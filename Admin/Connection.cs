@@ -17,14 +17,22 @@ namespace IW4MAdmin
 
         public String Read()
         {
-            WebResponse Resp = ConnectionHandle.GetResponse();
-            StreamReader data_in = new StreamReader(Resp.GetResponseStream());
-            String result = data_in.ReadToEnd();
+            try
+            {
+                WebResponse Resp = ConnectionHandle.GetResponse();
+                StreamReader data_in = new StreamReader(Resp.GetResponseStream());
+                String result = data_in.ReadToEnd();
 
-            data_in.Close();
-            Resp.Close();
+                data_in.Close();
+                Resp.Close();
 
-            return result;
+                return result;
+            }
+
+            catch (System.Net.WebException E)
+            {
+                return null;
+            }
         }
 
         private String Location;

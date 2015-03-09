@@ -22,7 +22,7 @@ namespace IW4MAdmin
             logFile = new file("admin_" + port + ".log", true);
             Log = new Log(logFile, Log.Level.Production);
             players = new List<Player>(new Player[18]);
-            DB = new Database(port + ".dll");
+            DB = new Database("clients.dll");
             Bans = DB.getBans();
             owner = DB.getOwner();
             maps = new List<Map>();
@@ -113,7 +113,7 @@ namespace IW4MAdmin
             }
             catch (Exception E)
             {
-                Log.Write("Unable to add player - " + E.Message, Log.Level.Debug);
+                Log.Write("Unable to add player " + P.getName() + " - " + E.Message, Log.Level.Debug);
                 return false;
             }
         }
@@ -254,9 +254,9 @@ namespace IW4MAdmin
         {
             if (!intializeBasics())
             {
-                Log.Write("Shutting due to uncorrectable errors (check log)" + logPath, Log.Level.Production);
+                Log.Write("Stopping " + Port +  " due to uncorrectable errors (check log)" + logPath, Log.Level.Production);
                 Utilities.Wait(10);
-                Environment.Exit(-1);
+                return;
             }
 
             //Handles new rcon requests in a fashionable manner
@@ -717,7 +717,7 @@ namespace IW4MAdmin
             commands.Add(new MapCMD("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
             commands.Add(new Find("find", "find player in database. syntax: !find <player>", "f", Player.Permission.Administrator, 1, false));
             commands.Add(new Rules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
-
+            commands.Add(new PrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
             /*
             commands.Add(new commands { command = "stats", desc = "view your server stats.", requiredPer = 0 });
             commands.Add(new commands { command = "speed", desc = "change player speed. syntax: !speed <number>", requiredPer = 3 });

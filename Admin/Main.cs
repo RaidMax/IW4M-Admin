@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace IW4MAdmin
 {
@@ -9,20 +10,26 @@ namespace IW4MAdmin
         static String IP;
         static int Port;
         static String RCON;
+        static double Version = 0.2;
 
 
         static void Main(string[] args)
         {
             Console.WriteLine("=====================================================");
-            Console.WriteLine(" IW4M ADMIN v");
+            Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
+            String latestVer = checkUpdate();
+            if (latestVer != null)
+                Console.WriteLine(" Version " + Version + " (latest " + latestVer + ")");
+            else
+                 Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
+ 
 
             file Config = new file("config\\servers.cfg");
-            String[] SV_CONF = Config.getParameters(3);
-            double Version = 0.1;
+            String[] SV_CONF = Config.readAll();
 
-            if (SV_CONF == null || SV_CONF.Length != 3)
+            if (SV_CONF == null || SV_CONF.Length < 1)
             {
                 setupConfig();
                 SV_CONF = new file("config\\servers.cfg").getParameters(3);
@@ -31,11 +38,23 @@ namespace IW4MAdmin
 
             if (Config.getSize() > 0 && SV_CONF != null)
             {
-                Console.WriteLine("Starting admin on port " + SV_CONF[1]);
+                foreach (String S in SV_CONF)
+                {
+                    if (S.Length < 1)
+                        continue;
 
-                Server IW4M;
-                IW4M = new Server(SV_CONF[0], Convert.ToInt32(SV_CONF[1]), SV_CONF[2]);
-                IW4M.Monitor();
+                    String[] sv = S.Split(':');
+
+                    Console.WriteLine("Starting admin on port " + sv[1]);
+
+                    Server IW4M;
+                    IW4M = new Server(sv[0], Convert.ToInt32(sv[1]), sv[2]);
+
+                    //Threading seems best here
+                    Thread monitorThread = new Thread(new ThreadStart(IW4M.Monitor));
+                    monitorThread.Start();
+                }
+                
             }
             else
             {
@@ -57,6 +76,12 @@ namespace IW4MAdmin
             file Config = new file("config\\servers.cfg", true);
             Config.Write(IP + ":" + Port + ":" + RCON);
             Console.WriteLine("Great! Let's go ahead and start 'er up.");
+        }
+
+        static String checkUpdate()
+        {
+            Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.txt");
+            return Ver.Read();
         }
     }
 }

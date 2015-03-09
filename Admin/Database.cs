@@ -37,7 +37,7 @@ namespace IW4MAdmin
             if (Result != null && Result.Rows.Count > 0)
             {
                 DataRow ResponseRow = Result.Rows[0];
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), ((int)ResponseRow["Connections"] + 1));
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"]);
             }
 
             else

@@ -36,7 +36,7 @@ namespace IW4MAdmin
             Level = l;
             dbID = cind;
             LastOffense = lo;
-            Connections = con;
+            Connections = con + 1;
             Warnings = 0;
         }
 

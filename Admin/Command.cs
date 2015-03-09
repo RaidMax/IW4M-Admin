@@ -171,7 +171,7 @@ namespace IW4MAdmin
             if (E.Origin.getLevel() > E.Target.getLevel())
             {
                 E.Target.Ban(Message, E.Origin);
-                E.Origin.Tell("Successfully banned ^5" + E.Target.getName() + " (^7" + E.Target.getID());
+                E.Origin.Tell(String.Format("Sucessfully banned ^5{0} ^7({1})", E.Target.getName(), E.Target.getID()));
             }
             else
                 E.Origin.Tell("You cannot ban " + E.Target.getName());
@@ -430,5 +430,16 @@ namespace IW4MAdmin
             }
         }
 
+    }
+
+    class PrivateMessage : Command
+    {
+        public PrivateMessage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            E.Target.Tell("^1" + E.Origin.getName() + " ^3[PM]^7 - " + E.Data);
+            E.Origin.Tell("Sucessfully sent message");
+        }
     }
 }

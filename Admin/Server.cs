@@ -19,10 +19,10 @@ namespace IW4MAdmin
             rcon_pass = password;
             clientnum = 0;
             RCON = new RCON(this);
-            logFile = new file("admin_" + address + "_" + port + ".log", true);
+            logFile = new file("admin_" + port + ".log", true);
             Log = new Log(logFile, Log.Level.Production);
             players = new List<Player>(new Player[18]);
-            DB = new Database(port + ".db");
+            DB = new Database(port + ".dll");
             Bans = DB.getBans();
             owner = DB.getOwner();
             maps = new List<Map>();
@@ -66,19 +66,16 @@ namespace IW4MAdmin
             return commands;
         }
 
+        //Returns list of all current players
         public List<Player> getPlayers()
         {
             return players;
         }
 
+        //Returns list of all active bans (loaded at runtime)
         public List<Ban> getBans()
         {
             return Bans;
-        }
-
-        //Performs update on server statistics read from log.
-        public void Update()
-        {
         }
             
         //Add player object p to `players` list
@@ -130,6 +127,7 @@ namespace IW4MAdmin
             return true;
         }
 
+        //Get a client from players list by by log line. If create = true, it will return  a new player object
          public Player clientFromLine(String[] line, int name_pos, bool create)
          {
             string Name = line[name_pos].ToString().Trim();
@@ -156,6 +154,7 @@ namespace IW4MAdmin
             }
         }
 
+        //Should be client from Name ( returns client in players list by name )
          public Player clientFromLine(String Name)
          {
              foreach (Player P in players)
@@ -255,7 +254,7 @@ namespace IW4MAdmin
         {
             if (!intializeBasics())
             {
-                Log.Write("Shutting due to uncorrectable errors..." + logPath, Log.Level.Debug);
+                Log.Write("Shutting due to uncorrectable errors (check log)" + logPath, Log.Level.Production);
                 Utilities.Wait(10);
                 Environment.Exit(-1);
             }
@@ -351,6 +350,7 @@ namespace IW4MAdmin
 
         }
 
+        //Vital RCON commands to establish log file and server name. May need to cleanup in the future
         private bool intializeBasics()
         {
             try
@@ -574,7 +574,7 @@ namespace IW4MAdmin
             }
         }
 
-        public bool Unban(String GUID)
+        public bool Unban(String GUID, Player Target)
         {
             foreach (Ban B in Bans)
             {

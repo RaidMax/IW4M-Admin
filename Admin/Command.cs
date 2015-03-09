@@ -169,7 +169,10 @@ namespace IW4MAdmin
             E.Target.lastEvent = E; // needs to be fixed
             String Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
             if (E.Origin.getLevel() > E.Target.getLevel())
+            {
                 E.Target.Ban(Message, E.Origin);
+                E.Origin.Tell("Successfully banned ^5" + E.Target.getName() + " (^7" + E.Target.getID());
+            }
             else
                 E.Origin.Tell("You cannot ban " + E.Target.getName());
         }
@@ -182,7 +185,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            if (E.Owner.Unban(E.Data.Trim()))
+            if (E.Owner.Unban(E.Data.Trim(), E.Target))
                 E.Origin.Tell("Successfully unbanned " + E.Data.Trim());
             else
                 E.Origin.Tell("Unable to find a ban for that GUID");
@@ -196,7 +199,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            String You = String.Format("You are {0} at client spot {1} with xuid {2}. You have connected {3} times and are currently ranked {4}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), E.Origin.getConnections(), E.Origin.getLevel());
+            String You = String.Format("You are {0} at client spot {1} with xuid {2} and ID {5}. You have connected {3} times and are currently ranked {4}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), E.Origin.getConnections(), E.Origin.getLevel(), E.Origin.getDBID());
             E.Origin.Tell(You);
         }
 

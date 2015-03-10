@@ -10,17 +10,17 @@ namespace IW4MAdmin
         static String IP;
         static int Port;
         static String RCON;
-        static double Version = 0.2;
-
+        static public double Version = 0.2;
+        static public double latestVersion;
 
         static void Main(string[] args)
         {
+            double.TryParse(checkUpdate(), out latestVersion);
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
-            String latestVer = checkUpdate();
-            if (latestVer != null)
-                Console.WriteLine(" Version " + Version + " (latest " + latestVer + ")");
+            if (latestVersion != 0)
+                Console.WriteLine(" Version " + Version + " (latest " + latestVersion + ")");
             else
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
@@ -80,7 +80,7 @@ namespace IW4MAdmin
 
         static String checkUpdate()
         {
-            Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.txt");
+            Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
             return Ver.Read();
         }
     }

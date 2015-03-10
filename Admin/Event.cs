@@ -69,16 +69,22 @@ namespace IW4MAdmin
                 if (eventType == "Q")
                     return new Event(GType.Disconnect, null, SV.clientFromLine(line, 3, false), null, null);
 
+                if (eventType == "K")
+                    return new Event(GType.Kill, line[9], SV.clientFromLine(line[8]), SV.clientFromLine(line[4]), null);
+
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
                 {
+                    if (line.Length < 4)
+                    {
+                        Console.WriteLine("SAY FUCKED UP");
+                        return null;
+                    }
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
                     string message = rgx.Replace(line[4], "");
-                    if (message.Length < 2)
-                        message = " ";
                     return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromLine(line, 3, false), null, null);
                 }
 
-                if (eventType == "d")
+                if (eventType == "d" || eventType == ":")
                     return new Event(GType.MapEnd, null, null, null, null);
 
                 if (line[0].Length > 400) // blaze it

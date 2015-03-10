@@ -24,6 +24,7 @@ namespace IW4MAdmin
             Instance = I;
             toSend = new Queue<String>();
         }
+
         //When we don't care about a response
         public bool sendRCON(String message)
         {
@@ -116,8 +117,10 @@ namespace IW4MAdmin
                 {
                     sendRCON(toSend.Peek());
                     toSend.Dequeue();
+                    Utilities.Wait(0.85);
                 }
-                Utilities.Wait(0.3);
+                else
+                    Utilities.Wait(0.1);
             }
         }
 

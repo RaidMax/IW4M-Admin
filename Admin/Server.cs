@@ -22,7 +22,8 @@ namespace IW4MAdmin
             logFile = new file("admin_" + port + ".log", true);
             Log = new Log(logFile, Log.Level.Production);
             players = new List<Player>(new Player[18]);
-            DB = new Database("clients.dll");
+            DB = new Database("clients.rm", Database.Type.Clients);
+            stats = new Database("stats_" + port + ".rm", Database.Type.Stats);
             Bans = DB.getBans();
             owner = DB.getOwner();
             maps = new List<Map>();
@@ -94,6 +95,12 @@ namespace IW4MAdmin
                     P = A;
                 }
 
+                P.stats = stats.getStats(P.getDBID());
+                if (P.stats == null)
+                {
+                    stats.addPlayer(P);
+                    P.stats = new Stats(0, 0, 0, 0);
+                }
                 players[P.getClientNum()] = null;
                 players[P.getClientNum()] = P;
 
@@ -101,13 +108,13 @@ namespace IW4MAdmin
 
                 if (P.getLevel() == Player.Permission.Banned)
                 {
-                    Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Production);
+                    Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Debug);
                     String Message = "^1Player Kicked: ^7Previously Banned for ^5" + isBanned(P).getReason();
                     P.Kick(Message);
                 }
 
                 else
-                    Log.Write("Client " + P.getName() + " connecting...", Log.Level.Production);
+                    Log.Write("Client " + P.getName() + " connecting...", Log.Level.Debug);
 
                 return true;
             }
@@ -121,7 +128,7 @@ namespace IW4MAdmin
         //Remove player by CLIENT NUMBER
         public bool removePlayer(int cNum)
         {
-            Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Production);
+            Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
             players[cNum] = null;
             clientnum--;
             return true;
@@ -204,6 +211,9 @@ namespace IW4MAdmin
                 int cNum = -1;
                 int.TryParse(Args[0], out cNum);
 
+                if (Args[0] == String.Empty)
+                    return C;
+
                 if (Args[0][0] == '@')
                 {
                     int dbID = -1;
@@ -282,6 +292,8 @@ namespace IW4MAdmin
                     lastMessage = DateTime.Now - start;
                     if(lastMessage.TotalSeconds > messageTime && messages.Count > 0)
                     {
+                        if (Program.Version != Program.latestVersion && Program.latestVersion != 0)
+                            Broadcast("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
                         Broadcast(messages[nextMessage]);
                         if (nextMessage == (messages.Count - 1))
                             nextMessage = 0;
@@ -496,12 +508,30 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.Disconnect)
             {
                 if (getNumPlayers() > 0)
+                {
+                    DB.updatePlayer(E.Origin);
+                    stats.updatePlayer(E.Origin);
                     removePlayer(E.Origin.getClientNum());
+                }
                 return true;
+            }
+
+            if (E.Type == Event.GType.Kill)
+            {
+                if (E.Origin != null && E.Target != null)
+                {
+                    E.Origin.stats.Kills++;
+                    E.Origin.stats.Update();
+                    E.Target.stats.Deaths++;
+                    E.Target.stats.Update();
+                }
             }
 
             if (E.Type == Event.GType.Say)
             {
+                if (E.Data.Length < 2)
+                    return false;
+
                 Log.Write("Message from " + E.Origin.getName() + ": " + E.Data, Log.Level.Debug);
 
                 if (E.Data.Substring(0, 1) != "!")
@@ -539,6 +569,13 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.MapEnd)
             {
                 Log.Write("Game ending...", Log.Level.Production);
+                foreach (Player P in players)
+                {
+                    if (P == null)
+                        continue;
+                    stats.updatePlayer(P);
+                    Log.Write("Updated stats for client " + P.getDBID(), Log.Level.Debug);
+                }
                 return true;
             }
 
@@ -578,11 +615,11 @@ namespace IW4MAdmin
         {
             foreach (Ban B in Bans)
             {
-                if (B.getID() == GUID)
+                if (B.getID() == Target.getID())
                 {
                     DB.removeBan(GUID);
                     Bans.Remove(B);
-                    Player P = DB.getPlayer(GUID, 0);
+                    Player P = DB.getPlayer(Target.getID(), 0);
                     P.setLevel(Player.Permission.User);
                     DB.updatePlayer(P);
                     return true;
@@ -711,13 +748,14 @@ namespace IW4MAdmin
             commands.Add(new Uptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
             commands.Add(new Warn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Moderator, 2, true));
             commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Administrator, 1, true));
-            commands.Add(new Unban("unban", "unban player by guid. syntax: !unban <guid>.", "ub", Player.Permission.Administrator, 1, false));
+            commands.Add(new Unban("unban", "unban player by guid. syntax: !unban <guid>.", "ub", Player.Permission.Administrator, 1, true));
             commands.Add(new Admins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
             commands.Add(new Wisdom("wisdom", "get a random wisdom quote. syntax: !wisdom", "w", Player.Permission.Administrator, 0, false));
             commands.Add(new MapCMD("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
             commands.Add(new Find("find", "find player in database. syntax: !find <player>", "f", Player.Permission.Administrator, 1, false));
             commands.Add(new Rules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
             commands.Add(new PrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
+            commands.Add(new _Stats("stats", "view your stats or another player's. syntax: !stats", "xlrstats", Player.Permission.User, 0, true));
             /*
             commands.Add(new commands { command = "stats", desc = "view your server stats.", requiredPer = 0 });
             commands.Add(new commands { command = "speed", desc = "change player speed. syntax: !speed <number>", requiredPer = 3 });
@@ -735,6 +773,7 @@ namespace IW4MAdmin
         public List<Map> maps;
         public List<String> rules;
         public Queue<Event> events;
+        public Database stats;
 
         //Info
         private String IP;

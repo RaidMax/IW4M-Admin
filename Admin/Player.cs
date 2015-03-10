@@ -4,6 +4,28 @@ using System.Text;
 
 namespace IW4MAdmin
 {
+    class Stats
+    {
+        public Stats(int K, int D, double kdr, double skill)
+        {
+            Kills = K;
+            Deaths = D;
+            KDR = kdr;
+            Skill = Math.Round(skill,2);
+        }
+
+        public void Update()
+        {
+            KDR = Math.Round((double)((double)Kills / (double)Deaths), 2);
+            Skill = Math.Round((double)Kills * (((double)Kills / (double)Deaths) / 10), 2);
+        }
+
+        public int Kills;
+        public int Deaths;
+        public double KDR;
+        public double Skill;
+    }
+
     class Player
     {
         public enum Permission
@@ -50,9 +72,9 @@ namespace IW4MAdmin
             return npID;
         }
         
-        public String getDBID()
+        public int getDBID()
         {
-            return Convert.ToString(dbID);
+            return dbID;
         }
 
         public int getClientNum()
@@ -130,5 +152,6 @@ namespace IW4MAdmin
         public Event lastEvent;
         public String LastOffense;
         public int Warnings;
+        public Stats stats;
     }
 }

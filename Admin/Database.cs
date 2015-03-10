@@ -10,22 +10,39 @@ namespace IW4MAdmin
 {
     class Database
     {
-        public Database(String FN)
+        public enum Type
+        {
+            Clients,
+            Stats
+        }
+
+        public Database(String FN, Type T)
         {
             FileName = FN;
             DBCon = String.Format("Data Source={0}", FN);
             Con = new SQLiteConnection(DBCon);
-            Init();
+            DBType = T;
+            Init(T);
         }
 
-        private void Init()
+        private void Init(Type T)
         {
             if(!File.Exists(FileName))
             {
-                String query = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL);";
-                ExecuteNonQuery(query);
-                query = "CREATE TABLE [BANS] ( [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] Text NULL)";
-                ExecuteNonQuery(query);
+                switch (T)
+                {
+                    case Type.Clients:
+                        String query = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL);";
+                        ExecuteNonQuery(query);
+                        query = "CREATE TABLE [BANS] ( [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] Text NULL);";
+                        ExecuteNonQuery(query);
+                        break;
+                    case Type.Stats:
+                        String query_stats = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0 );";
+                        ExecuteNonQuery(query_stats);
+                        break;
+                }
+                
             }
         }
 
@@ -104,6 +121,21 @@ namespace IW4MAdmin
             return Bans;
         }
 
+        public Stats getStats(int DBID)
+        {
+            String Query = String.Format("SELECT * FROM STATS WHERE Number = '{0}'", DBID);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow ResponseRow = Result.Rows[0];
+                return new Stats(Convert.ToInt32(ResponseRow["KILLS"]), Convert.ToInt32(ResponseRow["DEATHS"]), Convert.ToDouble(ResponseRow["KDR"]), Convert.ToDouble(ResponseRow["SKILL"]));
+            }
+
+            else
+                return null;
+        }
+
         public void removeBan(String GUID)
         {
             String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}'", GUID);
@@ -114,28 +146,52 @@ namespace IW4MAdmin
         {
             Dictionary<String, object> newPlayer = new Dictionary<String, object>();
 
-            newPlayer.Add("Name", Utilities.removeNastyChars(P.getName()));
-            newPlayer.Add("npID", P.getID());
-            newPlayer.Add("Level", (int)P.getLevel());
-           // newPlayer.Add("Number", P.getClientNum().ToString());
-            newPlayer.Add("LastOffense", "");
-            newPlayer.Add("Connections", 1);
+            if (DBType == Type.Clients)
+            {
+                newPlayer.Add("Name", Utilities.removeNastyChars(P.getName()));
+                newPlayer.Add("npID", P.getID());
+                newPlayer.Add("Level", (int)P.getLevel());
+                newPlayer.Add("LastOffense", "");
+                newPlayer.Add("Connections", 1);
 
-            Insert("CLIENTS", newPlayer);
+                Insert("CLIENTS", newPlayer);
+            }
+            
+            if (DBType == Type.Stats)
+            {
+                newPlayer.Add("Number", P.getDBID());
+                newPlayer.Add("KILLS", 0);
+                newPlayer.Add("DEATHS", 0);
+                newPlayer.Add("KDR", 0);
+                newPlayer.Add("SKILL", 0);
+                Insert("STATS", newPlayer);
+            }
         }
 
         public void updatePlayer(Player P)
         {
             Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
 
-            updatedPlayer.Add("Name", P.getName());
-            updatedPlayer.Add("npID", P.getID());
-            updatedPlayer.Add("Level", (int)P.getLevel());
-           // updatedPlayer.Add("Number", P.getClientNum().ToString());
-            updatedPlayer.Add("LastOffense", P.getLastO());
-            updatedPlayer.Add("Connections", P.getConnections());
+            if (DBType == Type.Clients)
+            {
+                updatedPlayer.Add("Name", P.getName());
+                updatedPlayer.Add("npID", P.getID());
+                updatedPlayer.Add("Level", (int)P.getLevel());
+                updatedPlayer.Add("LastOffense", P.getLastO());
+                updatedPlayer.Add("Connections", P.getConnections());
 
-            Update("CLIENTS", updatedPlayer, String.Format("npID = '{0}'", P.getID()));
+                Update("CLIENTS", updatedPlayer, String.Format("npID = '{0}'", P.getID()));
+            }
+
+            if (DBType == Type.Stats)
+            {
+                updatedPlayer.Add("KILLS", P.stats.Kills);
+                updatedPlayer.Add("DEATHS", P.stats.Deaths);
+                updatedPlayer.Add("KDR", P.stats.KDR);
+                updatedPlayer.Add("SKILL", P.stats.Skill);
+
+                Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.getDBID()));
+            }
         }
 
         public void addBan(Ban B)
@@ -240,5 +296,6 @@ namespace IW4MAdmin
         private String FileName;
         private String DBCon;
         private SQLiteConnection Con;
+        private Type DBType;
     }
 }

@@ -134,7 +134,6 @@ namespace IW4MAdmin
 
         private UdpClient sv_connection;
         private Server Instance;
-        private DateTime lastCMD;
         private Queue<String> toSend;
     }
 }

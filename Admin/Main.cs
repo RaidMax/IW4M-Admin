@@ -10,7 +10,7 @@ namespace IW4MAdmin
         static String IP;
         static int Port;
         static String RCON;
-        static public double Version = 0.2;
+        static public double Version = 0.3;
         static public double latestVersion;
 
         static void Main(string[] args)
@@ -73,12 +73,15 @@ namespace IW4MAdmin
             file Config = new file("config\\servers.cfg");
             String[] SV_CONF = Config.readAll();
             List<Server> Servers = new List<Server>();
+            Config.Close();
 
 
             if (SV_CONF == null || SV_CONF.Length < 1 || SV_CONF[0] == String.Empty)
             {
                 setupConfig(); // get our first time server
+                Config = new file("config\\servers.cfg", true);
                 Config.Write(IP + ':' + Port + ':' + RCON);
+                Config.Close();
                 Servers.Add(new Server(IP, Port, RCON));
             }
 

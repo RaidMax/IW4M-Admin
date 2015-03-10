@@ -112,10 +112,12 @@ namespace IW4MAdmin
                     stats.addPlayer(P);
                     P.stats = new Stats(0, 0, 0, 0);
                 }
+
+                if(players[P.getClientNum()] == null)
+                    clientnum++;
+
                 players[P.getClientNum()] = null;
                 players[P.getClientNum()] = P;
-
-                clientnum++;
 
                 if (P.getLevel() == Player.Permission.Banned)
                 {
@@ -293,8 +295,8 @@ namespace IW4MAdmin
             String[] oldLines = new String[8];
             DateTime start = DateTime.Now;
 
-            //Utilities.Wait(1);
-            //Broadcast("IW4M Admin is now ^2ONLINE");
+            Utilities.Wait(1);
+            Broadcast("IW4M Admin is now ^2ONLINE");
 
             while (errors <=5)
             {
@@ -787,6 +789,7 @@ namespace IW4MAdmin
             commands.Add(new Rules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
             commands.Add(new PrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
             commands.Add(new _Stats("stats", "view your stats or another player's. syntax: !stats", "xlrstats", Player.Permission.User, 0, true));
+            commands.Add(new TopStats("topstats", "view the top 4 players on this server. syntax !topstats", "xlrtopstats", Player.Permission.User, 0, false));
             /*
             commands.Add(new commands { command = "stats", desc = "view your server stats.", requiredPer = 0 });
             commands.Add(new commands { command = "speed", desc = "change player speed. syntax: !speed <number>", requiredPer = 3 });
@@ -821,7 +824,7 @@ namespace IW4MAdmin
         private TimeSpan lastMessage;
         private int nextMessage;
         private int errors = 0;
-        private Connection Heartbeat;
+
      
         //Log stuff
         private String Basepath;

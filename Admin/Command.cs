@@ -460,4 +460,38 @@ namespace IW4MAdmin
         }
     }
 
+    class TopStats : Command
+    {
+        public TopStats(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            List<Stats> Top = E.Owner.stats.topStats();
+            List<Player> TopP = new List<Player>();
+
+            foreach (Stats S in Top)
+            {
+                Player P = E.Owner.DB.findPlayers(S.Kills); // BAD
+                if (P != null)
+                {
+                    P.stats = S;
+                    TopP.Add(P);
+                }
+            }
+            if (TopP.Count > 0)
+            {
+                E.Origin.Tell("^1TOP PLAYERS");
+                foreach (Player P in TopP)
+                {
+                    if (P != null)
+                        E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.getName(), P.stats.KDR, P.stats.Skill));
+
+                }
+            }
+            else
+                E.Origin.Tell("There are no top players yet!");
+        }
+    }
+
+
 }

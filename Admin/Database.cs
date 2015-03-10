@@ -168,6 +168,25 @@ namespace IW4MAdmin
             }
         }
 
+        public List<Stats> topStats()
+        {
+            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' LIMIT 4", 20);
+            DataTable Result = GetDataTable(Query);
+
+            List<Stats> Top = new List<Stats>();
+            
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow D in Result.Rows)
+                {
+                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]));
+                    Top.Add(S);
+                }
+            }
+
+            return Top;     
+        }
+
         public void updatePlayer(Player P)
         {
             Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();

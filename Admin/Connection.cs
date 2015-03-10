@@ -29,7 +29,7 @@ namespace IW4MAdmin
                 return result;
             }
 
-            catch (System.Net.WebException E)
+            catch (System.Net.WebException)
             {
                 return null;
             }
@@ -43,7 +43,7 @@ namespace IW4MAdmin
                 Resp.Close();
             }
 
-            catch (System.Net.WebException E)
+            catch (System.Net.WebException)
             {
                 return;
             }

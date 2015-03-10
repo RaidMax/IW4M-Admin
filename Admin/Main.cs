@@ -29,10 +29,10 @@ namespace IW4MAdmin
             file Config = new file("config\\servers.cfg");
             String[] SV_CONF = Config.readAll();
 
-            if (SV_CONF == null || SV_CONF.Length < 1)
+            if (SV_CONF == null || SV_CONF.Length < 1 || SV_CONF[0] == String.Empty)
             {
                 setupConfig();
-                SV_CONF = new file("config\\servers.cfg").getParameters(3);
+                SV_CONF = new file("config\\servers.cfg").readAll();
             }
 
 

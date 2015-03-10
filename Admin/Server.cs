@@ -30,6 +30,7 @@ namespace IW4MAdmin
             rules = new List<String>();
             messages = new List<String>();
             events = new Queue<Event>();
+            HB = new Heartbeat(this);
             nextMessage = 0;
             initCommands();
             initMessages();
@@ -41,6 +42,11 @@ namespace IW4MAdmin
         public String getName()
         {
             return hostname;
+        }
+
+        public String getMap()
+        {
+            return mapname;
         }
 
         //Returns current server IP set by `net_ip` -- *STRING*
@@ -71,6 +77,11 @@ namespace IW4MAdmin
         public List<Player> getPlayers()
         {
             return players;
+        }
+
+        public int getClientNum()
+        {
+            return clientnum;
         }
 
         //Returns list of all active bans (loaded at runtime)
@@ -282,8 +293,8 @@ namespace IW4MAdmin
             String[] oldLines = new String[8];
             DateTime start = DateTime.Now;
 
-            Utilities.Wait(1);
-            Broadcast("IW4M Admin is now ^2ONLINE");
+            //Utilities.Wait(1);
+            //Broadcast("IW4M Admin is now ^2ONLINE");
 
             while (errors <=5)
             {
@@ -292,14 +303,13 @@ namespace IW4MAdmin
                     lastMessage = DateTime.Now - start;
                     if(lastMessage.TotalSeconds > messageTime && messages.Count > 0)
                     {
-                        if (Program.Version != Program.latestVersion && Program.latestVersion != 0)
-                            Broadcast("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
                         Broadcast(messages[nextMessage]);
                         if (nextMessage == (messages.Count - 1))
                             nextMessage = 0;
                         else
                             nextMessage++;
                         start = DateTime.Now;
+                        HB.Send();
                     }
 
                     if (l_size != logFile.getSize())
@@ -367,8 +377,40 @@ namespace IW4MAdmin
         {
             try
             {
+                //get sv_hostname
+               String[] p = RCON.responseSendRCON("sv_hostname");
+
+                if (p == null)
+                {
+                    Log.Write("Could not obtain server name!", Log.Level.All);
+                    return false;
+                }
+
+                p = p[1].Split('"');
+                hostname  = Utilities.stripColors(p[3].Substring(0, p[3].Length - 2).Trim());
+                p = null;
+                //END
+
+                Thread.Sleep(FLOOD_TIMEOUT);
+
+                //get mapname
+                p = RCON.responseSendRCON("mapname");
+
+                if (p == null)
+                {
+                    Log.Write("Could not obtain map name!", Log.Level.All);
+                    return false;
+                }
+
+                p = p[1].Split('"');
+                mapname = Utilities.stripColors(p[3].Substring(0, p[3].Length - 2).Trim());
+                p = null;
+                //END
+
+                Thread.Sleep(FLOOD_TIMEOUT);
+
                 //GET fs_basepath
-                String[] p = RCON.responseSendRCON("fs_basepath");
+                p = RCON.responseSendRCON("fs_basepath");
 
                 if (p == null)
                 {
@@ -459,20 +501,6 @@ namespace IW4MAdmin
 
                 Thread.Sleep(FLOOD_TIMEOUT);
 
-                //get sv_hostname
-                p = RCON.responseSendRCON("sv_hostname");
-
-                if (p == null)
-                {
-                    Log.Write("Could not obtain server name!", Log.Level.All);
-                    return false;
-                }
-
-                p = p[1].Split('"');
-                hostname = p[3].Substring(0, p[3].Length - 2).Trim();
-                p = null;
-                //END
-
                 if (Mod == String.Empty || onelog == "1")
                     logPath = Basepath + '\\' + "m2demo" + '\\' + log;
                 else
@@ -501,13 +529,13 @@ namespace IW4MAdmin
         {
             if (E.Type == Event.GType.Connect)
             {
-                this.addPlayer(E.Origin);
+                addPlayer(E.Origin);
                 return true;
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
-                if (getNumPlayers() > 0)
+                if (getNumPlayers() > 0 && E.Origin != null)
                 {
                     DB.updatePlayer(E.Origin);
                     stats.updatePlayer(E.Origin);
@@ -518,7 +546,7 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.Kill)
             {
-                if (E.Origin != null && E.Target != null)
+                if (E.Origin != null && E.Target != null && E.Origin.stats != null)
                 {
                     E.Origin.stats.Kills++;
                     E.Origin.stats.Update();
@@ -527,7 +555,7 @@ namespace IW4MAdmin
                 }
             }
 
-            if (E.Type == Event.GType.Say)
+            if (E.Type == Event.GType.Say && E.Origin != null)
             {
                 if (E.Data.Length < 2)
                     return false;
@@ -561,17 +589,18 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.MapChange)
             {
-                Log.Write("Map change detected..", Log.Level.Production);
-                return true;
-                //TODO here
+                Log.Write("New map loaded", Log.Level.Debug);
+                String[] statusResponse = E.Data.Split('\\');
+                if (statusResponse.Length >= 15 && statusResponse[13] == "mapname")
+                    mapname = maps.Find(m => m.Name.Equals(statusResponse[14])).Alias;    //update map for heartbeat                    
             }
 
             if (E.Type == Event.GType.MapEnd)
             {
-                Log.Write("Game ending...", Log.Level.Production);
+                Log.Write("Game ending...", Log.Level.Debug);
                 foreach (Player P in players)
                 {
-                    if (P == null)
+                    if (P == null || P.stats == null)
                         continue;
                     stats.updatePlayer(P);
                     Log.Write("Updated stats for client " + P.getDBID(), Log.Level.Debug);
@@ -707,6 +736,8 @@ namespace IW4MAdmin
                 if (lines[0] != l && l.Length > 1)
                     messages.Add(l);
             }
+            if (Program.Version != Program.latestVersion && Program.latestVersion != 0)
+               messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
         }
 
         private void initRules()
@@ -740,11 +771,11 @@ namespace IW4MAdmin
             commands.Add(new SBan("ban", "permanently ban a player from the server. syntax: !ban <player> <reason>", "b", Player.Permission.SeniorAdmin, 2, true));
             commands.Add(new WhoAmI("whoami", "give information about yourself. syntax: !whoami.", "who", Player.Permission.User, 0, false));
             commands.Add(new List("list", "list active clients syntax: !list.", "l", Player.Permission.Moderator, 0, false));
-            commands.Add(new Help("help", "list all available commands. syntax: !help.", "l", Player.Permission.User, 0, false));
+            commands.Add(new Help("help", "list all available commands. syntax: !help.", "h", Player.Permission.User, 0, false));
             commands.Add(new FastRestart("fastrestart", "fast restart current map. syntax: !fastrestart.", "fr", Player.Permission.Moderator, 0, false));
             commands.Add(new MapRotate("maprotate", "cycle to the next map in rotation. syntax: !maprotate.", "mr", Player.Permission.Administrator, 0, false));
             commands.Add(new SetLevel("setlevel", "set player to specified administration level. syntax: !setlevel <player> <level>.", "sl", Player.Permission.Owner, 2, true));
-            commands.Add(new Usage("usage", "get current application memory usage. syntax: !usage.", "u", Player.Permission.Moderator, 0, false));
+            commands.Add(new Usage("usage", "get current application memory usage. syntax: !usage.", "us", Player.Permission.Moderator, 0, false));
             commands.Add(new Uptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
             commands.Add(new Warn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Moderator, 2, true));
             commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Administrator, 1, true));
@@ -774,11 +805,13 @@ namespace IW4MAdmin
         public List<String> rules;
         public Queue<Event> events;
         public Database stats;
+        public Heartbeat HB;
 
         //Info
         private String IP;
         private int Port;
         private String hostname;
+        private String mapname;
         private int clientnum;
         private string rcon_pass;
         private List<Player> players;
@@ -788,6 +821,7 @@ namespace IW4MAdmin
         private TimeSpan lastMessage;
         private int nextMessage;
         private int errors = 0;
+        private Connection Heartbeat;
      
         //Log stuff
         private String Basepath;

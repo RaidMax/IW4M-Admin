@@ -35,6 +35,20 @@ namespace IW4MAdmin
             }
         }
 
+        public void Request(String data)
+        {
+            try
+            {
+                WebResponse Resp = WebRequest.Create(data).GetResponse();     
+                Resp.Close();
+            }
+
+            catch (System.Net.WebException E)
+            {
+                return;
+            }
+        }
+
         private String Location;
         private WebRequest ConnectionHandle;
     }

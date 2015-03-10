@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace IW4MAdmin
 {
@@ -72,6 +73,11 @@ namespace IW4MAdmin
                 }
             }
             return lineNumber;
+        }
+
+        public static String stripColors(String str)
+        {
+            return Regex.Replace(str, @"\^[0-9]", "");
         }
     }
 }

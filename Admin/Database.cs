@@ -187,7 +187,7 @@ namespace IW4MAdmin
             {
                 updatedPlayer.Add("KILLS", P.stats.Kills);
                 updatedPlayer.Add("DEATHS", P.stats.Deaths);
-                updatedPlayer.Add("KDR", P.stats.KDR);
+                updatedPlayer.Add("KDR", Math.Round(P.stats.KDR, 2));
                 updatedPlayer.Add("SKILL", P.stats.Skill);
 
                 Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.getDBID()));

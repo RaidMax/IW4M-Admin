@@ -10,7 +10,7 @@ namespace IW4MAdmin
         {
             Kills = K;
             Deaths = D;
-            KDR = kdr;
+            KDR = Math.Round(kdr,2);
             Skill = Math.Round(skill,2);
         }
 

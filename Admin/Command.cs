@@ -167,7 +167,11 @@ namespace IW4MAdmin
         {
             E.Target.LastOffense = Utilities.removeWords(E.Data, 1);
             E.Target.lastEvent = E; // needs to be fixed
+#if DEBUG
             String Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
+#else
+            String Message = "^1Player Banned: ^5" + E.Target.LastOffense;
+#endif
             if (E.Origin.getLevel() > E.Target.getLevel())
             {
                 E.Target.Ban(Message, E.Origin);

@@ -24,57 +24,40 @@ namespace IW4MAdmin
             else
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
+  
+
+            foreach (Server IW4M in checkConfig())
+            {   
+                //Threading seems best here
+                Thread monitorThread = new Thread(new ThreadStart(IW4M.Monitor));
+                monitorThread.Start();
+                Utilities.Wait(0.3);
+                Console.WriteLine("Now monitoring " + IW4M.getName());
+            }
+
+            Utilities.Wait(5); //Give them time to read an error before exiting
  
-
-            file Config = new file("config\\servers.cfg");
-            String[] SV_CONF = Config.readAll();
-
-            if (SV_CONF == null || SV_CONF.Length < 1 || SV_CONF[0] == String.Empty)
-            {
-                setupConfig();
-                SV_CONF = new file("config\\servers.cfg").readAll();
-            }
-
-
-            if (Config.getSize() > 0 && SV_CONF != null)
-            {
-                foreach (String S in SV_CONF)
-                {
-                    if (S.Length < 1)
-                        continue;
-
-                    String[] sv = S.Split(':');
-
-                    Console.WriteLine("Starting admin on port " + sv[1]);
-
-                    Server IW4M;
-                    IW4M = new Server(sv[0], Convert.ToInt32(sv[1]), sv[2]);
-
-                    //Threading seems best here
-                    Thread monitorThread = new Thread(new ThreadStart(IW4M.Monitor));
-                    monitorThread.Start();
-                }
-                
-            }
-            else
-            {
-                Console.WriteLine("[FATAL] CONFIG FILE DOES NOT EXIST OR IS INCORRECT!");
-                Utilities.Wait(5);
-            }
-                
         }
 
         static void setupConfig()
         {
+            bool validPort = false;
             Console.WriteLine("Hey there, it looks like you haven't set up a server yet. Let's get started!");
+
             Console.Write("Please enter the IP: ");
             IP = Console.ReadLine();
-            Console.Write("Please enter the Port: ");
-            Port = Convert.ToInt32(Console.ReadLine());
+
+            while (!validPort)
+            {
+                Console.Write("Please enter the Port: ");
+                int.TryParse(Console.ReadLine(), out Port);
+                if (Port != 0)
+                    validPort = true;
+            }
+
             Console.Write("Please enter the RCON password: ");
             RCON = Console.ReadLine();
             file Config = new file("config\\servers.cfg", true);
-            Config.Write(IP + ":" + Port + ":" + RCON);
             Console.WriteLine("Great! Let's go ahead and start 'er up.");
         }
 
@@ -82,6 +65,39 @@ namespace IW4MAdmin
         {
             Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
             return Ver.Read();
+        }
+
+        static List<Server> checkConfig()
+        {
+
+            file Config = new file("config\\servers.cfg");
+            String[] SV_CONF = Config.readAll();
+            List<Server> Servers = new List<Server>();
+
+
+            if (SV_CONF == null || SV_CONF.Length < 1 || SV_CONF[0] == String.Empty)
+            {
+                setupConfig(); // get our first time server
+                Config.Write(IP + ':' + Port + ':' + RCON);
+                Servers.Add(new Server(IP, Port, RCON));
+            }
+
+            else
+            {
+                foreach (String L in SV_CONF)
+                {
+                    String[] server_line = L.Split(':');
+                    int newPort;
+                    if (server_line.Length < 3 || !int.TryParse(server_line[1], out newPort))
+                    {
+                        Console.WriteLine("You have an error in your server.cfg");
+                        continue;
+                    }
+                    Servers.Add(new Server(server_line[0], newPort, server_line[2]));
+                }
+            }
+
+            return Servers;
         }
     }
 }

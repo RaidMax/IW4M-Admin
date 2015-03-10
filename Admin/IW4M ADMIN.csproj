@@ -94,6 +94,7 @@
     <Compile Include="Database.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="File.cs" />
+    <Compile Include="Heartbeat.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Maps.cs" />

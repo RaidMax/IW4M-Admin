@@ -84,11 +84,11 @@ namespace IW4MAdmin
                     return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromLine(line, 3, false), null, null);
                 }
 
-                if (eventType == "d" || eventType == ":")
+                if (eventType == ":")
                     return new Event(GType.MapEnd, null, null, null, null);
 
                 if (line[0].Length > 400) // blaze it
-                    return new Event(GType.MapChange, null, null, null, null);
+                    return new Event(GType.MapChange, line[0], null, null, null);
 
 
                 return null;

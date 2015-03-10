@@ -64,6 +64,14 @@ namespace IW4MAdmin
             return 0;
         }
 
+        public void Close()
+        {
+            if(Handle != null)
+                Handle.Close();
+            if (writeHandle != null)
+                writeHandle.Close();
+        }
+
         //FROM http://stackoverflow.com/questions/398378/get-last-10-lines-of-very-large-text-file-10gb-c-sharp
         public string ReadEndTokens()
         {
@@ -105,7 +113,7 @@ namespace IW4MAdmin
         }
         public String[] readAll()
         {
-            return Handle.ReadToEnd().Split('\n');
+            return Handle.ReadToEnd().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         public String[] end(int neededLines)

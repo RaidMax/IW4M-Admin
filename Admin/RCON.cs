@@ -67,7 +67,7 @@ namespace IW4MAdmin
             {
                 String STR_REQUEST;
                 if (message != "getstatus")
-                    STR_REQUEST = String.Format("ÿÿÿÿrcon {0} {1}", Instance.getPassword(), message);
+                    STR_REQUEST = String.Format("ÿÿÿÿrcon {0} {1}", Instance.getPassword().Replace("\r", String.Empty), message);
                 else
                     STR_REQUEST = String.Format("ÿÿÿÿ getstatus");
 
@@ -93,7 +93,15 @@ namespace IW4MAdmin
                 Byte[] receive = sv_connection.Receive(ref endPoint);
                 int num = int.Parse("0a", System.Globalization.NumberStyles.AllowHexSpecifier);          
 
-                return System.Text.Encoding.UTF8.GetString(receive).Split((char)num);
+                String[] response = System.Text.Encoding.UTF8.GetString(receive).Split((char)num);
+
+                if(response[1] == "Invalid password.")
+                {
+                    Instance.Log.Write("Invalid RCON password specified", Log.Level.Debug);
+                    return null;
+                }
+
+                return response;
             }
 
             catch (SocketException)

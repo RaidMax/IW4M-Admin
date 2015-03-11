@@ -28,7 +28,7 @@ namespace IW4MAdmin
         public file(String file, bool write)
         {
             Name = file;
-            writeHandle = new StreamWriter(new FileStream(Name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
+            writeHandle = new StreamWriter(new FileStream(Name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite));
             sze = 0;
         }
 

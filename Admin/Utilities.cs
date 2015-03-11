@@ -79,5 +79,24 @@ namespace IW4MAdmin
         {
             return Regex.Replace(str, @"\^[0-9]", "");
         }
+
+        public static String levelToColor(Player.Permission level)
+        {
+            switch (level)
+            {
+                case Player.Permission.Banned:
+                    return "^1" + Player.Permission.Banned;
+                    break;
+                case Player.Permission.Owner:
+                    return "^5" + Player.Permission.Owner;
+                    break;
+                case Player.Permission.User:
+                    return "^3" + Player.Permission.User;
+                    break;
+                default:
+                    return "^2" + level;
+                    break;
+            }
+        }
     }
 }

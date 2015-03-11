@@ -413,6 +413,23 @@ namespace IW4MAdmin
 
                 Thread.Sleep(FLOOD_TIMEOUT);
 
+                //get _Website
+                p = RCON.responseSendRCON("_Website");
+
+                if (p == null)
+                {
+                    Log.Write("Could not website name!", Log.Level.All);
+                    return false;
+                }
+
+                p = p[1].Split('"');
+                if (p[0].Trim() != "Unknown command")
+                    Website = (p[3].Substring(0, p[3].Length - 2).Trim());
+                p = null;
+                //END
+
+                Thread.Sleep(FLOOD_TIMEOUT);
+
                 //GET fs_basepath
                 p = RCON.responseSendRCON("fs_basepath");
 
@@ -811,6 +828,7 @@ namespace IW4MAdmin
         public Queue<Event> events;
         public Database stats;
         public Heartbeat HB;
+        public String Website;
 
         //Info
         private String IP;

@@ -167,10 +167,15 @@ namespace IW4MAdmin
         {
             E.Target.LastOffense = Utilities.removeWords(E.Data, 1);
             E.Target.lastEvent = E; // needs to be fixed
+            String Message;
 #if DEBUG
-            String Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
+            Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
 #else
-            String Message = "^1Player Banned: ^5" + E.Target.LastOffense;
+            if (E.Owner.Website == null)
+                Message = "^1Player Banned: ^5" + E.Target.LastOffense;
+            else
+                Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at " + E.Owner.Website + ")";
+
 #endif
             if (E.Origin.getLevel() > E.Target.getLevel())
             {
@@ -219,8 +224,8 @@ namespace IW4MAdmin
             {
                 if (P == null)
                     continue;
-             
-                E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", P.getLevel(), P.getClientNum(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
+
+                E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.getLevel()), P.getClientNum(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
             }
         }
 
@@ -252,11 +257,21 @@ namespace IW4MAdmin
 
             else
             {
+                int count = 0;
+                String _commands = String.Empty;
+
                 foreach (Command C in E.Owner.getCommands())
-                {
+                {        
                     if (E.Origin.getLevel() >= C.getNeededPerm())
                     {
-                        E.Origin.Tell(" [^3" + C.getName() + "^7] ");
+                        _commands = _commands + " [^3" + C.getName() + "^7] ";
+                        if (count >= 3)
+                        {
+                            E.Origin.Tell(_commands);
+                            _commands = String.Empty;
+                            count = 0;
+                        }
+                        count++;
                     }
                 }
                 E.Origin.Tell("Type !help <cmd> to get command usage example");
@@ -351,7 +366,7 @@ namespace IW4MAdmin
             {
                 if (P != null && P.getLevel() > Player.Permission.User)
                 {
-                    E.Origin.Tell(String.Format("[^3{0}^7]{3} {1}", P.getLevel(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
+                    E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.getLevel()), P.getName()));
                 }
             }
         }
@@ -411,7 +426,7 @@ namespace IW4MAdmin
 
             foreach (Player P in db_players)
             {
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2}", P.getName(), P.getDBID(), P.getID());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7]", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()));
                 E.Origin.Tell(mesg);
             }
 

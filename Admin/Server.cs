@@ -102,6 +102,8 @@ namespace IW4MAdmin
                     //messy way to prevent loss of last event
                     Player A;
                     A = DB.getPlayer(P.getID(), P.getClientNum());
+                    if (A.getName() != P.getName())
+                        A.updateName(P.getName());
                     A.lastEvent = P.lastEvent;
                     P = A;
                 }

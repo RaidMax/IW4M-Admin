@@ -97,6 +97,11 @@ namespace IW4MAdmin
             return LastOffense;
         }
 
+        public void updateName(String n)
+        {
+            Name = n;
+        }
+
         // BECAUSE IT NEEDS TO BE CHANGED!
         public void setLevel(Player.Permission Perm)
         {

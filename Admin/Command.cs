@@ -351,7 +351,7 @@ namespace IW4MAdmin
             {
                 if (P != null && P.getLevel() > Player.Permission.User)
                 {
-                    E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", P.getLevel(), P.getClientNum(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
+                    E.Origin.Tell(String.Format("[^3{0}^7]{3} {1}", P.getLevel(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
                 }
             }
         }

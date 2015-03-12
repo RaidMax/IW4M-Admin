@@ -125,10 +125,10 @@ namespace IW4MAdmin
                 {
                     sendRCON(toSend.Peek());
                     toSend.Dequeue();
-                    Utilities.Wait(0.85);
+                    Utilities.Wait(0.567);
                 }
                 else
-                    Utilities.Wait(0.1);
+                    Utilities.Wait(0.01);
             }
         }
 

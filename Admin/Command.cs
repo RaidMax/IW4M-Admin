@@ -323,7 +323,7 @@ namespace IW4MAdmin
                 E.Target.setLevel(newPerm);
                 E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
                 E.Origin.Tell(E.Target.getName() + " was successfully promoted!");
-                //NEEED TO mOVE 
+                //NEEED TO MOVE
                 E.Owner.DB.updatePlayer(E.Target);
             }
 
@@ -471,7 +471,11 @@ namespace IW4MAdmin
             if (E.Target == null)
                 E.Origin.Tell(String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Origin.stats.Kills, E.Origin.stats.Deaths, E.Origin.stats.KDR, E.Origin.stats.Skill));
             else
+            {
+                if (E.Target.stats == null)
+                    E.Target.stats = E.Owner.stats.getStats(E.Target.getDBID());
                 E.Origin.Tell(String.Format("[^3{4}^7] ^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Target.stats.Kills, E.Target.stats.Deaths, E.Target.stats.KDR, E.Target.stats.Skill, E.Target.getName()));
+            }
         }
     }
 
@@ -487,7 +491,7 @@ namespace IW4MAdmin
             foreach (Stats S in Top)
             {
                 Player P = E.Owner.DB.findPlayers(S.Kills); // BAD
-                if (P != null)
+                if (P != null && P.getLevel() != Player.Permission.Banned)
                 {
                     P.stats = S;
                     TopP.Add(P);

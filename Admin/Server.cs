@@ -84,6 +84,11 @@ namespace IW4MAdmin
             return clientnum;
         }
 
+        public int getMaxClients()
+        {
+            return maxClients;
+        }
+
         //Returns list of all active bans (loaded at runtime)
         public List<Ban> getBans()
         {
@@ -112,7 +117,7 @@ namespace IW4MAdmin
                 if (P.stats == null)
                 {
                     stats.addPlayer(P);
-                    P.stats = new Stats(0, 0, 0, 0);
+                    P.stats = new Stats(0, 0, 0, 1);
                 }
 
                 if(players[P.getClientNum()] == null)
@@ -292,6 +297,7 @@ namespace IW4MAdmin
             Thread eventQueue = new Thread(new ThreadStart(manageEventQueue));
             eventQueue.Start();
 
+            int timeFailed = 0;
             long l_size = -1;
             String[] lines = new String[8];
             String[] oldLines = new String[8];
@@ -381,40 +387,24 @@ namespace IW4MAdmin
         {
             try
             {
-                //get sv_hostname
-               String[] p = RCON.responseSendRCON("sv_hostname");
+                String[] infoResponse = RCON.responseSendRCON("getstatus");
 
-                if (p == null)
+                if (infoResponse == null || infoResponse.Length < 2)
                 {
-                    Log.Write("Could not obtain server name!", Log.Level.All);
+                    Log.Write("Could not get server status!", Log.Level.All);
                     return false;
                 }
 
-                p = p[1].Split('"');
-                hostname  = Utilities.stripColors(p[3].Substring(0, p[3].Length - 2).Trim());
-                p = null;
-                //END
-
-                Thread.Sleep(FLOOD_TIMEOUT);
-
-                //get mapname
-                p = RCON.responseSendRCON("mapname");
-
-                if (p == null)
-                {
-                    Log.Write("Could not obtain map name!", Log.Level.All);
-                    return false;
-                }
-
-                p = p[1].Split('"');
-                mapname = Utilities.stripColors(p[3].Substring(0, p[3].Length - 2).Trim());
-                p = null;
-                //END
-
-                Thread.Sleep(FLOOD_TIMEOUT);
+                infoResponse = infoResponse[1].Split('\\');
+                mapname = infoResponse[20];
+                mapname = maps.Find(m => m.Name.Equals(mapname)).Alias;
+                hostname = Utilities.stripColors(infoResponse[32]);
+                IW_Ver = infoResponse[2];
+                maxClients = Convert.ToInt32(infoResponse[6]);
+                Gametype = infoResponse[8];
 
                 //get _Website
-                p = RCON.responseSendRCON("_Website");
+                String[] p = RCON.responseSendRCON("_Website");
 
                 if (p == null)
                 {
@@ -570,9 +560,12 @@ namespace IW4MAdmin
                 if (E.Origin != null && E.Target != null && E.Origin.stats != null)
                 {
                     E.Origin.stats.Kills++;
-                    E.Origin.stats.Update();
+                    E.Origin.stats.updateKDR();
+                    E.Origin.stats.updateSkill(E.Target.stats.Skill);
+
                     E.Target.stats.Deaths++;
-                    E.Target.stats.Update();
+                    E.Target.stats.updateKDR();
+                    E.Target.stats.updateSkill(E.Origin.stats.Skill);
                 }
             }
 
@@ -728,7 +721,7 @@ namespace IW4MAdmin
                         maps.Add(map);
                     }
                 }
-            }
+            }     
             else
                 Log.Write("Maps configuration appears to be empty - skipping...", Log.Level.All);
         }
@@ -829,6 +822,7 @@ namespace IW4MAdmin
         public Database stats;
         public Heartbeat HB;
         public String Website;
+        public String Gametype;
 
         //Info
         private String IP;
@@ -844,6 +838,8 @@ namespace IW4MAdmin
         private TimeSpan lastMessage;
         private int nextMessage;
         private int errors = 0;
+        private String IW_Ver;
+        private int maxClients;
 
      
         //Log stuff

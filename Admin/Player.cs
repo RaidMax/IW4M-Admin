@@ -14,10 +14,15 @@ namespace IW4MAdmin
             Skill = Math.Round(skill,2);
         }
 
-        public void Update()
+        public void updateKDR()
         {
             KDR = Math.Round((double)((double)Kills / (double)Deaths), 2);
-            Skill = Math.Round((double)Kills * (((double)Kills / (double)Deaths) / 10), 2);
+        }
+
+        public void updateSkill(double enemySkill)
+        {
+            Skill = (Math.Round((double)Kills * (((double)Kills / (double)Deaths) / 10), 2));
+            Skill = Math.Round(Math.Log(Skill) * (enemySkill / 2) + (Math.Log(Deaths + 1) * 0.3) * 12, 2);
         }
 
         public int Kills;

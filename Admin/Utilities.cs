@@ -57,7 +57,7 @@ namespace IW4MAdmin
 
         public static String removeNastyChars(String str)
         {
-            return str.Replace("`", "").Replace("'", "").Replace("\\", "").Replace("\"", "").Replace("^", "").Replace("&quot;", "''");
+            return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("^", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
         }
 
         public static int GetLineNumber(Exception ex)
@@ -86,17 +86,60 @@ namespace IW4MAdmin
             {
                 case Player.Permission.Banned:
                     return "^1" + Player.Permission.Banned;
-                    break;
                 case Player.Permission.Owner:
                     return "^5" + Player.Permission.Owner;
-                    break;
                 case Player.Permission.User:
                     return "^3" + Player.Permission.User;
-                    break;
                 default:
                     return "^2" + level;
-                    break;
             }
+        }
+
+        public static String processMacro(Dictionary<String, Object> Dict, String str)
+        {
+            MatchCollection Found = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
+            foreach (Match M in Found)
+            {
+                String Match = M.Value;
+                String Identifier = M.Value.Substring(2, M.Length - 4);
+                String Replacement = Dict[Identifier].ToString();
+                str = str.Replace(Match, Replacement);
+            }
+
+            return str;
+        }
+
+        public static Dictionary<String, String> IPFromStatus(String[] players)
+        {
+            Dictionary<String, String> Dict = new Dictionary<String, String>();
+
+            foreach (String S in players)
+            {
+                String S2 = S.Trim();
+                if (S.Length < 50)
+                    continue;
+                if (Regex.Matches(S2, @"\d+$", RegexOptions.IgnoreCase).Count > 0)
+                {
+                    String[] eachPlayer = S2.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 3; i < eachPlayer.Length; i++ )
+                    {
+                        if (eachPlayer[i].Split(':').Length > 1)
+                        {
+                            Dict.Add(eachPlayer[3], eachPlayer[i].Split(':')[0]);
+                            break;
+                        }
+                    }
+                        
+                }
+           } 
+            return Dict;
+            
+        }
+
+        public static String DateTimeSQLite(DateTime datetime)
+        {
+            string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
+            return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second, datetime.Millisecond);
         }
     }
 }

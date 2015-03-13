@@ -70,7 +70,7 @@ namespace IW4MAdmin
                 E.Origin.setLevel(Player.Permission.Owner);
                 E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
                 E.Owner.owner = E.Origin;
-                E.Owner.DB.updatePlayer(E.Origin);
+                E.Owner.clientDB.updatePlayer(E.Origin);
             }
             else
                 E.Origin.Tell("This server already has an owner!");
@@ -168,15 +168,10 @@ namespace IW4MAdmin
             E.Target.LastOffense = Utilities.removeWords(E.Data, 1);
             E.Target.lastEvent = E; // needs to be fixed
             String Message;
-#if DEBUG
-            Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
-#else
             if (E.Owner.Website == null)
                 Message = "^1Player Banned: ^5" + E.Target.LastOffense;
             else
                 Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at " + E.Owner.Website + ")";
-
-#endif
             if (E.Origin.getLevel() > E.Target.getLevel())
             {
                 E.Target.Ban(Message, E.Origin);
@@ -324,7 +319,7 @@ namespace IW4MAdmin
                 E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
                 E.Origin.Tell(E.Target.getName() + " was successfully promoted!");
                 //NEEED TO MOVE
-                E.Owner.DB.updatePlayer(E.Target);
+                E.Owner.clientDB.updatePlayer(E.Target);
             }
 
             else
@@ -379,8 +374,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            String Quote = new Connection("http://www.iheartquotes.com/api/v1/random?max_lines=1&max_characters=200").Read();
-            E.Owner.Broadcast(Utilities.removeNastyChars(Quote));
+            E.Owner.Broadcast(E.Owner.Wisdom());
         }
 
     }
@@ -417,16 +411,32 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            var db_players = E.Owner.DB.findPlayers(E.Data.Trim());
+            var db_players = E.Owner.clientDB.findPlayers(E.Data.Trim());
             if (db_players == null)
             {
                 E.Origin.Tell("No players found");
                 return;
             }
 
+           
+
             foreach (Player P in db_players)
-            {
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7]", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()));
+            { 
+                String mesg;
+                var db_aliases = E.Owner.aliasDB.getPlayer(P.getDBID());
+
+                if (P.getLevel() == Player.Permission.Banned)
+                   mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7] - {4}", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()), P.getLastO());
+                else
+                   mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7]", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()));
+                E.Origin.Tell(mesg);
+                if (db_aliases != null)
+                {
+                    mesg = "Aliases: ";
+                    foreach (String S in db_aliases.getNames())
+                        mesg += S + ',';
+                }
+
                 E.Origin.Tell(mesg);
             }
 
@@ -458,7 +468,7 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             E.Target.Tell("^1" + E.Origin.getName() + " ^3[PM]^7 - " + E.Data);
-            E.Origin.Tell("Sucessfully sent message");
+            E.Origin.Tell(String.Format("To ^3{0} ^7-> {1}", E.Target.getName(), E.Data));
         }
     }
 
@@ -473,7 +483,7 @@ namespace IW4MAdmin
             else
             {
                 if (E.Target.stats == null)
-                    E.Target.stats = E.Owner.stats.getStats(E.Target.getDBID());
+                    E.Target.stats = E.Owner.statDB.getStats(E.Target.getDBID());
                 E.Origin.Tell(String.Format("[^3{4}^7] ^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Target.stats.Kills, E.Target.stats.Deaths, E.Target.stats.KDR, E.Target.stats.Skill, E.Target.getName()));
             }
         }
@@ -485,12 +495,12 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            List<Stats> Top = E.Owner.stats.topStats();
+            List<Stats> Top = E.Owner.statDB.topStats();
             List<Player> TopP = new List<Player>();
 
             foreach (Stats S in Top)
             {
-                Player P = E.Owner.DB.findPlayers(S.Kills); // BAD
+                Player P = E.Owner.clientDB.getPlayer(S.Kills); // BAD
                 if (P != null && P.getLevel() != Player.Permission.Banned)
                 {
                     P.stats = S;
@@ -509,6 +519,19 @@ namespace IW4MAdmin
             }
             else
                 E.Origin.Tell("There are no top players yet!");
+        }
+    }
+
+    class Reload : Command
+    {
+        public Reload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            if (E.Owner.Reload())
+                E.Origin.Tell("Sucessfully reloaded configs!");
+            else
+                E.Origin.Tell("Unable to reload configs :(");
         }
     }
 

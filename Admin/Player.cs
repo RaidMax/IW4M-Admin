@@ -6,7 +6,7 @@ namespace IW4MAdmin
 {
     class Stats
     {
-        public Stats(int K, int D, double kdr, double skill)
+        public Stats(int K, int D, double kdr, double   skill)
         {
             Kills = K;
             Deaths = D;
@@ -21,14 +21,62 @@ namespace IW4MAdmin
 
         public void updateSkill(double enemySkill)
         {
-            Skill = (Math.Round((double)Kills * (((double)Kills / (double)Deaths) / 10), 2));
-            Skill = Math.Round(Math.Log(Skill) * (enemySkill / 2) + (Math.Log(Deaths + 1) * 0.3) * 12, 2);
+            Skill = Math.Round(Math.Log(KDR + 1) * ((enemySkill / 2) + 1) + (Math.Log(Deaths) * 0.3) * 12, 2);
         }
 
         public int Kills;
         public int Deaths;
         public double KDR;
         public double Skill;
+    }
+
+    class Aliases
+    {
+        public Aliases(int Num, String N, String I)
+        {
+            Number = Num;
+            Names = N;
+            IPS = I;
+        }
+
+        public List<String> getNames()
+        {
+            return new List<String>(Names.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        public List<String> getIPS()
+        {
+            return new List<String>(IPS.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        public String getIPSDB()
+        {
+            return IPS;
+        }
+
+        public String getNamesDB()
+        {
+            return Names;
+        }
+
+        public int getNumber()
+        {
+            return Number;
+        }
+
+        public void addName(String Name)
+        {
+            Names += Names + ';';
+        }
+
+        public void addIP(String IP)
+        {
+            IPS += IP + ';';
+        }
+
+        private String Names;
+        private String IPS;
+        private int Number;
     }
 
     class Player
@@ -55,7 +103,7 @@ namespace IW4MAdmin
             Warnings = 0;
         }
 
-        public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con)
+        public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)
         {
             Name = n;
             npID = id;
@@ -64,6 +112,7 @@ namespace IW4MAdmin
             dbID = cind;
             LastOffense = lo;
             Connections = con + 1;
+            IP = IP2;
             Warnings = 0;
         }
 
@@ -102,9 +151,19 @@ namespace IW4MAdmin
             return LastOffense;
         }
 
+        public String getIP()
+        {
+            return IP;
+        }
+
         public void updateName(String n)
         {
             Name = n;
+        }
+
+        public void updateIP(String I)
+        {
+            IP = I;
         }
 
         // BECAUSE IT NEEDS TO BE CHANGED!
@@ -158,10 +217,12 @@ namespace IW4MAdmin
         private Player.Permission Level;
         private int dbID;
         private int Connections;
+        private String IP;
 
         public Event lastEvent;
         public String LastOffense;
         public int Warnings;
         public Stats stats;
+        public Aliases Alias;
     }
 }

@@ -8,226 +8,20 @@ using System.Collections;
 
 namespace IW4MAdmin
 {
-    class Database
+    abstract class Database
     {
-        public enum Type
-        {
-            Clients,
-            Stats
-        }
-
-        public Database(String FN, Type T)
+        public Database(String FN)
         {
             FileName = FN;
             DBCon = String.Format("Data Source={0}", FN);
             Con = new SQLiteConnection(DBCon);
-            DBType = T;
-            Init(T);
+            Init();
         }
 
-        private void Init(Type T)
-        {
-            if(!File.Exists(FileName))
-            {
-                switch (T)
-                {
-                    case Type.Clients:
-                        String query = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL);";
-                        ExecuteNonQuery(query);
-                        query = "CREATE TABLE [BANS] ( [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] Text NULL);";
-                        ExecuteNonQuery(query);
-                        break;
-                    case Type.Stats:
-                        String query_stats = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0 );";
-                        ExecuteNonQuery(query_stats);
-                        break;
-                }
-                
-            }
-        }
-
-        public Player getPlayer(String ID, int cNum)
-        {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE npID = '{0}' LIMIT 1", ID);
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                DataRow ResponseRow = Result.Rows[0];
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"]);
-            }
-
-            else
-                return null;
-        }
-
-        public List<Player> findPlayers(String name)
-        {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Name LIKE '%{0}%' LIMIT 10", name);
-            DataTable Result = GetDataTable(Query);
-
-            List<Player> Players = new List<Player>();
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                foreach (DataRow p in Result.Rows)
-                {
-                    Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), ((int)p["Connections"])));
-                }
-                return Players;
-            }
-
-            else
-                return null;
-        }
-
-        public Player findPlayers(int dbIndex)
-        {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Number = '{0}' LIMIT 1", dbIndex);
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-            { 
-               foreach (DataRow p in Result.Rows)
-                    return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), ((int)p["Connections"]));
-            }
-     
-            return null;
-        }
-
-        public Player getOwner()
-        {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level = '{0}'", 4);
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                DataRow ResponseRow = Result.Rows[0];
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), null, 0);
-            }
-
-            else
-                return null;
-        }
-
-        public List<Ban> getBans()
-        {
-            List<Ban> Bans = new List<Ban>();
-            DataTable Result = GetDataTable("SELECT * FROM BANS");
-
-            foreach (DataRow Row in Result.Rows)
-                Bans.Add(new Ban(Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString()));
-
-            return Bans;
-        }
-
-        public Stats getStats(int DBID)
-        {
-            String Query = String.Format("SELECT * FROM STATS WHERE Number = '{0}'", DBID);
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                DataRow ResponseRow = Result.Rows[0];
-                return new Stats(Convert.ToInt32(ResponseRow["KILLS"]), Convert.ToInt32(ResponseRow["DEATHS"]), Convert.ToDouble(ResponseRow["KDR"]), Convert.ToDouble(ResponseRow["SKILL"]));
-            }
-
-            else
-                return null;
-        }
-
-        public void removeBan(String GUID)
-        {
-            String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}'", GUID);
-            ExecuteNonQuery(Query);
-        }
-
-        public void addPlayer(Player P)
-        {
-            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
-
-            if (DBType == Type.Clients)
-            {
-                newPlayer.Add("Name", Utilities.removeNastyChars(P.getName()));
-                newPlayer.Add("npID", P.getID());
-                newPlayer.Add("Level", (int)P.getLevel());
-                newPlayer.Add("LastOffense", "");
-                newPlayer.Add("Connections", 1);
-
-                Insert("CLIENTS", newPlayer);
-            }
-            
-            if (DBType == Type.Stats)
-            {
-                newPlayer.Add("Number", P.getDBID());
-                newPlayer.Add("KILLS", 0);
-                newPlayer.Add("DEATHS", 0);
-                newPlayer.Add("KDR", 0);
-                newPlayer.Add("SKILL", 0);
-                Insert("STATS", newPlayer);
-            }
-        }
-
-        public List<Stats> topStats()
-        {
-            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 4", 20);
-            DataTable Result = GetDataTable(Query);
-
-            List<Stats> Top = new List<Stats>();
-            
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                foreach (DataRow D in Result.Rows)
-                {
-                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]));
-                    if (S.Skill > 20)
-                        Top.Add(S);
-                }
-            }
-
-            return Top;     
-        }
-
-        public void updatePlayer(Player P)
-        {
-            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
-
-            if (DBType == Type.Clients)
-            {
-                updatedPlayer.Add("Name", P.getName());
-                updatedPlayer.Add("npID", P.getID());
-                updatedPlayer.Add("Level", (int)P.getLevel());
-                updatedPlayer.Add("LastOffense", P.getLastO());
-                updatedPlayer.Add("Connections", P.getConnections());
-
-                Update("CLIENTS", updatedPlayer, String.Format("npID = '{0}'", P.getID()));
-            }
-
-            if (DBType == Type.Stats)
-            {
-                updatedPlayer.Add("KILLS", P.stats.Kills);
-                updatedPlayer.Add("DEATHS", P.stats.Deaths);
-                updatedPlayer.Add("KDR", Math.Round(P.stats.KDR, 2));
-                updatedPlayer.Add("SKILL", P.stats.Skill);
-
-                Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.getDBID()));
-            }
-        }
-
-        public void addBan(Ban B)
-        {
-            Dictionary<String, object> newBan = new Dictionary<String, object>();
-
-            newBan.Add("Reason", B.getReason());
-            newBan.Add("npID", B.getID());
-            newBan.Add("bannedByID", B.getBanner());
-   
-            Insert("BANS", newBan);
-        }
-
+        abstract public void Init();
+        
         //HELPERS
-
-        public bool Insert(String tableName, Dictionary<String, object> data)
+        protected bool Insert(String tableName, Dictionary<String, object> data)
         {
             String columns = "";
             String values = "";
@@ -251,7 +45,7 @@ namespace IW4MAdmin
             return returnCode;
         }
 
-        public bool Update(String tableName, Dictionary<String, object> data, String where)
+        protected bool Update(String tableName, Dictionary<String, object> data, String where)
         {
             String vals = "";
             Boolean returnCode = true;
@@ -275,13 +69,13 @@ namespace IW4MAdmin
             return returnCode;
         }
 
-        public DataRow getDataRow(String Q)
+        protected DataRow getDataRow(String Q)
         {
             DataRow Result = GetDataTable(Q).Rows[0];
             return Result;
         }
 
-        private int ExecuteNonQuery(String Request)
+        protected int ExecuteNonQuery(String Request)
         {
             Con.Open();
             SQLiteCommand CMD = new SQLiteCommand(Con);
@@ -291,7 +85,7 @@ namespace IW4MAdmin
             return rowsUpdated;
         }
 
-        public DataTable GetDataTable(String sql)
+        protected DataTable GetDataTable(String sql)
         {
             DataTable dt = new DataTable();
             try
@@ -313,9 +107,328 @@ namespace IW4MAdmin
         }
         //END
 
-        private String FileName;
-        private String DBCon;
-        private SQLiteConnection Con;
-        private Type DBType;
+        protected String FileName;
+        protected String DBCon;
+        protected SQLiteConnection Con;
+    }
+
+    class ClientsDB : Database
+    {
+        public ClientsDB(String FN) : base(FN) { }
+
+        public override void Init()
+        {
+            if(!File.Exists(FileName))
+            {
+                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL);";
+                ExecuteNonQuery(Create);
+                Create = "CREATE TABLE [BANS] ( [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
+                ExecuteNonQuery(Create);
+            }
+        }
+
+        //Returns a single player object with matching GUID, false if no matches
+        public Player getPlayer(String ID, int cNum)
+        {
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE npID = '{0}' LIMIT 1", ID);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow ResponseRow = Result.Rows[0];
+
+
+                if (ResponseRow["IP"].ToString().Length < 2)
+                    ResponseRow["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
+
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString());
+            }
+
+            else
+                return null;
+        }
+
+        //Overloaded method for getPlayer, returns Client with matching DBIndex, null if none found
+        public Player getPlayer(int dbIndex)
+        {
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Number = '{0}' LIMIT 1", dbIndex);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            { 
+                DataRow p = Result.Rows[0];
+
+                if (p["IP"].ToString().Length < 2)
+                    p["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
+
+                return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString());
+            }
+
+            else
+                return null;
+        }
+
+        //Returns a list of players matching name parameter, null if no players found matching
+        public List<Player> findPlayers(String name)
+        {
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Name LIKE '%{0}%' LIMIT 8", name);
+            DataTable Result = GetDataTable(Query);
+
+            List<Player> Players = new List<Player>();
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow p in Result.Rows)
+                {
+                    Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString()));
+                }
+                return Players;
+            }
+
+            else
+                return null;
+        }
+
+        //Returns any player with level 4 permissions, null if no owner found
+        public Player getOwner()
+        {
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level = '{0}'", 4);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow ResponseRow = Result.Rows[0];
+                if (ResponseRow["IP"].ToString().Length < 6)
+                    ResponseRow["IP"] = "0";
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), null, 0, ResponseRow["IP"].ToString());
+            }
+
+            else
+                return null;
+        }
+
+        //Returns list of bans in database
+        public List<Ban> getBans()
+        {
+            List<Ban> Bans = new List<Ban>();
+            DataTable Result = GetDataTable("SELECT * FROM BANS");
+
+            foreach (DataRow Row in Result.Rows)
+            {
+                if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
+                    Row["TIME"] = DateTime.Now.ToString();
+                if (Row["IP"].ToString().Length < 2)
+                    Row["IP"] = DateTime.Now.ToString(); //because we don't have old ip's and don't want a messy alias
+
+                Bans.Add(new Ban(Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+            }
+
+            return Bans;
+        }
+
+        //Returns total number of player entries in database
+        public int totalPlayers()
+        {
+            DataTable Result = GetDataTable("SELECT * from CLIENTS ORDER BY Number DESC LIMIT 1");
+            if (Result.Rows.Count > 0)
+                return Convert.ToInt32(Result.Rows[0]["Number"]);
+            else
+                return 0;
+        }
+
+        //Add specified player to database
+        public void addPlayer(Player P)
+        {
+            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
+
+            newPlayer.Add("Name", Utilities.removeNastyChars(P.getName()));
+            newPlayer.Add("npID", P.getID());
+            newPlayer.Add("Level", (int)P.getLevel());
+            newPlayer.Add("LastOffense", "");
+            newPlayer.Add("Connections", 1);
+            newPlayer.Add("IP", P.getIP());
+
+            Insert("CLIENTS", newPlayer);
+        }
+
+        ///Update information of specified player
+        public void updatePlayer(Player P)
+        {
+            Dictionary<String, Object> updatedPlayer = new Dictionary<String, Object>();
+
+            updatedPlayer.Add("Name", P.getName());
+            updatedPlayer.Add("npID", P.getID());
+            updatedPlayer.Add("Level", (int)P.getLevel());
+            updatedPlayer.Add("LastOffense", P.getLastO());
+            updatedPlayer.Add("Connections", P.getConnections());
+            updatedPlayer.Add("IP", P.getIP());
+
+            Update("CLIENTS", updatedPlayer, String.Format("npID = '{0}'", P.getID()));
+        }
+
+
+        //Add specified ban to database
+        public void addBan(Ban B)
+        {
+            Dictionary<String, object> newBan = new Dictionary<String, object>();
+
+            newBan.Add("Reason", B.getReason());
+            newBan.Add("npID", B.getID());
+            newBan.Add("bannedByID", B.getBanner());
+            newBan.Add("IP", B.getIP());
+            newBan.Add("TIME", Utilities.DateTimeSQLite(DateTime.Now));
+
+            Insert("BANS", newBan);
+        }
+
+
+        //Deletes ban with matching GUID
+        public void removeBan(String GUID)
+        {
+            String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}'", GUID);
+            ExecuteNonQuery(Query);
+        }
+        
+
+    }
+
+    class StatsDB : Database
+    {
+        public StatsDB(String FN) : base(FN) { }
+
+        public override void Init()
+        {
+            if (!File.Exists(FileName))
+            {
+                String Create = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0 );"; 
+                ExecuteNonQuery(Create);
+            }
+        }
+
+        // Return stats for player specified by Database ID, null if no matches
+        public Stats getStats(int DBID)
+        {
+            String Query = String.Format("SELECT * FROM STATS WHERE Number = '{0}'", DBID);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow ResponseRow = Result.Rows[0];
+                return new Stats(Convert.ToInt32(ResponseRow["KILLS"]), Convert.ToInt32(ResponseRow["DEATHS"]), Convert.ToDouble(ResponseRow["KDR"]), Convert.ToDouble(ResponseRow["SKILL"]));
+            }
+
+            else
+                return null;
+        }
+
+        public void addPlayer(Player P)
+        {
+            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
+
+            newPlayer.Add("Number", P.getDBID());
+            newPlayer.Add("KILLS", 0);
+            newPlayer.Add("DEATHS", 0);
+            newPlayer.Add("KDR", 0);
+            newPlayer.Add("SKILL", 1);
+
+            Insert("STATS", newPlayer);
+        }
+
+        //Update stat information of specified player
+        public void updatePlayer(Player P)
+        {
+            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
+
+            updatedPlayer.Add("KILLS", P.stats.Kills);
+            updatedPlayer.Add("DEATHS", P.stats.Deaths);
+            updatedPlayer.Add("KDR", Math.Round(P.stats.KDR, 2));
+            updatedPlayer.Add("SKILL", P.stats.Skill);
+
+            Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.getDBID()));
+        }
+
+        //Returns top 8 players (we filter through them later)
+        public List<Stats> topStats()
+        {
+            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 8", 20);
+            DataTable Result = GetDataTable(Query);
+
+            List<Stats> Top = new List<Stats>();
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow D in Result.Rows)
+                {
+                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]));
+                    if (S.Skill > 20)
+                        Top.Add(S);
+                }
+            }
+
+            return Top;
+        }
+
+        public void clearSkill()
+        {
+            String Query = "SELECT * FROM STATS";
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow D in Result.Rows)
+                    Update("STATS", new Dictionary<String, Object> () { {"SKILL",  1} }, String.Format("Number = '{0}'", D["Number"]));
+            }
+        }
+    }
+
+    class AliasesDB : Database
+    {
+        public AliasesDB(String FN) : base(FN) { }
+
+        public override void Init()
+        {
+            if (!File.Exists(FileName))
+            {
+                String Create = "CREATE TABLE [ALIASES] ( [Number] INTEGER, [NAMES] TEXT NULL, [IPS] TEXTNULL );";
+                ExecuteNonQuery(Create);
+            }
+        }
+
+        public Aliases getPlayer(int dbIndex)
+        {
+            String Query = String.Format("SELECT * FROM ALIASES WHERE Number = '{0}' LIMIT 1", dbIndex);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow p = Result.Rows[0];
+                return new Aliases(Convert.ToInt32(p["Number"]), p["NAMES"].ToString(), p["IPS"].ToString());
+            }
+
+            else
+                return null;
+        }
+
+        public void addPlayer(Aliases Alias)
+        {
+            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
+
+            newPlayer.Add("Number", Alias.getNumber());
+            newPlayer.Add("NAMES", Alias.getNamesDB());
+            newPlayer.Add("IPS", Alias.getIPSDB());
+
+            Insert("ALIASES", newPlayer);
+        }
+
+        public void updatePlayer(Aliases Alias)
+        {
+            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
+
+            updatedPlayer.Add("Number", Alias.getNumber());
+            updatedPlayer.Add("NAMES", Alias.getNamesDB());
+            updatedPlayer.Add("IPS", Alias.getIPSDB());
+
+            Update("ALIASES", updatedPlayer, String.Format("Number = '{0}'", Alias.getNumber()));
+        }
     }
 }

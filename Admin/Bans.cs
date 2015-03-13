@@ -6,12 +6,13 @@ namespace IW4MAdmin
 {
     class Ban
     { 
-        public Ban(String Reas, String TargID, String From)
+        public Ban(String Reas, String TargID, String From, DateTime time, String ip)
         {
             Reason = Reas;
             npID = TargID;
             bannedByID = From;
-            When = DateTime.Now;
+            When = time;
+            IP = ip;
         }
 
         public String getReason()
@@ -28,11 +29,22 @@ namespace IW4MAdmin
         {
             return bannedByID;
         }
+
+        public String getIP()
+        {
+            return IP;
+        }
+
+        public String getWhen()
+        {
+            return When.ToString("yyyy-MM-dd HH:mm:ss"); ;
+        }
        
         private String Reason;
         private String npID;
         private String bannedByID;
         private DateTime When;
+        private String IP;
 
     }
  

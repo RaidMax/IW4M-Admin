@@ -1,11 +1,4 @@
-﻿VERSION: 0.5
+﻿VERSION: 0.6
 CHANGELOG:
--close config files after reading oops
--added reload command
--added macros! (Denoted by {{MACRO}} in server config right now only {{WISDOM}} and {{TOTALPLAYERS}})
--added IP's (tracks and rebans new accounts on same banned ip)!
--aliases
--reworked database classes
--heartbeat gives running version
--player banned in find gives last ban reason
--reworked rcon yet again
+-stability fixes
+-welcome has post-fixed connection indicator

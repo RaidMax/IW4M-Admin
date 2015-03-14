@@ -100,7 +100,10 @@ namespace IW4MAdmin
             Level = (Player.Permission)l;
             LastOffense = null;
             Connections = 0;
+            IP = "";
             Warnings = 0;
+            Alias = new Aliases(0, "", "");
+            stats = new Stats(0, 0, 0, 1);
         }
 
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)

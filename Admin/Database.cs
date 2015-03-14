@@ -350,7 +350,7 @@ namespace IW4MAdmin
         //Returns top 8 players (we filter through them later)
         public List<Stats> topStats()
         {
-            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 8", 20);
+            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 8", 10);
             DataTable Result = GetDataTable(Query);
 
             List<Stats> Top = new List<Stats>();
@@ -360,7 +360,7 @@ namespace IW4MAdmin
                 foreach (DataRow D in Result.Rows)
                 {
                     Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]));
-                    if (S.Skill > 20)
+                    if (S.Skill > 10)
                         Top.Add(S);
                 }
             }

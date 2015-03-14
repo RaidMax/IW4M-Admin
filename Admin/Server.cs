@@ -99,11 +99,72 @@ namespace IW4MAdmin
         {
             return Bans;
         }
+
+        public void threadedConnect(Player P, Player NewPlayer)
+        {
+            bool updated = false;
+            while (!updated)
+            {
+                try
+                {
+                    P.updateIP(IPS[P.getID()].Trim());
+                    updated = true;
+                    Log.Write("Sucessfully updated " + NewPlayer.getName() + "'s IP to " + P.getIP(), Log.Level.Debug);
+                }
+
+                catch
+                {
+                    //Log.Write("Looks like the connecting player doesn't have an IP location assigned yet. Let's wait for next poll", Log.Level.Debug);
+                    Utilities.Wait(1);
+                }
+            }
+
+            if (NewPlayer.Alias == null)
+            {
+                aliasDB.addPlayer(new Aliases(NewPlayer.getDBID(), NewPlayer.getName(), P.getIP()));
+            }
+
+            if (P.getName() != NewPlayer.getName())
+            {
+                NewPlayer.updateName(P.getName());
+                NewPlayer.Alias.addName(P.getName());
+                aliasDB.updatePlayer(NewPlayer.Alias);
+            }
+
+            if (P.getIP() != NewPlayer.getIP())
+            {
+                NewPlayer.updateIP(P.getIP());
+                NewPlayer.Alias.addIP(P.getIP());
+                aliasDB.updatePlayer(NewPlayer.Alias);
+            }
+            
+            clientDB.updatePlayer(NewPlayer);
+
+            Ban B = isBanned(NewPlayer);
+            if (B != null || NewPlayer.getLevel() == Player.Permission.Banned)
+            {
+                Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Debug);
+                string Reason = String.Empty;
+                if (B != null)
+                    Reason = B.getReason();
+                else
+                    Reason = P.LastOffense;
+
+                String Message = "^1Player Kicked: ^7Previously Banned for ^5" + Reason;
+                P.Kick(Message);
+            }
+
+            players[NewPlayer.getClientNum()] = null;
+            players[NewPlayer.getClientNum()] = NewPlayer;
+
+        }
             
         //Add player object p to `players` list
         public bool addPlayer(Player P)
         {
+#if DEBUG == false
             try
+#endif
             {
                 if (clientDB.getPlayer(P.getID(), P.getClientNum()) == null)
                 {
@@ -117,68 +178,38 @@ namespace IW4MAdmin
                 //messy way to prevent loss of last event
                 Player NewPlayer = clientDB.getPlayer(P.getID(), P.getClientNum());
                 NewPlayer.stats = statDB.getStats(NewPlayer.getDBID());
-                if (NewPlayer.stats == null)
+                NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.getDBID());
+
+                if (NewPlayer.stats == null) //For safety
                 {
                     statDB.addPlayer(NewPlayer);
                     NewPlayer.stats = statDB.getStats(NewPlayer.getDBID());
                 }
-                NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.getDBID());
-                NewPlayer.lastEvent = P.lastEvent;
-                
+
+                if (P.lastEvent == null)
+                    NewPlayer.lastEvent = new Event(Event.GType.Say, null, NewPlayer, null, this); // this is messy but its throwing an error when they've started it too late
+                else
+                    NewPlayer.lastEvent = P.lastEvent;
+
                 if (players[NewPlayer.getClientNum()] == null)
                 {
-                    try
-                    {
-                        P.updateIP(IPS[P.getID()]);
-                    }
+                    Thread connectThread = new Thread(() => threadedConnect(P, NewPlayer));
+                    connectThread.Start(); // We don't want events to get behind
 
-                    catch
-                    {
-                        Log.Write("Looks like the connecting player doesn't have an IP location assigned yet.", Log.Level.Debug);
-                        P.updateIP(getPlayerIP(P.getID()));
-                    }
-
-                    if (P.getName() != NewPlayer.getName())
-                    {
-                        NewPlayer.updateName(P.getName());
-                        NewPlayer.Alias.addName(P.getName());
-                    }
-
-                    if (P.getIP() != NewPlayer.getIP())
-                    {
-                        NewPlayer.updateIP(P.getIP());
-                        NewPlayer.Alias.addIP(P.getIP());
-                    }
-
+                    NewPlayer.Tell("Welcome ^5" + NewPlayer.getName() + " ^7this is your ^5" + Utilities.timesConnected(NewPlayer.getConnections()) + " ^7time connecting!");
+                    Log.Write("Client " + NewPlayer.getName() + " connecting...", Log.Level.Debug);
                     clientnum++;
                 }
 
-                NewPlayer.lastEvent = P.lastEvent;
-
-                players[NewPlayer.getClientNum()] = null;
-                players[NewPlayer.getClientNum()] = NewPlayer;
-
-                Ban B = isBanned(NewPlayer);
-                if (NewPlayer.getLevel() == Player.Permission.Banned || B != null)
-                {
-                    Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Debug);
-                    String Message = "^1Player Kicked: ^7Previously Banned for ^5" + B.getReason();
-                    P.Kick(Message);
-                }
-
-                else
-                    Log.Write("Client " + NewPlayer.getName() + " connecting...", Log.Level.Debug);
-
-                clientDB.updatePlayer(NewPlayer);
-                aliasDB.updatePlayer(NewPlayer.Alias);
-
                 return true;
             }
+#if DEBUG == false
             catch (Exception E)
             {
                 Log.Write("Unable to add player " + P.getName() + " - " + E.Message, Log.Level.Debug);
                 return false;
             }
+#endif
         }
 
         //Remove player by CLIENT NUMBER
@@ -214,7 +245,8 @@ namespace IW4MAdmin
                 }
 
                 Log.Write("Could not find player but player is in server. Lets try to manually add (looks like you didn't start me on an empty server)", Log.Level.All);
-                addPlayer(new Player(Name, line[1].ToString(), Convert.ToInt16(line[2]), 0));
+                players[Convert.ToInt16(line[2])] = null;
+                addPlayer(new Player(Name, line[1].ToString().Trim(), Convert.ToInt16(line[2]), 0));
                 return players[Convert.ToInt16(line[2])];
             }
         }
@@ -326,7 +358,7 @@ namespace IW4MAdmin
 
         private void manageEventQueue()
         {
-            while (true)
+            while (isRunning)
             {
                 if (events.Count > 0)
                 {
@@ -340,6 +372,7 @@ namespace IW4MAdmin
         //Starts the monitoring process
         public void Monitor()
         {
+            isRunning = true;
 
             //Handles new rcon requests in a fashionable manner
             Thread RCONQueue = new Thread(new ThreadStart(RCON.ManageRCONQueue));
@@ -348,9 +381,13 @@ namespace IW4MAdmin
             if (!intializeBasics())
             {
                 Log.Write("Stopping " + Port + " due to uncorrectable errors (check log)" + logPath, Log.Level.Production);
-                Utilities.Wait(10);
+                isRunning = false;
+                Utilities.Wait(10);  
                 return;
             }
+
+            Thread statusUpdate = new Thread(new ThreadStart(pollServer));
+            statusUpdate.Start();
 
             //Handles new events in a fashionable manner
             Thread eventQueue = new Thread(new ThreadStart(manageEventQueue));
@@ -358,22 +395,27 @@ namespace IW4MAdmin
 
             int timesFailed = 0;
             long l_size = -1;
+            bool checkedForOutdate = false;
             String[] lines = new String[8];
             String[] oldLines = new String[8];
             DateTime start = DateTime.Now;
 
             Utilities.Wait(1);
+#if DEBUG == false
             Broadcast("IW4M Admin is now ^2ONLINE");
+#endif
 
             while (errors <=5)
             {
-                try
+#if DEBUG == false
+               try
+#endif
                 {
                     lastMessage = DateTime.Now - start;
                     if(lastMessage.TotalSeconds > messageTime && messages.Count > 0)
                     {
 
-                        if  (RCON.responseSendRCON("sv_online") == null)
+                        if  (RCON.addRCON("sv_online") == null)
                         {
                             timesFailed++;
                             Log.Write("Server appears to be offline - " + timesFailed, Log.Level.Debug);
@@ -381,7 +423,7 @@ namespace IW4MAdmin
                         else
                             timesFailed = 0;
                         Thread.Sleep(300);
-                        initMacros();
+                        initMacros(); // somethings dynamically change so we have to re-init the dictionary
                         Broadcast(Utilities.processMacro(Macros, messages[nextMessage]));
                         if (nextMessage == (messages.Count - 1))
                             nextMessage = 0;
@@ -390,6 +432,16 @@ namespace IW4MAdmin
                         start = DateTime.Now;
                         if (timesFailed <= 3)
                             HB.Send();
+
+                        String checkVer = new Connection("http://raidmax.org/IW4M/Admin/version.php").Read();
+                        double checkVerNum;
+                        double.TryParse(checkVer, out checkVerNum);
+                        if (checkVerNum != Program.Version && checkVerNum != 0 && !checkedForOutdate)
+                        {
+                            messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + checkVerNum);
+                            checkedForOutdate = true;
+                        }
+                        
                     }
 
                     if (l_size != logFile.getSize())
@@ -438,18 +490,36 @@ namespace IW4MAdmin
                     l_size = logFile.getSize();
                     Thread.Sleep(1);
                 }
+#if DEBUG == false
                 catch (Exception E)
                 {
                     Log.Write("Something unexpected occured. Hopefully we can ignore it - " + E.Message + " @"  + Utilities.GetLineNumber(E), Log.Level.All);
                     errors++;
                     continue;
                 }
+#endif
 
             }
-
+            isRunning = false;
             RCONQueue.Abort();
             eventQueue.Abort();
 
+        }
+
+        private void pollServer()
+        {
+            while (isRunning)
+            {
+                IPS = Utilities.IPFromStatus(RCON.addRCON("status"));
+                while (IPS == null)
+                {
+                    IPS = Utilities.IPFromStatus(RCON.addRCON("status"));
+                    Utilities.Wait(1);
+                }
+
+                lastPoll = DateTime.Now;
+                Utilities.Wait(15);
+            }
         }
 
         //Vital RCON commands to establish log file and server name. May need to cleanup in the future
@@ -513,7 +583,7 @@ namespace IW4MAdmin
                 //END
 
                 //get fs_game
-                p =RCON.addRCON("fs_game");
+                p = RCON.addRCON("fs_game");
 
                 if (p == null)
                 {
@@ -550,7 +620,7 @@ namespace IW4MAdmin
                 //END
 
                 //get g_logsync
-                p =RCON.addRCON("g_logsync");
+                p = RCON.addRCON("g_logsync");
 
                 if (p == null)
                 {
@@ -595,8 +665,8 @@ namespace IW4MAdmin
                 logFile = new file(logPath);
                 Log.Write("Log file is " + logPath, Log.Level.Debug);
 
-               //get players ip's 
-                p =RCON.addRCON("status");
+               //get players ip's
+                p = RCON.addRCON("status");
                 if (p == null)
                 {
                    Log.Write("Unable to get initial player list!", Log.Level.Debug);
@@ -604,6 +674,7 @@ namespace IW4MAdmin
                 }
                
                 IPS = Utilities.IPFromStatus(p);
+                lastPoll = DateTime.Now;
 
 #if DEBUG
                /* System.Net.FtpWebRequest tmp = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create("ftp://raidmax.org/logs/games_old.log");
@@ -612,7 +683,6 @@ namespace IW4MAdmin
                 String ftpLog = new StreamReader(ftpStream).ReadToEnd();*/
                 logPath = "games_old.log"; 
 #endif
-
                 return true;
             }
             catch (Exception E)
@@ -978,6 +1048,8 @@ namespace IW4MAdmin
 
         //Will probably move this later
         private Dictionary<String, String> IPS;
+        public bool isRunning;
+        private DateTime lastPoll;
 
      
         //Log stuff

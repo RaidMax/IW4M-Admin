@@ -58,7 +58,9 @@ namespace IW4MAdmin
 
         public static Event requestEvent(String[] line, Server SV)
         {
+#if DEBUG == false
             try
+#endif
             {
                 String eventType = line[0].Substring(line[0].Length - 1);
                 eventType = eventType.Trim();
@@ -76,7 +78,7 @@ namespace IW4MAdmin
                 {
                     if (line.Length < 4)
                     {
-                        Console.WriteLine("SAY FUCKED UP");
+                        Console.WriteLine("SAY FUCKED UP BIG-TIME");
                         return null;
                     }
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
@@ -93,11 +95,13 @@ namespace IW4MAdmin
 
                 return null;
             }
+#if DEBUG == false
             catch (Exception E)
             {
                 SV.Log.Write("Error requesting event " + E.Message, Log.Level.Debug);
                 return null;
             }
+#endif
         }
 
 

@@ -467,6 +467,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
+            E.Data = Utilities.removeWords(E.Data, 1);
             E.Target.Tell("^1" + E.Origin.getName() + " ^3[PM]^7 - " + E.Data);
             E.Origin.Tell(String.Format("To ^3{0} ^7-> {1}", E.Target.getName(), E.Data));
         }

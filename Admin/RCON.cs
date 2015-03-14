@@ -101,7 +101,7 @@ namespace IW4MAdmin
 
         public void ManageRCONQueue()
         {
-            while (true)
+            while (Instance.isRunning)
             {
                 if (toSend.Count > 0)
                 {

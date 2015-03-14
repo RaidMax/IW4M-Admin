@@ -29,6 +29,7 @@ namespace IW4MAdmin
         {
             Name = file;
             writeHandle = new StreamWriter(new FileStream(Name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite));
+        //    writeHandle.AutoFlush = true;
             sze = 0;
         }
 

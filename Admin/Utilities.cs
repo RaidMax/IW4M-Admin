@@ -113,6 +113,9 @@ namespace IW4MAdmin
         {
             Dictionary<String, String> Dict = new Dictionary<String, String>();
 
+            if (players == null)
+                return null;
+
             foreach (String S in players)
             {
                 String S2 = S.Trim();
@@ -140,6 +143,48 @@ namespace IW4MAdmin
         {
             string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
             return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second, datetime.Millisecond);
+        }
+
+        public static String timesConnected(int connection)
+        {
+            String Prefix = String.Empty;
+            if (connection % 10 > 3 || connection % 10 == 0)
+                Prefix = "th";
+            else
+            {
+                switch (connection % 10)
+                {
+                    case 1:
+                        Prefix = "st";
+                        break;
+                    case 2:
+                        Prefix = "nd";
+                        break;
+                    case 3:
+                        Prefix = "rd";
+                        break;
+                }
+    
+            }
+
+            switch (connection)
+            {
+                case 0:
+                case 1:
+                    return "first";
+                case 2:
+                    return "second";
+                case 3:
+                    return "third";
+                case 4:
+                    return "fourth";
+                case 5:
+                    return "fifth";
+                case 100:
+                    return "One-Hundreth (amazing!)";
+                default:
+                    return connection.ToString() + Prefix;
+            }
         }
     }
 }

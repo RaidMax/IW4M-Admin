@@ -99,6 +99,12 @@ namespace IW4MAdmin
             return newReq.waitForResponse();
         }
 
+        public void Reset()
+        {
+            sv_connection.Close();
+            sv_connection = new UdpClient();
+        }
+
         public void ManageRCONQueue()
         {
             while (Instance.isRunning)

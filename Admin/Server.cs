@@ -100,65 +100,6 @@ namespace IW4MAdmin
             return Bans;
         }
 
-        public void threadedConnect(Player P, Player NewPlayer)
-        {
-            bool updated = false;
-            while (!updated)
-            {
-                try
-                {
-                    P.updateIP(IPS[P.getID()].Trim());
-                    updated = true;
-                    Log.Write("Sucessfully updated " + NewPlayer.getName() + "'s IP to " + P.getIP(), Log.Level.Debug);
-                }
-
-                catch
-                {
-                    //Log.Write("Looks like the connecting player doesn't have an IP location assigned yet. Let's wait for next poll", Log.Level.Debug);
-                    Utilities.Wait(1);
-                }
-            }
-
-            if (NewPlayer.Alias == null)
-            {
-                aliasDB.addPlayer(new Aliases(NewPlayer.getDBID(), NewPlayer.getName(), P.getIP()));
-            }
-
-            if (P.getName() != NewPlayer.getName())
-            {
-                NewPlayer.updateName(P.getName());
-                NewPlayer.Alias.addName(P.getName());
-                aliasDB.updatePlayer(NewPlayer.Alias);
-            }
-
-            if (P.getIP() != NewPlayer.getIP())
-            {
-                NewPlayer.updateIP(P.getIP());
-                NewPlayer.Alias.addIP(P.getIP());
-                aliasDB.updatePlayer(NewPlayer.Alias);
-            }
-            
-            clientDB.updatePlayer(NewPlayer);
-
-            Ban B = isBanned(NewPlayer);
-            if (B != null || NewPlayer.getLevel() == Player.Permission.Banned)
-            {
-                Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Debug);
-                string Reason = String.Empty;
-                if (B != null)
-                    Reason = B.getReason();
-                else
-                    Reason = P.LastOffense;
-
-                String Message = "^1Player Kicked: ^7Previously Banned for ^5" + Reason;
-                P.Kick(Message);
-            }
-
-            players[NewPlayer.getClientNum()] = null;
-            players[NewPlayer.getClientNum()] = NewPlayer;
-
-        }
-            
         //Add player object p to `players` list
         public bool addPlayer(Player P)
         {
@@ -173,7 +114,6 @@ namespace IW4MAdmin
                     statDB.addPlayer(New);
                     aliasDB.addPlayer(new Aliases(New.getDBID(), New.getName(), New.getIP()));
                 }
-
 
                 //messy way to prevent loss of last event
                 Player NewPlayer = clientDB.getPlayer(P.getID(), P.getClientNum());
@@ -193,8 +133,61 @@ namespace IW4MAdmin
 
                 if (players[NewPlayer.getClientNum()] == null)
                 {
-                    Thread connectThread = new Thread(() => threadedConnect(P, NewPlayer));
-                    connectThread.Start(); // We don't want events to get behind
+                    bool updated = false;
+                    while (!updated)
+                    {
+                        try
+                        {
+                            P.updateIP(IPS[P.getID()].Trim());
+                            updated = true;
+                            Log.Write("Sucessfully updated " + NewPlayer.getName() + "'s IP to " + P.getIP(), Log.Level.Debug);
+                        }
+
+                        catch
+                        {
+                            //Log.Write("Looks like the connecting player doesn't have an IP location assigned yet. Let's wait for next poll", Log.Level.Debug);
+                            Utilities.Wait(1);
+                        }
+                    }
+
+                    if (NewPlayer.Alias == null)
+                    {
+                        aliasDB.addPlayer(new Aliases(NewPlayer.getDBID(), NewPlayer.getName(), P.getIP()));
+                    }
+
+                    if (P.getName() != NewPlayer.getName())
+                    {
+                        NewPlayer.updateName(P.getName());
+                        NewPlayer.Alias.addName(P.getName());
+                        aliasDB.updatePlayer(NewPlayer.Alias);
+                    }
+
+                    if (P.getIP() != NewPlayer.getIP())
+                    {
+                        NewPlayer.updateIP(P.getIP());
+                        NewPlayer.Alias.addIP(P.getIP());
+                        aliasDB.updatePlayer(NewPlayer.Alias);
+                    }
+
+                    clientDB.updatePlayer(NewPlayer);
+                    NewPlayer.lastEvent.Owner = this; // cuz crashes
+
+                    Ban B = isBanned(NewPlayer);
+                    if (B != null || NewPlayer.getLevel() == Player.Permission.Banned)
+                    {
+                        Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Debug);
+                        string Reason = String.Empty;
+                        if (B != null)
+                            Reason = B.getReason();
+                        else
+                            Reason = P.LastOffense;
+
+                        String Message = "^1Player Kicked: ^7Previously Banned for ^5" + Reason;
+                        NewPlayer.Kick(Message);
+                    }
+
+                    players[NewPlayer.getClientNum()] = null;
+                    players[NewPlayer.getClientNum()] = NewPlayer;
 
                     NewPlayer.Tell("Welcome ^5" + NewPlayer.getName() + " ^7this is your ^5" + Utilities.timesConnected(NewPlayer.getConnections()) + " ^7time connecting!");
                     Log.Write("Client " + NewPlayer.getName() + " connecting...", Log.Level.Debug);
@@ -215,12 +208,22 @@ namespace IW4MAdmin
         //Remove player by CLIENT NUMBER
         public bool removePlayer(int cNum)
         {
-            Log.Write("Updating stats for " + players[cNum].getName(), Log.Level.Debug);
-            statDB.updatePlayer(players[cNum]);
-            Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
-            players[cNum] = null;
-            clientnum--;
-            return true;
+            if (cNum >= 0 && cNum < 18)
+            {
+                Log.Write("Updating stats for " + players[cNum].getName(), Log.Level.Debug);
+                statDB.updatePlayer(players[cNum]);
+
+                Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
+                players[cNum] = null;
+                clientnum--;
+                return true;
+            }
+
+            else
+            {
+                Log.Write("Client disconnecting has an invalid client index!", Log.Level.Debug);
+                return false;
+            }
         }
 
         //Get a client from players list by by log line. If create = true, it will return  a new player object
@@ -265,6 +268,58 @@ namespace IW4MAdmin
              return null;
          }
 
+        //Another version of client from line, written for the line created by a kill or death event
+        public Player clientFromLineArr(String[] L, bool kill)
+        {
+            if (L.Length < 7)
+            {
+                Log.Write("Line sent for client creation is not long enough!", Log.Level.Debug);
+                return null;
+            }
+
+            if (kill)
+            {
+                foreach (Player P in players)
+                {
+                    if (P == null)
+                        continue;
+                    if (P.getName().ToLower().Contains(L[8].Trim()))
+                        return P;
+                }
+
+                String killerName = L[8].Trim();
+                String killerGUID = L[5].Trim();
+                int killerID = -1;
+                int.TryParse(L[6], out killerID);
+                Player newPlayer =  new Player(killerName, killerGUID, killerID, 0);
+
+                addPlayer(newPlayer);
+                return players[newPlayer.getClientNum()];
+            }
+
+            else
+            {
+                foreach (Player P in players)
+                {
+                    if (P == null)
+                        continue;
+                    if (P.getName().ToLower().Contains(L[4].Trim()))
+                        return P;
+                }
+
+                String victimName = L[4].Trim();
+                String victimGUID = L[1].Trim();
+                int victimID = -1;
+                int.TryParse(L[2].Trim(), out victimID);
+
+                Player newPlayer = new Player(victimName, victimGUID, victimID, 0);
+                addPlayer(newPlayer);
+                return players[newPlayer.getClientNum()];
+            }
+
+        }
+
+        //Check ban list for every banned player and return ban if match is found 
          public Ban isBanned(Player C)
          {
                  foreach (Ban B in Bans)
@@ -286,19 +341,7 @@ namespace IW4MAdmin
             return null;
          }
 
-        public String getPlayerIP(String GUID)
-        {
-            Dictionary<string, string> dict;
-            int count = 0;
-            do
-            {
-               //because rcon can be weird
-               dict = Utilities.IPFromStatus(RCON.addRCON("status"));
-               count++;
-            } while(dict.Count < clientnum || count < 5);
-            return dict[GUID];
-        }
-
+        //Procses requested command correlating to an event
         public Command processCommand(Event E, Command C)
         {
             E.Data = Utilities.removeWords(E.Data, 1);
@@ -324,16 +367,20 @@ namespace IW4MAdmin
                 if (Args[0] == String.Empty)
                     return C;
 
-                if (Args[0][0] == '@')
+                if (Args[0][0] == '@') // user specifying target by database ID
                 {
                     int dbID = -1;
                     int.TryParse(Args[0].Substring(1, Args[0].Length-1), out dbID);
                     Player found = E.Owner.clientDB.getPlayer(dbID);
                     if (found != null)
+                    {
                         E.Target = found;
+                        E.Target.lastEvent = E;
+                        E.Owner = this;
+                    }
                 }
 
-                else if(Args[0].Length < 3 && cNum > -1 && cNum < 18)
+                else if(Args[0].Length < 3 && cNum > -1 && cNum < 18) // user specifying target by client num
                 {
                     if (players[cNum] != null)
                         E.Target = players[cNum];
@@ -351,11 +398,14 @@ namespace IW4MAdmin
             return C;
         }
 
+        //push a new event into the queue
         private void addEvent(Event E)
         {
             events.Enqueue(E);
         }
+        
 
+        //process new event every 100 milliseconds
         private void manageEventQueue()
         {
             while (isRunning)
@@ -385,7 +435,8 @@ namespace IW4MAdmin
                 Utilities.Wait(10);  
                 return;
             }
-
+            
+            //Thread to handle polling server for IP's
             Thread statusUpdate = new Thread(new ThreadStart(pollServer));
             statusUpdate.Start();
 
@@ -414,15 +465,6 @@ namespace IW4MAdmin
                     lastMessage = DateTime.Now - start;
                     if(lastMessage.TotalSeconds > messageTime && messages.Count > 0)
                     {
-
-                        if  (RCON.addRCON("sv_online") == null)
-                        {
-                            timesFailed++;
-                            Log.Write("Server appears to be offline - " + timesFailed, Log.Level.Debug);
-                        }
-                        else
-                            timesFailed = 0;
-                        Thread.Sleep(300);
                         initMacros(); // somethings dynamically change so we have to re-init the dictionary
                         Broadcast(Utilities.processMacro(Macros, messages[nextMessage]));
                         if (nextMessage == (messages.Count - 1))
@@ -508,17 +550,36 @@ namespace IW4MAdmin
 
         private void pollServer()
         {
+            int timesFailed = 0;
             while (isRunning)
             {
                 IPS = Utilities.IPFromStatus(RCON.addRCON("status"));
                 while (IPS == null)
                 {
+                    timesFailed++;
+                    Log.Write("Server appears to be offline - " + timesFailed, Log.Level.Debug);
+
+                    if (timesFailed > 4)
+                    {
+                        Log.Write("Max offline attempts reached. Reinitializing RCON connection.", Log.Level.Debug);
+                        RCON.Reset();
+                        timesFailed = 0;
+                    }
+
+                    else
+                    {
+                        Log.Write("Server responded to status query!", Log.Level.All);
+                        timesFailed = 0;
+                    }
+
+                    Thread.Sleep(FLOOD_TIMEOUT);
+
                     IPS = Utilities.IPFromStatus(RCON.addRCON("status"));
                     Utilities.Wait(1);
                 }
 
                 lastPoll = DateTime.Now;
-                Utilities.Wait(15);
+                Utilities.Wait(20);
             }
         }
 
@@ -560,6 +621,7 @@ namespace IW4MAdmin
                 IW_Ver = infoResponseDict["shortversion"];
                 maxClients = Convert.ToInt32(infoResponseDict["sv_maxclients"]);
                 Gametype = infoResponseDict["g_gametype"];
+
                 try
                 {
                     Website = infoResponseDict["_Website"];
@@ -681,7 +743,7 @@ namespace IW4MAdmin
                 tmp.Credentials = new System.Net.NetworkCredential("*", "*");
                 System.IO.Stream ftpStream = tmp.GetResponse().GetResponseStream();
                 String ftpLog = new StreamReader(ftpStream).ReadToEnd();*/
-                logPath = "games_old.log"; 
+                //logPath = "games_old.log"; 
 #endif
                 return true;
             }
@@ -695,58 +757,113 @@ namespace IW4MAdmin
         //Process any server event
         public bool processEvent(Event E)
         {
+            //
             if (E.Type == Event.GType.Connect)
             {
+                if (E.Origin == null)
+                    Log.Write("Connect event triggered, but no client is detected!", Log.Level.Debug);
                 addPlayer(E.Origin);
                 return true;
             }
 
-            if (E.Type == Event.GType.Disconnect && E.Origin.getClientNum() > 0)
+            if (E.Type == Event.GType.Disconnect)
             {
-                if (getNumPlayers() > 0 && E.Origin != null && players[E.Origin.getClientNum()] != null)
+                if (E.Origin == null)
                 {
-                    clientDB.updatePlayer(E.Origin);
-                    removePlayer(E.Origin.getClientNum());
+                    Log.Write("Disconnect event triggered, but no origin found.", Log.Level.Debug);
+                    return false;
                 }
+
+                E.Origin.Connections++;
+                clientDB.updatePlayer(E.Origin);
+                removePlayer(E.Origin.getClientNum());
+               
                 return true;
             }
 
             if (E.Type == Event.GType.Kill)
             {
-                if (E.Origin != null && E.Target != null && E.Origin.stats != null)
+                if (E.Origin == null)
                 {
-                    E.Origin.stats.Kills++;
-                    E.Origin.stats.updateKDR();
-                    E.Origin.stats.updateSkill(E.Target.stats.Skill);
-
-                    E.Target.stats.Deaths++;
-                    E.Target.stats.updateKDR();
-                    //E.Target.stats.updateSkill(E.Origin.stats.Skill);
+                    Log.Write("Kill event triggered, but no origin found!", Log.Level.Debug);
+                    return false;
                 }
+
+                if (E.Target == null)
+                {
+                    Log.Write("Kill event triggered, but no target found!", Log.Level.Debug);
+                    return false;
+                }
+
+                if (E.Origin.stats == null)
+                {
+                    Log.Write("Kill event triggered, but no stats found for origin!", Log.Level.Debug);
+                    E.Origin.stats = statDB.getStats(E.Origin.getDBID());
+                }
+
+                if (E.Target.stats == null)
+                {
+                    Log.Write("Kill event triggered, but no stats found for target!", Log.Level.Debug);
+                    E.Target.stats = statDB.getStats(E.Target.getDBID());
+                }
+
+                Log.Write(E.Origin.getName() + " killed " + E.Target.getName() + " with a " + E.Data, Log.Level.Debug);
+                E.Origin.stats.Kills++;
+                E.Origin.stats.updateKDR();
+
+                E.Origin.stats.lastMew = TrueSkill.calculateWinnerMu(E.Origin.stats, E.Target.stats);
+
+                E.Origin.stats.lastSigma = TrueSkill.calculateWinnerSigma(E.Origin.stats, E.Target.stats);
+                E.Origin.stats.updateSkill();
+
+                E.Target.stats.Deaths++;
+                E.Target.stats.updateKDR();
+
+                E.Target.stats.lastMew = TrueSkill.calculateLoserMu(E.Target.stats, E.Origin.stats);
+                E.Target.stats.lastSigma = TrueSkill.calculateLoserSigma(E.Target.stats, E.Origin.stats);
             }
 
-            if (E.Type == Event.GType.Say && E.Origin != null)
+            if (E.Type == Event.GType.Say)
             {
-                if (E.Data.Length < 2)
+
+                if (E.Data.Length < 2) // ITS A LIE!
                     return false;
+
+                if (E.Origin == null)
+                {
+                    Log.Write("Say event triggered, but no origin found! - " + E.Data, Log.Level.Debug);
+                    return false;
+                }
 
                 Log.Write("Message from " + E.Origin.getName() + ": " + E.Data, Log.Level.Debug);
 
-                if (E.Data.Substring(0, 1) != "!")
+                if (E.Owner == null)
+                {
+                    Log.Write("Say event does not have an owner!", Log.Level.Debug);
+                    return false;
+                }
+
+                if (E.Data.Substring(0, 1) != "!") // Not a command so who gives an F?
                     return true;
 
                 Command C = E.isValidCMD(commands);
+
                 if (C != null)
                 {
                     C = processCommand(E, C);
                     if (C != null)
                     {
+                        if (C.needsTarget() && E.Target == null)
+                        {
+                            Log.Write("Requested event requiring target does not have a target!", Log.Level.Debug);
+                            return false;
+                        }
                         C.Execute(E);
                         return true;
                     }
                     else
                     {
-                        Log.Write("Error processing command by " + E.Origin.getName(), Log.Level.Debug);
+                        Log.Write("Player didn't properly enter command - " + E.Origin.getName(), Log.Level.Debug);
                         return true;
                     }
                 }

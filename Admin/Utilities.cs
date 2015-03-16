@@ -148,7 +148,7 @@ namespace IW4MAdmin
         public static String timesConnected(int connection)
         {
             String Prefix = String.Empty;
-            if (connection % 10 > 3 || connection % 10 == 0)
+            if (connection % 10 > 3 || connection % 10 == 0 || (connection % 100 > 9 && connection % 100 < 19))
                 Prefix = "th";
             else
             {

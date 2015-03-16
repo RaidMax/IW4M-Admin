@@ -107,6 +107,7 @@
     </Compile>
     <Compile Include="RCON.cs" />
     <Compile Include="Server.cs" />
+    <Compile Include="TrueSkill.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

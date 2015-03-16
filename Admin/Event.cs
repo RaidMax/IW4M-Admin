@@ -69,10 +69,10 @@ namespace IW4MAdmin
                     return new Event(GType.Connect, null, SV.clientFromLine(line, 3, true), null, SV);
 
                 if (eventType == "Q")
-                    return new Event(GType.Disconnect, null, SV.clientFromLine(line, 3, false), null, null);
+                    return new Event(GType.Disconnect, null, SV.getPlayers()[Convert.ToInt16(line[2])], null, null);
 
                 if (eventType == "K")
-                    return new Event(GType.Kill, line[9], SV.clientFromLine(line[8]), SV.clientFromLine(line[4]), null);
+                    return new Event(GType.Kill, line[9], SV.clientFromLineArr(line, true), SV.clientFromLineArr(line, false), null);
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
                 {

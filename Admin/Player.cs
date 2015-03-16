@@ -12,6 +12,9 @@ namespace IW4MAdmin
             Deaths = D;
             KDR = Math.Round(kdr,2);
             Skill = Math.Round(skill,2);
+
+            lastSigma = lastMew/3;
+            lastMew = 25;
         }
 
         public void updateKDR()
@@ -19,15 +22,18 @@ namespace IW4MAdmin
             KDR = Math.Round((double)((double)Kills / (double)Deaths), 2);
         }
 
-        public void updateSkill(double enemySkill)
+        public void updateSkill()
         {
-            Skill = Math.Round(Math.Log(KDR + 1) * ((enemySkill / 2) + 1) + (Math.Log(Deaths) * 0.3) * 12, 2);
+            Skill = TrueSkill.Gaussian(lastMew, lastSigma);
         }
 
         public int Kills;
         public int Deaths;
         public double KDR;
         public double Skill;
+
+        public double lastSigma;
+        public double lastMew;
     }
 
     class Aliases
@@ -98,7 +104,7 @@ namespace IW4MAdmin
             npID = id;
             Number = num;
             Level = (Player.Permission)l;
-            LastOffense = null;
+            LastOffense = String.Empty;
             Connections = 0;
             IP = "";
             Warnings = 0;
@@ -113,8 +119,11 @@ namespace IW4MAdmin
             Number = num;
             Level = l;
             dbID = cind;
-            LastOffense = lo;
-            Connections = con + 1;
+            if (lo == null)
+                LastOffense = String.Empty;
+            else
+                LastOffense = lo;
+            Connections = con;
             IP = IP2;
             Warnings = 0;
         }
@@ -219,7 +228,7 @@ namespace IW4MAdmin
         private int Number;
         private Player.Permission Level;
         private int dbID;
-        private int Connections;
+        public int Connections;
         private String IP;
 
         public Event lastEvent;

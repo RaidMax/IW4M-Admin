@@ -15,6 +15,7 @@ namespace IW4MAdmin
             FileName = FN;
             DBCon = String.Format("Data Source={0}", FN);
             Con = new SQLiteConnection(DBCon);
+            Open = false;
             Init();
         }
 
@@ -59,7 +60,7 @@ namespace IW4MAdmin
             }
             try
             {
-                this.ExecuteNonQuery(String.Format("update {0} set {1} where {2};", tableName, vals, where));
+                ExecuteNonQuery(String.Format("update {0} set {1} where {2};", tableName, vals, where));
             }
             catch (Exception fail)
             {
@@ -77,6 +78,7 @@ namespace IW4MAdmin
 
         protected int ExecuteNonQuery(String Request)
         {
+            waitForClose();
             Con.Open();
             SQLiteCommand CMD = new SQLiteCommand(Con);
             CMD.CommandText = Request;
@@ -90,6 +92,7 @@ namespace IW4MAdmin
             DataTable dt = new DataTable();
             try
             {
+                waitForClose();
                 Con.Open();
                 SQLiteCommand mycommand = new SQLiteCommand(Con);
                 mycommand.CommandText = sql;
@@ -105,11 +108,22 @@ namespace IW4MAdmin
             }
             return dt;
         }
+
+        protected void waitForClose()
+        {
+            while (Con.State == ConnectionState.Open)
+            {
+                Utilities.Wait(0.01);
+            }
+
+            return;
+        }
         //END
 
         protected String FileName;
         protected String DBCon;
         protected SQLiteConnection Con;
+        protected bool Open;
     }
 
     class ClientsDB : Database

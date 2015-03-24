@@ -72,12 +72,14 @@ namespace IW4MAdmin
 
         public void addName(String Name)
         {
-            Names += Names + ';';
+            if (Name.Trim() != String.Empty && Name != null)
+                Names +=  ';' + Names;
         }
 
         public void addIP(String IP)
         {
-            IPS += IP + ';';
+            if (IP.Trim() != String.Empty && IP != null)
+                IPS += ';' + IP;
         }
 
         private String Names;
@@ -89,6 +91,7 @@ namespace IW4MAdmin
     {
         public enum Permission
         {
+            Flagged = -2,
             Banned = -1,
             User = 0,
             Moderator = 1,

@@ -152,9 +152,9 @@ namespace IW4MAdmin
                 DataRow ResponseRow = Result.Rows[0];
 
 
-                if (ResponseRow["IP"].ToString().Length < 2)
-                    ResponseRow["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
-
+               // if (ResponseRow["IP"].ToString().Length < 2)
+                //    ResponseRow["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
+                
                 return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString());
             }
 
@@ -172,8 +172,8 @@ namespace IW4MAdmin
             { 
                 DataRow p = Result.Rows[0];
 
-                if (p["IP"].ToString().Length < 2)
-                    p["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
+               // if (p["IP"].ToString().Length < 2)
+                 //   p["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
 
                 return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString());
             }
@@ -231,8 +231,8 @@ namespace IW4MAdmin
             {
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
-                if (Row["IP"].ToString().Length < 2)
-                    Row["IP"] = DateTime.Now.ToString(); //because we don't have old ip's and don't want a messy alias
+               // if (Row["IP"].ToString().Length < 2)
+                //    Row["IP"] = DateTime.Now.ToString(); //because we don't have old ip's and don't want a messy alias
 
                 Bans.Add(new Ban(Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
             }

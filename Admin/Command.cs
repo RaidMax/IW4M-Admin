@@ -203,7 +203,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            String You = String.Format("You are {0} at client spot {1} with xuid {2} and ID {5}. You have connected {3} times and are currently ranked {4}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), E.Origin.getConnections(), E.Origin.getLevel(), E.Origin.getDBID());
+            String You = String.Format("{0} [^3{1}^7] {{2}} {{3}} [{4}^7] IP: {5}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), Utilities.levelToColor(E.Origin.getLevel()), E.Origin.getDBID(), E.Origin.getIP());
             E.Origin.Tell(You);
         }
 
@@ -412,32 +412,51 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             var db_players = E.Owner.clientDB.findPlayers(E.Data.Trim());
+
             if (db_players == null)
             {
                 E.Origin.Tell("No players found");
                 return;
             }
 
-           
-
             foreach (Player P in db_players)
             { 
                 String mesg;
-                var db_aliases = E.Owner.aliasDB.getPlayer(P.getDBID());
+                P.Alias = E.Owner.aliasDB.getPlayer(P.getDBID());
 
                 if (P.getLevel() == Player.Permission.Banned)
                    mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7] - {4}", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()), P.getLastO());
                 else
                    mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7]", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()));
-                E.Origin.Tell(mesg);
-                if (db_aliases != null)
-                {
-                    mesg = "Aliases: ";
-                    foreach (String S in db_aliases.getNames())
-                        mesg += S + ',';
-                }
 
                 E.Origin.Tell(mesg);
+
+                if (P.Alias == null)
+                    continue;
+
+                if (P.Alias.getNames() != null)
+                {
+                    mesg = "Aliases: ";
+                    foreach (String S in P.Alias.getNames())
+                    {
+                        if (S != String.Empty)
+                            mesg += S + "  | ";
+                    }
+                    E.Origin.Tell(mesg);
+                }
+
+                if (P.Alias.getIPS() != null)
+                {
+                    mesg = "IPs: ";             
+                    foreach (String IP in P.Alias.getIPS())
+                    {
+                        if (IP.Split('.').Length > 3 && IP != String.Empty)
+                            mesg += IP + "  | ";
+                    }
+
+                    E.Origin.Tell(mesg);
+
+                }
             }
 
         }
@@ -515,7 +534,6 @@ namespace IW4MAdmin
                 {
                     if (P != null)
                         E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.getName(), P.stats.KDR, P.stats.Skill));
-
                 }
             }
             else
@@ -536,5 +554,106 @@ namespace IW4MAdmin
         }
     }
 
+    class Balance : Command
+    {
+        public Balance(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
+        public override void Execute(Event E)
+        {
+            E.Owner.RCON.addRCON(String.Format("admin_lastevent {0};{1}", "balance", E.Origin.getID())); //Let gsc do the magic
+        }
+    }
+
+    class GoTo : Command
+    {
+        public GoTo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            E.Owner.RCON.addRCON(String.Format("admin_lastevent {0};{1};{2};{3}", "goto", E.Origin.getID(), E.Target.getName(), E.Data)); //Let gsc do the magic
+        }
+    }
+
+    class Flag : Command
+    {
+        public Flag(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            if (E.Target.getLevel() >= E.Origin.getLevel())
+            {
+                E.Origin.Tell("You cannot flag " + E.Target.getName());
+                return;
+            }
+
+            if (E.Target.getLevel() == Player.Permission.Flagged)
+            {
+                E.Target.setLevel(Player.Permission.User);
+                E.Origin.Tell("You have ^5unflagged ^7" + E.Target.getName());
+            }
+
+            else
+            {
+                E.Target.setLevel(Player.Permission.Flagged);
+                E.Origin.Tell("You have ^5flagged ^7" + E.Target.getName());
+            }
+
+            E.Owner.clientDB.updatePlayer(E.Target);
+        }
+    }
+
+    class _Report : Command
+    {
+        public _Report(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            if (E.Target.getLevel() > E.Origin.getLevel())
+            {
+                E.Origin.Tell("You cannot report " + E.Target.getName());
+                return;
+            }
+
+            E.Data = Utilities.removeWords(E.Data, 1);
+            E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
+            E.Origin.Tell("Successfully reported " + E.Target.getName());
+
+            E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.getName(), E.Target.getName(), E.Data));
+        }
+    }
+
+    class Reports : Command
+    {
+        public Reports(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            if (E.Owner.Reports.Count < 1)
+            {
+                E.Origin.Tell("No players reported yet.");
+                return;
+            }
+
+            int count = E.Owner.Reports.Count - 1;
+            for (int i = 0; i <= count; i++)
+            {
+                if (count > 8)
+                    i = count - 8;
+                Report R = E.Owner.Reports[i];
+                E.Origin.Tell(String.Format("^5{0}^7->^1{1}^7: {2}", R.Origin.getName(), R.Target.getName(), R.Reason));
+            }
+        }
+    }
+
+    class _Tell : Command
+    {
+        public _Tell(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            E.Data = Utilities.removeWords(E.Data, 1);
+            E.Owner.RCON.addRCON(String.Format("admin_lastevent tell;{0};{1};{2}", E.Origin.getID(), E.Target.getID(), E.Data));
+        }
+    }
 }
+    

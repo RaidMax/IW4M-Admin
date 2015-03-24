@@ -14,16 +14,17 @@ namespace IW4MAdmin
             None,
         }
 
-        public Log(file logf, Level mode)
+        public Log(file logf, Level mode, int port)
         {
             logFile = logf;
             logMode = mode;
+            Port = port;
         }
 
 
         public void Write(String line, Level lv)
         {
-            String Line = String.Format("{1} - [{0}]: {2}", lv, getTime(), line);
+            String Line = String.Format("{1} - [{0}]: {2}", Port, getTime(), line);
             switch(logMode)
             {
                 case Level.All:
@@ -50,5 +51,6 @@ namespace IW4MAdmin
 
         private file logFile;
         private Level logMode;
+        private int Port;
     }
 }

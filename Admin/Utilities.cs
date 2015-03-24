@@ -57,7 +57,10 @@ namespace IW4MAdmin
 
         public static String removeNastyChars(String str)
         {
-            return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("^", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
+            if (str != null)
+                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("^", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
+            else
+                return String.Empty;
         }
 
         public static int GetLineNumber(Exception ex)
@@ -86,6 +89,8 @@ namespace IW4MAdmin
             {
                 case Player.Permission.Banned:
                     return "^1" + Player.Permission.Banned;
+                case Player.Permission.Flagged:
+                    return "^0" + Player.Permission.Flagged;
                 case Player.Permission.Owner:
                     return "^5" + Player.Permission.Owner;
                 case Player.Permission.User:

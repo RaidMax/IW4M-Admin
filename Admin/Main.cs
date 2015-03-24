@@ -29,10 +29,11 @@ namespace IW4MAdmin
             foreach (Server IW4M in checkConfig())
             {   
                 //Threading seems best here
-                Thread monitorThread = new Thread(new ThreadStart(IW4M.Monitor));
+                Server SV = IW4M;
+                Thread monitorThread = new Thread(new ThreadStart(SV.Monitor));
                 monitorThread.Start();
-                Utilities.Wait(0.3);
-                Console.WriteLine("Now monitoring " + IW4M.getName());
+                Utilities.Wait(0.2); // give rcon a chance to respond
+                Console.WriteLine("Now monitoring " + SV.getName());
             }
 
             Utilities.Wait(5); //Give them time to read an error before exiting

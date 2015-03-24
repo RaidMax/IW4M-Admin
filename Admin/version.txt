@@ -1,4 +1,4 @@
-﻿VERSION: 0.6
+﻿VERSION: 0.7
 CHANGELOG:
--stability fixes
--welcome has post-fixed connection indicator
+-rcon tweaks
+-so much stuff cant remember

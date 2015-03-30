@@ -90,14 +90,14 @@ namespace IW4MAdmin
     {
         public enum Permission
         {
-            Flagged = -2,
             Banned = -1,
             User = 0,
-            Moderator = 1,
-            Administrator = 2,
-            SeniorAdmin = 3,
-            Owner = 4,
-            Creator = 5,
+            Flagged = 1,
+            Moderator = 2,
+            Administrator = 3,
+            SeniorAdmin = 4,
+            Owner = 5,
+            Creator = 6,
         }
 
         public Player(string n, string id, int num, int l)

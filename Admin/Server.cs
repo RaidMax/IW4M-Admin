@@ -217,6 +217,9 @@ namespace IW4MAdmin
                     if (aP == null)
                         continue;
 
+                    if (aP.getLevel() == Player.Permission.Flagged)
+                        NewPlayer.setLevel(Player.Permission.Flagged);
+
                     String Reason = String.Empty;
                     String Message = String.Empty;
 
@@ -281,6 +284,12 @@ namespace IW4MAdmin
                 if (NewPlayer.getLevel() > Player.Permission.Moderator)
                     NewPlayer.Tell("There are ^5" + Reports.Count + " ^7recent reports!");
 
+                if (NewPlayer.stats == null) // there seems to be an issue with stats with multiple servers. I think this should fix it
+                { 
+                    statDB.addPlayer(NewPlayer);
+                    NewPlayer.stats = statDB.getStats(NewPlayer.getDBID());
+                }
+
                 return true;
             }
 #if DEBUG == false
@@ -328,13 +337,16 @@ namespace IW4MAdmin
                 return null;
             }
 
-            int pID = -1;
+            int pID = -2; // apparently falling = -1 cID so i can't use it now
             int.TryParse(L[cIDPos].Trim(), out pID);
+
+            if (pID == -1) // special case similar to mod_suicide
+                int.TryParse(L[2], out pID);
 
             if (pID < 0 || pID > 17)
             {
                 Log.Write("Error event player index " + pID + " is out of bounds!", Log.Level.Debug);
-                Log.Write(String.Join(";", L), Log.Level.Debug);
+                Log.Write("Offending line -- " + String.Join(";", L), Log.Level.Debug);
                 return null;
             }
 
@@ -715,12 +727,14 @@ namespace IW4MAdmin
                 {
                     Website = infoResponseDict["_website"];
                 }
+
                 catch (Exception E)
                 {
+                    Website = "this server's website"; 
                     Log.Write("Seems not to have website specified", Log.Level.Debug);
                 }
 
-                String[] p =RCON.addRCON("fs_basepath");
+                String[] p = RCON.addRCON("fs_basepath");
 
                 if (p == null)
                 {
@@ -835,6 +849,7 @@ namespace IW4MAdmin
                 //logPath = "games_old.log"; 
                 //logFile = new file("C:\\Users\\Michael\\text.txt");
 #endif
+                Log.Write("Now monitoring " + this.getName(), Log.Level.Debug);
                 return true;
             }
             catch (Exception E)
@@ -884,13 +899,13 @@ namespace IW4MAdmin
                 if (E.Origin.stats == null)
                 {
                     Log.Write("Kill event triggered, but no stats found for origin!", Log.Level.Debug);
-                    E.Origin.stats = statDB.getStats(E.Origin.getDBID());
+                    return false;
                 }
 
                 if (E.Target.stats == null)
                 {
                     Log.Write("Kill event triggered, but no stats found for target!", Log.Level.Debug);
-                    E.Target.stats = statDB.getStats(E.Target.getDBID());
+                    return false;
                 }
 
                 if (E.Origin != E.Target)
@@ -902,8 +917,8 @@ namespace IW4MAdmin
                     E.Target.stats.updateKDR();
 
                     Skills.updateNewSkill(E.Origin, E.Target);
-                    E.Owner.statDB.updatePlayer(E.Origin);
-                    E.Owner.statDB.updatePlayer(E.Target);
+                    statDB.updatePlayer(E.Origin);
+                    statDB.updatePlayer(E.Target);
 
                     totalKills++;
                     Log.Write(E.Origin.getName() + " killed " + E.Target.getName() + " with a " + E.Data, Log.Level.Debug);
@@ -913,6 +928,7 @@ namespace IW4MAdmin
                 {
                     E.Origin.stats.Deaths++;
                     E.Origin.stats.updateKDR();
+                    statDB.updatePlayer(E.Origin);
                     Log.Write(E.Origin.getName() + " suicided...", Log.Level.Debug);
                 }
             }
@@ -1148,7 +1164,6 @@ namespace IW4MAdmin
         private void initMacros()
         {
             Macros = new Dictionary<String, Object>();
-            Macros.Add("WEBSITE", "nbsclan.org");
             Macros.Add("WISDOM", Wisdom());
             Macros.Add("TOTALPLAYERS", clientDB.totalPlayers());
             Macros.Add("TOTALKILLS", totalKills);

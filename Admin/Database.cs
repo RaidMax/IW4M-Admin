@@ -361,9 +361,9 @@ namespace IW4MAdmin
             {
                 DataRow ResponseRow = Result.Rows[0];
                 if (ResponseRow["MEAN"] == DBNull.Value)
-                    ResponseRow["MEAN"] = 25;
+                    ResponseRow["MEAN"] = Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean;
                 if (ResponseRow["DEV"] == DBNull.Value)
-                    ResponseRow["DEV"] = 8;
+                    ResponseRow["DEV"] = Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation;
                 if (ResponseRow["SKILL"] == DBNull.Value)
                     ResponseRow["SKILL"] = 0;
 
@@ -371,7 +371,7 @@ namespace IW4MAdmin
             }
 
             else
-                return new Stats(0, 0, 0, 0, 0, 25, 8.3333);
+                return null;
         }
 
         public void addPlayer(Player P)
@@ -462,11 +462,8 @@ namespace IW4MAdmin
 
         public int totalStats()
         {
-            DataTable Result = GetDataTable("SELECT * from STATS ORDER BY Number DESC LIMIT 1");
-            if (Result.Rows.Count > 0)
-                return Convert.ToInt32(Result.Rows[0]["Number"]);
-            else
-                return 0;
+            DataTable Result = GetDataTable("SELECT * FROM STATS");
+            return Result.Rows.Count;
         }
 
         public void clearSkill()

@@ -19,3 +19,4 @@ CHANGELOG:
 -fixed crash when finding player stats that don't exist
 -fixed a bug that caused owner command to reactivate only `creator` rank player existed
 -fixed a bug that caused certain notifications to be sent to all players
+-various small fixes

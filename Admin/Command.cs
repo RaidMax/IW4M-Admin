@@ -356,11 +356,15 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            foreach (Player P in E.Owner.getPlayers())
+            List<Player> activePlayers = E.Owner.getPlayers();
+            lock (activePlayers)
             {
-                if (P != null && P.getLevel() > Player.Permission.User && !P.Masked)
+                foreach (Player P in E.Owner.getPlayers())
                 {
-                    E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.getLevel()), P.getName()));
+                    if (P != null && P.getLevel() > Player.Permission.User && !P.Masked)
+                    {
+                        E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.getLevel()), P.getName()));
+                    }
                 }
             }
         }

@@ -10,7 +10,7 @@ namespace IW4MAdmin
         static String IP;
         static int Port;
         static String RCON;
-        static public double Version = 0.7;
+        static public double Version = 0.8;
         static public double latestVersion;
         static public List<Server> Servers;
 
@@ -33,14 +33,15 @@ namespace IW4MAdmin
                 Server SV = IW4M;
                 Thread monitorThread = new Thread(new ThreadStart(SV.Monitor));
                 monitorThread.Start();
-                Utilities.Wait(0.2); // give rcon a chance to respond
-                Console.WriteLine("Now monitoring " + SV.getName());
             }
 
-            IW4MAdmin_Web.WebFront test = new IW4MAdmin_Web.WebFront();
-            test.Init();
+            IW4MAdmin_Web.WebFront WebStuff = new IW4MAdmin_Web.WebFront();
 
-            Utilities.Wait(5); //Give them time to read an error before exiting
+            Thread webFrontThread = new Thread( new ThreadStart(WebStuff.Init));
+            webFrontThread.Start();
+
+            Utilities.Wait(3);
+            Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
  
         }
 

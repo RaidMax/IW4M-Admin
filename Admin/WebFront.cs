@@ -105,20 +105,31 @@ namespace IW4MAdmin_Web
                     return "IW4M Administration";
                 case "BANS":
                     buffer.Append("<table cellspacing=0 class=bans>");
+                    int totalBans = IW4MAdmin.Program.Servers[0].Bans.Count;
                     int range;
                     int start = Pagination*30 + 1;
-                    if (IW4MAdmin.Program.Servers[0].Bans.Count <= 30)
-                        range = IW4MAdmin.Program.Servers[0].Bans.Count - 1;
-                    else if ((IW4MAdmin.Program.Servers[0].Bans.Count - start) < 30 )
-                        range = (IW4MAdmin.Program.Servers[0].Bans.Count - start);
+                    int cycleFix = 0;
+
+                    if (totalBans <= 30)
+                        range = totalBans - 1;
+                    else if ((totalBans - start) < 30)
+                        range = (totalBans - start);
                     else
                         range = 30;
 
-                    List<IW4MAdmin.Ban> Bans = IW4MAdmin.Program.Servers[0].Bans.GetRange(start, range);
+                    List<IW4MAdmin.Ban> Bans = new List<IW4MAdmin.Ban>();
+
+                    if (totalBans > 0)
+                        Bans = IW4MAdmin.Program.Servers[0].Bans.GetRange(start, range);
+                    else
+                        Bans.Add(new IW4MAdmin.Ban("No Bans", "0", "0", DateTime.Now, ""));
+
+
                     buffer.Append("<h1 style=margin-top: 0;>{{TIME}}</h1><hr /><tr><th>Name</th><th style=text-align:left;>Offense</th><th style=text-align:left;>Banned By</th><th style='width: 175px; text-align:right;padding-right: 80px;'>Time</th></tr>");
+
                     if (Bans[0] != null)
-                        buffer = buffer.Replace("{{TIME}}", "From " + IW4MAdmin.Utilities.timePassed(Bans[0].getTime()) + " ago" + " &mdash; " + IW4MAdmin.Program.Servers[0].Bans.Count + " total");
-                    int cycleFix = 0;
+                        buffer = buffer.Replace("{{TIME}}", "From " + IW4MAdmin.Utilities.timePassed(Bans[0].getTime()) + " ago" + " &mdash; " + totalBans + " total");
+             
                     for (int i = 0; i < Bans.Count; i++)
                     {
                         if (Bans[i] == null)
@@ -148,8 +159,9 @@ namespace IW4MAdmin_Web
                             buffer.AppendFormat("<tr {4}><td>{0}</th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.getName(), P.getLastO(), IW4MAdmin.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix);
                             cycleFix++;
                         }
-                     }
+                    }
                     buffer.Append("</table><hr/>");
+ 
                     buffer.Append(parsePagination(server, IW4MAdmin.Program.Servers[0].Bans.Count, 30, Pagination, "bans"));
                     return buffer.ToString();
                 case "PAGE":
@@ -157,11 +169,11 @@ namespace IW4MAdmin_Web
                     
                     return buffer.ToString();
                 case "STATS":
-                    int totalStats = IW4MAdmin.Program.Servers[server].statDB.totalStats()-1;
+                    int totalStats = IW4MAdmin.Program.Servers[server].statDB.totalStats();
                     buffer.Append("<h1 style='margin-top: 0;'>Starting at #{{TOP}}</h1><hr />");
                     buffer.Append("<table style='width:100%' cellspacing=0 class=stats>");
  
-                    start = Pagination*30 + 1;
+                    start = Pagination*30;
                     if (totalStats <= 30)
                         range = totalStats - 1;
                     else if ((totalStats - start) < 30 )
@@ -197,7 +209,7 @@ namespace IW4MAdmin_Web
                     }
                     buffer.Append("</table><hr/>");
                     buffer.Append(parsePagination(server, totalStats, 30, Pagination, "stats"));
-                    return buffer.ToString().Replace("{{TOP}}", (start).ToString());
+                    return buffer.ToString().Replace("{{TOP}}", (start + 1).ToString());
                 default:
                     return input;
             }

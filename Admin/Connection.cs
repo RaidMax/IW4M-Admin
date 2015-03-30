@@ -13,6 +13,7 @@ namespace IW4MAdmin
             Location = Loc;
             ConnectionHandle = WebRequest.Create(Location);
             ConnectionHandle.Proxy = null;
+            ConnectionHandle.Timeout = 1000;
         }
 
         public String Read()

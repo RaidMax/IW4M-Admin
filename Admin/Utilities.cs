@@ -229,9 +229,10 @@ namespace IW4MAdmin
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
+                    int cID         = -1;
                     String cName    = stripColors(responseLine.Substring(46, 18)).Trim();
                     String npID     = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
-                    int cID         = Convert.ToInt32(playerInfo[0]);
+                    int.TryParse(playerInfo[0], out cID);
                     String cIP      = responseLine.Substring(72,20).Trim().Split(':')[0];
 
                     Player P        = new Player(cName, npID, cID, cIP);

@@ -94,9 +94,9 @@ namespace IW4MAdmin
                 case Player.Permission.Owner:
                     return "^5" + Player.Permission.Owner;
                 case Player.Permission.User:
-                    return "^3" + Player.Permission.User;
+                    return "^2" + Player.Permission.User;
                 default:
-                    return "^2" + level;
+                    return "^3" + level;
             }
         }
 
@@ -144,10 +144,133 @@ namespace IW4MAdmin
             
         }
 
+        public static String nameHTMLFormatted(Player P)
+        {
+            switch (P.getLevel())
+            {
+                case Player.Permission.User:
+                    return "<span style='color:rgb(121, 194, 97)'>" + P.getName() + "</span>";
+                case Player.Permission.Moderator:
+                    return "<span style='color:#e7b402'>" + P.getName() + "</span>";
+                case Player.Permission.Administrator:
+                    return "<span style='color:#ec82de'>" + P.getName() + "</span>";
+                case Player.Permission.SeniorAdmin:
+                    return "<span style='color:#2eb6bf'>" + P.getName() + "</span>";
+                case Player.Permission.Owner | Player.Permission.Creator:
+                    return "<span style='color:rgb(38,120,230)'>" + P.getName() + "</span>";
+                default:
+                    return "<i>" + P.getName() + "</i>";
+            }
+        }
+
+        public static String gametypeLocalized(String input)
+        {
+            switch (input)
+            {
+                case "dm":
+                    return "Deathmatch";
+                case "war":
+                    return "Team Deathmatch";
+                case "koth":
+                    return "Headquarters";
+                case "ctf":
+                    return "Capture The Flag";
+                case "dd":
+                    return "Demolition";
+                case "dom":
+                    return "Domination";
+                case "sab":
+                    return "Sabotage";
+                case "sd":
+                    return "Search & Destroy";
+                case "vip":
+                    return "Very Important Person";
+                case "gtnw":
+                    return "Global Thermonuclear War";
+                case "oitc":
+                    return "One In The Chamber";
+                case "arena":
+                    return "Arena";
+                case "dzone":
+                    return "Drop Zone";
+                case "gg":
+                    return "Gun Game";
+                case "snipe":
+                    return "Sniping";
+                case "ss":
+                    return "Sharp Shooter";
+                case "m40a3":
+                    return "M40A3";
+                case "fo":
+                    return "Face Off";
+                case "dmc":
+                    return "Deathmatch Classic";
+                case "killcon":
+                    return "Kill Confirmed";
+                case "oneflag":
+                    return "One Flag CTF";
+                default:
+                    return "Unknown";
+            }
+        }
+
+        public static Dictionary<String, Player> playersFromStatus(String[] Status)
+        {
+            Dictionary<String, Player> playerDictionary = new Dictionary<String, Player>();
+
+            if (Status == null) // looks like we didn't get a proper response
+                return null;
+
+            foreach (String S in Status)
+            {
+                String responseLine = S.Trim();
+
+                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 72) // its a client line!
+                {
+                    String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    String cName    = stripColors(responseLine.Substring(46, 18)).Trim();
+                    String npID     = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
+                    int cID         = Convert.ToInt32(playerInfo[0]);
+                    String cIP      = responseLine.Substring(72,20).Trim().Split(':')[0];
+
+                    Player P        = new Player(cName, npID, cID, cIP);
+
+                    try
+                    {
+                        playerDictionary.Add(npID, P);
+                    }
+
+                    catch(Exception E)
+                    {
+                        /// need to handle eventually
+                        Console.WriteLine("Error handling player add -- " + E.Message);
+                        continue;
+                    }
+                }
+            }
+            return playerDictionary;
+
+        }
+
         public static String DateTimeSQLite(DateTime datetime)
         {
             string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
             return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second, datetime.Millisecond);
+        }
+
+        public static String timePassed(DateTime start)
+        {
+            TimeSpan Elapsed = DateTime.Now - start;
+
+            if (Elapsed.Hours < 1 && Elapsed.Minutes < 60)
+                return Elapsed.Minutes + " minutes";
+            if (Elapsed.Days < 1 && Elapsed.Hours <= 24)
+                return Elapsed.Hours + " hours";
+            if (Elapsed.Days <= 365)
+                return Elapsed.Days + " days";
+            else
+                return "a very long time";
         }
 
         public static String timesConnected(int connection)
@@ -168,8 +291,7 @@ namespace IW4MAdmin
                     case 3:
                         Prefix = "rd";
                         break;
-                }
-    
+                }    
             }
 
             switch (connection)

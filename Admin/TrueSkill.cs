@@ -1,55 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Moserware.Skills.TrueSkill;
+using IW4MAdmin;
 
-namespace IW4MAdmin
+
+namespace Moserware
 {
     class TrueSkill
     {
-       public static double calculateWinnerMu(Stats originStats, Stats targetStats)
-       {
-            double Beta = originStats.lastMew / 6;
-            double lastSkill = Gaussian(originStats.lastMew, originStats.lastSigma);
-            double c = Math.Sqrt((2 * Beta * Beta)  + (originStats.lastSigma * originStats.lastSigma) + (targetStats.lastSigma * targetStats.lastSigma));
-            double newMew = originStats.lastMew + ((originStats.lastSigma) * (originStats.lastSigma) / c) * ((originStats.lastMew - targetStats.lastMew) / c);
-            return newMew;
-       }
+        public TrueSkill()
+        {
+            calculator = new TwoPlayerTrueSkillCalculator();
+            gInfo = Skills.GameInfo.DefaultGameInfo;
+        }
 
-       public static double calculateLoserMu(Stats originStats, Stats targetStats)
-       {
-           double Beta = originStats.lastMew / 6;
-           double lastSkill = Gaussian(originStats.lastMew, originStats.lastSigma);
-           double c = Math.Sqrt( (2 * Beta * Beta) + (originStats.lastSigma * originStats.lastSigma) + (targetStats.lastSigma * targetStats.lastSigma));
-           double newMew = originStats.lastMew - ((targetStats.lastSigma) * (targetStats.lastSigma) / c) * ((originStats.lastMew - targetStats.lastMew) / c);
-           return newMew;
-       }
+        public void updateNewSkill(Player P1, Player P2)
+        {
+            var player1 = new Skills.Player(P1.getDBID());
+            var player2 = new Skills.Player(P2.getDBID());
 
-       public static double calculateLoserSigma(Stats originStats, Stats targetStats)
-       {
-           double Beta = originStats.lastMew / 6;
-           double lastSkill = Gaussian(originStats.lastMew, originStats.lastSigma);
-           double c = ((2 * Beta * Beta) + originStats.lastSigma * originStats.lastSigma) + (targetStats.lastSigma * targetStats.lastSigma);
-           double newSigma = originStats.lastSigma * ( 1 - (targetStats.lastSigma) * (targetStats.lastSigma) / c) * ((originStats.lastMew - targetStats.lastMew) / c);
-           return newSigma;
-       }
+            var team1 = new Skills.Team(player1, P1.stats.Rating);
+            var team2 = new Skills.Team(player2, P2.stats.Rating);
 
-       public static double calculateWinnerSigma(Stats originStats, Stats targetStats)
-       {
-           double Beta = originStats.lastMew / 6;
-           double lastSkill = Gaussian(originStats.lastMew, originStats.lastSigma);
-           double c = ((2 * Beta * Beta)  + originStats.lastSigma * originStats.lastSigma) + (targetStats.lastSigma * targetStats.lastSigma);
-           double newSigma = originStats.lastSigma * (1 - (originStats.lastSigma) * (originStats.lastSigma) / c) * ((originStats.lastMew - targetStats.lastMew) / c);
-           return newSigma;
-       }
+            var newRatings = calculator.CalculateNewRatings(gInfo, Skills.Teams.Concat(team1, team2), 1, 2);
 
+            P1.stats.Rating = newRatings[player1];
+            P2.stats.Rating = newRatings[player2];
 
-
-       //https://gist.github.com/tansey/1444070
-       public static double Gaussian( double mean, double stddev)
-       {
-
-           double y1 = Math.Sqrt(-2.0 * Math.Log(.5)) * Math.Cos(2.0 * Math.PI * .5);
-           return y1 * stddev + mean;
-       } 
+            P1.stats.Skill = Math.Round(P1.stats.Rating.ConservativeRating, 3)*10;
+            P2.stats.Skill = Math.Round(P2.stats.Rating.ConservativeRating, 3)*10;
+        }
+    
+        private Skills.SkillCalculator calculator;
+        public Skills.GameInfo gInfo;
     }
 }

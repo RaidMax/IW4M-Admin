@@ -10,8 +10,9 @@ namespace IW4MAdmin
         static String IP;
         static int Port;
         static String RCON;
-        static public double Version = 0.6;
+        static public double Version = 0.7;
         static public double latestVersion;
+        static public List<Server> Servers;
 
         static void Main(string[] args)
         {
@@ -24,9 +25,9 @@ namespace IW4MAdmin
             else
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
-  
 
-            foreach (Server IW4M in checkConfig())
+            Servers = checkConfig();
+            foreach (Server IW4M in Servers)
             {   
                 //Threading seems best here
                 Server SV = IW4M;
@@ -35,6 +36,9 @@ namespace IW4MAdmin
                 Utilities.Wait(0.2); // give rcon a chance to respond
                 Console.WriteLine("Now monitoring " + SV.getName());
             }
+
+            IW4MAdmin_Web.WebFront test = new IW4MAdmin_Web.WebFront();
+            test.Init();
 
             Utilities.Wait(5); //Give them time to read an error before exiting
  

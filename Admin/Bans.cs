@@ -37,7 +37,12 @@ namespace IW4MAdmin
 
         public String getWhen()
         {
-            return When.ToString("yyyy-MM-dd HH:mm:ss"); ;
+            return When.ToString("MM/dd/yy HH:mm:ss"); ;
+        }
+
+        public DateTime getTime()
+        {
+            return When;
         }
        
         private String Reason;

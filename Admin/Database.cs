@@ -79,11 +79,17 @@ namespace IW4MAdmin
         protected int ExecuteNonQuery(String Request)
         {
             waitForClose();
-            Con.Open();
-            SQLiteCommand CMD = new SQLiteCommand(Con);
-            CMD.CommandText = Request;
-            int rowsUpdated = CMD.ExecuteNonQuery();
-            Con.Close();
+            int rowsUpdated = 0;
+
+            lock (Con)
+            {
+                Con.Open();
+                SQLiteCommand CMD = new SQLiteCommand(Con);
+                CMD.CommandText = Request;
+                rowsUpdated = CMD.ExecuteNonQuery();
+                Con.Close();
+            }
+
             return rowsUpdated;
         }
 
@@ -93,13 +99,17 @@ namespace IW4MAdmin
             try
             {
                 waitForClose();
-                Con.Open();
-                SQLiteCommand mycommand = new SQLiteCommand(Con);
-                mycommand.CommandText = sql;
-                SQLiteDataReader reader = mycommand.ExecuteReader();
-                dt.Load(reader);
-                reader.Close();
-                Con.Close();
+                lock (Con)
+                {
+                    Con.Open();
+                    SQLiteCommand mycommand = new SQLiteCommand(Con);
+                    mycommand.CommandText = sql;
+                    SQLiteDataReader reader = mycommand.ExecuteReader();
+                    dt.Load(reader);
+                    reader.Close();
+                    Con.Close();
+                }
+
             }
             catch (Exception e)
             {
@@ -134,7 +144,7 @@ namespace IW4MAdmin
         {
             if(!File.Exists(FileName))
             {
-                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL);";
+                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL);";
                 ExecuteNonQuery(Create);
                 Create = "CREATE TABLE [BANS] ( [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
                 ExecuteNonQuery(Create);
@@ -150,12 +160,18 @@ namespace IW4MAdmin
             if (Result != null && Result.Rows.Count > 0)
             {
                 DataRow ResponseRow = Result.Rows[0];
-
-
-               // if (ResponseRow["IP"].ToString().Length < 2)
-                //    ResponseRow["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
+                DateTime LC;
                 
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString());
+                try
+                {
+                    LC = DateTime.Parse(ResponseRow["LastConnection"].ToString());
+                }
+                catch (Exception)
+                {
+                    LC = DateTime.Now;
+                }
+ 
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), LC);
             }
 
             else
@@ -171,11 +187,17 @@ namespace IW4MAdmin
             if (Result != null && Result.Rows.Count > 0)
             { 
                 DataRow p = Result.Rows[0];
+                DateTime LC;
+                try
+                {
+                    LC = DateTime.Parse(p["LastConnection"].ToString());
+                }
+                catch (Exception)
+                {
+                    LC = DateTime.Now;
+                }
 
-               // if (p["IP"].ToString().Length < 2)
-                 //   p["IP"] = DateTime.Now.ToString(); // because aliases and backwards compatibility
-
-                return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString());
+                return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC);
             }
 
             else
@@ -194,7 +216,17 @@ namespace IW4MAdmin
             {
                 foreach (DataRow p in Result.Rows)
                 {
-                    Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString()));
+                    DateTime LC;
+                    try
+                    {
+                        LC = DateTime.Parse(p["LastConnection"].ToString());
+                    }
+                    catch (Exception)
+                    {
+                        LC = DateTime.Now;
+                    }
+
+                    Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC));
                 }
                 return Players;
             }
@@ -206,7 +238,7 @@ namespace IW4MAdmin
         //Returns any player with level 4 permissions, null if no owner found
         public Player getOwner()
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level = '{0}'", 4);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level >= '{0}'", 4);
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
@@ -225,14 +257,12 @@ namespace IW4MAdmin
         public List<Ban> getBans()
         {
             List<Ban> Bans = new List<Ban>();
-            DataTable Result = GetDataTable("SELECT * FROM BANS");
+            DataTable Result = GetDataTable("SELECT * FROM BANS ORDER BY TIME DESC");
 
             foreach (DataRow Row in Result.Rows)
             {
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
-               // if (Row["IP"].ToString().Length < 2)
-                //    Row["IP"] = DateTime.Now.ToString(); //because we don't have old ip's and don't want a messy alias
 
                 Bans.Add(new Ban(Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
             }
@@ -261,6 +291,7 @@ namespace IW4MAdmin
             newPlayer.Add("LastOffense", "");
             newPlayer.Add("Connections", 1);
             newPlayer.Add("IP", P.getIP());
+            newPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
 
             Insert("CLIENTS", newPlayer);
         }
@@ -276,6 +307,7 @@ namespace IW4MAdmin
             updatedPlayer.Add("LastOffense", P.getLastO());
             updatedPlayer.Add("Connections", P.getConnections());
             updatedPlayer.Add("IP", P.getIP());
+            updatedPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
 
             Update("CLIENTS", updatedPlayer, String.Format("npID = '{0}'", P.getID()));
         }
@@ -314,7 +346,7 @@ namespace IW4MAdmin
         {
             if (!File.Exists(FileName))
             {
-                String Create = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0 );"; 
+                String Create = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0 );"; 
                 ExecuteNonQuery(Create);
             }
         }
@@ -328,11 +360,18 @@ namespace IW4MAdmin
             if (Result != null && Result.Rows.Count > 0)
             {
                 DataRow ResponseRow = Result.Rows[0];
-                return new Stats(Convert.ToInt32(ResponseRow["KILLS"]), Convert.ToInt32(ResponseRow["DEATHS"]), Convert.ToDouble(ResponseRow["KDR"]), Convert.ToDouble(ResponseRow["SKILL"]));
+                if (ResponseRow["MEAN"] == DBNull.Value)
+                    ResponseRow["MEAN"] = 25;
+                if (ResponseRow["DEV"] == DBNull.Value)
+                    ResponseRow["DEV"] = 8;
+                if (ResponseRow["SKILL"] == DBNull.Value)
+                    ResponseRow["SKILL"] = 0;
+
+                return new Stats(Convert.ToInt32(ResponseRow["Number"]), Convert.ToInt32(ResponseRow["KILLS"]), Convert.ToInt32(ResponseRow["DEATHS"]), Convert.ToDouble(ResponseRow["KDR"]), Convert.ToDouble(ResponseRow["SKILL"]), Convert.ToDouble(ResponseRow["MEAN"]), Convert.ToDouble(ResponseRow["DEV"]));
             }
 
             else
-                return null;
+                return new Stats(0, 0, 0, 0, 0, 25, 8.3333);
         }
 
         public void addPlayer(Player P)
@@ -343,7 +382,9 @@ namespace IW4MAdmin
             newPlayer.Add("KILLS", 0);
             newPlayer.Add("DEATHS", 0);
             newPlayer.Add("KDR", 0);
-            newPlayer.Add("SKILL", 1);
+            newPlayer.Add("SKILL", Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.ConservativeRating);
+            newPlayer.Add("MEAN", Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean);
+            newPlayer.Add("DEV", Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation);
 
             Insert("STATS", newPlayer);
         }
@@ -357,6 +398,8 @@ namespace IW4MAdmin
             updatedPlayer.Add("DEATHS", P.stats.Deaths);
             updatedPlayer.Add("KDR", Math.Round(P.stats.KDR, 2));
             updatedPlayer.Add("SKILL", P.stats.Skill);
+            updatedPlayer.Add("MEAN", P.stats.Rating.Mean);
+            updatedPlayer.Add("DEV", P.stats.Rating.StandardDeviation);
 
             Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.getDBID()));
         }
@@ -364,7 +407,7 @@ namespace IW4MAdmin
         //Returns top 8 players (we filter through them later)
         public List<Stats> topStats()
         {
-            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 8", 10);
+            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 5", 230);
             DataTable Result = GetDataTable(Query);
 
             List<Stats> Top = new List<Stats>();
@@ -373,13 +416,57 @@ namespace IW4MAdmin
             {
                 foreach (DataRow D in Result.Rows)
                 {
-                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]));
-                    if (S.Skill > 10)
+                    if (D["MEAN"] == DBNull.Value)
+                        continue;
+                    if (D["DEV"] == DBNull.Value)
+                        continue;
+
+                    if (D["SKILL"] == DBNull.Value)
+                        D["SKILL"] = 0;
+
+                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));
+                    if (S.Skill > 230)
                         Top.Add(S);
                 }
             }
 
             return Top;
+        }
+
+        public List<Stats> getMultipleStats(int start, int length)
+        {
+            String Query = String.Format("SELECT * FROM STATS ORDER BY SKILL DESC LIMIT '{0}' OFFSET '{1}'", length, start);
+            DataTable Result = GetDataTable(Query);
+
+            List<Stats> Stats = new List<Stats>();
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow D in Result.Rows)
+                {
+                    if (D["MEAN"] == DBNull.Value)
+                        continue;
+                    if (D["DEV"] == DBNull.Value)
+                        continue;
+
+                    if (D["SKILL"] == DBNull.Value)
+                        D["SKILL"] = 0;
+
+                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));
+                    Stats.Add(S);
+                }
+            }
+
+            return Stats;
+        }
+
+        public int totalStats()
+        {
+            DataTable Result = GetDataTable("SELECT * from STATS ORDER BY Number DESC LIMIT 1");
+            if (Result.Rows.Count > 0)
+                return Convert.ToInt32(Result.Rows[0]["Number"]);
+            else
+                return 0;
         }
 
         public void clearSkill()
@@ -421,6 +508,21 @@ namespace IW4MAdmin
 
             else
                 return null;
+        }
+
+        public List<Aliases> getPlayer(String IP)
+        {
+            String Query = String.Format("SELECT * FROM ALIASES WHERE IPS LIKE '%{0}%'", IP);
+            DataTable Result = GetDataTable(Query);
+            List<Aliases> players = new List<Aliases>();
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow p in Result.Rows)
+                 players.Add(new Aliases(Convert.ToInt32(p["Number"]), p["NAMES"].ToString(), p["IPS"].ToString()));
+            }
+
+            return players;
         }
 
         public void addPlayer(Aliases Alias)

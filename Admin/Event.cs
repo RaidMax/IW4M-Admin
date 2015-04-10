@@ -66,24 +66,19 @@ namespace IW4MAdmin
                 eventType = eventType.Trim();
 
                 if (eventType == "J")
-                    return new Event(GType.Connect, null, SV.clientFromLine(line, 3, true), null, SV);
+                    return new Event(GType.Connect, null, SV.clientFromEventLine(line, 2), null, SV);
 
                 if (eventType == "Q")
-                    return new Event(GType.Disconnect, null, SV.getPlayers()[Convert.ToInt16(line[2])], null, null);
+                    return new Event(GType.Disconnect, null, SV.clientFromEventLine(line, 2), null, SV);
 
                 if (eventType == "K")
-                    return new Event(GType.Kill, line[9], SV.clientFromLineArr(line, true), SV.clientFromLineArr(line, false), null);
+                        return new Event(GType.Kill, line[9], SV.clientFromEventLine(line, 6), SV.clientFromEventLine(line, 2), SV);
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
                 {
-                    if (line.Length < 4)
-                    {
-                        Console.WriteLine("SAY FUCKED UP BIG-TIME");
-                        return null;
-                    }
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
                     string message = rgx.Replace(line[4], "");
-                    return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromLine(line, 3, false), null, null);
+                    return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromEventLine(line, 2), null, SV);
                 }
 
                 if (eventType == ":")

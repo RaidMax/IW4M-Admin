@@ -6,34 +6,33 @@ namespace IW4MAdmin
 {
     class Stats
     {
-        public Stats(int K, int D, double kdr, double   skill)
+        public Stats(int n, int K, int D, double kdr, double skill, double mean, double dev)
         {
+            statIndex = n;
             Kills = K;
             Deaths = D;
             KDR = Math.Round(kdr,2);
-            Skill = Math.Round(skill,2);
 
-            lastSigma = lastMew/3;
-            lastMew = 25;
+            Rating = new Moserware.Skills.Rating(mean, dev);
+            Skill = Math.Round(Rating.ConservativeRating, 3)*10;
+
         }
 
         public void updateKDR()
         {
-            KDR = Math.Round((double)((double)Kills / (double)Deaths), 2);
-        }
+            int tempDeaths = Deaths; // cuz we don't want undefined!
+            if (Deaths == 0)
+                tempDeaths = 1;
 
-        public void updateSkill()
-        {
-            Skill = TrueSkill.Gaussian(lastMew, lastSigma);
+            KDR = Math.Round((double)((double)Kills / (double)tempDeaths), 2);
         }
 
         public int Kills;
         public int Deaths;
         public double KDR;
         public double Skill;
-
-        public double lastSigma;
-        public double lastMew;
+        public int statIndex;
+        public Moserware.Skills.Rating Rating;
     }
 
     class Aliases
@@ -73,7 +72,7 @@ namespace IW4MAdmin
         public void addName(String Name)
         {
             if (Name.Trim() != String.Empty && Name != null)
-                Names +=  ';' + Names;
+                Names +=  ';' + Name;
         }
 
         public void addIP(String IP)
@@ -112,7 +111,18 @@ namespace IW4MAdmin
             IP = "";
             Warnings = 0;
             Alias = new Aliases(0, "", "");
-            stats = new Stats(0, 0, 0, 1);
+            stats = new Stats(0, 0, 0, 0, Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.ConservativeRating, Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean, Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation);
+            LastConnection = DateTime.Now;
+            
+        }
+
+        public Player(string n, string id, int num, String I)
+        {
+            Name = n;
+            npID = id;
+            Number = num;
+            IP = I;
+            LastConnection = DateTime.Now;
         }
 
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)
@@ -129,6 +139,26 @@ namespace IW4MAdmin
             Connections = con;
             IP = IP2;
             Warnings = 0;
+            Masked = false;
+            LastConnection = DateTime.Now;
+        }
+
+        public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2, DateTime LC)
+        {
+            Name = n;
+            npID = id;
+            Number = num;
+            Level = l;
+            dbID = cind;
+            if (lo == null)
+                LastOffense = String.Empty;
+            else
+                LastOffense = lo;
+            Connections = con;
+            IP = IP2;
+            Warnings = 0;
+            Masked = false;
+            LastConnection = LC;
         }
 
         public String getName()
@@ -171,9 +201,24 @@ namespace IW4MAdmin
             return IP;
         }
 
+        public String getLastConnection()
+        {
+            TimeSpan Elapsed = DateTime.Now - LastConnection;
+
+            if (Elapsed.Minutes < 60)
+                return Elapsed.Minutes + " minutes";
+            if (Elapsed.Hours <= 24)
+                return Elapsed.Hours + " hours";
+            if (Elapsed.Days <= 365)
+                return Elapsed.Days + " days";
+            else
+                return "a very long time";
+        }
+
         public void updateName(String n)
         {
-            Name = n;
+            if (n.Trim() != String.Empty)
+                Name = n;
         }
 
         public void updateIP(String I)
@@ -209,7 +254,12 @@ namespace IW4MAdmin
 
         public void Ban(String Message, Player Sender)
         {
-            lastEvent.Owner.Ban(Message, this, Sender);
+                lastEvent.Owner.Ban(Message, this, Sender);          
+        }
+
+        public void Alert()
+        {
+            lastEvent.Owner.Alert(this);
         }
 
         //should be moved to utils
@@ -233,11 +283,13 @@ namespace IW4MAdmin
         private int dbID;
         public int Connections;
         private String IP;
+        private DateTime LastConnection;
 
         public Event lastEvent;
         public String LastOffense;
         public int Warnings;
         public Stats stats;
         public Aliases Alias;
+        public bool Masked;
     }
 }

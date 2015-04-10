@@ -112,9 +112,15 @@ namespace IW4MAdmin
                 return encoding.GetString(buffer);
             }
         }
+
         public String[] readAll()
         {
             return Handle.ReadToEnd().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        public String getLines()
+        {
+            return Handle.ReadToEnd();
         }
 
         public String[] end(int neededLines)

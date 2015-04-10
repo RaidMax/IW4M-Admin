@@ -1,4 +1,21 @@
-﻿VERSION: 0.7
+﻿VERSION: 0.8
 CHANGELOG:
--rcon tweaks
--so much stuff cant remember
+-added mask command
+-added baninfo command
+-added alias command and removed redundant output from `find`
+-added rcon command
+-added webfront (http://127.0.0.1:1624)
+-true skill is officially implemented
+-find now shows last connect time
+-noise on pm (if gsc_enabled)
+-force 8 line chat height (if gsc_enabled)
+-tell admins the number of reports on join
+-enhanced ban tracking
+-ip wait timeout added
+-remove report on ban
+-can't report yourself
+-remove reported players when banned
+-fixed rare crash with toadmins backend
+-fixed crash when finding player stats that don't exist
+-fixed a bug that caused owner command to reactivate only `creator` rank player existed
+-fixed a bug that caused certain notifications to be sent to all players

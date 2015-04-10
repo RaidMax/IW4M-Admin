@@ -154,7 +154,6 @@ namespace IW4MAdmin
                 E.Target.tempBan(Message);
             else
                 E.Origin.Tell("You cannot temp ban " + E.Target.getName());
-
         }
 
     }
@@ -171,7 +170,7 @@ namespace IW4MAdmin
             if (E.Owner.Website == null)
                 Message = "^1Player Banned: ^5" + E.Target.LastOffense;
             else
-                Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at " + E.Owner.Website + ")";
+                Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
             if (E.Origin.getLevel() > E.Target.getLevel())
             {
                 E.Target.Ban(Message, E.Origin);
@@ -203,7 +202,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            String You = String.Format("{0} [^3{1}^7] {{2}} {{3}} [{4}^7] IP: {5}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), Utilities.levelToColor(E.Origin.getLevel()), E.Origin.getDBID(), E.Origin.getIP());
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), E.Origin.getDBID(), Utilities.levelToColor(E.Origin.getLevel()), E.Origin.getIP());
             E.Origin.Tell(You);
         }
 
@@ -260,7 +259,7 @@ namespace IW4MAdmin
                     if (E.Origin.getLevel() >= C.getNeededPerm())
                     {
                         _commands = _commands + " [^3" + C.getName() + "^7] ";
-                        if (count >= 3)
+                        if (count >= 4)
                         {
                             E.Origin.Tell(_commands);
                             _commands = String.Empty;
@@ -359,7 +358,7 @@ namespace IW4MAdmin
         {
             foreach (Player P in E.Owner.getPlayers())
             {
-                if (P != null && P.getLevel() > Player.Permission.User)
+                if (P != null && P.getLevel() > Player.Permission.User && !P.Masked)
                 {
                     E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.getLevel()), P.getName()));
                 }
@@ -421,46 +420,10 @@ namespace IW4MAdmin
 
             foreach (Player P in db_players)
             { 
-                String mesg;
-                P.Alias = E.Owner.aliasDB.getPlayer(P.getDBID());
-
-                if (P.getLevel() == Player.Permission.Banned)
-                   mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7] - {4}", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()), P.getLastO());
-                else
-                   mesg = String.Format("[^3{0}^7] [^3@{1}^7] - {2} [{3}^7]", P.getName(), P.getDBID(), P.getID(), Utilities.levelToColor(P.getLevel()));
-
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.getName(), P.getDBID(), Utilities.levelToColor(P.getLevel()), P.getIP(), P.getLastConnection());
                 E.Origin.Tell(mesg);
-
-                if (P.Alias == null)
-                    continue;
-
-                if (P.Alias.getNames() != null)
-                {
-                    mesg = "Aliases: ";
-                    foreach (String S in P.Alias.getNames())
-                    {
-                        if (S != String.Empty)
-                            mesg += S + "  | ";
-                    }
-                    E.Origin.Tell(mesg);
-                }
-
-                if (P.Alias.getIPS() != null)
-                {
-                    mesg = "IPs: ";             
-                    foreach (String IP in P.Alias.getIPS())
-                    {
-                        if (IP.Split('.').Length > 3 && IP != String.Empty)
-                            mesg += IP + "  | ";
-                    }
-
-                    E.Origin.Tell(mesg);
-
-                }
             }
-
         }
-
     }
 
     class Rules : Command
@@ -477,7 +440,6 @@ namespace IW4MAdmin
                     E.Origin.Tell("- " + r);
             }
         }
-
     }
 
     class PrivateMessage : Command
@@ -487,6 +449,7 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             E.Data = Utilities.removeWords(E.Data, 1);
+            E.Target.Alert();
             E.Target.Tell("^1" + E.Origin.getName() + " ^3[PM]^7 - " + E.Data);
             E.Origin.Tell(String.Format("To ^3{0} ^7-> {1}", E.Target.getName(), E.Data));
         }
@@ -499,12 +462,20 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             if (E.Target == null)
-                E.Origin.Tell(String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Origin.stats.Kills, E.Origin.stats.Deaths, E.Origin.stats.KDR, E.Origin.stats.Skill));
-            else
             {
                 if (E.Target.stats == null)
-                    E.Target.stats = E.Owner.statDB.getStats(E.Target.getDBID());
-                E.Origin.Tell(String.Format("[^3{4}^7] ^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Target.stats.Kills, E.Target.stats.Deaths, E.Target.stats.KDR, E.Target.stats.Skill, E.Target.getName()));
+                    E.Origin.Tell("You do not have any stats!");
+                else
+                    E.Origin.Tell(String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Origin.stats.Kills, E.Origin.stats.Deaths, E.Origin.stats.KDR, E.Origin.stats.Skill));
+            }
+
+            else
+            {
+                E.Target.stats = E.Owner.statDB.getStats(E.Target.getDBID());
+                if (E.Target.stats == null)
+                    E.Origin.Tell("That person does not have any stats at this time!");
+                else
+                    E.Origin.Tell(String.Format("[^3{4}^7] ^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Target.stats.Kills, E.Target.stats.Deaths, E.Target.stats.KDR, E.Target.stats.Skill, E.Target.getName()));
             }
         }
     }
@@ -527,6 +498,7 @@ namespace IW4MAdmin
                     TopP.Add(P);
                 }
             }
+
             if (TopP.Count > 0)
             {
                 E.Origin.Tell("^1TOP PLAYERS");
@@ -536,6 +508,7 @@ namespace IW4MAdmin
                         E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.getName(), P.stats.KDR, P.stats.Skill));
                 }
             }
+
             else
                 E.Origin.Tell("There are no top players yet!");
         }
@@ -608,6 +581,12 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
+            if (E.Target == E.Origin)
+            {
+                E.Origin.Tell("You cannot report yourself, silly.");
+                return;
+            }
+
             if (E.Target.getLevel() > E.Origin.getLevel())
             {
                 E.Origin.Tell("You cannot report " + E.Target.getName());
@@ -653,6 +632,122 @@ namespace IW4MAdmin
         {
             E.Data = Utilities.removeWords(E.Data, 1);
             E.Owner.RCON.addRCON(String.Format("admin_lastevent tell;{0};{1};{2}", E.Origin.getID(), E.Target.getID(), E.Data));
+        }
+    }
+
+    class Mask : Command
+    {
+        public Mask(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            if (E.Origin.Masked)
+            {
+                E.Origin.Masked = false;
+                E.Origin.Tell("You are now unmasked");
+            }
+            else
+            {
+                E.Origin.Masked = true;
+                E.Origin.Tell("You are now masked");
+            }
+        }
+    }
+
+    class BanInfo : Command
+    {
+        public BanInfo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            if (E.Target == null)
+            {
+                E.Origin.Tell("No bans for that player.");
+                return;
+            }
+
+            Ban B = E.Owner.Bans.Find(b => b.getID().Equals(E.Target.getID()));
+            
+            if (B == null)
+            {
+                E.Origin.Tell("No active ban was found for that player.");
+                return;
+            }
+
+            Player Banner = E.Owner.clientDB.getPlayer(B.getBanner(), -1);
+
+            if (Banner == null)
+            {
+                E.Origin.Tell("Ban was found for the player, but origin of the ban is unavailable.");
+                return;
+            }
+
+            E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2}", E.Target.getName(), Banner.getName(), B.getReason()));
+        }
+    }
+
+    class Alias : Command
+    {
+        public Alias(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            E.Target.Alias = E.Owner.aliasDB.getPlayer(E.Target.getDBID());
+
+            if (E.Target.Alias == null)
+            {
+                E.Target.Tell("Could not find alias info for that player.");
+                return;
+            }
+
+            E.Target.Tell("[^3" + E.Target.getName() + "^7]");
+            StringBuilder message = new StringBuilder();
+
+            List<Player> playerAliases = new List<Player>(); 
+            E.Owner.getAliases(playerAliases, E.Target);
+               
+           // if (E.Target.Alias.getNames() != null)
+            {
+                message.Append("Aliases: ");
+
+                foreach (Player P in playerAliases)
+                {
+                    foreach (String S in P.Alias.getNames())
+                    {
+                        if (S != String.Empty && S != E.Target.getName())
+                            message.Append(S + "  | ");
+                    }
+                }
+                E.Origin.Tell(message.ToString());
+            }
+
+            if (E.Target.Alias.getIPS() != null)
+            {
+                message.Append("IPS: ");
+
+                foreach (Player P2 in playerAliases)
+                {
+                    foreach (String IP in P2.Alias.getIPS())
+                    {
+                        if (IP.Split('.').Length > 3 && IP != String.Empty && !message.ToString().Contains(IP))
+                            message.Append (IP + "  | ");
+                    }
+                }
+
+                E.Origin.Tell(message.ToString());
+            }
+        }
+    }
+
+    class _RCON : Command
+    {
+        public _RCON(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            String[] Response = E.Owner.RCON.addRCON(E.Data.Trim());
+            if (Response.Length > 0)
+                E.Origin.Tell("Successfuly sent RCON command!");
         }
     }
 }

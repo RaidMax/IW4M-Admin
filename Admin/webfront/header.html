@@ -1,0 +1,277 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>{{TITLE}}</title>
+    <style>
+        * {
+            font-family: 'Robot', sans-serif;
+            margin: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #171717;
+        }
+
+        #container {
+            width: 1100px;
+            background-color: #fff;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .h0 {
+            font-size: 40pt;
+            text-align: center;
+            margin-bottom: 0px;
+            float: right;
+            line-height: 100px;
+        }
+
+        h1 {
+            margin-top: 20px;
+            clear: both;
+        }
+
+        #header_img {
+            width: 100px;
+            height: 96px;
+            float: right;
+            background-image: url("http://23.251.150.125:8000/static/images/logo.png");
+            background-size: 100px 96px;
+            background-repeat: no-repeat;
+        }
+
+        #logo_shit
+        {
+            width: 100px;
+            height: 96px;
+            float: left;
+            background-image: url("http://23.251.150.125:8000/static/images/logo.png");
+            background-size: 100px 96px;
+            background-repeat: no-repeat;
+        }
+
+        p {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        ul {
+            padding: 0;
+            margin: 0;
+            display: table;
+            width: 100%;
+        }
+
+        ul.tablehead li {
+                display: table-cell;
+                list-style-type: none;
+                font-size: 18pt;
+                margin: 0;
+                padding-top: 10px;
+                padding-bottom: 10px;
+         }
+
+        ul.row li {
+                overflow: hidden;
+                display: table-cell;
+                list-style-type: none;
+                font-size: 12pt;
+        }
+
+        li {
+        }
+
+        td{
+            padding: 8px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        tr.row-white {
+            background-color: #fff;
+        }
+
+        tr.row-grey {
+            background-color: #eee;
+        }
+
+        th
+        {
+            font-size: 16pt;
+        }
+
+        li.row-green {
+            background-color: rgba(121, 194, 97, .3);
+            padding: 10px 0px 10px 0px;
+            width: 70px;
+            text-align: center;
+        }
+
+        li.row-red {
+            background-color: rgba(196, 22, 28, .3);
+            padding: 10px 0px 10px 0px;
+            width: 70px;
+            text-align: center;
+        }
+
+        input[type="submit"] {
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14pt;
+            width: 250px;
+            height: 40px;
+            background-color: rgb(121, 194, 97);
+        }
+
+        input[type="submit"]:hover {
+                background-color: #fff;
+                color: #171717;
+                border: 1px solid #171717;
+            }
+
+        .question_title {
+            color: #171717;
+            font-size: 16pt;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .question_answer {
+            background-color: rgb(121, 194, 97);
+            color: #fff;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .question_answer a:hover {
+                color: cyan;
+            }
+
+        ol, ol li {
+            margin-left: 0;
+            padding-left: 30px;
+        }
+
+        a:link, a:visited {
+            text-decoration: none;
+            color: rgb(38,120,230);
+        }
+
+        a:hover {
+                color: #171717;
+            }
+
+        .BigList {
+            font-size: 12pt;
+            opacity: 0.5;
+        }
+
+        .separator {
+            position: absolute;
+            width: 3px;
+            height: 40px;
+            background-color: #ccc;
+            left: 25%;
+            right: 75%;
+        }
+
+        .asterik {
+            font-size: 11pt;
+            color: #171717;
+            font-style: italic;
+        }
+
+        #commands {
+            margin: 0 auto;
+        }
+
+        .block {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        hr {
+            background-color: rgb(38,120,230);
+            border: none;
+            width: 100%;
+            height: 5px;
+            margin-bottom: 5px;
+            margin-top: 5px;
+        }
+
+        .server {
+            width: 100%;
+            text-align: left;
+        }
+
+        .server_title {
+            font-size: 24pt;
+            margin-bottom: 20px;
+            min-width: 550px;
+        }
+
+        .server_info {
+            font-size: 14pt;
+        }
+
+        .server_map {
+            min-width: 140px;
+        }
+
+        .server_players {
+            min-width: 50px;
+        }
+
+        .server_gametype {
+            min-width: 175px;
+        }
+
+        .players {
+            width: 60%;
+            text-align: left;
+        }
+
+        .bans {
+            text-align: left;
+            width: 100%;
+        }
+
+        .bans th
+        {
+            font-size: 20pt;
+        }
+
+        #pages{
+            font-size: 14pt;
+            text-align:center; 
+        }
+
+        #pages a {
+            margin: 10px;
+        }
+
+        #pagination{
+        }
+
+        #footer{
+            background-color: #fff;
+            padding-top: 5px;
+            padding-bottom: 10px;
+            text-align: center;
+            width: 1160px;
+            margin: 0 auto;
+            border-radius: 0px 0px 11px 11px;
+        }
+
+        .players tbody tr td
+        {
+            padding: 1px;
+        }
+    </style>
+</head>

@@ -725,9 +725,11 @@ namespace IW4MAdmin
                 E.Origin.Tell(message.ToString());
             }
 
+            message = new StringBuilder();
+
             if (E.Target.Alias.getIPS() != null)
             {
-                message.Append("IPS: ");
+                message.Append("IPs: ");
 
                 foreach (Player P2 in playerAliases)
                 {

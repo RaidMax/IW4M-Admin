@@ -120,7 +120,7 @@ namespace IW4MAdmin_Web
                     List<IW4MAdmin.Ban> Bans = new List<IW4MAdmin.Ban>();
 
                     if (totalBans > 0)
-                        Bans = IW4MAdmin.Program.Servers[0].Bans.GetRange(start, range);
+                        Bans = IW4MAdmin.Program.Servers[0].Bans.GetRange(start, range).OrderByDescending(x => x.getTime()).ToList();
                     else
                         Bans.Add(new IW4MAdmin.Ban("No Bans", "0", "0", DateTime.Now, ""));
 
@@ -180,7 +180,7 @@ namespace IW4MAdmin_Web
                         range = (totalStats - start);
                     else
                         range = 30;
-                    List<IW4MAdmin.Stats> Stats = IW4MAdmin.Program.Servers[server].statDB.getMultipleStats(start, range);
+                    List<IW4MAdmin.Stats> Stats = IW4MAdmin.Program.Servers[server].statDB.getMultipleStats(start, range).OrderByDescending(x => x.Skill).ToList();
                     buffer.Append("<tr><th style=text-align:left;>Name</th><th style=text-align:left;>Kills</th><th style=text-align:left;>Deaths</th><th style=text-align:left;>KDR</th><th style='width: 175px; text-align:right;'>Rating</th></tr>");
                     cycleFix = 0;
                     for (int i = 0; i < totalStats; i++)

@@ -12,7 +12,7 @@ namespace IW4MAdmin
         static String RCON;
         static public double Version = 0.8;
         static public double latestVersion;
-        static public List<Server> Servers;
+        static public List<Server> Servers;//
 
         static void Main(string[] args)
         {

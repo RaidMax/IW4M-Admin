@@ -149,17 +149,48 @@ namespace IW4MAdmin
             switch (P.getLevel())
             {
                 case Player.Permission.User:
-                    return "<span style='color:rgb(121, 194, 97)'>" + P.getName() + "</span>";
+                    return "<span style='color:rgb(87, 150, 66)'>" + P.getName() + "</span>";
                 case Player.Permission.Moderator:
                     return "<span style='color:#e7b402'>" + P.getName() + "</span>";
                 case Player.Permission.Administrator:
                     return "<span style='color:#ec82de'>" + P.getName() + "</span>";
                 case Player.Permission.SeniorAdmin:
                     return "<span style='color:#2eb6bf'>" + P.getName() + "</span>";
-                case Player.Permission.Owner | Player.Permission.Creator:
+                case Player.Permission.Owner:
                     return "<span style='color:rgb(38,120,230)'>" + P.getName() + "</span>";
+                case Player.Permission.Creator:
+                    return "<span style='color:rgb(38,120,230)'>" + P.getName() + "</span>";
+                case Player.Permission.Banned:
+                    return "<span style='color:rgb(196, 22, 28)'>" + P.getName() + "</span>";
+                case Player.Permission.Flagged:
+                    return "<span style='color:rgb(251, 124, 98)'>" + P.getName() + "</span>";
                 default:
                     return "<i>" + P.getName() + "</i>";
+            }
+        }
+
+        public static String nameHTMLFormatted(Player.Permission Level)
+        {
+            switch (Level)
+            {
+                case Player.Permission.User:
+                    return "<span style='color:rgb(87, 150, 66)'>" + Level + "</span>";
+                case Player.Permission.Moderator:
+                    return "<span style='color:#e7b402'>" + Level + "</span>";
+                case Player.Permission.Administrator:
+                    return "<span style='color:#ec82de'>" + Level + "</span>";
+                case Player.Permission.SeniorAdmin:
+                    return "<span style='color:#2eb6bf'>" + Level + "</span>";
+                case Player.Permission.Owner:
+                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
+                case Player.Permission.Creator:
+                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
+                case Player.Permission.Banned:
+                    return "<span style='color:rgb(196, 22, 28)'>" + Level + "</span>";
+                case Player.Permission.Flagged:
+                    return "<span style='color:rgb(251, 124, 98)'>" + Level + "</span>";
+                default:
+                    return "<i>" + Level + "</i>";
             }
         }
 
@@ -264,12 +295,12 @@ namespace IW4MAdmin
         {
             TimeSpan Elapsed = DateTime.Now - start;
 
-            if (Elapsed.Hours < 1 && Elapsed.Minutes < 60)
-                return Elapsed.Minutes + " minutes";
-            if (Elapsed.Days < 1 && Elapsed.Hours <= 24)
-                return Elapsed.Hours + " hours";
-            if (Elapsed.Days <= 365)
-                return Elapsed.Days + " days";
+            if (Elapsed.TotalMinutes < 120)
+                return Math.Round(Elapsed.TotalMinutes, 0) + " minutes";
+            if (Elapsed.TotalHours <= 24)
+                return Math.Round(Elapsed.TotalHours, 0) + " hours";
+            if (Elapsed.TotalDays <= 365)
+                return Math.Round(Elapsed.TotalDays, 0) + " days";
             else
                 return "a very long time";
         }

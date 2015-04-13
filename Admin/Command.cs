@@ -361,7 +361,7 @@ namespace IW4MAdmin
             {
                 foreach (Player P in E.Owner.getPlayers())
                 {
-                    if (P != null && P.getLevel() > Player.Permission.User && !P.Masked)
+                    if (P != null && P.getLevel() > Player.Permission.Flagged && !P.Masked)
                     {
                         E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.getLevel()), P.getName()));
                     }
@@ -426,6 +426,53 @@ namespace IW4MAdmin
             { 
                 String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.getName(), P.getDBID(), Utilities.levelToColor(P.getLevel()), P.getIP(), P.getLastConnection());
                 E.Origin.Tell(mesg);
+            }
+        }
+    }
+
+    class FindAll : Command
+    {
+        public FindAll(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            E.Data = E.Data.Trim();
+
+            if (E.Data.Length < 4)
+            {
+                E.Origin.Tell("You must enter at least 4 letters");
+                return;
+            }
+
+            //var db_players = E.Owner.clientDB.findPlayers(E.Data.Trim());
+            var db_aliases = E.Owner.aliasDB.findPlayers(E.Data);
+
+            if (db_aliases == null)
+            {
+                E.Origin.Tell("No players found");
+                return;
+            }
+
+            foreach (Aliases P in db_aliases)
+            {
+                if (P == null)
+                    continue;
+
+                String lookingFor = String.Empty;
+
+                foreach(String S in P.getNames())
+                {
+                    if (S.Contains(E.Data))
+                        lookingFor = S;
+                }
+
+                Player Current = E.Owner.clientDB.getPlayer(P.getNumber());
+
+                if (Current != null)
+                {
+                    String mesg = String.Format("^1{0} ^7now goes by ^5{1}^7 [^3{2}^7]", lookingFor, Current.getName(), Current.getDBID());
+                    E.Origin.Tell(mesg);
+                }
             }
         }
     }

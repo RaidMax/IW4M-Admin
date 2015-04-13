@@ -117,7 +117,10 @@ namespace IW4MAdmin
             Aliases currentAliases = aliasDB.getPlayer(Origin.getDBID());
 
             if (currentAliases == null)
+            {
                 Log.Write("No aliases found for " + Origin.getName(), Log.Level.Debug);
+                return;
+            }
 
             foreach (String IP in currentAliases.getIPS())
             {
@@ -303,6 +306,12 @@ namespace IW4MAdmin
         {
             if (cNum >= 0 && cNum < players.Count)
             {
+                if (players[cNum] == null)
+                {
+                    Log.Write("Error - Disconnecting client slot is already empty!", Log.Level.Debug);
+                    return false;
+                }
+
                 Player Leaving = players[cNum];
                 Leaving.Connections++;
                 clientDB.updatePlayer(Leaving);
@@ -319,7 +328,7 @@ namespace IW4MAdmin
 
             else
             {
-                Log.Write("Client disconnecting has an invalid client index!", Log.Level.Debug);
+                Log.Write("Error - Client disconnecting has an invalid client index!", Log.Level.Debug);
                 clientnum = statusPlayers.Count;
                 return false;
             }
@@ -824,7 +833,9 @@ namespace IW4MAdmin
                     logPath = Basepath + '\\' + "m2demo" + '\\' + log;
                 else
                     logPath = Basepath + '\\' + Mod + '\\' + log;
-
+#if DEBUG
+         //       logPath = "C:\\Users\\Michael\\Desktop\\test.txt";
+#endif
                 if (!File.Exists(logPath))
                 {
                     Log.Write("Gamelog does not exist!", Log.Level.All);
@@ -851,7 +862,7 @@ namespace IW4MAdmin
                 String ftpLog = new StreamReader(ftpStream).ReadToEnd();*/
                 //logPath = "games_old.log"; 
 #endif
-                Log.Write("Now monitoring " + this.getName(), Log.Level.Debug);
+                Log.Write("Now monitoring " + this.getName(), Log.Level.All);
                 return true;
             }
             catch (Exception E)
@@ -1093,9 +1104,9 @@ namespace IW4MAdmin
             {
                 if (B.getID() == Target.getID())
                 {
-                    clientDB.removeBan(Target.getID());
+                    clientDB.removeBan(Target.getID(), Target.getIP());
                     Bans.Remove(B);
-                    Player P = clientDB.getPlayer(Target.getID(), 0);
+                    Player P = clientDB.getPlayer(Target.getID(), -1);
                     P.setLevel(Player.Permission.User);
                     clientDB.updatePlayer(P);
                     return true;
@@ -1147,7 +1158,7 @@ namespace IW4MAdmin
                     if (P == null)
                         continue;
 
-                    if (P.getLevel() > Player.Permission.User)
+                    if (P.getLevel() > Player.Permission.Flagged)
                     {
                         P.Alert();
                         P.Tell(message);
@@ -1274,7 +1285,7 @@ namespace IW4MAdmin
             commands.Add(new Uptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
             commands.Add(new Warn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Moderator, 2, true));
             commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Administrator, 1, true));
-            commands.Add(new Unban("unban", "unban player by guid. syntax: !unban <guid>.", "ub", Player.Permission.SeniorAdmin, 1, true));
+            commands.Add(new Unban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
             commands.Add(new Admins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
             commands.Add(new Wisdom("wisdom", "get a random wisdom quote. syntax: !wisdom", "w", Player.Permission.Administrator, 0, false));
             commands.Add(new MapCMD("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
@@ -1294,6 +1305,7 @@ namespace IW4MAdmin
             commands.Add(new BanInfo("baninfo", "get information about a ban for a player. syntax: !baninfo <player>", "bi", Player.Permission.Moderator, 1, true));
             commands.Add(new Alias("alias", "get past aliases and ips of a player. syntax: !alias <player>", "known", Player.Permission.Moderator, 1, true));
             commands.Add(new _RCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
+            commands.Add(new FindAll("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
         }
 
         //Objects

@@ -66,7 +66,7 @@ processEvent(event)
 				Player GoTo(Target);
 			break;
 		case "alert":
-			Player Alert(Data);
+			Player Alert(Data, "New Notification!");
 			break;
 		case "tell":
 			Target Tell(Data, Player);

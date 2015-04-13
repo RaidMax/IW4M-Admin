@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,8 @@ namespace IW4MAdmin_Web
         {
             main,
             stats,
-            bans
+            bans,
+            player
         }
 
         public WebFront()
@@ -66,20 +68,46 @@ namespace IW4MAdmin_Web
             {
                 case "SERVERS":
                     var Servers = IW4MAdmin.Program.Servers;
+                    int cycleFix = 0;
                     for (int i = 0; i < Servers.Count; i++)
                     {
                         StringBuilder players = new StringBuilder();
                         if (Servers[i].getClientNum() < 1)
-                            players.Append("<th>No Players</th>");
+                            players.Append("<h2>No Players</h2>");
                         else
                         {
                             int count = 0;
-                            foreach (IW4MAdmin.Player P in Servers[i].statusPlayers.Values)
+                            double currentPlayers = Servers[i].statusPlayers.Count;
+                            
+                            foreach (IW4MAdmin.Player P in Servers[i].getPlayers())
                             {
-                                if (count > 0 && count % 6 == 0)
-                                    players.Append("</tr><tr>");
-                                players.AppendFormat("<td>{0}</td>", P.getName());
+                                if (P == null)
+                                    continue;
+
+                                if (count % 2 == 0)
+                                {
+                                    switch (cycleFix)
+                                    {
+                                        case 0:
+                                            players.Append("<tr class='row-grey'>");
+                                            cycleFix = 1;
+                                            break;
+                                        case 1:
+                                            players.Append("<tr class='row-white'>");
+                                            cycleFix = 0;
+                                            break;
+                                    }
+                                }
+  
+                                players.AppendFormat("<td><a href='/{0}/{1}/?player'>{2}</a></td>", i, P.getDBID(), IW4MAdmin.Utilities.nameHTMLFormatted(P));
+                                
+                                if (count % 2 != 0)
+                                {
+                                    players.Append("</tr>");
+                                }
+
                                 count++;
+
                             }
                         }
                         buffer.AppendFormat(@"<table cellpadding=0 cellspacing=0 class=server>
@@ -91,12 +119,10 @@ namespace IW4MAdmin_Web
                                                     <th><a href=/{4}/0/?stats>Stats</a></th>
                                                     <th><a href=/{4}/0/?bans>Bans</a></th>
                                                  </tr>
-                                                </table>
-                                              <table class=players>
-                                                 <tr>
-                                                    {5}
-                                                 </tr>
                                              </table>
+                                             <table cellpadding='0' cellspacing='0' class='players'>
+                                                    {5}
+                                            </table>
                                             <hr/>", 
                                              Servers[i].getName(), Servers[i].getMap(), Servers[i].getClientNum() + "/" + Servers[i].getMaxClients(), IW4MAdmin.Utilities.gametypeLocalized(Servers[i].getGametype()), i, players.ToString());
                     }
@@ -108,7 +134,7 @@ namespace IW4MAdmin_Web
                     int totalBans = IW4MAdmin.Program.Servers[0].Bans.Count;
                     int range;
                     int start = Pagination*30 + 1;
-                    int cycleFix = 0;
+                    cycleFix = 0;
 
                     if (totalBans <= 30)
                         range = totalBans - 1;
@@ -156,7 +182,8 @@ namespace IW4MAdmin_Web
                                 Prefix = "class=row-grey";
                             else
                                 Prefix = "class=row-white";
-                            buffer.AppendFormat("<tr {4}><td>{0}</th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.getName(), P.getLastO(), IW4MAdmin.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix);
+                            String Link = "/" + server + "/" + P.getDBID() + "/?player";
+                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.getName(), P.getLastO(), IW4MAdmin.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link);
                             cycleFix++;
                         }
                     }
@@ -203,13 +230,56 @@ namespace IW4MAdmin_Web
                                 Prefix = "class=row-grey";
                             else
                                 Prefix = "class=row-white";
-                            buffer.AppendFormat("<tr {5}><td>{0}</th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{3}</td><td style='width: 175px; text-align:right;'>{4}</td></tr></div>", P.getName(), P.stats.Kills, P.stats.Deaths, P.stats.KDR, P.stats.Skill, Prefix);
+
+                            String Link = "/" + server + "/" + P.getDBID() + "/?player";
+                            buffer.AppendFormat("<tr {5}><td><a href='{6}'>{0}</a></td><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{3}</td><td style='width: 175px; text-align:right;'>{4}</td></tr></div>", P.getName(), P.stats.Kills, P.stats.Deaths, P.stats.KDR, P.stats.Skill, Prefix, Link);
                             cycleFix++;
                         }
                     }
                     buffer.Append("</table><hr/>");
                     buffer.Append(parsePagination(server, totalStats, 30, Pagination, "stats"));
                     return buffer.ToString().Replace("{{TOP}}", (start + 1).ToString());
+                case "PLAYER":
+                    buffer.Append("<table class='player_info'><tr><th>Name</th><th>Aliases</th><th>IP</th><th>Rating</th><th>Level</th><th>Connections</th><th>Last Seen</th><th>Profile</th>");
+                    IW4MAdmin.Player Player = IW4MAdmin.Program.Servers[server].clientDB.getPlayer(Pagination);
+
+                    if (Player == null)
+                        buffer.Append("</table>");
+
+                    else
+                    {
+                        buffer.Append("<tr>");
+                        StringBuilder str = new StringBuilder();
+                        List<IW4MAdmin.Player> aliases = new List<IW4MAdmin.Player>();
+                        IW4MAdmin.Program.Servers[server].getAliases(aliases, Player);
+
+                        foreach (IW4MAdmin.Player a in aliases)
+                            str.AppendFormat("<span>{0}</span><br/>", a.getName());
+
+                        Player.stats = IW4MAdmin.Program.Servers[server].statDB.getStats(Player.getDBID());
+                        String Rating = String.Empty;
+
+                        if (Player.stats == null)
+                            Rating = "Not Available";
+                        else
+                            Rating = Player.stats.Skill.ToString();
+
+                        bool logged = false;
+                        String IP;
+                        if (logged)
+                            IP = Player.getIP();
+                        else
+                            IP = "XXX.XXX.XXX.XXX";
+
+                        Int64 forumID = Int64.Parse(Player.getID(), NumberStyles.AllowHexSpecifier);
+                        forumID = forumID - 76561197960265728;
+
+                        buffer.AppendFormat("<td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.getName(), str, IP, Rating, IW4MAdmin.Utilities.nameHTMLFormatted(Player.getLevel()), Player.getConnections(), Player.getLastConnection(), forumID, Player.getName());
+                        buffer.Append("</tr></table>");
+                    }
+
+                    return buffer.ToString();
+
                 default:
                     return input;
             }
@@ -230,6 +300,9 @@ namespace IW4MAdmin_Web
                 case WebFront.Page.stats:
                     output = output.Replace("{{STATS}}", parseMacros("STATS", page, pageNumber, server));
                     break;
+                case WebFront.Page.player:
+                    output = output.Replace("{{PLAYER}}", parseMacros("PLAYER", page, pageNumber, server));
+                    break;
             }
 
             //output = output.Replace("{{PAGE}}", parseMacros("PAGE", page, pageNumber, server));
@@ -237,6 +310,7 @@ namespace IW4MAdmin_Web
             //output = output.Replace("{{SERVERS}}", parseMacros("SERVERS", 0));
             //output = output.Replace("{{BANS}}", parseMacros("BANS", page));
             output = output.Replace("{{TITLE}}", "IW4M Administration");
+            output = output.Replace("{{VERSION}}", IW4MAdmin.Program.Version.ToString());
             //output = output.Replace("{{PAGE}}", parseMacros("PAGE", page));
             //output = output.Replace("{{STATS}}", parseMacros("STATS", page));
 
@@ -265,7 +339,7 @@ namespace IW4MAdmin_Web
         {
             if (request.Uri.StartsWith("/"))
             {
-                Console.WriteLine("[WEBFRONT] Processing Request for " + request.Uri);             
+                //Console.WriteLine("[WEBFRONT] Processing Request for " + request.Uri);             
                 var body = String.Empty;
 
                 if (request.Uri.StartsWith("/"))
@@ -273,6 +347,10 @@ namespace IW4MAdmin_Web
                     IW4MAdmin.file Header = new IW4MAdmin.file("webfront\\header.html");
                     var header = Header.getLines();
                     Header.Close();
+
+                    IW4MAdmin.file Footer = new IW4MAdmin.file("webfront\\footer.html");
+                    var footer = Footer.getLines();
+                    Footer.Close();
 
                     String[] req = request.Path.Split(new char[] {'/'}, StringSplitOptions.RemoveEmptyEntries);
 
@@ -291,7 +369,7 @@ namespace IW4MAdmin_Web
                         IW4MAdmin.file Bans = new IW4MAdmin.file("webfront\\bans.html");
                         var bans = Bans.getLines();
                         Bans.Close();
-                        body = Macro.findMacros((header + bans), page, server, WebFront.Page.bans);
+                        body = Macro.findMacros((header + bans + footer), page, server, WebFront.Page.bans);
                     }
 
                     else if (request.QueryString == "stats")
@@ -299,7 +377,15 @@ namespace IW4MAdmin_Web
                         IW4MAdmin.file Stats = new IW4MAdmin.file("webfront\\stats.html");
                         var stats = Stats.getLines();
                         Stats.Close();
-                        body = Macro.findMacros(header + stats, page, server, WebFront.Page.stats);
+                        body = Macro.findMacros(header + stats + footer, page, server, WebFront.Page.stats);
+                    }
+
+                    else if (request.QueryString == "player")
+                    {
+                        IW4MAdmin.file Player = new IW4MAdmin.file("webfront\\player.html");
+                        var player = Player.getLines();
+                        Player.Close();
+                        body = Macro.findMacros(header + player + footer, page, server, WebFront.Page.player);
                     }
 
                     else
@@ -307,16 +393,11 @@ namespace IW4MAdmin_Web
                         IW4MAdmin.file Main = new IW4MAdmin.file("webfront\\main.html");
                         var main = Main.getLines();
                         Main.Close();
-                        body = Macro.findMacros(header + main, 0, server, WebFront.Page.main);
-                    }               
-                }
+                        body = Macro.findMacros(header + main + footer, 0, server, WebFront.Page.main);
+                    }
 
-                /*var body = string.Format(
-                    "Uri: {0}\r\nPath: {1}\r\nQuery:{2}\r\nFragment: {3}\r\n",
-                    request.Uri,
-                    request.Path,
-                    request.QueryString,
-                    request.Fragment);*/
+                    IW4MAdmin.Program.Servers[server].Log.Write("Webfront processed request for " + request.Uri, IW4MAdmin.Log.Level.Debug);
+                }
 
                 var headers = new HttpResponseHead()
                 {

@@ -203,16 +203,7 @@ namespace IW4MAdmin
 
         public String getLastConnection()
         {
-            TimeSpan Elapsed = DateTime.Now - LastConnection;
-
-            if (Elapsed.Minutes < 60)
-                return Elapsed.Minutes + " minutes";
-            if (Elapsed.Hours <= 24)
-                return Elapsed.Hours + " hours";
-            if (Elapsed.Days <= 365)
-                return Elapsed.Days + " days";
-            else
-                return "a very long time";
+            return Utilities.timePassed(LastConnection);
         }
 
         public void updateName(String n)

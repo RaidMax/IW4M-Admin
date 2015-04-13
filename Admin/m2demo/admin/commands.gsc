@@ -26,10 +26,10 @@ GoTo(target)
 		
 }
 
-Alert(sound)
+Alert(sound, message)
 {
 	self playLocalSound(sound);
-	self iPrintLnBold("New Report!");
+	self iPrintLnBold(message);
 }
 
 Tell(message, source)

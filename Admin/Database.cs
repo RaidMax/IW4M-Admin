@@ -334,6 +334,12 @@ namespace IW4MAdmin
             String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}'", GUID);
             ExecuteNonQuery(Query);
         }
+
+        public void removeBan(String GUID, String IP)
+        {
+            String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}' or IP= '%{1}%'", GUID, IP);
+            ExecuteNonQuery(Query);
+        }
         
 
     }
@@ -517,6 +523,22 @@ namespace IW4MAdmin
             {
                 foreach (DataRow p in Result.Rows)
                  players.Add(new Aliases(Convert.ToInt32(p["Number"]), p["NAMES"].ToString(), p["IPS"].ToString()));
+            }
+
+            return players;
+        }
+
+        public List<Aliases> findPlayers(String name)
+        {
+            String Query = String.Format("SELECT * FROM ALIASES WHERE NAMES LIKE '%{0}%' LIMIT 8", name);
+            DataTable Result = GetDataTable(Query);
+
+            List<Aliases> players = new List<Aliases>();
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow p in Result.Rows)
+                    players.Add(new Aliases(Convert.ToInt32(p["Number"]), p["NAMES"].ToString(), p["IPS"].ToString()));
             }
 
             return players;

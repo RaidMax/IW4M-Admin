@@ -37,4 +37,32 @@ Tell(message, source)
 	self iPrintLnBold("^1" + source.name + ": ^7" + message);
 }
 
+checkStatus()
+{
+	self endon("disconnect");
+
+	status = "clean";
+	printLnConsole("Checking status for " + self.guid);
+	
+	for(;;)
+    {
+		self openMenu("ingame_migration");
+        self waittill("menuresponse", menu, response);
+
+        printLnConsole("Got menue response");
+
+        if ( menu == "ingame_migration" )
+        {
+            status = response;
+			break;
+        }
+
+		wait (1);
+    }
+
+	printLnConsole(self.name + "is" + response);
+
+	if ( status == "dirty")
+		setDvar("whosisdirt", self.guid);
+}
 

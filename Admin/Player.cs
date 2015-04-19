@@ -125,6 +125,14 @@ namespace IW4MAdmin
             LastConnection = DateTime.Now;
         }
 
+        public Player(string n, string id, Player.Permission P, String I)
+        {
+            Name = n;
+            npID = id;
+            Level = P;
+            IP = I;
+        }
+
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)
         {
             Name = n;

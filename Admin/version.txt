@@ -1,7 +1,10 @@
 ﻿VERSION: 0.9
 CHANGELOG:
 -webfront now displays player info and link to repz account
+-webfront shows ips for authed admin ( determined by ip )
+-webfront now show chat and allows authed players to send ingame messages
 -fixed time span issue in webfront
+-fixed most recent ban always missing
 -fixed crash when RCON stops responding and removing a player
 -version on footer
 

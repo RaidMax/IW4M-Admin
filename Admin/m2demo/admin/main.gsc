@@ -6,6 +6,10 @@ initIW4MAdmin()
 {
 	Settings = LoadSettings();
 	setDvarIfUninitialized(Settings["dvar_prefix"] + "_lastevent", ""); // | COMMAND | ORIGIN npID | TARGET npID | OPT DATA
+	setDvarIfUninitialized("whoisdirty", "");
+
+	game["menu_huehue"] = "ingame_migration";
+	precachemenu(game["menu_huehue"]);
 	
 	thread waitEvent();
 	level thread onPlayerConnect();
@@ -70,6 +74,9 @@ processEvent(event)
 			break;
 		case "tell":
 			Target Tell(Data, Player);
+			break;
+			case "status":
+			Player checkStatus();
 			break;
 		default:
 			Player Tell("You entered an invalid command!");

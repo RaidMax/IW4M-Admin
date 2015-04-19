@@ -1,9 +1,14 @@
-﻿<body>
-
-    <div id="container">
-        <div class="h0" style="margin-top: 0">IW4M Admin</div><div id="header_img"></div>
-
-        <h1 style="margin-top: 0;">Currently Monitoring</h1>
-        <hr />
-        {{SERVERS}}
-    </div>
+﻿<script>
+function show_data()
+{
+ $('#chatList').load('/?chat');
+}
+setInterval('show_data()', 5000);
+</script>
+<div id="container">
+    <div class="h0" style="margin-top: 0">IW4M Admin</div><div id="header_img"></div>
+    
+    <h1 style="margin-top: 0;">Currently Monitoring</h1>
+    <hr />
+    {{SERVERS}}
+ </div>

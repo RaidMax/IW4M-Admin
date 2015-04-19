@@ -4,7 +4,12 @@
 <head>
     <meta charset="utf-8" />
     <title>{{TITLE}}</title>
-    <style>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> 
+    <script type="text/javascript">
+		var userip;
+	</script>
+	<script type="text/javascript" src="http://l2.io/ip.js?var=userip"></script>
+	<style>
         * {
             font-family: 'Robot', sans-serif;
             margin: 0;
@@ -124,15 +129,15 @@
             border-radius: 4px;
             color: #fff;
             font-size: 14pt;
-            width: 250px;
-            height: 40px;
+            //width: 250px;
+           // height: 40px;
             background-color: rgb(121, 194, 97);
         }
 
         input[type="submit"]:hover {
                 background-color: #fff;
                 color: #171717;
-                border: 1px solid #171717;
+                //border: 1px solid #171717;
             }
 
         .question_title {
@@ -236,7 +241,7 @@
             width: 40%;
             text-align: left;
             padding-top: 10px;
-            padding-bottom 10p;x
+            padding-bottom: 10px;
         }
 
         .bans {
@@ -271,6 +276,12 @@
             border-radius: 0px 0px 11px 11px;
         }
 
+
+		.players {
+			float: left;
+			width: 400px;
+		}
+
         .players tbody tr td
         {
             padding: 3px;
@@ -288,5 +299,114 @@
             vertical-align: top;
             padding: 0;
         }
+
+        #player_search {
+			position: absolute;
+			top: 0; 
+			left: 0; 
+			right: 0;
+			height: auto;
+			width: 300px;
+			margin: 0 auto;
+        }
+		
+		#player_search input[type="submit"] {
+			padding: 3px;
+			margin: 3px;
+			margin-top: 10px;
+			width: auto;
+			height: auto;
+			border: 1px solid #171717;
+			border-radius: 3px;
+		}
+		
+		#player_search input[type="text"] {
+			font-size: 14pt;
+		}
+		
+		.chatFormat_text
+		{
+			font-size: 14pt;
+			width: 505px;
+		}
+		
+		.chatFormat_submit, .chatFormat_submit:hover
+		{
+			padding: 3px;
+			padding-left: 15px;
+			padding-right: 15px;
+			width: 70px;
+			margin: 3px;
+			margin-right: 0;
+			width: auto;
+			margin-bottom: 10px;
+			color: grey;
+		}
+		
+		.chatHistory {
+			float: right;
+			height: auto;
+			width: 600px;
+			overflow: hidden;
+			margin-top: 10px;			
+		}
+		
+		.chatOutFormat {
+			float: right;
+		}
+		
+		#table_chatHistory {
+			width: 100%;
+			padding: 0;
+			margin: 0;
+		}
+		
+		#table_chatHistory td {
+			padding: 0;
+			margin: 0;
+		}
+
+		.chat_name
+		{
+			width: 140px;
+		}
+
+		.chat_message
+		{
+			text-align: left;
+		}
     </style>
 </head>
+<body>
+<script type="text/javascript">
+		function loadChatMessages(server, divElem) {
+			$(divElem).load("/" + server + "/0/?chat");
+		}
+</script>
+<script type="text/javascript">
+	function chatRequest(server, divElem) {
+		var Message = document.getElementById(divElem).value.replace(/\s/g, "%20").replace(/[\\|\/]/g,"");
+		if (Message.length > 4 && Message.length < 51)
+		{
+			$(".null").load("/" + server + "/0/" + userip + "/" + Message + "/?chat");
+			$("#" + divElem).val('');
+		}
+		else if (Message.length <= 4)
+			alert("You must enter at least 4 characters!");	
+		else
+			alert("Please enter no more than 50 characters");
+	}
+</script>
+   <script type="text/javascript">
+       function searchPlayerName() {
+           var nameValue = document.getElementById("search_playerName").value;
+           if (nameValue.length > 0)
+			window.location.href = ("/0/0/" + nameValue + "/?player");
+       }
+   </script>
+<div id="player_search">
+        <form action="javascript:searchPlayerName()">
+        <input id="search_playerName" type="text" placeholder="Player Name" />
+        <input type="submit" value="Find" />
+    </form>
+</div>

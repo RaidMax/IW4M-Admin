@@ -58,7 +58,7 @@ namespace IW4MAdmin
         public static String removeNastyChars(String str)
         {
             if (str != null)
-                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("^", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
+                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
             else
                 return String.Empty;
         }
@@ -76,6 +76,15 @@ namespace IW4MAdmin
                 }
             }
             return lineNumber;
+        }
+
+        public static String cleanChars(String S)
+        {
+            StringBuilder Cleaned = new StringBuilder();
+
+            foreach (char c in S)
+                if (c < 127 && c > 31 && c != 37 && c != 34 && c != 92) Cleaned.Append(c);
+            return Cleaned.ToString();
         }
 
         public static String stripColors(String str)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data.SQLite;
 using System.Data;
+using System.Linq;
 using System.IO;
 using System.Collections;
 
@@ -204,6 +205,44 @@ namespace IW4MAdmin
                 return null;
         }
 
+        //get player by ip, (used for webfront)
+        public Player getPlayer(String IP)
+        {
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE IP='{0}'", IP);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                List<Player> lastKnown = new List<Player>();
+                foreach (DataRow p in Result.Rows)
+                {
+                    DateTime LC;
+                    try
+                    {
+                        LC = DateTime.Parse(p["LastConnection"].ToString());
+                        lastKnown.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32((DateTime.Now - LC).TotalSeconds), p["IP"].ToString(), LC));
+                    }
+
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                }
+
+                if (lastKnown.Count > 0)
+                {
+                    List<Player> Returning = lastKnown.OrderBy(t => t.Connections).ToList();
+                    return Returning[0];
+                }
+
+                else
+                    return null;
+            }
+
+            else
+                return null;
+        }
+
         //Returns a list of players matching name parameter, null if no players found matching
         public List<Player> findPlayers(String name)
         {
@@ -238,7 +277,7 @@ namespace IW4MAdmin
         //Returns any player with level 4 permissions, null if no owner found
         public Player getOwner()
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level >= '{0}'", 4);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level > '{0}'", 4);
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
@@ -268,6 +307,19 @@ namespace IW4MAdmin
             }
 
             return Bans;
+        }
+
+        //Returns all players with level > Flagged
+        public List<Player> getAdmins()
+        {
+            List<Player> Admins = new List<Player>();
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE LEVEL > '{0}'", 1);
+            DataTable Result = GetDataTable(Query);
+
+            foreach (DataRow P in Result.Rows)
+                Admins.Add(new Player(P["Name"].ToString(), P["npID"].ToString(), (Player.Permission)P["Level"], P["IP"].ToString()));
+
+            return Admins;
         }
 
         //Returns total number of player entries in database
@@ -530,7 +582,7 @@ namespace IW4MAdmin
 
         public List<Aliases> findPlayers(String name)
         {
-            String Query = String.Format("SELECT * FROM ALIASES WHERE NAMES LIKE '%{0}%' LIMIT 8", name);
+            String Query = String.Format("SELECT * FROM ALIASES WHERE NAMES LIKE '%{0}%' LIMIT 15", name);
             DataTable Result = GetDataTable(Query);
 
             List<Aliases> players = new List<Aliases>();

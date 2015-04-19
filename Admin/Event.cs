@@ -5,6 +5,25 @@ using System.Text.RegularExpressions;
 
 namespace IW4MAdmin
 {
+    class Chat
+    {
+        public Chat ( Player O, String M, DateTime D)
+        {
+            Origin = O;
+            Message = M;
+            Time = D;
+        }
+
+        public String timeString()
+        {
+            return Time.ToShortTimeString();
+        }
+
+        public Player Origin { get; private set; }
+        public String Message { get; private set; }
+        public DateTime Time { get; private set; }
+    }
+
     class Event
     {
         public enum GType

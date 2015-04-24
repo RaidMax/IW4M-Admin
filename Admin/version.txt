@@ -3,6 +3,8 @@ CHANGELOG:
 -webfront now displays player info and link to repz account
 -webfront shows ips for authed admin ( determined by ip )
 -webfront now show chat and allows authed players to send ingame messages
+-webfront now has public ban list http://127.0.0.1/?pubbans
+-webfront now shows player history
 -fixed time span issue in webfront
 -fixed most recent ban always missing
 -fixed crash when RCON stops responding and removing a player

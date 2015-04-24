@@ -582,7 +582,12 @@ namespace IW4MAdmin
 
         public List<Aliases> findPlayers(String name)
         {
-            String Query = String.Format("SELECT * FROM ALIASES WHERE NAMES LIKE '%{0}%' LIMIT 15", name);
+            String[] EyePee = name.Split('.');
+            String Penor = "THISISNOTANIP";
+            if (EyePee.Length > 1)
+                Penor = (EyePee[0] + '.' + EyePee[1] + '.');
+
+            String Query = String.Format("SELECT * FROM ALIASES WHERE NAMES LIKE '%{0}%' OR IPS LIKE '%{1}%' LIMIT 15", name, Penor);
             DataTable Result = GetDataTable(Query);
 
             List<Aliases> players = new List<Aliases>();

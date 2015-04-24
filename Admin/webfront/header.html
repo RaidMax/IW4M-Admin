@@ -5,10 +5,13 @@
     <meta charset="utf-8" />
     <title>{{TITLE}}</title>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> 
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
+    <link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet">
+    <script type='text/javascript' src='//www.google.com/jsapi'></script>
     <script type="text/javascript">
 		var userip;
 	</script>
-	<script type="text/javascript" src="http://l2.io/ip.js?var=userip"></script>
+	<script type="text/javascript" src="//l2.io/ip.js?var=userip"></script>
 	<style>
         * {
             font-family: 'Robot', sans-serif;
@@ -129,8 +132,6 @@
             border-radius: 4px;
             color: #fff;
             font-size: 14pt;
-            //width: 250px;
-           // height: 40px;
             background-color: rgb(121, 194, 97);
         }
 
@@ -219,6 +220,7 @@
             font-size: 20pt;
             margin-bottom: 20px;
             min-width: 530px;
+            max-width: 545px;
         }
 
         .server_info {
@@ -375,6 +377,18 @@
 		{
 			text-align: left;
 		}
+
+        th 
+        {
+            font-size: 14pt;
+
+        }
+
+        th a
+        {
+            font-size: 12pt;
+            padding-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -401,7 +415,7 @@
        function searchPlayerName() {
            var nameValue = document.getElementById("search_playerName").value;
            if (nameValue.length > 0)
-			window.location.href = ("/0/0/" + nameValue + "/?player");
+			window.location.href = ("/0/0/" + userip + "/" + nameValue + "/?player");
        }
    </script>
 <div id="player_search">

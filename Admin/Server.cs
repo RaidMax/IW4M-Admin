@@ -39,6 +39,7 @@ namespace IW4MAdmin
             Skills = new Moserware.TrueSkill();
             statusPlayers = new Dictionary<string, Player>();
             chatHistory = new List<Chat>();
+            playerHistory = new Queue<int>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
             initCommands();
@@ -299,7 +300,7 @@ namespace IW4MAdmin
 #endif
                 Log.Write("Client " + NewPlayer.getName() + " connecting...", Log.Level.Debug); // they're clean
 
-                if (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
+                while (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
                     chatHistory.RemoveAt(0);
                 chatHistory.Add(new Chat(NewPlayer, "<i>CONNECTED</i>", DateTime.Now));
 
@@ -527,6 +528,12 @@ namespace IW4MAdmin
         {
             isRunning = true;
 
+#if DEBUG
+        //    Random rnd = new Random();
+          //  while (playerHistory.Count < 144)
+          //      playerHistory.Enqueue(rnd.Next(0, 18));
+#endif
+
             //Handles new rcon requests in a fashionable manner
             Thread RCONQueue = new Thread(new ThreadStart(RCON.ManageRCONQueue));
             RCONQueue.Start();
@@ -553,6 +560,8 @@ namespace IW4MAdmin
             String[] lines = new String[8];
             String[] oldLines = new String[8];
             DateTime start = DateTime.Now;
+            DateTime playerCountStart = DateTime.Now;
+            DateTime lastCount = DateTime.Now;
 
             Utilities.Wait(1);
 #if DEBUG == false
@@ -566,6 +575,16 @@ namespace IW4MAdmin
 #endif
                 {
                     lastMessage = DateTime.Now - start;
+                    lastCount = DateTime.Now;
+
+                    if ((lastCount - playerCountStart).TotalMinutes > 4)
+                    {
+                        while (playerHistory.Count > 144 )
+                            playerHistory.Dequeue();
+                        playerHistory.Enqueue(clientnum);
+                        playerCountStart = DateTime.Now;
+                    }
+
                     if(lastMessage.TotalSeconds > messageTime && messages.Count > 0)
                     {
                         initMacros(); // somethings dynamically change so we have to re-init the dictionary
@@ -922,7 +941,7 @@ namespace IW4MAdmin
                     return false;
                 }
 
-                if (chatHistory.Count > Math.Ceiling(((double)clientnum - 1) / 2))
+                while (chatHistory.Count > Math.Ceiling(((double)clientnum - 1) / 2))
                     chatHistory.RemoveAt(0);
                 chatHistory.Add(new Chat(E.Origin, "<i>DISCONNECTED</i>", DateTime.Now));
 
@@ -1006,7 +1025,7 @@ namespace IW4MAdmin
                     E.Data = Utilities.stripColors(Utilities.cleanChars(E.Data));
                     if (E.Data.Length > 50)
                         E.Data = E.Data.Substring(0, 50) + "...";
-                    if (chatHistory.Count > Math.Ceiling((double)clientnum/2))
+                    while (chatHistory.Count > Math.Ceiling((double)clientnum/2))
                         chatHistory.RemoveAt(0);
 
                     chatHistory.Add(new Chat(E.Origin, E.Data, DateTime.Now));
@@ -1145,18 +1164,10 @@ namespace IW4MAdmin
                 if (B.getID() == Target.getID())
                 {
                     clientDB.removeBan(Target.getID(), Target.getIP());
-                    int position = Bans.IndexOf(B);
 
 
-                    if (position > -1 && position < Bans.Count - 1)
-                    {
-                        Log.Write("Removing ban at index #" + position, Log.Level.Debug);
-                        Bans.RemoveAt(position);
-                        Bans[position] = null;
-                    }
-
-                    else
-                        Log.Write(position + " is an invalid ban index!", Log.Level.Debug);
+                    for (int i = 0; i < IW4MAdmin.Program.Servers.Count; i++)
+                        IW4MAdmin.Program.Servers[i].Bans = IW4MAdmin.Program.Servers[i].clientDB.getBans();
 
                     Player P = clientDB.getPlayer(Target.getID(), -1);
                     P.setLevel(Player.Permission.User);
@@ -1231,7 +1242,7 @@ namespace IW4MAdmin
             if ((requestTime - lastWebChat).TotalSeconds > 1)
             {
                 Broadcast("^1[WEBCHAT] ^5" + P.getName() + "^7 - " + Message);
-                if (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
+                while (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
                     chatHistory.RemoveAt(0);
 
                 if (Message.Length > 50)
@@ -1395,6 +1406,8 @@ namespace IW4MAdmin
         public int totalKills = 0;
         public List<Report> Reports;
         public List<Chat> chatHistory;
+        public Queue<int> playerHistory;
+
 
         //Info
         private String IP;

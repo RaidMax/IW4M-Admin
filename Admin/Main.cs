@@ -10,7 +10,7 @@ namespace IW4MAdmin
         static String IP;
         static int Port;
         static String RCON;
-        static public double Version = 0.8;
+        static public double Version = 0.9;
         static public double latestVersion;
         static public List<Server> Servers;//
 

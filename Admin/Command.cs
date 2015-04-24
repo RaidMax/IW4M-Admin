@@ -189,7 +189,7 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             if (E.Owner.Unban(E.Data.Trim(), E.Target))
-                E.Origin.Tell("Successfully unbanned " + E.Data.Trim());
+                E.Origin.Tell("Successfully unbanned " + E.Target.getName());
             else
                 E.Origin.Tell("Unable to find a ban for that GUID");
         }

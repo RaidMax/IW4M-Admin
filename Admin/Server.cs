@@ -39,7 +39,7 @@ namespace IW4MAdmin
             Skills = new Moserware.TrueSkill();
             statusPlayers = new Dictionary<string, Player>();
             chatHistory = new List<Chat>();
-            playerHistory = new Queue<int>();
+            playerHistory = new Queue<pHistory>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
             initCommands();
@@ -529,9 +529,15 @@ namespace IW4MAdmin
             isRunning = true;
 
 #if DEBUG
-        //    Random rnd = new Random();
-          //  while (playerHistory.Count < 144)
-          //      playerHistory.Enqueue(rnd.Next(0, 18));
+          /*  Random rnd = new Random();
+            DateTime testTOD = DateTime.Now;
+            while (playerHistory.Count < 144)
+            {
+                playerHistory.Enqueue(new pHistory(testTOD, rnd.Next(14, 19)));
+                 testTOD = testTOD.AddMinutes(5);
+            }
+
+            Console.WriteLine("There are " + playerHistory.Count + " player counts");*/
 #endif
 
             //Handles new rcon requests in a fashionable manner
@@ -579,9 +585,9 @@ namespace IW4MAdmin
 
                     if ((lastCount - playerCountStart).TotalMinutes > 4)
                     {
-                        while (playerHistory.Count > 144 )
+                        while (playerHistory.Count > 144 ) // 12 times a minute for 12 hours
                             playerHistory.Dequeue();
-                        playerHistory.Enqueue(clientnum);
+                        playerHistory.Enqueue(new pHistory(lastCount, clientnum));
                         playerCountStart = DateTime.Now;
                     }
 
@@ -1406,7 +1412,7 @@ namespace IW4MAdmin
         public int totalKills = 0;
         public List<Report> Reports;
         public List<Chat> chatHistory;
-        public Queue<int> playerHistory;
+        public Queue<pHistory> playerHistory;
 
 
         //Info

@@ -97,6 +97,7 @@
     <Compile Include="Event.cs" />
     <Compile Include="File.cs" />
     <Compile Include="Heartbeat.cs" />
+    <Compile Include="Helpers.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Maps.cs" />
@@ -130,6 +131,9 @@
     <Content Include="webfront\footer.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="webfront\graph.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="webfront\header.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -146,7 +150,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="config\messages.cfg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="config\rules.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

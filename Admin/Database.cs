@@ -450,6 +450,9 @@ namespace IW4MAdmin
         //Update stat information of specified player
         public void updatePlayer(Player P)
         {
+            if (P.stats == null)
+                return;
+
             Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
 
             updatedPlayer.Add("KILLS", P.stats.Kills);

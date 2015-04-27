@@ -463,19 +463,20 @@ namespace IW4MAdmin_Web
                         test.Append("<script type='text/javascript' src='//www.google.com/jsapi'></script><div id='chart_div'></div>");
                         test.Append("<script> var players = [");
                         int count = 1;
-                        DateTime prev = DateTime.Now;
-                        foreach (int i in IW4MAdmin.Program.Servers[server].playerHistory.ToArray())
+                        List<IW4MAdmin.pHistory> run = IW4MAdmin.Program.Servers[server].playerHistory.ToList();
+                        foreach (IW4MAdmin.pHistory i in run) //need to reverse for proper timeline
                         {
-                            test.AppendFormat("[[{0},{1},{2}], {3}]", prev.Hour, prev.Minute, prev.Second, i);
-                            prev = prev.AddMinutes(-5);
+                            test.AppendFormat("[new Date({0}, {1}, {2}, {3}, {4}), {5}]", i.When.Year, i.When.Month - 1, i.When.Day, i.When.Hour, i.When.Minute, i.Players);
                             if (count < IW4MAdmin.Program.Servers[server].playerHistory.Count)
-                                test.Append(',');
+                                test.Append(",\n");
                             count++;
                         }
                         test.Append("];\n");
                         test.Append("</script>");
-                        test.Append("<script>function drawBasic(){var a=new google.visualization.DataTable;a.addColumn('timeofday','Time'),a.addColumn('number','Players'),a.addRows(players);var e={ hAxis:{title:'Time', gridlines: {count:10}}, vAxis:{title:'Players'}, vAxis: {viewWindow: {max:18}, gridlines: {count:7}}},i=new google.visualization.LineChart(document.getElementById('chart_div'));i.draw(a,e)}google.load('visualization','1',{ callback: drawBasic, packages:['corechart','line']});</script>");
-                        body = test.ToString();
+                        IW4MAdmin.file Graph = new IW4MAdmin.file("webfront\\graph.html");
+                        var graph = Graph.getLines();
+                        Graph.Close();
+                        body = test.ToString()  + graph ;
                     }
 
                     else if (request.QueryString == "player")
@@ -500,8 +501,8 @@ namespace IW4MAdmin_Web
                         IW4MAdmin.Player P = IW4MAdmin.Program.Servers[server].clientDB.getPlayer(IP);
                         if (P == null)
                             P = new IW4MAdmin.Player("Guest", "Guest", 0, 0);
-                        if (P.getLevel() > IW4MAdmin.Player.Permission.Flagged)
-                            Console.WriteLine(P.getName() + " is authenticated");
+                       // if (P.getLevel() > IW4MAdmin.Player.Permission.Flagged)
+                        //    Console.WriteLine(P.getName() + " is authenticate");
 
                         Client toSend = new Client(WebFront.Page.player, page, request.Headers, Data, P);
                         body = Macro.findMacros(header + player + footer, toSend, server);

@@ -1,4 +1,8 @@
-﻿VERSION: 0.9
+﻿VERSION: 0.9.1
+CHANGELOG:
+fixed issue with `history` timelime
+
+VERSION: 0.9
 CHANGELOG:
 -webfront now displays player info and link to repz account
 -webfront shows ips for authed admin ( determined by ip )

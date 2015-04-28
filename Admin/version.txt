@@ -1,6 +1,7 @@
 ﻿VERSION: 0.9.1
 CHANGELOG:
-fixed issue with `history` timelime
+-fixed issue with `history` timelime
+-fixed issue with mapname not being updated
 
 VERSION: 0.9
 CHANGELOG:

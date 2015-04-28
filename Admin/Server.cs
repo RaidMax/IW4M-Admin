@@ -1071,9 +1071,36 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.MapChange)
             {
                 Log.Write("New map loaded - " + clientnum + " active players", Log.Level.Debug);
-                String[] statusResponse = E.Data.Split('\\');
-                if (statusResponse.Length >= 15 && statusResponse[13] == "mapname")
-                    mapname = maps.Find(m => m.Name.Equals(statusResponse[14])).Alias;    //update map for heartbeat       
+
+                Dictionary<String, String> infoResponseDict = new Dictionary<String, String>();
+                String[] infoResponse = E.Data.Split('\\');
+
+                for (int i = 0; i < infoResponse.Length; i++)
+                {
+                    if (i % 2 == 0 || infoResponse[i] == String.Empty)
+                        continue;
+                    infoResponseDict.Add(infoResponse[i], infoResponse[i + 1]);
+                }
+
+                String newMapName = null;
+                infoResponseDict.TryGetValue("mapname", out newMapName);
+
+                if (newMapName != null)
+                {
+                    try
+                    {
+                        mapname = maps.Find(m => m.Name.Equals(mapname)).Alias;
+                    }
+
+                    catch (Exception)
+                    {
+                        Log.Write(mapname + " doesn't appear to be in the maps.cfg", Log.Level.Debug);
+                    }
+                }
+
+                else
+                    Log.Write("Could not get new mapname from InitGame line!", Log.Level.Debug);
+
                 return true;
             }
 
@@ -1124,7 +1151,7 @@ namespace IW4MAdmin
         public void Tell(String Message, Player Target)
         {
             if (Target.getClientNum() > -1)
-                RCON.addRCON("tell " + Target.getClientNum() + " " + Message + "^7");
+                RCON.addRCON("tellraw " + Target.getClientNum() + " " + Message + "^7"); // I fixed tellraw :>
         }
 
         public void Kick(String Message, Player Target)

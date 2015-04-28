@@ -100,11 +100,11 @@ namespace IW4MAdmin
                     return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromEventLine(line, 2), null, SV);
                 }
 
-                if (eventType == ":")
-                    return new Event(GType.MapEnd, null, null, null, null);
+               if (eventType == ":")
+                   return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
 
-                if (line[0].Length > 400) // blaze it
-                    return new Event(GType.MapChange, line[0], null, null, null);
+                if (line[0].Split('\\').Length > 5) // blaze it
+                    return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
 
 
                 return null;

@@ -13,8 +13,7 @@ function drawChart() {
     data.addRows(players);
 
     var options = {
-    //curveType: 'function',
-    //width: 900,
+    //curveType: 'function', still haven't decided on this
     height: 300,
     legend: {position: 'none'},
     enableInteractivity: true,
@@ -27,13 +26,13 @@ function drawChart() {
         viewWindowMode: 'explicit',
         viewWindow: {
             min: 0,
-            max: 18
+            max: 18 // for iw4
         },
     },
     hAxis: {
       viewWindow: {
-        //min: players[0][0],
-        //max: players[players.length-1][0]
+        //min: players[0][0], no longer needed as timeline adjusts automatically
+        //max: players[players.length-1][0] // ditto
       },
       gridlines: {
         count: 12,

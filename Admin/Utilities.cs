@@ -353,6 +353,7 @@ namespace IW4MAdmin
             else
                 dvar_actual.latched = dvar_raw.latched.ToString();
 
+            dvar_actual.type = dvar_raw.type;
             dvar_actual.flags = getIntFromPointer((int)dvar_raw.flags, Handle);
             dvar_actual.max = getIntFromPointer((int)dvar_raw.max, Handle);
             dvar_actual.min = getIntFromPointer((int)dvar_raw.min, Handle);

@@ -351,14 +351,12 @@ namespace IW4MAdmin
                 {
                     players[cNum] = null;
                 }
-                clientnum = statusPlayers.Count;
                 return true;
             }
 
             else
             {
                 Log.Write("Error - Client disconnecting has an invalid client index!", Log.Level.Debug);
-                clientnum = statusPlayers.Count;
                 return false;
             }
         }
@@ -628,6 +626,7 @@ namespace IW4MAdmin
                     if ((DateTime.Now - lastPoll).Milliseconds > 750)
                     {
                         int numberRead = 0;
+                        int activeClients = 0;
 
                         for (int i = 0; i < players.Count; i++)
                         {
@@ -639,10 +638,13 @@ namespace IW4MAdmin
                             if (eachClient.state == 0)
                                 removePlayer(i);
                             else if (eachClient.state > 1)
-                                addPlayer(new Player(eachClient.name, eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
+                                addPlayer(new Player(Utilities.stripColors(Utilities.cleanChars(eachClient.name)), eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
+                            if (eachClient.state > 2)
+                                activeClients++;
                         }
 
                         lastPoll = DateTime.Now;
+                        clientnum = activeClients;
                     }
 #endif
 
@@ -1363,6 +1365,7 @@ namespace IW4MAdmin
             Macros.Add("WISDOM", Wisdom());
             Macros.Add("TOTALPLAYERS", clientDB.totalPlayers());
             Macros.Add("TOTALKILLS", totalKills);
+            Macros.Add("VERSION", IW4MAdmin.Program.Version);
       
         }
 

@@ -72,7 +72,7 @@ namespace IW4MAdmin
         public uint flags;
 
         [FieldOffset(12)]
-        short type;
+        public short type;
 
         [FieldOffset(16)]
         public IntPtr current;
@@ -94,21 +94,13 @@ namespace IW4MAdmin
     public struct dvar
     {
         public String name;
-
         public String description;
-
         public int flags;
-
-        short type;
-
+        public short type;
         public String current;
-
         public String latched;
-
         public String _default;
-
         public int min;
-
         public int max;
     }
 

@@ -1,10 +1,12 @@
-﻿
+﻿//#define USINGMEMORY
 using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
 using System.Threading; //SLEEP
 using System.IO;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 
 namespace IW4MAdmin
@@ -13,8 +15,9 @@ namespace IW4MAdmin
     {
         const int FLOOD_TIMEOUT = 300;
 
-        public Server(string address, int port, string password)
+        public Server(string address, int port, string password, int H)
         {
+            Handle = H;
             IP = address;
             Port = port;
             rcon_pass = password;
@@ -334,7 +337,7 @@ namespace IW4MAdmin
             {
                 if (players[cNum] == null)
                 {
-                    Log.Write("Error - Disconnecting client slot is already empty!", Log.Level.Debug);
+                    //Log.Write("Error - Disconnecting client slot is already empty!", Log.Level.Debug);
                     return false;
                 }
 
@@ -509,7 +512,7 @@ namespace IW4MAdmin
         }
         
 
-        //process new event every 100 milliseconds
+        //process new event every 50 milliseconds
         private void manageEventQueue()
         {
             while (isRunning)
@@ -519,9 +522,15 @@ namespace IW4MAdmin
                     processEvent(events.Peek());
                     events.Dequeue();
                 }
-                Utilities.Wait(0.1);
+                Utilities.Wait(0.05);
             }
         }
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
         //Starts the monitoring process
         public void Monitor()
@@ -551,11 +560,11 @@ namespace IW4MAdmin
                 Utilities.Wait(10);  
                 return;
             }
-            
+#if DEBUG == false
             //Thread to handle polling server for IP's
             Thread statusUpdate = new Thread(new ThreadStart(pollServer));
             statusUpdate.Start();
-
+#endif
             //Handles new events in a fashionable manner
             Thread eventQueue = new Thread(new ThreadStart(manageEventQueue));
             eventQueue.Start();
@@ -576,6 +585,8 @@ namespace IW4MAdmin
 
             while (isRunning)
             {
+
+
 #if DEBUG == false
                try
 #endif
@@ -613,6 +624,27 @@ namespace IW4MAdmin
                         }
                         
                     }
+#if DEBUG
+                    if ((DateTime.Now - lastPoll).Milliseconds > 750)
+                    {
+                        int numberRead = 0;
+
+                        for (int i = 0; i < players.Count; i++)
+                        {
+                            Byte[] buff = new Byte[681872]; // struct size ( 0.68MB :( )
+                            ReadProcessMemory((int)Handle, 0x31D9390 + (buff.Length)*(i), buff, buff.Length, ref numberRead); // svs_clients start + current client
+
+                            client_s eachClient = (client_s)Helpers.ReadStruct<client_s>(buff);
+
+                            if (eachClient.state == 0)
+                                removePlayer(i);
+                            else if (eachClient.state > 1)
+                                addPlayer(new Player(eachClient.name, eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
+                        }
+
+                        lastPoll = DateTime.Now;
+                    }
+#endif
 
                     if (l_size != logFile.getSize())
                     {
@@ -658,7 +690,7 @@ namespace IW4MAdmin
                     }
                     oldLines = lines;
                     l_size = logFile.getSize();
-                    Thread.Sleep(1);
+                    Thread.Sleep(250);
                 }
 #if DEBUG == false
                 catch (Exception E)
@@ -672,7 +704,6 @@ namespace IW4MAdmin
             isRunning = false;
             RCONQueue.Abort();
             eventQueue.Abort();
-
         }
 
         private void pollServer()
@@ -748,6 +779,30 @@ namespace IW4MAdmin
         }
 
         //Vital RCON commands to establish log file and server name. May need to cleanup in the future
+#if USINGMEMORY
+        private bool initializeBasics()
+        {
+            dvar map = Utilities.getDvar(0x2098DDC, Handle);
+
+            String mapOut;
+            
+            mapname = map.current;
+
+            dvar sv_hostname = Utilities.getDvar(0x2098D98, Handle);
+            hostname = sv_hostname.current;
+
+            dvar shortversion = Utilities.getDvar(0x1AD79D0, Handle);
+            IW_Ver = shortversion.current;
+
+            dvar party_maxplayers = Utilities.getDvar(0x1080998, Handle);
+            maxClients = Convert.ToInt32(party_maxplayers.current);
+
+            dvar g_gametype = Utilities.getDvar(0x1AD7934, Handle);
+            Gametype = g_gametype.current;
+
+            // skipping website b/c dynamically allocated ( we will pick it up on maprotate )
+        }
+#else
         private bool intializeBasics()
         {
            try
@@ -922,11 +977,11 @@ namespace IW4MAdmin
                 return false;
             }
         }
-
+#endif
         //Process any server event
         public bool processEvent(Event E)
         {
-            /*if (E.Type == Event.GType.Connect) // this is anow handled by rcon status :(
+            /*if (E.Type == Event.GType.Connect) // this is anow handled by memory :)
             {
                 if (E.Origin == null)
                     Log.Write("Connect event triggered, but no client is detected!", Log.Level.Debug);
@@ -1089,7 +1144,8 @@ namespace IW4MAdmin
                 {
                     try
                     {
-                        mapname = maps.Find(m => m.Name.Equals(mapname)).Alias;
+                        Map newMap = maps.Find(m => m.Name.Equals(newMapName));
+                        mapname = newMap.Alias;
                     }
 
                     catch (Exception)
@@ -1151,7 +1207,14 @@ namespace IW4MAdmin
         public void Tell(String Message, Player Target)
         {
             if (Target.getClientNum() > -1)
+            {
+#if DEBUG
+                RCON.addRCON("tell " + Target.getClientNum() + " " + Message + "^7");
+
+#else
                 RCON.addRCON("tellraw " + Target.getClientNum() + " " + Message + "^7"); // I fixed tellraw :>
+#endif
+            }
         }
 
         public void Kick(String Message, Player Target)
@@ -1460,6 +1523,7 @@ namespace IW4MAdmin
         private Dictionary<String, Object> Macros;
         private Moserware.TrueSkill Skills;
         private DateTime lastWebChat;
+        private int Handle;
 
 
         //Will probably move this later

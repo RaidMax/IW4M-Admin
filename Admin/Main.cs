@@ -1,7 +1,11 @@
-﻿using System;
+﻿#define USINGMEMORY
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Net;
 
 namespace IW4MAdmin
 {
@@ -12,7 +16,8 @@ namespace IW4MAdmin
         static String RCON;
         static public double Version = 0.9;
         static public double latestVersion;
-        static public List<Server> Servers;//
+        static public List<Server> Servers;
+        static public bool usingMemory = true;
 
         static void Main(string[] args)
         {
@@ -26,8 +31,14 @@ namespace IW4MAdmin
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
 
-            Servers = checkConfig();
-            foreach (Server IW4M in Servers)
+            List<Server> viableServers = getServers();
+            
+            if (viableServers.Count < 1)
+                viableServers = checkConfig(); // fall back to config    
+
+            Servers = viableServers;
+
+            foreach (Server IW4M in viableServers)
             {   
                 //Threading seems best here
                 Server SV = IW4M;
@@ -88,7 +99,7 @@ namespace IW4MAdmin
                 Config = new file("config\\servers.cfg", true);
                 Config.Write(IP + ':' + Port + ':' + RCON);
                 Config.Close();
-                Servers.Add(new Server(IP, Port, RCON));
+                Servers.Add(new Server(IP, Port, RCON, 0));
             }
 
             else
@@ -102,11 +113,43 @@ namespace IW4MAdmin
                         Console.WriteLine("You have an error in your server.cfg");
                         continue;
                     }
-                    Servers.Add(new Server(server_line[0], newPort, server_line[2]));
+                    Servers.Add(new Server(server_line[0], newPort, server_line[2],0));
                 }
             }
 
             return Servers;
+        }
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool ReadProcessMemory(int hProcess,
+          int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
+
+        static List<Server> getServers()
+        {
+            List<Server> Servers = new List<Server>();
+            foreach ( Process P in Process.GetProcessesByName("iw4m"))
+            {
+                IntPtr Handle = OpenProcess(0x0010, false, P.Id);
+                int numberRead = 0;
+                Byte[] dediStuff = new Byte[1];
+                ReadProcessMemory((int)Handle, 0x5DEC04, dediStuff, 1, ref numberRead);
+
+                if (dediStuff[0] == 0)
+                {
+                    Console.WriteLine("Viable IW4M Instance found with PID #" + P.Id);
+
+                    dvar net_ip = Utilities.getDvar(0x64A1DF8, (int)Handle);
+                    dvar net_port = Utilities.getDvar(0x64A3004, (int)Handle);
+                    dvar rcon_password = Utilities.getDvar(0x111FF634, (int)Handle);
+
+                    Servers.Add(new Server(Dns.GetHostAddresses(net_ip.current)[1].ToString(), Convert.ToInt32(net_port.current), rcon_password.current, (int)Handle));               
+                }
+            }
+            return Servers;
+
         }
     }
 }

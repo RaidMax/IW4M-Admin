@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 
 namespace IW4MAdmin
 {
@@ -312,6 +313,81 @@ namespace IW4MAdmin
                 return Math.Round(Elapsed.TotalDays, 0) + " days";
             else
                 return "a very long time";
+        }
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
+
+        public static dvar getDvar(int Location, int Handle)
+        {
+            int numberRead = 0;
+            Byte[] Buff = new Byte[72];
+            Byte[] Ptr = new Byte[4];
+
+            ReadProcessMemory(Handle, Location, Ptr, Ptr.Length, ref numberRead); // get location of dvar
+
+            ReadProcessMemory(Handle, (int)BitConverter.ToUInt32(Ptr, 0), Buff, Buff.Length, ref numberRead); // read dvar memory
+
+            dvar_t dvar_raw = Helpers.ReadStruct<dvar_t>(Buff); // get the dvar struct
+
+            dvar dvar_actual = new dvar(); // gotta convert to something readable
+
+            dvar_actual.name = getStringFromPointer((int)dvar_raw.name, Handle);
+            dvar_actual.description = getStringFromPointer((int)dvar_raw.description, Handle);
+
+            if ((int)dvar_raw._default > short.MaxValue)
+                dvar_actual._default = getStringFromPointer((int)dvar_raw._default, Handle);
+            else
+                dvar_actual._default = dvar_raw._default.ToString();
+
+            if ((int)dvar_raw.current > short.MaxValue)
+                dvar_actual.current = getStringFromPointer((int)dvar_raw.current, Handle);
+            else
+                dvar_actual.current = dvar_raw.current.ToString();
+
+            if ((int)dvar_raw.latched > short.MaxValue)
+                dvar_actual.latched = getStringFromPointer((int)dvar_raw.latched, Handle);
+            else
+                dvar_actual.latched = dvar_raw.latched.ToString();
+
+            dvar_actual.flags = getIntFromPointer((int)dvar_raw.flags, Handle);
+            dvar_actual.max = getIntFromPointer((int)dvar_raw.max, Handle);
+            dvar_actual.min = getIntFromPointer((int)dvar_raw.min, Handle);
+
+            // done!
+
+            return dvar_actual;
+        }
+
+        public static String getStringFromPointer(int Location, int Handle)
+        {
+            int numberRead = 0;
+            Byte[] Buff = new Byte[256];
+
+            ReadProcessMemory(Handle, Location, Buff, Buff.Length, ref numberRead);
+
+            StringBuilder str = new StringBuilder();
+            for ( int i = 0; i < Buff.Length; i++)
+            {
+                if (Buff[i] == 0)
+                    break;
+
+                str.Append((char)Buff[i]);
+            }
+            return str.ToString();
+        }
+
+        public static int getIntFromPointer(int Location, int Handle)
+        {
+            int numberRead = 0;
+            Byte[] Buff = new Byte[4];
+
+            ReadProcessMemory(Handle, Location, Buff, Buff.Length, ref numberRead);
+
+            return BitConverter.ToInt32(Buff, 0);
         }
 
         public static String timesConnected(int connection)

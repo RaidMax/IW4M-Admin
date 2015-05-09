@@ -2,6 +2,7 @@
 CHANGELOG:
 -fixed issue with `history` timelime
 -fixed issue with mapname not being updated
+-now reads memory for player info! ( experimental debug only )
 
 VERSION: 0.9
 CHANGELOG:

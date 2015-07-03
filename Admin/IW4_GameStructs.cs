@@ -104,8 +104,6 @@ namespace IW4MAdmin
         public int max;
     }
 
-
-
     class Helpers
     {
         public static String NET_AdrToString(netadr_t a)
@@ -122,5 +120,4 @@ namespace IW4MAdmin
             return (T)Marshal.PtrToStructure(new IntPtr(b), typeof(T));
         }
     }   
-
 }

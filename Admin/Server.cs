@@ -1,11 +1,9 @@
-﻿//#define USINGMEMORY
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
-using System.Threading; //SLEEP
+using System.Threading;
 using System.IO;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 
@@ -15,8 +13,9 @@ namespace IW4MAdmin
     {
         const int FLOOD_TIMEOUT = 300;
 
-        public Server(string address, int port, string password, int H)
+        public Server(string address, int port, string password, int H, int PID)
         {
+            this.PID = PID;
             Handle = H;
             IP = address;
             Port = port;
@@ -112,6 +111,11 @@ namespace IW4MAdmin
         public List<Ban> getBans()
         {
             return Bans;
+        }
+
+        public int pID()
+        {
+            return this.PID;
         }
 
         public void getAliases(List<Player> returnPlayers, Player Origin)
@@ -558,7 +562,7 @@ namespace IW4MAdmin
                 Utilities.Wait(10);  
                 return;
             }
-#if DEBUG == false
+#if DEBUG
             //Thread to handle polling server for IP's
             Thread statusUpdate = new Thread(new ThreadStart(pollServer));
             statusUpdate.Start();
@@ -583,8 +587,6 @@ namespace IW4MAdmin
 
             while (isRunning)
             {
-
-
 #if DEBUG == false
                try
 #endif
@@ -622,7 +624,7 @@ namespace IW4MAdmin
                         }
                         
                     }
-#if DEBUG
+#if DEBUG == false
                     if ((DateTime.Now - lastPoll).Milliseconds > 750)
                     {
                         int numberRead = 0;
@@ -634,6 +636,8 @@ namespace IW4MAdmin
                             ReadProcessMemory((int)Handle, 0x31D9390 + (buff.Length)*(i), buff, buff.Length, ref numberRead); // svs_clients start + current client
 
                             client_s eachClient = (client_s)Helpers.ReadStruct<client_s>(buff);
+                            if (eachClient.isBot == 1)
+                                continue;
 
                             if (eachClient.state == 0)
                                 removePlayer(i);
@@ -707,7 +711,7 @@ namespace IW4MAdmin
             RCONQueue.Abort();
             eventQueue.Abort();
         }
-
+#if DEBUG
         private void pollServer()
         {
             int timesFailed = 0;
@@ -779,6 +783,7 @@ namespace IW4MAdmin
                 Utilities.Wait(15);
             }
         }
+#endif
 
         //Vital RCON commands to establish log file and server name. May need to cleanup in the future
 #if USINGMEMORY
@@ -941,9 +946,7 @@ namespace IW4MAdmin
                     logPath = Basepath + '\\' + "m2demo" + '\\' + log;
                 else
                     logPath = Basepath + '\\' + Mod + '\\' + log;
-#if DEBUG
-         //       logPath = "C:\\Users\\Michael\\Desktop\\test.txt";
-#endif
+
                 if (!File.Exists(logPath))
                 {
                     Log.Write("Gamelog does not exist!", Log.Level.All);
@@ -964,7 +967,7 @@ namespace IW4MAdmin
                 lastPoll = DateTime.Now;
 
 #if DEBUG
-               /* System.Net.FtpWebRequest tmp = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create("ftp://raidmax.org/logs/games_old.log");
+               /* System.Net.FtpWebRequest tmp = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create("");
                 tmp.Credentials = new System.Net.NetworkCredential("*", "*");
                 System.IO.Stream ftpStream = tmp.GetResponse().GetResponseStream();
                 String ftpLog = new StreamReader(ftpStream).ReadToEnd();*/
@@ -983,6 +986,8 @@ namespace IW4MAdmin
         //Process any server event
         public bool processEvent(Event E)
         {
+
+#if DEBUG
             /*if (E.Type == Event.GType.Connect) // this is anow handled by memory :)
             {
                 if (E.Origin == null)
@@ -990,6 +995,7 @@ namespace IW4MAdmin
                 addPlayer(E.Origin);
                 return true;
             }*/
+#endif
 
             if (E.Type == Event.GType.Connect)
             {
@@ -1353,7 +1359,6 @@ namespace IW4MAdmin
 
         //END
 
-        //THIS IS BAD BECAUSE WE DON"T WANT EVERYONE TO HAVE ACCESS :/
         public String getPassword()
         {
             return rcon_pass;
@@ -1365,8 +1370,7 @@ namespace IW4MAdmin
             Macros.Add("WISDOM", Wisdom());
             Macros.Add("TOTALPLAYERS", clientDB.totalPlayers());
             Macros.Add("TOTALKILLS", totalKills);
-            Macros.Add("VERSION", IW4MAdmin.Program.Version);
-      
+            Macros.Add("VERSION", IW4MAdmin.Program.Version);     
         }
 
         private void initMaps()
@@ -1507,7 +1511,6 @@ namespace IW4MAdmin
         public List<Chat> chatHistory;
         public Queue<pHistory> playerHistory;
 
-
         //Info
         private String IP;
         private int Port;
@@ -1527,13 +1530,12 @@ namespace IW4MAdmin
         private Moserware.TrueSkill Skills;
         private DateTime lastWebChat;
         private int Handle;
-
+        private int PID;
 
         //Will probably move this later
         public Dictionary<String, Player> statusPlayers;
         public bool isRunning;
         private DateTime lastPoll;
-
      
         //Log stuff
         private String Basepath;

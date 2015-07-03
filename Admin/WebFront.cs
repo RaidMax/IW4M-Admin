@@ -350,7 +350,12 @@ namespace IW4MAdmin_Web
                                 forumID = forumID - 76561197960265728;
                             }
 
-                            buffer.AppendFormat("<td><a href='{9}'>{0}</a></td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.getName(), str, IPs, Rating, IW4MAdmin.Utilities.nameHTMLFormatted(Player.getLevel()), Player.getConnections(), Player.getLastConnection(), forumID, Player.getName(), "/0/" + Player.getDBID() + "/userip/?player");
+                            String Screenshot = String.Empty;
+
+                            if (logged)
+                                Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.getName());
+
+                            buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.getName(), str, IPs, Rating, IW4MAdmin.Utilities.nameHTMLFormatted(Player.getLevel()), Player.getConnections(), Player.getLastConnection(), forumID, Player.getName(), "/0/" + Player.getDBID() + "/userip/?player", Screenshot);
                             buffer.Append("</tr>");
                         }
 

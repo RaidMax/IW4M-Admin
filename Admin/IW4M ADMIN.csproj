@@ -102,6 +102,7 @@
     <Compile Include="Helpers.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Main.cs" />
+    <Compile Include="Manager.cs" />
     <Compile Include="Maps.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="RCON.cs" />

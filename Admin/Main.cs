@@ -3,20 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Net;
 
 namespace IW4MAdmin
 {
     class Program
     {
-        static String IP;
-        static int Port;
-        static String RCON;
-        static public double Version = 0.9;
+        static public double Version = 0.91;
         static public double latestVersion;
-        static public List<Server> Servers;
         static public bool usingMemory = true;
 
         static void Main(string[] args)
@@ -30,12 +23,9 @@ namespace IW4MAdmin
             else
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
-
-            List<Server> viableServers = getServers();
-            
+#if DEBUG           
             if (viableServers.Count < 1)
                 viableServers = checkConfig(); // fall back to config    
-
             Servers = viableServers;
 
             foreach (Server IW4M in viableServers)
@@ -45,17 +35,16 @@ namespace IW4MAdmin
                 Thread monitorThread = new Thread(new ThreadStart(SV.Monitor));
                 monitorThread.Start();
             }
+#endif  
+            IW4MAdmin.Manager IW4MAdmin = new IW4MAdmin.Manager();
+            IW4MAdmin.Init();
 
-            IW4MAdmin_Web.WebFront WebStuff = new IW4MAdmin_Web.WebFront();
-
-            Thread webFrontThread = new Thread( new ThreadStart(WebStuff.Init));
-            webFrontThread.Start();
-
-            Utilities.Wait(3);
             Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
- 
-        }
 
+            IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront();
+            frontEnd.Init();
+        }
+#if DEBUG
         static void setupConfig()
         {
             bool validPort = false;
@@ -77,6 +66,7 @@ namespace IW4MAdmin
             file Config = new file("config\\servers.cfg", true);
             Console.WriteLine("Great! Let's go ahead and start 'er up.");
         }
+#endif
 
         static String checkUpdate()
         {
@@ -84,6 +74,7 @@ namespace IW4MAdmin
             return Ver.Read();
         }
 
+#if DEBUG
         static List<Server> checkConfig()
         {
 
@@ -91,7 +82,6 @@ namespace IW4MAdmin
             String[] SV_CONF = Config.readAll();
             List<Server> Servers = new List<Server>();
             Config.Close();
-
 
             if (SV_CONF == null || SV_CONF.Length < 1 || SV_CONF[0] == String.Empty)
             {
@@ -116,40 +106,8 @@ namespace IW4MAdmin
                     Servers.Add(new Server(server_line[0], newPort, server_line[2],0));
                 }
             }
-
             return Servers;
         }
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool ReadProcessMemory(int hProcess,
-          int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
-
-        static List<Server> getServers()
-        {
-            List<Server> Servers = new List<Server>();
-            foreach ( Process P in Process.GetProcessesByName("iw4m"))
-            {
-                IntPtr Handle = OpenProcess(0x0010, false, P.Id);
-                int numberRead = 0;
-                Byte[] dediStuff = new Byte[1];
-                ReadProcessMemory((int)Handle, 0x5DEC04, dediStuff, 1, ref numberRead);
-
-                if (dediStuff[0] == 0)
-                {
-                    Console.WriteLine("Viable IW4M Instance found with PID #" + P.Id);
-
-                    dvar net_ip = Utilities.getDvar(0x64A1DF8, (int)Handle);
-                    dvar net_port = Utilities.getDvar(0x64A3004, (int)Handle);
-                    dvar rcon_password = Utilities.getDvar(0x111FF634, (int)Handle);
-
-                    Servers.Add(new Server(Dns.GetHostAddresses(net_ip.current)[1].ToString(), Convert.ToInt32(net_port.current), rcon_password.current, (int)Handle));               
-                }
-            }
-            return Servers;
-
-        }
+#endif
     }
 }

@@ -18,9 +18,9 @@ namespace IW4MAdmin
 
         public RCON(Server I)
         {
-            sv_connection = new UdpClient();
-            sv_connection.Client.SendTimeout = 1000;
-            sv_connection.Client.ReceiveTimeout = 1000;
+            //sv_connection = new UdpClient();
+           // sv_connection.Client.SendTimeout = 1000;
+            //sv_connection.Client.ReceiveTimeout = 1000;
             Instance = I;
             toSend = new Queue<RCON_Request>();
         }
@@ -112,7 +112,8 @@ namespace IW4MAdmin
                 if (toSend.Count > 0)
                 {
                     RCON_Request Current = toSend.Peek();
-                    Current.Response = responseSendRCON(Current.Request);
+                    //Current.Response = responseSendRCON(Current.Request);
+                    Utilities.executeCommand(Instance.pID(), Current.Request);
                     toSend.Dequeue();
                     Utilities.Wait(0.567);
                 }

@@ -11,6 +11,7 @@ namespace IW4MAdmin
         static public double Version = 0.91;
         static public double latestVersion;
         static public bool usingMemory = true;
+        static private Manager serverManager;
 
         static void Main(string[] args)
         {
@@ -36,13 +37,14 @@ namespace IW4MAdmin
                 monitorThread.Start();
             }
 #endif  
-            IW4MAdmin.Manager IW4MAdmin = new IW4MAdmin.Manager();
-            IW4MAdmin.Init();
+            IW4MAdmin.Manager serverManager = new IW4MAdmin.Manager();
+            serverManager.Init();
 
-            Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
+            if (serverManager.getServers() != null)
+                Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
 
-            IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront();
-            frontEnd.Init();
+            //IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront(serverManager.getServers());
+            //frontEnd.Init();
         }
 #if DEBUG
         static void setupConfig()
@@ -68,10 +70,15 @@ namespace IW4MAdmin
         }
 #endif
 
-        static String checkUpdate()
+        static private String checkUpdate()
         {
             Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
             return Ver.Read();
+        }
+
+        static public List<Server> getServers()
+        {
+            return serverManager.getServers();
         }
 
 #if DEBUG

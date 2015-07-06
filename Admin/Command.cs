@@ -799,7 +799,7 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             String[] Response = E.Owner.RCON.addRCON(E.Data.Trim());
-            if (Response.Length > 0)
+            if (Response != null && Response.Length > 0)
                 E.Origin.Tell("Successfuly sent RCON command!");
         }
     }

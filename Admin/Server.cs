@@ -19,7 +19,6 @@ namespace IW4MAdmin
             Handle = H;
             IP = address;
             Port = port;
-            rcon_pass = password;
             clientnum = 0;
             RCON = new RCON(this);
             logFile = new file("admin_" + port + ".log", true);
@@ -528,6 +527,31 @@ namespace IW4MAdmin
             }
         }
 
+        public void executeCommand(String CMD)
+        {
+            if (CMD.ToLower() == "map_restart" || CMD.ToLower() == "map_rotate")
+                return;
+
+            else if (CMD.ToLower().Substring(0, 4) == "map ")
+            {
+                backupRotation = getDvar("sv_mapRotation").current;
+                backupTimeLimit = Convert.ToInt32(getDvar("scr_" + Gametype + "_timelimit").current);
+                Utilities.executeCommand(PID, "sv_maprotation map " + CMD.ToLower().Substring(4, CMD.Length-4));
+                Utilities.executeCommand(PID, "scr_" + Gametype + "_timelimit 0.001");
+                Utilities.Wait(1);
+                Utilities.executeCommand(PID, "scr_" + Gametype + "_timelimit " + backupTimeLimit);
+            }
+
+            else
+                Utilities.executeCommand(PID, CMD);
+                
+        }
+
+        private dvar getDvar(String DvarName)
+        {
+            return Utilities.getDvarValue(PID, DvarName);
+        }
+
         [DllImport("kernel32.dll")]
         public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
@@ -562,6 +586,9 @@ namespace IW4MAdmin
                 Utilities.Wait(10);  
                 return;
             }
+
+
+
 #if DEBUG
             //Thread to handle polling server for IP's
             Thread statusUpdate = new Thread(new ThreadStart(pollServer));
@@ -784,197 +811,38 @@ namespace IW4MAdmin
             }
         }
 #endif
-
-        //Vital RCON commands to establish log file and server name. May need to cleanup in the future
-#if USINGMEMORY
-        private bool initializeBasics()
-        {
-            dvar map = Utilities.getDvar(0x2098DDC, Handle);
-
-            String mapOut;
-            
-            mapname = map.current;
-
-            dvar sv_hostname = Utilities.getDvar(0x2098D98, Handle);
-            hostname = sv_hostname.current;
-
-            dvar shortversion = Utilities.getDvar(0x1AD79D0, Handle);
-            IW_Ver = shortversion.current;
-
-            dvar party_maxplayers = Utilities.getDvar(0x1080998, Handle);
-            maxClients = Convert.ToInt32(party_maxplayers.current);
-
-            dvar g_gametype = Utilities.getDvar(0x1AD7934, Handle);
-            Gametype = g_gametype.current;
-
-            // skipping website b/c dynamically allocated ( we will pick it up on maprotate )
-        }
-#else
         private bool intializeBasics()
         {
            try
-            {
-                String[] infoResponse = RCON.addRCON("getstatus");
-    
-                if (infoResponse == null || infoResponse.Length < 2)
-                {
-                    Log.Write("Could not get server status!", Log.Level.All);
-                    hostname = "Offline"; // for the web front
-                    return false;
-                }
+           {
+               // basic info dvars
+                hostname         = Utilities.stripColors(getDvar("sv_hostname").current);
+                mapname          = getDvar("mapname").current;
+                IW_Ver           = getDvar("shortversion").current;
+                maxClients       = Convert.ToInt32(getDvar("party_maxplayers").current);
+                Gametype         = getDvar("g_gametype").current;
 
-                infoResponse = infoResponse[1].Split('\\');
-                Dictionary<String, String> infoResponseDict = new Dictionary<string, string>();
+               // important log variables
+                Basepath         = getDvar("fs_basepath").current;
+                Mod              = getDvar("fs_game").current;
+                logPath          = getDvar("g_log").current;
+                //int logSync = Convert.ToInt32(getDvar("g_logSync").current);   
 
-                for (int i = 0; i < infoResponse.Length; i++)
-                {
-                    if (i%2 == 0 || infoResponse[i] == String.Empty)
-                        continue;
-                    infoResponseDict.Add(infoResponse[i], infoResponse[i+1]);
-                }
+               if (Mod == String.Empty)
+                   logPath = Basepath + '\\' + "m2demo" + '\\' + logPath;
+               else
+                   logPath = Basepath + '\\' + Mod + '\\' + logPath;
 
-                mapname = infoResponseDict["mapname"];
-                try
-                {
-                    mapname = maps.Find(m => m.Name.Equals(mapname)).Alias;
-                }
-
-                catch(Exception)
-                {
-                    Log.Write(mapname + " doesn't appear to be in the maps.cfg", Log.Level.Debug);
-                }
-
-                hostname = Utilities.stripColors(infoResponseDict["sv_hostname"]);
-                IW_Ver = infoResponseDict["shortversion"];
-                maxClients = Convert.ToInt32(infoResponseDict["sv_maxclients"]);
-                Gametype = infoResponseDict["g_gametype"];
-
-                try
-                {
-                    Website = infoResponseDict["_website"];
-                }
-
-                catch (Exception)
-                {
-                    Website = "this server's website"; 
-                    Log.Write("Seems not to have website specified", Log.Level.Debug);
-                }
-
-                String[] p = RCON.addRCON("fs_basepath");
-
-                if (p == null)
-                {
-                    Log.Write("Could not obtain basepath!", Log.Level.All);
-                    return false;
-                }
-
-                p = p[1].Split('"');
-                Basepath = p[3].Substring(0, p[3].Length - 2).Trim();
-                p = null;
-                //END
-
-                //get fs_game
-                p = RCON.addRCON("fs_game");
-
-                if (p == null)
-                {
-                    Log.Write("Could not obtain mod path!", Log.Level.All);
-                    return false;
-                }
-
-                p = p[1].Split('"');
-                Mod = p[3].Substring(0, p[3].Length - 2).Trim().Replace('/', '\\');
-                p = null;
-
-                //END
-
-                //get g_log
-                p = RCON.addRCON("g_log");
-
-                if (p == null)
-                {
-                    Log.Write("Could not obtain log path!", Log.Level.All);
-                    return false;
-                }
-
-                if (p.Length < 4)
-                {
-                    Thread.Sleep(FLOOD_TIMEOUT);
-                    Log.Write("Server does not appear to have map loaded. Please map_rotate", Log.Level.All);
-                    return false;
-                }
-
-                p = p[1].Split('"');
-                string log = p[3].Substring(0, p[3].Length - 2).Trim();
-                p = null;
-
-                //END
-
-                //get g_logsync
-                p = RCON.addRCON("g_logsync");
-
-                if (p == null)
-                {
-                    Log.Write("Could not obtain log sync status!", Log.Level.All);
-                    return false;
-                }
-
-
-                p = p[1].Split('"');
-                int logsync = Convert.ToInt32(p[3].Substring(0, p[3].Length - 2).Trim());
-                p = null;
-
-                if (logsync != 1)
-                    RCON.addRCON("g_logsync 1");
-                //END
-
-                //get iw4m_onelog
-                p = RCON.addRCON("iw4m_onelog");
-
-                if (p[0] == String.Empty || p[1].Length < 15)
-                {
-                    Log.Write("Could not obtain iw4m_onelog value!", Log.Level.All);
-                    return false;
-                }
-
-                p = p[1].Split('"');
-                string onelog = p[3].Substring(0, p[3].Length - 2).Trim();
-                p = null;
-                //END
-
-                if (Mod == String.Empty || onelog == "1")
-                    logPath = Basepath + '\\' + "m2demo" + '\\' + log;
-                else
-                    logPath = Basepath + '\\' + Mod + '\\' + log;
-
-                if (!File.Exists(logPath))
-                {
-                    Log.Write("Gamelog does not exist!", Log.Level.All);
-                    return false;
-                }
-
-                logFile = new file(logPath);
-                Log.Write("Log file is " + logPath, Log.Level.Debug);
-
-               //get players ip's
-                p = RCON.addRCON("status");
-                if (p == null)
-                {
-                   Log.Write("Unable to get initial player list!", Log.Level.Debug);
+               if (!File.Exists(logPath))
+               {
+                   Log.Write("Gamelog does not exist!", Log.Level.All);
                    return false;
-                }
-               
-                lastPoll = DateTime.Now;
+               }
 
-#if DEBUG
-               /* System.Net.FtpWebRequest tmp = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create("");
-                tmp.Credentials = new System.Net.NetworkCredential("*", "*");
-                System.IO.Stream ftpStream = tmp.GetResponse().GetResponseStream();
-                String ftpLog = new StreamReader(ftpStream).ReadToEnd();*/
-                //logPath = "games_old.log"; 
-#endif
-                Log.Write("Now monitoring " + this.getName(), Log.Level.All);
-                return true;
+               logFile = new file(logPath);
+               Log.Write("Log file is " + logPath, Log.Level.Production);
+               Log.Write("Now monitoring " + this.getName(), Log.Level.Production);
+               return true;
             }
             catch (Exception E)
             {
@@ -982,21 +850,10 @@ namespace IW4MAdmin
                 return false;
             }
         }
-#endif
+
         //Process any server event
         public bool processEvent(Event E)
         {
-
-#if DEBUG
-            /*if (E.Type == Event.GType.Connect) // this is anow handled by memory :)
-            {
-                if (E.Origin == null)
-                    Log.Write("Connect event triggered, but no client is detected!", Log.Level.Debug);
-                addPlayer(E.Origin);
-                return true;
-            }*/
-#endif
-
             if (E.Type == Event.GType.Connect)
             {
                 return true;
@@ -1134,6 +991,8 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.MapChange)
             {
                 Log.Write("New map loaded - " + clientnum + " active players", Log.Level.Debug);
+                executeCommand("sv_mapRotation " + backupRotation);
+                executeCommand("scr_" + Gametype + "_timelimit " + backupTimeLimit);
 
                 Dictionary<String, String> infoResponseDict = new Dictionary<String, String>();
                 String[] infoResponse = E.Data.Split('\\');
@@ -1215,14 +1074,7 @@ namespace IW4MAdmin
         public void Tell(String Message, Player Target)
         {
             if (Target.getClientNum() > -1)
-            {
-#if DEBUG
-                RCON.addRCON("tell " + Target.getClientNum() + " " + Message + "^7");
-
-#else
                 RCON.addRCON("tellraw " + Target.getClientNum() + " " + Message + "^7"); // I fixed tellraw :>
-#endif
-            }
         }
 
         public void Kick(String Message, Player Target)
@@ -1269,13 +1121,11 @@ namespace IW4MAdmin
                 {
                     clientDB.removeBan(Target.getID(), Target.getIP());
 
-
-                    for (int i = 0; i < IW4MAdmin.Program.Servers.Count; i++)
-                        IW4MAdmin.Program.Servers[i].Bans = IW4MAdmin.Program.Servers[i].clientDB.getBans();
-
                     Player P = clientDB.getPlayer(Target.getID(), -1);
                     P.setLevel(Player.Permission.User);
                     clientDB.updatePlayer(P);
+
+                    Bans = clientDB.getBans();
                     return true;
                 }
             }
@@ -1292,7 +1142,7 @@ namespace IW4MAdmin
         public void mapRotate(int delay)
         {
             Utilities.Wait(delay);
-            RCON.addRCON("map_rotate");
+            executeCommand("map_rotate");
         }
 
         public void tempBan(String Message, Player Target)
@@ -1302,12 +1152,12 @@ namespace IW4MAdmin
         
         public void mapRotate()
         {
-            RCON.addRCON("map_rotate");
+            mapRotate(0);
         }
 
-        public void Map(String map)
+        public void Map(String mapName)
         {
-            RCON.addRCON("map " + map);
+            executeCommand("map " + mapName);
         }
 
         public String Wisdom()
@@ -1531,6 +1381,8 @@ namespace IW4MAdmin
         private DateTime lastWebChat;
         private int Handle;
         private int PID;
+        private String backupRotation;
+        private int backupTimeLimit;
 
         //Will probably move this later
         public Dictionary<String, Player> statusPlayers;

@@ -14,15 +14,27 @@ namespace IW4MAdmin
         private List<Server> Servers;
         private SortedDictionary<int, Thread> ThreadList;
         private List<int> activePIDs;
+        private Log mainLog;
 
         public Manager()
         {
             ThreadList = new SortedDictionary<int, Thread>();
+            file logFile = new file("IW4MAdmin_ApplicationLog.log");
+            mainLog = new Log(logFile, Log.Level.All, 0);
         }
 
         public void Init()
         {
             activePIDs = getCurrentIW4MProcesses();
+
+            if (activePIDs.Count == 0)
+            {
+                mainLog.Write("No viable IW4M instances detected.", Log.Level.All);
+                mainLog.Write("Shutting Down...", Log.Level.All);
+                Utilities.Wait(5);
+                return;
+            }
+
             Servers = loadServers();
 
             foreach (Server S in Servers)
@@ -31,12 +43,16 @@ namespace IW4MAdmin
                 Thread IW4MServerThread = new Thread(IW4MServer.Monitor);
                 ThreadList.Add(IW4MServer.pID(), IW4MServerThread);
                 IW4MServerThread.Start();
+
+                //mainLog.Write("Now monitoring the server running on port " + IW4MServer.getPort(), Log.Level.All);
             }
 
             while (true)
             {
+                List<Server> defunctServers = new List<Server>();
                 lock (Servers)
                 {
+             
                     foreach (Server S in Servers)
                     {
                         if (S == null)
@@ -50,22 +66,34 @@ namespace IW4MAdmin
                                 Defunct.Abort();
                                 ThreadList[S.pID()] = null;
                             }
+                            mainLog.Write("Server with PID #" + S.pID() + " no longer appears to be running.", Log.Level.All);
                             activePIDs.Remove(S.pID());
+                            defunctServers.Add(S);
                         }
                     }
                 }
+
+                foreach (Server S in defunctServers)
+                    Servers.Remove(S);
+                defunctServers = null;
+
                 scanForNewServers();
                 Utilities.Wait(5);
             }
         }
 
+        public List<Server> getServers()
+        {
+            return Servers;
+        }
+
         private void scanForNewServers()
         {
             List<int> newProcesses = getCurrentIW4MProcesses();
-            foreach (int pID in activePIDs)
+            foreach (int pID in newProcesses)
             {
                 bool newProcess = true;
-                foreach (int I in newProcesses)
+                foreach (int I in activePIDs)
                 {
                     if (I == pID)
                         newProcess = false;
@@ -73,12 +101,16 @@ namespace IW4MAdmin
 
                 if (newProcess)
                 {
-                    Server S = loadIndividualServer(pID);
-                    Servers.Add(S);
-                    Thread IW4MServerThread = new Thread(S.Monitor);
-                    ThreadList.Add(pID, IW4MServerThread);
 
-                    IW4MServerThread.Start();
+                    if (!ThreadList.ContainsKey(pID))
+                    {
+                        Server S = loadIndividualServer(pID);
+                        Servers.Add(S);
+                        Thread IW4MServerThread = new Thread(S.Monitor);
+                        ThreadList.Add(pID, IW4MServerThread);
+                        mainLog.Write("New server dectected on port " + S.getPort(), Log.Level.All);
+                        IW4MServerThread.Start();
+                    }
                 }
             }
 
@@ -88,14 +120,19 @@ namespace IW4MAdmin
         {
             if (pID > 0)
             {
-                Process P = Process.GetProcessById(pID);
-                if (P.ProcessName.Length == 0)
+                try
+                {
+                    Process P = Process.GetProcessById(pID);
+                    return true;
+                }
+
+                catch (System.ArgumentException)
                 {
                     return false;
-                    Console.WriteLine("Server with PID #" + pID + " doesn't seem to be running anymore");
                 }
-                return true;
+
             }
+
             return false;
         }
 
@@ -141,12 +178,24 @@ namespace IW4MAdmin
                 IntPtr Handle = OpenProcess(0x10, false, pID);
                 if (Handle != null)
                 {
+                    int timeWaiting = 0; 
+                    bool sv_running = false;
+                    int sv_runningPtr = Utilities.getIntFromPointer(0x1AD7934, (int)Handle) + 0x10; // where the dvar_t struct is stored + the offset for current value
+
+                    while(!sv_running) // server is still booting up
+                    {
+                        sv_running = Utilities.getBoolFromPointer(sv_runningPtr, (int)Handle);
+                        Utilities.Wait(1);
+                        timeWaiting++;
+
+                        if (timeWaiting > 60) // don't want to get stuck waiting forever if the server is frozen
+                            return null;
+                    }
+
                     dvar net_ip = Utilities.getDvar(0x64A1DF8, (int)Handle);
                     dvar net_port = Utilities.getDvar(0x64A3004, (int)Handle);
-                    // unfortunately this needs to be updated for every iw4m build :/
-                    dvar rcon_password = Utilities.getDvar(0x1120CC3C, (int)Handle);
 
-                    return new Server(Dns.GetHostAddresses(net_ip.current)[1].ToString(), Convert.ToInt32(net_port.current), rcon_password.current, (int)Handle, pID);
+                    return new Server(net_ip.current, Convert.ToInt32(net_port.current), "", (int)Handle, pID);
                 }
 
                 return null;

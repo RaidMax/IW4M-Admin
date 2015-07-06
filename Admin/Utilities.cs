@@ -315,11 +315,71 @@ namespace IW4MAdmin
                 return "a very long time";
         }
 
+        [Flags]
+        public enum ProcessAccessFlags : uint
+        {
+            Terminate = 0x00000001,
+            CreateThread = 0x00000002,
+            VMOperation = 0x00000008,
+            VMRead = 0x00000010,
+            VMWrite = 0x00000020,
+            DupHandle = 0x00000040,
+            SetInformation = 0x00000200,
+            QueryInformation = 0x00000400,
+            Synchronize = 0x00100000,
+            All = 0x001F0FFF
+        }
+
+        [Flags]
+        public enum AllocationType
+        {
+            Commit = 0x00001000,
+            Reserve = 0x00002000,
+            Decommit = 0x00004000,
+            Release = 0x00008000,
+            Reset = 0x00080000,
+            TopDown = 0x00100000,
+            WriteWatch = 0x00200000,
+            Physical = 0x00400000,
+            LargePages = 0x20000000
+        }
+
+        [Flags]
+        public enum MemoryProtection
+        {
+            NoAccess = 0x0001,
+            ReadOnly = 0x0002,
+            ReadWrite = 0x0004,
+            WriteCopy = 0x0008,
+            Execute = 0x0010,
+            ExecuteRead = 0x0020,
+            ExecuteReadWrite = 0x0040,
+            ExecuteWriteCopy = 0x0080,
+            GuardModifierflag = 0x0100,
+            NoCacheModifierflag = 0x0200,
+            WriteCombineModifierflag = 0x0400
+        }
+
         [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+        public static extern IntPtr OpenProcess(ProcessAccessFlags dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
         [DllImport("kernel32.dll")]
         public static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, uint nSize, out UIntPtr lpNumberOfBytesWritten);
+
+        [DllImport("kernel32.dll")]
+        static extern bool TerminateThread(IntPtr hThread, uint dwExitCode);
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, AllocationType flAllocationType, MemoryProtection flProtect);
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, out uint lpThreadId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool VirtualFree(IntPtr lpAddress, UIntPtr dwSize, AllocationType type);
 
         public static dvar getDvar(int Location, int Handle)
         {
@@ -363,6 +423,29 @@ namespace IW4MAdmin
             return dvar_actual;
         }
 
+        public static int getDvarCurrentAddress(int Location, int Handle)
+        {
+            int numberRead = 0;
+            Byte[] Buff = new Byte[72];
+            Byte[] Ptr = new Byte[4];
+
+            ReadProcessMemory(Handle, Location, Ptr, Ptr.Length, ref numberRead); // get location of dvar
+
+            ReadProcessMemory(Handle, (int)BitConverter.ToUInt32(Ptr, 0), Buff, Buff.Length, ref numberRead); // read dvar memory
+
+            dvar_t dvar_raw = Helpers.ReadStruct<dvar_t>(Buff); // get the dvar struct
+
+            int current = (int)dvar_raw.current;
+
+            return current;
+        }
+
+        public static void setDvar(int Location, int Handle, String Value)
+        {
+            UIntPtr bytesWritten = UIntPtr.Zero;
+            WriteProcessMemory((IntPtr)Handle, (IntPtr)Location, Encoding.ASCII.GetBytes(Value), (uint)Value.Length, out bytesWritten);
+        }
+
         public static String getStringFromPointer(int Location, int Handle)
         {
             int numberRead = 0;
@@ -389,6 +472,124 @@ namespace IW4MAdmin
             ReadProcessMemory(Handle, Location, Buff, Buff.Length, ref numberRead);
 
             return BitConverter.ToInt32(Buff, 0);
+        }
+
+        public static Boolean getBoolFromPointer(int Location, int Handle)
+        {
+            int numberRead = 0;
+            Byte[] Buff = new Byte[1];
+
+            ReadProcessMemory(Handle, Location, Buff, Buff.Length, ref numberRead);
+
+            return BitConverter.ToBoolean(Buff, 0);
+        }
+
+        public static void executeCommand(int pID, String Command)
+        {
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+            IntPtr memoryForCMDName = allocateAndWrite(Encoding.ASCII.GetBytes(Command + "\0"), ProcessHandle);
+            uint threadID;
+
+            if (memoryForCMDName == IntPtr.Zero)  
+                return;
+
+            // set the dvar's current value pointer to our desired command
+            setDvarCurrentPtr((IntPtr)0x2098D9C, memoryForCMDName, ProcessHandle);
+
+            // assembly instruction to execute the command we want stored in `surogate` dvar
+            byte[] executeCMD = {     
+                                    0x55, 0x8B, 0xEC, 0x51, 0xC7, 0x45, 0xFC,   // ---------------------------------------------
+                                    0x9C, 0x8D, 0x09, 0x02, 0x8B, 0x45, 0xFC,   // dvar_t** dvarWithCMD = (dvar_t**)(0x2098D9C);
+                                    0x8B, 0x08, 0x8B, 0x51, 0x10, 0x52, 0x6A, 
+                                    0x00, 0x6A, 0x00, 0xFF, 0x15, 0x1C, 0x53,   // Cmd_ExecuteSingleCommand(0, 0, (*dvarWithCMD)->current.string );
+                                    0x11, 0x10, 0x83, 0xC4, 0x0C, 0x8B, 0xE5,   // ---------------------------------------------
+                                    0x5D, 0xC3
+                                };
+            
+            // allocate the memory for the assembly command and write it
+            IntPtr codeAllocation = allocateAndWrite(executeCMD, ProcessHandle);
+            if (codeAllocation == IntPtr.Zero)
+                return;
+
+            // create our thread that executes command :)
+            Console.WriteLine(codeAllocation.ToString("X8"));
+            IntPtr ThreadHandle = CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, codeAllocation, IntPtr.Zero, 0, out threadID);
+
+            // cleanup
+            if (!VirtualFree(codeAllocation, (UIntPtr)executeCMD.Length, AllocationType.Decommit))
+                Thread.Sleep(1);
+            if (!VirtualFree(memoryForCMDName, (UIntPtr)Command.Length + 1, AllocationType.Decommit))
+                Thread.Sleep(1);
+        }
+
+        public static IntPtr allocateAndWrite(Byte[] Data, IntPtr ProcessHandle)
+        {
+            UIntPtr bytesWritten;
+            IntPtr AllocatedMemory = VirtualAllocEx(ProcessHandle, IntPtr.Zero, (uint)Data.Length, AllocationType.Commit, MemoryProtection.ExecuteReadWrite);
+            if (!WriteProcessMemory(ProcessHandle, AllocatedMemory, Data, (uint)Data.Length, out bytesWritten))
+            {
+                Console.WriteLine("UNABLE TO WRITE PROCESS MEMORY!");
+                return IntPtr.Zero;
+            }
+
+            if ((int)bytesWritten != Data.Length)
+                return IntPtr.Zero;
+            else
+                return AllocatedMemory;
+        }
+
+        public static bool setDvarCurrentPtr(IntPtr DvarAddress, IntPtr ValueAddress, IntPtr ProcessHandle)
+        {
+            int locationOfCurrentPtr = getIntFromPointer((int)DvarAddress, (int)ProcessHandle) + 0x10;
+            Byte[] newTextPtr = BitConverter.GetBytes((int)ValueAddress);
+            UIntPtr bytesWritten;
+            if (!WriteProcessMemory(ProcessHandle, (IntPtr)locationOfCurrentPtr, newTextPtr, (uint)newTextPtr.Length, out bytesWritten))
+                return false;
+            if (newTextPtr.Length != (int)bytesWritten)
+                return false;
+            return true;
+        }
+
+        public static dvar getDvarValue(int pID, String DVAR)
+        {
+            uint threadID = 0;
+
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
+            if (memoryForDvarName == IntPtr.Zero)
+                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
+
+            setDvarCurrentPtr((IntPtr)0x2098D9C, memoryForDvarName, ProcessHandle);
+
+            byte[] copyDvarValue = {   
+                                    0x55, 0x8B, 0xEC, 0x83, 0xEC, 0x08, // -----------------------------------------------
+                                    0xC7, 0x45, 0xFC, 0x9C, 0x8D, 0x09, // dvar_t** surogateDvar = (dvar_t**)(0x2098D9C);
+                                    0x02, 0x8B, 0x45, 0xFC, 0x8B, 0x08, //
+                                    0x8B, 0x51, 0x10, 0x52, 0xFF, 0x15,	// dvar_t *newDvar = Dvar_FindVar((*surogateDvar)->current.string);
+                                    0x6C, 0x53, 0x11, 0x10, 0x83, 0xC4, // 
+                                    0x04, 0x89, 0x45, 0xF8, 0x83, 0x7D, // if (newDvar)
+                                    0xF8, 0x00, 0x74, 0x0B, 0x8B, 0x45, // 
+                                    0xFC, 0x8B, 0x08, 0x8B, 0x55, 0xF8, // (*surogateDvar)->current.integer = (int)newDvar;
+                                    0x89, 0x51, 0x10, 0x8B, 0xE5, 0x5D, // -----------------------------------------------
+                                    0xC3
+                                };
+          
+            IntPtr codeAllocation = allocateAndWrite(copyDvarValue, ProcessHandle);
+
+            if (codeAllocation == IntPtr.Zero)
+                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR CODE");
+                                                                  
+            IntPtr ThreadHandle = CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, codeAllocation, IntPtr.Zero, 0, out threadID);
+
+            if (!VirtualFree(codeAllocation, UIntPtr.Zero, AllocationType.Release))
+                Thread.Sleep(1);
+            if (!VirtualFree(memoryForDvarName, UIntPtr.Zero, AllocationType.Release))
+                Thread.Sleep(1);
+
+            int dvarLoc = getIntFromPointer(0x2098D9C, (int)ProcessHandle);
+            //int ptrToOurDvar = getIntFromPointer(dvarLoc +, (int)ProcessHandle);
+            return getDvar(dvarLoc + 0x10, (int)ProcessHandle);
         }
 
         public static String timesConnected(int connection)

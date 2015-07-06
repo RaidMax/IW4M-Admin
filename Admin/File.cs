@@ -17,12 +17,29 @@ namespace IW4MAdmin
                 Directory.CreateDirectory(_Directory);
             
             if (!File.Exists(fileName))
-            { 
-                FileStream penis = File.Create(fileName);
-                penis.Close();
+            {
+                try
+                {
+                    FileStream penis = File.Create(fileName);
+                    penis.Close();
+                }
+
+                catch
+                {
+                    //Console.WriteLine("Unable to open log file for writing!");
+                }
             }
-            Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-            sze = Handle.BaseStream.Length;
+
+            try
+            {
+                Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                sze = Handle.BaseStream.Length;
+            }
+
+            catch
+            {
+                //Console.WriteLine("Unable to open log file for writing!");
+            }
         }
 
         public file(String file, bool write)
@@ -41,8 +58,11 @@ namespace IW4MAdmin
 
         public void Write(String line)
         {
-            writeHandle.WriteLine(line);
-            writeHandle.Flush();
+            if (writeHandle != null)
+            {
+                writeHandle.WriteLine(line);
+                writeHandle.Flush();
+            }
         }
 
         public String[] getParameters(int num)

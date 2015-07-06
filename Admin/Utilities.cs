@@ -378,8 +378,11 @@ namespace IW4MAdmin
         [DllImport("kernel32.dll")]
         public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, out uint lpThreadId);
 
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, AllocationType dwFreeType);
+
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool VirtualFree(IntPtr lpAddress, UIntPtr dwSize, AllocationType type);
+        static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
 
         public static dvar getDvar(int Location, int Handle)
         {
@@ -405,6 +408,8 @@ namespace IW4MAdmin
 
             if ((int)dvar_raw.current > short.MaxValue)
                 dvar_actual.current = getStringFromPointer((int)dvar_raw.current, Handle);
+            else if ((int)dvar_raw.current <= 1025)
+                dvar_actual.current = ((int)dvar_raw.current % 1024).ToString();
             else
                 dvar_actual.current = dvar_raw.current.ToString();
 
@@ -512,14 +517,18 @@ namespace IW4MAdmin
                 return;
 
             // create our thread that executes command :)
-            Console.WriteLine(codeAllocation.ToString("X8"));
             IntPtr ThreadHandle = CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, codeAllocation, IntPtr.Zero, 0, out threadID);
+            if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
+                return;
+
+            WaitForSingleObject(ThreadHandle, 5000);
 
             // cleanup
-            if (!VirtualFree(codeAllocation, (UIntPtr)executeCMD.Length, AllocationType.Decommit))
-                Thread.Sleep(1);
-            if (!VirtualFree(memoryForCMDName, (UIntPtr)Command.Length + 1, AllocationType.Decommit))
-                Thread.Sleep(1);
+            if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
+                Console.WriteLine(Marshal.GetLastWin32Error());
+            if (!VirtualFreeEx(ProcessHandle, memoryForCMDName, 0, AllocationType.Release))
+                Console.WriteLine(Marshal.GetLastWin32Error());
+
         }
 
         public static IntPtr allocateAndWrite(Byte[] Data, IntPtr ProcessHandle)
@@ -552,8 +561,8 @@ namespace IW4MAdmin
 
         public static dvar getDvarValue(int pID, String DVAR)
         {
+            dvar requestedDvar = new dvar();
             uint threadID = 0;
-
             IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
 
             IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
@@ -581,14 +590,17 @@ namespace IW4MAdmin
                 Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR CODE");
                                                                   
             IntPtr ThreadHandle = CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, codeAllocation, IntPtr.Zero, 0, out threadID);
+            if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
+                return requestedDvar;
 
-            if (!VirtualFree(codeAllocation, UIntPtr.Zero, AllocationType.Release))
-                Thread.Sleep(1);
-            if (!VirtualFree(memoryForDvarName, UIntPtr.Zero, AllocationType.Release))
-                Thread.Sleep(1);
+            WaitForSingleObject(ThreadHandle, 5000);
+
+            if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
+                Console.WriteLine(Marshal.GetLastWin32Error());
+            if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
+                Console.WriteLine(Marshal.GetLastWin32Error());
 
             int dvarLoc = getIntFromPointer(0x2098D9C, (int)ProcessHandle);
-            //int ptrToOurDvar = getIntFromPointer(dvarLoc +, (int)ProcessHandle);
             return getDvar(dvarLoc + 0x10, (int)ProcessHandle);
         }
 

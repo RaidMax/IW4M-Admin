@@ -607,7 +607,6 @@ namespace IW4MAdmin
             DateTime playerCountStart = DateTime.Now;
             DateTime lastCount = DateTime.Now;
 
-            Utilities.Wait(1);
 #if DEBUG == false
             Broadcast("IW4M Admin is now ^2ONLINE");
 #endif
@@ -991,8 +990,6 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.MapChange)
             {
                 Log.Write("New map loaded - " + clientnum + " active players", Log.Level.Debug);
-                executeCommand("sv_mapRotation " + backupRotation);
-                executeCommand("scr_" + Gametype + "_timelimit " + backupTimeLimit);
 
                 Dictionary<String, String> infoResponseDict = new Dictionary<String, String>();
                 String[] infoResponse = E.Data.Split('\\');

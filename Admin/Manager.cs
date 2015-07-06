@@ -15,6 +15,7 @@ namespace IW4MAdmin
         private SortedDictionary<int, Thread> ThreadList;
         private List<int> activePIDs;
         private Log mainLog;
+        private bool initialized = false;
 
         public Manager()
         {
@@ -46,6 +47,8 @@ namespace IW4MAdmin
 
                 //mainLog.Write("Now monitoring the server running on port " + IW4MServer.getPort(), Log.Level.All);
             }
+
+            initialized = true;
 
             while (true)
             {
@@ -178,19 +181,23 @@ namespace IW4MAdmin
                 IntPtr Handle = OpenProcess(0x10, false, pID);
                 if (Handle != null)
                 {
-                    int timeWaiting = 0; 
+                    int timeWaiting = 0;
+     
                     bool sv_running = false;
-                    int sv_runningPtr = Utilities.getIntFromPointer(0x1AD7934, (int)Handle) + 0x10; // where the dvar_t struct is stored + the offset for current value
+                    
 
                     while(!sv_running) // server is still booting up
                     {
+                        int sv_runningPtr = Utilities.getIntFromPointer(0x1AD7934, (int)Handle) + 0x10; // where the dvar_t struct is stored + the offset for current value
                         sv_running = Utilities.getBoolFromPointer(sv_runningPtr, (int)Handle);
                         Utilities.Wait(1);
                         timeWaiting++;
 
-                        if (timeWaiting > 60) // don't want to get stuck waiting forever if the server is frozen
+                        if (timeWaiting > 30) // don't want to get stuck waiting forever if the server is frozen
                             return null;
                     }
+
+                    Utilities.Wait(5);
 
                     dvar net_ip = Utilities.getDvar(0x64A1DF8, (int)Handle);
                     dvar net_port = Utilities.getDvar(0x64A3004, (int)Handle);
@@ -201,6 +208,11 @@ namespace IW4MAdmin
                 return null;
             }
             return null;
+        }
+
+        public bool isReady()
+        {
+            return initialized;
         }
     }
 }

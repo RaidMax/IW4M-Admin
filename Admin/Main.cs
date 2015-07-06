@@ -37,14 +37,22 @@ namespace IW4MAdmin
                 monitorThread.Start();
             }
 #endif  
-            IW4MAdmin.Manager serverManager = new IW4MAdmin.Manager();
-            serverManager.Init();
+            serverManager = new IW4MAdmin.Manager();
+
+            Thread serverMGRThread = new Thread(serverManager.Init);
+            serverMGRThread.Start();
+
+            while(!serverManager.isReady())
+            {
+                Utilities.Wait(1);
+            }
 
             if (serverManager.getServers() != null)
                 Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
 
-            //IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront(serverManager.getServers());
-            //frontEnd.Init();
+            //this is blocking so if it goes down :(
+            IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront();
+            frontEnd.Init();
         }
 #if DEBUG
         static void setupConfig()
@@ -76,9 +84,9 @@ namespace IW4MAdmin
             return Ver.Read();
         }
 
-        static public List<Server> getServers()
+        static public Server[] getServers()
         {
-            return serverManager.getServers();
+            return serverManager.getServers().ToArray();
         }
 
 #if DEBUG

@@ -115,7 +115,8 @@ namespace IW4MAdmin
                     //Current.Response = responseSendRCON(Current.Request);
                     Utilities.executeCommand(Instance.pID(), Current.Request);
                     toSend.Dequeue();
-                    Utilities.Wait(0.567);
+                    //Utilities.Wait(0.567);
+                    Utilities.Wait(.3);
                 }
                 else
                     Utilities.Wait(0.01);

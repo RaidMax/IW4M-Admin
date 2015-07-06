@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define ENABLED_CRAP_CODE_THAT_NEEDS_TO_BE_REWRITTEN
+using System;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,8 @@ using Kayak;
 using Kayak.Http;
 using System.Net;
 
-#if DEBUG
+
+#if ENABLED_CRAP_CODE_THAT_NEEDS_TO_BE_REWRITTEN
 namespace IW4MAdmin_Web
 {
     class Client
@@ -32,7 +34,7 @@ namespace IW4MAdmin_Web
 
     class WebFront
     {
-        private List<IW4MAdmin.Server> Servers;
+        private IW4MAdmin.Server[] Servers;
 
         public enum Page
         {
@@ -42,9 +44,9 @@ namespace IW4MAdmin_Web
             player
         }
 
-        public WebFront(List<IW4MAdmin.Server> curServers)
+        public WebFront()
         {
-            Servers = curServers;
+            Servers = IW4MAdmin.Program.getServers();
         }
 
         public void Init()
@@ -86,21 +88,22 @@ namespace IW4MAdmin_Web
         static public String parseMacros(String input, WebFront.Page Page, int server, int Pagination, bool logged, String Data)
         {
             StringBuilder buffer = new StringBuilder();
+            IW4MAdmin.Server[] Servers= IW4MAdmin.Program.getServers();
             switch (input)
             {
                 case "SERVERS":
                     int cycleFix = 0;
-                    foreach (IW4MAdmin.Server S in IW4MAdmin.Program.getServers())
+                    for (int i = 0; i < Servers.Count(); i++)
                     {
                         StringBuilder players = new StringBuilder();
-                        if (S.getClientNum() < 1)
+                        if (Servers[i].getClientNum() < 1)
                             players.Append("<h2>No Players</h2>");
                         else
                         {
                             int count = 0;
-                            double currentPlayers = S.statusPlayers.Count;
-                            
-                            foreach (IW4MAdmin.Player P in S.getPlayers())
+                            double currentPlayers = Servers[i].statusPlayers.Count;
+
+                            foreach (IW4MAdmin.Player P in Servers[i].getPlayers())
                             {
                                 if (P == null)
                                     continue;
@@ -119,9 +122,9 @@ namespace IW4MAdmin_Web
                                             break;
                                     }
                                 }
-  
-                                players.AppendFormat("<td><a href='/{0}/{1}/userip/?player'>{2}</a></td>", S.pID(), P.getDBID(), IW4MAdmin.Utilities.nameHTMLFormatted(P));
-                                
+
+                                players.AppendFormat("<td><a href='/{0}/{1}/userip/?player'>{2}</a></td>", Servers[i].pID(), P.getDBID(), IW4MAdmin.Utilities.nameHTMLFormatted(P));
+
                                 if (count % 2 != 0)
                                 {
                                     players.Append("</tr>");
@@ -144,11 +147,11 @@ namespace IW4MAdmin_Web
                                              </table>
                                              <table cellpadding='0' cellspacing='0' class='players'>
                                                     {5}
-                                            </table>", 
-                                             S.getName(), S.getMap(), S.getClientNum() + "/" + S.getMaxClients(), IW4MAdmin.Utilities.gametypeLocalized(S.getGametype()), S.pID(), players.ToString());
-                        buffer.AppendFormat("<div class='chatHistory' id='chatHistory_{0}'></div><script type='text/javascript'>$( document ).ready(function() {{ setInterval({1}loadChatMessages({0}, '#chatHistory_{0}'){1}, 2500); }});</script><div class='null' style='clear:both;'></div>", S.pID(), '\"');
-                        if (S.getClientNum() > 0)
-                            buffer.AppendFormat("<form class='chatOutFormat' action={1}javascript:chatRequest({0}, 'chatEntry_{0}'){1}><input class='chatFormat_text' type='text' placeholder='Enter a message...' id='chatEntry_{0}'/><input class='chatFormat_submit' type='submit'/></form>", server.pID(), '\"');
+                                            </table>",
+                                             Servers[i].getName(), Servers[i].getMap(), Servers[i].getClientNum() + "/" + Servers[i].getMaxClients(), IW4MAdmin.Utilities.gametypeLocalized(Servers[i].getGametype()), i, players.ToString());
+                        buffer.AppendFormat("<div class='chatHistory' id='chatHistory_{0}'></div><script type='text/javascript'>$( document ).ready(function() {{ setInterval({1}loadChatMessages({0}, '#chatHistory_{0}'){1}, 2500); }});</script><div class='null' style='clear:both;'></div>", i, '\"');
+                        if (Servers[i].getClientNum() > 0)
+                            buffer.AppendFormat("<form class='chatOutFormat' action={1}javascript:chatRequest({0}, 'chatEntry_{0}'){1}><input class='chatFormat_text' type='text' placeholder='Enter a message...' id='chatEntry_{0}'/><input class='chatFormat_submit' type='submit'/></form>", i, '\"');
                         buffer.Append("<hr/>");
                     }
                     return buffer.ToString();
@@ -214,13 +217,13 @@ namespace IW4MAdmin_Web
                     }
                     buffer.Append("</table><hr/>");
 
-                    buffer.Append(parsePagination(server, IW4MAdmin.Program.getServers()[0].Bans.Count, 30, Pagination, "bans"));
+                    buffer.Append(parsePagination(server, Servers[0].Bans.Count, 30, Pagination, "bans"));
                     return buffer.ToString();
                 case "PAGE":
                     buffer.Append("<div id=pages>");              
                     return buffer.ToString();
                 case "STATS":
-                    int totalStats = IW4MAdmin.Program.Servers[server].statDB.totalStats();
+                    int totalStats = Servers[server].statDB.totalStats();
                     buffer.Append("<h1 style='margin-top: 0;'>Starting at #{{TOP}}</h1><hr />");
                     buffer.Append("<table style='width:100%' cellspacing=0 class=stats>");
  
@@ -231,7 +234,7 @@ namespace IW4MAdmin_Web
                         range = (totalStats - start);
                     else
                         range = 30;
-                    List<IW4MAdmin.Stats> Stats = IW4MAdmin.Program.Servers[server].statDB.getMultipleStats(start, range).OrderByDescending(x => x.Skill).ToList();
+                    List<IW4MAdmin.Stats> Stats = Servers[server].statDB.getMultipleStats(start, range).OrderByDescending(x => x.Skill).ToList();
                     buffer.Append("<tr><th style=text-align:left;>Name</th><th style=text-align:left;>Kills</th><th style=text-align:left;>Deaths</th><th style=text-align:left;>KDR</th><th style='width: 175px; text-align:right;'>Rating</th></tr>");
                     cycleFix = 0;
                     for (int i = 0; i < totalStats; i++)
@@ -239,7 +242,7 @@ namespace IW4MAdmin_Web
                         if (i >= Stats.Count -1 || Stats[i] == null )
                             continue;
 
-                        IW4MAdmin.Player P = IW4MAdmin.Program.Servers[server].clientDB.getPlayer(Stats[i].statIndex);
+                        IW4MAdmin.Player P = Servers[server].clientDB.getPlayer(Stats[i].statIndex);
 
                         if (P == null)
                             continue;
@@ -268,18 +271,18 @@ namespace IW4MAdmin_Web
                     List<IW4MAdmin.Player> matchingPlayers = new List<IW4MAdmin.Player>();
 
                     if (Data == null)
-                        matchingPlayers.Add(IW4MAdmin.Program.Servers[server].clientDB.getPlayer(Pagination));
+                        matchingPlayers.Add(Servers[server].clientDB.getPlayer(Pagination));
                     else
                     {
-                        var alias = IW4MAdmin.Program.Servers[server].aliasDB.findPlayers(Data);
+                        var alias = Servers[server].aliasDB.findPlayers(Data);
 
                         foreach (var a in alias)
                         {
-                            var p = IW4MAdmin.Program.Servers[server].clientDB.getPlayer(a.getNumber());
+                            var p = Servers[server].clientDB.getPlayer(a.getNumber());
                             if (p != null)
                             {
                                 List<IW4MAdmin.Player> aliases = new List<IW4MAdmin.Player>();
-                                IW4MAdmin.Program.Servers[server].getAliases(aliases, p);
+                                Servers[server].getAliases(aliases, p);
 
                                 foreach (var pa in aliases)
                                 {
@@ -303,7 +306,7 @@ namespace IW4MAdmin_Web
                             buffer.Append("<tr>");
                             StringBuilder str = new StringBuilder();
                             List<IW4MAdmin.Player> aliases = new List<IW4MAdmin.Player>();
-                            IW4MAdmin.Program.Servers[server].getAliases(aliases, Player);
+                            Servers[server].getAliases(aliases, Player);
 
                             foreach (IW4MAdmin.Player a in aliases)
                             {
@@ -319,7 +322,7 @@ namespace IW4MAdmin_Web
                                     str.AppendFormat("<span>{0}</span><br/>", a.getName());
                             }
 
-                            Player.stats = IW4MAdmin.Program.Servers[server].statDB.getStats(Player.getDBID());
+                            Player.stats = Servers[server].statDB.getStats(Player.getDBID());
                             String Rating = String.Empty;
 
                             if (Player.stats == null)
@@ -373,7 +376,7 @@ namespace IW4MAdmin_Web
         {
             String output = input;
 
-            bool logged = IW4MAdmin.Program.Servers[server].clientDB.getAdmins().Exists(player => player.getIP() == C.requestOrigin["Host"].Split(':')[0]);
+            bool logged = IW4MAdmin.Program.getServers()[server].clientDB.getAdmins().Exists(player => player.getIP() == C.requestOrigin["Host"].Split(':')[0]);
 
             switch (C.requestedPage)
             {
@@ -469,11 +472,11 @@ namespace IW4MAdmin_Web
                         test.Append("<script type='text/javascript' src='//www.google.com/jsapi'></script><div id='chart_div'></div>");
                         test.Append("<script> var players = [");
                         int count = 1;
-                        List<IW4MAdmin.pHistory> run = IW4MAdmin.Program.Servers[server].playerHistory.ToList();
+                        List<IW4MAdmin.pHistory> run = IW4MAdmin.Program.getServers()[server].playerHistory.ToList();
                         foreach (IW4MAdmin.pHistory i in run) //need to reverse for proper timeline
                         {
                             test.AppendFormat("[new Date({0}, {1}, {2}, {3}, {4}), {5}]", i.When.Year, i.When.Month - 1, i.When.Day, i.When.Hour, i.When.Minute, i.Players);
-                            if (count < IW4MAdmin.Program.Servers[server].playerHistory.Count)
+                            if (count < IW4MAdmin.Program.getServers()[server].playerHistory.Count)
                                 test.Append(",\n");
                             count++;
                         }
@@ -504,7 +507,7 @@ namespace IW4MAdmin_Web
                             IP = req[2];
                         }
 
-                        IW4MAdmin.Player P = IW4MAdmin.Program.Servers[server].clientDB.getPlayer(IP);
+                        IW4MAdmin.Player P = IW4MAdmin.Program.getServers()[server].clientDB.getPlayer(IP);
                         if (P == null)
                             P = new IW4MAdmin.Player("Guest", "Guest", 0, 0);
                        // if (P.getLevel() > IW4MAdmin.Player.Permission.Flagged)
@@ -534,10 +537,10 @@ namespace IW4MAdmin_Web
                             Text = null;
                         }
 
-                        if (IP == null && IW4MAdmin.Program.Servers[server].getClientNum() > 0)
+                        if (IP == null && IW4MAdmin.Program.getServers()[server].getClientNum() > 0)
                         {
                             chatMessages.Append("<table id='table_chatHistory'>");
-                            foreach (IW4MAdmin.Chat Message in IW4MAdmin.Program.Servers[server].chatHistory)
+                            foreach (IW4MAdmin.Chat Message in IW4MAdmin.Program.getServers()[server].chatHistory)
                                 chatMessages.AppendFormat("<tr><td class='chat_name' style='text-align: left;'>{0}</td><td class='chat_message'>{1}</td><td class='chat_time' style='text-align: right;'>{2}</td></tr>", IW4MAdmin.Utilities.nameHTMLFormatted(Message.Origin), Message.Message, Message.timeString());
                             chatMessages.Append("</table>");
                             body = chatMessages.ToString();
@@ -545,10 +548,10 @@ namespace IW4MAdmin_Web
 
                         else if (Text != null && Text.Length > 4)
                         {
-                            IW4MAdmin.Player requestPlayer = IW4MAdmin.Program.Servers[server].clientDB.getPlayer(IP);
+                            IW4MAdmin.Player requestPlayer = IW4MAdmin.Program.getServers()[server].clientDB.getPlayer(IP);
 
                             if (requestPlayer != null)
-                                IW4MAdmin.Program.Servers[server].webChat(requestPlayer, Text);
+                                IW4MAdmin.Program.getServers()[server].webChat(requestPlayer, Text);
                         }
                     }
 
@@ -557,7 +560,7 @@ namespace IW4MAdmin_Web
                         type = "text/plain";
                         StringBuilder banTXT = new StringBuilder();
                         banTXT.AppendFormat("===========================================\nIW4M ADMIN PUBLIC BAN LIST\nGENERATED {0}\nIP---GUID---REASON---TIME\n===========================================\n", DateTime.Now.ToString());
-                        foreach (IW4MAdmin.Ban B in IW4MAdmin.Program.Servers[0].Bans)
+                        foreach (IW4MAdmin.Ban B in IW4MAdmin.Program.getServers()[0].Bans)
                         {
                             if (B.getIP() != null && B.getIP() != String.Empty && B.getReason() != null && B.getReason() != String.Empty)
                                 banTXT.AppendFormat("{0}---{1}---{2}---{3}\n", B.getIP(), B.getID(), B.getReason().Trim(), Math.Round((B.getTime()-DateTime.MinValue).TotalSeconds, 0));
@@ -574,7 +577,7 @@ namespace IW4MAdmin_Web
                         body = Macro.findMacros(header + main + footer, toSend, server);
                     }
 
-                    IW4MAdmin.Program.Servers[server].Log.Write("Webfront processed request for " + request.Uri, IW4MAdmin.Log.Level.Debug);
+                    IW4MAdmin.Program.getServers()[server].Log.Write("Webfront processed request for " + request.Uri, IW4MAdmin.Log.Level.Debug);
                 }
 
                 var headers = new HttpResponseHead()

@@ -845,7 +845,7 @@ namespace IW4MAdmin
             }
             catch (Exception E)
             {
-                Log.Write("Error during initialization - " + E.Message, Log.Level.All);
+                Log.Write("Error during initialization - " + E.Message +"--" + E.StackTrace, Log.Level.All);
                 return false;
             }
         }

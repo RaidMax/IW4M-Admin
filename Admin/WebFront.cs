@@ -123,7 +123,7 @@ namespace IW4MAdmin_Web
                                     }
                                 }
 
-                                players.AppendFormat("<td><a href='/{0}/{1}/userip/?player'>{2}</a></td>", Servers[i].pID(), P.getDBID(), IW4MAdmin.Utilities.nameHTMLFormatted(P));
+                                players.AppendFormat("<td><a href='/{0}/{1}/userip/?player'>{2}</a></td>", i, P.getDBID(), IW4MAdmin.Utilities.nameHTMLFormatted(P));
 
                                 if (count % 2 != 0)
                                 {

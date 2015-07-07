@@ -521,7 +521,7 @@ namespace IW4MAdmin
             if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
                 return;
 
-            WaitForSingleObject(ThreadHandle, 5000);
+            WaitForSingleObject(ThreadHandle, 500000);
 
             // cleanup
             if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
@@ -593,7 +593,7 @@ namespace IW4MAdmin
             if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
                 return requestedDvar;
 
-            WaitForSingleObject(ThreadHandle, 5000);
+            WaitForSingleObject(ThreadHandle, 500000);
 
             if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
                 Console.WriteLine(Marshal.GetLastWin32Error());

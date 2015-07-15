@@ -20,7 +20,7 @@ namespace IW4MAdmin
         public Manager()
         {
             ThreadList = new SortedDictionary<int, Thread>();
-            file logFile = new file("IW4MAdmin_ApplicationLog.log");
+            file logFile = new file("IW4MAdminManager.log", true);
             mainLog = new Log(logFile, Log.Level.All, 0);
         }
 
@@ -31,7 +31,6 @@ namespace IW4MAdmin
             if (activePIDs.Count == 0)
             {
                 mainLog.Write("No viable IW4M instances detected.", Log.Level.All);
-                mainLog.Write("Shutting Down...", Log.Level.All);
                 Utilities.Wait(5);
                 return;
             }
@@ -199,12 +198,11 @@ namespace IW4MAdmin
 
                     Utilities.Wait(5);
 
-                    dvar net_ip = Utilities.getDvar(0x64A1DF8, (int)Handle);
-                    dvar net_port = Utilities.getDvar(0x64A3004, (int)Handle);
+                    dvar net_ip = Utilities.getDvarOld(0x64A1DF8, (int)Handle);
+                    dvar net_port = Utilities.getDvarOld(0x64A3004, (int)Handle);
 
                     return new Server(net_ip.current, Convert.ToInt32(net_port.current), "", (int)Handle, pID);
                 }
-
                 return null;
             }
             return null;

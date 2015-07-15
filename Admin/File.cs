@@ -26,7 +26,7 @@ namespace IW4MAdmin
 
                 catch
                 {
-                    //Console.WriteLine("Unable to open log file for writing!");
+                    Console.WriteLine("Unable to open log file for writing!");
                 }
             }
 
@@ -46,7 +46,7 @@ namespace IW4MAdmin
         {
             Name = file;
             writeHandle = new StreamWriter(new FileStream(Name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite));
-        //    writeHandle.AutoFlush = true;
+        //   writeHandle.AutoFlush = true;
             sze = 0;
         }
 

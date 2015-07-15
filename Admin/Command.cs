@@ -75,9 +75,7 @@ namespace IW4MAdmin
             else
                 E.Origin.Tell("This server already has an owner!");
         }
-
     }
-
 
     class Warn : Command
     {
@@ -95,10 +93,8 @@ namespace IW4MAdmin
                 E.Owner.Broadcast(Message);
                 if (E.Target.Warnings >= 4)
                     E.Target.Kick("You were kicked for too many warnings!");
-            }
-                
+            }       
         }
-
     }
 
     class WarnClear : Command
@@ -112,7 +108,6 @@ namespace IW4MAdmin
             String Message = String.Format("All warning cleared for {0}", E.Target.getName());
             E.Owner.Broadcast(Message);
         }
-
     }
 
     class Kick : Command
@@ -122,13 +117,12 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             E.Target.LastOffense = Utilities.removeWords(E.Data, 1);
-            String Message = "^1Player Kicked: ^5" + E.Target.LastOffense + "              ^1Admin: ^5" + E.Origin.getName();
+            String Message = "^1Player Kicked: ^5" + E.Target.LastOffense + "                    ^1Admin: ^5" + E.Origin.getName();
             if (E.Origin.getLevel() > E.Target.getLevel())
                 E.Target.Kick(Message);
             else
                 E.Origin.Tell("You cannot kick " + E.Target.getName());            
         }
-
     }
 
     class Say : Command
@@ -139,7 +133,6 @@ namespace IW4MAdmin
         {
             E.Owner.Broadcast("^1" + E.Origin.getName() + " - ^6" + E.Data + "^7");
         }
-
     }
 
     class TempBan : Command
@@ -155,7 +148,6 @@ namespace IW4MAdmin
             else
                 E.Origin.Tell("You cannot temp ban " + E.Target.getName());
         }
-
     }
 
     class SBan : Command
@@ -170,7 +162,7 @@ namespace IW4MAdmin
             if (E.Owner.Website == null)
                 Message = "^1Player Banned: ^5" + E.Target.LastOffense;
             else
-                Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal at nbsclan.org)";
+                Message = "^1Player Banned: ^5" + E.Target.LastOffense + "^7 (appeal " + E.Owner.Website;
             if (E.Origin.getLevel() > E.Target.getLevel())
             {
                 E.Target.Ban(Message, E.Origin);
@@ -179,7 +171,6 @@ namespace IW4MAdmin
             else
                 E.Origin.Tell("You cannot ban " + E.Target.getName());
         }
-
     }
 
     class Unban : Command
@@ -193,7 +184,6 @@ namespace IW4MAdmin
             else
                 E.Origin.Tell("Unable to find a ban for that GUID");
         }
-
     }
 
     class WhoAmI : Command
@@ -205,7 +195,6 @@ namespace IW4MAdmin
             String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.getName(), E.Origin.getClientNum(), E.Origin.getID(), E.Origin.getDBID(), Utilities.levelToColor(E.Origin.getLevel()), E.Origin.getIP());
             E.Origin.Tell(You);
         }
-
     }
 
     class List : Command
@@ -214,15 +203,17 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            foreach (Player P in E.Owner.getPlayers())
+            lock (E.Owner.getPlayers())
             {
-                if (P == null)
-                    continue;
+                foreach (Player P in E.Owner.getPlayers())
+                {
+                    if (P == null)
+                        continue;
 
-                E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.getLevel()), P.getClientNum(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
+                    E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.getLevel()), P.getClientNum(), P.getName(), Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.getLevel().ToString().Length)));
+                }
             }
         }
-
     }
 
     class Help : Command
@@ -271,7 +262,6 @@ namespace IW4MAdmin
                 E.Origin.Tell("Type !help <cmd> to get command usage example");
             }
         }
-
     }
 
     class FastRestart : Command
@@ -295,7 +285,6 @@ namespace IW4MAdmin
             E.Owner.Broadcast("Performing map rotate in 5 seconds...");
             E.Owner.mapRotate(5);
         }
-
     }
 
     class SetLevel : Command
@@ -324,7 +313,6 @@ namespace IW4MAdmin
             else
                 E.Origin.Tell("Invalid group specified.");
         }
-
     }
 
     class Usage : Command
@@ -335,7 +323,6 @@ namespace IW4MAdmin
         {
             E.Origin.Tell("IW4M Admin is using " + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
         }
-
     }
 
     class Uptime : Command
@@ -347,7 +334,6 @@ namespace IW4MAdmin
             TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
             E.Origin.Tell(String.Format("IW4M Admin has been up for {0} days, {1} hours, and {2} minutes", uptime.Days, uptime.Hours, uptime.Minutes));
         }
-
     }
 
     class Admins : Command
@@ -368,7 +354,6 @@ namespace IW4MAdmin
                 }
             }
         }
-
     }
 
     class Wisdom : Command
@@ -379,7 +364,6 @@ namespace IW4MAdmin
         {
             E.Owner.Broadcast(E.Owner.Wisdom());
         }
-
     }
 
 
@@ -405,7 +389,6 @@ namespace IW4MAdmin
             Utilities.Wait(3);
             E.Owner.Map(newMap);
         }
-
     }
 
     class Find : Command

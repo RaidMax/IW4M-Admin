@@ -217,7 +217,6 @@ namespace IW4MAdmin
                     NewPlayer.lastEvent = new Event(Event.GType.Say, null, NewPlayer, null, this); // this is messy but its throwing an error when they've started it too late
                 else
                     NewPlayer.lastEvent = P.lastEvent;
-
            
                 // lets check aliases 
                 if ((NewPlayer.Alias.getNames().Find(m => m.Equals(P.getName()))) == null || NewPlayer.getName() == null || NewPlayer.getName() == String.Empty) 
@@ -294,7 +293,7 @@ namespace IW4MAdmin
                 }
 
                 //finally lets check their clean status :>
-                checkClientStatus(NewPlayer);
+                //checkClientStatus(NewPlayer);
 
                 lock (players)
                 {
@@ -529,27 +528,17 @@ namespace IW4MAdmin
 
         public void executeCommand(String CMD)
         {
-            if (CMD.ToLower() == "map_restart" || CMD.ToLower() == "map_rotate")
-                return;
-
-            else if (CMD.ToLower().Substring(0, 4) == "map ")
-            {
-                backupRotation = getDvar("sv_mapRotation").current;
-                backupTimeLimit = Convert.ToInt32(getDvar("scr_" + Gametype + "_timelimit").current);
-                Utilities.executeCommand(PID, "sv_maprotation map " + CMD.ToLower().Substring(4, CMD.Length-4));
-                Utilities.executeCommand(PID, "scr_" + Gametype + "_timelimit 0.001");
-                Utilities.Wait(1);
-                Utilities.executeCommand(PID, "scr_" + Gametype + "_timelimit " + backupTimeLimit);
-            }
-
-            else
-                Utilities.executeCommand(PID, CMD);
-                
+            Utilities.executeCommand(PID, CMD);     
         }
 
         private dvar getDvar(String DvarName)
         {
-            return Utilities.getDvarValue(PID, DvarName);
+            return Utilities.getDvar(PID, DvarName);
+        }
+
+        private void setDvar(String Dvar, String Value)
+        {
+            //Utilities.setDvar(PID, Dvar, Value);
         }
 
         [DllImport("kernel32.dll")]
@@ -814,20 +803,30 @@ namespace IW4MAdmin
         {
            try
            {
-               // basic info dvars
+               // inject our dll 
+               if (!Utilities.initalizeInterface(PID))
+               {
+                   Log.Write("Could not load IW4MAdmin interface!", IW4MAdmin.Log.Level.Debug);
+                   return false;
+               }
+                // basic info dvars
                 hostname         = Utilities.stripColors(getDvar("sv_hostname").current);
                 mapname          = getDvar("mapname").current;
                 IW_Ver           = getDvar("shortversion").current;
                 maxClients       = Convert.ToInt32(getDvar("party_maxplayers").current);
                 Gametype         = getDvar("g_gametype").current;
 
-               // important log variables
+                // important log variables
                 Basepath         = getDvar("fs_basepath").current;
                 Mod              = getDvar("fs_game").current;
                 logPath          = getDvar("g_log").current;
-                //int logSync = Convert.ToInt32(getDvar("g_logSync").current);   
+                int oneLog       = Convert.ToInt32(getDvar("iw4m_onelog").current);
 
-               if (Mod == String.Empty)
+                // our settings
+               setDvar("sv_kickBanTime", "3600");      // 1 hour
+               setDvar("g_logSync", "1");              // yas
+
+               if (Mod == String.Empty || oneLog == 1)
                    logPath = Basepath + '\\' + "m2demo" + '\\' + logPath;
                else
                    logPath = Basepath + '\\' + Mod + '\\' + logPath;

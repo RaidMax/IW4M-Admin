@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace IW4MAdmin
 {
@@ -384,48 +385,59 @@ namespace IW4MAdmin
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
 
-        public static dvar getDvar(int Location, int Handle)
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern int CloseHandle(IntPtr hObject);
+
+        public static dvar getDvar(int Location, IntPtr Handle)
         {
             int numberRead = 0;
             Byte[] Buff = new Byte[72];
-            Byte[] Ptr = new Byte[4];
 
-            ReadProcessMemory(Handle, Location, Ptr, Ptr.Length, ref numberRead); // get location of dvar
-
-            ReadProcessMemory(Handle, (int)BitConverter.ToUInt32(Ptr, 0), Buff, Buff.Length, ref numberRead); // read dvar memory
+            ReadProcessMemory((int)Handle, Location, Buff, Buff.Length, ref numberRead); // read dvar memory
 
             dvar_t dvar_raw = Helpers.ReadStruct<dvar_t>(Buff); // get the dvar struct
-
             dvar dvar_actual = new dvar(); // gotta convert to something readable
 
-            dvar_actual.name = getStringFromPointer((int)dvar_raw.name, Handle);
-            dvar_actual.description = getStringFromPointer((int)dvar_raw.description, Handle);
+            dvar_actual.name = getStringFromPointer((int)dvar_raw.name, (int)Handle);
+            dvar_actual.description = getStringFromPointer((int)dvar_raw.description, (int)Handle);
 
             if ((int)dvar_raw._default > short.MaxValue)
-                dvar_actual._default = getStringFromPointer((int)dvar_raw._default, Handle);
+                dvar_actual._default = getStringFromPointer((int)dvar_raw._default, (int)Handle);
             else
                 dvar_actual._default = dvar_raw._default.ToString();
 
             if ((int)dvar_raw.current > short.MaxValue)
-                dvar_actual.current = getStringFromPointer((int)dvar_raw.current, Handle);
+                dvar_actual.current = getStringFromPointer((int)dvar_raw.current, (int)Handle);
             else if ((int)dvar_raw.current <= 1025)
                 dvar_actual.current = ((int)dvar_raw.current % 1024).ToString();
             else
                 dvar_actual.current = dvar_raw.current.ToString();
 
             if ((int)dvar_raw.latched > short.MaxValue)
-                dvar_actual.latched = getStringFromPointer((int)dvar_raw.latched, Handle);
+                dvar_actual.latched = getStringFromPointer((int)dvar_raw.latched, (int)Handle);
             else
                 dvar_actual.latched = dvar_raw.latched.ToString();
 
             dvar_actual.type = dvar_raw.type;
-            dvar_actual.flags = getIntFromPointer((int)dvar_raw.flags, Handle);
-            dvar_actual.max = getIntFromPointer((int)dvar_raw.max, Handle);
-            dvar_actual.min = getIntFromPointer((int)dvar_raw.min, Handle);
+            dvar_actual.flags = getIntFromPointer((int)dvar_raw.flags, (int)Handle);
+            dvar_actual.max = getIntFromPointer((int)dvar_raw.max, (int)Handle);
+            dvar_actual.min = getIntFromPointer((int)dvar_raw.min, (int)Handle);
 
             // done!
 
             return dvar_actual;
+        }
+
+        public static dvar getDvarOld(int Location, int Handle)
+        {
+            int loc = getIntFromPointer(Location, Handle);
+            return getDvar(loc, (IntPtr)Handle);
         }
 
         public static int getDvarCurrentAddress(int Location, int Handle)
@@ -435,11 +447,9 @@ namespace IW4MAdmin
             Byte[] Ptr = new Byte[4];
 
             ReadProcessMemory(Handle, Location, Ptr, Ptr.Length, ref numberRead); // get location of dvar
-
             ReadProcessMemory(Handle, (int)BitConverter.ToUInt32(Ptr, 0), Buff, Buff.Length, ref numberRead); // read dvar memory
 
             dvar_t dvar_raw = Helpers.ReadStruct<dvar_t>(Buff); // get the dvar struct
-
             int current = (int)dvar_raw.current;
 
             return current;
@@ -447,8 +457,8 @@ namespace IW4MAdmin
 
         public static void setDvar(int Location, int Handle, String Value)
         {
-            UIntPtr bytesWritten = UIntPtr.Zero;
-            WriteProcessMemory((IntPtr)Handle, (IntPtr)Location, Encoding.ASCII.GetBytes(Value), (uint)Value.Length, out bytesWritten);
+            //UIntPtr bytesWritten = UIntPtr.Zero;
+            //WriteProcessMemory((IntPtr)Handle, (IntPtr)Location, Encoding.ASCII.GetBytes(Value), (uint)Value.Length, out bytesWritten);
         }
 
         public static String getStringFromPointer(int Location, int Handle)
@@ -491,7 +501,7 @@ namespace IW4MAdmin
 
         public static void executeCommand(int pID, String Command)
         {
-            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+            /*IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
             IntPtr memoryForCMDName = allocateAndWrite(Encoding.ASCII.GetBytes(Command + "\0"), ProcessHandle);
             uint threadID;
 
@@ -521,13 +531,13 @@ namespace IW4MAdmin
             if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
                 return;
 
-            WaitForSingleObject(ThreadHandle, 500000);
+            WaitForSingleObject(ThreadHandle, Int32.MaxValue); // gg if it doesn't finishe
 
             // cleanup
             if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
                 Console.WriteLine(Marshal.GetLastWin32Error());
             if (!VirtualFreeEx(ProcessHandle, memoryForCMDName, 0, AllocationType.Release))
-                Console.WriteLine(Marshal.GetLastWin32Error());
+                Console.WriteLine(Marshal.GetLastWin32Error());*/
 
         }
 
@@ -559,19 +569,77 @@ namespace IW4MAdmin
             return true;
         }
 
-        public static dvar getDvarValue(int pID, String DVAR)
+        public static bool initalizeInterface(int pID)
         {
-            dvar requestedDvar = new dvar();
-            uint threadID = 0;
-            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+            String Path = AppDomain.CurrentDomain.BaseDirectory + "lib\\AdminInterface.dll";
 
-            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
+            if (!File.Exists(Path))
+                return false;
+
+            UIntPtr bytesWritten;
+            uint threadID;
+
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+            if (ProcessHandle == IntPtr.Zero)
+                return false;
+
+            IntPtr lpLLAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+
+            if (lpLLAddress == IntPtr.Zero)
+                return false;
+
+            IntPtr pathAllocation = VirtualAllocEx(ProcessHandle, IntPtr.Zero, (uint)Path.Length + 1, AllocationType.Commit, MemoryProtection.ExecuteReadWrite);
+
+            if (pathAllocation == IntPtr.Zero)
+                return false;
+
+            byte[] pathBytes = Encoding.ASCII.GetBytes(Path);
+
+            if (!WriteProcessMemory(ProcessHandle, pathAllocation, pathBytes, (uint)pathBytes.Length, out bytesWritten))
+                return false;
+
+            if (CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, lpLLAddress, pathAllocation, 0, out threadID) == IntPtr.Zero)
+                return false;
+
+            CloseHandle(ProcessHandle);
+
+            return true;
+        }
+
+        public static void setDvar(int pID, String Name, String Value)
+        {
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Name + " " + Value + "\0"), ProcessHandle);
+
             if (memoryForDvarName == IntPtr.Zero)
+            {
                 Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
+                return;
+            }
 
             setDvarCurrentPtr((IntPtr)0x2098D9C, memoryForDvarName, ProcessHandle);
 
-            byte[] copyDvarValue = {   
+            if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
+                Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
+
+            CloseHandle(ProcessHandle);
+        }
+
+        public static dvar getDvar(int pID, String DVAR)
+        {
+            dvar requestedDvar =        new dvar();
+            IntPtr ProcessHandle =      OpenProcess(ProcessAccessFlags.All, false, pID);
+            IntPtr memoryForDvarName =  allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
+
+            if (memoryForDvarName == IntPtr.Zero)
+            {
+                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
+                return requestedDvar;
+            }
+
+            setDvarCurrentPtr((IntPtr)0x2089E04, memoryForDvarName, ProcessHandle); // sv_debugRate
+#if ASD
+           /* byte[] copyDvarValue = {   
                                     0x55, 0x8B, 0xEC, 0x83, 0xEC, 0x08, // -----------------------------------------------
                                     0xC7, 0x45, 0xFC, 0x9C, 0x8D, 0x09, // dvar_t** surogateDvar = (dvar_t**)(0x2098D9C);
                                     0x02, 0x8B, 0x45, 0xFC, 0x8B, 0x08, //
@@ -593,15 +661,25 @@ namespace IW4MAdmin
             if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
                 return requestedDvar;
 
-            WaitForSingleObject(ThreadHandle, 500000);
+            WaitForSingleObject(ThreadHandle, Int32.MaxValue); //  gg if thread doesn't finish
 
             if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
                 Console.WriteLine(Marshal.GetLastWin32Error());
             if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
-                Console.WriteLine(Marshal.GetLastWin32Error());
+                Console.WriteLine(Marshal.GetLastWin32Error());*/
+#endif
+            Utilities.Wait(.3);
+            int dvarLoc = getIntFromPointer(0x2089E04, (int)ProcessHandle); // this is where the dvar is stored
 
-            int dvarLoc = getIntFromPointer(0x2098D9C, (int)ProcessHandle);
-            return getDvar(dvarLoc + 0x10, (int)ProcessHandle);
+            if (dvarLoc == 0)
+                return requestedDvar;
+
+            dvarLoc = getIntFromPointer(dvarLoc + 0x10, (int)ProcessHandle);
+
+            requestedDvar = getDvar(dvarLoc, ProcessHandle);
+            CloseHandle(ProcessHandle);
+
+            return requestedDvar;
         }
 
         public static String timesConnected(int connection)

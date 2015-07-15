@@ -95,6 +95,9 @@ namespace IW4MAdmin_Web
                     int cycleFix = 0;
                     for (int i = 0; i < Servers.Count(); i++)
                     {
+                        if (IW4MAdmin.Program.getServers()[i] == null)
+                            continue;
+
                         StringBuilder players = new StringBuilder();
                         if (Servers[i].getClientNum() < 1)
                             players.Append("<h2>No Players</h2>");
@@ -577,7 +580,7 @@ namespace IW4MAdmin_Web
                         body = Macro.findMacros(header + main + footer, toSend, server);
                     }
 
-                    IW4MAdmin.Program.getServers()[server].Log.Write("Webfront processed request for " + request.Uri, IW4MAdmin.Log.Level.Debug);
+                    //IW4MAdmin.Program.getServers()[server].Log.Write("Webfront processed request for " + request.Uri, IW4MAdmin.Log.Level.Debug);
                 }
 
                 var headers = new HttpResponseHead()

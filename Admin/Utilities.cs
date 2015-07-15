@@ -457,8 +457,8 @@ namespace IW4MAdmin
 
         public static void setDvar(int Location, int Handle, String Value)
         {
-            //UIntPtr bytesWritten = UIntPtr.Zero;
-            //WriteProcessMemory((IntPtr)Handle, (IntPtr)Location, Encoding.ASCII.GetBytes(Value), (uint)Value.Length, out bytesWritten);
+            UIntPtr bytesWritten = UIntPtr.Zero;
+            WriteProcessMemory((IntPtr)Handle, (IntPtr)Location, Encoding.ASCII.GetBytes(Value), (uint)Value.Length, out bytesWritten);
         }
 
         public static String getStringFromPointer(int Location, int Handle)
@@ -539,6 +539,22 @@ namespace IW4MAdmin
             if (!VirtualFreeEx(ProcessHandle, memoryForCMDName, 0, AllocationType.Release))
                 Console.WriteLine(Marshal.GetLastWin32Error());*/
 
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command +  "\0"), ProcessHandle);
+
+            if (memoryForDvarName == IntPtr.Zero)
+            {
+                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
+                return;
+            }
+
+            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);
+
+          //  if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
+            //    Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
+
+            CloseHandle(ProcessHandle);
+
         }
 
         public static IntPtr allocateAndWrite(Byte[] Data, IntPtr ProcessHandle)
@@ -557,9 +573,9 @@ namespace IW4MAdmin
                 return AllocatedMemory;
         }
 
-        public static bool setDvarCurrentPtr(IntPtr DvarAddress, IntPtr ValueAddress, IntPtr ProcessHandle)
+        public static bool setDvarCurrentPtr(int DvarAddress, IntPtr ValueAddress, IntPtr ProcessHandle)
         {
-            int locationOfCurrentPtr = getIntFromPointer((int)DvarAddress, (int)ProcessHandle) + 0x10;
+            int locationOfCurrentPtr = getIntFromPointer(DvarAddress, (int)ProcessHandle) + 0x10;
             Byte[] newTextPtr = BitConverter.GetBytes((int)ValueAddress);
             UIntPtr bytesWritten;
             if (!WriteProcessMemory(ProcessHandle, (IntPtr)locationOfCurrentPtr, newTextPtr, (uint)newTextPtr.Length, out bytesWritten))
@@ -608,7 +624,7 @@ namespace IW4MAdmin
 
         public static void setDvar(int pID, String Name, String Value)
         {
-            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+           /* IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
             IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Name + " " + Value + "\0"), ProcessHandle);
 
             if (memoryForDvarName == IntPtr.Zero)
@@ -617,12 +633,12 @@ namespace IW4MAdmin
                 return;
             }
 
-            setDvarCurrentPtr((IntPtr)0x2098D9C, memoryForDvarName, ProcessHandle);
+            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);
 
             if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
                 Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
 
-            CloseHandle(ProcessHandle);
+            CloseHandle(ProcessHandle);*/
         }
 
         public static dvar getDvar(int pID, String DVAR)
@@ -637,7 +653,7 @@ namespace IW4MAdmin
                 return requestedDvar;
             }
 
-            setDvarCurrentPtr((IntPtr)0x2089E04, memoryForDvarName, ProcessHandle); // sv_debugRate
+            setDvarCurrentPtr(0x2089E04, memoryForDvarName, ProcessHandle); // sv_debugRate
 #if ASD
            /* byte[] copyDvarValue = {   
                                     0x55, 0x8B, 0xEC, 0x83, 0xEC, 0x08, // -----------------------------------------------

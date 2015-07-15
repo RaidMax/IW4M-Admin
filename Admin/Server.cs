@@ -236,6 +236,8 @@ namespace IW4MAdmin
                 aliasDB.updatePlayer(NewPlayer.Alias);
                 clientDB.updatePlayer(NewPlayer);
 
+                Utilities.Wait(10); // they're loading in.
+
                 if (NewPlayer.getLevel() == Player.Permission.Banned) // their guid is already banned so no need to check aliases
                 {
                     String Message;
@@ -538,7 +540,7 @@ namespace IW4MAdmin
 
         private void setDvar(String Dvar, String Value)
         {
-            //Utilities.setDvar(PID, Dvar, Value);
+          //  Utilities.setDvar(PID, Dvar, Value);
         }
 
         [DllImport("kernel32.dll")]

@@ -236,7 +236,7 @@ namespace IW4MAdmin
                 aliasDB.updatePlayer(NewPlayer.Alias);
                 clientDB.updatePlayer(NewPlayer);
 
-                Utilities.Wait(10); // they're loading in.
+               // Utilities.Wait(10); // they're loading in.
 
                 if (NewPlayer.getLevel() == Player.Permission.Banned) // their guid is already banned so no need to check aliases
                 {
@@ -513,7 +513,6 @@ namespace IW4MAdmin
             events.Enqueue(E);
         }
         
-
         //process new event every 50 milliseconds
         private void manageEventQueue()
         {
@@ -540,7 +539,7 @@ namespace IW4MAdmin
 
         private void setDvar(String Dvar, String Value)
         {
-          //  Utilities.setDvar(PID, Dvar, Value);
+            Utilities.executeCommand(PID, Dvar + " " + Value);
         }
 
         [DllImport("kernel32.dll")]
@@ -572,19 +571,11 @@ namespace IW4MAdmin
 
             if (!intializeBasics())
             {
-                Log.Write("Stopping " + Port + " due to uncorrectable errors (check log)" + logPath, Log.Level.Production);
+                Log.Write("Stopping " + Port + " due to uncorrectable errors (check log)", Log.Level.Production);
                 isRunning = false;
-                Utilities.Wait(10);  
                 return;
             }
 
-
-
-#if DEBUG
-            //Thread to handle polling server for IP's
-            Thread statusUpdate = new Thread(new ThreadStart(pollServer));
-            statusUpdate.Start();
-#endif
             //Handles new events in a fashionable manner
             Thread eventQueue = new Thread(new ThreadStart(manageEventQueue));
             eventQueue.Start();
@@ -651,17 +642,19 @@ namespace IW4MAdmin
                         {
                             Byte[] buff = new Byte[681872]; // struct size ( 0.68MB :( )
                             ReadProcessMemory((int)Handle, 0x31D9390 + (buff.Length)*(i), buff, buff.Length, ref numberRead); // svs_clients start + current client
-
                             client_s eachClient = (client_s)Helpers.ReadStruct<client_s>(buff);
+
                             if (eachClient.isBot == 1)
                                 continue;
 
                             if (eachClient.state == 0)
                                 removePlayer(i);
-                            else if (eachClient.state > 1)
+
+                            else if (eachClient.state > 2)
+                            {
                                 addPlayer(new Player(Utilities.stripColors(Utilities.cleanChars(eachClient.name)), eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
-                            if (eachClient.state > 2)
                                 activeClients++;
+                            }
                         }
 
                         lastPoll = DateTime.Now;
@@ -1090,9 +1083,13 @@ namespace IW4MAdmin
             {
                 Target.setLevel(Player.Permission.Banned);
                 Ban newBan = new Ban(Target.getLastO(), Target.getID(), Origin.getID(), DateTime.Now, Target.getIP());
-                Bans.Add(newBan);
+
                 clientDB.addBan(newBan);
                 clientDB.updatePlayer(Target);
+
+                foreach (Server S in Program.getServers()) // make sure bans show up on the webfront
+                    S.Bans = S.clientDB.getBans();
+
                 lock (Reports) // threading seems to do something weird here
                 {
                     List<Report> toRemove = new List<Report>();
@@ -1123,7 +1120,8 @@ namespace IW4MAdmin
                     P.setLevel(Player.Permission.User);
                     clientDB.updatePlayer(P);
 
-                    Bans = clientDB.getBans();
+                    foreach (Server S in Program.getServers())
+                        S.Bans = S.clientDB.getBans();
                     return true;
                 }
             }

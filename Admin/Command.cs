@@ -525,7 +525,7 @@ namespace IW4MAdmin
 
             foreach (Stats S in Top)
             {
-                Player P = E.Owner.clientDB.getPlayer(S.Kills); // BAD
+                Player P = E.Owner.clientDB.getPlayer(S.statIndex);
                 if (P != null && P.getLevel() != Player.Permission.Banned)
                 {
                     P.stats = S;
@@ -740,20 +740,17 @@ namespace IW4MAdmin
             List<Player> playerAliases = new List<Player>(); 
             E.Owner.getAliases(playerAliases, E.Target);
                
-           // if (E.Target.Alias.getNames() != null)
-            {
-                message.Append("Aliases: ");
+            message.Append("Aliases: ");
 
-                foreach (Player P in playerAliases)
+            foreach (Player P in playerAliases)
+            {
+                foreach (String S in P.Alias.getNames())
                 {
-                    foreach (String S in P.Alias.getNames())
-                    {
-                        if (S != String.Empty && S != E.Target.getName())
-                            message.Append(S + "  | ");
-                    }
+                    if (S != String.Empty && S != E.Target.getName())
+                        message.Append(S + "  | ");
                 }
-                E.Origin.Tell(message.ToString());
             }
+            E.Origin.Tell(message.ToString());
 
             message = new StringBuilder();
 

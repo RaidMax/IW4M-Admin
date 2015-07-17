@@ -50,9 +50,11 @@ namespace IW4MAdmin
             if (serverManager.getServers() != null)
                 Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
 
-            //this is blocking so if it goes down :(
-            IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront();
-            frontEnd.Init();
+            if (serverManager.getServers().Count > 0)
+            {
+                IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront();
+                frontEnd.Init();
+            }
         }
 #if DEBUG
         static void setupConfig()

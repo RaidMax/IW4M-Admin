@@ -43,8 +43,6 @@ namespace IW4MAdmin
                 Thread IW4MServerThread = new Thread(IW4MServer.Monitor);
                 ThreadList.Add(IW4MServer.pID(), IW4MServerThread);
                 IW4MServerThread.Start();
-
-                //mainLog.Write("Now monitoring the server running on port " + IW4MServer.getPort(), Log.Level.All);
             }
 
             initialized = true;

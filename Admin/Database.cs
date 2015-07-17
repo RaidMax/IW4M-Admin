@@ -129,7 +129,6 @@ namespace IW4MAdmin
 
             return;
         }
-        //END
 
         protected String FileName;
         protected String DBCon;
@@ -391,9 +390,7 @@ namespace IW4MAdmin
         {
             String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}' or IP= '%{1}%'", GUID, IP);
             ExecuteNonQuery(Query);
-        }
-        
-
+        }   
     }
 
     class StatsDB : Database
@@ -465,10 +462,10 @@ namespace IW4MAdmin
             Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.getDBID()));
         }
 
-        //Returns top 8 players (we filter through them later)
+        //Returns top 5 players (we filter through them later)
         public List<Stats> topStats()
         {
-            String Query = String.Format("SELECT * FROM STATS WHERE SKILL > '{0}' ORDER BY SKILL DESC LIMIT 5", 230);
+            String Query = String.Format("SELECT * FROM STATS WHERE KILLS > '{0}' AND KDR < '{1}' AND SKILL > '{2}' ORDER BY SKILL DESC LIMIT 5", 250, 7, 245);
             DataTable Result = GetDataTable(Query);
 
             List<Stats> Top = new List<Stats>();
@@ -477,17 +474,11 @@ namespace IW4MAdmin
             {
                 foreach (DataRow D in Result.Rows)
                 {
-                    if (D["MEAN"] == DBNull.Value)
-                        continue;
-                    if (D["DEV"] == DBNull.Value)
+                    if (D["MEAN"] == DBNull.Value || D["DEV"] == DBNull.Value || D["SKILL"] == DBNull.Value)
                         continue;
 
-                    if (D["SKILL"] == DBNull.Value)
-                        D["SKILL"] = 0;
-
-                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));
-                    if (S.Skill > 230)
-                        Top.Add(S);
+                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));               
+                    Top.Add(S);
                 }
             }
 

@@ -450,7 +450,12 @@ namespace IW4MAdmin_Web
                         Int32.TryParse(req[1], out page);
                     }
 
-                    if (request.QueryString == "bans")
+                    if (IW4MAdmin.Program.getServers().Length < 1)
+                    {
+                        body = "<h1 style='font-family: Segoe UI;'>IT SEEMS LIKE THERE ARE NO LONGER ANY SERVERS BEING MONITORED!</h1>";
+                    }
+
+                    else if (request.QueryString == "bans")
                     {
                         IW4MAdmin.file Bans = new IW4MAdmin.file("webfront\\bans.html");
                         var bans = Bans.getLines();
@@ -513,8 +518,6 @@ namespace IW4MAdmin_Web
                         IW4MAdmin.Player P = IW4MAdmin.Program.getServers()[server].clientDB.getPlayer(IP);
                         if (P == null)
                             P = new IW4MAdmin.Player("Guest", "Guest", 0, 0);
-                       // if (P.getLevel() > IW4MAdmin.Player.Permission.Flagged)
-                        //    Console.WriteLine(P.getName() + " is authenticate");
 
                         Client toSend = new Client(WebFront.Page.player, page, request.Headers, Data, P);
                         body = Macro.findMacros(header + player + footer, toSend, server);

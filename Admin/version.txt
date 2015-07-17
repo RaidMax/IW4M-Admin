@@ -3,7 +3,9 @@ CHANGELOG:
 -fixed issue with `history` timelime
 -fixed issue with mapname not being updated
 -fixed rare crash related to !list
--now reads memory for player info! ( experimental debug only )
+-fixed topstats issues ( prevents cheaters from jumping to the top )
+-fixed webfront banlist not updating until tool restart
+-now reads memory for player info!
 
 VERSION: 0.9
 CHANGELOG:

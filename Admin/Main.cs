@@ -24,7 +24,7 @@ namespace IW4MAdmin
             else
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
-#if DEBUG           
+#if DEBUG2           
             if (viableServers.Count < 1)
                 viableServers = checkConfig(); // fall back to config    
             Servers = viableServers;
@@ -56,7 +56,7 @@ namespace IW4MAdmin
                 frontEnd.Init();
             }
         }
-#if DEBUG
+#if DEBUG2
         static void setupConfig()
         {
             bool validPort = false;
@@ -91,7 +91,7 @@ namespace IW4MAdmin
             return serverManager.getServers().ToArray();
         }
 
-#if DEBUG
+#if DEBUG2
         static List<Server> checkConfig()
         {
 

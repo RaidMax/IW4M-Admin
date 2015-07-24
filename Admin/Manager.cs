@@ -26,15 +26,13 @@ namespace IW4MAdmin
 
         public void Init()
         {
-            activePIDs = getCurrentIW4MProcesses();
-
-            if (activePIDs.Count == 0)
+            while (getCurrentIW4MProcesses().Count == 0)
             {
                 mainLog.Write("No viable IW4M instances detected.", Log.Level.All);
-                Utilities.Wait(5);
-                return;
+                Utilities.Wait(10);
             }
 
+            activePIDs = getCurrentIW4MProcesses();
             Servers = loadServers();
 
             foreach (Server S in Servers)
@@ -108,7 +106,7 @@ namespace IW4MAdmin
                         Servers.Add(S);
                         Thread IW4MServerThread = new Thread(S.Monitor);
                         ThreadList.Add(pID, IW4MServerThread);
-                        mainLog.Write("New server dectected on port " + S.getPort(), Log.Level.All);
+                        mainLog.Write("New server detected on port " + S.getPort(), Log.Level.All);
                         IW4MServerThread.Start();
                     }
                 }

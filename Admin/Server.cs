@@ -804,18 +804,34 @@ namespace IW4MAdmin
                    Log.Write("Could not load IW4MAdmin interface!", IW4MAdmin.Log.Level.Debug);
                    return false;
                }
+
                 // basic info dvars
                 hostname         = Utilities.stripColors(getDvar("sv_hostname").current);
                 mapname          = getDvar("mapname").current;
                 IW_Ver           = getDvar("shortversion").current;
-                maxClients       = Convert.ToInt32(getDvar("party_maxplayers").current);
+                maxClients       = -1;
+                Int32.TryParse(getDvar("party_maxplayers").current, out maxClients);
+
+                if (maxClients == -1)
+                {
+                    Log.Write("Could not get iw4m_onelog value", IW4MAdmin.Log.Level.Debug);
+                    return false;
+                }
+
                 Gametype         = getDvar("g_gametype").current;
 
                 // important log variables
                 Basepath         = getDvar("fs_basepath").current;
                 Mod              = getDvar("fs_game").current;
                 logPath          = getDvar("g_log").current;
-                int oneLog       = Convert.ToInt32(getDvar("iw4m_onelog").current);
+                int oneLog      = -1;
+                Int32.TryParse(getDvar("iw4m_onelog").current, out oneLog);
+
+               if (oneLog == -1)
+               {
+                   Log.Write("Could not get iw4m_onelog value", IW4MAdmin.Log.Level.Debug);
+                   return false;
+               }
 
                 // our settings
                setDvar("sv_kickBanTime", "3600");      // 1 hour

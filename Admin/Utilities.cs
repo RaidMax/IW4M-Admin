@@ -316,6 +316,12 @@ namespace IW4MAdmin
                 return "a very long time";
         }
 
+        const int PROCESS_CREATE_THREAD = 0x0002;
+        const int PROCESS_QUERY_INFORMATION = 0x0400;
+        const int PROCESS_VM_OPERATION = 0x0008;
+        const int PROCESS_VM_WRITE = 0x0020;
+        const int PROCESS_VM_READ = 0x0010;
+
         [Flags]
         public enum ProcessAccessFlags : uint
         {
@@ -365,6 +371,9 @@ namespace IW4MAdmin
         public static extern IntPtr OpenProcess(ProcessAccessFlags dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
         [DllImport("kernel32.dll")]
+        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+        [DllImport("kernel32.dll")]
         public static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll")]
@@ -376,7 +385,7 @@ namespace IW4MAdmin
         [DllImport("kernel32.dll")]
         public static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, AllocationType flAllocationType, MemoryProtection flProtect);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, out uint lpThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
@@ -385,14 +394,44 @@ namespace IW4MAdmin
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern int CloseHandle(IntPtr hObject);
+
+        [DllImport("ntdll.dll")]
+        public static extern uint RtlCreateUserThread(
+            [In] IntPtr Process,
+            [In] IntPtr ThreadSecurityDescriptor,
+            [In] bool CreateSuspended,
+            [In] int StackZeroBits,
+            uint MaximumStackSize,
+            [In] [Optional] IntPtr InitialStackSize,
+            [In] IntPtr StartAddress,
+            [In] IntPtr Parameter,
+            [Out] out IntPtr Thread,
+            [Out] out ClientId ClientId
+        );
+ 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ClientId
+        {
+            public ClientId(int processId, int threadId)
+            {
+                this.UniqueProcess = new IntPtr(processId);
+                this.UniqueThread = new IntPtr(threadId);
+            }
+ 
+            public IntPtr UniqueProcess;
+            public IntPtr UniqueThread;
+ 
+            public int ProcessId { get { return this.UniqueProcess.ToInt32(); } }
+            public int ThreadId { get { return this.UniqueThread.ToInt32(); } }
+        }
 
         public static dvar getDvar(int Location, IntPtr Handle)
         {
@@ -550,8 +589,10 @@ namespace IW4MAdmin
 
             setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);
 
-          //  if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
-            //    Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
+            Utilities.Wait(.3);
+
+            if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
+                Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
 
             CloseHandle(ProcessHandle);
 
@@ -590,55 +631,86 @@ namespace IW4MAdmin
             String Path = AppDomain.CurrentDomain.BaseDirectory + "lib\\AdminInterface.dll";
 
             if (!File.Exists(Path))
+            {
+                Console.WriteLine("AdminInterface DLL does not exist!");
                 return false;
+            }
 
             UIntPtr bytesWritten;
-            uint threadID;
+            IntPtr threadID;
 
             IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+#if DEBUG
+            Console.WriteLine("Process handle is: " + ProcessHandle);
+#endif
             if (ProcessHandle == IntPtr.Zero)
+            {
+                Console.WriteLine("Unable to open target process");
                 return false;
+            }
 
             IntPtr lpLLAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
 
             if (lpLLAddress == IntPtr.Zero)
+            {
+                Console.WriteLine("Could not obtain address of function address");
                 return false;
+            }
+
+#if DEBUG
+            Console.WriteLine("LoadLibraryA location is 0x" + lpLLAddress.ToString("X8"));
+#endif
 
             IntPtr pathAllocation = VirtualAllocEx(ProcessHandle, IntPtr.Zero, (uint)Path.Length + 1, AllocationType.Commit, MemoryProtection.ExecuteReadWrite);
 
             if (pathAllocation == IntPtr.Zero)
+            {
+                Console.WriteLine("Could not allocate memory for path location");
                 return false;
+            }
+#if DEBUG
+            Console.WriteLine("Allocated DLL path address is 0x" + pathAllocation.ToString("X8"));
+#endif
 
             byte[] pathBytes = Encoding.ASCII.GetBytes(Path);
 
             if (!WriteProcessMemory(ProcessHandle, pathAllocation, pathBytes, (uint)pathBytes.Length, out bytesWritten))
+            {
+                Console.WriteLine("Could not write process memory");
                 return false;
+            }
+            
+            ClientId clientid = new ClientId();
+            threadID = new IntPtr();
+            RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, pathAllocation, out threadID, out clientid);
 
-            if (CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, lpLLAddress, pathAllocation, 0, out threadID) == IntPtr.Zero)
+            if (threadID == IntPtr.Zero)
+            {
+                Console.WriteLine("Could not create remote thread");
                 return false;
+            }
+#if DEBUG
+            //Console.WriteLine("Thread Status is " + threadStatus);
+            Console.WriteLine("Thread ID is " + threadID);
+#endif
+            uint responseCode = WaitForSingleObject (threadID, 3000);
+
+            if (responseCode != 0x00000000L)
+            {
+                Console.WriteLine("Thread did not finish in a timely manner!");
+                Console.WriteLine("Last error is: " + Marshal.GetLastWin32Error());
+                return false;
+            }
+
+            if (!VirtualFreeEx(ProcessHandle, pathAllocation, 0, AllocationType.Decommit))
+                Console.WriteLine("Could not free memory allocated for DLL name");
 
             CloseHandle(ProcessHandle);
 
+#if DEBUG
+            Console.WriteLine("Initialization finished -- last error : " + Marshal.GetLastWin32Error());
+#endif
             return true;
-        }
-
-        public static void setDvar(int pID, String Name, String Value)
-        {
-           /* IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
-            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Name + " " + Value + "\0"), ProcessHandle);
-
-            if (memoryForDvarName == IntPtr.Zero)
-            {
-                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
-                return;
-            }
-
-            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);
-
-            if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
-                Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
-
-            CloseHandle(ProcessHandle);*/
         }
 
         public static dvar getDvar(int pID, String DVAR)

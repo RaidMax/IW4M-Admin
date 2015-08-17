@@ -408,9 +408,10 @@ namespace IW4MAdmin_Web
     {
         public void OnException(IScheduler scheduler, Exception e)
         {
-            Console.WriteLine(e.InnerException.Message);
-            Console.Write(e.InnerException);
-            e.DebugStackTrace();
+            //Program.getManager().mainLog.Write(e.InnerException.Message);
+            //Console.Write(e.InnerException);
+           // e.DebugStackTrace();
+            IW4MAdmin.Program.getManager().mainLog.Write("Web front encountered an error!");
         }
 
         public void OnStop(IScheduler scheduler)
@@ -426,7 +427,7 @@ namespace IW4MAdmin_Web
             String type = "text/html";
             if (request.Uri.StartsWith("/"))
             {
-                //Console.WriteLine("[WEBFRONT] Processing Request for " + request.Uri);             
+                //Program.getManager().mainLog.Write("[WEBFRONT] Processing Request for " + request.Uri);             
                 var body = String.Empty;
 
                 if (request.Uri.StartsWith("/"))
@@ -476,6 +477,9 @@ namespace IW4MAdmin_Web
                     else if (request.QueryString == "playerhistory")
                     {
                         //type = "text/plain";
+                        if (IW4MAdmin.Program.getServers().Length < server)
+                            return;
+
                         StringBuilder test = new StringBuilder();
                         test.Append("<script type='text/javascript' src='//www.google.com/jsapi'></script><div id='chart_div'></div>");
                         test.Append("<script> var players = [");
@@ -515,6 +519,9 @@ namespace IW4MAdmin_Web
                             IP = req[2];
                         }
 
+                        if (IW4MAdmin.Program.getServers().Length < server)
+                            return;
+
                         IW4MAdmin.Player P = IW4MAdmin.Program.getServers()[server].clientDB.getPlayer(IP);
                         if (P == null)
                             P = new IW4MAdmin.Player("Guest", "Guest", 0, 0);
@@ -530,6 +537,9 @@ namespace IW4MAdmin_Web
                       //  if (IW4MAdmin.Program.Servers[server].chatHistory.Count < 8)
                       //      IW4MAdmin.Program.Servers[server].chatHistory.Add(new IW4MAdmin.Chat(new IW4MAdmin.Player("TEST", "xuid", 0, 0), "TEST MESSAGE", DateTime.Now));
 #endif
+                        if (IW4MAdmin.Program.getServers().Length < server)
+                            return;
+
                         String IP, Text;
                         if (req.Length > 3)
                         {

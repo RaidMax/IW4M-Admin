@@ -28,7 +28,8 @@ namespace IW4MAdmin
         //We want to read the reponse
         public String[] responseSendRCON(String message)
         {
-            try
+            return null;
+           /* try
             {
                 String STR_REQUEST = String.Empty;
                 if (message != "getstatus")
@@ -89,7 +90,7 @@ namespace IW4MAdmin
                 sv_connection.Close();
                 sv_connection = new UdpClient();
                 return null;
-            }
+            }*/
         }
 
         public String[] addRCON(String Message)
@@ -113,7 +114,7 @@ namespace IW4MAdmin
                 {
                     RCON_Request Current = toSend.Peek();
                     //Current.Response = responseSendRCON(Current.Request);
-                    Utilities.executeCommand(Instance.pID(), Current.Request);
+                    Utilities.executeCommand(Instance.pID(), Current.Request, Instance.lastCommandPointer);
                     toSend.Dequeue();
                     //Utilities.Wait(0.567);
                     Utilities.Wait(.3);

@@ -529,17 +529,17 @@ namespace IW4MAdmin
 
         public void executeCommand(String CMD)
         {
-            Utilities.executeCommand(PID, CMD);     
+            lastCommandPointer = Utilities.executeCommand(PID, CMD, lastCommandPointer);     
         }
 
         private dvar getDvar(String DvarName)
         {
-            return Utilities.getDvar(PID, DvarName);
+            return Utilities.getDvar(PID, DvarName, lastCommandPointer);
         }
 
         private void setDvar(String Dvar, String Value)
         {
-            Utilities.executeCommand(PID, Dvar + " " + Value);
+            lastDvarPointer = Utilities.executeCommand(PID, Dvar + " " + Value, lastDvarPointer);
         }
 
         [DllImport("kernel32.dll")]
@@ -706,7 +706,7 @@ namespace IW4MAdmin
                     }
                     oldLines = lines;
                     l_size = logFile.getSize();
-                    Thread.Sleep(250);
+                    Thread.Sleep(150);
                 }
 #if DEBUG == false
                 catch (Exception E)
@@ -721,7 +721,7 @@ namespace IW4MAdmin
             RCONQueue.Abort();
             eventQueue.Abort();
         }
-#if DEBUG
+#if DEBUG2
         private void pollServer()
         {
             int timesFailed = 0;
@@ -814,7 +814,7 @@ namespace IW4MAdmin
 
                 if (maxClients == -1)
                 {
-                    Log.Write("Could not get iw4m_onelog value", IW4MAdmin.Log.Level.Debug);
+                    Log.Write("Could not get max clients value", IW4MAdmin.Log.Level.Debug);
                     return false;
                 }
 
@@ -844,12 +844,12 @@ namespace IW4MAdmin
 
                if (!File.Exists(logPath))
                {
-                   Log.Write("Gamelog does not exist!", Log.Level.All);
+                   Log.Write("Gamelog `" + logPath + "` does not exist!", Log.Level.All);
                    return false;
                }
 
                logFile = new file(logPath);
-               Log.Write("Log file is " + logPath, Log.Level.Production);
+               Log.Write("Log file is " + logPath, Log.Level.Debug);
                Log.Write("Now monitoring " + this.getName(), Log.Level.Production);
                return true;
             }
@@ -1221,11 +1221,6 @@ namespace IW4MAdmin
 
         //END
 
-        public String getPassword()
-        {
-            return rcon_pass;
-        }
-
         private void initMacros()
         {
             Macros = new Dictionary<String, Object>();
@@ -1379,12 +1374,12 @@ namespace IW4MAdmin
         private String hostname;
         private String mapname;
         private int clientnum;
-        private string rcon_pass;
         private List<Player> players;
         private List<Command> commands;
         private List<String> messages;
         private int messageTime;
         private TimeSpan lastMessage;
+        private DateTime lastPoll;
         private int nextMessage;
         private String IW_Ver;
         private int maxClients;
@@ -1393,14 +1388,14 @@ namespace IW4MAdmin
         private DateTime lastWebChat;
         private int Handle;
         private int PID;
-        private String backupRotation;
-        private int backupTimeLimit;
 
         //Will probably move this later
         public Dictionary<String, Player> statusPlayers;
         public bool isRunning;
-        private DateTime lastPoll;
-     
+        private IntPtr dllPointer;
+        public IntPtr lastCommandPointer;
+        public IntPtr lastDvarPointer;
+
         //Log stuff
         private String Basepath;
         private String Mod;

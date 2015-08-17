@@ -3,18 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace IW4MAdmin
 {
     class Program
     {
-        static public double Version = 0.91;
+        static public double Version = 0.92;
         static public double latestVersion;
         static public bool usingMemory = true;
         static private Manager serverManager;
 
         static void Main(string[] args)
         {
+            handler = new ConsoleEventDelegate(OnProcessExit);
+            SetConsoleCtrlHandler(handler, true);
+
             double.TryParse(checkUpdate(), out latestVersion);
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
@@ -48,7 +52,7 @@ namespace IW4MAdmin
             }
 
             if (serverManager.getServers() != null)
-                Console.WriteLine("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
+                Program.getManager().mainLog.Write("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
 
             if (serverManager.getServers().Count > 0)
             {
@@ -80,6 +84,38 @@ namespace IW4MAdmin
         }
 #endif
 
+        static ConsoleEventDelegate handler;
+
+        static private bool OnProcessExit(int e)
+        {
+            try
+            {
+                foreach (Server S in IW4MAdmin.Program.getServers())
+                {
+                    if (S == null)
+                        continue;
+
+                    if (Utilities.shutdownInterface(S.pID(), IntPtr.Zero))
+                        Program.getManager().mainLog.Write("Successfully removed IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
+                    else
+                        Program.getManager().mainLog.Write("Could not remove IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
+                }
+
+                Program.getManager().shutDown();
+            }
+
+            catch
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private delegate bool ConsoleEventDelegate(int eventType);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
+
         static private String checkUpdate()
         {
             Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
@@ -89,6 +125,11 @@ namespace IW4MAdmin
         static public Server[] getServers()
         {
             return serverManager.getServers().ToArray();
+        }
+
+        static public Manager getManager()
+        {
+            return serverManager;
         }
 
 #if DEBUG2

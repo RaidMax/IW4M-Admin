@@ -14,7 +14,7 @@ namespace IW4MAdmin
         private List<Server> Servers;
         private SortedDictionary<int, Thread> ThreadList;
         private List<int> activePIDs;
-        private Log mainLog;
+        public Log mainLog;
         private bool initialized = false;
 
         public Manager()
@@ -80,6 +80,18 @@ namespace IW4MAdmin
             }
         }
 
+        public void shutDown()
+        {
+            foreach (Server S in Servers)
+                S.isRunning = false;
+
+            foreach (int PID in activePIDs)
+            {
+                ThreadList[PID].Abort();
+                mainLog.Write("Exited thread for PID " + PID);
+            }
+        }
+
         public List<Server> getServers()
         {
             return Servers;
@@ -88,8 +100,15 @@ namespace IW4MAdmin
         private void scanForNewServers()
         {
             List<int> newProcesses = getCurrentIW4MProcesses();
+
+            if (activePIDs == null)
+                return;
+
             foreach (int pID in newProcesses)
             {
+                if (pID == 0)
+                    continue;
+
                 bool newProcess = true;
                 foreach (int I in activePIDs)
                 {
@@ -99,7 +118,6 @@ namespace IW4MAdmin
 
                 if (newProcess)
                 {
-
                     if (!ThreadList.ContainsKey(pID))
                     {
                         Server S = loadIndividualServer(pID);

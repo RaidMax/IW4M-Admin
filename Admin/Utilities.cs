@@ -91,6 +91,8 @@ namespace IW4MAdmin
 
         public static String stripColors(String str)
         {
+            if (str == null)
+                return "";
             return Regex.Replace(str, @"\^[0-9]", "");
         }
 
@@ -287,7 +289,7 @@ namespace IW4MAdmin
                     catch(Exception E)
                     {
                         /// need to handle eventually
-                        Console.WriteLine("Error handling player add -- " + E.Message);
+                        Program.getManager().mainLog.Write("Error handling player add -- " + E.Message);
                         continue;
                     }
                 }
@@ -402,6 +404,9 @@ namespace IW4MAdmin
 
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern int CloseHandle(IntPtr hObject);
+
+        [DllImport("kernel32.dll")]
+        static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
 
         [DllImport("ntdll.dll")]
         public static extern uint RtlCreateUserThread(
@@ -538,7 +543,7 @@ namespace IW4MAdmin
             return BitConverter.ToBoolean(Buff, 0);
         }
 
-        public static void executeCommand(int pID, String Command)
+        public static IntPtr executeCommand(int pID, String Command, IntPtr lastMemoryLocation)
         {
             /*IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
             IntPtr memoryForCMDName = allocateAndWrite(Encoding.ASCII.GetBytes(Command + "\0"), ProcessHandle);
@@ -574,28 +579,34 @@ namespace IW4MAdmin
 
             // cleanup
             if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
-                Console.WriteLine(Marshal.GetLastWin32Error());
+                Program.getManager().mainLog.Write(Marshal.GetLastWin32Error());
             if (!VirtualFreeEx(ProcessHandle, memoryForCMDName, 0, AllocationType.Release))
-                Console.WriteLine(Marshal.GetLastWin32Error());*/
+                Program.getManager().mainLog.Write(Marshal.GetLastWin32Error());*/
 
             IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
-            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command +  "\0"), ProcessHandle);
+
+
+            if (lastMemoryLocation != IntPtr.Zero)
+            {
+                if (!VirtualFreeEx(ProcessHandle, lastMemoryLocation, 0, AllocationType.Release))
+                {
+                    Program.getManager().mainLog.Write("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
+                    return IntPtr.Zero;
+                }
+            }
+
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command +  "\0"), ProcessHandle); // this gets disposed next call
 
             if (memoryForDvarName == IntPtr.Zero)
             {
-                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
-                return;
+                Program.getManager().mainLog.Write("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
+                return IntPtr.Zero;
             }
 
-            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);
-
-            Utilities.Wait(.3);
-
-            if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
-                Console.WriteLine("Virtual Free Failed -- Error #" + Marshal.GetLastWin32Error());
-
+            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);      
             CloseHandle(ProcessHandle);
 
+            return memoryForDvarName;
         }
 
         public static IntPtr allocateAndWrite(Byte[] Data, IntPtr ProcessHandle)
@@ -604,7 +615,7 @@ namespace IW4MAdmin
             IntPtr AllocatedMemory = VirtualAllocEx(ProcessHandle, IntPtr.Zero, (uint)Data.Length, AllocationType.Commit, MemoryProtection.ExecuteReadWrite);
             if (!WriteProcessMemory(ProcessHandle, AllocatedMemory, Data, (uint)Data.Length, out bytesWritten))
             {
-                Console.WriteLine("UNABLE TO WRITE PROCESS MEMORY!");
+                Program.getManager().mainLog.Write("Unable to write process memory!");
                 return IntPtr.Zero;
             }
 
@@ -626,26 +637,104 @@ namespace IW4MAdmin
             return true;
         }
 
-        public static bool initalizeInterface(int pID)
+        public static bool shutdownInterface(int pID, IntPtr moduleHandle, params IntPtr[] cleanUp)
+        {
+            IntPtr threadID;
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
+#if DEBUG
+            Program.getManager().mainLog.Write("Process handle is: " + ProcessHandle);
+            Program.getManager().mainLog.Write("Module handle is " + moduleHandle);
+#endif
+            if (ProcessHandle == IntPtr.Zero)
+            {
+                Program.getManager().mainLog.Write("Unable to open target process");
+                return false;
+            }
+
+            IntPtr baseAddress = IntPtr.Zero;
+
+            System.Diagnostics.Process P = System.Diagnostics.Process.GetProcessById(pID);
+            foreach (System.Diagnostics.ProcessModule M in P.Modules)
+            {
+                if (M.ModuleName == "AdminInterface.dll")
+                    baseAddress = M.BaseAddress;
+            }
+
+            if (baseAddress == IntPtr.Zero)
+            {
+                Program.getManager().mainLog.Write("Base address was not found!");
+                return false;
+            }
+
+            IntPtr lpLLAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "FreeLibrary");
+
+
+            if (lpLLAddress == IntPtr.Zero)
+            {
+                Program.getManager().mainLog.Write("Could not obtain address of function address");
+                return false;
+            }
+
+            ClientId clientid = new ClientId();
+            threadID = new IntPtr();
+            RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
+
+            if (threadID == IntPtr.Zero)
+            {
+                Program.getManager().mainLog.Write("Could not create remote thread");
+                return false;
+            }
+#if DEBUG
+            //Program.getManager().mainLog.Write("Thread Status is " + threadStatus);
+            Program.getManager().mainLog.Write("Thread ID is " + threadID);
+#endif
+            uint responseCode = WaitForSingleObject(threadID, 3000);
+
+            if (responseCode != 0x00000000L)
+            {
+                Program.getManager().mainLog.Write("Thread did not finish in a timely manner!");
+                Program.getManager().mainLog.Write("Last error is: " + Marshal.GetLastWin32Error());
+                return false;
+            }
+
+            CloseHandle(ProcessHandle);
+
+            foreach (IntPtr Pointer in cleanUp)
+            {
+                if (Pointer != IntPtr.Zero)
+                {
+                    if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
+                        Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
+                }
+            }
+
+#if DEBUG
+            Program.getManager().mainLog.Write("shutdown finished -- last error : " + Marshal.GetLastWin32Error());
+#endif
+            return true;
+        }
+/////////////////////////////////////////////////////////////
+
+        public static Boolean initalizeInterface(int pID)
         {
             String Path = AppDomain.CurrentDomain.BaseDirectory + "lib\\AdminInterface.dll";
 
             if (!File.Exists(Path))
             {
-                Console.WriteLine("AdminInterface DLL does not exist!");
+                Program.getManager().mainLog.Write("AdminInterface DLL does not exist!");
                 return false;
             }
 
             UIntPtr bytesWritten;
             IntPtr threadID;
-
+           
             IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
 #if DEBUG
-            Console.WriteLine("Process handle is: " + ProcessHandle);
+            Program.getManager().mainLog.Write("Process handle is: " + ProcessHandle);
 #endif
             if (ProcessHandle == IntPtr.Zero)
             {
-                Console.WriteLine("Unable to open target process");
+                Program.getManager().mainLog.Write("Unable to open target process");
                 return false;
             }
 
@@ -653,30 +742,30 @@ namespace IW4MAdmin
 
             if (lpLLAddress == IntPtr.Zero)
             {
-                Console.WriteLine("Could not obtain address of function address");
+                Program.getManager().mainLog.Write("Could not obtain address of function address");
                 return false;
             }
 
 #if DEBUG
-            Console.WriteLine("LoadLibraryA location is 0x" + lpLLAddress.ToString("X8"));
+            Program.getManager().mainLog.Write("LoadLibraryA location is 0x" + lpLLAddress.ToString("X8"));
 #endif
 
             IntPtr pathAllocation = VirtualAllocEx(ProcessHandle, IntPtr.Zero, (uint)Path.Length + 1, AllocationType.Commit, MemoryProtection.ExecuteReadWrite);
 
             if (pathAllocation == IntPtr.Zero)
             {
-                Console.WriteLine("Could not allocate memory for path location");
+                Program.getManager().mainLog.Write("Could not allocate memory for path location");
                 return false;
             }
 #if DEBUG
-            Console.WriteLine("Allocated DLL path address is 0x" + pathAllocation.ToString("X8"));
+            Program.getManager().mainLog.Write("Allocated DLL path address is 0x" + pathAllocation.ToString("X8"));
 #endif
 
             byte[] pathBytes = Encoding.ASCII.GetBytes(Path);
 
             if (!WriteProcessMemory(ProcessHandle, pathAllocation, pathBytes, (uint)pathBytes.Length, out bytesWritten))
             {
-                Console.WriteLine("Could not write process memory");
+                Program.getManager().mainLog.Write("Could not write process memory");
                 return false;
             }
             
@@ -686,46 +775,49 @@ namespace IW4MAdmin
 
             if (threadID == IntPtr.Zero)
             {
-                Console.WriteLine("Could not create remote thread");
+                Program.getManager().mainLog.Write("Could not create remote thread");
                 return false;
             }
 #if DEBUG
-            //Console.WriteLine("Thread Status is " + threadStatus);
-            Console.WriteLine("Thread ID is " + threadID);
-#endif
-            uint responseCode = WaitForSingleObject (threadID, 3000);
+            //Program.getManager().mainLog.Write("Thread Status is " + threadStatus);
+            Program.getManager().mainLog.Write("Thread ID is " + threadID);
+#endif  
+            uint responseCode = WaitForSingleObject(threadID, 5000);
 
             if (responseCode != 0x00000000L)
             {
-                Console.WriteLine("Thread did not finish in a timely manner!");
-                Console.WriteLine("Last error is: " + Marshal.GetLastWin32Error());
+                Program.getManager().mainLog.Write("Thread did not finish in a timely manner!", Log.Level.Debug);
+                Program.getManager().mainLog.Write("Last error is: " + Marshal.GetLastWin32Error(), Log.Level.Debug);
                 return false;
             }
 
-            if (!VirtualFreeEx(ProcessHandle, pathAllocation, 0, AllocationType.Decommit))
-                Console.WriteLine("Could not free memory allocated for DLL name");
-
             CloseHandle(ProcessHandle);
-
 #if DEBUG
-            Console.WriteLine("Initialization finished -- last error : " + Marshal.GetLastWin32Error());
+            Program.getManager().mainLog.Write("Initialization finished -- last error : " + Marshal.GetLastWin32Error());
 #endif
             return true;
         }
 
-        public static dvar getDvar(int pID, String DVAR)
+        public static dvar getDvar(int pID, String DVAR, IntPtr lastMemoryLocation)
         {
             dvar requestedDvar =        new dvar();
             IntPtr ProcessHandle =      OpenProcess(ProcessAccessFlags.All, false, pID);
+
+            if (lastMemoryLocation != IntPtr.Zero)
+            {
+                if (!VirtualFreeEx(ProcessHandle, lastMemoryLocation, 0, AllocationType.Release))
+                    Program.getManager().mainLog.Write("Virtual free failed during cleanup-- Error #" + Marshal.GetLastWin32Error(), Log.Level.Debug);
+            }
+
             IntPtr memoryForDvarName =  allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
 
             if (memoryForDvarName == IntPtr.Zero)
             {
-                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR DVAR NAME");
+                Program.getManager().mainLog.Write("Unable to allocate memory for dvar name", Log.Level.Debug);
                 return requestedDvar;
             }
 
-            setDvarCurrentPtr(0x2089E04, memoryForDvarName, ProcessHandle); // sv_debugRate
+            setDvarCurrentPtr(0x2089E04, memoryForDvarName, ProcessHandle); // sv_allowedclan1
 #if ASD
            /* byte[] copyDvarValue = {   
                                     0x55, 0x8B, 0xEC, 0x83, 0xEC, 0x08, // -----------------------------------------------
@@ -743,7 +835,7 @@ namespace IW4MAdmin
             IntPtr codeAllocation = allocateAndWrite(copyDvarValue, ProcessHandle);
 
             if (codeAllocation == IntPtr.Zero)
-                Console.WriteLine("UNABLE TO ALLOCATE MEMORY FOR CODE");
+                Program.getManager().mainLog.Write("UNABLE TO ALLOCATE MEMORY FOR CODE");
                                                                   
             IntPtr ThreadHandle = CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, codeAllocation, IntPtr.Zero, 0, out threadID);
             if (ThreadHandle == null || ThreadHandle == IntPtr.Zero)
@@ -752,11 +844,11 @@ namespace IW4MAdmin
             WaitForSingleObject(ThreadHandle, Int32.MaxValue); //  gg if thread doesn't finish
 
             if (!VirtualFreeEx(ProcessHandle, codeAllocation, 0, AllocationType.Release))
-                Console.WriteLine(Marshal.GetLastWin32Error());
+                Program.getManager().mainLog.Write(Marshal.GetLastWin32Error());
             if (!VirtualFreeEx(ProcessHandle, memoryForDvarName, 0, AllocationType.Release))
-                Console.WriteLine(Marshal.GetLastWin32Error());*/
+                Program.getManager().mainLog.Write(Marshal.GetLastWin32Error());*/
 #endif
-            Utilities.Wait(.3);
+            Thread.Sleep(120);
             int dvarLoc = getIntFromPointer(0x2089E04, (int)ProcessHandle); // this is where the dvar is stored
 
             if (dvarLoc == 0)

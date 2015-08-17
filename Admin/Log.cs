@@ -21,6 +21,10 @@ namespace IW4MAdmin
             Port = port;
         }
 
+        public void Write(String line)
+        {
+            Write(line, Level.Debug);
+        }
 
         public void Write(String line, Level lv)
         {

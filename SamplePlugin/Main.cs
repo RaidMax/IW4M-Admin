@@ -34,7 +34,7 @@ namespace SamplePlugin
             String Sender = E.Origin.Name;
 
             for (int i = 0; i < 10; i++)
-                originatingServer.Broadcast(String.Format("^7{0}: {1}", Sender, Message));
+                originatingServer.Broadcast(String.Format("^7{0}: ^{1}{2}^7", Sender, i, Message));
         }
     }
 

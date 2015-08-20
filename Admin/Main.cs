@@ -39,11 +39,11 @@ namespace IW4MAdmin
 
             while(!serverManager.isReady())
             {
-                Utilities.Wait(1);
+                SharedLibrary.Utilities.Wait(1);
             }
 
             if (serverManager.getServers() != null)
-                Program.getManager().mainLog.Write("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.");
+                Program.getManager().mainLog.Write("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.", Log.Level.Production);
 
             if (serverManager.getServers().Count > 0)
             {
@@ -106,41 +106,5 @@ namespace IW4MAdmin
         {
             return serverManager;
         }
-
-#if DEBUG2
-        static List<Server> checkConfig()
-        {
-
-            file Config = new file("config\\servers.cfg");
-            String[] SV_CONF = Config.readAll();
-            List<Server> Servers = new List<Server>();
-            Config.Close();
-
-            if (SV_CONF == null || SV_CONF.Length < 1 || SV_CONF[0] == String.Empty)
-            {
-                setupConfig(); // get our first time server
-                Config = new file("config\\servers.cfg", true);
-                Config.Write(IP + ':' + Port + ':' + RCON);
-                Config.Close();
-                Servers.Add(new Server(IP, Port, RCON, 0));
-            }
-
-            else
-            {
-                foreach (String L in SV_CONF)
-                {
-                    String[] server_line = L.Split(':');
-                    int newPort;
-                    if (server_line.Length < 3 || !int.TryParse(server_line[1], out newPort))
-                    {
-                        Console.WriteLine("You have an error in your server.cfg");
-                        continue;
-                    }
-                    Servers.Add(new Server(server_line[0], newPort, server_line[2],0));
-                }
-            }
-            return Servers;
-        }
-#endif
     }
 }

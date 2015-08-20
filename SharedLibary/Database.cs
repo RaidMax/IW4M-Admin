@@ -22,7 +22,7 @@ namespace SharedLibrary
 
             catch(System.DllNotFoundException)
             {
-                Console.WriteLine("Could not locate the SQLite DLL!\nEnsure it is located in the 'lib' folder");
+                Console.WriteLine("Fatal Error: could not locate the SQLite DLL(s)!\nEnsure they are located in the 'lib' folder");
                 Utilities.Wait(5);
                 System.Environment.Exit(0);
             }

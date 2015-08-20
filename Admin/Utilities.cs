@@ -11,314 +11,6 @@ namespace IW4MAdmin
 {
     class Utilities
     {
-        //Get string with specified number of spaces -- really only for visual output
-        public static String getSpaces(int Num)
-        {
-            String SpaceString = String.Empty;
-            while (Num > 0)
-            {
-                SpaceString += ' ';
-                Num--;
-            }
-
-            return SpaceString;
-        }
-
-        //Sleep for x amount of seconds
-        public static void Wait(double time)
-        {
-            Thread.Sleep((int)Math.Ceiling(time*1000));
-        }
-
-        //Remove words from a space delimited string
-        public static String removeWords(String str, int num)
-        {
-            String newStr = String.Empty;
-            String[] tmp = str.Split(' ');
-
-            for (int i = 0; i < tmp.Length; i++)
-            {
-                if (i >= num)
-                    newStr += tmp[i] + ' ';
-            }
-
-            return newStr;
-        }
-
-        public static Player.Permission matchPermission(String str)
-        {
-            String lookingFor = str.ToLower();
-
-            for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Owner; Perm++)
-            {
-                if (lookingFor.Contains(Perm.ToString().ToLower()))
-                    return Perm;
-            }
-
-            return Player.Permission.Banned;
-        }
-
-        public static String removeNastyChars(String str)
-        {
-            if (str != null)
-                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
-            else
-                return String.Empty;
-        }
-
-        public static int GetLineNumber(Exception ex)
-        {
-            var lineNumber = 0;
-            const string lineSearch = ":line ";
-            var index = ex.StackTrace.LastIndexOf(lineSearch);
-            if (index != -1)
-            {
-                var lineNumberText = ex.StackTrace.Substring(index + lineSearch.Length);
-                if (int.TryParse(lineNumberText, out lineNumber))
-                {
-                }
-            }
-            return lineNumber;
-        }
-
-        public static String cleanChars(String S)
-        {
-            StringBuilder Cleaned = new StringBuilder();
-
-            foreach (char c in S)
-                if (c < 127 && c > 31 && c != 37 && c != 34 && c != 92) Cleaned.Append(c);
-            return Cleaned.ToString();
-        }
-
-        public static String stripColors(String str)
-        {
-            if (str == null)
-                return "";
-            return Regex.Replace(str, @"\^[0-9]", "");
-        }
-
-        public static String levelToColor(Player.Permission level)
-        {
-            switch (level)
-            {
-                case Player.Permission.Banned:
-                    return "^1" + Player.Permission.Banned;
-                case Player.Permission.Flagged:
-                    return "^0" + Player.Permission.Flagged;
-                case Player.Permission.Owner:
-                    return "^5" + Player.Permission.Owner;
-                case Player.Permission.User:
-                    return "^2" + Player.Permission.User;
-                default:
-                    return "^3" + level;
-            }
-        }
-
-        public static String processMacro(Dictionary<String, Object> Dict, String str)
-        {
-            MatchCollection Found = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
-            foreach (Match M in Found)
-            {
-                String Match = M.Value;
-                String Identifier = M.Value.Substring(2, M.Length - 4);
-                String Replacement = Dict[Identifier].ToString();
-                str = str.Replace(Match, Replacement);
-            }
-
-            return str;
-        }
-
-        public static Dictionary<String, String> IPFromStatus(String[] players)
-        {
-            Dictionary<String, String> Dict = new Dictionary<String, String>();
-
-            if (players == null)
-                return null;
-
-            foreach (String S in players)
-            {
-                String S2 = S.Trim();
-                if (S.Length < 50)
-                    continue;
-                if (Regex.Matches(S2, @"\d+$", RegexOptions.IgnoreCase).Count > 0)
-                {
-                    String[] eachPlayer = S2.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    for (int i = 3; i < eachPlayer.Length; i++ )
-                    {
-                        if (eachPlayer[i].Split(':').Length > 1)
-                        {
-                            Dict.Add(eachPlayer[3], eachPlayer[i].Split(':')[0]);
-                            break;
-                        }
-                    }
-                        
-                }
-           } 
-            return Dict;
-            
-        }
-
-        public static String nameHTMLFormatted(Player P)
-        {
-            switch (P.Level)
-            {
-                case Player.Permission.User:
-                    return "<span style='color:rgb(87, 150, 66)'>" + P.Name+ "</span>";
-                case Player.Permission.Moderator:
-                    return "<span style='color:#e7b402'>" + P.Name+ "</span>";
-                case Player.Permission.Administrator:
-                    return "<span style='color:#ec82de'>" + P.Name+ "</span>";
-                case Player.Permission.SeniorAdmin:
-                    return "<span style='color:#2eb6bf'>" + P.Name+ "</span>";
-                case Player.Permission.Owner:
-                    return "<span style='color:rgb(38,120,230)'>" + P.Name+ "</span>";
-                case Player.Permission.Creator:
-                    return "<span style='color:rgb(38,120,230)'>" + P.Name+ "</span>";
-                case Player.Permission.Banned:
-                    return "<span style='color:rgb(196, 22, 28)'>" + P.Name+ "</span>";
-                case Player.Permission.Flagged:
-                    return "<span style='color:rgb(251, 124, 98)'>" + P.Name+ "</span>";
-                default:
-                    return "<i>" + P.Name+ "</i>";
-            }
-        }
-
-        public static String nameHTMLFormatted(Player.Permission Level)
-        {
-            switch (Level)
-            {
-                case Player.Permission.User:
-                    return "<span style='color:rgb(87, 150, 66)'>" + Level + "</span>";
-                case Player.Permission.Moderator:
-                    return "<span style='color:#e7b402'>" + Level + "</span>";
-                case Player.Permission.Administrator:
-                    return "<span style='color:#ec82de'>" + Level + "</span>";
-                case Player.Permission.SeniorAdmin:
-                    return "<span style='color:#2eb6bf'>" + Level + "</span>";
-                case Player.Permission.Owner:
-                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
-                case Player.Permission.Creator:
-                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
-                case Player.Permission.Banned:
-                    return "<span style='color:rgb(196, 22, 28)'>" + Level + "</span>";
-                case Player.Permission.Flagged:
-                    return "<span style='color:rgb(251, 124, 98)'>" + Level + "</span>";
-                default:
-                    return "<i>" + Level + "</i>";
-            }
-        }
-
-        public static String gametypeLocalized(String input)
-        {
-            switch (input)
-            {
-                case "dm":
-                    return "Deathmatch";
-                case "war":
-                    return "Team Deathmatch";
-                case "koth":
-                    return "Headquarters";
-                case "ctf":
-                    return "Capture The Flag";
-                case "dd":
-                    return "Demolition";
-                case "dom":
-                    return "Domination";
-                case "sab":
-                    return "Sabotage";
-                case "sd":
-                    return "Search & Destroy";
-                case "vip":
-                    return "Very Important Person";
-                case "gtnw":
-                    return "Global Thermonuclear War";
-                case "oitc":
-                    return "One In The Chamber";
-                case "arena":
-                    return "Arena";
-                case "dzone":
-                    return "Drop Zone";
-                case "gg":
-                    return "Gun Game";
-                case "snipe":
-                    return "Sniping";
-                case "ss":
-                    return "Sharp Shooter";
-                case "m40a3":
-                    return "M40A3";
-                case "fo":
-                    return "Face Off";
-                case "dmc":
-                    return "Deathmatch Classic";
-                case "killcon":
-                    return "Kill Confirmed";
-                case "oneflag":
-                    return "One Flag CTF";
-                default:
-                    return "Unknown";
-            }
-        }
-
-        public static Dictionary<String, Player> playersFromStatus(String[] Status)
-        {
-            Dictionary<String, Player> playerDictionary = new Dictionary<String, Player>();
-
-            if (Status == null) // looks like we didn't get a proper response
-                return null;
-
-            foreach (String S in Status)
-            {
-                String responseLine = S.Trim();
-
-                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 92) // its a client line!
-                {
-                    String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    int cID         = -1;
-                    String cName    = stripColors(responseLine.Substring(46, 18)).Trim();
-                    String npID     = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
-                    int.TryParse(playerInfo[0], out cID);
-                    String cIP      = responseLine.Substring(72,20).Trim().Split(':')[0];
-
-                    Player P        = new Player(cName, npID, cID, cIP);
-
-                    try
-                    {
-                        playerDictionary.Add(npID, P);
-                    }
-
-                    catch(Exception E)
-                    {
-                        /// need to handle eventually
-                        Program.getManager().mainLog.Write("Error handling player add -- " + E.Message);
-                        continue;
-                    }
-                }
-            }
-            return playerDictionary;
-
-        }
-
-        public static String DateTimeSQLite(DateTime datetime)
-        {
-            string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
-            return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second, datetime.Millisecond);
-        }
-
-        public static String timePassed(DateTime start)
-        {
-            TimeSpan Elapsed = DateTime.Now - start;
-
-            if (Elapsed.TotalMinutes < 120)
-                return Math.Round(Elapsed.TotalMinutes, 0) + " minutes";
-            if (Elapsed.TotalHours <= 24)
-                return Math.Round(Elapsed.TotalHours, 0) + " hours";
-            if (Elapsed.TotalDays <= 365)
-                return Math.Round(Elapsed.TotalDays, 0) + " days";
-            else
-                return "a very long time";
-        }
-
         const int PROCESS_CREATE_THREAD = 0x0002;
         const int PROCESS_QUERY_INFORMATION = 0x0400;
         const int PROCESS_VM_OPERATION = 0x0008;
@@ -400,7 +92,7 @@ namespace IW4MAdmin
         [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
 
-         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -422,7 +114,7 @@ namespace IW4MAdmin
             [Out] out IntPtr Thread,
             [Out] out ClientId ClientId
         );
- 
+
         [StructLayout(LayoutKind.Sequential)]
         public struct ClientId
         {
@@ -431,10 +123,10 @@ namespace IW4MAdmin
                 this.UniqueProcess = new IntPtr(processId);
                 this.UniqueThread = new IntPtr(threadId);
             }
- 
+
             public IntPtr UniqueProcess;
             public IntPtr UniqueThread;
- 
+
             public int ProcessId { get { return this.UniqueProcess.ToInt32(); } }
             public int ThreadId { get { return this.UniqueThread.ToInt32(); } }
         }
@@ -514,7 +206,7 @@ namespace IW4MAdmin
             ReadProcessMemory(Handle, Location, Buff, Buff.Length, ref numberRead);
 
             StringBuilder str = new StringBuilder();
-            for ( int i = 0; i < Buff.Length; i++)
+            for (int i = 0; i < Buff.Length; i++)
             {
                 if (Buff[i] == 0)
                     break;
@@ -596,7 +288,7 @@ namespace IW4MAdmin
                 }
             }
 
-            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command +  "\0"), ProcessHandle); // this gets disposed next call
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command + "\0"), ProcessHandle); // this gets disposed next call
 
             if (memoryForDvarName == IntPtr.Zero)
             {
@@ -604,7 +296,7 @@ namespace IW4MAdmin
                 return IntPtr.Zero;
             }
 
-            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);      
+            setDvarCurrentPtr(0x2098D9C, memoryForDvarName, ProcessHandle);
             CloseHandle(ProcessHandle);
 
             return memoryForDvarName;
@@ -707,8 +399,8 @@ namespace IW4MAdmin
             {
                 if (Pointer != IntPtr.Zero)
                 {
-                  //  if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
-                   //     Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
+                    //  if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
+                    //     Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
                 }
             }
 
@@ -717,7 +409,7 @@ namespace IW4MAdmin
 #endif
             return true;
         }
-/////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////
 
         public static Boolean initalizeInterface(int pID)
         {
@@ -731,7 +423,7 @@ namespace IW4MAdmin
 
             UIntPtr bytesWritten;
             IntPtr threadID;
-           
+
             IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
 #if DEBUG
             Program.getManager().mainLog.Write("Process handle is: " + ProcessHandle);
@@ -772,7 +464,7 @@ namespace IW4MAdmin
                 Program.getManager().mainLog.Write("Could not write process memory");
                 return false;
             }
-            
+
             ClientId clientid = new ClientId();
             threadID = new IntPtr();
             RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, pathAllocation, out threadID, out clientid);
@@ -785,7 +477,7 @@ namespace IW4MAdmin
 #if DEBUG
             //Program.getManager().mainLog.Write("Thread Status is " + threadStatus);
             Program.getManager().mainLog.Write("Thread ID is " + threadID);
-#endif  
+#endif
             uint responseCode = WaitForSingleObject(threadID, 5000);
 
             if (responseCode != 0x00000000L)
@@ -804,8 +496,8 @@ namespace IW4MAdmin
 
         public static dvar getDvar(int pID, String DVAR, IntPtr lastMemoryLocation)
         {
-            dvar requestedDvar =        new dvar();
-            IntPtr ProcessHandle =      OpenProcess(ProcessAccessFlags.All, false, pID);
+            dvar requestedDvar = new dvar();
+            IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
 
             if (lastMemoryLocation != IntPtr.Zero)
             {
@@ -813,7 +505,7 @@ namespace IW4MAdmin
                     Program.getManager().mainLog.Write("Virtual free failed during cleanup-- Error #" + Marshal.GetLastWin32Error(), Log.Level.Debug);
             }
 
-            IntPtr memoryForDvarName =  allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(DVAR + "\0"), ProcessHandle);
 
             if (memoryForDvarName == IntPtr.Zero)
             {
@@ -864,47 +556,6 @@ namespace IW4MAdmin
             CloseHandle(ProcessHandle);
 
             return requestedDvar;
-        }
-
-        public static String timesConnected(int connection)
-        {
-            String Prefix = String.Empty;
-            if (connection % 10 > 3 || connection % 10 == 0 || (connection % 100 > 9 && connection % 100 < 19))
-                Prefix = "th";
-            else
-            {
-                switch (connection % 10)
-                {
-                    case 1:
-                        Prefix = "st";
-                        break;
-                    case 2:
-                        Prefix = "nd";
-                        break;
-                    case 3:
-                        Prefix = "rd";
-                        break;
-                }    
-            }
-
-            switch (connection)
-            {
-                case 0:
-                case 1:
-                    return "first";
-                case 2:
-                    return "second";
-                case 3:
-                    return "third";
-                case 4:
-                    return "fourth";
-                case 5:
-                    return "fifth";
-                case 100:
-                    return "One-Hundreth (amazing!)";
-                default:
-                    return connection.ToString() + Prefix;
-            }
         }
     }
 }

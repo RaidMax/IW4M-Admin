@@ -12,8 +12,6 @@ namespace IW4MAdmin
 {
     class IW4MServer : SharedLibrary.Server
     {
-        const int FLOOD_TIMEOUT = 300;
-
         public IW4MServer(string address, int port, string password, int H, int PID) : base(address, port, password, H, PID) 
         {
             playerHistory = new Queue<pHistory>();
@@ -194,7 +192,7 @@ namespace IW4MAdmin
                     players[NewPlayer.clientID] = NewPlayer;
                 }
 #if DEBUG == FALSE
-                    NewPlayer.Tell("Welcome ^5" + NewPlayer.Name + " ^7this is your ^5" + Utilities.timesConnected(NewPlayer.Connections) + " ^7time connecting!");
+                NewPlayer.Tell("Welcome ^5" + NewPlayer.Name + " ^7this is your ^5" + SharedLibrary.Utilities.timesConnected(NewPlayer.Connections) + " ^7time connecting!");
 #endif
                 Log.Write("Client " + NewPlayer.Name + " connecting...", Log.Level.Debug); // they're clean
 
@@ -326,18 +324,18 @@ namespace IW4MAdmin
         //Procses requested command correlating to an event
         override public Command processCommand(Event E, Command C)
         {
-            E.Data = Utilities.removeWords(E.Data, 1);
-            String[] Args = E.Data.Trim().Split(' ');
-   
-            if (Args.Length < (C.requiredArgNum))
+            E.Data = SharedLibrary.Utilities.removeWords(E.Data, 1);
+            String[] Args = E.Data.Trim().Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+
+            if (E.Origin.Level < C.Permission)
             {
-                E.Origin.Tell("Not enough arguments supplied!");
+                E.Origin.Tell("You do not have access to that command!");
                 return null;
             }
 
-            if(E.Origin.Level < C.Permission)
+            if (Args.Length < (C.requiredArgNum))
             {
-                E.Origin.Tell("You do not have access to that command!");
+                E.Origin.Tell("Not enough arguments supplied!");
                 return null;
             }
 
@@ -407,6 +405,18 @@ namespace IW4MAdmin
         [DllImport("kernel32.dll")]
         public static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
+        private void manageEventQueue()
+        {
+            while(isRunning)
+            {
+                if (events.Count > 0)
+                    processEvent(events.Dequeue());
+                if (commandQueue.Count > 0)
+                    lastCommandPointer = Utilities.executeCommand(PID, commandQueue.Dequeue(), lastCommandPointer);  
+                Thread.Sleep(350);
+            }
+        }
+
         //Starts the monitoring process
         override public void Monitor()
         {
@@ -418,6 +428,10 @@ namespace IW4MAdmin
                 isRunning = false;
                 return;
             }
+
+            Thread eventQueueThread = new Thread(new ThreadStart(manageEventQueue));
+            eventQueueThread.Name = "Event Queue Manager";
+            eventQueueThread.Start();
 
             long l_size = -1;
             bool checkedForOutdate = false;
@@ -451,7 +465,7 @@ namespace IW4MAdmin
                     if(lastMessage.TotalSeconds > messageTime && messages.Count > 0)
                     {
                         initMacros(); // somethings dynamically change so we have to re-init the dictionary
-                        Broadcast(Utilities.processMacro(Macros, messages[nextMessage]));
+                        Broadcast(SharedLibrary.Utilities.processMacro(Macros, messages[nextMessage]));
                         if (nextMessage == (messages.Count - 1))
                             nextMessage = 0;
                         else
@@ -490,7 +504,7 @@ namespace IW4MAdmin
 
                             else if (eachClient.state == 5 )
                             {
-                                addPlayer(new Player(Utilities.stripColors(Utilities.cleanChars(eachClient.name)), eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
+                                addPlayer(new Player(SharedLibrary.Utilities.stripColors(SharedLibrary.Utilities.cleanChars(eachClient.name)), eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
                                 activeClients++;
                             }
                         }
@@ -533,7 +547,7 @@ namespace IW4MAdmin
 
                                         event_.Origin.lastEvent = event_;
                                         event_.Origin.lastEvent.Owner = this;
-                                        processEvent(event_);
+                                        events.Enqueue(event_);
                                     }
                                 }
 
@@ -542,20 +556,19 @@ namespace IW4MAdmin
                     }
                     oldLines = lines;
                     l_size = logFile.getSize();
-                    if (commandQueue.Count > 0)
-                        lastCommandPointer = Utilities.executeCommand(PID, commandQueue.Dequeue(), lastCommandPointer);  
-                    Thread.Sleep(150);
+                    Thread.Sleep(350);
                 }
 #if DEBUG == false
                 catch (Exception E)
                 {
-                    Log.Write("Something unexpected occured. Hopefully we can ignore it - " + E.Message + " @"  + Utilities.GetLineNumber(E), Log.Level.All);
+                    Log.Write("Something unexpected occured. Hopefully we can ignore it :)", Log.Level.All);
                     continue;
                 }
 #endif
 
             }
             isRunning = false;
+            eventQueueThread.Join();
         }
 
         override public bool intializeBasics()
@@ -570,7 +583,7 @@ namespace IW4MAdmin
                }
 
                 // basic info dvars
-                hostname         = Utilities.stripColors(getDvar("sv_hostname").current);
+               hostname = SharedLibrary.Utilities.stripColors(getDvar("sv_hostname").current);
                 mapname          = getDvar("mapname").current;
                 IW_Ver           = getDvar("shortversion").current;
                 maxClients       = -1;
@@ -721,7 +734,7 @@ namespace IW4MAdmin
 
                 if (E.Data.Substring(0, 1) != "!") // Not a command so who gives an F?
                 {
-                    E.Data = Utilities.stripColors(Utilities.cleanChars(E.Data));
+                    E.Data = SharedLibrary.Utilities.stripColors(SharedLibrary.Utilities.cleanChars(E.Data));
                     if (E.Data.Length > 50)
                         E.Data = E.Data.Substring(0, 50) + "...";
                     while (chatHistory.Count > Math.Ceiling((double)clientnum/2))

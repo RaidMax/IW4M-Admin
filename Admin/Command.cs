@@ -33,7 +33,7 @@ namespace IW4MAdmin
                 E.Origin.Tell("You cannot warn " + E.Target.Name);
             else
             {
-                E.Target.lastOffense = Utilities.removeWords(E.Data, 1);
+                E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
                 E.Target.Warnings++;
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", E.Target.Warnings, E.Target.Name, E.Target.lastOffense);
                 E.Owner.Broadcast(Message);
@@ -62,7 +62,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            E.Target.lastOffense = Utilities.removeWords(E.Data, 1);
+            E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
             String Message = "^1Player Kicked: ^5" + E.Target.lastOffense + "                    ^1Admin: ^5" + E.Origin.Name;
             if (E.Origin.Level > E.Target.Level)
                 E.Target.Kick(Message);
@@ -87,7 +87,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            E.Target.lastOffense = Utilities.removeWords(E.Data, 1);
+            E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
             String Message = "^1Player Temporarily Banned: ^5" + E.Target.lastOffense + "^7 (1 hour)";
             if (E.Origin.Level > E.Target.Level)
                 E.Target.tempBan(Message);
@@ -102,7 +102,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            E.Target.lastOffense = Utilities.removeWords(E.Data, 1);
+            E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
             E.Target.lastEvent = E; // needs to be fixed
             String Message;
             if (E.Owner.Website == null)
@@ -138,7 +138,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.clientID, E.Origin.npID, E.Origin.databaseID, Utilities.levelToColor(E.Origin.Level), E.Origin.IP);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.clientID, E.Origin.npID, E.Origin.databaseID, SharedLibrary.Utilities.levelToColor(E.Origin.Level), E.Origin.IP);
             E.Origin.Tell(You);
         }
     }
@@ -156,7 +156,7 @@ namespace IW4MAdmin
                     if (P == null)
                         continue;
 
-                    E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.Level), P.clientID, P.Name, Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length)));
+                    E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", SharedLibrary.Utilities.levelToColor(P.Level), P.clientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length)));
                 }
             }
         }
@@ -245,7 +245,7 @@ namespace IW4MAdmin
                 return;
             }
 
-            Player.Permission newPerm = Utilities.matchPermission(Utilities.removeWords(E.Data, 1));
+            Player.Permission newPerm = SharedLibrary.Utilities.matchPermission(SharedLibrary.Utilities.removeWords(E.Data, 1));
 
             if (newPerm > Player.Permission.Banned)
             {
@@ -295,7 +295,7 @@ namespace IW4MAdmin
                 {
                     if (P != null && P.Level > Player.Permission.Flagged && !P.Masked)
                     {
-                        E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+                        E.Origin.Tell(String.Format("[^3{0}^7] {1}", SharedLibrary.Utilities.levelToColor(P.Level), P.Name));
                     }
                 }
             }
@@ -314,14 +314,14 @@ namespace IW4MAdmin
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
                     E.Owner.Broadcast("Changing to map ^2" + m.Alias);
-                    Utilities.Wait(3);
+                    SharedLibrary.Utilities.Wait(3);
                     E.Owner.Map(m.Name);
                     return;
                 }
             }
 
             E.Owner.Broadcast("Attempting to change to unknown map ^1" + newMap);
-            Utilities.Wait(3);
+            SharedLibrary.Utilities.Wait(3);
             E.Owner.Map(newMap);
         }
     }
@@ -342,7 +342,7 @@ namespace IW4MAdmin
 
             foreach (Player P in db_players)
             { 
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.databaseID, Utilities.levelToColor(P.Level), P.IP, P.getLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.databaseID, SharedLibrary.Utilities.levelToColor(P.Level), P.IP, P.getLastConnection());
                 E.Origin.Tell(mesg);
             }
         }
@@ -417,7 +417,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            E.Data = Utilities.removeWords(E.Data, 1);
+            E.Data = SharedLibrary.Utilities.removeWords(E.Data, 1);
             E.Target.Alert();
             E.Target.Tell("^1" + E.Origin.Name + " ^3[PM]^7 - " + E.Data);
             E.Origin.Tell(String.Format("To ^3{0} ^7-> {1}", E.Target.Name, E.Data));
@@ -562,7 +562,7 @@ namespace IW4MAdmin
                 return;
             }
 
-            E.Data = Utilities.removeWords(E.Data, 1);
+            E.Data = SharedLibrary.Utilities.removeWords(E.Data, 1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
             E.Origin.Tell("Successfully reported " + E.Target.Name);
 
@@ -599,7 +599,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            E.Data = Utilities.removeWords(E.Data, 1);
+            E.Data = SharedLibrary.Utilities.removeWords(E.Data, 1);
             E.Origin.currentServer.executeCommand(String.Format("admin_lastevent tell;{0};{1};{2}", E.Origin.npID, E.Target.npID, E.Data));
         }
     }

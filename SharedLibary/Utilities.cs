@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace SharedLibrary
 {
-    class Utilities
+    public class Utilities
     {
         //Get string with specified number of spaces -- really only for visual output
         public static String getSpaces(int Num)
@@ -111,6 +111,31 @@ namespace SharedLibrary
                     return "^2" + Player.Permission.User;
                 default:
                     return "^3" + level;
+            }
+        }
+
+        public static String nameHTMLFormatted(Player P)
+        {
+            switch (P.Level)
+            {
+                case Player.Permission.User:
+                    return "<span style='color:rgb(87, 150, 66)'>" + P.Name + "</span>";
+                case Player.Permission.Moderator:
+                    return "<span style='color:#e7b402'>" + P.Name + "</span>";
+                case Player.Permission.Administrator:
+                    return "<span style='color:#ec82de'>" + P.Name + "</span>";
+                case Player.Permission.SeniorAdmin:
+                    return "<span style='color:#2eb6bf'>" + P.Name + "</span>";
+                case Player.Permission.Owner:
+                    return "<span style='color:rgb(38,120,230)'>" + P.Name + "</span>";
+                case Player.Permission.Creator:
+                    return "<span style='color:rgb(38,120,230)'>" + P.Name + "</span>";
+                case Player.Permission.Banned:
+                    return "<span style='color:rgb(196, 22, 28)'>" + P.Name + "</span>";
+                case Player.Permission.Flagged:
+                    return "<span style='color:rgb(251, 124, 98)'>" + P.Name + "</span>";
+                default:
+                    return "<i>" + P.Name + "</i>";
             }
         }
 

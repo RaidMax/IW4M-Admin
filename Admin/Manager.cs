@@ -22,15 +22,15 @@ namespace IW4MAdmin
         {
             ThreadList = new SortedDictionary<int, Thread>();
             IFile logFile = new IFile("IW4MAdminManager.log", true);
-            mainLog = new Log(logFile, Log.Level.All, 0);
+            mainLog = new Log(logFile, Log.Level.Production, 0);
         }
 
         public void Init()
         {
             while (getCurrentIW4MProcesses().Count == 0)
             {
-                mainLog.Write("No viable IW4M instances detected.", Log.Level.All);
-                Utilities.Wait(10);
+                mainLog.Write("No viable IW4M instances detected.", Log.Level.Production);
+                SharedLibrary.Utilities.Wait(10);
             }
 
             PluginImporter.Load();
@@ -69,7 +69,7 @@ namespace IW4MAdmin
                                 Defunct.Join();
                                 ThreadList[S.pID()] = null;
                             }
-                            mainLog.Write("Server with PID #" + S.pID() + " no longer appears to be running.", Log.Level.All);
+                            mainLog.Write("Server with PID #" + S.pID() + " no longer appears to be running.", Log.Level.Debug);
                             activePIDs.Remove(S.pID());
                             defunctServers.Add(S);
                         }
@@ -81,7 +81,7 @@ namespace IW4MAdmin
                 defunctServers = null;
 
                 scanForNewServers();
-                Utilities.Wait(5);
+                SharedLibrary.Utilities.Wait(5);
             }
 
             mainLog.Write("Manager shutting down...");
@@ -130,7 +130,7 @@ namespace IW4MAdmin
                         Servers.Add(S);
                         Thread IW4MServerThread = new Thread(S.Monitor);
                         ThreadList.Add(pID, IW4MServerThread);
-                        mainLog.Write("New server detected on port " + S.getPort(), Log.Level.All);
+                        mainLog.Write("New server detected on port " + S.getPort(), Log.Level.Production);
                         IW4MServerThread.Start();
                     }
                 }
@@ -209,14 +209,14 @@ namespace IW4MAdmin
                     {
                         int sv_runningPtr = Utilities.getIntFromPointer(0x1AD7934, (int)Handle) + 0x10; // where the dvar_t struct is stored + the offset for current value
                         sv_running = Utilities.getBoolFromPointer(sv_runningPtr, (int)Handle);
-                        Utilities.Wait(1);
+                        SharedLibrary.Utilities.Wait(1);
                         timeWaiting++;
 
                         if (timeWaiting > 30) // don't want to get stuck waiting forever if the server is frozen
                             return null;
                     }
 
-                    Utilities.Wait(5);
+                    SharedLibrary.Utilities.Wait(2);
 
                     dvar net_ip = Utilities.getDvarOld(0x64A1DF8, (int)Handle);
                     dvar net_port = Utilities.getDvarOld(0x64A3004, (int)Handle);

@@ -7,11 +7,11 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("IW4M Admin")]
-[assembly: AssemblyDescription("Admin for IW4x projects")]
+[assembly: AssemblyDescription("Server admin for your IW4M Servers")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("RaidMax LLC")]
 [assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("© 2015")]
+[assembly: AssemblyCopyright("2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,5 +33,5 @@ using System.Resources;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.8.1")]
+[assembly: AssemblyVersion("0.9.5")]
 [assembly: NeutralResourcesLanguageAttribute("en")]

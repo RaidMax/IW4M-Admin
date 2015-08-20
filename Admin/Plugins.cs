@@ -21,13 +21,13 @@ namespace IW4MAdmin
 
             else
             {
-                Program.getManager().mainLog.Write("Plugin folder does not exist!", Log.Level.Debug);
+                Program.getManager().mainLog.Write("Plugin folder does not exist!", Log.Level.All);
                 return false;
             }
 
             if (dllFileNames == null || dllFileNames.Length == 0)
             {
-                Program.getManager().mainLog.Write("No plugins to load", Log.Level.Debug);
+                Program.getManager().mainLog.Write("No plugins to load", Log.Level.All);
                 return true;
             }
 
@@ -51,10 +51,10 @@ namespace IW4MAdmin
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             potentialPlugins.Add(newCommand);
-                            Program.getManager().mainLog.Write("Loaded command plugin \"" + newCommand.Name + "\"", Log.Level.Debug);
+                            Program.getManager().mainLog.Write("Loaded command plugin \"" + newCommand.Name + "\"", Log.Level.All);
                         }  
                         else
-                            Program.getManager().mainLog.Write("Ignoring invalid command plugin \"" + assemblyType.Name + "\"", Log.Level.Debug);
+                            Program.getManager().mainLog.Write("Ignoring invalid command plugin \"" + assemblyType.Name + "\"", Log.Level.All);
                     }
                 }
             }

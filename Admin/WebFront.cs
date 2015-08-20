@@ -128,7 +128,7 @@ namespace IW4MAdmin_Web
                                     }
                                 }
 
-                                players.AppendFormat("<td><a href='/{0}/{1}/userip/?player'>{2}</a></td>", i, P.databaseID, Utilities.nameHTMLFormatted(P));
+                                players.AppendFormat("<td><a href='/{0}/{1}/userip/?player'>{2}</a></td>", i, P.databaseID, SharedLibrary.Utilities.nameHTMLFormatted(P));
 
                                 if (count % 2 != 0)
                                 {
@@ -153,7 +153,7 @@ namespace IW4MAdmin_Web
                                              <table cellpadding='0' cellspacing='0' class='players'>
                                                     {5}
                                             </table>",
-                                             Servers[i].getName(), Servers[i].getMap(), Servers[i].getClientNum() + "/" + Servers[i].getMaxClients(), Utilities.gametypeLocalized(Servers[i].getGametype()), i, players.ToString());
+                                             Servers[i].getName(), Servers[i].getMap(), Servers[i].getClientNum() + "/" + Servers[i].getMaxClients(), SharedLibrary.Utilities.gametypeLocalized(Servers[i].getGametype()), i, players.ToString());
                         buffer.AppendFormat("<div class='chatHistory' id='chatHistory_{0}'></div><script type='text/javascript'>$( document ).ready(function() {{ setInterval({1}loadChatMessages({0}, '#chatHistory_{0}'){1}, 2500); }});</script><div class='null' style='clear:both;'></div>", i, '\"');
                         if (Servers[i].getClientNum() > 0)
                             buffer.AppendFormat("<form class='chatOutFormat' action={1}javascript:chatRequest({0}, 'chatEntry_{0}'){1}><input class='chatFormat_text' type='text' placeholder='Enter a message...' id='chatEntry_{0}'/><input class='chatFormat_submit' type='submit'/></form>", i, '\"');
@@ -187,7 +187,7 @@ namespace IW4MAdmin_Web
                     buffer.Append("<h1 style=margin-top: 0;>{{TIME}}</h1><hr /><tr><th>Name</th><th style=text-align:left;>Offense</th><th style=text-align:left;>Banned By</th><th style='width: 175px; text-align:right;padding-right: 80px;'>Time</th></tr>");
 
                     if (Bans[0] != null)
-                        buffer = buffer.Replace("{{TIME}}", "From " + Utilities.timePassed(Bans[0].When) + " ago" + " &mdash; " + totalBans + " total");
+                        buffer = buffer.Replace("{{TIME}}", "From " + SharedLibrary.Utilities.timePassed(Bans[0].When) + " ago" + " &mdash; " + totalBans + " total");
              
                     for (int i = 0; i < Bans.Count; i++)
                     {
@@ -216,7 +216,7 @@ namespace IW4MAdmin_Web
                             else
                                 Prefix = "class=row-white";
                             String Link = "/" + server + "/" + P.databaseID + "/userip/?player";
-                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.Name, P.lastOffense, Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link);
+                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.Name, P.lastOffense, SharedLibrary.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link);
                             cycleFix++;
                         }
                     }
@@ -364,7 +364,7 @@ namespace IW4MAdmin_Web
                             if (logged)
                                 Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
 
-                            buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, str, IPs, Rating, Utilities.nameHTMLFormatted(Player.Level), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/0/" + Player.databaseID + "/userip/?player", Screenshot);
+                            buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, str, IPs, Rating, SharedLibrary.Utilities.nameHTMLFormatted(Player), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/0/" + Player.databaseID + "/userip/?player", Screenshot);
                             buffer.Append("</tr>");
                         }
 
@@ -547,7 +547,7 @@ namespace IW4MAdmin_Web
                         if (req.Length > 3)
                         {
                             IP = req[2];
-                            Text = Utilities.cleanChars(HttpUtility.UrlDecode(req[3]));
+                            Text = SharedLibrary.Utilities.cleanChars(HttpUtility.UrlDecode(req[3]));
                         }
 
                         else
@@ -560,7 +560,7 @@ namespace IW4MAdmin_Web
                         {
                             chatMessages.Append("<table id='table_chatHistory'>");
                             foreach (Chat Message in Program.getServers()[server].chatHistory)
-                                chatMessages.AppendFormat("<tr><td class='chat_name' style='text-align: left;'>{0}</td><td class='chat_message'>{1}</td><td class='chat_time' style='text-align: right;'>{2}</td></tr>", Utilities.nameHTMLFormatted(Message.Origin), Message.Message, Message.timeString());
+                                chatMessages.AppendFormat("<tr><td class='chat_name' style='text-align: left;'>{0}</td><td class='chat_message'>{1}</td><td class='chat_time' style='text-align: right;'>{2}</td></tr>", SharedLibrary.Utilities.nameHTMLFormatted(Message.Origin), Message.Message, Message.timeString());
                             chatMessages.Append("</table>");
                             body = chatMessages.ToString();
                         }

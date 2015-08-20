@@ -8,17 +8,17 @@ namespace IW4MAdmin
 {
     public class PluginImporter
     {
-        public static List<Command> potentialPlugins = new List<Command>();
-        public static List<EventNotify> potentialNotifies = new List<EventNotify>();
+        public static List<Command> potentialCommands;
+        public static List<EventNotify> potentialNotifies;
 
         public static bool Load()
         {
             string[] dllFileNames = null;
+            potentialCommands = new List<Command>();
+            potentialNotifies = new List<EventNotify>();
 
             if (Directory.Exists(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins"))
-            {
                 dllFileNames = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins", "*.dll");
-            }
 
             else
             {
@@ -52,6 +52,7 @@ namespace IW4MAdmin
                             Object notifyObject = Activator.CreateInstance(assemblyType);
                             EventNotify newNotify = (EventNotify)notifyObject;
                             potentialNotifies.Add(newNotify);
+                            newNotify.onLoad();
                             Program.getManager().mainLog.Write("Loaded event plugin \"" + assemblyType.Name + "\"", Log.Level.All);
                         }
 
@@ -59,7 +60,7 @@ namespace IW4MAdmin
                         {
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
-                            potentialPlugins.Add(newCommand);
+                            potentialCommands.Add(newCommand);
                             Program.getManager().mainLog.Write("Loaded command plugin \"" + newCommand.Name + "\"", Log.Level.All);
                         }
 

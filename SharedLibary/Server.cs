@@ -21,7 +21,6 @@ namespace SharedLibrary
             Log = new Log(logFile, Log.Level.Production, port);
 #endif
             clientDB = new ClientsDB("clients.rm");
-            statDB = new StatsDB("stats_" + Port + ".rm");
             aliasDB = new AliasesDB("aliases.rm");
 
             players = new List<Player>(new Player[18]);
@@ -211,27 +210,7 @@ namespace SharedLibrary
         /// Reloads all the server configurations
         /// </summary>
         /// <returns>True on sucess</returns>
-        public bool Reload()
-        {
-            try
-            {
-                messages = null;
-                maps = null;
-                rules = null;
-                initMaps();
-                initMessages();
-                initRules();
-                return true;
-            }
-            catch (Exception E)
-            {
-                Log.Write("Unable to reload configs! - " + E.Message, Log.Level.Debug);
-                messages = new List<String>();
-                maps = new List<Map>();
-                rules = new List<String>();
-                return false;
-            }
-        }
+        abstract public bool Reload();
 
         /// <summary>
         /// Send a message to all players
@@ -384,7 +363,7 @@ namespace SharedLibrary
         /// <summary>
         /// Read the map configuration
         /// </summary>
-        private void initMaps()
+        protected void initMaps()
         {
             maps = new List<Map>();
 
@@ -410,7 +389,7 @@ namespace SharedLibrary
         /// <summary>
         /// Initialize the messages to be broadcasted
         /// </summary>
-        private void initMessages()
+        protected void initMessages()
         {
             messages = new List<String>();
 
@@ -447,7 +426,7 @@ namespace SharedLibrary
         /// <summary>
         /// Initialize the rules configuration
         /// </summary>
-        private void initRules()
+        protected void initRules()
         {
             rules = new List<String>();
 
@@ -474,7 +453,7 @@ namespace SharedLibrary
         abstract public void initCommands();
 
         //Objects
-        public Log Log;
+        public Log Log { get; private set; }
         public List<Ban> Bans;
         public Player owner;
         public List<Map> maps;
@@ -519,6 +498,5 @@ namespace SharedLibrary
         // Databases
         public ClientsDB clientDB;
         public AliasesDB aliasDB;
-        public StatsDB statDB;
     }
 }

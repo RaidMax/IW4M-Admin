@@ -228,7 +228,7 @@ namespace IW4MAdmin_Web
                     buffer.Append("<div id=pages>");              
                     return buffer.ToString();
                 case "STATS":
-                    int totalStats = Servers[server].statDB.totalStats();
+                    int totalStats = 0;
                     buffer.Append("<h1 style='margin-top: 0;'>Starting at #{{TOP}}</h1><hr />");
                     buffer.Append("<table style='width:100%' cellspacing=0 class=stats>");
  
@@ -239,10 +239,10 @@ namespace IW4MAdmin_Web
                         range = (totalStats - start);
                     else
                         range = 30;
-                    List<Stats> Stats = Servers[server].statDB.getMultipleStats(start, range).OrderByDescending(x => x.Skill).ToList();
+                    //List<Stats> Stats = Servers[server].statDB.getMultipleStats(start, range).OrderByDescending(x => x.Skill).ToList();
                     buffer.Append("<tr><th style=text-align:left;>Name</th><th style=text-align:left;>Kills</th><th style=text-align:left;>Deaths</th><th style=text-align:left;>KDR</th><th style='width: 175px; text-align:right;'>Rating</th></tr>");
                     cycleFix = 0;
-                    for (int i = 0; i < totalStats; i++)
+                    /*for (int i = 0; i < totalStats; i++)
                     {
                         if (i >= Stats.Count -1 || Stats[i] == null )
                             continue;
@@ -267,7 +267,7 @@ namespace IW4MAdmin_Web
                             buffer.AppendFormat("<tr {5}><td><a href='{6}'>{0}</a></td><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{3}</td><td style='width: 175px; text-align:right;'>{4}</td></tr></div>", P.Name, P.stats.Kills, P.stats.Deaths, P.stats.KDR, P.stats.Skill, Prefix, Link);
                             cycleFix++;
                         }
-                    }
+                    }*/
                     buffer.Append("</table><hr/>");
                     buffer.Append(parsePagination(server, totalStats, 30, Pagination, "stats"));
                     return buffer.ToString().Replace("{{TOP}}", (start + 1).ToString());
@@ -327,14 +327,6 @@ namespace IW4MAdmin_Web
                                     str.AppendFormat("<span>{0}</span><br/>", a.Name);
                             }
 
-                            Player.stats = Servers[server].statDB.getStats(Player.databaseID);
-                            String Rating = String.Empty;
-
-                            if (Player.stats == null)
-                                Rating = "Not Available";
-                            else
-                                Rating = Player.stats.Skill.ToString();
-
                             StringBuilder IPs = new StringBuilder();
 
                             if (logged)
@@ -364,7 +356,7 @@ namespace IW4MAdmin_Web
                             if (logged)
                                 Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
 
-                            buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, str, IPs, Rating, SharedLibrary.Utilities.nameHTMLFormatted(Player), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/0/" + Player.databaseID + "/userip/?player", Screenshot);
+                            buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, str, IPs, 0, SharedLibrary.Utilities.nameHTMLFormatted(Player), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/0/" + Player.databaseID + "/userip/?player", Screenshot);
                             buffer.Append("</tr>");
                         }
 

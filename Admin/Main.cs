@@ -10,14 +10,14 @@ namespace IW4MAdmin
 {
     class Program
     {
-        static public double Version = 0.92;
-        static public double latestVersion;
-        static public bool usingMemory = true;
+        static public double Version { get; private set; }
         static private Manager serverManager;
         static private IW4MAdmin_Web.WebFront frontEnd;
 
         static void Main(string[] args)
         {
+            Version = 0.95;
+            double latestVersion = 0;
             handler = new ConsoleEventDelegate(OnProcessExit);
             SetConsoleCtrlHandler(handler, true);
 
@@ -66,6 +66,7 @@ namespace IW4MAdmin
                     if (S == null)
                         continue;
 
+                    S.Broadcast("^5IW4MAdmin ^7is going ^1offline^7");
                     S.isRunning = false;
 
                     if (Utilities.shutdownInterface(S.pID()))
@@ -77,14 +78,13 @@ namespace IW4MAdmin
                 Program.getManager().shutDown();
                 frontEnd.webSchedule.Stop();
                 frontEnd.webSchedule.Dispose();
+                return false;
             }
 
             catch
             {
                 return true;
             }
-
-            return false;
         }
 
         private delegate bool ConsoleEventDelegate(int eventType);

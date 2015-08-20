@@ -4,37 +4,6 @@ using System.Text;
 
 namespace SharedLibrary
 {
-    public class Stats
-    {
-        public Stats(int n, int K, int D, double kdr, double skill, double mean, double dev)
-        {
-            statIndex = n;
-            Kills = K;
-            Deaths = D;
-            KDR = Math.Round(kdr, 2);
-
-            //Rating = new Moserware.Skills.Rating(mean, dev);
-            //Skill = Math.Round(Rating.ConservativeRating, 3) * 10;
-
-        }
-
-        public void updateKDR()
-        {
-            int tempDeaths = Deaths; // cuz we don't want undefined!
-            if (Deaths == 0)
-                tempDeaths = 1;
-
-            KDR = Math.Round((double)((double)Kills / (double)tempDeaths), 2);
-        }
-
-        public int Kills;
-        public int Deaths;
-        public double KDR;
-        public double Skill;
-        public int statIndex;
-       // public Moserware.Skills.Rating Rating;
-    }
-
     public class Aliases
     {
         public Aliases(int Num, String N, String I)
@@ -228,7 +197,6 @@ namespace SharedLibrary
         public Event lastEvent;
         public String lastOffense;
         public int Warnings;
-        public Stats stats;
         public Aliases Alias;
         public bool Masked;
     }

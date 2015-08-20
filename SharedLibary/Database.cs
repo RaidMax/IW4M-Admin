@@ -125,7 +125,7 @@ namespace SharedLibrary
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                throw new Exception(e.Message);
+                return new DataTable();
             }
             return dt;
         }
@@ -403,7 +403,7 @@ namespace SharedLibrary
         }
     }
 
-    public class StatsDB : Database
+    /*public class StatsDB : Database
     {
         public StatsDB(String FN) : base(FN) { }
 
@@ -539,7 +539,7 @@ namespace SharedLibrary
                     Update("STATS", new Dictionary<String, Object>() { { "SKILL", 1 } }, String.Format("Number = '{0}'", D["Number"]));
             }
         }
-    }
+    }*/
 
     public class AliasesDB : Database
     {

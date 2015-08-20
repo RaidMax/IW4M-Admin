@@ -130,5 +130,6 @@ namespace SharedLibrary
     public abstract class EventNotify
     {
         public abstract void onEvent(Event E);
+        public abstract void onLoad();
     }
 }

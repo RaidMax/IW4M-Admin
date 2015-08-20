@@ -83,12 +83,9 @@ namespace IW4MAdmin
                     clientDB.addPlayer(P);
                     NewPlayer = clientDB.getPlayer(P.npID, P.clientID);
                     aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
-                    statDB.addPlayer(NewPlayer);
                 }
 
                 NewPlayer.updateName(P.Name.Trim());
-    
-                NewPlayer.stats = statDB.getStats(NewPlayer.databaseID);
                 NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
 
                 if (NewPlayer.Alias == null)
@@ -204,12 +201,6 @@ namespace IW4MAdmin
                 if (NewPlayer.Level > Player.Permission.Moderator)
                     NewPlayer.Tell("There are ^5" + Reports.Count + " ^7recent reports!");
 
-                if (NewPlayer.stats == null) // there seems to be an issue with stats with multiple servers. I think this should fix it
-                { 
-                    statDB.addPlayer(NewPlayer);
-                    NewPlayer.stats = statDB.getStats(NewPlayer.databaseID);
-                }
-
                 return true;
             }
 #if DEBUG == false
@@ -235,7 +226,6 @@ namespace IW4MAdmin
                 Player Leaving = players[cNum];
                 Leaving.Connections++;
                 clientDB.updatePlayer(Leaving);
-                statDB.updatePlayer(Leaving);
 
                 Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
                 events.Enqueue(new Event(Event.GType.Disconnect, "", Leaving, null, this));
@@ -674,27 +664,9 @@ namespace IW4MAdmin
                     return false;
                 }
 
-                if (E.Target == null)
-                {
-                    Log.Write("Kill event triggered, but no target found!", Log.Level.Debug);
-                    return false;
-                }
-
-                if (E.Origin.stats == null)
-                {
-                    Log.Write("Kill event triggered, but no stats found for origin!", Log.Level.Debug);
-                    return false;
-                }
-
-                if (E.Target.stats == null)
-                {
-                    Log.Write("Kill event triggered, but no stats found for target!", Log.Level.Debug);
-                    return false;
-                }
-
                 if (E.Origin != E.Target)
                 {
-                    E.Origin.stats.Kills += 1;
+                    /*E.Origin.stats.Kills += 1;
                     E.Origin.stats.updateKDR();
 
                     E.Target.stats.Deaths += 1;
@@ -704,17 +676,15 @@ namespace IW4MAdmin
                     statDB.updatePlayer(E.Origin);
                     statDB.updatePlayer(E.Target);
 
-                    totalKills++;
+                    totalKills++;*/
                     Log.Write(E.Origin.Name + " killed " + E.Target.Name + " with a " + E.Data, Log.Level.Debug);
                     events.Enqueue(new Event(Event.GType.Death, E.Data, E.Target, null, this));
                 }
 
                 else // suicide/falling
                 {
-                    E.Origin.stats.Deaths++;
-                    E.Origin.stats.updateKDR();
-                    statDB.updatePlayer(E.Origin);
                     Log.Write(E.Origin.Name + " suicided...", Log.Level.Debug);
+                    events.Enqueue(new Event(Event.GType.Death, "suicide", E.Target, null, this));
                 }
             }
 
@@ -820,13 +790,6 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.MapEnd)
             {
                 Log.Write("Game ending...", Log.Level.Debug);
-                foreach (Player P in players)
-                {
-                    if (P == null || P.stats == null)
-                        continue;
-                    statDB.updatePlayer(P);
-                    Log.Write("Updated stats for client " + P.databaseID, Log.Level.Debug);
-                }
                 return true;
             }
 
@@ -846,8 +809,8 @@ namespace IW4MAdmin
                 clientDB.addBan(newBan);
                 clientDB.updatePlayer(Target);
 
-               // foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
-               //     S.Bans = S.clientDB.getBans();
+                foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+                    S.Bans = S.clientDB.getBans();
 
                 lock (Reports) // threading seems to do something weird here
                 {
@@ -879,12 +842,37 @@ namespace IW4MAdmin
                     P.setLevel(Player.Permission.User);
                     clientDB.updatePlayer(P);
 
+                    foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+                        S.Bans = S.clientDB.getBans();
+
                     return true;
                 }
             }
             return false;
         }
 
+        override public bool Reload()
+        {
+            try
+            {
+                messages = null;
+                maps = null;
+                rules = null;
+                initMaps();
+                initMessages();
+                initRules();
+                PluginImporter.Load();
+                return true;
+            }
+            catch (Exception E)
+            {
+                Log.Write("Unable to reload configs! - " + E.Message, Log.Level.Debug);
+                messages = new List<String>();
+                maps = new List<Map>();
+                rules = new List<String>();
+                return false;
+            }
+        }
 
         override public void initMacros()
         {
@@ -923,8 +911,8 @@ namespace IW4MAdmin
             commands.Add(new Find("find", "find player in database. syntax: !find <player>", "f", Player.Permission.SeniorAdmin, 1, false));
             commands.Add(new Rules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
             commands.Add(new PrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
-            commands.Add(new _Stats("stats", "view your stats or another player's. syntax: !stats", "xlrstats", Player.Permission.User, 0, true));
-            commands.Add(new TopStats("topstats", "view the top 4 players on this server. syntax: !topstats", "xlrtopstats", Player.Permission.User, 0, false));
+            //commands.Add(new _Stats("stats", "view your stats or another player's. syntax: !stats", "xlrstats", Player.Permission.User, 0, true));
+            //commands.Add(new TopStats("topstats", "view the top 4 players on this server. syntax: !topstats", "xlrtopstats", Player.Permission.User, 0, false));
             commands.Add(new Reload("reload", "reload configurations. syntax: !reload", "reload", Player.Permission.Owner, 0, false));
             commands.Add(new Balance("balance", "balance teams. syntax !balance", "bal", Player.Permission.Moderator, 0, false));
             commands.Add(new GoTo("goto", "teleport to selected player. syntax !goto", "go", Player.Permission.SeniorAdmin, 1, true));
@@ -938,7 +926,7 @@ namespace IW4MAdmin
             commands.Add(new _RCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
             commands.Add(new FindAll("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
 
-            foreach (Command C in PluginImporter.potentialPlugins)
+            foreach (Command C in PluginImporter.potentialCommands)
                 commands.Add(C);
         
         }

@@ -424,65 +424,6 @@ namespace IW4MAdmin
         }
     }
 
-    class _Stats : Command
-    {
-        public _Stats(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
-
-        public override void Execute(Event E)
-        {
-            if (E.Target == null)
-            {
-                if (E.Target.stats == null)
-                    E.Origin.Tell("You do not have any stats!");
-                else
-                    E.Origin.Tell(String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Origin.stats.Kills, E.Origin.stats.Deaths, E.Origin.stats.KDR, E.Origin.stats.Skill));
-            }
-
-            else
-            {
-                E.Target.stats = E.Owner.statDB.getStats(E.Target.databaseID);
-                if (E.Target.stats == null)
-                    E.Origin.Tell("That person does not have any stats at this time!");
-                else
-                    E.Origin.Tell(String.Format("[^3{4}^7] ^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", E.Target.stats.Kills, E.Target.stats.Deaths, E.Target.stats.KDR, E.Target.stats.Skill, E.Target.Name));
-            }
-        }
-    }
-
-    class TopStats : Command
-    {
-        public TopStats(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
-
-        public override void Execute(Event E)
-        {
-            List<Stats> Top = E.Owner.statDB.topStats();
-            List<Player> TopP = new List<Player>();
-
-            foreach (Stats S in Top)
-            {
-                Player P = E.Owner.clientDB.getPlayer(S.statIndex);
-                if (P != null && P.Level != Player.Permission.Banned)
-                {
-                    P.stats = S;
-                    TopP.Add(P);
-                }
-            }
-
-            if (TopP.Count > 0)
-            {
-                E.Origin.Tell("^1TOP PLAYERS");
-                foreach (Player P in TopP)
-                {
-                    if (P != null)
-                        E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.Name, P.stats.KDR, P.stats.Skill));
-                }
-            }
-
-            else
-                E.Origin.Tell("There are no top players yet!");
-        }
-    }
-
     class Reload : Command
     {
         public Reload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }

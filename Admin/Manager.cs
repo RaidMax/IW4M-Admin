@@ -216,7 +216,8 @@ namespace IW4MAdmin
                             return null;
                     }
 
-                    SharedLibrary.Utilities.Wait(2);
+                    if (timeWaiting > 5)
+                        SharedLibrary.Utilities.Wait(2);
 
                     dvar net_ip = Utilities.getDvarOld(0x64A1DF8, (int)Handle);
                     dvar net_port = Utilities.getDvarOld(0x64A3004, (int)Handle);

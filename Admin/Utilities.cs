@@ -367,21 +367,16 @@ namespace IW4MAdmin
                 return false;
             }
 
-            //ClientId clientid = new ClientId();
-            //threadID = new IntPtr();
-            uint ThreadID2;
-            threadID = IntPtr.Zero;
-            //RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
-            //SCreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, lpLLAddress, baseAddress, 0, out ThreadID2);
-            return true;
+            ClientId clientid = new ClientId();
+            threadID = new IntPtr();
 
+            RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
             if (threadID == IntPtr.Zero)
             {
                 Program.getManager().mainLog.Write("Could not create remote thread");
                 return false;
             }
 #if DEBUG
-            //Program.getManager().mainLog.Write("Thread Status is " + threadStatus);
             Program.getManager().mainLog.Write("Thread ID is " + threadID);
 #endif
             uint responseCode = WaitForSingleObject(threadID, 3000);
@@ -399,8 +394,8 @@ namespace IW4MAdmin
             {
                 if (Pointer != IntPtr.Zero)
                 {
-                    //  if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
-                    //     Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
+                      if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
+                         Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
                 }
             }
 

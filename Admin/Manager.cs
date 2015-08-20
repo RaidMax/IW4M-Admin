@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Net;
 using System.Threading;
+using SharedLibrary;
 
 namespace IW4MAdmin
 {
@@ -20,7 +21,7 @@ namespace IW4MAdmin
         public Manager()
         {
             ThreadList = new SortedDictionary<int, Thread>();
-            file logFile = new file("IW4MAdminManager.log", true);
+            IFile logFile = new IFile("IW4MAdminManager.log", true);
             mainLog = new Log(logFile, Log.Level.All, 0);
         }
 
@@ -32,6 +33,8 @@ namespace IW4MAdmin
                 Utilities.Wait(10);
             }
 
+            PluginImporter.Load();
+
             activePIDs = getCurrentIW4MProcesses();
             Servers = loadServers();
 
@@ -39,13 +42,14 @@ namespace IW4MAdmin
             {
                 Server IW4MServer = S;
                 Thread IW4MServerThread = new Thread(IW4MServer.Monitor);
+                IW4MServerThread.Name = "Monitor thread for " + S.pID();
                 ThreadList.Add(IW4MServer.pID(), IW4MServerThread);
                 IW4MServerThread.Start();
             }
 
             initialized = true;
 
-            while (true)
+            while (activePIDs.Count > 0)
             {
                 List<Server> defunctServers = new List<Server>();
                 lock (Servers)
@@ -59,9 +63,10 @@ namespace IW4MAdmin
                         if (!isIW4MStillRunning(S.pID()))
                         {
                             Thread Defunct = ThreadList[S.pID()];
+                            S.isRunning = false;
                             if (Defunct != null)
                             {
-                                Defunct.Abort();
+                                Defunct.Join();
                                 ThreadList[S.pID()] = null;
                             }
                             mainLog.Write("Server with PID #" + S.pID() + " no longer appears to be running.", Log.Level.All);
@@ -78,6 +83,8 @@ namespace IW4MAdmin
                 scanForNewServers();
                 Utilities.Wait(5);
             }
+
+            mainLog.Write("Manager shutting down...");
         }
 
         public void shutDown()
@@ -85,11 +92,10 @@ namespace IW4MAdmin
             foreach (Server S in Servers)
                 S.isRunning = false;
 
-            foreach (int PID in activePIDs)
-            {
-                ThreadList[PID].Abort();
-                mainLog.Write("Exited thread for PID " + PID);
-            }
+            activePIDs = new List<int>();
+
+            foreach (KeyValuePair<int, Thread> T in ThreadList)
+                ThreadList[T.Key].Join();
         }
 
         public List<Server> getServers()
@@ -215,7 +221,7 @@ namespace IW4MAdmin
                     dvar net_ip = Utilities.getDvarOld(0x64A1DF8, (int)Handle);
                     dvar net_port = Utilities.getDvarOld(0x64A3004, (int)Handle);
 
-                    return new Server(net_ip.current, Convert.ToInt32(net_port.current), "", (int)Handle, pID);
+                    return new IW4MServer(net_ip.current, Convert.ToInt32(net_port.current), "", (int)Handle, pID);
                 }
                 return null;
             }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
+using SharedLibrary;
 
 namespace IW4MAdmin
 {
@@ -13,6 +14,7 @@ namespace IW4MAdmin
         static public double latestVersion;
         static public bool usingMemory = true;
         static private Manager serverManager;
+        static private IW4MAdmin_Web.WebFront frontEnd;
 
         static void Main(string[] args)
         {
@@ -28,22 +30,11 @@ namespace IW4MAdmin
             else
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
-#if DEBUG2           
-            if (viableServers.Count < 1)
-                viableServers = checkConfig(); // fall back to config    
-            Servers = viableServers;
-
-            foreach (Server IW4M in viableServers)
-            {   
-                //Threading seems best here
-                Server SV = IW4M;
-                Thread monitorThread = new Thread(new ThreadStart(SV.Monitor));
-                monitorThread.Start();
-            }
-#endif  
+ 
             serverManager = new IW4MAdmin.Manager();
 
             Thread serverMGRThread = new Thread(serverManager.Init);
+            serverMGRThread.Name = "Server Manager thread";
             serverMGRThread.Start();
 
             while(!serverManager.isReady())
@@ -56,33 +47,13 @@ namespace IW4MAdmin
 
             if (serverManager.getServers().Count > 0)
             {
-                IW4MAdmin_Web.WebFront frontEnd = new IW4MAdmin_Web.WebFront();
+                frontEnd = new IW4MAdmin_Web.WebFront();
                 frontEnd.Init();
             }
+
+            serverMGRThread.Join();
+            serverManager.mainLog.Write("Shutting down IW4MAdmin...", Log.Level.Debug);
         }
-#if DEBUG2
-        static void setupConfig()
-        {
-            bool validPort = false;
-            Console.WriteLine("Hey there, it looks like you haven't set up a server yet. Let's get started!");
-
-            Console.Write("Please enter the IP: ");
-            IP = Console.ReadLine();
-
-            while (!validPort)
-            {
-                Console.Write("Please enter the Port: ");
-                int.TryParse(Console.ReadLine(), out Port);
-                if (Port != 0)
-                    validPort = true;
-            }
-
-            Console.Write("Please enter the RCON password: ");
-            RCON = Console.ReadLine();
-            file Config = new file("config\\servers.cfg", true);
-            Console.WriteLine("Great! Let's go ahead and start 'er up.");
-        }
-#endif
 
         static ConsoleEventDelegate handler;
 
@@ -95,13 +66,17 @@ namespace IW4MAdmin
                     if (S == null)
                         continue;
 
-                    if (Utilities.shutdownInterface(S.pID(), IntPtr.Zero))
+                    S.isRunning = false;
+
+                    if (Utilities.shutdownInterface(S.pID()))
                         Program.getManager().mainLog.Write("Successfully removed IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
                     else
                         Program.getManager().mainLog.Write("Could not remove IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
                 }
 
                 Program.getManager().shutDown();
+                frontEnd.webSchedule.Stop();
+                frontEnd.webSchedule.Dispose();
             }
 
             catch

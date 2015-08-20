@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace IW4MAdmin
+namespace SharedLibrary
 {
-    class Chat
+    public class Chat
     {
-        public Chat ( Player O, String M, DateTime D)
+        public Chat(Player O, String M, DateTime D)
         {
             Origin = O;
             Message = M;
@@ -24,7 +24,7 @@ namespace IW4MAdmin
         public DateTime Time { get; private set; }
     }
 
-    class Event
+    public class Event
     {
         public enum GType
         {
@@ -36,13 +36,12 @@ namespace IW4MAdmin
             Death,
             MapChange,
             MapEnd,
-        
+
             //FROM ADMIN
             Broadcast,
             Tell,
             Kick,
-            Ban, 
-
+            Ban,
             Unknown,
         }
 
@@ -55,7 +54,6 @@ namespace IW4MAdmin
             Owner = S;
         }
 
-        //This needs to be here
         public Command isValidCMD(List<Command> list)
         {
             if (this.Data.Substring(0, 1) == "!")
@@ -64,7 +62,7 @@ namespace IW4MAdmin
 
                 foreach (Command C in list)
                 {
-                    if (C.getName() == cmd[0].ToLower() || C.getAlias() == cmd[0].ToLower())
+                    if (C.Name == cmd[0].ToLower() || C.Alias == cmd[0].ToLower())
                         return C;
                 }
 
@@ -91,7 +89,7 @@ namespace IW4MAdmin
                     return new Event(GType.Disconnect, null, SV.clientFromEventLine(line, 2), null, SV);
 
                 if (eventType == "K")
-                        return new Event(GType.Kill, line[9], SV.clientFromEventLine(line, 6), SV.clientFromEventLine(line, 2), SV);
+                    return new Event(GType.Kill, line[9], SV.clientFromEventLine(line, 6), SV.clientFromEventLine(line, 2), SV);
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
                 {
@@ -100,8 +98,8 @@ namespace IW4MAdmin
                     return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromEventLine(line, 2), null, SV);
                 }
 
-               if (eventType == ":")
-                   return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
+                if (eventType == ":")
+                    return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
 
                 if (line[0].Split('\\').Length > 5) // blaze it
                     return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
@@ -124,6 +122,5 @@ namespace IW4MAdmin
         public Player Origin;
         public Player Target;
         public Server Owner;
-
     }
 }

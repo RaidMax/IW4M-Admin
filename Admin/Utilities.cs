@@ -5,6 +5,7 @@ using System.Threading;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.IO;
+using SharedLibrary;
 
 namespace IW4MAdmin
 {
@@ -159,26 +160,26 @@ namespace IW4MAdmin
 
         public static String nameHTMLFormatted(Player P)
         {
-            switch (P.getLevel())
+            switch (P.Level)
             {
                 case Player.Permission.User:
-                    return "<span style='color:rgb(87, 150, 66)'>" + P.getName() + "</span>";
+                    return "<span style='color:rgb(87, 150, 66)'>" + P.Name+ "</span>";
                 case Player.Permission.Moderator:
-                    return "<span style='color:#e7b402'>" + P.getName() + "</span>";
+                    return "<span style='color:#e7b402'>" + P.Name+ "</span>";
                 case Player.Permission.Administrator:
-                    return "<span style='color:#ec82de'>" + P.getName() + "</span>";
+                    return "<span style='color:#ec82de'>" + P.Name+ "</span>";
                 case Player.Permission.SeniorAdmin:
-                    return "<span style='color:#2eb6bf'>" + P.getName() + "</span>";
+                    return "<span style='color:#2eb6bf'>" + P.Name+ "</span>";
                 case Player.Permission.Owner:
-                    return "<span style='color:rgb(38,120,230)'>" + P.getName() + "</span>";
+                    return "<span style='color:rgb(38,120,230)'>" + P.Name+ "</span>";
                 case Player.Permission.Creator:
-                    return "<span style='color:rgb(38,120,230)'>" + P.getName() + "</span>";
+                    return "<span style='color:rgb(38,120,230)'>" + P.Name+ "</span>";
                 case Player.Permission.Banned:
-                    return "<span style='color:rgb(196, 22, 28)'>" + P.getName() + "</span>";
+                    return "<span style='color:rgb(196, 22, 28)'>" + P.Name+ "</span>";
                 case Player.Permission.Flagged:
-                    return "<span style='color:rgb(251, 124, 98)'>" + P.getName() + "</span>";
+                    return "<span style='color:rgb(251, 124, 98)'>" + P.Name+ "</span>";
                 default:
-                    return "<i>" + P.getName() + "</i>";
+                    return "<i>" + P.Name+ "</i>";
             }
         }
 
@@ -637,13 +638,12 @@ namespace IW4MAdmin
             return true;
         }
 
-        public static bool shutdownInterface(int pID, IntPtr moduleHandle, params IntPtr[] cleanUp)
+        public static bool shutdownInterface(int pID, params IntPtr[] cleanUp)
         {
             IntPtr threadID;
             IntPtr ProcessHandle = OpenProcess(ProcessAccessFlags.All, false, pID);
 #if DEBUG
             Program.getManager().mainLog.Write("Process handle is: " + ProcessHandle);
-            Program.getManager().mainLog.Write("Module handle is " + moduleHandle);
 #endif
             if (ProcessHandle == IntPtr.Zero)
             {
@@ -675,9 +675,13 @@ namespace IW4MAdmin
                 return false;
             }
 
-            ClientId clientid = new ClientId();
-            threadID = new IntPtr();
-            RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
+            //ClientId clientid = new ClientId();
+            //threadID = new IntPtr();
+            uint ThreadID2;
+            threadID = IntPtr.Zero;
+            //RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
+            //SCreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, lpLLAddress, baseAddress, 0, out ThreadID2);
+            return true;
 
             if (threadID == IntPtr.Zero)
             {
@@ -703,13 +707,13 @@ namespace IW4MAdmin
             {
                 if (Pointer != IntPtr.Zero)
                 {
-                    if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
-                        Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
+                  //  if (!VirtualFreeEx(ProcessHandle, Pointer, 0, AllocationType.Release))
+                   //     Program.getManager().mainLog.Write("Virtual Free Failed During Exit Cleanup -- Error #" + Marshal.GetLastWin32Error());
                 }
             }
 
 #if DEBUG
-            Program.getManager().mainLog.Write("shutdown finished -- last error : " + Marshal.GetLastWin32Error());
+            Program.getManager().mainLog.Write("Shutdown finished -- last error : " + Marshal.GetLastWin32Error());
 #endif
             return true;
         }

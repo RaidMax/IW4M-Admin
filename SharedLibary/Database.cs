@@ -1,29 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Data.SQLite;
 using System.Data;
-using System.Linq;
 using System.IO;
 using System.Collections;
-using SharedLibrary;
 
-namespace IW4MAdmin
+namespace SharedLibrary
 {
-    abstract class DatabaseA : SharedLibrary.Database
+    public abstract class Database
     {
         public Database(String FN)
         {
             FileName = FN;
             DBCon = String.Format("Data Source={0}", FN);
-            Con = new SQLiteConnection(DBCon);
+            try
+            {
+                Con = new SQLiteConnection(DBCon);
+            }
+
+            catch(System.DllNotFoundException)
+            {
+                Console.WriteLine("Could not locate the SQLite DLL!\nEnsure it is located in the 'lib' folder");
+                Utilities.Wait(5);
+                System.Environment.Exit(0);
+            }
+            
             Open = false;
             Init();
         }
 
         abstract public void Init();
-        
-        //HELPERS
+
         protected bool Insert(String tableName, Dictionary<String, object> data)
         {
             String columns = "";
@@ -137,13 +146,13 @@ namespace IW4MAdmin
         protected bool Open;
     }
 
-    class ClientsDB : Database
+    public class ClientsDB : Database
     {
         public ClientsDB(String FN) : base(FN) { }
 
         public override void Init()
         {
-            if(!File.Exists(FileName))
+            if (!File.Exists(FileName))
             {
                 String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL);";
                 ExecuteNonQuery(Create);
@@ -162,7 +171,7 @@ namespace IW4MAdmin
             {
                 DataRow ResponseRow = Result.Rows[0];
                 DateTime LC;
-                
+
                 try
                 {
                     LC = DateTime.Parse(ResponseRow["LastConnection"].ToString());
@@ -171,7 +180,7 @@ namespace IW4MAdmin
                 {
                     LC = DateTime.Now;
                 }
- 
+
                 return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), LC);
             }
 
@@ -186,7 +195,7 @@ namespace IW4MAdmin
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
-            { 
+            {
                 DataRow p = Result.Rows[0];
                 DateTime LC;
                 try
@@ -356,7 +365,7 @@ namespace IW4MAdmin
             updatedPlayer.Add("Name", P.Name);
             updatedPlayer.Add("npID", P.npID);
             updatedPlayer.Add("Level", (int)P.Level);
-            updatedPlayer.Add("LastOffense", P.LastOffense);
+            updatedPlayer.Add("LastOffense", P.lastOffense);
             updatedPlayer.Add("Connections", P.Connections);
             updatedPlayer.Add("IP", P.IP);
             updatedPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
@@ -370,10 +379,10 @@ namespace IW4MAdmin
         {
             Dictionary<String, object> newBan = new Dictionary<String, object>();
 
-            newBan.Add("Reason", B.getReason());
-            newBan.Add("npID", B.getID());
-            newBan.Add("bannedByID", B.getBanner());
-            newBan.Add("IP", B.getIP());
+            newBan.Add("Reason", B.Reason);
+            newBan.Add("npID", B.npID);
+            newBan.Add("bannedByID", B.bannedByID);
+            newBan.Add("IP", B.IP);
             newBan.Add("TIME", Utilities.DateTimeSQLite(DateTime.Now));
 
             Insert("BANS", newBan);
@@ -391,10 +400,10 @@ namespace IW4MAdmin
         {
             String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}' or IP= '%{1}%'", GUID, IP);
             ExecuteNonQuery(Query);
-        }   
+        }
     }
 
-    class StatsDB : Database
+    public class StatsDB : Database
     {
         public StatsDB(String FN) : base(FN) { }
 
@@ -402,7 +411,7 @@ namespace IW4MAdmin
         {
             if (!File.Exists(FileName))
             {
-                String Create = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0 );"; 
+                String Create = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0 );";
                 ExecuteNonQuery(Create);
             }
         }
@@ -417,9 +426,9 @@ namespace IW4MAdmin
             {
                 DataRow ResponseRow = Result.Rows[0];
                 if (ResponseRow["MEAN"] == DBNull.Value)
-                    ResponseRow["MEAN"] = Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean;
+                    ResponseRow["MEAN"] = 0; // Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean;
                 if (ResponseRow["DEV"] == DBNull.Value)
-                    ResponseRow["DEV"] = Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation;
+                    ResponseRow["DEV"] = 0; // Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation;
                 if (ResponseRow["SKILL"] == DBNull.Value)
                     ResponseRow["SKILL"] = 0;
 
@@ -438,9 +447,9 @@ namespace IW4MAdmin
             newPlayer.Add("KILLS", 0);
             newPlayer.Add("DEATHS", 0);
             newPlayer.Add("KDR", 0);
-            newPlayer.Add("SKILL", Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.ConservativeRating);
-            newPlayer.Add("MEAN", Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean);
-            newPlayer.Add("DEV", Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation);
+            newPlayer.Add("SKILL", 0); //Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.ConservativeRating);
+            newPlayer.Add("MEAN", 0); //Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean);
+            newPlayer.Add("DEV", 0); //Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation);
 
             Insert("STATS", newPlayer);
         }
@@ -478,7 +487,7 @@ namespace IW4MAdmin
                     if (D["MEAN"] == DBNull.Value || D["DEV"] == DBNull.Value || D["SKILL"] == DBNull.Value)
                         continue;
 
-                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));               
+                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));
                     Top.Add(S);
                 }
             }
@@ -527,12 +536,12 @@ namespace IW4MAdmin
             if (Result != null && Result.Rows.Count > 0)
             {
                 foreach (DataRow D in Result.Rows)
-                    Update("STATS", new Dictionary<String, Object> () { {"SKILL",  1} }, String.Format("Number = '{0}'", D["Number"]));
+                    Update("STATS", new Dictionary<String, Object>() { { "SKILL", 1 } }, String.Format("Number = '{0}'", D["Number"]));
             }
         }
     }
 
-    class AliasesDB : Database
+    public class AliasesDB : Database
     {
         public AliasesDB(String FN) : base(FN) { }
 
@@ -569,7 +578,7 @@ namespace IW4MAdmin
             if (Result != null && Result.Rows.Count > 0)
             {
                 foreach (DataRow p in Result.Rows)
-                 players.Add(new Aliases(Convert.ToInt32(p["Number"]), p["NAMES"].ToString(), p["IPS"].ToString()));
+                    players.Add(new Aliases(Convert.ToInt32(p["Number"]), p["NAMES"].ToString(), p["IPS"].ToString()));
             }
 
             return players;

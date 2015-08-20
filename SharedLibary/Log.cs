@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
-namespace IW4MAdmin
+namespace SharedLibrary
 {
-    class Log
+    public class Log
     {
         public enum Level
         {
@@ -18,7 +19,7 @@ namespace IW4MAdmin
         {
             logFile = logf;
             logMode = mode;
-            Port = port;
+            Identifier = port;
         }
 
         public void Write(String line)
@@ -28,8 +29,8 @@ namespace IW4MAdmin
 
         public void Write(String line, Level lv)
         {
-            String Line = String.Format("{1} - [{0}]: {2}", Port, getTime(), line);
-            switch(logMode)
+            String Line = String.Format("{1} - [{0}]: {2}", Identifier, getTime(), line);
+            switch (logMode)
             {
                 case Level.All:
                     if (lv == Level.All || lv == Level.Debug || lv == Level.Production)
@@ -47,7 +48,7 @@ namespace IW4MAdmin
 
             logFile.Write(Line);
         }
-        
+
         private string getTime()
         {
             return DateTime.Now.ToString("HH:mm:ss");
@@ -55,6 +56,6 @@ namespace IW4MAdmin
 
         private IFile logFile;
         private Level logMode;
-        private int Port;
+        private int Identifier;
     }
 }

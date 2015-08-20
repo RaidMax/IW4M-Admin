@@ -5,129 +5,36 @@ using System.Text;
 using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
+using SharedLibrary;
 
 
 namespace IW4MAdmin
 {
-    class Server
+    class IW4MServer : SharedLibrary.Server
     {
         const int FLOOD_TIMEOUT = 300;
 
-        public Server(string address, int port, string password, int H, int PID)
+        public IW4MServer(string address, int port, string password, int H, int PID) : base(address, port, password, H, PID) 
         {
-            this.PID = PID;
-            Handle = H;
-            IP = address;
-            Port = port;
-            clientnum = 0;
-            RCON = new RCON(this);
-            logFile = new file("admin_" + port + ".log", true);
-#if DEBUG
-            Log = new Log(logFile, Log.Level.Debug, port);
-#else
-            Log = new Log(logFile, Log.Level.Production, port);
-#endif
-            players = new List<Player>(new Player[18]);
-            clientDB = new ClientsDB("clients.rm");
-            statDB = new StatsDB("stats_" + port + ".rm");
-            aliasDB = new AliasesDB("aliases.rm");
-            Bans = clientDB.getBans();
-            owner = clientDB.getOwner();
-            events = new Queue<Event>();
-            HB = new Heartbeat(this);
-            Macros = new Dictionary<String, Object>();
-            Reports = new List<Report>();
-            Skills = new Moserware.TrueSkill();
-            statusPlayers = new Dictionary<string, Player>();
-            chatHistory = new List<Chat>();
             playerHistory = new Queue<pHistory>();
-            lastWebChat = DateTime.Now;
-            nextMessage = 0;
-            initCommands();
-            initMacros();
-            initMessages();
-            initMaps();
-            initRules();
+            commandQueue = new Queue<string>();   
         }
 
-        //Returns the current server name -- *STRING*
-        public String getName()
+        public override void initAbstractObj()
         {
-            return hostname;
+            throw new NotImplementedException();
         }
-
-        public String getMap()
-        {
-            return mapname;
-        }
-
-        public String getGametype()
-        {
-            return Gametype;
-        }
-
-        //Returns current server IP set by `net_ip` -- *STRING*
-        public String getIP()
-        {
-            return IP;
-        }
-
-        //Returns current server port set by `net_port` -- *INT*
-        public int getPort()
-        {
-            return Port;
-        }
-
-        //Returns number of active clients on server -- *INT*
-        public int getNumPlayers()
-        {
-            return clientnum;
-        }
-
-        //Returns the list of commands
-        public List<Command> getCommands()
-        {
-            return commands;
-        }
-
-        //Returns list of all current players
-        public List<Player> getPlayers()
-        {
-            return players;
-        }
-
-        public int getClientNum()
-        {
-            return clientnum;
-        }
-
-        public int getMaxClients()
-        {
-            return maxClients;
-        }
-
-        //Returns list of all active bans (loaded at runtime)
-        public List<Ban> getBans()
-        {
-            return Bans;
-        }
-
-        public int pID()
-        {
-            return this.PID;
-        }
-
-        public void getAliases(List<Player> returnPlayers, Player Origin)
+        override public void getAliases(List<Player> returnPlayers, Player Origin)
         {  
             if (Origin == null)
                 return;
 
             List<Aliases> aliasAliases = new List<Aliases>();
-            Aliases currentAliases = aliasDB.getPlayer(Origin.getDBID());
+            Aliases currentAliases = aliasDB.getPlayer(Origin.databaseID);
 
             if (currentAliases == null)
             {
-                Log.Write("No aliases found for " + Origin.getName(), Log.Level.Debug);
+                Log.Write("No aliases found for " + Origin.Name, Log.Level.Debug);
                 return;
             }
 
@@ -148,7 +55,7 @@ namespace IW4MAdmin
                         {
                             aliasPlayer.Alias = a;
 
-                            if (returnPlayers.Exists(p => p.getDBID() == aliasPlayer.getDBID()) == false)
+                            if (returnPlayers.Exists(p => p.databaseID == aliasPlayer.databaseID == false))
                             {
                                 returnPlayers.Add(aliasPlayer);
                                 getAliases(returnPlayers, aliasPlayer);
@@ -158,57 +65,42 @@ namespace IW4MAdmin
             }           
         }
 
-        bool checkClientStatus(Player P)
-        {
-          /*  RCON.addRCON("admin_lastevent status;" + P.getID() + ";0;clean");
-            Utilities.Wait(0.5); // give it time to update
-            String[] Status = RCON.addRCON("whoisdirty");
-
-            if (Status != null)
-            {
-                String GUID = Utilities.stripColors(Status[1].Split(new char[] { '\"' })[3]);
-            }
-            */
-  
-            return true;
-        }
-     
         //Add player object p to `players` list
-        public bool addPlayer(Player P)
+        override public bool addPlayer(Player P)
         {
-            if (P.getClientNum() < 0 || P.getClientNum() > (players.Count-1)) // invalid index
+            if (P.clientID < 0 || P.clientID > (players.Count-1)) // invalid index
                 return false;
 
-            if (players[P.getClientNum()] != null && players[P.getClientNum()].getID() == P.getID()) // if someone has left and a new person has taken their spot between polls
+            if (players[P.clientID] != null && players[P.clientID].npID == P.npID) // if someone has left and a new person has taken their spot between polls
                 return true;
 
-            Log.Write("Client slot #" + P.getClientNum() + " now reserved", Log.Level.Debug);
+            Log.Write("Client slot #" + P.clientID + " now reserved", Log.Level.Debug);
 
                 
 #if DEBUG == false
             try
 #endif
             {
-                Player NewPlayer = clientDB.getPlayer(P.getID(), P.getClientNum());
+                Player NewPlayer = clientDB.getPlayer(P.npID, P.clientID);
 
                 if (NewPlayer == null) // first time connecting
                 {
-                    Log.Write("Client slot #" + P.getClientNum() + " first time connecting", Log.Level.All);
+                    Log.Write("Client slot #" + P.clientID + " first time connecting", Log.Level.All);
                     clientDB.addPlayer(P);
-                    NewPlayer = clientDB.getPlayer(P.getID(), P.getClientNum());
-                    aliasDB.addPlayer(new Aliases(NewPlayer.getDBID(), NewPlayer.getName(), NewPlayer.getIP()));
+                    NewPlayer = clientDB.getPlayer(P.npID, P.clientID);
+                    aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
                     statDB.addPlayer(NewPlayer);
                 }
 
-                NewPlayer.updateName(P.getName().Trim());
+                NewPlayer.updateName(P.Name.Trim());
     
-                NewPlayer.stats = statDB.getStats(NewPlayer.getDBID());
-                NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.getDBID());
+                NewPlayer.stats = statDB.getStats(NewPlayer.databaseID);
+                NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
 
                 if (NewPlayer.Alias == null)
                 {
-                    aliasDB.addPlayer(new Aliases(NewPlayer.getDBID(), NewPlayer.getName(), NewPlayer.getIP()));
-                    NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.getDBID());
+                    aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
+                    NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
                 }
                 
                 // try not to crash if no stats!
@@ -219,43 +111,42 @@ namespace IW4MAdmin
                     NewPlayer.lastEvent = P.lastEvent;
            
                 // lets check aliases 
-                if ((NewPlayer.Alias.getNames().Find(m => m.Equals(P.getName()))) == null || NewPlayer.getName() == null || NewPlayer.getName() == String.Empty) 
+                if ((NewPlayer.Alias.getNames().Find(m => m.Equals(P.Name))) == null || NewPlayer.Name == null || NewPlayer.Name == String.Empty) 
                 {
-                    NewPlayer.updateName(P.getName().Trim());
-                    NewPlayer.Alias.addName(NewPlayer.getName());
+                    NewPlayer.updateName(P.Name.Trim());
+                    NewPlayer.Alias.addName(NewPlayer.Name);
                 }
                
                 // and ips
-                if (NewPlayer.Alias.getIPS().Find(i => i.Equals(P.getIP())) == null || P.getIP() == null || P.getIP() == String.Empty)
+                if (NewPlayer.Alias.getIPS().Find(i => i.Equals(P.IP)) == null || P.IP == null || P.IP == String.Empty)
                 {
-                    NewPlayer.Alias.addIP(P.getIP());
+                    NewPlayer.Alias.addIP(P.IP);
                 }
 
-                NewPlayer.updateIP(P.getIP());
+                NewPlayer.updateIP(P.IP);
 
                 aliasDB.updatePlayer(NewPlayer.Alias);
                 clientDB.updatePlayer(NewPlayer);
 
-               // Utilities.Wait(10); // they're loading in.
 
-                if (NewPlayer.getLevel() == Player.Permission.Banned) // their guid is already banned so no need to check aliases
+                if (NewPlayer.Level == Player.Permission.Banned) // their guid is already banned so no need to check aliases
                 {
                     String Message;
 
-                    Log.Write("Banned client " + P.getName() + " trying to connect...", Log.Level.Debug);
+                    Log.Write("Banned client " + P.Name + " trying to connect...", Log.Level.Debug);
 
-                    if (NewPlayer.getLastO() != null)
-                        Message = "^7Player Kicked: Previously banned for ^5" + NewPlayer.getLastO() + " ^7(appeal at " + Website + ")";
+                    if (NewPlayer.lastOffense != null)
+                        Message = "^7Player Kicked: Previously banned for ^5" + NewPlayer.lastOffense + " ^7(appeal at " + Website + ")";
                     else
                         Message = "Player Kicked: Previous Ban";
 
                     NewPlayer.Kick(Message);
 
-                    if (players[NewPlayer.getClientNum()] != null)
+                    if (players[NewPlayer.clientID] != null)
                     {
                         lock (players)
                         {
-                            players[NewPlayer.getClientNum()] = null;
+                            players[NewPlayer.clientID] = null;
                         }
                     }
 
@@ -270,25 +161,25 @@ namespace IW4MAdmin
                     if (aP == null)
                         continue;
 
-                    if (aP.getLevel() == Player.Permission.Flagged)
+                    if (aP.Level == Player.Permission.Flagged)
                         NewPlayer.setLevel(Player.Permission.Flagged);
 
                     Ban B = isBanned(aP);
 
                     if (B != null)
                     {
-                        Log.Write(String.Format("Banned client {0} is connecting with new alias {1}", aP.getName(), NewPlayer.getName()), Log.Level.Debug);
-                        NewPlayer.LastOffense = String.Format("Evading ( {0} )", aP.getName());
+                        Log.Write(String.Format("Banned client {0} is connecting with new alias {1}", aP.Name, NewPlayer.Name), Log.Level.Debug);
+                        NewPlayer.lastOffense = String.Format("Evading ( {0} )", aP.Name);
 
-                        if (B.getReason() != null)
-                            NewPlayer.Ban("^7Previously Banned: ^5" + B.getReason() + " ^7(appeal at " + Website  + ")", NewPlayer);
+                        if (B.Reason != null)
+                            NewPlayer.Ban("^7Previously Banned: ^5" + B.Reason + " ^7(appeal at " + Website  + ")", NewPlayer);
                         else
                             NewPlayer.Ban("^7Previous Ban", NewPlayer);
 
                         lock (players)
                         {
-                            if (players[NewPlayer.getClientNum()] != null)
-                                players[NewPlayer.getClientNum()] = null;
+                            if (players[NewPlayer.clientID] != null)
+                                players[NewPlayer.clientID] = null;
                         }
                         return true;
                     }
@@ -299,28 +190,28 @@ namespace IW4MAdmin
 
                 lock (players)
                 {
-                    players[NewPlayer.getClientNum()] = null; // just in case we have shit in the way
-                    players[NewPlayer.getClientNum()] = NewPlayer;
+                    players[NewPlayer.clientID] = null; // just in case we have shit in the way
+                    players[NewPlayer.clientID] = NewPlayer;
                 }
 #if DEBUG == FALSE
-                    NewPlayer.Tell("Welcome ^5" + NewPlayer.getName() + " ^7this is your ^5" + Utilities.timesConnected(NewPlayer.getConnections()) + " ^7time connecting!");
+                    NewPlayer.Tell("Welcome ^5" + NewPlayer.Name + " ^7this is your ^5" + Utilities.timesConnected(NewPlayer.Connections) + " ^7time connecting!");
 #endif
-                Log.Write("Client " + NewPlayer.getName() + " connecting...", Log.Level.Debug); // they're clean
+                Log.Write("Client " + NewPlayer.Name + " connecting...", Log.Level.Debug); // they're clean
 
                 while (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
                     chatHistory.RemoveAt(0);
                 chatHistory.Add(new Chat(NewPlayer, "<i>CONNECTED</i>", DateTime.Now));
 
-                if (NewPlayer.getLevel() == Player.Permission.Flagged)
-                    ToAdmins("^1NOTICE: ^7Flagged player ^5" + NewPlayer.getName() + "^7 has joined!");
+                if (NewPlayer.Level == Player.Permission.Flagged)
+                    ToAdmins("^1NOTICE: ^7Flagged player ^5" + NewPlayer.Name + "^7 has joined!");
 
-                if (NewPlayer.getLevel() > Player.Permission.Moderator)
+                if (NewPlayer.Level > Player.Permission.Moderator)
                     NewPlayer.Tell("There are ^5" + Reports.Count + " ^7recent reports!");
 
                 if (NewPlayer.stats == null) // there seems to be an issue with stats with multiple servers. I think this should fix it
                 { 
                     statDB.addPlayer(NewPlayer);
-                    NewPlayer.stats = statDB.getStats(NewPlayer.getDBID());
+                    NewPlayer.stats = statDB.getStats(NewPlayer.databaseID);
                 }
 
                 return true;
@@ -328,14 +219,14 @@ namespace IW4MAdmin
 #if DEBUG == false
             catch (Exception E)
             {
-                Log.Write("Unable to add player " + P.getName() + " - " + E.Message, Log.Level.Debug);
+                Log.Write("Unable to add player " + P.Name + " - " + E.Message, Log.Level.Debug);
                 return false;
             }
 #endif
         }
 
         //Remove player by CLIENT NUMBER
-        public bool removePlayer(int cNum)
+        override public bool removePlayer(int cNum)
         {
             if (cNum >= 0 && cNum < players.Count)
             {
@@ -366,7 +257,7 @@ namespace IW4MAdmin
         }
 
         //Another version of client from line, written for the line created by a kill or death event
-        public Player clientFromEventLine(String[] L, int cIDPos)
+        override public Player clientFromEventLine(String[] L, int cIDPos)
         {
             if (L.Length < cIDPos)
             {
@@ -404,42 +295,28 @@ namespace IW4MAdmin
             } 
         }
 
-        public Player clientFromName(String pName)
-        {
-            lock (players)
-            {
-                foreach (var P in players)
-                {
-                    if (P != null && P.getName().ToLower().Contains(pName.ToLower()))
-                        return P;
-                }
-            }
-
-            return null;
-        }
-
         //Check ban list for every banned player and return ban if match is found 
-         public Ban isBanned(Player C)
+         override public Ban isBanned(Player C)
          {
             
-                 if (C.getLevel() == Player.Permission.Banned)
-                    return Bans.Find(p => p.getID().Equals(C.getID()));
+                 if (C.Level == Player.Permission.Banned)
+                    return Bans.Find(p => p.npID.Equals(C.npID));
 
                  foreach (Ban B in Bans)
                  {
-                     if (B.getID().Length < 5 || B.getIP().Length < 5)
+                     if (B.npID.Length < 5 || B.IP.Length < 5)
                          continue;
 
-                     if (B.getID() == null || C.getID() == null)
+                     if (B.npID == null || C.npID == null)
                          continue;
 
-                     if (B.getID() == C.getID())
+                     if (B.npID == C.npID)
                          return B;
 
-                     if (B.getIP() == null || C.getIP() == null)
+                     if (B.IP == null || C.IP == null)
                          continue;
 
-                     if (C.getIP() == B.getIP())
+                     if (C.IP == B.IP)
                          return B;
                  }
 
@@ -447,29 +324,29 @@ namespace IW4MAdmin
          }
 
         //Procses requested command correlating to an event
-        public Command processCommand(Event E, Command C)
+        override public Command processCommand(Event E, Command C)
         {
             E.Data = Utilities.removeWords(E.Data, 1);
             String[] Args = E.Data.Trim().Split(' ');
    
-            if (Args.Length < (C.getNumArgs()))
+            if (Args.Length < (C.requiredArgNum))
             {
                 E.Origin.Tell("Not enough arguments supplied!");
                 return null;
             }
 
-            if(E.Origin.getLevel() < C.getNeededPerm())
+            if(E.Origin.Level < C.Permission)
             {
                 E.Origin.Tell("You do not have access to that command!");
                 return null;
             }
 
-            if (C.needsTarget())
+            if (C.needsTarget)
             {
                 int cNum = -1;
                 int.TryParse(Args[0], out cNum);
 
-                if (C.getName() == "stats" && Args.Length == 1)
+                if (C.Name == "stats" && Args.Length == 1)
                     E.Target = E.Origin;
 
                 if (Args[0] == String.Empty)
@@ -480,7 +357,9 @@ namespace IW4MAdmin
                 {
                     int dbID = -1;
                     int.TryParse(Args[0].Substring(1, Args[0].Length-1), out dbID);
-                    Player found = E.Owner.clientDB.getPlayer(dbID);
+
+                    IW4MServer castServer = (IW4MServer)(E.Owner);
+                    Player found = castServer.clientDB.getPlayer(dbID);
                     if (found != null)
                     {
                         E.Target = found;
@@ -507,37 +386,17 @@ namespace IW4MAdmin
             return C;
         }
 
-        //push a new event into the queue
-        private void addEvent(Event E)
+        override public void executeCommand(String CMD)
         {
-            events.Enqueue(E);
-        }
-        
-        //process new event every 50 milliseconds
-        private void manageEventQueue()
-        {
-            while (isRunning)
-            {
-                if (events.Count > 0)
-                {
-                    processEvent(events.Peek());
-                    events.Dequeue();
-                }
-                Utilities.Wait(0.05);
-            }
+            commandQueue.Enqueue(CMD);   
         }
 
-        public void executeCommand(String CMD)
-        {
-            lastCommandPointer = Utilities.executeCommand(PID, CMD, lastCommandPointer);     
-        }
-
-        private dvar getDvar(String DvarName)
+        override public dvar getDvar(String DvarName)
         {
             return Utilities.getDvar(PID, DvarName, lastCommandPointer);
         }
 
-        private void setDvar(String Dvar, String Value)
+        override public void setDvar(String Dvar, String Value)
         {
             lastDvarPointer = Utilities.executeCommand(PID, Dvar + " " + Value, lastDvarPointer);
         }
@@ -549,25 +408,9 @@ namespace IW4MAdmin
         public static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
         //Starts the monitoring process
-        public void Monitor()
+        override public void Monitor()
         {
             isRunning = true;
-
-#if DEBUG
-          /*  Random rnd = new Random();
-            DateTime testTOD = DateTime.Now;
-            while (playerHistory.Count < 144)
-            {
-                playerHistory.Enqueue(new pHistory(testTOD, rnd.Next(14, 19)));
-                 testTOD = testTOD.AddMinutes(5);
-            }
-
-            Console.WriteLine("There are " + playerHistory.Count + " player counts");*/
-#endif
-
-            //Handles new rcon requests in a fashionable manner
-            Thread RCONQueue = new Thread(new ThreadStart(RCON.ManageRCONQueue));
-            RCONQueue.Start();
 
             if (!intializeBasics())
             {
@@ -576,11 +419,6 @@ namespace IW4MAdmin
                 return;
             }
 
-            //Handles new events in a fashionable manner
-            Thread eventQueue = new Thread(new ThreadStart(manageEventQueue));
-            eventQueue.Start();
-
-            int timesFailed = 0;
             long l_size = -1;
             bool checkedForOutdate = false;
             String[] lines = new String[8];
@@ -619,8 +457,8 @@ namespace IW4MAdmin
                         else
                             nextMessage++;
                         start = DateTime.Now;
-                        if (timesFailed <= 3)
-                            HB.Send();
+                        //if (timesFailed <= 3)
+                         //   HB.Send();
 
                         String checkVer = new Connection("http://raidmax.org/IW4M/Admin/version.php").Read();
                         double checkVerNum;
@@ -632,7 +470,7 @@ namespace IW4MAdmin
                         }
                         
                     }
-#if DEBUG == false
+
                     if ((DateTime.Now - lastPoll).Milliseconds > 750)
                     {
                         int numberRead = 0;
@@ -650,7 +488,7 @@ namespace IW4MAdmin
                             if (eachClient.state == 0)
                                 removePlayer(i);
 
-                            else if (eachClient.state > 2)
+                            else if (eachClient.state == 5 )
                             {
                                 addPlayer(new Player(Utilities.stripColors(Utilities.cleanChars(eachClient.name)), eachClient.steamid.ToString("x16"), i, 0, i, null, 0, Helpers.NET_AdrToString(eachClient.adr).Split(':')[0]));
                                 activeClients++;
@@ -660,7 +498,6 @@ namespace IW4MAdmin
                         lastPoll = DateTime.Now;
                         clientnum = activeClients;
                     }
-#endif
 
                     if (l_size != logFile.getSize())
                     {
@@ -688,7 +525,7 @@ namespace IW4MAdmin
                                 else
                                 {
                                     string[] game_event = lines[count].Split(';');
-                                    Event event_ = Event.requestEvent(game_event, this);
+                                    Event event_ = Event.requestEvent(game_event, (Server)this);
                                     if (event_ != null)
                                     {
                                         if (event_.Origin == null)
@@ -696,8 +533,7 @@ namespace IW4MAdmin
 
                                         event_.Origin.lastEvent = event_;
                                         event_.Origin.lastEvent.Owner = this;
-
-                                        addEvent(event_);
+                                        processEvent(event_);
                                     }
                                 }
 
@@ -706,6 +542,8 @@ namespace IW4MAdmin
                     }
                     oldLines = lines;
                     l_size = logFile.getSize();
+                    if (commandQueue.Count > 0)
+                        lastCommandPointer = Utilities.executeCommand(PID, commandQueue.Dequeue(), lastCommandPointer);  
                     Thread.Sleep(150);
                 }
 #if DEBUG == false
@@ -718,90 +556,16 @@ namespace IW4MAdmin
 
             }
             isRunning = false;
-            RCONQueue.Abort();
-            eventQueue.Abort();
         }
-#if DEBUG2
-        private void pollServer()
-        {
-            int timesFailed = 0;
-            Dictionary<String, Player> toCheck = new Dictionary<String, Player>();
-            while (isRunning)
-            {
-                String[] Response = RCON.addRCON("status");
-                if (Response != null)
-                    toCheck = Utilities.playersFromStatus(Response);
-           
-                if (toCheck != null)
-                {
-                    lastPoll = DateTime.Now;
-                    timesFailed = 0;
 
-                    if (toCheck != statusPlayers)
-                    {
-                        List<Player> toRemove = new List<Player>();
-                        lock (players)
-                        {
-                            foreach (Player P in players)
-                            {
-                                if (P == null)
-                                    continue;
-
-                                Player Matching;
-                                toCheck.TryGetValue(P.getID(), out Matching);
-                                if (Matching == null) // they are no longer with us
-                                    toRemove.Add(P);
-                            }
-
-                            foreach (Player Removing in toRemove) // cuz cant modify collections
-                                removePlayer(Removing.getClientNum());
-                        }
-
-                        foreach (var P in toCheck.Values)
-                        {
-                            if (P == null)
-                            {
-                                Log.Write("Null player found in toCheck", Log.Level.Debug);
-                                continue;
-                            }
-
-                            if (!addPlayer(P))
-                                Log.Write("Error adding " + P.getName() + " at client slot #" + P.getClientNum(), Log.Level.Debug);
-                        }
-
-                        lock (statusPlayers)
-                        {
-                            statusPlayers = toCheck;
-                        }
-                    }
-
-                    clientnum = statusPlayers.Count;
-                }
-
-                else
-                {
-                    timesFailed++;
-                    Log.Write("Server appears to be offline - " + timesFailed, Log.Level.Debug);
-
-                    if (timesFailed >= 4)
-                    {
-                        Log.Write("Max offline attempts reached. Reinitializing RCON connection.", Log.Level.Debug);
-                        RCON.Reset();
-                    }
-                }
-
-                Utilities.Wait(15);
-            }
-        }
-#endif
-        private bool intializeBasics()
+        override public bool intializeBasics()
         {
            try
            {
                // inject our dll 
                if (!Utilities.initalizeInterface(PID))
                {
-                   Log.Write("Could not load IW4MAdmin interface!", IW4MAdmin.Log.Level.Debug);
+                   Log.Write("Could not load IW4MAdmin interface!", Log.Level.Debug);
                    return false;
                }
 
@@ -814,7 +578,7 @@ namespace IW4MAdmin
 
                 if (maxClients == -1)
                 {
-                    Log.Write("Could not get max clients value", IW4MAdmin.Log.Level.Debug);
+                    Log.Write("Could not get max clients value", Log.Level.Debug);
                     return false;
                 }
 
@@ -829,7 +593,7 @@ namespace IW4MAdmin
 
                if (oneLog == -1)
                {
-                   Log.Write("Could not get iw4m_onelog value", IW4MAdmin.Log.Level.Debug);
+                   Log.Write("Could not get iw4m_onelog value", Log.Level.Debug);
                    return false;
                }
 
@@ -848,9 +612,9 @@ namespace IW4MAdmin
                    return false;
                }
 
-               logFile = new file(logPath);
+               logFile = new IFile(logPath);
                Log.Write("Log file is " + logPath, Log.Level.Debug);
-               Log.Write("Now monitoring " + this.getName(), Log.Level.Production);
+               Log.Write("Now monitoring " + getName(), Log.Level.Production);
                return true;
             }
             catch (Exception E)
@@ -861,7 +625,7 @@ namespace IW4MAdmin
         }
 
         //Process any server event
-        public bool processEvent(Event E)
+        override public bool processEvent(Event E)
         {
             if (E.Type == Event.GType.Connect)
             {
@@ -880,7 +644,7 @@ namespace IW4MAdmin
                     chatHistory.RemoveAt(0);
                 chatHistory.Add(new Chat(E.Origin, "<i>DISCONNECTED</i>", DateTime.Now));
 
-                removePlayer(E.Origin.getClientNum());        
+                removePlayer(E.Origin.clientID);        
                 return true;
             }
 
@@ -918,12 +682,12 @@ namespace IW4MAdmin
                     E.Target.stats.Deaths += 1;
                     E.Target.stats.updateKDR();
 
-                    Skills.updateNewSkill(E.Origin, E.Target);
+                    //Skills.updateNewSkill(E.Origin, E.Target);
                     statDB.updatePlayer(E.Origin);
                     statDB.updatePlayer(E.Target);
 
                     totalKills++;
-                    Log.Write(E.Origin.getName() + " killed " + E.Target.getName() + " with a " + E.Data, Log.Level.Debug);
+                    Log.Write(E.Origin.Name + " killed " + E.Target.Name + " with a " + E.Data, Log.Level.Debug);
                 }
 
                 else // suicide/falling
@@ -931,7 +695,7 @@ namespace IW4MAdmin
                     E.Origin.stats.Deaths++;
                     E.Origin.stats.updateKDR();
                     statDB.updatePlayer(E.Origin);
-                    Log.Write(E.Origin.getName() + " suicided...", Log.Level.Debug);
+                    Log.Write(E.Origin.Name + " suicided...", Log.Level.Debug);
                 }
             }
 
@@ -947,7 +711,7 @@ namespace IW4MAdmin
                     return false;
                 }
 
-                Log.Write("Message from " + E.Origin.getName() + ": " + E.Data, Log.Level.Debug);
+                Log.Write("Message from " + E.Origin.Name + ": " + E.Data, Log.Level.Debug);
 
                 if (E.Owner == null)
                 {
@@ -975,7 +739,7 @@ namespace IW4MAdmin
                     C = processCommand(E, C);
                     if (C != null)
                     {
-                        if (C.needsTarget() && E.Target == null)
+                        if (C.needsTarget && E.Target == null)
                         {
                             Log.Write("Requested event requiring target does not have a target!", Log.Level.Debug);
                             return false;
@@ -986,7 +750,7 @@ namespace IW4MAdmin
 
                     else
                     {
-                        Log.Write("Player didn't properly enter command - " + E.Origin.getName(), Log.Level.Debug);
+                        Log.Write("Player didn't properly enter command - " + E.Origin.Name, Log.Level.Debug);
                         return true;
                     }
                 }
@@ -1042,7 +806,7 @@ namespace IW4MAdmin
                     if (P == null || P.stats == null)
                         continue;
                     statDB.updatePlayer(P);
-                    Log.Write("Updated stats for client " + P.getDBID(), Log.Level.Debug);
+                    Log.Write("Updated stats for client " + P.databaseID, Log.Level.Debug);
                 }
                 return true;
             }
@@ -1050,94 +814,52 @@ namespace IW4MAdmin
             return false;
         }
 
-        public bool Reload()
+        override public void Ban(String Message, Player Target, Player Origin)
         {
-            try
-            {
-                messages = null;
-                maps = null;
-                rules = null;
-                initMaps();
-                initMessages();
-                initRules();
-                return true;
-            }
-            catch (Exception E)
-            {
-                Log.Write("Unable to reload configs! - " + E.Message, Log.Level.Debug);
-                messages = new List<String>();
-                maps = new List<Map>();
-                rules = new List<String>();
-                return false;
-            }
-        }
-
-        //THESE MAY NEED TO BE MOVED
-        public void Broadcast(String Message)
-        {
-            RCON.addRCON("sayraw " + Message);
-        }
-
-        public void Tell(String Message, Player Target)
-        {
-            if (Target.getClientNum() > -1)
-                RCON.addRCON("tellraw " + Target.getClientNum() + " " + Message + "^7"); // I fixed tellraw :>
-        }
-
-        public void Kick(String Message, Player Target)
-        {
-            if (Target.getClientNum() > -1)
-                RCON.addRCON("clientkick " + Target.getClientNum() + " \"" + Message + "^7\"");
-        }
-
-        public void Ban(String Message, Player Target, Player Origin)
-        {
-            if (Target.getClientNum() > -1)
-                RCON.addRCON("tempbanclient " + Target.getClientNum() + " \"" + Message + "^7\"");
+            if (Target.clientID > -1)
+                executeCommand("tempbanclient " + Target.clientID + " \"" + Message + "^7\"");
 
             if (Origin != null)
             {
                 Target.setLevel(Player.Permission.Banned);
-                Ban newBan = new Ban(Target.getLastO(), Target.getID(), Origin.getID(), DateTime.Now, Target.getIP());
+                Ban newBan = new Ban(Target.lastOffense, Target.npID, Origin.npID, DateTime.Now, Target.IP);
 
                 clientDB.addBan(newBan);
                 clientDB.updatePlayer(Target);
 
-                foreach (Server S in Program.getServers()) // make sure bans show up on the webfront
-                    S.Bans = S.clientDB.getBans();
+               // foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+               //     S.Bans = S.clientDB.getBans();
 
                 lock (Reports) // threading seems to do something weird here
                 {
                     List<Report> toRemove = new List<Report>();
                     foreach (Report R in Reports)
                     {
-                        if (R.Target.getID() == Target.getID())
+                        if (R.Target.npID == Target.npID)
                             toRemove.Add(R);
                     }
 
                     foreach (Report R in toRemove)
                     {
                         Reports.Remove(R);
-                        Log.Write("Removing report for banned GUID -- " + R.Origin.getID(), Log.Level.Debug);
+                        Log.Write("Removing report for banned GUID -- " + R.Origin.npID, Log.Level.Debug);
                     }
                 }
             }
         }
 
-        public bool Unban(String GUID, Player Target)
+        override public bool Unban(String GUID, Player Target)
         {
             foreach (Ban B in Bans)
             {
-                if (B.getID() == Target.getID())
+                if (B.npID == Target.npID)
                 {
-                    clientDB.removeBan(Target.getID(), Target.getIP());
+                    clientDB.removeBan(Target.npID, Target.IP);
 
-                    Player P = clientDB.getPlayer(Target.getID(), -1);
+                    Player P = clientDB.getPlayer(Target.npID, -1);
                     P.setLevel(Player.Permission.User);
                     clientDB.updatePlayer(P);
 
-                    foreach (Server S in Program.getServers())
-                        S.Bans = S.clientDB.getBans();
                     return true;
                 }
             }
@@ -1145,165 +867,15 @@ namespace IW4MAdmin
         }
 
 
-        public void fastRestart(int delay)
-        {
-            Utilities.Wait(delay);
-            RCON.addRCON("fast_restart");
-        }
-
-        public void mapRotate(int delay)
-        {
-            Utilities.Wait(delay);
-            executeCommand("map_rotate");
-        }
-
-        public void tempBan(String Message, Player Target)
-        {
-            RCON.addRCON("tempbanclient " + Target.getClientNum() + " \"" + Message + "\"");
-        }
-        
-        public void mapRotate()
-        {
-            mapRotate(0);
-        }
-
-        public void Map(String mapName)
-        {
-            executeCommand("map " + mapName);
-        }
-
-        public String Wisdom()
-        {
-            String Quote = new Connection("http://www.iheartquotes.com/api/v1/random?max_lines=1&max_characters=200").Read();
-            return Utilities.removeNastyChars(Quote);
-        }
-
-        public void ToAdmins(String message)
-        {
-            lock (players) // threading can modify list while we do this
-            {
-                foreach (Player P in players)
-                {
-                    if (P == null)
-                        continue;
-
-                    if (P.getLevel() > Player.Permission.Flagged)
-                    {
-                        P.Alert();
-                        P.Tell(message);
-                    }
-                }
-            }
-        }
-
-        public void Alert(Player P)
-        {
-            RCON.addRCON("admin_lastevent alert;" + P.getID() + ";0;mp_killstreak_nuclearstrike");
-        }
-
-        public void webChat(Player P, String Message)
-        {
-            DateTime requestTime = DateTime.Now;
-
-            if ((requestTime - lastWebChat).TotalSeconds > 1)
-            {
-                Broadcast("^1[WEBCHAT] ^5" + P.getName() + "^7 - " + Message);
-                while (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
-                    chatHistory.RemoveAt(0);
-
-                if (Message.Length > 50)
-                    Message = Message.Substring(0, 50) + "...";
-
-                chatHistory.Add(new Chat(P, Utilities.stripColors(Message), DateTime.Now));
-                lastWebChat = DateTime.Now;
-            }
-        }
-
-        //END
-
-        private void initMacros()
+        override public void initMacros()
         {
             Macros = new Dictionary<String, Object>();
-            Macros.Add("WISDOM", Wisdom());
             Macros.Add("TOTALPLAYERS", clientDB.totalPlayers());
             Macros.Add("TOTALKILLS", totalKills);
-            Macros.Add("VERSION", IW4MAdmin.Program.Version);     
+            Macros.Add("VERSION", IW4MAdmin.Program.Version);
         }
 
-        private void initMaps()
-        {
-            maps = new List<Map>();
-
-            file mapfile = new file("config\\maps.cfg");
-            String[] _maps = mapfile.readAll();
-            mapfile.Close();
-            if (_maps.Length > 2) // readAll returns minimum one empty string
-            {
-                foreach (String m in _maps)
-                {
-                    String[] m2 = m.Split(':');
-                    if (m2.Length > 1)
-                    {
-                        Map map = new Map(m2[0].Trim(), m2[1].Trim());
-                        maps.Add(map);
-                    }
-                }
-            }     
-            else
-                Log.Write("Maps configuration appears to be empty - skipping...", Log.Level.All);
-        }
-
-        private void initMessages()
-        {
-            messages = new List<String>();
-
-            file messageCFG = new file("config\\messages.cfg");
-            String[] lines = messageCFG.readAll();
-            messageCFG.Close();
-
-            if (lines.Length < 2) //readAll returns minimum one empty string
-            {
-                Log.Write("Messages configuration appears empty - skipping...", Log.Level.All);
-                return;
-            }
-
-            int mTime = -1;
-            int.TryParse(lines[0], out mTime);
-
-            if (messageTime == -1)
-                messageTime = 60;
-            else
-                messageTime = mTime;
-            
-            foreach (String l in lines)
-            {
-                if (lines[0] != l && l.Length > 1)
-                    messages.Add(l);
-            }
-            if (Program.Version != Program.latestVersion && Program.latestVersion != 0)
-               messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
-        }
-
-        private void initRules()
-        {
-            rules = new List<String>();
-
-            file ruleFile = new file("config\\rules.cfg");
-            String[] _rules = ruleFile.readAll();
-            ruleFile.Close();
-            if (_rules.Length > 2) // readAll returns minimum one empty string
-            {
-                foreach (String r in _rules)
-                {
-                    if (r.Length > 1)
-                        rules.Add(r);
-                }
-            }
-            else
-                Log.Write("Rules configuration appears empty - skipping...", Log.Level.All);
-        }
-
-        private void initCommands()
+        override public void initCommands()
         {
             // Something like *COMMAND* | NAME | HELP MSG | ALIAS | NEEDED PERMISSION | # OF REQUIRED ARGS | HAS TARGET |
 
@@ -1328,7 +900,6 @@ namespace IW4MAdmin
             commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Administrator, 1, true));
             commands.Add(new Unban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
             commands.Add(new Admins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
-            commands.Add(new Wisdom("wisdom", "get a random wisdom quote. syntax: !wisdom", "w", Player.Permission.Administrator, 0, false));
             commands.Add(new MapCMD("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
             commands.Add(new Find("find", "find player in database. syntax: !find <player>", "f", Player.Permission.SeniorAdmin, 1, false));
             commands.Add(new Rules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
@@ -1347,59 +918,21 @@ namespace IW4MAdmin
             commands.Add(new Alias("alias", "get past aliases and ips of a player. syntax: !alias <player>", "known", Player.Permission.Moderator, 1, true));
             commands.Add(new _RCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
             commands.Add(new FindAll("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
+
+            foreach (Command C in PluginImporter.potentialPlugins)
+                commands.Add(C);
+        
         }
 
         //Objects
-        public Log Log;
-        public RCON RCON;
-        public ClientsDB clientDB;
-        public AliasesDB aliasDB;
-        public StatsDB statDB;
-        public List<Ban> Bans;
-        public Player owner;
-        public List<Map> maps;
-        public List<String> rules;
-        public Queue<Event> events;
-        public Heartbeat HB;
-        public String Website;
-        public String Gametype;
-        public int totalKills = 0;
-        public List<Report> Reports;
-        public List<Chat> chatHistory;
         public Queue<pHistory> playerHistory;
+        private Queue<String> commandQueue;
 
         //Info
-        private String IP;
-        private int Port;
-        private String hostname;
-        private String mapname;
-        private int clientnum;
-        private List<Player> players;
-        private List<Command> commands;
-        private List<String> messages;
-        private int messageTime;
-        private TimeSpan lastMessage;
-        private DateTime lastPoll;
-        private int nextMessage;
-        private String IW_Ver;
-        private int maxClients;
-        private Dictionary<String, Object> Macros;
-        private Moserware.TrueSkill Skills;
-        private DateTime lastWebChat;
-        private int Handle;
-        private int PID;
 
         //Will probably move this later
-        public Dictionary<String, Player> statusPlayers;
-        public bool isRunning;
         private IntPtr dllPointer;
         public IntPtr lastCommandPointer;
         public IntPtr lastDvarPointer;
-
-        //Log stuff
-        private String Basepath;
-        private String Mod;
-        private String logPath;
-        private file logFile;
     }
 }

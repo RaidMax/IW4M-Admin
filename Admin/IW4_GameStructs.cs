@@ -90,20 +90,6 @@ namespace IW4MAdmin
         public IntPtr max;
     }
 
-    // not iw4
-    public struct dvar
-    {
-        public String name;
-        public String description;
-        public int flags;
-        public short type;
-        public String current;
-        public String latched;
-        public String _default;
-        public int min;
-        public int max;
-    }
-
     class Helpers
     {
         public static String NET_AdrToString(netadr_t a)

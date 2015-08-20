@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Moserware.Skills.TrueSkill;
 using IW4MAdmin;
+using SharedLibrary;
 
 
 namespace Moserware
@@ -17,8 +18,8 @@ namespace Moserware
 
         public void updateNewSkill(Player P1, Player P2)
         {
-            var player1 = new Skills.Player(P1.getDBID());
-            var player2 = new Skills.Player(P2.getDBID());
+           /* var player1 = new Skills.Player(P1.databaseID);
+            var player2 = new Skills.Player(P2.databaseID);
 
             var team1 = new Skills.Team(player1, P1.stats.Rating);
             var team2 = new Skills.Team(player2, P2.stats.Rating);
@@ -29,7 +30,7 @@ namespace Moserware
             P2.stats.Rating = newRatings[player2];
 
             P1.stats.Skill = Math.Round(P1.stats.Rating.ConservativeRating, 3)*10;
-            P2.stats.Skill = Math.Round(P2.stats.Rating.ConservativeRating, 3)*10;
+            P2.stats.Skill = Math.Round(P2.stats.Rating.ConservativeRating, 3)*10;*/
         }
     
         private Skills.SkillCalculator calculator;

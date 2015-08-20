@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace IW4MAdmin
+namespace SharedLibrary
 {
-    class IFile
+    public class IFile
     {
         public IFile(String fileName)
         {
             //Not safe for directories with more than one folder but meh
             _Directory = fileName.Split('\\')[0];
-            Name = (fileName.Split('\\'))[fileName.Split('\\').Length-1];
+            Name = (fileName.Split('\\'))[fileName.Split('\\').Length - 1];
 
             if (!Directory.Exists(_Directory))
                 Directory.CreateDirectory(_Directory);
-            
+
             if (!File.Exists(fileName))
             {
                 try
@@ -26,7 +26,7 @@ namespace IW4MAdmin
 
                 catch
                 {
-                    Console.WriteLine("Unable to open log file for writing!");
+                    Console.WriteLine("Unable to create file!");
                 }
             }
 
@@ -81,7 +81,7 @@ namespace IW4MAdmin
 
         public void Close()
         {
-            if(Handle != null)
+            if (Handle != null)
                 Handle.Close();
             if (writeHandle != null)
                 writeHandle.Close();
@@ -128,7 +128,7 @@ namespace IW4MAdmin
         private long sze;
         private String Name;
         private String _Directory;
-        StreamReader Handle;
-        StreamWriter writeHandle;
+        private StreamReader Handle;
+        private StreamWriter writeHandle;
     }
 }

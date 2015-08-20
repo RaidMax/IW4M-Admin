@@ -82,14 +82,17 @@ namespace SharedLibrary
                 String eventType = line[0].Substring(line[0].Length - 1);
                 eventType = eventType.Trim();
 
-                if (eventType == "J")
-                    return new Event(GType.Connect, null, SV.clientFromEventLine(line, 2), null, SV);
-
-                if (eventType == "Q")
-                    return new Event(GType.Disconnect, null, SV.clientFromEventLine(line, 2), null, SV);
-
                 if (eventType == "K")
-                    return new Event(GType.Kill, line[9], SV.clientFromEventLine(line, 6), SV.clientFromEventLine(line, 2), SV);
+                {
+                    StringBuilder Data = new StringBuilder();
+                    if (line.Length > 9)
+                    {
+                        for (int i = 9; i < line.Length; i++)
+                            Data.Append(line[i] + ";");
+                    }
+
+                    return new Event(GType.Kill, Data.ToString(), SV.clientFromEventLine(line, 6), SV.clientFromEventLine(line, 2), SV);
+                }
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
                 {
@@ -99,10 +102,10 @@ namespace SharedLibrary
                 }
 
                 if (eventType == ":")
-                    return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
+                    return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
                 if (line[0].Split('\\').Length > 5) // blaze it
-                    return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, null);
+                    return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
 
                 return null;
@@ -122,5 +125,10 @@ namespace SharedLibrary
         public Player Origin;
         public Player Target;
         public Server Owner;
+    }
+
+    public abstract class EventNotify
+    {
+        public abstract void onEvent(Event E);
     }
 }

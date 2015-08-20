@@ -9,6 +9,7 @@ namespace IW4MAdmin
     public class PluginImporter
     {
         public static List<Command> potentialPlugins = new List<Command>();
+        public static List<EventNotify> potentialNotifies = new List<EventNotify>();
 
         public static bool Load()
         {
@@ -46,15 +47,24 @@ namespace IW4MAdmin
                     Type[] types = Plugin.GetTypes();
                     foreach(Type assemblyType in types)
                     {
-                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
+                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "EventNotify")
+                        {
+                            Object notifyObject = Activator.CreateInstance(assemblyType);
+                            EventNotify newNotify = (EventNotify)notifyObject;
+                            potentialNotifies.Add(newNotify);
+                            Program.getManager().mainLog.Write("Loaded event plugin \"" + assemblyType.Name + "\"", Log.Level.All);
+                        }
+
+                        else if (assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
                         {
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             potentialPlugins.Add(newCommand);
                             Program.getManager().mainLog.Write("Loaded command plugin \"" + newCommand.Name + "\"", Log.Level.All);
-                        }  
+                        }
+
                         else
-                            Program.getManager().mainLog.Write("Ignoring invalid command plugin \"" + assemblyType.Name + "\"", Log.Level.All);
+                            Program.getManager().mainLog.Write("Ignoring invalid plugin \"" + assemblyType.Name + "\"", Log.Level.All);
                     }
                 }
             }

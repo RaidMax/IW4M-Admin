@@ -15,13 +15,9 @@ namespace IW4MAdmin
         public IW4MServer(string address, int port, string password, int H, int PID) : base(address, port, password, H, PID) 
         {
             playerHistory = new Queue<pHistory>();
-            commandQueue = new Queue<string>();   
+            commandQueue = new Queue<string>();
         }
 
-        public override void initAbstractObj()
-        {
-            throw new NotImplementedException();
-        }
         override public void getAliases(List<Player> returnPlayers, Player Origin)
         {  
             if (Origin == null)
@@ -125,6 +121,8 @@ namespace IW4MAdmin
 
                 aliasDB.updatePlayer(NewPlayer.Alias);
                 clientDB.updatePlayer(NewPlayer);
+
+                events.Enqueue(new Event(Event.GType.Connect, "", NewPlayer, null, this));
 
 
                 if (NewPlayer.Level == Player.Permission.Banned) // their guid is already banned so no need to check aliases
@@ -240,6 +238,7 @@ namespace IW4MAdmin
                 statDB.updatePlayer(Leaving);
 
                 Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
+                events.Enqueue(new Event(Event.GType.Disconnect, "", Leaving, null, this));
                 lock (players)
                 {
                     players[cNum] = null;
@@ -410,10 +409,16 @@ namespace IW4MAdmin
             while(isRunning)
             {
                 if (events.Count > 0)
-                    processEvent(events.Dequeue());
+                {
+                    Event curEvent = events.Peek();
+                    processEvent(curEvent);
+                    foreach (EventNotify E in PluginImporter.potentialNotifies)
+                        E.onEvent(curEvent);
+                    events.Dequeue();
+                }
                 if (commandQueue.Count > 0)
                     lastCommandPointer = Utilities.executeCommand(PID, commandQueue.Dequeue(), lastCommandPointer);  
-                Thread.Sleep(350);
+                Thread.Sleep(300);
             }
         }
 
@@ -556,7 +561,7 @@ namespace IW4MAdmin
                     }
                     oldLines = lines;
                     l_size = logFile.getSize();
-                    Thread.Sleep(350);
+                    Thread.Sleep(300);
                 }
 #if DEBUG == false
                 catch (Exception E)
@@ -701,6 +706,7 @@ namespace IW4MAdmin
 
                     totalKills++;
                     Log.Write(E.Origin.Name + " killed " + E.Target.Name + " with a " + E.Data, Log.Level.Debug);
+                    events.Enqueue(new Event(Event.GType.Death, E.Data, E.Target, null, this));
                 }
 
                 else // suicide/falling

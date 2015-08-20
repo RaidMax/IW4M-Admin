@@ -38,6 +38,17 @@ namespace SamplePlugin
         }
     }
 
+    public class SampleEvent : EventNotify
+    {
+        public override void onEvent(Event E)
+        {
+            E.Owner.Broadcast("An event occured of type: ^1" + E.Type);
+
+            if (E.Data != null)
+                E.Origin.Tell(E.Data);
+        }
+    }
+
     public class InvalidCommandExample
     {
         private void doNotDoThis() { }

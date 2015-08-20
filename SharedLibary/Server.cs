@@ -106,16 +106,40 @@ namespace SharedLibrary
             return this.PID;
         }
 
+        /// <summary>
+        /// Get any know aliases ( name or ip based ) from the database
+        /// </summary>
+        /// <param name="returnPlayers">List of aliases matching given player</param>
+        /// <param name="Origin">Player to scan for aliases</param>
         abstract public void getAliases(List<Player> returnPlayers, Player Origin);
  
-        //Add player object p to `players` list
+        /// <summary>
+        /// Add a player to the server's player list
+        /// </summary>
+        /// <param name="P">Player pulled from memory reading</param>
+        /// <returns>True if player added sucessfully, false otherwise</returns>
         abstract public bool addPlayer(Player P);
 
-        //Remove player by CLIENT NUMBER
+        /// <summary>
+        /// Remove player by client number
+        /// </summary>
+        /// <param name="cNum">Client ID of player to be removed</param>
+        /// <returns>true if removal succeded, false otherwise</returns>
         abstract public bool removePlayer(int cNum);
 
+        /// <summary>
+        /// Get the player from the server's list by line from game long
+        /// </summary>
+        /// <param name="L">Game log line containing event</param>
+        /// <param name="cIDPos">Position in the line where the cliet ID is written</param>
+        /// <returns>Matching player if found</returns>
         abstract public Player clientFromEventLine(String[] L, int cIDPos);
 
+        /// <summary>
+        /// Get a player by name
+        /// </summary>
+        /// <param name="pName">Player name to search for</param>
+        /// <returns>Matching player if found</returns>
         public Player clientFromName(String pName)
         {
             lock (players)
@@ -130,32 +154,63 @@ namespace SharedLibrary
             return null;
         }
 
-        //Check ban list for every banned player and return ban if match is found 
+        /// <summary>
+        /// Check ban list for every banned player and return ban if match is found 
+        /// </summary>
+        /// <param name="C">Player to check if banned</param>
+        /// <returns>Matching ban if found</returns>
         abstract public Ban isBanned(Player C);
 
-        //Procses requested command correlating to an event
+        /// <summary>
+        /// Process requested command correlating to an event
+        /// </summary>
+        /// <param name="E">Event parameter</param>
+        /// <param name="C">Command requested from the event</param>
+        /// <returns></returns>
         abstract public Command processCommand(Event E, Command C);
 
-        //push a new event into the queue
-        private void addEvent(Event E)
-        {
-            events.Enqueue(E);
-        }
-
+        /// <summary>
+        /// Execute a command on the server
+        /// </summary>
+        /// <param name="CMD">Command to execute</param>
         abstract public void executeCommand(String CMD);
 
+        /// <summary>
+        /// Retrieve a Dvar from the server
+        /// </summary>
+        /// <param name="DvarName">Name of Dvar to retrieve</param>
+        /// <returns>Dvar if found</returns>
         abstract public dvar getDvar(String DvarName);
 
+        /// <summary>
+        /// Set a Dvar on the server
+        /// </summary>
+        /// <param name="Dvar">Name of the</param>
+        /// <param name="Value"></param>
         abstract public void setDvar(String Dvar, String Value);
 
-        //Starts the monitoring process
+        /// <summary>
+        /// Main loop for the monitoring processes of the server ( handles events and connects/disconnects )
+        /// </summary>
         abstract public void Monitor();
 
+        /// <summary>
+        /// Set up the basic variables ( base path / hostname / etc ) that allow the monitor thread to work
+        /// </summary>
+        /// <returns>True if no issues initializing, false otherwise</returns>
         abstract public bool intializeBasics();
 
-        //Process any server event
+        /// <summary>
+        /// Process any server event
+        /// </summary>
+        /// <param name="E">Event</param>
+        /// <returns>True on sucess</returns>
         abstract public bool processEvent(Event E);
 
+        /// <summary>
+        /// Reloads all the server configurations
+        /// </summary>
+        /// <returns>True on sucess</returns>
         public bool Reload()
         {
             try
@@ -178,56 +233,30 @@ namespace SharedLibrary
             }
         }
 
-        //THESE MAY NEED TO BE MOVED
+        /// <summary>
+        /// Send a message to all players
+        /// </summary>
+        /// <param name="Message">Message to be sent to all players</param>
         public void Broadcast(String Message)
         {
             executeCommand("sayraw " + Message);
         }
-
+        
+        /// <summary>
+        /// Send a message to a particular players
+        /// </summary>
+        /// <param name="Message">Message to send</param>
+        /// <param name="Target">Player to send message to</param>
         public void Tell(String Message, Player Target)
         {
             if (Target.clientID > -1)
                 executeCommand("tellraw " + Target.clientID + " " + Message + "^7");
         }
 
-        public void Kick(String Message, Player Target)
-        {
-            if (Target.clientID > -1)
-                executeCommand("clientkick " + Target.clientID + " \"" + Message + "^7\"");
-        }
-
-        abstract public void Ban(String Message, Player Target, Player Origin);
-
-        abstract public bool Unban(String GUID, Player Target);
-
-
-        public void fastRestart(int delay)
-        {
-            Utilities.Wait(delay);
-            executeCommand("fast_restart");
-        }
-
-        public void mapRotate(int delay)
-        {
-            Utilities.Wait(delay);
-            executeCommand("map_rotate");
-        }
-
-        public void tempBan(String Message, Player Target)
-        {
-            executeCommand("tempbanclient " + Target.clientID + " \"" + Message + "\"");
-        }
-        
-        public void mapRotate()
-        {
-            mapRotate(0);
-        }
-
-        public void Map(String mapName)
-        {
-            executeCommand("map " + mapName);
-        }
-
+        /// <summary>
+        /// Send a message to all admins on the server
+        /// </summary>
+        /// <param name="message">Message to send out</param>
         public void ToAdmins(String message)
         {
             lock (players) // threading can modify list while we do this
@@ -246,9 +275,87 @@ namespace SharedLibrary
             }
         }
 
+        /// <summary>
+        /// Alert a player via gsc implementation
+        /// </summary>
+        /// <param name="P"></param>
         public void Alert(Player P)
         {
             executeCommand("admin_lastevent alert;" + P.npID + ";0;mp_killstreak_nuclearstrike");
+        }
+
+        /// <summary>
+        /// Kick a player from the server
+        /// </summary>
+        /// <param name="Reason">Reason for kicking</param>
+        /// <param name="Target">Player to kick</param>
+        public void Kick(String Reason, Player Target)
+        {
+            if (Target.clientID > -1)
+                executeCommand("clientkick " + Target.clientID + " \"" + Reason + "^7\"");
+        }
+
+        /// <summary>
+        /// Temporarily ban a player ( default 1 hour ) from the server
+        /// </summary>
+        /// <param name="Reason">Reason for banning the player</param>
+        /// <param name="Target">The player to ban</param>
+        public void tempBan(String Reason, Player Target)
+        {
+            executeCommand("tempbanclient " + Target.clientID + " \"" + Reason + "\"");
+        }
+
+        /// <summary>
+        /// Perm ban a player from the server
+        /// </summary>
+        /// <param name="Reason">The reason for the ban</param>
+        /// <param name="Target">The person to ban</param>
+        /// <param name="Origin">The person who banned the target</param>
+        abstract public void Ban(String Reason, Player Target, Player Origin);
+
+        /// <summary>
+        /// Unban a player by npID / GUID
+        /// </summary>
+        /// <param name="npID">npID of the player</param>
+        /// <param name="Target">I don't remember what this is for</param>
+        /// <returns></returns>
+        abstract public bool Unban(String npID, Player Target);
+
+        /// <summary>
+        /// Fast restart the server with a specified delay
+        /// </summary>
+        /// <param name="delay"></param>
+        public void fastRestart(int delay)
+        {
+            Utilities.Wait(delay);
+            executeCommand("fast_restart");
+        }
+
+        /// <summary>
+        /// Rotate the server to the next map with specified delay
+        /// </summary>
+        /// <param name="delay"></param>
+        public void mapRotate(int delay)
+        {
+            Utilities.Wait(delay);
+            executeCommand("map_rotate");
+        }
+        
+        /// <summary>
+        /// Map rotate without delay
+        /// </summary>
+        public void mapRotate()
+        {
+            mapRotate(0);
+        }
+
+        /// <summary>
+        /// Change the current searver map
+        /// </summary>
+        /// <param name="mapName">Non-localized map name</param>
+        public void Map(String mapName)
+        {
+            executeCommand("map " + mapName);
         }
 
         public void webChat(Player P, String Message)
@@ -269,8 +376,14 @@ namespace SharedLibrary
             }
         }
 
+        /// <summary>
+        /// Initalize the macro variables
+        /// </summary>
         abstract public void initMacros();
 
+        /// <summary>
+        /// Read the map configuration
+        /// </summary>
         private void initMaps()
         {
             maps = new List<Map>();
@@ -294,6 +407,9 @@ namespace SharedLibrary
                 Log.Write("Maps configuration appears to be empty - skipping...", Log.Level.All);
         }
 
+        /// <summary>
+        /// Initialize the messages to be broadcasted
+        /// </summary>
         private void initMessages()
         {
             messages = new List<String>();
@@ -328,6 +444,9 @@ namespace SharedLibrary
               // messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
         }
 
+        /// <summary>
+        /// Initialize the rules configuration
+        /// </summary>
         private void initRules()
         {
             rules = new List<String>();
@@ -349,8 +468,10 @@ namespace SharedLibrary
             ruleFile.Close();
         }
 
+        /// <summary>
+        /// Load up the built in commands
+        /// </summary>
         abstract public void initCommands();
-        abstract public void initAbstractObj();
 
         //Objects
         public Log Log;

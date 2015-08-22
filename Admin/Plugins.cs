@@ -8,14 +8,12 @@ namespace IW4MAdmin
 {
     public class PluginImporter
     {
-        public static List<Command> potentialCommands;
-        public static List<Plugin> potentialNotifies;
+        public static List<Command> potentialCommands = new List<Command>();
+        public static List<Plugin> potentialPlugins = new List<Plugin>();
 
         public static bool Load()
         {
             string[] dllFileNames = null;
-            potentialCommands = new List<Command>();
-            potentialNotifies = new List<Plugin>();
 
             if (Directory.Exists(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins"))
                 dllFileNames = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins", "*.dll");
@@ -35,8 +33,8 @@ namespace IW4MAdmin
             ICollection<Assembly> assemblies = new List<Assembly>(dllFileNames.Length);
             foreach (string dllFile in dllFileNames)
             {
-                AssemblyName an = AssemblyName.GetAssemblyName(dllFile);
-                Assembly assembly = Assembly.Load(an);
+                byte[] rawDLL = File.ReadAllBytes(dllFile); // because we want to update the plugin without restarting
+                Assembly assembly = Assembly.Load(rawDLL);
                 assemblies.Add(assembly);
             }
 
@@ -52,8 +50,21 @@ namespace IW4MAdmin
                         {
                             Object notifyObject = Activator.CreateInstance(assemblyType);
                             Plugin newNotify = (Plugin)notifyObject;
-                            potentialNotifies.Add(newNotify);
-                            newNotify.onLoad();
+                            potentialPlugins.Add(newNotify);
+
+                            try
+                            {
+                                newNotify.onLoad();
+                            }
+
+                            catch (Exception E)
+                            {
+                                Program.getManager().mainLog.Write("There was an error starting \"" + newNotify.Name + "\" plugin", Log.Level.Debug);
+                                Program.getManager().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
+                                Program.getManager().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
+                                continue;
+                            }
+                            
                             Program.getManager().mainLog.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
                             totalLoaded++;
                         }
@@ -72,6 +83,29 @@ namespace IW4MAdmin
 
             Program.getManager().mainLog.Write("Loaded " + totalLoaded + " plugins.", Log.Level.Production);
             return true;
+        }
+
+        public static void Unload()
+        {
+            foreach (Plugin P in potentialPlugins)
+            {
+                try
+                {
+                    P.onUnload();
+                }
+
+                catch (Exception E)
+                {
+                    Program.getManager().mainLog.Write("There was an error unloading \"" + P.Name + "\" plugin", Log.Level.Debug);
+                    Program.getManager().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
+                    Program.getManager().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
+                    continue;
+                }
+            }
+
+            potentialCommands = new List<Command>();
+            potentialPlugins = new List<Plugin>();
+
         }
     }
 }

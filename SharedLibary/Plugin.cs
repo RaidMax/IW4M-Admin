@@ -8,6 +8,7 @@ namespace SharedLibrary
     public abstract class Plugin
     {
         public abstract void onLoad();
+        public abstract void onUnload();
         public abstract void onEvent(Event E);
 
         //for logging purposes

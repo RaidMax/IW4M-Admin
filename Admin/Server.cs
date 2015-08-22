@@ -428,7 +428,7 @@ namespace IW4MAdmin
                 {
                     Event curEvent = events.Peek();
                     processEvent(curEvent);
-                    foreach (Plugin P in PluginImporter.potentialNotifies)
+                    foreach (Plugin P in PluginImporter.potentialPlugins)
                     {
                         try
                         {
@@ -884,6 +884,7 @@ namespace IW4MAdmin
                 initMaps();
                 initMessages();
                 initRules();
+                PluginImporter.Unload();
                 PluginImporter.Load();
                 return true;
             }

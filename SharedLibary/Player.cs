@@ -130,22 +130,22 @@ namespace SharedLibrary
 
         public void Kick(String Message)
         {
-            currentServer.Kick(Message, this);
+            lastEvent.Owner.Kick(Message, this);
         }
 
         public void tempBan(String Message)
         {
-            currentServer.tempBan(Message, this);
+            lastEvent.Owner.tempBan(Message, this);
         }
 
         public void Ban(String Message, Player Sender)
         {
-            currentServer.Ban(Message, this, Sender);
+            lastEvent.Owner.Ban(Message, this, Sender);
         }
 
         public void Alert()
         {
-            currentServer.Alert(this);
+            lastEvent.Owner.Alert(this);
         }
 
         public String Name { get; private set; }

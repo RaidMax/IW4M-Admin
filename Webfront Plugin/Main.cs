@@ -7,6 +7,7 @@ namespace Webfront_Plugin
     public class Webfront : Plugin
     {
         private static Manager webManager;
+        private static Thread webManagerThread;
 
         public override void onEvent(Event E)
         {
@@ -28,10 +29,16 @@ namespace Webfront_Plugin
         public override void onLoad()
         {
             webManager = new Manager();
-            Thread webManagerThread = new Thread(new ThreadStart(webManager.Init));
+            webManagerThread = new Thread(new ThreadStart(webManager.Init));
             webManagerThread.Name = "Webfront";
 
             webManagerThread.Start();
+        }
+
+        public override void onUnload()
+        {
+            webManager.webScheduler.Stop();
+            webManagerThread.Join();
         }
 
         public override String Name

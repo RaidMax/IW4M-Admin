@@ -189,22 +189,24 @@ namespace IW4MAdmin
             else
             {
                 int count = 0;
-                String _commands = String.Empty;
+                StringBuilder helpResponse = new StringBuilder();
+                List<Command> test = E.Owner.getCommands();
 
-                foreach (Command C in E.Owner.getCommands())
+                foreach (Command C in test)
                 {        
                     if (E.Origin.Level >= C.Permission)
                     {
-                        _commands = _commands + " [^3" + C.Name + "^7] ";
+                        helpResponse.Append(" [^3" + C.Name + "^7] ");
                         if (count >= 4)
                         {
-                            E.Origin.Tell(_commands);
-                            _commands = String.Empty;
+                            E.Origin.Tell(helpResponse.ToString());
+                            helpResponse = new StringBuilder();
                             count = 0;
                         }
                         count++;
                     }
                 }
+                E.Origin.Tell(helpResponse.ToString());
                 E.Origin.Tell("Type !help <cmd> to get command usage example");
             }
         }

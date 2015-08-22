@@ -118,6 +118,11 @@ namespace SamplePlugin
             playerStats = new StatsDB("stats.rm");
         }
 
+        public override void onUnload()
+        {
+
+        }
+
         public override string Name
         {
             get { return "Basic Stats"; }

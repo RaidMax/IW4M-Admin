@@ -31,6 +31,7 @@ namespace SharedLibrary
             SeniorAdmin = 4,
             Owner = 5,
             Creator = 6,
+            Console = 7,
         }
 
         public Player(string n, string id, int num, int l)

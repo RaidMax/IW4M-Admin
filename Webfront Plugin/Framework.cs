@@ -367,6 +367,25 @@ namespace Webfront_Plugin
                 return Input.Replace(Macro, buffer.ToString());
             }
 
+            if (Looking == "GRAPH")
+            {
+                StringBuilder buffer = new StringBuilder();
+                buffer.Append("<script type='text/javascript' src='//www.google.com/jsapi'></script><div id='chart_div'></div>");
+                buffer.Append("<script> var players = [");
+                int count = 1;
+                List<PlayerHistory> run = Servers[0].playerHistory.ToList();
+                foreach (PlayerHistory i in run) //need to reverse for proper timeline
+                {
+                    buffer.AppendFormat("[new Date({0}, {1}, {2}, {3}, {4}), {5}]", i.When.Year, i.When.Month - 1, i.When.Day, i.When.Hour, i.When.Minute, i.Players);
+                    if (count < run.Count)
+                        buffer.Append(",\n");
+                    count++;
+                }
+                buffer.Append("];\n");
+                buffer.Append("</script>");
+                return Input.Replace(Macro, buffer.ToString());
+            }
+
             if (Looking == "TITLE")
                 return Input.Replace(Macro, "IW4MAdmin by RaidMax");
 
@@ -399,7 +418,7 @@ namespace Webfront_Plugin
                         break;
                     case "graph":
                         requestedPage = new graph();
-                        break;
+                        return processTemplate(requestedPage.Load(), request.QueryString);
                     case "stats":
                         requestedPage = new stats();
                         break;

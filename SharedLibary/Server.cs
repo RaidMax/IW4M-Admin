@@ -29,6 +29,7 @@ namespace SharedLibrary
             Macros = new Dictionary<String, Object>();
             Reports = new List<Report>();
             statusPlayers = new Dictionary<string, Player>();
+            playerHistory = new Queue<PlayerHistory>();
             chatHistory = new List<Chat>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
@@ -240,6 +241,13 @@ namespace SharedLibrary
         {
             if (Target.clientID > -1)
                 executeCommand("tellraw " + Target.clientID + " " + Message + "^7");
+
+            if (Target.Level == Player.Permission.Console)
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(Utilities.stripColors(Message));
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
         }
 
         /// <summary>
@@ -474,6 +482,7 @@ namespace SharedLibrary
         public int totalKills = 0;
         public List<Report> Reports;
         public List<Chat> chatHistory;
+        public Queue<PlayerHistory> playerHistory { get; private set; }
 
         //Info
         protected String IP;

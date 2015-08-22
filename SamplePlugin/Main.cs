@@ -77,7 +77,7 @@ namespace SamplePlugin
         }
     }
 
-    public class Stats : Notify
+    public class Stats : Plugin
     {
         public static StatsDB playerStats { get; private set; }
 
@@ -108,6 +108,7 @@ namespace SamplePlugin
 
                 victimStats.Deaths++;
                 victimStats.KDR = victimStats.Kills / victimStats.Deaths;
+
                 playerStats.updateStats(Victim, victimStats);
             }
         }
@@ -115,6 +116,16 @@ namespace SamplePlugin
         public override void onLoad()
         {
             playerStats = new StatsDB("stats.rm");
+        }
+
+        public override string Name
+        {
+            get { return "Basic Stats"; }
+        }
+
+        public override float Version
+        {
+            get { return 0.1f; }
         }
     }
 

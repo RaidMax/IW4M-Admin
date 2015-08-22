@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IW4MAdmin
+namespace SharedLibrary
 {
-    class pHistory
+    public class PlayerHistory
     {
-        public pHistory(DateTime w, int cNum)
+        public PlayerHistory(DateTime w, int cNum)
         {
             When = w;
             Players = cNum;

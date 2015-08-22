@@ -60,16 +60,20 @@ namespace IW4MAdmin
                         if (S == null)
                             continue;
 
-                        if (!isIW4MStillRunning(S.pID()))
+                        if (!isIW4MStillRunning(S.pID()) || !S.isRunning)
                         {
                             Thread Defunct = ThreadList[S.pID()];
+
+                            if (!S.isRunning)
+                                Utilities.shutdownInterface(S.pID());
+                            
                             S.isRunning = false;
                             if (Defunct != null)
                             {
                                 Defunct.Join();
                                 ThreadList[S.pID()] = null;
                             }
-                            mainLog.Write("Server with PID #" + S.pID() + " no longer appears to be running.", Log.Level.Debug);
+                            mainLog.Write("Server with PID #" + S.pID() + " can no longer be monitored.", Log.Level.Debug);
                             activePIDs.Remove(S.pID());
                             defunctServers.Add(S);
                         }
@@ -96,6 +100,11 @@ namespace IW4MAdmin
 
             foreach (KeyValuePair<int, Thread> T in ThreadList)
                 ThreadList[T.Key].Join();
+        }
+
+        public bool isRunning()
+        {
+            return activePIDs.Count != 0;
         }
 
         public List<Server> getServers()

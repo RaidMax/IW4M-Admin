@@ -414,8 +414,10 @@
    <script type="text/javascript">
        function searchPlayerName() {
            var nameValue = document.getElementById("search_playerName").value;
-           if (nameValue.length > 0)
+           if (nameValue.length > 3)
                window.location.href = ("/player?query=" + encodeURIComponent(nameValue));
+           else
+               alert("Please enter at least 4 characters of the name");
        }
    </script>
 <div id="player_search">

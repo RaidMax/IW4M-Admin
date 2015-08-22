@@ -107,7 +107,6 @@
     <Compile Include="Command.cs" />
     <Compile Include="Connection.cs" />
     <Compile Include="Heartbeat.cs" />
-    <Compile Include="Helpers.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="Plugins.cs" />
@@ -141,7 +140,7 @@
     <Content Include="plugins\SamplePlugin.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\Webfront Plugin.dll">
+    <Content Include="plugins\WebfrontPlugin.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="version.txt">
@@ -157,7 +156,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="webfront\graph.html">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="webfront\header.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

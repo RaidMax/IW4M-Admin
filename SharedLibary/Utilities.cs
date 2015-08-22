@@ -171,7 +171,15 @@ namespace SharedLibrary
             {
                 String Match = M.Value;
                 String Identifier = M.Value.Substring(2, M.Length - 4);
-                String Replacement = Dict[Identifier].ToString();
+                Object foundVal;
+                Dict.TryGetValue(Identifier, out foundVal);
+                String Replacement;
+
+                if (foundVal != null)
+                    Replacement = foundVal.ToString();
+                else
+                    Replacement = "";
+
                 str = str.Replace(Match, Replacement);
             }
 

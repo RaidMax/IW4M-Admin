@@ -14,7 +14,6 @@ namespace IW4MAdmin
     {
         public IW4MServer(string address, int port, string password, int H, int PID) : base(address, port, password, H, PID) 
         {
-            playerHistory = new Queue<pHistory>();
             commandQueue = new Queue<string>();
         }
 
@@ -429,8 +428,22 @@ namespace IW4MAdmin
                 {
                     Event curEvent = events.Peek();
                     processEvent(curEvent);
-                    foreach (Notify E in PluginImporter.potentialNotifies)
-                        E.onEvent(curEvent);
+                    foreach (Plugin P in PluginImporter.potentialNotifies)
+                    {
+                        try
+                        {
+                            P.onEvent(curEvent);
+                        }
+
+                        catch (Exception Except)
+                        {
+                            Log.Write(String.Format("The plugin \"{0}\" (v{1}) generated an error. ( see log )", P.Name, P.Version), Log.Level.Production);
+                            Log.Write(String.Format("Error Message: {0}", Except.Message), Log.Level.Debug);
+                            Log.Write(String.Format("Error Trace: {0}", Except.StackTrace), Log.Level.Debug);
+                            continue;
+                        }
+                        
+                    }
                     events.Dequeue();
                 }
                 if (commandQueue.Count > 0)
@@ -465,6 +478,7 @@ namespace IW4MAdmin
 
 #if DEBUG == false
             Broadcast("IW4M Admin is now ^2ONLINE");
+            int numExceptions = 0;
 #endif
 
             while (isRunning)
@@ -480,7 +494,7 @@ namespace IW4MAdmin
                     {
                         while (playerHistory.Count > 144 ) // 12 times a minute for 12 hours
                             playerHistory.Dequeue();
-                        playerHistory.Enqueue(new pHistory(lastCount, clientnum));
+                        playerHistory.Enqueue(new PlayerHistory(lastCount, clientnum));
                         playerCountStart = DateTime.Now;
                     }
 
@@ -493,21 +507,9 @@ namespace IW4MAdmin
                         else
                             nextMessage++;
                         start = DateTime.Now;
-                        //if (timesFailed <= 3)
-                         //   HB.Send();
-
-                        String checkVer = new Connection("http://raidmax.org/IW4M/Admin/version.php").Read();
-                        double checkVerNum;
-                        double.TryParse(checkVer, out checkVerNum);
-                        if (checkVerNum != Program.Version && checkVerNum != 0 && !checkedForOutdate)
-                        {
-                            messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + checkVerNum);
-                            checkedForOutdate = true;
-                        }
-                        
                     }
 
-                    if ((DateTime.Now - lastPoll).Milliseconds > 750)
+                    if ((DateTime.Now - lastPoll).Milliseconds > 300)
                     {
                         int numberRead = 0;
                         int activeClients = 0;
@@ -583,8 +585,18 @@ namespace IW4MAdmin
 #if DEBUG == false
                 catch (Exception E)
                 {
-                    Log.Write("Something unexpected occured. Hopefully we can ignore it :)", Log.Level.All);
-                    continue;
+                    numExceptions++;
+                    Log.Write("Unexpected error on \"" + hostname + "\"", Log.Level.Debug);
+                    Log.Write("Error Message: " + E.Message, Log.Level.Debug);
+                    Log.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
+                    if (numExceptions < 30)
+                        continue;
+                    else
+                    {
+                        Log.Write("Maximum number of unhandled exceptions reached for \"" + hostname + "\"", Log.Level.Production);
+                        events.Enqueue(new Event(Event.GType.Stop, "Monitoring stopping because of max exceptions reached", null, null, this));
+                        isRunning = false;
+                    }
                 }
 #endif
 
@@ -596,20 +608,20 @@ namespace IW4MAdmin
 
         override public bool intializeBasics()
         {
-           try
-           {
-               // inject our dll 
-               if (!Utilities.initalizeInterface(PID))
-               {
-                   Log.Write("Could not load IW4MAdmin interface!", Log.Level.Debug);
-                   return false;
-               }
+            try
+            {
+                // inject our dll 
+                if (!Utilities.initalizeInterface(PID))
+                {
+                    Log.Write("Could not load IW4MAdmin interface!", Log.Level.Debug);
+                    return false;
+                }
 
                 // basic info dvars
-               hostname = SharedLibrary.Utilities.stripColors(getDvar("sv_hostname").current);
-                mapname          = getDvar("mapname").current;
-                IW_Ver           = getDvar("shortversion").current;
-                maxClients       = -1;
+                hostname = SharedLibrary.Utilities.stripColors(getDvar("sv_hostname").current);
+                mapname = getDvar("mapname").current;
+                IW_Ver = getDvar("shortversion").current;
+                maxClients = -1;
                 Int32.TryParse(getDvar("party_maxplayers").current, out maxClients);
 
                 if (maxClients == -1)
@@ -618,46 +630,47 @@ namespace IW4MAdmin
                     return false;
                 }
 
-                Gametype         = getDvar("g_gametype").current;
+                Gametype = getDvar("g_gametype").current;
 
                 // important log variables
-                Basepath         = getDvar("fs_basepath").current;
-                Mod              = getDvar("fs_game").current;
-                logPath          = getDvar("g_log").current;
-                int oneLog      = -1;
+                Basepath = getDvar("fs_basepath").current;
+                Mod = getDvar("fs_game").current;
+                logPath = getDvar("g_log").current;
+                int oneLog = -1;
                 Int32.TryParse(getDvar("iw4m_onelog").current, out oneLog);
 
-               if (oneLog == -1)
-               {
-                   Log.Write("Could not get iw4m_onelog value", Log.Level.Debug);
-                   return false;
-               }
+                if (oneLog == -1)
+                {
+                    Log.Write("Could not get iw4m_onelog value", Log.Level.Debug);
+                    return false;
+                }
 
                 // our settings
-               setDvar("sv_kickBanTime", "3600");      // 1 hour
-               setDvar("g_logSync", "1");              // yas
+                setDvar("sv_kickBanTime", "3600");      // 1 hour
+                setDvar("g_logSync", "1");              // yas
 
-               if (Mod == String.Empty || oneLog == 1)
-                   logPath = Basepath + '\\' + "m2demo" + '\\' + logPath;
-               else
-                   logPath = Basepath + '\\' + Mod + '\\' + logPath;
+                if (Mod == String.Empty || oneLog == 1)
+                    logPath = Basepath + '\\' + "m2demo" + '\\' + logPath;
+                else
+                    logPath = Basepath + '\\' + Mod + '\\' + logPath;
 
-               if (!File.Exists(logPath))
-               {
-                   Log.Write("Gamelog `" + logPath + "` does not exist!", Log.Level.All);
-                   return false;
-               }
+                if (!File.Exists(logPath))
+                {
+                    Log.Write("Gamelog `" + logPath + "` does not exist!", Log.Level.All);
+                    return false;
+                }
 
-               logFile = new IFile(logPath);
-               Log.Write("Log file is " + logPath, Log.Level.Debug);
-               Log.Write("Now monitoring " + getName(), Log.Level.Production);
-               events.Enqueue(new Event(Event.GType.Start, "Server started", null, null, this));
-               Bans = clientDB.getBans();
-               return true;
+                logFile = new IFile(logPath);
+                Log.Write("Log file is " + logPath, Log.Level.Debug);
+                Log.Write("Now monitoring " + getName(), Log.Level.Production);
+                events.Enqueue(new Event(Event.GType.Start, "Server started", null, null, this));
+                Bans = clientDB.getBans();
+                return true;
             }
+
             catch (Exception E)
             {
-                Log.Write("Error during initialization - " + E.Message +"--" + E.StackTrace, Log.Level.All);
+                Log.Write("Error during initialization - " + E.Message + "--" + E.StackTrace, Log.Level.All);
                 return false;
             }
         }
@@ -696,18 +709,6 @@ namespace IW4MAdmin
 
                 if (E.Origin != E.Target)
                 {
-                    /*E.Origin.stats.Kills += 1;
-                    E.Origin.stats.updateKDR();
-
-                    E.Target.stats.Deaths += 1;
-                    E.Target.stats.updateKDR();
-
-                    //Skills.updateNewSkill(E.Origin, E.Target);
-                    statDB.updatePlayer(E.Origin);
-                    statDB.updatePlayer(E.Target);
-
-                    totalKills++;*/
-                    Log.Write(E.Origin.Name + " killed " + E.Target.Name + " with a " + E.Data, Log.Level.Debug);
                     events.Enqueue(new Event(Event.GType.Death, E.Data, E.Target, null, this));
                 }
 
@@ -720,7 +721,6 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.Say)
             {
-
                 if (E.Data.Length < 2) // ITS A LIE!
                     return false;
 
@@ -738,44 +738,59 @@ namespace IW4MAdmin
                     return false;
                 }
 
-                if (E.Data.Substring(0, 1) != "!") // Not a command so who gives an F?
+                if (E.Data.Substring(0, 1) == "!" || E.Origin.Level == Player.Permission.Console)
+                {
+                    Command C = E.isValidCMD(commands);
+
+                    if (C != null)
+                    {
+                        C = processCommand(E, C);
+                        if (C != null)
+                        {
+                            if (C.needsTarget && E.Target == null)
+                            {
+                                Log.Write("Requested event requiring target does not have a target!", Log.Level.Debug);
+                                return false;
+                            }
+
+                            try
+                            {
+                                C.Execute(E);
+                            }
+
+                            catch (Exception Except)
+                            {
+                                Log.Write(String.Format("A command request \"{0}\" generated an error.", C.Name, Log.Level.Debug));
+                                Log.Write(String.Format("Error Message: {0}", Except.Message), Log.Level.Debug);
+                                Log.Write(String.Format("Error Trace: {0}", Except.StackTrace), Log.Level.Debug);
+                                return false;
+                            }
+                            return true;
+                        }
+
+                        else
+                        {
+                            Log.Write("Player didn't properly enter command - " + E.Origin.Name, Log.Level.Debug);
+                            return true;
+                        }
+                    }
+
+                    else
+                        E.Origin.Tell("You entered an invalid command!");
+                }
+
+                else // Not a command so who gives an F?
                 {
                     E.Data = SharedLibrary.Utilities.stripColors(SharedLibrary.Utilities.cleanChars(E.Data));
                     if (E.Data.Length > 50)
                         E.Data = E.Data.Substring(0, 50) + "...";
-                    while (chatHistory.Count > Math.Ceiling((double)clientnum/2))
+                    while (chatHistory.Count > Math.Ceiling((double)clientnum / 2))
                         chatHistory.RemoveAt(0);
 
                     chatHistory.Add(new Chat(E.Origin, E.Data, DateTime.Now));
 
                     return true;
                 }
-
-                Command C = E.isValidCMD(commands);
-
-                if (C != null)
-                {
-                    C = processCommand(E, C);
-                    if (C != null)
-                    {
-                        if (C.needsTarget && E.Target == null)
-                        {
-                            Log.Write("Requested event requiring target does not have a target!", Log.Level.Debug);
-                            return false;
-                        }
-                        C.Execute(E);
-                        return true;
-                    }
-
-                    else
-                    {
-                        Log.Write("Player didn't properly enter command - " + E.Origin.Name, Log.Level.Debug);
-                        return true;
-                    }
-                }
-
-                else
-                    E.Origin.Tell("You entered an invalid command!");
 
                 return true;
             }
@@ -784,35 +799,13 @@ namespace IW4MAdmin
             {
                 Log.Write("New map loaded - " + clientnum + " active players", Log.Level.Debug);
 
-                Dictionary<String, String> infoResponseDict = new Dictionary<String, String>();
-                String[] infoResponse = E.Data.Split('\\');
+                String newMapName = getDvar("mapname").current;
+                Map newMap = maps.Find(m => m.Name.Equals(newMapName));
 
-                for (int i = 0; i < infoResponse.Length; i++)
-                {
-                    if (i % 2 == 0 || infoResponse[i] == String.Empty)
-                        continue;
-                    infoResponseDict.Add(infoResponse[i], infoResponse[i + 1]);
-                }
-
-                String newMapName = null;
-                infoResponseDict.TryGetValue("mapname", out newMapName);
-
-                if (newMapName != null)
-                {
-                    try
-                    {
-                        Map newMap = maps.Find(m => m.Name.Equals(newMapName));
-                        mapname = newMap.Alias;
-                    }
-
-                    catch (Exception)
-                    {
-                        Log.Write(mapname + " doesn't appear to be in the maps.cfg", Log.Level.Debug);
-                    }
-                }
-
+                if (newMap != null)
+                    mapname = newMap.Alias;
                 else
-                    Log.Write("Could not get new mapname from InitGame line!", Log.Level.Debug);
+                    mapname = newMapName;
 
                 return true;
             }
@@ -941,8 +934,6 @@ namespace IW4MAdmin
             commands.Add(new Find("find", "find player in database. syntax: !find <player>", "f", Player.Permission.SeniorAdmin, 1, false));
             commands.Add(new Rules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
             commands.Add(new PrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
-            //commands.Add(new _Stats("stats", "view your stats or another player's. syntax: !stats", "xlrstats", Player.Permission.User, 0, true));
-            //commands.Add(new TopStats("topstats", "view the top 4 players on this server. syntax: !topstats", "xlrtopstats", Player.Permission.User, 0, false));
             commands.Add(new Reload("reload", "reload configurations. syntax: !reload", "reload", Player.Permission.Owner, 0, false));
             commands.Add(new Balance("balance", "balance teams. syntax !balance", "bal", Player.Permission.Moderator, 0, false));
             commands.Add(new GoTo("goto", "teleport to selected player. syntax !goto", "go", Player.Permission.SeniorAdmin, 1, true));
@@ -962,7 +953,6 @@ namespace IW4MAdmin
         }
 
         //Objects
-        public Queue<pHistory> playerHistory;
         private Queue<String> commandQueue;
 
         //Info

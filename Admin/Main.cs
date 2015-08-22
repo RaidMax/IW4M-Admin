@@ -44,6 +44,19 @@ namespace IW4MAdmin
             if (serverManager.getServers() != null)
                 Program.getManager().mainLog.Write("IW4M Now Initialized!", Log.Level.Production);
 
+            String userInput;
+            Server serverToExecuteOn = serverManager.getServers()[0];
+            Player Origin = new Player("IW4MAdmin Console", "", -1, Player.Permission.Console, -1, "", 0, "");
+
+            do
+            {
+                userInput = Console.ReadLine();
+                Event E = new Event(Event.GType.Say, userInput, Origin, null, serverToExecuteOn);
+                Origin.lastEvent = E;
+                serverToExecuteOn.processEvent(E);
+                Console.Write('>');
+
+            } while (userInput != null && serverManager.isRunning());
 
             serverMGRThread.Join();
             serverManager.mainLog.Write("Shutting down IW4MAdmin...", Log.Level.Debug);

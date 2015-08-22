@@ -40,6 +40,7 @@ namespace IW4MAdmin
                 assemblies.Add(assembly);
             }
 
+            int totalLoaded = 0;
             foreach (Assembly Plugin in assemblies)
             {
                 if (Plugin != null)
@@ -47,13 +48,14 @@ namespace IW4MAdmin
                     Type[] types = Plugin.GetTypes();
                     foreach(Type assemblyType in types)
                     {
-                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "Notify")
+                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "Plugin")
                         {
                             Object notifyObject = Activator.CreateInstance(assemblyType);
                             Plugin newNotify = (Plugin)notifyObject;
                             potentialNotifies.Add(newNotify);
                             newNotify.onLoad();
-                            Program.getManager().mainLog.Write("Loaded event plugin \"" + assemblyType.Name + "\"", Log.Level.All);
+                            Program.getManager().mainLog.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
+                            totalLoaded++;
                         }
 
                         else if (assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
@@ -61,14 +63,14 @@ namespace IW4MAdmin
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             potentialCommands.Add(newCommand);
-                            Program.getManager().mainLog.Write("Loaded command plugin \"" + newCommand.Name + "\"", Log.Level.All);
+                            Program.getManager().mainLog.Write("Registered command \"" + newCommand.Name + "\"", Log.Level.Debug);
+                            totalLoaded++;
                         }
-
-                        else
-                            Program.getManager().mainLog.Write("Ignoring invalid plugin \"" + assemblyType.Name + "\"", Log.Level.All);
                     }
                 }
             }
+
+            Program.getManager().mainLog.Write("Loaded " + totalLoaded + " plugins.", Log.Level.Production);
             return true;
         }
     }

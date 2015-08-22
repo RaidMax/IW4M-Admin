@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace Webfront_Plugin
 {
-    public class Webfront : Notify
+    public class Webfront : Plugin
     {
         private static Manager webManager;
 
@@ -32,6 +32,16 @@ namespace Webfront_Plugin
             webManagerThread.Name = "Webfront";
 
             webManagerThread.Start();
+        }
+
+        public override String Name
+        {
+            get { return "Webfront"; }
+        }
+
+        public override float Version
+        {
+            get { return 0.1f; }
         }
     }
 }

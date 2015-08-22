@@ -55,6 +55,7 @@
     <Compile Include="Dvar.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Map.cs" />
+    <Compile Include="Miscellaneous.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

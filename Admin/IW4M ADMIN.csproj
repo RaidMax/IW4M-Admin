@@ -88,10 +88,6 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Kayak">
-      <HintPath>..\packages\Kayak.0.7.2\lib\Kayak.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="SharedLibary">
       <HintPath>..\SharedLibary\SharedLibary\bin\Debug\SharedLibary.dll</HintPath>
       <Private>False</Private>
@@ -123,7 +119,6 @@
     </Compile>
     <Compile Include="Server.cs" />
     <Compile Include="Utilities.cs" />
-    <Compile Include="WebFront.cs" />
     <Compile Include="IW4_GameStructs.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -146,11 +141,17 @@
     <Content Include="plugins\SamplePlugin.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="plugins\Webfront Plugin.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="version.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="webfront\bans.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="webfront\error.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="webfront\footer.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -163,6 +164,9 @@
     </Content>
     <Content Include="webfront\main.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="webfront\notfound.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="webfront\player.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -305,7 +309,6 @@ del *.pdb
 del *.dll
 del app.config
 del *.manifest
-del *.rm
 del *.log
 xcopy /E /Y "$(ProjectDir)bin\Release" "$(SolutionDir)Release Build"</PostBuildEvent>
   </PropertyGroup>

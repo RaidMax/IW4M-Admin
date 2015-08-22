@@ -23,6 +23,7 @@ namespace SharedLibrary
             clientDB = new ClientsDB("clients.rm");
             aliasDB = new AliasesDB("aliases.rm");
 
+            Bans = new List<Ban>();
             players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
             Macros = new Dictionary<String, Object>();
@@ -108,9 +109,18 @@ namespace SharedLibrary
         /// <summary>
         /// Get any know aliases ( name or ip based ) from the database
         /// </summary>
-        /// <param name="returnPlayers">List of aliases matching given player</param>
         /// <param name="Origin">Player to scan for aliases</param>
-        abstract public void getAliases(List<Player> returnPlayers, Player Origin);
+        abstract public List<Aliases> getAliases(Player Origin);
+
+        public List<Player> getPlayerAliases(Player Origin)
+        {
+            List<int> databaseIDs = new List<int>();
+
+            foreach (Aliases A in getAliases(Origin))
+                databaseIDs.Add(A.Number);
+
+            return clientDB.getPlayers(databaseIDs);
+        }
  
         /// <summary>
         /// Add a player to the server's player list

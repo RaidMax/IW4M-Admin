@@ -107,6 +107,7 @@ namespace SharedLibrary
         protected DataTable GetDataTable(String sql)
         {
             DataTable dt = new DataTable();
+    
             try
             {
                 waitForClose();
@@ -170,22 +171,58 @@ namespace SharedLibrary
             if (Result != null && Result.Rows.Count > 0)
             {
                 DataRow ResponseRow = Result.Rows[0];
-                DateTime LC;
+                DateTime lastCon = DateTime.MinValue;
+                DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
 
-                try
-                {
-                    LC = DateTime.Parse(ResponseRow["LastConnection"].ToString());
-                }
-                catch (Exception)
-                {
-                    LC = DateTime.Now;
-                }
-
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), LC);
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon);
             }
 
             else
                 return null;
+        }
+
+        public List<Player> getPlayers(List<String> npIDs)
+        {
+            List<Player> returnssss = new List<Player>();
+            String test = String.Join("' OR npID = '", npIDs);
+           
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE npID = '{0}'", test);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow ResponseRow in Result.Rows)
+                {
+                    DateTime lastCon = DateTime.MinValue;
+                    DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
+
+                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon));
+                }
+            }
+
+            return returnssss;
+        }
+
+        public List<Player> getPlayers(List<int> databaseIDs)
+        {
+            List<Player> returnssss = new List<Player>();
+            String test = String.Join("' OR Number = '", databaseIDs);
+
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Number = '{0}'", test);
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow ResponseRow in Result.Rows)
+                {
+                    DateTime lastCon = DateTime.MinValue;
+                    DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
+
+                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon));
+                }
+            }
+
+            return returnssss;
         }
 
         //Overloaded method for getPlayer, returns Client with matching DBIndex, null if none found
@@ -204,7 +241,7 @@ namespace SharedLibrary
                 }
                 catch (Exception)
                 {
-                    LC = DateTime.Now;
+                    LC = DateTime.MinValue;
                 }
 
                 return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC);
@@ -217,7 +254,7 @@ namespace SharedLibrary
         //get player by ip, (used for webfront)
         public Player getPlayer(String IP)
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE IP='{0}'", IP);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE IP = '{0}'", IP);
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
@@ -255,7 +292,7 @@ namespace SharedLibrary
         //Returns a list of players matching name parameter, null if no players found matching
         public List<Player> findPlayers(String name)
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Name LIKE '%{0}%' LIMIT 8", name);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Name LIKE '%{0}%' LIMIT 32", name);
             DataTable Result = GetDataTable(Query);
 
             List<Player> Players = new List<Player>();
@@ -271,7 +308,7 @@ namespace SharedLibrary
                     }
                     catch (Exception)
                     {
-                        LC = DateTime.Now;
+                        LC = DateTime.MinValue;
                     }
 
                     Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC));
@@ -403,144 +440,6 @@ namespace SharedLibrary
         }
     }
 
-    /*public class StatsDB : Database
-    {
-        public StatsDB(String FN) : base(FN) { }
-
-        public override void Init()
-        {
-            if (!File.Exists(FileName))
-            {
-                String Create = "CREATE TABLE [STATS] ( [Number] INTEGER, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0 );";
-                ExecuteNonQuery(Create);
-            }
-        }
-
-        // Return stats for player specified by Database ID, null if no matches
-        public Stats getStats(int DBID)
-        {
-            String Query = String.Format("SELECT * FROM STATS WHERE Number = '{0}'", DBID);
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                DataRow ResponseRow = Result.Rows[0];
-                if (ResponseRow["MEAN"] == DBNull.Value)
-                    ResponseRow["MEAN"] = 0; // Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean;
-                if (ResponseRow["DEV"] == DBNull.Value)
-                    ResponseRow["DEV"] = 0; // Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation;
-                if (ResponseRow["SKILL"] == DBNull.Value)
-                    ResponseRow["SKILL"] = 0;
-
-                return new Stats(Convert.ToInt32(ResponseRow["Number"]), Convert.ToInt32(ResponseRow["KILLS"]), Convert.ToInt32(ResponseRow["DEATHS"]), Convert.ToDouble(ResponseRow["KDR"]), Convert.ToDouble(ResponseRow["SKILL"]), Convert.ToDouble(ResponseRow["MEAN"]), Convert.ToDouble(ResponseRow["DEV"]));
-            }
-
-            else
-                return null;
-        }
-
-        public void addPlayer(Player P)
-        {
-            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
-
-            newPlayer.Add("Number", P.databaseID);
-            newPlayer.Add("KILLS", 0);
-            newPlayer.Add("DEATHS", 0);
-            newPlayer.Add("KDR", 0);
-            newPlayer.Add("SKILL", 0); //Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.ConservativeRating);
-            newPlayer.Add("MEAN", 0); //Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean);
-            newPlayer.Add("DEV", 0); //Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation);
-
-            Insert("STATS", newPlayer);
-        }
-
-        //Update stat information of specified player
-        public void updatePlayer(Player P)
-        {
-            if (P.stats == null)
-                return;
-
-            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
-
-            updatedPlayer.Add("KILLS", P.stats.Kills);
-            updatedPlayer.Add("DEATHS", P.stats.Deaths);
-            updatedPlayer.Add("KDR", Math.Round(P.stats.KDR, 2));
-            updatedPlayer.Add("SKILL", P.stats.Skill);
-            //updatedPlayer.Add("MEAN", P.stats.Rating.Mean);
-            //updatedPlayer.Add("DEV", P.stats.Rating.StandardDeviation);
-
-            Update("STATS", updatedPlayer, String.Format("Number = '{0}'", P.databaseID));
-        }
-
-        //Returns top 5 players (we filter through them later)
-        public List<Stats> topStats()
-        {
-            String Query = String.Format("SELECT * FROM STATS WHERE KILLS > '{0}' AND KDR < '{1}' AND SKILL > '{2}' ORDER BY SKILL DESC LIMIT 5", 250, 7, 245);
-            DataTable Result = GetDataTable(Query);
-
-            List<Stats> Top = new List<Stats>();
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                foreach (DataRow D in Result.Rows)
-                {
-                    if (D["MEAN"] == DBNull.Value || D["DEV"] == DBNull.Value || D["SKILL"] == DBNull.Value)
-                        continue;
-
-                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));
-                    Top.Add(S);
-                }
-            }
-
-            return Top;
-        }
-
-        public List<Stats> getMultipleStats(int start, int length)
-        {
-            String Query = String.Format("SELECT * FROM STATS ORDER BY SKILL DESC LIMIT '{0}' OFFSET '{1}'", length, start);
-            DataTable Result = GetDataTable(Query);
-
-            List<Stats> Stats = new List<Stats>();
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                foreach (DataRow D in Result.Rows)
-                {
-                    if (D["MEAN"] == DBNull.Value)
-                        continue;
-                    if (D["DEV"] == DBNull.Value)
-                        continue;
-
-                    if (D["SKILL"] == DBNull.Value)
-                        D["SKILL"] = 0;
-
-                    Stats S = new Stats(Convert.ToInt32(D["Number"]), Convert.ToInt32(D["KILLS"]), Convert.ToInt32(D["DEATHS"]), Convert.ToDouble(D["KDR"]), Convert.ToDouble(D["SKILL"]), Convert.ToDouble(D["MEAN"]), Convert.ToDouble(D["DEV"]));
-                    Stats.Add(S);
-                }
-            }
-
-            return Stats;
-        }
-
-        public int totalStats()
-        {
-            DataTable Result = GetDataTable("SELECT * FROM STATS");
-            return Result.Rows.Count;
-        }
-
-        public void clearSkill()
-        {
-            String Query = "SELECT * FROM STATS";
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                foreach (DataRow D in Result.Rows)
-                    Update("STATS", new Dictionary<String, Object>() { { "SKILL", 1 } }, String.Format("Number = '{0}'", D["Number"]));
-            }
-        }
-    }*/
-
     public class AliasesDB : Database
     {
         public AliasesDB(String FN) : base(FN) { }
@@ -609,9 +508,9 @@ namespace SharedLibrary
         {
             Dictionary<String, object> newPlayer = new Dictionary<String, object>();
 
-            newPlayer.Add("Number", Alias.getNumber());
-            newPlayer.Add("NAMES", Alias.getNamesDB());
-            newPlayer.Add("IPS", Alias.getIPSDB());
+            newPlayer.Add("Number", Alias.Number);
+            newPlayer.Add("NAMES", String.Join(";", Alias.Names));
+            newPlayer.Add("IPS", String.Join(";", Alias.IPS));
 
             Insert("ALIASES", newPlayer);
         }
@@ -620,11 +519,11 @@ namespace SharedLibrary
         {
             Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
 
-            updatedPlayer.Add("Number", Alias.getNumber());
-            updatedPlayer.Add("NAMES", Alias.getNamesDB());
-            updatedPlayer.Add("IPS", Alias.getIPSDB());
+            updatedPlayer.Add("Number", Alias.Number);
+            updatedPlayer.Add("NAMES", String.Join(";", Alias.Names));
+            updatedPlayer.Add("IPS", String.Join(";", Alias.IPS));
 
-            Update("ALIASES", updatedPlayer, String.Format("Number = '{0}'", Alias.getNumber()));
+            Update("ALIASES", updatedPlayer, String.Format("Number = '{0}'", Alias.Number));
         }
     }
 }

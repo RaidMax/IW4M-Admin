@@ -12,7 +12,6 @@ namespace IW4MAdmin
     {
         static public double Version { get; private set; }
         static private Manager serverManager;
-        static private IW4MAdmin_Web.WebFront frontEnd;
 
         static void Main(string[] args)
         {
@@ -43,13 +42,8 @@ namespace IW4MAdmin
             }
 
             if (serverManager.getServers() != null)
-                Program.getManager().mainLog.Write("IW4M Now Initialized! Visit http://127.0.0.1:1624 for server overview.", Log.Level.Production);
+                Program.getManager().mainLog.Write("IW4M Now Initialized!", Log.Level.Production);
 
-            if (serverManager.getServers().Count > 0)
-            {
-                frontEnd = new IW4MAdmin_Web.WebFront();
-                frontEnd.Init();
-            }
 
             serverMGRThread.Join();
             serverManager.mainLog.Write("Shutting down IW4MAdmin...", Log.Level.Debug);
@@ -76,8 +70,6 @@ namespace IW4MAdmin
                 }
 
                 Program.getManager().shutDown();
-                frontEnd.webSchedule.Stop();
-                frontEnd.webSchedule.Dispose();
                 return false;
             }
 

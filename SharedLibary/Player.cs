@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace SharedLibrary
 {
@@ -9,50 +10,13 @@ namespace SharedLibrary
         public Aliases(int Num, String N, String I)
         {
             Number = Num;
-            Names = N;
-            IPS = I;
+            Names = N.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+            IPS = new List<String>(I.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
         }
 
-        public List<String> getNames()
-        {
-            return new List<String>(Names.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
-        }
-
-        public List<String> getIPS()
-        {
-            return new List<String>(IPS.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
-        }
-
-        public String getIPSDB()
-        {
-            return IPS;
-        }
-
-        public String getNamesDB()
-        {
-            return Names;
-        }
-
-        public int getNumber()
-        {
-            return Number;
-        }
-
-        public void addName(String Name)
-        {
-            if (Name.Trim() != String.Empty && Name != null)
-                Names += ';' + Name;
-        }
-
-        public void addIP(String IP)
-        {
-            if (IP.Trim() != String.Empty && IP != null)
-                IPS += ';' + IP;
-        }
-
-        private String Names;
-        private String IPS;
-        private int Number;
+        public List<String> Names { get; private set; }
+        public List<String> IPS { get; private set; }
+        public int Number { get; private set; }
     }
 
     public class Player
@@ -80,7 +44,6 @@ namespace SharedLibrary
             IP = "";
             Warnings = 0;
             Alias = new Aliases(0, "", "");
-            //stats = new Stats(0, 0, 0, 0, Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.ConservativeRating, Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.Mean, Moserware.Skills.GameInfo.DefaultGameInfo.DefaultRating.StandardDeviation);
             LastConnection = DateTime.Now;
 
         }

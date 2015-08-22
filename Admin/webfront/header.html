@@ -394,7 +394,7 @@
 <body>
 <script type="text/javascript">
 		function loadChatMessages(server, divElem) {
-			$(divElem).load("/" + server + "/0/?chat");
+			$(divElem).load("/chat?server=" + server);
 		}
 </script>
 <script type="text/javascript">
@@ -402,7 +402,7 @@
 		var Message = document.getElementById(divElem).value.replace(/\s/g, "%20").replace(/[\\|\/]/g,"");
 		if (Message.length > 4 && Message.length < 51)
 		{
-			$(".null").load("/" + server + "/0/" + userip + "/" + Message + "/?chat");
+			$(".null").load("/chat?server=" + server);
 			$("#" + divElem).val('');
 		}
 		else if (Message.length <= 4)
@@ -415,7 +415,7 @@
        function searchPlayerName() {
            var nameValue = document.getElementById("search_playerName").value;
            if (nameValue.length > 0)
-			window.location.href = ("/0/0/" + userip + "/" + nameValue + "/?player");
+               window.location.href = ("/player?query=" + encodeURIComponent(nameValue));
        }
    </script>
 <div id="player_search">

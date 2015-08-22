@@ -18,11 +18,39 @@ namespace IW4MAdmin
             commandQueue = new Queue<string>();
         }
 
-        override public void getAliases(List<Player> returnPlayers, Player Origin)
-        {  
-            if (Origin == null)
-                return;
+        
+        private void getAliases(List<Aliases> returnAliases, Aliases currentAlias)
+        {
+            foreach(String IP in currentAlias.IPS)
+            {
+                List<Aliases> Matching = aliasDB.getPlayer(IP);
+                foreach(Aliases I in Matching)
+                {
+                    if (!returnAliases.Contains(I) && returnAliases.Find(x => x.Number == I.Number) == null)
+                    {
+                        returnAliases.Add(I);
+                        getAliases(returnAliases, I);
+                    }
+                }
+            }
+        }
 
+        public override List<Aliases> getAliases(Player Origin)
+        {
+            List<Aliases> allAliases = new List<Aliases>();
+            
+            if (Origin == null)
+                return allAliases;
+
+            Aliases currentIdentityAliases = aliasDB.getPlayer(Origin.databaseID);
+
+            if (currentIdentityAliases == null)
+                return allAliases;
+
+            getAliases(allAliases, currentIdentityAliases);
+            return allAliases;
+
+            /*
             List<Aliases> aliasAliases = new List<Aliases>();
             Aliases currentAliases = aliasDB.getPlayer(Origin.databaseID);
 
@@ -56,7 +84,7 @@ namespace IW4MAdmin
                             }
                         }
                     }
-            }           
+            } */          
         }
 
         //Add player object p to `players` list
@@ -102,16 +130,16 @@ namespace IW4MAdmin
                     NewPlayer.lastEvent = P.lastEvent;
            
                 // lets check aliases 
-                if ((NewPlayer.Alias.getNames().Find(m => m.Equals(P.Name))) == null || NewPlayer.Name == null || NewPlayer.Name == String.Empty) 
+                if ((NewPlayer.Alias.Names.Find(m => m.Equals(P.Name))) == null || NewPlayer.Name == null || NewPlayer.Name == String.Empty) 
                 {
                     NewPlayer.updateName(P.Name.Trim());
-                    NewPlayer.Alias.addName(NewPlayer.Name);
+                    NewPlayer.Alias.Names.Add(NewPlayer.Name);
                 }
                
                 // and ips
-                if (NewPlayer.Alias.getIPS().Find(i => i.Equals(P.IP)) == null || P.IP == null || P.IP == String.Empty)
+                if (NewPlayer.Alias.IPS.Find(i => i.Equals(P.IP)) == null || P.IP == null || P.IP == String.Empty)
                 {
-                    NewPlayer.Alias.addIP(P.IP);
+                    NewPlayer.Alias.IPS.Add(P.IP);
                 }
 
                 NewPlayer.updateIP(P.IP);
@@ -146,8 +174,7 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                List<Player> newPlayerAliases = new List<Player>();
-                getAliases(newPlayerAliases, NewPlayer);
+                List<Player> newPlayerAliases = getPlayerAliases(NewPlayer);
 
                 foreach (Player aP in newPlayerAliases) // lets check their aliases
                 {
@@ -402,7 +429,7 @@ namespace IW4MAdmin
                 {
                     Event curEvent = events.Peek();
                     processEvent(curEvent);
-                    foreach (EventNotify E in PluginImporter.potentialNotifies)
+                    foreach (Notify E in PluginImporter.potentialNotifies)
                         E.onEvent(curEvent);
                     events.Dequeue();
                 }
@@ -562,6 +589,7 @@ namespace IW4MAdmin
 #endif
 
             }
+            events.Enqueue(new Event(Event.GType.Stop, "Server monitoring stopped", null, null, this));
             isRunning = false;
             eventQueueThread.Join();
         }
@@ -623,6 +651,8 @@ namespace IW4MAdmin
                logFile = new IFile(logPath);
                Log.Write("Log file is " + logPath, Log.Level.Debug);
                Log.Write("Now monitoring " + getName(), Log.Level.Production);
+               events.Enqueue(new Event(Event.GType.Start, "Server started", null, null, this));
+               Bans = clientDB.getBans();
                return true;
             }
             catch (Exception E)

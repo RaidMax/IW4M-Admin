@@ -29,6 +29,8 @@ namespace SharedLibrary
         public enum GType
         {
             //FROM SERVER
+            Start,
+            Stop,
             Connect,
             Disconnect,
             Say,
@@ -125,11 +127,5 @@ namespace SharedLibrary
         public Player Origin;
         public Player Target;
         public Server Owner;
-    }
-
-    public abstract class EventNotify
-    {
-        public abstract void onEvent(Event E);
-        public abstract void onLoad();
     }
 }

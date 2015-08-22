@@ -114,6 +114,31 @@ namespace SharedLibrary
             }
         }
 
+        public static String levelHTMLFormatted(Player.Permission Level)
+        {
+            switch (Level)
+            {
+                case Player.Permission.User:
+                    return "<span style='color:rgb(87, 150, 66)'>" + Level + "</span>";
+                case Player.Permission.Moderator:
+                    return "<span style='color:#e7b402'>" + Level + "</span>";
+                case Player.Permission.Administrator:
+                    return "<span style='color:#ec82de'>" + Level + "</span>";
+                case Player.Permission.SeniorAdmin:
+                    return "<span style='color:#2eb6bf'>" + Level + "</span>";
+                case Player.Permission.Owner:
+                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
+                case Player.Permission.Creator:
+                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
+                case Player.Permission.Banned:
+                    return "<span style='color:rgb(196, 22, 28)'>" + Level + "</span>";
+                case Player.Permission.Flagged:
+                    return "<span style='color:rgb(251, 124, 98)'>" + Level + "</span>";
+                default:
+                    return "<i>" + Level + "</i>";
+            }
+        }
+
         public static String nameHTMLFormatted(Player P)
         {
             switch (P.Level)

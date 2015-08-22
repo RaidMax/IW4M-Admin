@@ -378,13 +378,13 @@ namespace IW4MAdmin
 
                 String lookingFor = String.Empty;
 
-                foreach(String S in P.getNames())
+                foreach(String S in P.Names)
                 {
                     if (S.Contains(E.Data))
                         lookingFor = S;
                 }
 
-                Player Current = E.Owner.clientDB.getPlayer(P.getNumber());
+                Player Current = E.Owner.clientDB.getPlayer(P.Number);
 
                 if (Current != null)
                 {
@@ -613,14 +613,13 @@ namespace IW4MAdmin
             E.Target.Tell("[^3" + E.Target.Name + "^7]");
             StringBuilder message = new StringBuilder();
 
-            List<Player> playerAliases = new List<Player>(); 
-            E.Owner.getAliases(playerAliases, E.Target);
+            List<Player> playerAliases = E.Owner.getPlayerAliases(E.Target);
                
             message.Append("Aliases: ");
 
             foreach (Player P in playerAliases)
             {
-                foreach (String S in P.Alias.getNames())
+                foreach (String S in P.Alias.Names)
                 {
                     if (S != String.Empty && S != E.Target.Name)
                         message.Append(S + "  | ");
@@ -630,13 +629,13 @@ namespace IW4MAdmin
 
             message = new StringBuilder();
 
-            if (E.Target.Alias.getIPS() != null)
+            if (E.Target.Alias.IPS != null)
             {
                 message.Append("IPs: ");
 
                 foreach (Player P2 in playerAliases)
                 {
-                    foreach (String IP in P2.Alias.getIPS())
+                    foreach (String IP in P2.Alias.IPS)
                     {
                         if (IP.Split('.').Length > 3 && IP != String.Empty && !message.ToString().Contains(IP))
                             message.Append (IP + "  | ");

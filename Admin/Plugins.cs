@@ -9,13 +9,13 @@ namespace IW4MAdmin
     public class PluginImporter
     {
         public static List<Command> potentialCommands;
-        public static List<EventNotify> potentialNotifies;
+        public static List<Plugin> potentialNotifies;
 
         public static bool Load()
         {
             string[] dllFileNames = null;
             potentialCommands = new List<Command>();
-            potentialNotifies = new List<EventNotify>();
+            potentialNotifies = new List<Plugin>();
 
             if (Directory.Exists(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins"))
                 dllFileNames = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins", "*.dll");
@@ -47,10 +47,10 @@ namespace IW4MAdmin
                     Type[] types = Plugin.GetTypes();
                     foreach(Type assemblyType in types)
                     {
-                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "EventNotify")
+                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "Notify")
                         {
                             Object notifyObject = Activator.CreateInstance(assemblyType);
-                            EventNotify newNotify = (EventNotify)notifyObject;
+                            Plugin newNotify = (Plugin)notifyObject;
                             potentialNotifies.Add(newNotify);
                             newNotify.onLoad();
                             Program.getManager().mainLog.Write("Loaded event plugin \"" + assemblyType.Name + "\"", Log.Level.All);

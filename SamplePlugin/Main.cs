@@ -65,7 +65,7 @@ namespace SamplePlugin
     }
 #endif
 
-    public class StatCommand: Command
+    public class StatCommand : Command
     {
         public StatCommand() : base("stats", "view your stats. syntax !stats", "xlrstats", Player.Permission.User, 0, false) { }
 
@@ -77,13 +77,12 @@ namespace SamplePlugin
         }
     }
 
-    public class Stats : EventNotify
+    public class Stats : Notify
     {
         public static StatsDB playerStats { get; private set; }
 
         public override void onEvent(Event E)
         {
-            Console.WriteLine("event type is " + E.Type);
             if (E.Type == Event.GType.Kill)
             {
                 Player Killer = E.Origin;

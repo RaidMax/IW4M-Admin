@@ -90,6 +90,11 @@ namespace SharedLibrary
             return Cleaned.ToString();
         }
 
+        /// <summary>
+        /// Remove all IW Engine color codes
+        /// </summary>
+        /// <param name="str">String containing color codes</param>
+        /// <returns></returns>
         public static String stripColors(String str)
         {
             if (str == null)
@@ -97,6 +102,11 @@ namespace SharedLibrary
             return Regex.Replace(str, @"\^[0-9]", "");
         }
 
+        /// <summary>
+        /// Get the IW Engine color code corresponding to an admin level
+        /// </summary>
+        /// <param name="level">Specified player level</param>
+        /// <returns></returns>
         public static String levelToColor(Player.Permission level)
         {
             switch (level)
@@ -114,6 +124,11 @@ namespace SharedLibrary
             }
         }
 
+        /// <summary>
+        /// HTML formatted level color
+        /// </summary>
+        /// <param name="Level">Specified player level</param>
+        /// <returns></returns>
         public static String levelHTMLFormatted(Player.Permission Level)
         {
             switch (Level)
@@ -186,6 +201,11 @@ namespace SharedLibrary
             return str;
         }
 
+        /// <summary>
+        /// Get the full gametype name
+        /// </summary>
+        /// <param name="input">Shorthand gametype reported from server</param>
+        /// <returns></returns>
         public static String gametypeLocalized(String input)
         {
             switch (input)
@@ -293,6 +313,8 @@ namespace SharedLibrary
                     return "fifth";
                 case 100:
                     return "One-Hundreth (amazing!)";
+                case 500:
+                    return "^7You're really ^5dedicated ^7to this server! This is your ^5500th ^7time connecting!";
                 default:
                     return connection.ToString() + Prefix;
             }

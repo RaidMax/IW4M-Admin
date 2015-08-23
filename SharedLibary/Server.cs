@@ -239,7 +239,7 @@ namespace SharedLibrary
         /// <param name="Target">Player to send message to</param>
         public void Tell(String Message, Player Target)
         {
-            if (Target.clientID > -1)
+            if (Target.clientID > -1 && Message.Length > 0)
                 executeCommand("tellraw " + Target.clientID + " " + Message + "^7");
 
             if (Target.Level == Player.Permission.Console)

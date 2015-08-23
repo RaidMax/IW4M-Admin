@@ -8,24 +8,42 @@ using System.Net;
 
 namespace Webfront_Plugin
 {
-    class Manager
+    static class Manager
     {
-        public IScheduler webScheduler { get; private set; }
+        public static IScheduler webScheduler { get; private set; }
         public static Framework webFront { get; private set; }
+        public static IPAddress lastIP;
 
-        public Manager()
-        {
-
-        }
-
-        public void Init()
+        public static void Init()
         {
             webScheduler = KayakScheduler.Factory.Create(new SchedulerDelegate());
-            var server = KayakServer.Factory.CreateHttp(new RequestDelegate(), webScheduler);
+            var server = KayakServer.Factory.Create(new ServerDelegate(), webScheduler);
+
             webFront = new Framework();
 
             using (server.Listen(new IPEndPoint(IPAddress.Any, 1624)))
                 webScheduler.Start();
+        }      
+    }
+
+    class HttpServerDelegate : IServerDelegate
+    {
+        IHttpRequestDelegate requestDelegate;
+
+        public HttpServerDelegate(IHttpRequestDelegate requestDelegate)
+        {
+            this.requestDelegate = requestDelegate;
+    
+        }
+
+        public ISocketDelegate OnConnection(IServer server, ISocket socket)
+        {
+            // Kayak.Http.IHttpServerFactory
+        }
+
+        public void OnClose(IServer server)
+        {
+
         }
     }
 
@@ -38,7 +56,7 @@ namespace Webfront_Plugin
 
         public void OnStop(IScheduler scheduler)
         {
-
+            
         }
     }
 

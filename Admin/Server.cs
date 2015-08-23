@@ -16,8 +16,7 @@ namespace IW4MAdmin
         {
             commandQueue = new Queue<string>();
         }
-
-        
+   
         private void getAliases(List<Aliases> returnAliases, Aliases currentAlias)
         {
             foreach(String IP in currentAlias.IPS)
@@ -47,43 +46,7 @@ namespace IW4MAdmin
                 return allAliases;
 
             getAliases(allAliases, currentIdentityAliases);
-            return allAliases;
-
-            /*
-            List<Aliases> aliasAliases = new List<Aliases>();
-            Aliases currentAliases = aliasDB.getPlayer(Origin.databaseID);
-
-            if (currentAliases == null)
-            {
-                Log.Write("No aliases found for " + Origin.Name, Log.Level.Debug);
-                return;
-            }
-
-            foreach (String IP in currentAliases.getIPS())
-            {
-                    List<Aliases> tmp = aliasDB.getPlayer(IP);
-                    if (tmp != null)
-                        aliasAliases = tmp;
-
-                    foreach (Aliases a in aliasAliases)
-                    {
-                        if (a == null)
-                            continue;
-
-                        Player aliasPlayer = clientDB.getPlayer(a.getNumber());
-
-                        if (aliasPlayer != null)
-                        {
-                            aliasPlayer.Alias = a;
-
-                            if (returnPlayers.Exists(p => p.databaseID == aliasPlayer.databaseID == false))
-                            {
-                                returnPlayers.Add(aliasPlayer);
-                                getAliases(returnPlayers, aliasPlayer);
-                            }
-                        }
-                    }
-            } */          
+            return allAliases;        
         }
 
         //Add player object p to `players` list
@@ -411,7 +374,7 @@ namespace IW4MAdmin
 
         override public void setDvar(String Dvar, String Value)
         {
-            lastDvarPointer = Utilities.executeCommand(PID, Dvar + " " + Value, lastDvarPointer);
+            lastDvarPointer = Utilities.executeCommand(PID, Dvar + " " + "\"" + Value + "\"", lastDvarPointer);
         }
 
         [DllImport("kernel32.dll")]
@@ -427,6 +390,10 @@ namespace IW4MAdmin
                 if (events.Count > 0)
                 {
                     Event curEvent = events.Peek();
+
+                    if (curEvent == null)
+                        continue;
+
                     processEvent(curEvent);
                     foreach (Plugin P in PluginImporter.potentialPlugins)
                     {
@@ -610,6 +577,9 @@ namespace IW4MAdmin
         {
             try
             {
+                // clear out any lingering instances
+                Utilities.shutdownInterface(PID);
+
                 // inject our dll 
                 if (!Utilities.initalizeInterface(PID))
                 {
@@ -646,8 +616,19 @@ namespace IW4MAdmin
                 }
 
                 // our settings
-                setDvar("sv_kickBanTime", "3600");      // 1 hour
-                setDvar("g_logSync", "1");              // yas
+                setDvar("sv_kickbantime", "3600");      // 1 hour
+    
+                int logSync = -1;
+                Int32.TryParse(getDvar("g_logSync").current, out oneLog);
+
+                if (logSync == 0)
+                {
+                    Log.Write("g_logsync is not set to 1, restarting map...");
+                    setDvar("g_logSync", "1");              // yas
+                    executeCommand("map_restart");
+                    SharedLibrary.Utilities.Wait(10);
+                }
+
 
                 if (Mod == String.Empty || oneLog == 1)
                     logPath = Basepath + '\\' + "m2demo" + '\\' + logPath;
@@ -799,13 +780,26 @@ namespace IW4MAdmin
             {
                 Log.Write("New map loaded - " + clientnum + " active players", Log.Level.Debug);
 
-                String newMapName = getDvar("mapname").current;
+                String newMapName = "0";
+                String newGametype = "0";
+                String newHostName = "0";
+
+                while(newMapName == "0" || newGametype == "0" || newHostName == "0") // weird anomaly here.
+                {
+                   newMapName = getDvar("mapname").current;
+                   newGametype = getDvar("g_gametype").current;
+                   newHostName = getDvar("sv_hostname").current;
+                }
+                
                 Map newMap = maps.Find(m => m.Name.Equals(newMapName));
 
                 if (newMap != null)
                     mapname = newMap.Alias;
                 else
                     mapname = newMapName;
+
+                Gametype = newGametype;
+                hostname = SharedLibrary.Utilities.stripColors(newHostName);
 
                 return true;
             }
@@ -911,6 +905,8 @@ namespace IW4MAdmin
             // Something like *COMMAND* | NAME | HELP MSG | ALIAS | NEEDED PERMISSION | # OF REQUIRED ARGS | HAS TARGET |
 
             commands = new List<Command>();
+
+            owner = clientDB.getOwner();
 
             if(owner == null)
                 commands.Add(new Owner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));

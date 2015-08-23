@@ -11,7 +11,7 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
-            if (E.Owner.owner == null)
+            if (E.Owner.clientDB.getOwner() == null)
             {
                 E.Origin.setLevel(Player.Permission.Owner);
                 E.Origin.Tell("Congratulations, you have claimed ownership of this server!");

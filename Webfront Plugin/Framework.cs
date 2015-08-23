@@ -97,6 +97,15 @@ namespace Webfront_Plugin
 
         private String processReplacements(String Input, String Macro, int curPage, int ID, String Query, params Server[] Servers)
         {
+            bool Authenticated = false;
+
+            if (Servers[0] != null && Manager.lastIP != null)
+            {
+                Player User = Servers[0].clientDB.getPlayer(Manager.lastIP.ToString());
+                if (User != null && User.Level > Player.Permission.Flagged)
+                    Authenticated = true;
+            }
+
             if (Macro.Length < 5)
                 return "";
 
@@ -110,12 +119,12 @@ namespace Webfront_Plugin
                 foreach (Server S in activeServers)
                 {
                     StringBuilder players = new StringBuilder();
-                    if (S.getClientNum() < 1)
-                        players.Append("<h2>No Players</h2>");
-                    else
+                    if (S.getClientNum() > 0)
                     {
                         int count = 0;
                         double currentPlayers = S.statusPlayers.Count;
+
+                        players.Append("<table cellpadding='0' cellspacing='0' class='players'>");
 
                         foreach (Player P in S.getPlayers())
                         {
@@ -147,6 +156,7 @@ namespace Webfront_Plugin
                             count++;
 
                         }
+                        players.Append("</table>");
                     }
                     buffer.AppendFormat(@"<table cellpadding=0 cellspacing=0 class=server>
                                                 <tr>
@@ -159,11 +169,12 @@ namespace Webfront_Plugin
                                                     <th><a class='history' href='/graph?server={4}'>History</a></th>
                                                  </tr>
                                              </table>
-                                             <table cellpadding='0' cellspacing='0' class='players'>
-                                                    {5}
-                                            </table>",
+                                                    {5}",
+                                          
                                          S.getName(), S.getMap(), S.getClientNum() + "/" + S.getMaxClients(), SharedLibrary.Utilities.gametypeLocalized(S.getGametype()), S.pID(), players.ToString());
-                    buffer.AppendFormat("<div class='chatHistory' id='chatHistory_{0}'></div><script type='text/javascript'>$( document ).ready(function() {{ setInterval({1}loadChatMessages({0}, '#chatHistory_{0}'){1}, 2500); }});</script><div class='null' style='clear:both;'></div>", S.pID(), '\"');
+                    
+                    if (S.getClientNum() > 0)
+                        buffer.AppendFormat("<div class='chatHistory' id='chatHistory_{0}'></div><script type='text/javascript'>$( document ).ready(function() {{ setInterval({1}loadChatMessages({0}, '#chatHistory_{0}'){1}, 2500); }});</script><div class='null' style='clear:both;'></div>", S.pID(), '\"');
                     //if (S.getClientNum() > 0)
                        // buffer.AppendFormat("<form class='chatOutFormat' action={1}javascript:chatRequest({0}, 'chatEntry_{0}'){1}><input class='chatFormat_text' type='text' placeholder='Enter a message...' id='chatEntry_{0}'/><input class='chatFormat_submit' type='submit'/></form>", S.pID(), '\"');
                     buffer.Append("<hr/>");
@@ -230,30 +241,35 @@ namespace Webfront_Plugin
 
                         List<Aliases> allAlliases = S.getAliases(Player);
                         List<String> nameAlias = new List<String>();
+                        List<String> IPAlias = new List<String>();
 
                         foreach (Aliases A in allAlliases)
                         {
                             foreach (String Name in A.Names.Distinct())
                                 nameAlias.Add(Name);
-                        }
 
+                            if (Authenticated)
+                            {
+                                foreach (String IP in A.IPS.Distinct())
+                                    IPAlias.Add(IP);
+                            }
+                        }
+                        str.Append("<a href='#' class='pseudoLinkAlias'>Show Aliases</a>");
+                        str.Append("<div class='playerAlias'>");
                         foreach (String Name in nameAlias.Distinct())
                             str.AppendFormat("<span>{0}</span><br/>", Utilities.stripColors(Name));
+                        str.Append("</div>");
              
 
                         StringBuilder IPs = new StringBuilder();
-
-                        if (false)
+   
+                        if (Authenticated)
                         {
-                            /*foreach (Player a in aliases)
-                            {
-                                foreach (String ip in a.Alias.IPS)
-                                {
-                                    if (!IPs.ToString().Contains(ip))
-                                        IPs.AppendFormat("<span>{0}</span><br/>", ip);
-                                }
-                            }*/
-
+                            IPs.Append("<a href='#'><span class='pseudoLinkIP'><i>Show IPs</i></span></a>");
+                            IPs.Append("<div class='playerIPs'>");
+                            foreach (String IP in IPAlias)
+                                IPs.AppendFormat("<span>{0}</span><br/>", IP);
+                            IPs.Append("</div>");
                         }
                         else
                             IPs.Append("Hidden");
@@ -268,7 +284,7 @@ namespace Webfront_Plugin
                         String Screenshot = String.Empty;
 
                         //if (logged)
-                          Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
+                          Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}' target='_blank'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
 
                         buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, str, IPs, 0, SharedLibrary.Utilities.levelHTMLFormatted(Player.Level), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/player?id=" + Player.databaseID, Screenshot);
                         buffer.Append("</tr>");

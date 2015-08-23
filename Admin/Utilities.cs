@@ -288,7 +288,7 @@ namespace IW4MAdmin
                 }
             }
 
-            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command + "\0"), ProcessHandle); // this gets disposed next call
+            IntPtr memoryForDvarName = allocateAndWrite(Encoding.ASCII.GetBytes(Command + '\0'), ProcessHandle); // this gets disposed next call
 
             if (memoryForDvarName == IntPtr.Zero)
             {
@@ -343,49 +343,45 @@ namespace IW4MAdmin
                 return false;
             }
 
-            IntPtr baseAddress = IntPtr.Zero;
+            List<IntPtr> baseAddresses = new List<IntPtr>();
 
             System.Diagnostics.Process P = System.Diagnostics.Process.GetProcessById(pID);
             foreach (System.Diagnostics.ProcessModule M in P.Modules)
             {
-                if (M.ModuleName == "AdminInterface.dll")
-                    baseAddress = M.BaseAddress;
+                if (M.ModuleName == "AdminInterface.dll" && M.BaseAddress != IntPtr.Zero)
+                    baseAddresses.Add(M.BaseAddress);
             }
 
-            if (baseAddress == IntPtr.Zero)
-            {
-                Program.getManager().mainLog.Write("Base address was not found!");
-                return false;
-            }
-
-            IntPtr lpLLAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "FreeLibrary");
-
+            IntPtr lpLLAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "FreeLibraryAndExitThread");
 
             if (lpLLAddress == IntPtr.Zero)
             {
-                Program.getManager().mainLog.Write("Could not obtain address of function address");
+                Program.getManager().mainLog.Write("Could not obtain address of freelibary");
                 return false;
             }
 
             ClientId clientid = new ClientId();
             threadID = new IntPtr();
 
-            RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
-            if (threadID == IntPtr.Zero)
+            foreach (IntPtr baseAddress in baseAddresses)
             {
-                Program.getManager().mainLog.Write("Could not create remote thread");
-                return false;
-            }
+                RtlCreateUserThread(ProcessHandle, IntPtr.Zero, false, 0, (uint)0, IntPtr.Zero, lpLLAddress, baseAddress, out threadID, out clientid);
+                if (threadID == IntPtr.Zero)
+                {
+                    Program.getManager().mainLog.Write("Could not create remote thread");
+                    return false;
+                }
 #if DEBUG
             Program.getManager().mainLog.Write("Thread ID is " + threadID);
 #endif
-            uint responseCode = WaitForSingleObject(threadID, 3000);
+                uint responseCode = WaitForSingleObject(threadID, 3000);
 
-            if (responseCode != 0x00000000L)
-            {
-                Program.getManager().mainLog.Write("Thread did not finish in a timely manner!");
-                Program.getManager().mainLog.Write("Last error is: " + Marshal.GetLastWin32Error());
-                return false;
+                if (responseCode != 0x00000000L)
+                {
+                    Program.getManager().mainLog.Write("Thread did not finish in a timely manner!", Log.Level.Debug);
+                    Program.getManager().mainLog.Write("Last error is: " + Marshal.GetLastWin32Error(), Log.Level.Debug);
+                    return false;
+                }
             }
 
             CloseHandle(ProcessHandle);

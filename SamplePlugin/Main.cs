@@ -98,7 +98,12 @@ namespace SamplePlugin
                         killerStats.KDR = killerStats.Kills / killerStats.Deaths;
 
                     playerStats.updateStats(Killer, killerStats);
+
+                    killerStats.killStreak++;
+                    killerStats.deathStreak = 0;
                 }
+
+                Killer.Tell(messageOnStreak(killerStats.killStreak, killerStats.deathStreak));
             }
 
             if (E.Type == Event.GType.Death)
@@ -110,6 +115,11 @@ namespace SamplePlugin
                 victimStats.KDR = victimStats.Kills / victimStats.Deaths;
 
                 playerStats.updateStats(Victim, victimStats);
+
+                victimStats.deathStreak++;
+                victimStats.killStreak = 0;
+
+                Victim.Tell(messageOnStreak(victimStats.killStreak, victimStats.deathStreak));
             }
         }
 
@@ -121,6 +131,32 @@ namespace SamplePlugin
         public override void onUnload()
         {
 
+        }
+
+        private String messageOnStreak(int killStreak, int deathStreak)
+        {
+            String Message = "";
+            switch (killStreak)
+            {
+                case 5:
+                    Message = "Great job! You're on a ^55 killstreak!";
+                    break;
+                case 10:
+                    Message = "Amazing! ^510 ^7kills without dying!";
+                    break;
+            }
+
+            switch (deathStreak)
+            {
+                case 5:
+                    Message = "Pick it up soldier, you've died 5 times in a row...";
+                    break;
+                case 10:
+                    Message = "Seriously? ^510 ^7deaths without getting a kill?";
+                    break;
+            }
+
+            return Message;
         }
 
         public override string Name
@@ -204,11 +240,15 @@ namespace SamplePlugin
             Deaths = D;
             KDR = DR;
             Skill = S;
+            deathStreak = 0;
+            killStreak = 0;
         }
 
         public int Kills;
         public int Deaths;
         public double KDR;
         public double Skill;
+        public int deathStreak;
+        public int killStreak;
     }
 }

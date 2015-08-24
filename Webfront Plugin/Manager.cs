@@ -13,38 +13,17 @@ namespace Webfront_Plugin
         public static IScheduler webScheduler { get; private set; }
         public static Framework webFront { get; private set; }
         public static IPAddress lastIP;
+        public static IServer webServer;
 
         public static void Init()
         {
             webScheduler = KayakScheduler.Factory.Create(new SchedulerDelegate());
-            var server = KayakServer.Factory.Create(new ServerDelegate(), webScheduler);
-
+            webServer = KayakServer.Factory.CreateHttp(new RequestDelegate(), webScheduler);
             webFront = new Framework();
 
-            using (server.Listen(new IPEndPoint(IPAddress.Any, 1624)))
+            using (webServer.Listen(new IPEndPoint(IPAddress.Any, 1624)))
                 webScheduler.Start();
         }      
-    }
-
-    class HttpServerDelegate : IServerDelegate
-    {
-        IHttpRequestDelegate requestDelegate;
-
-        public HttpServerDelegate(IHttpRequestDelegate requestDelegate)
-        {
-            this.requestDelegate = requestDelegate;
-    
-        }
-
-        public ISocketDelegate OnConnection(IServer server, ISocket socket)
-        {
-            // Kayak.Http.IHttpServerFactory
-        }
-
-        public void OnClose(IServer server)
-        {
-
-        }
     }
 
     class SchedulerDelegate : ISchedulerDelegate
@@ -64,52 +43,9 @@ namespace Webfront_Plugin
     {
         public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response)
         {
-            /*if (request.Method.ToUpperInvariant() == "POST" && request.Uri.StartsWith("/bufferedecho"))
-            {
-                // when you subecribe to the request body before calling OnResponse,
-                // the server will automatically send 100-continue if the client is 
-                // expecting it.
-                requestBody.Connect(new BufferedConsumer(bufferedBody =>
-                {
-                    var headers = new HttpResponseHead()
-                    {
-                        Status = "200 OK",
-                        Headers = new Dictionary<string, string>() 
-                            {
-                                { "Content-Type", "text/plain" },
-                                { "Content-Length", request.Headers["Content-Length"] },
-                                { "Connection", "close" }
-                            }
-                    };
-                    response.OnResponse(headers, new BufferedProducer(bufferedBody));
-                }, error =>
-                {
-                    // XXX
-                    // uh oh, what happens?
-                }));
-            }
-            else if (request.Method.ToUpperInvariant() == "POST" && request.Uri.StartsWith("/echo"))
-            {
-                var headers = new HttpResponseHead()
-                {
-                    Status = "200 OK",
-                    Headers = new Dictionary<string, string>() 
-                    {
-                        { "Content-Type", "text/plain" },
-                        { "Connection", "close" }
-                    }
-                };
-                if (request.Headers.ContainsKey("Content-Length"))
-                    headers.Headers["Content-Length"] = request.Headers["Content-Length"];
-
-                // if you call OnResponse before subscribing to the request body,
-                // 100-continue will not be sent before the response is sent.
-                // per rfc2616 this response must have a 'final' status code,
-                // but the server does not enforce it.
-                response.OnResponse(headers, requestBody);
-            }*/
-
-          
+            DefaultKayakServer castCrap = (DefaultKayakServer)Manager.webServer;
+            Manager.lastIP = castCrap.clientAddress.Address;
+        
             string body = Manager.webFront.processRequest(request);
             var headers = new HttpResponseHead()
                 {
@@ -122,44 +58,6 @@ namespace Webfront_Plugin
                 };
 
             response.OnResponse(headers, new BufferedProducer(body));
-       
-            /*
-            if (request.Uri.StartsWith("/"))
-            {
-                var body = string.Format(
-                    "Hello world.\r\nHello.\r\n\r\nUri: {0}\r\nPath: {1}\r\nQuery:{2}\r\nFragment: {3}\r\n",
-                    request.Uri,
-                    request.Path,
-                    request.QueryString,
-                    request.Fragment);
-
-                var headers = new HttpResponseHead()
-                {
-                    Status = "200 OK",
-                    Headers = new Dictionary<string, string>() 
-                    {
-                        { "Content-Type", "text/plain" },
-                        { "Content-Length", body.Length.ToString() },
-                    }
-                };
-                response.OnResponse(headers, new BufferedProducer(body));
-            }
-            else
-            {
-                var responseBody = "The resource you requested ('" + request.Uri + "') could not be found.";
-                var headers = new HttpResponseHead()
-                {
-                    Status = "404 Not Found",
-                    Headers = new Dictionary<string, string>()
-                    {
-                        { "Content-Type", "text/plain" },
-                        { "Content-Length", responseBody.Length.ToString() }
-                    }
-                };
-                var body = new BufferedProducer(responseBody);
-
-                response.OnResponse(headers, body);
-            }*/
         }
     }
 

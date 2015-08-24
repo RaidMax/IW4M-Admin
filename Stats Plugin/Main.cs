@@ -161,12 +161,26 @@ namespace SamplePlugin
 
         public override string Name
         {
-            get { return "Basic Stats"; }
+            get
+            {
+                return "Basic Stats";
+            }
         }
 
         public override float Version
         {
-            get { return 0.1f; }
+            get
+            {
+                return 0.1f;
+            }
+        }
+
+        public override string Author
+        {
+            get
+            {
+                return "RaidMax";
+            }
         }
     }
 

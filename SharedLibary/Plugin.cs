@@ -12,7 +12,8 @@ namespace SharedLibrary
         public abstract void onEvent(Event E);
 
         //for logging purposes
-        public abstract string Name { get; }
-        public abstract float Version { get; }
+        public abstract String Name { get; }
+        public abstract float Version { get; }  
+        public abstract String Author { get; }
     }
 }

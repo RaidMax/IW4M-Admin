@@ -70,7 +70,7 @@
     <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>IW4MAdmin.ico</ApplicationIcon>
+    <ApplicationIcon>IW4AdminIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>IW4MAdmin.Program</StartupObject>
@@ -126,8 +126,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="lib\System.Data.SQLite.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Content Include="IW4AdminIcon.ico" />
     <Content Include="lib\AdminInterface.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -137,7 +138,7 @@
     <Content Include="lib\SQLite.Interop.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\SamplePlugin.dll">
+    <Content Include="plugins\SimpleStatsPlugin.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="plugins\WebfrontPlugin.dll">
@@ -224,9 +225,6 @@
       <ProductName>Visual C++ 2013 Runtime Libraries %28x86%29</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="IW4MAdmin.ico" />
   </ItemGroup>
   <ItemGroup>
     <PublishFile Include="config\maps.cfg">

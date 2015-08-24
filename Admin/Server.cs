@@ -436,7 +436,6 @@ namespace IW4MAdmin
             eventQueueThread.Start();
 
             long l_size = -1;
-            bool checkedForOutdate = false;
             String[] lines = new String[8];
             String[] oldLines = new String[8];
             DateTime start = DateTime.Now;
@@ -951,8 +950,6 @@ namespace IW4MAdmin
 
         //Objects
         private Queue<String> commandQueue;
-
-        //Info
 
         //Will probably move this later
         private IntPtr dllPointer;

@@ -45,5 +45,13 @@ namespace Webfront_Plugin
         {
             get { return 0.1f; }
         }
+
+        public override string Author
+        {
+            get
+            {
+                return "RaidMax";
+            }
+        }
     }
 }

@@ -43,6 +43,8 @@ namespace Webfront_Plugin
 
                     if (querySet["server"] != null)
                         requestedServer = activeServers.Find(x => x.pID() == Int32.Parse(querySet["server"]));
+                    else
+                        requestedServer = activeServers.First();
                     
                     if (querySet["page"] != null)
                         requestPageNum = Int32.Parse(querySet["page"]);
@@ -237,43 +239,47 @@ namespace Webfront_Plugin
                             continue;
 
                         buffer.Append("<tr>");
-                        StringBuilder str = new StringBuilder();
+                        StringBuilder Names = new StringBuilder();
 
-                        List<Aliases> allAlliases = S.getAliases(Player);
+                        
                         List<String> nameAlias = new List<String>();
                         List<String> IPAlias = new List<String>();
-
-                        foreach (Aliases A in allAlliases)
-                        {
-                            foreach (String Name in A.Names.Distinct())
-                                nameAlias.Add(Name);
-
-                            if (Authenticated)
-                            {
-                                foreach (String IP in A.IPS.Distinct())
-                                    IPAlias.Add(IP);
-                            }
-                        }
-                        str.Append("<a href='#' class='pseudoLinkAlias'>Show Aliases</a>");
-                        str.Append("<div class='playerAlias'>");
-                        foreach (String Name in nameAlias.Distinct())
-                            str.AppendFormat("<span>{0}</span><br/>", Utilities.stripColors(Name));
-                        str.Append("</div>");
-             
-
                         StringBuilder IPs = new StringBuilder();
-   
+
                         if (Authenticated)
                         {
-                            IPs.Append("<a href='#'><span class='pseudoLinkIP'><i>Show IPs</i></span></a>");
+                            List<Aliases> allAlliases = S.getAliases(Player);
+
+                            foreach (Aliases A in allAlliases)
+                            {
+
+                                foreach (String Name in A.Names.Distinct())
+                                    nameAlias.Add(Name);
+
+                                foreach (String IP in A.IPS.Distinct())
+                                    IPAlias.Add(IP);
+
+                            }
+
+                            Names.Append("<a href='#' class='pseudoLinkAlias'>Show Aliases</a>");
+                            Names.Append("<div class='playerAlias'>");
+                            foreach (String Name in nameAlias.Distinct())
+                                Names.AppendFormat("<span>{0}</span><br/>", Utilities.stripColors(Name));
+                            Names.Append("</div>");
+
+                            IPs.Append("<a href='#' class='pseudoLinkIP'>Show IPs</a>");
                             IPs.Append("<div class='playerIPs'>");
                             foreach (String IP in IPAlias)
                                 IPs.AppendFormat("<span>{0}</span><br/>", IP);
                             IPs.Append("</div>");
                         }
-                        else
+   
+                        if (!Authenticated)
+                        {
+                            Names.Append("Hidden");
                             IPs.Append("Hidden");
-
+                        }
+                            
                         Int64 forumID = 0;
                         if (Player.npID.Length == 16)
                         {
@@ -284,9 +290,9 @@ namespace Webfront_Plugin
                         String Screenshot = String.Empty;
 
                         //if (logged)
-                          Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}' target='_blank'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
+                        Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}' target='_blank'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
 
-                        buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, str, IPs, 0, SharedLibrary.Utilities.levelHTMLFormatted(Player.Level), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/player?id=" + Player.databaseID, Screenshot);
+                        buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, Names, IPs, 0, SharedLibrary.Utilities.levelHTMLFormatted(Player.Level), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/player?id=" + Player.databaseID, Screenshot);
                         buffer.Append("</tr>");
                     }
 

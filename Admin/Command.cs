@@ -149,14 +149,25 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
+            StringBuilder playerList = new StringBuilder();
             lock (E.Owner.getPlayers())
             {
+                int count = 0;
                 foreach (Player P in E.Owner.getPlayers())
                 {
                     if (P == null)
                         continue;
 
-                    E.Origin.Tell(String.Format("[^3{0}^7]{3}[^3{1}^7] {2}", SharedLibrary.Utilities.levelToColor(P.Level), P.clientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length)));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", SharedLibrary.Utilities.levelToColor(P.Level), P.clientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    if (count == 2)
+                    {
+                        E.Origin.Tell(playerList.ToString());
+                        count = 0;
+                        playerList = new StringBuilder();
+                        continue;
+                    }
+
+                    count++;
                 }
             }
         }
@@ -519,6 +530,13 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
+            if (E.Data != null && E.Data.ToLower().Contains("clear"))
+            {
+                E.Owner.Reports = new List<Report>();
+                E.Origin.Tell("Reports successfully cleared!");
+                return;
+            }
+
             if (E.Owner.Reports.Count < 1)
             {
                 E.Origin.Tell("No players reported yet.");
@@ -657,6 +675,20 @@ namespace IW4MAdmin
         {
             E.Origin.currentServer.executeCommand(E.Data.Trim());
             E.Origin.Tell("Successfuly sent RCON command!");
+        }
+    }
+
+    class Plugins : Command
+    {
+        public Plugins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override void Execute(Event E)
+        {
+            E.Origin.Tell("^5Loaded Plugins:");
+            foreach (Plugin P in PluginImporter.potentialPlugins)
+            {
+                E.Origin.Tell(String.Format("^3{0} ^7[^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
+            }
         }
     }
 }

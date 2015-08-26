@@ -100,12 +100,15 @@ namespace Webfront_Plugin
         private String processReplacements(String Input, String Macro, int curPage, int ID, String Query, params Server[] Servers)
         {
             bool Authenticated = false;
+            bool UserPrivelege = false;
 
             if (Servers[0] != null && Manager.lastIP != null)
             {
                 Player User = Servers[0].clientDB.getPlayer(Manager.lastIP.ToString());
                 if (User != null && User.Level > Player.Permission.Flagged)
                     Authenticated = true;
+                if (User != null && User.Level == Player.Permission.User)
+                    UserPrivelege = true;
             }
 
             if (Macro.Length < 5)
@@ -174,11 +177,13 @@ namespace Webfront_Plugin
                                                     {5}",
                                           
                                          S.getName(), S.getMap(), S.getClientNum() + "/" + S.getMaxClients(), SharedLibrary.Utilities.gametypeLocalized(S.getGametype()), S.pID(), players.ToString());
-                    
+
                     if (S.getClientNum() > 0)
+                    {
                         buffer.AppendFormat("<div class='chatHistory' id='chatHistory_{0}'></div><script type='text/javascript'>$( document ).ready(function() {{ setInterval({1}loadChatMessages({0}, '#chatHistory_{0}'){1}, 2500); }});</script><div class='null' style='clear:both;'></div>", S.pID(), '\"');
-                    //if (S.getClientNum() > 0)
-                       // buffer.AppendFormat("<form class='chatOutFormat' action={1}javascript:chatRequest({0}, 'chatEntry_{0}'){1}><input class='chatFormat_text' type='text' placeholder='Enter a message...' id='chatEntry_{0}'/><input class='chatFormat_submit' type='submit'/></form>", S.pID(), '\"');
+                        if (UserPrivelege || Authenticated)
+                            buffer.AppendFormat("<form class='chatOutFormat' action={1}javascript:chatRequest({0}, 'chatEntry_{0}'){1}><input class='chatFormat_text' type='text' placeholder='Enter a message...' id='chatEntry_{0}'/><input class='chatFormat_submit' type='submit'/></form>", S.pID(), '\"');
+                    }
                     buffer.Append("<hr/>");
                 }
                 return Input.Replace(Macro, buffer.ToString());
@@ -352,7 +357,7 @@ namespace Webfront_Plugin
                         Player P = bannedPlayers[i];
                         Player B;
 
-                        if (Bans[i].bannedByID == Bans[i].npID)
+                        if (P.npID == Bans[i].bannedByID)
                             B = new Player("IW4MAdmin", "", 0, SharedLibrary.Player.Permission.Banned, 0, "", 0, "");
 
                         else
@@ -441,9 +446,6 @@ namespace Webfront_Plugin
                     case "graph":
                         requestedPage = new graph();
                         return processTemplate(requestedPage.Load(), request.QueryString);
-                    case "stats":
-                        requestedPage = new stats();
-                        break;
                     case "chat":
                         requestedPage = new chat();
                         return processTemplate(requestedPage.Load(), request.QueryString);
@@ -544,19 +546,6 @@ namespace Webfront_Plugin
         public override String Name
         {
             get { return "player"; }
-        }
-
-        public override String Load()
-        {
-            return loadHTML();
-        }
-    }
-
-    class stats : Page
-    {
-        public override String Name
-        {
-            get { return "stats"; }
         }
 
         public override String Load()

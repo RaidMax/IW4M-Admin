@@ -30,7 +30,7 @@ namespace IW4MAdmin
                  Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
             Console.WriteLine("=====================================================");
  
-            serverManager = new IW4MAdmin.Manager();
+            serverManager = new Manager();
 
             Thread serverMGRThread = new Thread(serverManager.Init);
             serverMGRThread.Name = "Server Manager thread";
@@ -42,11 +42,11 @@ namespace IW4MAdmin
             }
 
             if (serverManager.getServers() != null)
-                Program.getManager().mainLog.Write("IW4M Now Initialized!", Log.Level.Production);
+                getManager().mainLog.Write("IW4M Now Initialized!", Log.Level.Production);
 
             String userInput;
             Server serverToExecuteOn = serverManager.getServers()[0];
-            Player Origin = new Player("IW4MAdmin Console", "", -1, Player.Permission.Console, -1, "", 0, "");
+            Player Origin = new Player("IW4MAdmin", "", -1, Player.Permission.Console, -1, "", 0, "");
 
             do
             {
@@ -68,7 +68,7 @@ namespace IW4MAdmin
         {
             try
             {
-                foreach (Server S in IW4MAdmin.Program.getServers())
+                foreach (Server S in getServers())
                 {
                     if (S == null)
                         continue;
@@ -77,12 +77,12 @@ namespace IW4MAdmin
                     S.isRunning = false;
 
                     if (Utilities.shutdownInterface(S.pID()))
-                        Program.getManager().mainLog.Write("Successfully removed IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
+                        getManager().mainLog.Write("Successfully removed IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
                     else
-                        Program.getManager().mainLog.Write("Could not remove IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
+                        getManager().mainLog.Write("Could not remove IW4MAdmin from server with PID " + S.pID(), Log.Level.Debug);
                 }
 
-                Program.getManager().shutDown();
+                getManager().shutDown();
                 return false;
             }
 

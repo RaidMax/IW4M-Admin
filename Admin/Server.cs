@@ -589,6 +589,12 @@ namespace IW4MAdmin
                 // basic info dvars
                 hostname = SharedLibrary.Utilities.stripColors(getDvar("sv_hostname").current);
                 mapname = getDvar("mapname").current;
+                Map localizedMapName = maps.Find(x => x.Name.Equals(mapname));
+
+                if (localizedMapName != null)
+                    mapname = localizedMapName.Alias;
+
+
                 IW_Ver = getDvar("shortversion").current;
                 maxClients = -1;
                 Int32.TryParse(getDvar("party_maxplayers").current, out maxClients);
@@ -910,6 +916,9 @@ namespace IW4MAdmin
             if(owner == null)
                 commands.Add(new Owner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
 
+            foreach (Command C in PluginImporter.potentialCommands)
+                commands.Add(C);
+
             commands.Add(new Kick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Moderator, 2, true));
             commands.Add(new Say("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
             commands.Add(new TempBan("tempban", "temporarily ban a player for 1 hour. syntax: !tempban <player> <reason>.", "tb", Player.Permission.Moderator, 2, true));
@@ -942,10 +951,7 @@ namespace IW4MAdmin
             commands.Add(new Alias("alias", "get past aliases and ips of a player. syntax: !alias <player>", "known", Player.Permission.Moderator, 1, true));
             commands.Add(new _RCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
             commands.Add(new FindAll("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
-
-            foreach (Command C in PluginImporter.potentialCommands)
-                commands.Add(C);
-        
+            commands.Add(new Plugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
         }
 
         //Objects

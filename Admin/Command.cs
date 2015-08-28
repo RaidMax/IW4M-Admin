@@ -108,7 +108,7 @@ namespace IW4MAdmin
             if (E.Owner.Website == null)
                 Message = "^1Player Banned: ^5" + E.Target.lastOffense;
             else
-                Message = "^1Player Banned: ^5" + E.Target.lastOffense + "^7 (appeal " + E.Owner.Website;
+                Message = "^1Player Banned: ^5" + E.Target.lastOffense + "^7 (appeal at" + E.Owner.Website + ")";
             if (E.Origin.Level > E.Target.Level)
             {
                 E.Target.Ban(Message, E.Origin);

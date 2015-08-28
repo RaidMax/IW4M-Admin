@@ -5,66 +5,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Data;
 
-namespace SamplePlugin
+namespace StatsPlugin
 {
-#if SAMPLE_CODE
-    public class SampleCommand : Command
-    {
-        public SampleCommand() : base("testplugin", "sample plugin command. syntax !testplugin", "tp", Player.Permission.User, 0, false) { }
-
-        public override void Execute(Event E)
-        {
-            Player clientWhoSent = E.Origin;
-            Server originatingServer = E.Owner;
-
-            String[] messageToClient = { 
-                                           String.Format("The command {0} was requested by ^3{1}", Name, clientWhoSent.Name), 
-                                           String.Format("The command was request on server ^1{0}", originatingServer.getName()) 
-                                       };
-
-            foreach (String Line in messageToClient)
-                clientWhoSent.Tell(Line);
-        }
-    }
-
-    public class AnotherSampleCommand : Command
-    {
-        public AnotherSampleCommand() : base("scream", "broadcast your message. syntax !scream <message>", "s", Player.Permission.Moderator, 1, false) { }
-
-        public override void Execute(Event E)
-        {
-            Server originatingServer = E.Owner;
-            String Message = E.Data;
-            String Sender = E.Origin.Name;
-
-            for (int i = 0; i < 10; i++)
-                originatingServer.Broadcast(String.Format("^7{0}: ^{1}{2}^7", Sender, i, Message));
-
-            originatingServer.Log.Write("This line is coming from the plugin " + this.Name, Log.Level.Production);
-        }
-    }
-
-    public class SampleEvent : EventNotify
-    {
-        public override void onLoad()
-        {
-            Console.WriteLine("The sample event plugin was loaded!");
-        }
-        public override void onEvent(Event E)
-        {
-            E.Owner.Broadcast("An event occured of type: ^1" + E.Type);
-
-            if (E.Data != null)
-                E.Origin.Tell(E.Data);
-        }
-    }
-    
-    public class InvalidCommandExample
-    {
-        private void doNotDoThis() { }
-    }
-#endif
-
     public class StatCommand : Command
     {
         public StatCommand() : base("stats", "view your stats. syntax !stats", "xlrstats", Player.Permission.User, 0, false) { }
@@ -74,6 +16,27 @@ namespace SamplePlugin
             PlayerStats pStats = Stats.playerStats.getStats(E.Origin);
             String statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             E.Origin.Tell(statLine);
+        }
+    }
+
+    public class topStats : Command
+    {
+        public topStats() : base("topstats", "view the top 5 players on this server. syntax !topstats", "!ts", Player.Permission.User, 0, false) { }
+
+        public override void Execute(Event E)
+        {
+            List<KeyValuePair<String, PlayerStats>> pStats = Stats.playerStats.topStats();
+            StringBuilder msgBlder = new StringBuilder();
+
+            E.Origin.Tell("^5--Top Players--");
+            foreach (KeyValuePair<String, PlayerStats> pStat in pStats)
+            {
+                Player P = E.Owner.clientDB.getPlayer(pStat.Key, -1);
+                if (P == null)
+                    continue;
+                E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.Name, pStat.Value.KDR, pStat.Value.Skill));
+            }
+
         }
     }
 
@@ -100,6 +63,10 @@ namespace SamplePlugin
             {
                 foreach (Player P in E.Owner.getPlayers())
                 {
+
+                    if (P == null)
+                        continue;
+
                     calculateAndSaveSkill(P);
                     resetCounters(P.clientID);
 
@@ -116,6 +83,9 @@ namespace SamplePlugin
 
             if (E.Type == Event.GType.Kill)
             {
+                if (E.Origin == E.Target)
+                    return;
+
                 Player Killer = E.Origin;
                 PlayerStats killerStats = playerStats.getStats(Killer);
 
@@ -127,20 +97,17 @@ namespace SamplePlugin
                     inactiveMinutes[E.Origin.clientID]++;
                 }
 
-                if (Killer != E.Target)
-                {
-                    killerStats.Kills++;
+                killerStats.Kills++;
 
-                    if (killerStats.Deaths == 0)
-                        killerStats.KDR = killerStats.Kills;
-                    else
-                        killerStats.KDR = (double)killerStats.Kills / (double)killerStats.Deaths;
+                if (killerStats.Deaths == 0)
+                    killerStats.KDR = killerStats.Kills;
+                else
+                    killerStats.KDR = killerStats.Kills / killerStats.Deaths;
 
-                    playerStats.updateStats(Killer, killerStats);
+                playerStats.updateStats(Killer, killerStats);
 
-                    killStreaks[E.Origin.clientID]++;
-                    deathStreaks[E.Origin.clientID] = 0;
-                }
+                killStreaks[E.Origin.clientID]++;
+                deathStreaks[E.Origin.clientID] = 0;
 
                 Killer.Tell(messageOnStreak(killStreaks[E.Origin.clientID], deathStreaks[E.Origin.clientID]));
             }
@@ -151,7 +118,7 @@ namespace SamplePlugin
                 PlayerStats victimStats = playerStats.getStats(Victim);
 
                 victimStats.Deaths++;
-                victimStats.KDR = (double)victimStats.Kills / (double)victimStats.Deaths;
+                victimStats.KDR = victimStats.Kills / victimStats.Deaths;
 
                 playerStats.updateStats(Victim, victimStats);
 
@@ -164,6 +131,9 @@ namespace SamplePlugin
 
         private void calculateAndSaveSkill(Player P)
         {
+            if (P == null)
+                return;
+
             PlayerStats disconnectStats = playerStats.getStats(P);
             if (Kills[P.clientID] == 0)
                 return;
@@ -172,8 +142,11 @@ namespace SamplePlugin
                 inactiveMinutes[P.clientID] += (int)(DateTime.Now - lastKill[P.clientID]).TotalMinutes;
 
             int newPlayTime = (int)(DateTime.Now - connectionTime[P.clientID]).TotalMinutes - inactiveMinutes[P.clientID];
-            double newSPM = Kills[P.clientID] * 50 / Math.Max(newPlayTime, 1);
 
+            if (newPlayTime < 2)
+                return;
+ 
+            double newSPM = Kills[P.clientID] * 50 / newPlayTime;
             double kdrWeight = Math.Round(Math.Pow(disconnectStats.KDR, 2 / Math.E), 3);
             double Multiplier;
 
@@ -282,7 +255,7 @@ namespace SamplePlugin
         {
             if (!File.Exists(FileName))
             {
-                String Create = "CREATE TABLE [STATS] ( [npID] TEXT, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] TEXT DEFAULT 0, [SKILL] TEXT DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0, [SPM] TEXT DEFAULT 0, [PLAYTIME] INTEGER DEFAULT 0);";
+                String Create = "CREATE TABLE [STATS] ( [npID] TEXT, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0, [SPM] REAL DEFAULT 0, [PLAYTIME] INTEGER DEFAULT 0);";
                 ExecuteNonQuery(Create);
             }
         }
@@ -339,6 +312,31 @@ namespace SamplePlugin
             updatedPlayer.Add("PLAYTIME", S.playTime);
 
             Update("STATS", updatedPlayer, String.Format("npID = '{0}'", P.npID));
+        }
+
+        public List<KeyValuePair<String, PlayerStats>> topStats()
+        {
+            String Query = String.Format("SELECT * FROM STATS WHERE KDR < '{0}' AND KILLS > '{1}' AND PLAYTIME > '{2}' ORDER BY SKILL DESC LIMIT '{3}'", 10, 150, 60, 5);
+            DataTable Result = GetDataTable(Query);
+            List<KeyValuePair<String, PlayerStats>> pStats = new List<KeyValuePair<String, PlayerStats>>();
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow ResponseRow in Result.Rows)
+                {
+                    pStats.Add( new KeyValuePair<String, PlayerStats>(ResponseRow["npID"].ToString(), 
+                        new PlayerStats(
+                                        Convert.ToInt32(ResponseRow["KILLS"]),
+                                        Convert.ToInt32(ResponseRow["DEATHS"]),
+                                        Convert.ToDouble(ResponseRow["KDR"]),
+                                        Convert.ToDouble(ResponseRow["SKILL"]),
+                                        Convert.ToDouble(ResponseRow["SPM"]),
+                                        Convert.ToInt32(ResponseRow["PLAYTIME"])
+                                      )
+                          ));
+                }
+            }
+            return pStats;
         }
     }
 

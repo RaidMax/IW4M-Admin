@@ -88,9 +88,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SharedLibary">
-      <HintPath>..\SharedLibary\SharedLibary\bin\Debug\SharedLibary.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="SharedLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\SharedLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -132,7 +132,7 @@
     <Content Include="lib\AdminInterface.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="lib\SharedLibary.dll">
+    <Content Include="lib\SharedLibrary.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="lib\SQLite.Interop.dll">
@@ -307,7 +307,7 @@ del *.dll
 del app.config
 del *.manifest
 del *.log
-xcopy /E /Y "$(ProjectDir)bin\Release" "$(SolutionDir)Release Build"</PostBuildEvent>
+xcopy /Y /I /E "*" "$(SolutionDir)Release Build"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

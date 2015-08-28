@@ -125,27 +125,24 @@ namespace IW4MAdmin
                 if (pID == 0)
                     continue;
 
-                bool newProcess = true;
-                foreach (int I in activePIDs)
+                if (activePIDs.IndexOf(pID) == -1 && !ThreadList.ContainsKey(pID))
                 {
-                    if (I == pID)
-                        newProcess = false;
-                }
 
-                if (newProcess)
-                {
-                    if (!ThreadList.ContainsKey(pID))
+                    Server S = loadIndividualServer(pID);
+                    
+                    if (S == null)
                     {
-                        Server S = loadIndividualServer(pID);
-                        Servers.Add(S);
-                        Thread IW4MServerThread = new Thread(S.Monitor);
-                        ThreadList.Add(pID, IW4MServerThread);
-                        mainLog.Write("New server detected on port " + S.getPort(), Log.Level.Production);
-                        IW4MServerThread.Start();
+                        mainLog.Write("Unable to load new detected server!", Log.Level.Debug);
+                        continue;
                     }
+
+                    Servers.Add(S);
+                    Thread IW4MServerThread = new Thread(S.Monitor);
+                    ThreadList.Add(pID, IW4MServerThread);
+                    mainLog.Write("New server detected on port " + S.getPort(), Log.Level.Production);
+                    IW4MServerThread.Start();
                 }
             }
-
         }
 
         private bool isIW4MStillRunning(int pID)

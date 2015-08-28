@@ -344,8 +344,19 @@ namespace IW4MAdmin
             }
 
             List<IntPtr> baseAddresses = new List<IntPtr>();
+            System.Diagnostics.Process P;
 
-            System.Diagnostics.Process P = System.Diagnostics.Process.GetProcessById(pID);
+            try
+            {
+                P = System.Diagnostics.Process.GetProcessById(pID);
+            }
+
+            catch (System.ArgumentException)
+            {
+                Program.getManager().mainLog.Write("The server with PID " + pID + " was exited before deinit occured.", Log.Level.Debug);
+                return false;
+            }
+
             foreach (System.Diagnostics.ProcessModule M in P.Modules)
             {
                 if (M.ModuleName == "AdminInterface.dll" && M.BaseAddress != IntPtr.Zero)

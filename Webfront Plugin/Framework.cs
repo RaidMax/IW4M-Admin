@@ -347,17 +347,17 @@ namespace Webfront_Plugin
                         npIDs.Add(B.npID);
           
 
-                    Player[] bannedPlayers = S.clientDB.getPlayers(npIDs).ToArray();
+                    List<Player> bannedPlayers = S.clientDB.getPlayers(npIDs);
 
                     for (int i = 0; i < Bans.Count-1; i++)
                     {
                         if (Bans[i] == null)
                             continue;
 
-                        Player P = bannedPlayers[i];
+                        Player P = bannedPlayers.Where(x => x.npID == Bans[i].npID).First();
                         Player B;
 
-                        if (P.npID == Bans[i].bannedByID)
+                        if (P.npID == Bans[i].bannedByID || Bans[i].bannedByID == "")
                             B = new Player("IW4MAdmin", "", 0, SharedLibrary.Player.Permission.Banned, 0, "", 0, "");
 
                         else

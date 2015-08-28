@@ -84,8 +84,6 @@ namespace IW4MAdmin
                     NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
                 }
                 
-                // try not to crash if no stats!
-
                 if (P.lastEvent == null || P.lastEvent.Owner == null)
                     NewPlayer.lastEvent = new Event(Event.GType.Say, null, NewPlayer, null, this); // this is messy but its throwing an error when they've started it too late
                 else
@@ -299,7 +297,7 @@ namespace IW4MAdmin
             return null;
          }
 
-        //Procses requested command correlating to an event
+        //Process requested command correlating to an event
         override public Command processCommand(Event E, Command C)
         {
             E.Data = SharedLibrary.Utilities.removeWords(E.Data, 1);
@@ -392,7 +390,10 @@ namespace IW4MAdmin
                     Event curEvent = events.Peek();
 
                     if (curEvent == null)
+                    {
+                        events.Dequeue();
                         continue;
+                    }
 
                     processEvent(curEvent);
                     foreach (Plugin P in PluginImporter.potentialPlugins)
@@ -404,12 +405,11 @@ namespace IW4MAdmin
 
                         catch (Exception Except)
                         {
-                            Log.Write(String.Format("The plugin \"{0}\" (v{1}) generated an error. ( see log )", P.Name, P.Version), Log.Level.Production);
+                            Log.Write(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name), Log.Level.Production);
                             Log.Write(String.Format("Error Message: {0}", Except.Message), Log.Level.Debug);
                             Log.Write(String.Format("Error Trace: {0}", Except.StackTrace), Log.Level.Debug);
                             continue;
-                        }
-                        
+                        }   
                     }
                     events.Dequeue();
                 }
@@ -622,6 +622,10 @@ namespace IW4MAdmin
 
                 // our settings
                 setDvar("sv_kickbantime", "3600");      // 1 hour
+                Website = getDvar("_website").current;
+
+                if (Website == "0" || Website == null)
+                    Website = "this server's website";
     
                 int logSync = -1;
                 Int32.TryParse(getDvar("g_logSync").current, out oneLog);
@@ -910,7 +914,6 @@ namespace IW4MAdmin
             // Something like *COMMAND* | NAME | HELP MSG | ALIAS | NEEDED PERMISSION | # OF REQUIRED ARGS | HAS TARGET |
 
             commands = new List<Command>();
-
             owner = clientDB.getOwner();
 
             if(owner == null)

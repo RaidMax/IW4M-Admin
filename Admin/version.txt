@@ -1,6 +1,8 @@
 ﻿VERSION 0.9.5
 -Major refactoring to support plugins
 -*web front redux*
+-lots of little fixes and stability improvements
+-temporary removal of stats plugin as I perfect it
 
 VERSION 0.9.2
 CHANGELOG:

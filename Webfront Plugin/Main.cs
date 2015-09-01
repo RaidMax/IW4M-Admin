@@ -13,12 +13,12 @@ namespace Webfront_Plugin
             if (E.Type == Event.GType.Start)
             {
                 Manager.webFront.addServer(E.Owner);
-                E.Owner.Log.Write("Webfront now has access to server on port " + E.Owner.getPort(), Log.Level.Production);
+                E.Owner.Log.Write("Webfront now listening", Log.Level.Production);
             }
             if (E.Type == Event.GType.Stop)
             {
                 Manager.webFront.removeServer(E.Owner);
-                E.Owner.Log.Write("Webfront has lost access to server on port " + E.Owner.getPort(), Log.Level.Production);
+                E.Owner.Log.Write("Webfront has lost access to server", Log.Level.Production);
             }
         }
 

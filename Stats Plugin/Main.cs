@@ -13,8 +13,21 @@ namespace StatsPlugin
 
         public override void Execute(Event E)
         {
-            PlayerStats pStats = Stats.playerStats.getStats(E.Origin);
-            String statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
+            String statLine;
+            PlayerStats pStats;
+
+            if (E.Target != null)
+            {
+                pStats = Stats.playerStats.getStats(E.Target);
+                statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
+            }
+
+            else
+            {
+                pStats = Stats.playerStats.getStats(E.Origin);
+                statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
+            }
+
             E.Origin.Tell(statLine);
         }
     }

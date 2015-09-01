@@ -169,7 +169,6 @@ namespace Webfront_Plugin
                                                     <th class=server_map><span>{1}</span></th>
                                                     <th class=server_players><span>{2}</span></th>
                                                     <th class=server_gametype><span>{3}</span></th>
-                                                    <th><a href=/stats>Stats</a></th>
                                                     <th><a href=/bans>Bans</a></th>
                                                     <th><a class='history' href='/graph?server={4}'>History</a></th>
                                                  </tr>

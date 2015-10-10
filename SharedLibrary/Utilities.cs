@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define REPZ_BUILD
+using System;
 using System.Threading;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -45,8 +46,11 @@ namespace SharedLibrary
         public static Player.Permission matchPermission(String str)
         {
             String lookingFor = str.ToLower();
-
+#if REPZ_BUILD
+            for (Player.Permission Perm = Player.Permission.User; Perm <= Player.Permission.Owner; Perm++)
+#else
             for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Owner; Perm++)
+#endif
             {
                 if (lookingFor.Contains(Perm.ToString().ToLower()))
                     return Perm;
@@ -58,7 +62,7 @@ namespace SharedLibrary
         public static String removeNastyChars(String str)
         {
             if (str != null)
-                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "''").Replace("&amp;", "&").Replace("\"", "''");
+                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "").Replace("&amp;", "&").Replace("\"", "''").Replace("'", "");
             else
                 return String.Empty;
         }

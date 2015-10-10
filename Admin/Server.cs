@@ -574,7 +574,9 @@ namespace IW4MAdmin
 
         override public bool intializeBasics()
         {
+#if DEBUG == false
             try
+#endif
             {
                 // clear out any lingering instances
                 Utilities.shutdownInterface(PID);
@@ -587,8 +589,12 @@ namespace IW4MAdmin
                 }
 
                 // basic info dvars
-                hostname = SharedLibrary.Utilities.stripColors(getDvar("sv_hostname").current);
-                mapname = getDvar("mapname").current;
+                do
+                {
+                    hostname = SharedLibrary.Utilities.stripColors(getDvar("sv_hostname").current);
+                    mapname = getDvar("mapname").current;
+                } while (hostname == "0" || mapname == "0");
+
                 Map localizedMapName = maps.Find(x => x.Name.Equals(mapname));
 
                 if (localizedMapName != null)
@@ -608,11 +614,25 @@ namespace IW4MAdmin
                 Gametype = getDvar("g_gametype").current;
 
                 // important log variables
-                Basepath = getDvar("fs_basepath").current;
-                Mod = getDvar("fs_game").current;
-                logPath = getDvar("g_log").current;
+                do
+                {
+                    Basepath = getDvar("fs_basepath").current;
+                    Mod = getDvar("fs_game").current;
+                    logPath = getDvar("g_log").current;
+                } while (Basepath == "0" || Mod == "0" || logPath == "0");
                 int oneLog = -1;
-                Int32.TryParse(getDvar("iw4m_onelog").current, out oneLog);
+                logPath = logPath.Replace("/", "\\");
+                Mod = Mod.Replace("/", "\\");
+
+                int count = 0;
+
+                while(count < 15)
+                {
+                    Int32.TryParse(getDvar("iw4m_onelog").current, out oneLog);
+                    if (oneLog == 1)
+                        break;
+                    count++;
+                }
 
                 if (oneLog == -1)
                 {
@@ -626,7 +646,7 @@ namespace IW4MAdmin
 
                 if (Website == "0" || Website == null)
                     Website = "this server's website";
-    
+
                 int logSync = -1;
                 Int32.TryParse(getDvar("g_logSync").current, out oneLog);
 
@@ -657,12 +677,13 @@ namespace IW4MAdmin
                 Bans = clientDB.getBans();
                 return true;
             }
-
+#if DEBUG == false
             catch (Exception E)
             {
                 Log.Write("Error during initialization - " + E.Message + "--" + E.StackTrace, Log.Level.All);
                 return false;
             }
+#endif
         }
 
         //Process any server event

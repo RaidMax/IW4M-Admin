@@ -292,6 +292,7 @@ namespace SharedLibrary
         //Returns a list of players matching name parameter, null if no players found matching
         public List<Player> findPlayers(String name)
         {
+            name = name.Replace("'", "''");
             String Query = String.Format("SELECT * FROM CLIENTS WHERE Name LIKE '%{0}%' LIMIT 32", name);
             DataTable Result = GetDataTable(Query);
 

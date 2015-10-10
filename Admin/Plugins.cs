@@ -10,6 +10,7 @@ namespace IW4MAdmin
     {
         public static List<Command> potentialCommands = new List<Command>();
         public static List<Plugin> potentialPlugins = new List<Plugin>();
+        public static Plugin webFront = null;
 
         public static bool Load()
         {
@@ -50,23 +51,26 @@ namespace IW4MAdmin
                         {
                             Object notifyObject = Activator.CreateInstance(assemblyType);
                             Plugin newNotify = (Plugin)notifyObject;
-                            potentialPlugins.Add(newNotify);
-
-                            try
+                            if (potentialPlugins.Find(x => x.Name == newNotify.Name) == null)
                             {
-                                newNotify.onLoad();
-                            }
+                                potentialPlugins.Add(newNotify);
 
-                            catch (Exception E)
-                            {
-                                Program.getManager().mainLog.Write("There was an error starting \"" + newNotify.Name + "\" plugin", Log.Level.Debug);
-                                Program.getManager().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
-                                Program.getManager().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
-                                continue;
+                                try
+                                {
+                                    newNotify.onLoad();
+                                }
+
+                                catch (Exception E)
+                                {
+                                    Program.getManager().mainLog.Write("There was an error starting \"" + newNotify.Name + "\" plugin", Log.Level.Debug);
+                                    Program.getManager().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
+                                    Program.getManager().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
+                                    continue;
+                                }
+
+                                Program.getManager().mainLog.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
+                                totalLoaded++;
                             }
-                            
-                            Program.getManager().mainLog.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
-                            totalLoaded++;
                         }
 
                         else if (assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
@@ -91,7 +95,10 @@ namespace IW4MAdmin
             {
                 try
                 {
-                    P.onUnload();
+                    if (P.Name != "Webfront")
+                        P.onUnload();
+                    else
+                        webFront = P;
                 }
 
                 catch (Exception E)
@@ -105,6 +112,8 @@ namespace IW4MAdmin
 
             potentialCommands = new List<Command>();
             potentialPlugins = new List<Plugin>();
+            if (webFront != null)
+                potentialPlugins.Add(webFront);
 
         }
     }

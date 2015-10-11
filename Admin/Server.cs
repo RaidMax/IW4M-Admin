@@ -634,6 +634,8 @@ namespace IW4MAdmin
                     count++;
                 }
 
+                count = 0;
+
                 if (oneLog == -1)
                 {
                     Log.Write("Could not get iw4m_onelog value", Log.Level.Debug);
@@ -648,7 +650,15 @@ namespace IW4MAdmin
                     Website = "this server's website";
 
                 int logSync = -1;
-                Int32.TryParse(getDvar("g_logSync").current, out oneLog);
+                while (count < 15)
+                {
+                    Int32.TryParse(getDvar("g_logSync").current, out logSync);
+                    if (logSync == 1)
+                        break;
+                    count++;
+                }
+
+                count = 0;
 
                 if (logSync == 0)
                 {

@@ -624,17 +624,8 @@ namespace IW4MAdmin
                 logPath = logPath.Replace("/", "\\");
                 Mod = Mod.Replace("/", "\\");
 
-                int count = 0;
-
-                while(count < 15)
-                {
-                    Int32.TryParse(getDvar("iw4m_onelog").current, out oneLog);
-                    if (oneLog == 1)
-                        break;
-                    count++;
-                }
-
-                count = 0;
+                Thread.Sleep(100);
+               Int32.TryParse(getDvar("iw4m_onelog").current, out oneLog);
 
                 if (oneLog == -1)
                 {
@@ -650,15 +641,9 @@ namespace IW4MAdmin
                     Website = "this server's website";
 
                 int logSync = -1;
-                while (count < 15)
-                {
-                    Int32.TryParse(getDvar("g_logSync").current, out logSync);
-                    if (logSync == 1)
-                        break;
-                    count++;
-                }
 
-                count = 0;
+                Thread.Sleep(100);
+                Int32.TryParse(getDvar("g_logSync").current, out logSync);
 
                 if (logSync == 0)
                 {

@@ -1,8 +1,4 @@
-﻿VERSION 0.9.6
-CHANGELOG:
--fixed issue with log path sometimes not reading properly
--webfront no long crashes on reload
--
+﻿opllllllllll
 
 VERSION 0.9.5
 -Major refactoring to support plugins

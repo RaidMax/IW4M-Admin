@@ -144,28 +144,31 @@ namespace IW4MAdmin
             dvar_actual.name = getStringFromPointer((int)dvar_raw.name, (int)Handle);
             dvar_actual.description = getStringFromPointer((int)dvar_raw.description, (int)Handle);
 
-            if ((int)dvar_raw._default > short.MaxValue)
+            if (dvar_raw.type == 7)
+            {
                 dvar_actual._default = getStringFromPointer((int)dvar_raw._default, (int)Handle);
-            else
-                dvar_actual._default = dvar_raw._default.ToString();
-
-            if ((int)dvar_raw.current > short.MaxValue)
                 dvar_actual.current = getStringFromPointer((int)dvar_raw.current, (int)Handle);
-            else if ((int)dvar_raw.current <= 1025)
-                dvar_actual.current = ((int)dvar_raw.current % 1024).ToString();
-            else
-                dvar_actual.current = dvar_raw.current.ToString();
-
-            if ((int)dvar_raw.latched > short.MaxValue)
                 dvar_actual.latched = getStringFromPointer((int)dvar_raw.latched, (int)Handle);
+            }
+
+            else if (dvar_raw.type == 0)
+            {
+                dvar_actual._default = ((byte)dvar_raw._default).ToString();
+                dvar_actual.current = ((byte)dvar_raw.current).ToString();
+                dvar_actual.latched = ((byte)dvar_raw.latched).ToString();
+            }
+
             else
+            {
+                dvar_actual.current = dvar_raw.current.ToString();
+                dvar_actual._default = dvar_raw._default.ToString();
                 dvar_actual.latched = dvar_raw.latched.ToString();
+            }
 
             dvar_actual.type = dvar_raw.type;
             dvar_actual.flags = getIntFromPointer((int)dvar_raw.flags, (int)Handle);
             dvar_actual.max = getIntFromPointer((int)dvar_raw.max, (int)Handle);
             dvar_actual.min = getIntFromPointer((int)dvar_raw.min, (int)Handle);
-
             // done!
 
             return dvar_actual;

@@ -72,7 +72,7 @@ namespace IW4MAdmin
         public uint flags;
 
         [FieldOffset(12)]
-        public short type;
+        public Byte type;
 
         [FieldOffset(16)]
         public IntPtr current;
@@ -83,7 +83,7 @@ namespace IW4MAdmin
         [FieldOffset(48)]
         public IntPtr _default;
 
-        [FieldOffset(65)]
+        [FieldOffset(64)]
         public IntPtr min;
 
         [FieldOffset(68)]

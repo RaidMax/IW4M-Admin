@@ -91,12 +91,13 @@ namespace StatsPlugin
             if (E.Type == Event.GType.Disconnect)
             {
                 calculateAndSaveSkill(E.Origin);
+                resetCounters(E.Origin.clientID);
                 E.Owner.Log.Write("Updated skill for disconnecting client #" + E.Origin.databaseID, Log.Level.Debug);
             }
 
             if (E.Type == Event.GType.Kill)
             {
-                if (E.Origin == E.Target)
+                if (E.Origin == E.Target || E.Origin == null)
                     return;
 
                 Player Killer = E.Origin;
@@ -106,10 +107,8 @@ namespace StatsPlugin
                 Kills[E.Origin.clientID]++;
 
                 if ((lastKill[E.Origin.clientID] - DateTime.Now).TotalSeconds > 60)
-                {
                     inactiveMinutes[E.Origin.clientID]++;
-                }
-
+ 
                 killerStats.Kills++;
 
                 if (killerStats.Deaths == 0)
@@ -119,14 +118,17 @@ namespace StatsPlugin
 
                 playerStats.updateStats(Killer, killerStats);
 
-                killStreaks[E.Origin.clientID]++;
-                deathStreaks[E.Origin.clientID] = 0;
+                killStreaks[Killer.clientID] += 1;
+                deathStreaks[Killer.clientID] = 0;
 
-                Killer.Tell(messageOnStreak(killStreaks[E.Origin.clientID], deathStreaks[E.Origin.clientID]));
+                Killer.Tell(messageOnStreak(killStreaks[Killer.clientID], deathStreaks[Killer.clientID]));
             }
 
             if (E.Type == Event.GType.Death)
             {
+                if (E.Origin == E.Target || E.Origin == null)
+                    return;
+
                 Player Victim = E.Origin;
                 PlayerStats victimStats = playerStats.getStats(Victim);
 
@@ -135,10 +137,10 @@ namespace StatsPlugin
 
                 playerStats.updateStats(Victim, victimStats);
 
-                deathStreaks[E.Origin.clientID]++;
-                killStreaks[E.Origin.clientID] = 0;
+                deathStreaks[Victim.clientID] += 1;
+                killStreaks[Victim.clientID] = 0;
 
-                Victim.Tell(messageOnStreak(killStreaks[E.Origin.clientID], deathStreaks[E.Origin.clientID]));
+                Victim.Tell(messageOnStreak(killStreaks[Victim.clientID], deathStreaks[Victim.clientID]));
             }
         }
 
@@ -247,7 +249,7 @@ namespace StatsPlugin
         {
             get
             {
-                return 0.2f;
+                return 0.3f;
             }
         }
 

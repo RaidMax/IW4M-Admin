@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stats Plugin", "Stats Plugi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{D51EECEB-438A-47DA-870F-7D7B41BC24D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Welcome Plugin", "Welcome Plugin\Welcome Plugin.csproj", "{AF097E6B-48D5-4452-9CCF-0A81A21F341D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{D51EECEB-438A-47DA-870F-7D7B41BC24D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D51EECEB-438A-47DA-870F-7D7B41BC24D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D51EECEB-438A-47DA-870F-7D7B41BC24D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF097E6B-48D5-4452-9CCF-0A81A21F341D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF097E6B-48D5-4452-9CCF-0A81A21F341D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF097E6B-48D5-4452-9CCF-0A81A21F341D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF097E6B-48D5-4452-9CCF-0A81A21F341D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,6 +1,12 @@
-﻿opllllllllll
+﻿VERSION 1.0
+CHANGELOG:
+-first official stable release
+-fixed last known error (due to web front passing invalid sql syntax)
+-re-added stats. though still not working 100%
+-added welcome plugin
 
 VERSION 0.9.5
+CHANGELOG:
 -Major refactoring to support plugins
 -*web front redux*
 -lots of little fixes and stability improvements

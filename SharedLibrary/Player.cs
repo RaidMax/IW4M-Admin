@@ -128,14 +128,14 @@ namespace SharedLibrary
             lastEvent.Owner.Tell(Message, this);
         }
 
-        public void Kick(String Message)
+        public void Kick(String Message, Player Sender)
         {
-            lastEvent.Owner.Kick(Message, this);
+            lastEvent.Owner.Kick(Message, this, Sender);
         }
 
-        public void tempBan(String Message)
+        public void tempBan(String Message, Player Sender)
         {
-            lastEvent.Owner.tempBan(Message, this);
+            lastEvent.Owner.tempBan(Message, this, Sender);
         }
 
         public void Ban(String Message, Player Sender)

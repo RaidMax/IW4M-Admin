@@ -38,7 +38,7 @@ namespace IW4MAdmin
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", E.Target.Warnings, E.Target.Name, E.Target.lastOffense);
                 E.Owner.Broadcast(Message);
                 if (E.Target.Warnings >= 4)
-                    E.Target.Kick("You were kicked for too many warnings!");
+                    E.Target.Kick("You were kicked for too many warnings!", E.Origin);
             }       
         }
     }
@@ -65,7 +65,7 @@ namespace IW4MAdmin
             E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
             String Message = "^1Player Kicked: ^5" + E.Target.lastOffense + "                    ^1Admin: ^5" + E.Origin.Name;
             if (E.Origin.Level > E.Target.Level)
-                E.Target.Kick(Message);
+                E.Target.Kick(Message, E.Origin);
             else
                 E.Origin.Tell("You cannot kick " + E.Target.Name);            
         }
@@ -90,7 +90,7 @@ namespace IW4MAdmin
             E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
             String Message = "^1Player Temporarily Banned: ^5" + E.Target.lastOffense + "^7 (1 hour)";
             if (E.Origin.Level > E.Target.Level)
-                E.Target.tempBan(Message);
+                E.Target.tempBan(Message, E.Origin);
             else
                 E.Origin.Tell("You cannot temp ban " + E.Target.Name);
         }
@@ -596,7 +596,7 @@ namespace IW4MAdmin
                 return;
             }
 
-            Ban B = E.Owner.Bans.Find(b => b.npID.Equals(E.Target.npID));
+            Penalty B = E.Owner.Bans.Find(b => b.npID.Equals(E.Target.npID));
             
             if (B == null)
             {

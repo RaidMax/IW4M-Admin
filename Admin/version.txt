@@ -1,4 +1,12 @@
-﻿VERSION 1.0
+﻿VERSION 1.1
+CHANGELOG:
+-fixed ban sorting ( and an overlooked bug )
+-added kicks and temp-bans to penalty list
+-bans are now named penalties
+-readded pubbans page http://127.0.0.1:1624/pubbans
+-updated RepZ profile link
+
+VERSION 1.0
 CHANGELOG:
 -first official stable release
 -fixed last known error (due to web front passing invalid sql syntax)
@@ -30,7 +38,7 @@ CHANGELOG:
 -webfront now displays player info and link to repz account
 -webfront shows ips for authed admin ( determined by ip )
 -webfront now show chat and allows authed players to send ingame messages
--webfront now has public ban list http://127.0.0.1/?pubbans
+-webfront now has public ban list http://127.0.0.1:1624/pubbans
 -webfront now shows player history
 -fixed time span issue in webfront
 -fixed most recent ban always missing

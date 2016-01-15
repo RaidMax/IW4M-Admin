@@ -5,15 +5,16 @@ using System.Text;
 
 namespace SharedLibrary
 {
-    public class Ban
+    public class Penalty
     {
-        public Ban(String Reas, String TargID, String From, DateTime time, String ip)
+        public Penalty(Type BType, String Reas, String TargID, String From, DateTime time, String ip)
         {
             Reason = Reas;
             npID = TargID;
             bannedByID = From;
             When = time;
             IP = ip;
+            this.BType = BType;
         }
 
         public String getWhen()
@@ -21,10 +22,18 @@ namespace SharedLibrary
             return When.ToString("MM/dd/yy HH:mm:ss"); ;
         }
 
+        public enum Type
+        {
+            Kick,
+            TempBan,
+            Ban
+        }
+
         public String Reason { get; private set; }
         public String npID { get; private set; }
         public String bannedByID { get; private set; }
         public DateTime When { get; private set; }
         public String IP { get; private set; }
+        public Type BType { get; private set; }
     }
 }

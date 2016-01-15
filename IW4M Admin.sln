@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4M ADMIN", "Admin\IW4M ADMIN.csproj", "{DD5DCDA2-51DB-4B1A-922F-5705546E6115}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -23,6 +23,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{D51EECEB-438A-47DA-870F-7D7B41BC24D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Welcome Plugin", "Welcome Plugin\Welcome Plugin.csproj", "{AF097E6B-48D5-4452-9CCF-0A81A21F341D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D51EECEB-438A-47DA-870F-7D7B41BC24D6} = {D51EECEB-438A-47DA-870F-7D7B41BC24D6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -121,7 +121,7 @@ namespace IW4MAdmin
                     else
                         Message = "Player Kicked: Previous Ban";
 
-                    NewPlayer.Kick(Message);
+                    NewPlayer.Kick(Message, NewPlayer);
 
                     if (players[NewPlayer.clientID] != null)
                     {
@@ -144,9 +144,9 @@ namespace IW4MAdmin
                     if (aP.Level == Player.Permission.Flagged)
                         NewPlayer.setLevel(Player.Permission.Flagged);
 
-                    Ban B = isBanned(aP);
+                    Penalty B = isBanned(aP);
 
-                    if (B != null)
+                    if (B != null && B.BType == Penalty.Type.Ban)
                     {
                         Log.Write(String.Format("Banned client {0} is connecting with new alias {1}", aP.Name, NewPlayer.Name), Log.Level.Debug);
                         NewPlayer.lastOffense = String.Format("Evading ( {0} )", aP.Name);
@@ -270,13 +270,13 @@ namespace IW4MAdmin
         }
 
         //Check ban list for every banned player and return ban if match is found 
-         override public Ban isBanned(Player C)
+         override public Penalty isBanned(Player C)
          {
             
                  if (C.Level == Player.Permission.Banned)
                     return Bans.Find(p => p.npID.Equals(C.npID));
 
-                 foreach (Ban B in Bans)
+                 foreach (Penalty B in Bans)
                  {
                      if (B.npID.Length < 5 || B.IP.Length < 5)
                          continue;
@@ -838,6 +838,29 @@ namespace IW4MAdmin
             return false;
         }
 
+        public override void Kick(string Reason, Player Target, Player Origin)
+        {
+            if (Target.clientID > -1)
+            {
+                Penalty newPenalty = new Penalty(Penalty.Type.Kick, SharedLibrary.Utilities.stripColors(Reason.Split(':')[1]), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                clientDB.addBan(newPenalty);
+                foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+                    S.Bans = S.clientDB.getBans();
+                executeCommand("clientkick " + Target.clientID + " \"" + Reason + "^7\"");
+            }
+        }
+
+        public override void tempBan(string Reason, Player Target, Player Origin)
+        {
+            if (Target.clientID > -1)
+            {
+                executeCommand("tempbanclient " + Target.clientID + " \"" + Reason + "\"");
+                Penalty newPenalty = new Penalty(Penalty.Type.TempBan, SharedLibrary.Utilities.stripColors(Reason.Split(':')[1]), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+                    S.Bans = S.clientDB.getBans();
+                clientDB.addBan(newPenalty);
+            }
+        }
         override public void Ban(String Message, Player Target, Player Origin)
         {
             if (Target.clientID > -1)
@@ -846,7 +869,7 @@ namespace IW4MAdmin
             if (Origin != null)
             {
                 Target.setLevel(Player.Permission.Banned);
-                Ban newBan = new Ban(Target.lastOffense, Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.npID, Origin.npID, DateTime.Now, Target.IP);
 
                 clientDB.addBan(newBan);
                 clientDB.updatePlayer(Target);
@@ -874,7 +897,7 @@ namespace IW4MAdmin
 
         override public bool Unban(String GUID, Player Target)
         {
-            foreach (Ban B in Bans)
+            foreach (Penalty B in Bans)
             {
                 if (B.npID == Target.npID)
                 {

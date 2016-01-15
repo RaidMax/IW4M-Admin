@@ -183,6 +183,21 @@ namespace SharedLibrary
             }
         }
 
+        public static String penaltyHTMLFormatted(Penalty.Type BType)
+        {
+            switch(BType)
+            {
+                case Penalty.Type.Ban:
+                    return "<span style='color:Red'>" + BType.ToString() + "</span>";
+                case Penalty.Type.TempBan:
+                    return "<span style='color:Orange'>" + BType.ToString() + "</span>";
+                case Penalty.Type.Kick:
+                    return "<span style='color:#ffff80'>" + BType.ToString() + "</span>";
+                default:
+                    return "";
+            }
+        }
+
         public static String processMacro(Dictionary<String, Object> Dict, String str)
         {
             MatchCollection Found = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);

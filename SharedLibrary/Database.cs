@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Data.SQLite;
 using System.Data;
 using System.IO;
-using System.Collections;
 
 namespace SharedLibrary
 {
@@ -157,7 +155,7 @@ namespace SharedLibrary
             {
                 String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL);";
                 ExecuteNonQuery(Create);
-                Create = "CREATE TABLE [BANS] ( [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
+                Create = "CREATE TABLE [BANS] ( [TYPE] TEXT NULL, [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
                 ExecuteNonQuery(Create);
             }
         }
@@ -340,9 +338,9 @@ namespace SharedLibrary
         }
 
         //Returns list of bans in database
-        public List<Ban> getBans()
+        public List<Penalty> getBans()
         {
-            List<Ban> Bans = new List<Ban>();
+            List<Penalty> Bans = new List<Penalty>();
             DataTable Result = GetDataTable("SELECT * FROM BANS ORDER BY TIME DESC");
 
             foreach (DataRow Row in Result.Rows)
@@ -350,7 +348,12 @@ namespace SharedLibrary
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
 
-                Bans.Add(new Ban(Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+                SharedLibrary.Penalty.Type BanType = Penalty.Type.Ban;
+                if (Row["TYPE"].ToString().Length != 0)
+                    BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
+
+                Bans.Add(new Penalty(BanType, Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+          
             }
 
             return Bans;
@@ -413,7 +416,7 @@ namespace SharedLibrary
 
 
         //Add specified ban to database
-        public void addBan(Ban B)
+        public void addBan(Penalty B)
         {
             Dictionary<String, object> newBan = new Dictionary<String, object>();
 
@@ -422,6 +425,7 @@ namespace SharedLibrary
             newBan.Add("bannedByID", B.bannedByID);
             newBan.Add("IP", B.IP);
             newBan.Add("TIME", Utilities.DateTimeSQLite(DateTime.Now));
+            newBan.Add("TYPE", B.BType);
 
             Insert("BANS", newBan);
         }

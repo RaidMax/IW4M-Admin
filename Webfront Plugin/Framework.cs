@@ -169,7 +169,7 @@ namespace Webfront_Plugin
                                                     <th class=server_map><span>{1}</span></th>
                                                     <th class=server_players><span>{2}</span></th>
                                                     <th class=server_gametype><span>{3}</span></th>
-                                                    <th><a href=/bans>Bans</a></th>
+                                                    <th><a href=/bans>Penalties</a></th>
                                                     <th><a class='history' href='/graph?server={4}'>History</a></th>
                                                  </tr>
                                              </table>
@@ -296,7 +296,7 @@ namespace Webfront_Plugin
                         //if (logged)
                         Screenshot = String.Format("<a href='http://server.nbsclan.org/screen.php?id={0}&name={1}' target='_blank'><div style='background-image:url(http://server.nbsclan.org/shutter.png); width: 20px; height: 20px;float: right; position:relative; right: 21%; background-size: contain;'></div></a>", forumID, Player.Name);
 
-                        buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, Names, IPs, 0, SharedLibrary.Utilities.levelHTMLFormatted(Player.Level), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/player?id=" + Player.databaseID, Screenshot);
+                        buffer.AppendFormat("<td><a style='float: left;' href='{9}'>{0}</a>{10}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6} ago</td><td><a href='https://repziw4.de/forum/memberlist.php?mode=viewprofile&u={7}'>{8}</a></td>", Player.Name, Names, IPs, 0, SharedLibrary.Utilities.levelHTMLFormatted(Player.Level), Player.Connections, Player.getLastConnection(), forumID, Player.Name, "/player?id=" + Player.databaseID, Screenshot);
                         buffer.Append("</tr>");
                     }
 
@@ -319,36 +319,36 @@ namespace Webfront_Plugin
                 int cycleFix = 0;
 
                 if (totalBans <= limitPerPage)
-                    range = totalBans - 1;
+                    range = totalBans;
                 else if ((totalBans - start) < limitPerPage)
                     range = (totalBans - start);
                 else
                     range = limitPerPage;
 
-                List<Ban> Bans = new List<Ban>();
+                List<Penalty> Bans = new List<Penalty>();
 
                 if (totalBans > 0)
-                    Bans = S.Bans.GetRange(start, range).OrderByDescending(x => x.When).ToList();
+                    Bans = S.Bans.OrderByDescending(x => x.When).ToList().GetRange(start, range);
 
                 if (Bans.Count == 0)
                     buffer.Append("<span style='font-size: 16pt;'>No bans yet.</span>");
 
                 else
                 {
-                    buffer.Append("<h1 style=margin-top: 0;>{{TIME}}</h1><hr /><tr><th>Name</th><th style=text-align:left;>Offense</th><th style=text-align:left;>Banned By</th><th style='width: 175px; text-align:right;padding-right: 80px;'>Time</th></tr>");
+                    buffer.Append("<h1 style=margin-top: 0;>{{TIME}}</h1><hr /><tr><th>Name</th><th>Type</th><th style=text-align:left;>Offense</th><th style=text-align:left;>Penalty By</th><th style='width: 175px; text-align:right;padding-right: 80px;'>Time</th></tr>");
 
                     if (Bans[0] != null)
                         buffer = buffer.Replace("{{TIME}}", "From " + SharedLibrary.Utilities.timePassed(Bans[0].When) + " ago" + " &mdash; " + totalBans + " total");
 
                     List<String> npIDs = new List<string>();
 
-                    foreach (Ban B in Bans)
+                    foreach (Penalty B in Bans)
                         npIDs.Add(B.npID);
           
 
                     List<Player> bannedPlayers = S.clientDB.getPlayers(npIDs);
 
-                    for (int i = 0; i < Bans.Count-1; i++)
+                    for (int i = 0; i < Bans.Count; i++)
                     {
                         if (Bans[i] == null)
                             continue;
@@ -380,7 +380,7 @@ namespace Webfront_Plugin
                                 Prefix = "class=row-white";
 
                             String Link = "/player?id=" + P.databaseID;
-                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></th><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.Name, P.lastOffense, SharedLibrary.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link);
+                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></td><td style='width: 150px; border-left: 3px solid #bbb; text-align:left;'>{6}</td><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.Name, P.lastOffense.Substring(0, Math.Min(70, P.lastOffense.Length)), SharedLibrary.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link, Utilities.penaltyHTMLFormatted(Bans[i].BType));
                             cycleFix++;
                         }
                     }
@@ -416,7 +416,21 @@ namespace Webfront_Plugin
                 return Input.Replace(Macro, "IW4MAdmin by RaidMax");
 
             if (Looking == "VERSION")
-                return Input.Replace(Macro, "0.9.5");
+                return Input.Replace(Macro, "1.1");
+
+            if (Looking == "PUBBANS" || Looking == "PUBBANSR")
+            {
+                String pubBans = "=========================================\r\nIW4MAdmin Public Banlist\r\n=========================================\r\n";
+                foreach (Penalty P in activeServers[0].Bans.OrderByDescending(x => x.When).ToList())
+                {
+                    if (P.BType == Penalty.Type.Ban)
+                        pubBans += String.Format("{0};{1};{2};{3}\r\n",P.npID, P.IP, P.Reason.Trim(), P.When);
+                    if (Looking == "PUBBANSR")
+                        pubBans += "<br/>";
+                }
+
+                return Input.Replace(Macro, pubBans);
+            }
 
             return "PLACEHOLDER";
         
@@ -451,6 +465,10 @@ namespace Webfront_Plugin
                     case "error":
                         requestedPage = new error();
                         break;
+                    case "pubbans":
+                        return processTemplate("{{PUBBANS}}", null);
+                    case "pubbansr":
+                        return processTemplate("{{PUBBANSR}}", null);
                     default:
                         requestedPage = new notfound();
                         break;

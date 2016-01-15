@@ -23,7 +23,7 @@ namespace SharedLibrary
             clientDB = new ClientsDB("clients.rm");
             aliasDB = new AliasesDB("aliases.rm");
 
-            Bans = new List<Ban>();
+            Bans = new List<Penalty>();
             players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
             Macros = new Dictionary<String, Object>();
@@ -97,7 +97,7 @@ namespace SharedLibrary
         }
 
         //Returns list of all active bans (loaded at runtime)
-        public List<Ban> getBans()
+        public List<Penalty> getBans()
         {
             return Bans;
         }
@@ -169,7 +169,7 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="C">Player to check if banned</param>
         /// <returns>Matching ban if found</returns>
-        abstract public Ban isBanned(Player C);
+        abstract public Penalty isBanned(Player C);
 
         /// <summary>
         /// Process requested command correlating to an event
@@ -286,21 +286,14 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="Reason">Reason for kicking</param>
         /// <param name="Target">Player to kick</param>
-        public void Kick(String Reason, Player Target)
-        {
-            if (Target.clientID > -1)
-                executeCommand("clientkick " + Target.clientID + " \"" + Reason + "^7\"");
-        }
+        abstract public void Kick(String Reason, Player Target, Player Origin);
 
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server
         /// </summary>
         /// <param name="Reason">Reason for banning the player</param>
         /// <param name="Target">The player to ban</param>
-        public void tempBan(String Reason, Player Target)
-        {
-            executeCommand("tempbanclient " + Target.clientID + " \"" + Reason + "\"");
-        }
+        abstract public void tempBan(String Reason, Player Target, Player Origin);
 
         /// <summary>
         /// Perm ban a player from the server
@@ -472,7 +465,7 @@ namespace SharedLibrary
 
         //Objects
         public Log Log { get; private set; }
-        public List<Ban> Bans;
+        public List<Penalty> Bans;
         public Player owner;
         public List<Map> maps;
         public List<String> rules;

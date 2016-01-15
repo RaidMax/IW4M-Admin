@@ -15,7 +15,7 @@ namespace IW4MAdmin
 
         static void Main(string[] args)
         {
-            Version = 1.0;
+            Version = 1.1;
             double latestVersion = 0;
             handler = new ConsoleEventDelegate(OnProcessExit);
             SetConsoleCtrlHandler(handler, true);

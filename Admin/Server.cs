@@ -838,7 +838,7 @@ namespace IW4MAdmin
             return false;
         }
 
-        public override void Warn(string Reason, Player Target, Player Origin)
+        public override void Warn(String Reason, Player Target, Player Origin)
         {
             Penalty newPenalty = new Penalty(Penalty.Type.Warning, SharedLibrary.Utilities.stripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
             clientDB.addBan(newPenalty);
@@ -851,12 +851,12 @@ namespace IW4MAdmin
                 Target.Kick("You were kicked for too many warnings!", Origin);
         }
 
-        public override void Kick(string Reason, Player Target, Player Origin)
+        public override void Kick(String Reason, Player Target, Player Origin)
         {
             if (Target.clientID > -1)
             {
                 String Message = "^1Player Kicked: ^5" + Reason + "                    ^1Admin: ^5" + Origin.Name;
-                Penalty newPenalty = new Penalty(Penalty.Type.Kick, SharedLibrary.Utilities.stripColors(Reason.Split(':')[1]), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Penalty newPenalty = new Penalty(Penalty.Type.Kick, SharedLibrary.Utilities.stripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
                 clientDB.addBan(newPenalty);
                 foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
                     S.Bans = S.clientDB.getBans();
@@ -864,7 +864,7 @@ namespace IW4MAdmin
             }
         }
 
-        public override void tempBan(string Reason, Player Target, Player Origin)
+        public override void tempBan(String Reason, Player Target, Player Origin)
         {
             if (Target.clientID > -1)
             {

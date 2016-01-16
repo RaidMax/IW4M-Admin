@@ -380,7 +380,7 @@ namespace Webfront_Plugin
                                 Prefix = "class=row-white";
 
                             String Link = "/player?id=" + P.databaseID;
-                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></td><td style='width: 150px; border-left: 3px solid #bbb; text-align:left;'>{6}</td><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.Name, P.lastOffense.Substring(0, Math.Min(70, P.lastOffense.Length)), SharedLibrary.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link, Utilities.penaltyHTMLFormatted(Bans[i].BType));
+                            buffer.AppendFormat("<tr {4}><td><a href='{5}'>{0}</a></td><td style='width: 150px; border-left: 3px solid #bbb; text-align:left;'>{6}</td><td style='border-left: 3px solid #bbb; text-align:left;'>{1}</td><td style='border-left: 3px solid #bbb;text-align:left;'>{2}</td><td style='width: 175px; text-align:right;'>{3}</td></tr></div>", P.Name, Bans[i].Reason.Substring(0, Math.Min(70, Bans[i].Reason.Length)), SharedLibrary.Utilities.nameHTMLFormatted(B), Bans[i].getWhen(), Prefix, Link, Utilities.penaltyHTMLFormatted(Bans[i].BType));
                             cycleFix++;
                         }
                     }

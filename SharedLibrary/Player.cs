@@ -26,12 +26,13 @@ namespace SharedLibrary
             Banned = -1,
             User = 0,
             Flagged = 1,
-            Moderator = 2,
-            Administrator = 3,
-            SeniorAdmin = 4,
-            Owner = 5,
-            Creator = 6,
-            Console = 7,
+            Trusted = 2,
+            Moderator = 3,
+            Administrator = 4,
+            SeniorAdmin = 5,
+            Owner = 6,
+            Creator = 7,
+            Console = 8,
         }
 
         public Player(string n, string id, int num, int l)
@@ -136,6 +137,11 @@ namespace SharedLibrary
         public void tempBan(String Message, Player Sender)
         {
             lastEvent.Owner.tempBan(Message, this, Sender);
+        }
+
+        public void Warn(String Message, Player Sender)
+        {
+            lastEvent.Owner.Warn(Message, this, Sender);
         }
 
         public void Ban(String Message, Player Sender)

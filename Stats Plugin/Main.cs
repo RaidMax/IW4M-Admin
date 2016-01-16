@@ -70,6 +70,15 @@ namespace StatsPlugin
             if (E.Type == Event.GType.Connect)
             {
                 resetCounters(E.Origin.clientID);
+
+                PlayerStats checkForTrusted = playerStats.getStats(E.Origin);
+                if (checkForTrusted.playTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
+                {
+                    E.Origin.setLevel(Player.Permission.Trusted);
+                    E.Owner.clientDB.updatePlayer(E.Origin);
+                    E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands.");
+                    E.Origin.Tell("You earned this by playing for ^53 ^7full days!");
+                }
             }
 
             if (E.Type == Event.GType.MapEnd)

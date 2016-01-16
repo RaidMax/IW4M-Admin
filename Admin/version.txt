@@ -1,10 +1,12 @@
 ﻿VERSION 1.1
 CHANGELOG:
 -fixed ban sorting ( and an overlooked bug )
--added kicks and temp-bans to penalty list
+-added kicks, warnings and temp-bans to penalty list
 -bans are now named penalties
 -readded pubbans page http://127.0.0.1:1624/pubbans
 -updated RepZ profile link
+-added trusted group ( will need a new database or manual update )
+-reports capture screenshot
 
 VERSION 1.0
 CHANGELOG:

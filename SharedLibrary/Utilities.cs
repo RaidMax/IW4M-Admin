@@ -118,13 +118,15 @@ namespace SharedLibrary
                 case Player.Permission.Banned:
                     return "^1" + Player.Permission.Banned;
                 case Player.Permission.Flagged:
-                    return "^0" + Player.Permission.Flagged;
+                    return "^9" + Player.Permission.Flagged;
                 case Player.Permission.Owner:
                     return "^5" + Player.Permission.Owner;
                 case Player.Permission.User:
                     return "^2" + Player.Permission.User;
+                case Player.Permission.Trusted:
+                    return "^3" + Player.Permission.Trusted;
                 default:
-                    return "^3" + level;
+                    return "^6" + level;
             }
         }
 
@@ -153,6 +155,8 @@ namespace SharedLibrary
                     return "<span style='color:rgb(196, 22, 28)'>" + Level + "</span>";
                 case Player.Permission.Flagged:
                     return "<span style='color:rgb(251, 124, 98)'>" + Level + "</span>";
+                case Player.Permission.Trusted:
+                    return "<span style='color:orange'>" + Level + "</span>";
                 default:
                     return "<i>" + Level + "</i>";
             }
@@ -178,6 +182,8 @@ namespace SharedLibrary
                     return "<span style='color:rgb(196, 22, 28)'>" + P.Name + "</span>";
                 case Player.Permission.Flagged:
                     return "<span style='color:rgb(251, 124, 98)'>" + P.Name + "</span>";
+                case Player.Permission.Trusted:
+                    return "<span style='color:orange'>" + P.Name + "</span>";
                 default:
                     return "<i>" + P.Name + "</i>";
             }
@@ -188,11 +194,13 @@ namespace SharedLibrary
             switch(BType)
             {
                 case Penalty.Type.Ban:
-                    return "<span style='color:Red'>" + BType.ToString() + "</span>";
+                    return "<span style='color:rgb(196, 22, 28)'>" + BType.ToString() + "</span>";
                 case Penalty.Type.TempBan:
-                    return "<span style='color:Orange'>" + BType.ToString() + "</span>";
+                    return "<span style='color:#E6840C'>" + BType.ToString() + "</span>";
                 case Penalty.Type.Kick:
-                    return "<span style='color:#ffff80'>" + BType.ToString() + "</span>";
+                    return "<span style='color:#8A0578'>" + BType.ToString() + "</span>";
+                case Penalty.Type.Warning:
+                    return "<span style='color:#CAB11D'>" + BType.ToString() + "</span>";
                 default:
                     return "";
             }
@@ -334,9 +342,24 @@ namespace SharedLibrary
                     return "One-Hundreth (amazing!)";
                 case 500:
                     return "^7You're really ^5dedicated ^7to this server! This is your ^5500th ^7time connecting!";
+                case 1000:
+                    return "WOW! Soldier, it's your ^11000th ^7time connecting! You deserve a medal.";
+
                 default:
                     return connection.ToString() + Prefix;
             }
+        }
+
+        public static Int64 getForumIDFromStr(String npID)
+        {
+            Int64 forumID = 0;
+            if (npID.Length == 16)
+            {
+                forumID = Int64.Parse(npID.Substring(0, 16), System.Globalization.NumberStyles.AllowHexSpecifier);
+                forumID = forumID - 76561197960265728;
+            }
+
+            return forumID;
         }
     }
 }

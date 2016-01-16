@@ -24,6 +24,7 @@ namespace SharedLibrary
 
         public enum Type
         {
+            Warning,
             Kick,
             TempBan,
             Ban

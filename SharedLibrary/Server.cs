@@ -303,6 +303,8 @@ namespace SharedLibrary
         /// <param name="Origin">The person who banned the target</param>
         abstract public void Ban(String Reason, Player Target, Player Origin);
 
+        abstract public void Warn(String Reason, Player Target, Player Origin);
+
         /// <summary>
         /// Unban a player by npID / GUID
         /// </summary>

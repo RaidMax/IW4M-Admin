@@ -29,16 +29,12 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
+            E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
             if (E.Origin.Level <= E.Target.Level)
                 E.Origin.Tell("You cannot warn " + E.Target.Name);
             else
             {
-                E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
-                E.Target.Warnings++;
-                String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", E.Target.Warnings, E.Target.Name, E.Target.lastOffense);
-                E.Owner.Broadcast(Message);
-                if (E.Target.Warnings >= 4)
-                    E.Target.Kick("You were kicked for too many warnings!", E.Origin);
+                E.Target.Warn(E.Data, E.Origin);
             }       
         }
     }
@@ -63,9 +59,8 @@ namespace IW4MAdmin
         public override void Execute(Event E)
         {
             E.Target.lastOffense = SharedLibrary.Utilities.removeWords(E.Data, 1);
-            String Message = "^1Player Kicked: ^5" + E.Target.lastOffense + "                    ^1Admin: ^5" + E.Origin.Name;
             if (E.Origin.Level > E.Target.Level)
-                E.Target.Kick(Message, E.Origin);
+                E.Target.Kick(E.Target.lastOffense, E.Origin);
             else
                 E.Origin.Tell("You cannot kick " + E.Target.Name);            
         }
@@ -504,6 +499,12 @@ namespace IW4MAdmin
 
         public override void Execute(Event E)
         {
+            if (E.Owner.Reports.Find(x => x.Origin == E.Origin) != null)
+            {
+                E.Origin.Tell("You have already reported this player");
+                return;
+            }
+
             if (E.Target == E.Origin)
             {
                 E.Origin.Tell("You cannot report yourself, silly.");
@@ -518,6 +519,10 @@ namespace IW4MAdmin
 
             E.Data = SharedLibrary.Utilities.removeWords(E.Data, 1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
+
+            Connection Screenshot = new Connection(String.Format("http://server.nbsclan.org/screen.php?id={0}&name={1}?save=1", SharedLibrary.Utilities.getForumIDFromStr(E.Target.npID), E.Origin.Name));
+            String Response = Screenshot.Read();
+
             E.Origin.Tell("Successfully reported " + E.Target.Name);
 
             E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));

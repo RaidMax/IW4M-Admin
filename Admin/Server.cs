@@ -838,15 +838,29 @@ namespace IW4MAdmin
             return false;
         }
 
+        public override void Warn(string Reason, Player Target, Player Origin)
+        {
+            Penalty newPenalty = new Penalty(Penalty.Type.Warning, SharedLibrary.Utilities.stripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+            clientDB.addBan(newPenalty);
+            foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+                S.Bans = S.clientDB.getBans();
+            Target.Warnings++;
+            String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Target.lastOffense);
+            Broadcast(Message);
+            if (Target.Warnings >= 4)
+                Target.Kick("You were kicked for too many warnings!", Origin);
+        }
+
         public override void Kick(string Reason, Player Target, Player Origin)
         {
             if (Target.clientID > -1)
             {
+                String Message = "^1Player Kicked: ^5" + Reason + "                    ^1Admin: ^5" + Origin.Name;
                 Penalty newPenalty = new Penalty(Penalty.Type.Kick, SharedLibrary.Utilities.stripColors(Reason.Split(':')[1]), Target.npID, Origin.npID, DateTime.Now, Target.IP);
                 clientDB.addBan(newPenalty);
                 foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
                     S.Bans = S.clientDB.getBans();
-                executeCommand("clientkick " + Target.clientID + " \"" + Reason + "^7\"");
+                executeCommand("clientkick " + Target.clientID + " \"" + Message + "^7\"");
             }
         }
 
@@ -961,7 +975,7 @@ namespace IW4MAdmin
             foreach (Command C in PluginImporter.potentialCommands)
                 commands.Add(C);
 
-            commands.Add(new Kick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Moderator, 2, true));
+            commands.Add(new Kick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
             commands.Add(new Say("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
             commands.Add(new TempBan("tempban", "temporarily ban a player for 1 hour. syntax: !tempban <player> <reason>.", "tb", Player.Permission.Moderator, 2, true));
             commands.Add(new SBan("ban", "permanently ban a player from the server. syntax: !ban <player> <reason>", "b", Player.Permission.SeniorAdmin, 2, true));
@@ -973,8 +987,8 @@ namespace IW4MAdmin
             commands.Add(new SetLevel("setlevel", "set player to specified administration level. syntax: !setlevel <player> <level>.", "sl", Player.Permission.Owner, 2, true));
             commands.Add(new Usage("usage", "get current application memory usage. syntax: !usage.", "us", Player.Permission.Moderator, 0, false));
             commands.Add(new Uptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
-            commands.Add(new Warn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Moderator, 2, true));
-            commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Administrator, 1, true));
+            commands.Add(new Warn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
+            commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Trusted, 1, true));
             commands.Add(new Unban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
             commands.Add(new Admins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
             commands.Add(new MapCMD("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));

@@ -74,7 +74,7 @@ namespace IW4MAdmin
                             if (!S.isRunning)
                                 Utilities.shutdownInterface(S.pID());
 
-                            mainLog.Write("Server with PID #" + S.pID() + " can no longer be monitored.", Log.Level.Debug);
+                            mainLog.Write("Server with PID #" + S.pID() + " can no longer be monitored.", Log.Level.Production);
                             activePIDs.Remove(S.pID());
                             defunctServers.Add(S);
                         }

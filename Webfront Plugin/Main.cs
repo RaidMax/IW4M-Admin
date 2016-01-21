@@ -1,6 +1,7 @@
 ﻿using System;
 using SharedLibrary;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace Webfront_Plugin
 {
@@ -12,6 +13,7 @@ namespace Webfront_Plugin
         {
             if (E.Type == Event.GType.Start)
             {
+                Manager.webFront.removeServer(Manager.webFront.getServers().Find(x => x.getPort() == E.Owner.getPort()));
                 Manager.webFront.addServer(E.Owner);
                 E.Owner.Log.Write("Webfront now listening", Log.Level.Production);
             }

@@ -24,8 +24,16 @@ namespace Webfront_Plugin
 
         public void removeServer(Server S)
         {
-            if (activeServers.Contains(S))
+            if (S != null && activeServers.Contains(S))
+            {
+                S.Stop();
                 activeServers.Remove(S);
+            }
+        }
+
+        public List<Server> getServers()
+        {
+            return activeServers;
         }
 
         private String processTemplate(String Input, String Param)

@@ -419,6 +419,11 @@ namespace IW4MAdmin
             }
         }
 
+        public override void Stop()
+        {
+            this.isRunning = false;
+        }
+
         //Starts the monitoring process
         override public void Monitor()
         {
@@ -568,6 +573,7 @@ namespace IW4MAdmin
 
             }
             events.Enqueue(new Event(Event.GType.Stop, "Server monitoring stopped", null, null, this));
+            SharedLibrary.Utilities.Wait(3);
             isRunning = false;
             eventQueueThread.Join();
         }
@@ -840,15 +846,18 @@ namespace IW4MAdmin
 
         public override void Warn(String Reason, Player Target, Player Origin)
         {
-            Penalty newPenalty = new Penalty(Penalty.Type.Warning, SharedLibrary.Utilities.stripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
-            clientDB.addBan(newPenalty);
-            foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
-                S.Bans = S.clientDB.getBans();
-            Target.Warnings++;
-            String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Target.lastOffense);
-            Broadcast(Message);
             if (Target.Warnings >= 4)
-                Target.Kick("You were kicked for too many warnings!", Origin);
+                Target.Kick("Too many warnings!", Origin);
+            else
+            {
+                Penalty newPenalty = new Penalty(Penalty.Type.Warning, SharedLibrary.Utilities.stripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                clientDB.addBan(newPenalty);
+                foreach (SharedLibrary.Server S in Program.getServers()) // make sure bans show up on the webfront
+                    S.Bans = S.clientDB.getBans();
+                Target.Warnings++;
+                String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Target.lastOffense);
+                Broadcast(Message);
+            }
         }
 
         public override void Kick(String Reason, Player Target, Player Origin)

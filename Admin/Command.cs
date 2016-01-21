@@ -34,7 +34,7 @@ namespace IW4MAdmin
                 E.Origin.Tell("You cannot warn " + E.Target.Name);
             else
             {
-                E.Target.Warn(E.Data, E.Origin);
+                E.Target.Warn(E.Target.lastOffense, E.Origin);
             }       
         }
     }

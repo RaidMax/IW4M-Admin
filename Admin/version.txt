@@ -6,7 +6,9 @@ CHANGELOG:
 -readded pubbans page http://127.0.0.1:1624/pubbans
 -updated RepZ profile link
 -added trusted group ( will need a new database or manual update )
--reports capture screenshot
+-reports capture screenshot (maybe)
+-no more server duplicates on webfront when the server crashes ( was intentional )
+-warn reasons no longer show player's name
 
 VERSION 1.0
 CHANGELOG:

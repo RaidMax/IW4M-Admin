@@ -122,6 +122,8 @@ namespace SharedLibrary
 
             return clientDB.getPlayers(databaseIDs);
         }
+
+        abstract public void Stop();
  
         /// <summary>
         /// Add a player to the server's player list

@@ -3,17 +3,20 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using SharedLibrary;
+using SharedLibrary.Extensions;
 
 namespace IW4MAdmin
 {
     public class PluginImporter
     {
         public static List<Command> potentialCommands = new List<Command>();
-        public static List<Plugin> potentialPlugins = new List<Plugin>();
-        public static Plugin webFront = null;
+        public static List<IPlugin> potentialPlugins = new List<IPlugin>();
+        public static IPlugin webFront = null;
+        //private static AppDomain pluginDomain;
 
         public static bool Load()
         {
+            //pluginDomain = AppDomain.CreateDomain("Plugins");
             string[] dllFileNames = null;
 
             if (Directory.Exists(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins"))
@@ -21,13 +24,13 @@ namespace IW4MAdmin
 
             else
             {
-                Program.getManager().mainLog.Write("Plugin folder does not exist!", Log.Level.All);
+                Manager.GetInstance().Logger.Write("Plugin folder does not exist!", Log.Level.All);
                 return false;
             }
 
             if (dllFileNames == null || dllFileNames.Length == 0)
             {
-                Program.getManager().mainLog.Write("No plugins to load", Log.Level.All);
+                Manager.GetInstance().Logger.Write("No plugins to load", Log.Level.All);
                 return true;
             }
 
@@ -47,74 +50,67 @@ namespace IW4MAdmin
                     Type[] types = Plugin.GetTypes();
                     foreach(Type assemblyType in types)
                     {
-                        if(assemblyType.IsClass && assemblyType.BaseType.Name == "Plugin")
-                        {
-                            Object notifyObject = Activator.CreateInstance(assemblyType);
-                            Plugin newNotify = (Plugin)notifyObject;
-                            if (potentialPlugins.Find(x => x.Name == newNotify.Name) == null)
-                            {
-                                potentialPlugins.Add(newNotify);
-
-                                try
-                                {
-                                    newNotify.onLoad();
-                                }
-
-                                catch (Exception E)
-                                {
-                                    Program.getManager().mainLog.Write("There was an error starting \"" + newNotify.Name + "\" plugin", Log.Level.Debug);
-                                    Program.getManager().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
-                                    Program.getManager().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
-                                    continue;
-                                }
-
-                                Program.getManager().mainLog.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
-                                totalLoaded++;
-                            }
-                        }
-
-                        else if (assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
+                        if (assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
                         {
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             potentialCommands.Add(newCommand);
-                            Program.getManager().mainLog.Write("Registered command \"" + newCommand.Name + "\"", Log.Level.Debug);
+                            Manager.GetInstance().Logger.Write("Registered command \"" + newCommand.Name + "\"", Log.Level.Debug);
                             totalLoaded++;
+                            continue;
                         }
+
+                        try
+                        {
+                            if (assemblyType.GetInterface("IPlugin", false) == null)
+                                continue;
+                                   
+                            Object notifyObject = Activator.CreateInstance(assemblyType);
+                            IPlugin newNotify = (IPlugin)notifyObject;
+                            if (potentialPlugins.Find(x => x.Name == newNotify.Name) == null)
+                            {
+                                potentialPlugins.Add(newNotify);
+                                newNotify.OnLoad();
+                                Manager.GetInstance().Logger.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
+                                totalLoaded++;
+                            }
+                        }
+
+                        catch (Exception E)
+                        {
+                            Manager.GetInstance().Logger.Write("Could not load plugin " + Plugin.Location + " - " + E.Message);
+                        } 
                     }
                 }
             }
 
-            Program.getManager().mainLog.Write("Loaded " + totalLoaded + " plugins.", Log.Level.Production);
+            Manager.GetInstance().Logger.Write("Loaded " + totalLoaded + " plugins.", Log.Level.Production);
             return true;
         }
-
+        
+        /*
         public static void Unload()
         {
-            foreach (Plugin P in potentialPlugins)
+
+            foreach (IPlugin P in potentialPlugins)
             {
                 try
                 {
-                    if (P.Name != "Webfront")
-                        P.onUnload();
-                    else
-                        webFront = P;
+                    P.onUnload();
                 }
 
                 catch (Exception E)
                 {
-                    Program.getManager().mainLog.Write("There was an error unloading \"" + P.Name + "\" plugin", Log.Level.Debug);
-                    Program.getManager().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
-                    Program.getManager().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
+                    Manager.GetInstance().mainLog.Write("There was an error unloading \"" + P.Name + "\" plugin", Log.Level.Debug);
+                    Manager.GetInstance().mainLog.Write("Error Message: " + E.Message, Log.Level.Debug);
+                    Manager.GetInstance().mainLog.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
                     continue;
                 }
             }
 
             potentialCommands = new List<Command>();
-            potentialPlugins = new List<Plugin>();
-            if (webFront != null)
-                potentialPlugins.Add(webFront);
-
-        }
+            potentialPlugins = new List<IPlugin>();
+            AppDomain.Unload(pluginDomain);
+        }*/
     }
 }

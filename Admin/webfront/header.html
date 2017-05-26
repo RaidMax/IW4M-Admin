@@ -1,432 +1,145 @@
-﻿<!DOCTYPE html>
-
+<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>{{TITLE}}</title>
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> 
-    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
-    <link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet">
-    <script type='text/javascript' src='//www.google.com/jsapi'></script>
-    <script type="text/javascript">
-		var userip;
-	</script>
-	<script type="text/javascript" src="http://server.nbsclan.org/ip.php"></script>
-	<style>
-        * {
-            font-family: 'Robot', sans-serif;
-            margin: 0;
-        }
+    <title>IW4MAdmin by RaidMax</title>
+    <meta name="description" content="Administration tool for IW4M servers. Created by RaidMax">
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            background-color: #171717;
-        }
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://use.fontawesome.com/9c581fe29b.js"></script>
 
-        #container {
-            width: 1100px;
-            background-color: #fff;
-            margin: 0 auto;
-            padding: 30px;
-        }
-
-        .h0 {
-            font-size: 40pt;
-            text-align: center;
-            margin-bottom: 0px;
-            float: right;
-            line-height: 100px;
-        }
-
-        h1 {
-            margin-top: 20px;
-            clear: both;
-        }
-
-        #header_img {
-            width: 100px;
-            height: 96px;
-            float: right;
-            background-image: url("");
-            background-size: 100px 96px;
-            background-repeat: no-repeat;
-        }
-
-        #logo_shit
-        {
-            width: 100px;
-            height: 96px;
-            float: left;
-            background-image: url("");
-            background-size: 100px 96px;
-            background-repeat: no-repeat;
-        }
-
-        p {
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        ul {
-            padding: 0;
-            margin: 0;
-            display: table;
-            width: 100%;
-        }
-
-        ul.tablehead li {
-                display: table-cell;
-                list-style-type: none;
-                font-size: 18pt;
-                margin: 0;
-                padding-top: 10px;
-                padding-bottom: 10px;
-         }
-
-        ul.row li {
-                overflow: hidden;
-                display: table-cell;
-                list-style-type: none;
-                font-size: 12pt;
-        }
-
-        li {
-        }
-
-        td{
-            padding: 8px;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        tr.row-white {
-            background-color: #fff;
-        }
-
-        tr.row-grey {
-            background-color: #ddd;
-        }
-
-        th
-        {
-            font-size: 16pt;
-        }
-
-        li.row-green {
-            background-color: rgba(121, 194, 97, .3);
-            padding: 10px 0px 10px 0px;
-            width: 70px;
-            text-align: center;
-        }
-
-        li.row-red {
-            background-color: rgba(196, 22, 28, .3);
-            padding: 10px 0px 10px 0px;
-            width: 70px;
-            text-align: center;
-        }
-
-        input[type="submit"] {
-            border: none;
-            border-radius: 4px;
-            color: #fff;
-            font-size: 14pt;
-            background-color: rgb(121, 194, 97);
-        }
-
-        input[type="submit"]:hover {
-                background-color: #fff;
-                color: #171717;
-                //border: 1px solid #171717;
-            }
-
-        .question_title {
-            color: #171717;
-            font-size: 16pt;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .question_answer {
-            background-color: rgb(121, 194, 97);
-            color: #fff;
-            padding: 5px;
-            border-radius: 4px;
-        }
-
-        .question_answer a:hover {
-                color: cyan;
-            }
-
-        ol, ol li {
-            margin-left: 0;
-            padding-left: 30px;
-        }
-
-        a:link, a:visited {
-            text-decoration: none;
-            color: rgb(38,120,230);
-        }
-
-        a:hover {
-                color: #171717;
-            }
-
-        .BigList {
-            font-size: 12pt;
-            opacity: 0.5;
-        }
-
-        .separator {
-            position: absolute;
-            width: 3px;
-            height: 40px;
-            background-color: #ccc;
-            left: 25%;
-            right: 75%;
-        }
-
-        .asterik {
-            font-size: 11pt;
-            color: #171717;
-            font-style: italic;
-        }
-
-        #commands {
-            margin: 0 auto;
-        }
-
-        .block {
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        hr {
-            background-color: rgb(38,120,230);
-            border: none;
-            width: 100%;
-            height: 5px;
-            margin-bottom: 5px;
-            margin-top: 5px;
-        }
-
-        .server {
-            width: 100%;
-            text-align: left;
-        }
-
-        .server_title {
-            font-size: 20pt;
-            margin-bottom: 20px;
-            min-width: 530px;
-            max-width: 545px;
-        }
-
-        .server_info {
-            font-size: 14pt;
-        }
-
-        .server_map {
-            min-width: 140px;
-        }
-
-        .server_players {
-            min-width: 50px;
-        }
-
-        .server_gametype {
-            min-width: 175px;
-        }
-
-        .players {
-            width: 40%;
-            text-align: left;
-            padding-top: 10px;
-            padding-bottom: 10px;
-        }
-
-        .bans {
-            text-align: left;
-            width: 100%;
-        }
-
-        .bans th
-        {
-            font-size: 20pt;
-        }
-
-        #pages{
-            font-size: 14pt;
-            text-align:center; 
-        }
-
-        #pages a {
-            margin: 10px;
-        }
-
-        #pagination{
-        }
-
-        #footer{
-            background-color: #fff;
-            padding-top: 5px;
-            padding-bottom: 10px;
-            text-align: center;
-            width: 1160px;
-            margin: 0 auto;
-            border-radius: 0px 0px 11px 11px;
-        }
-
-		.players {
-			float: left;
-			width: 400px;
-		}
-
-        .players tbody tr td
-        {
-            padding: 3px;
-        }
-
-        .player_info{
-            width: 100%;
-            vertical-align: top;
-            text-align: left;
-        }
-
-        .player_info td
-        {
-            text-align: left;
-            vertical-align: top;
-            padding: 0;
-        }
-
-        #player_search {
-			position: absolute;
-			top: 0; 
-			left: 0; 
-			right: 0;
-			height: auto;
-			width: 300px;
-			margin: 0 auto;
-        }
-		
-		#player_search input[type="submit"] {
-			padding: 3px;
-			margin: 3px;
-			margin-top: 10px;
-			width: auto;
-			height: auto;
-			border: 1px solid rgba(23, 23, 23, 0.49);
-            border-radius: 0;
-		}
-		
-		#player_search input[type="text"] {
-			font-size: 14pt;
-		}
-		
-		.chatFormat_text
-		{
-			font-size: 14pt;
-			width: 505px;
-		}
-
-        .playerAlias, .playerIPs
-        {
-            display: none;
-        }
-		
-		.chatFormat_submit, .chatFormat_submit:hover
-		{
-			padding: 3px;
-			padding-left: 15px;
-			padding-right: 15px;
-			width: 70px;
-			margin: 3px;
-			margin-right: 0;
-			width: auto;
-			margin-bottom: 10px;
-			color: grey;
-		}
-		
-		.chatHistory {
-			float: right;
-			height: auto;
-			width: 600px;
-			overflow: hidden;
-			margin-top: 10px;			
-		}
-		
-		.chatOutFormat {
-			float: right;
-		}
-		
-		#table_chatHistory {
-			width: 100%;
-			padding: 0;
-			margin: 0;
-		}
-		
-		#table_chatHistory td {
-			padding: 0;
-			margin: 0;
-		}
-
-		.chat_name
-		{
-			width: 140px;
-		}
-
-		.chat_message
-		{
-			text-align: left;
-		}
-
-        th 
-        {
-            font-size: 14pt;
-
-        }
-
-        th a
-        {
-            font-size: 12pt;
-            padding-left: 10px;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="/webfront/main.css"/>
+    <link rel="stylesheet" type="text/css" href="/webfront/mobile.css"/>
 </head>
+<script>
+var user;
+
+$.getJSON("_userinfo", function(response) {
+  user = response;
+  $(document).trigger("actionEventLoad");
+});
+
+
+function showErrorMessage(msg)
+{
+    $('.alertBox').html(msg).addClass('error').slideDown("fast");
+}
+
+function parseGet(val) {
+    var result = "undefined",
+        tmp = [];
+    location.search
+    .substr(1)
+        .split("&")
+        .forEach(function (item) {
+        tmp = item.split("=");
+        if (tmp[0] === val) result = decodeURIComponent(tmp[1]);
+    });
+    return result;
+}
+
+function getColorForLevel(level, name)
+{
+  switch (level)
+  {
+    case "User":
+    case "Guest":
+      return "<span style='color: rgba(255, 255, 255, 0.85);'>" + name + "</span>";
+    case "Trusted":
+    case "Kick":
+    case "User":
+      return "<span style='color: rgba(116,147,99,1);''>" + name + "</span>";
+    case "Flagged":
+    case "TempBan":
+      return "<span style='color: rgba(253, 139, 22, 0.85);'>" + name + "</span>";
+    case "Banned":
+    case "Ban":
+    case "Console":
+      return "<span style='color: rgba(255, 69, 69, 0.85);'>" + name + "</span>";
+    case "Moderator":
+    case "Warning":
+      return "<span style='color: rgba(235, 211, 101, 0.75);'>" + name + "</span>";
+    case "Administrator":
+      return "<span style='color: rgba(236, 130, 222, 0.69);'>" + name + "</span>";
+    case "SeniorAdmin":
+      return "<span style='color: rgba(50, 177, 185, 0.85);'>" + name + "</span>";
+    case "Owner":
+      return "<span style='color: rgb(0, 122, 204);'>" + name + "</span>";
+  }
+}
+
+function formatMessages(messages)
+{
+    var chats = "";
+    $.each(messages, function(i, chat) {
+      chats +=
+      "<div class='chatPlayerName tableCell'>" + chat['Name'] + ":</div><div class='chatPlayerMessage tableCell'>" + $("<div/>").html(chat['Message']).text() + "</div> \
+      <div style='display:table-row'></div>"
+    });
+    return chats;
+}
+
+function getPages()
+{
+  $.getJSON("/pages", function(result){
+         $.each(result, function(i, page){
+           if (page['visible'] == true)
+            $("#navContainer").append("<div class=navEntry><a href=\"" + page['pagePath'] + "\">" + page['pageName'] + "</a></div>");
+         });
+     });
+}
+
+function shouldHideAction(author)
+{
+  // fixme dynamic
+    if (user.rank == null || author.ranking == null)
+      return " display: none";
+    else if (user.rank.name == "Moderator" || user.rank.name == "Administrator" || user.username == author.username)
+      return "";
+    else {
+      return " display: none";
+    }
+}
+
+function formatPlayers(players)
+{
+  var p = "";
+  for (i = 0; i < players.length; i++)
+  {
+    p += "<div class='playerName tableCell'><a href=\"/players?id=" + players[1*i]['playerID'] + "\">" + getColorForLevel(players[1*i]['playerLevel'], players[1*i]['playerName']) + "</a></div>";
+    if (i % 2 == 1 && i != 0 )
+      p += "<div style='display: table-row'></div>";
+  }
+  return p;
+}
+
+
+function checkJustNow(timestr)
+{
+  if (timestr.includes("just now"))
+    return timestr;
+  else
+    return timestr + " ago";
+}
+
+function getDate(datestr)
+{
+  var creationDate = new Date(datestr);
+  return (creationDate.getMonth() + 1) + '-' + creationDate.getDate() + '-' + creationDate.getFullYear();
+
+}
+
+function checkPrivilege()
+{
+  $.getJSON("_userinfo", function(response) { if (response.rank.id != 1) window.location.replace("home"); else $('.infoBox').show(); });
+}
+</script>
 <body>
-<script type="text/javascript">
-		function loadChatMessages(server, divElem) {
-			$(divElem).load("/chat?server=" + server);
-		}
-</script>
-<script type="text/javascript">
-	function chatRequest(server, divElem) {
-		var Message = document.getElementById(divElem).value.replace(/\s/g, "%20").replace(/[\\|\/]/g,"");
-		if (Message.length > 4 && Message.length < 51)
-		{
-			$(".null").load("/chat?server=" + server);
-			$("#" + divElem).val('');
-		}
-		else if (Message.length <= 4)
-			alert("You must enter at least 4 characters!");	
-		else
-			alert("Please enter no more than 50 characters");
-	}
-</script>
-   <script type="text/javascript">
-       function searchPlayerName() {
-           var nameValue = document.getElementById("search_playerName").value;
-           if (nameValue.length > 3)
-               window.location.href = ("/player?query=" + encodeURIComponent(nameValue));
-           else
-               alert("Please enter at least 4 characters of the name");
-       }
-   </script>
-<div id="player_search">
-        <form action="javascript:searchPlayerName()">
-        <input id="search_playerName" type="text" placeholder="Player Name" />
-        <input type="submit" value="Find" />
-    </form>
-</div>
+  <div id="header">
+    <div id="navContainer">
+      <div id="navHeader">IW4MAdmin</div>
+    </div>
+  </div>
+  <div class="loader"></div>
+  <div id="content">

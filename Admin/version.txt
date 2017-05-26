@@ -1,4 +1,33 @@
-﻿VERSION 1.1
+﻿VERSION 1.3
+CHANGELOG:
+-complete rewrite of lots of parts
+-async EVERYTHING!!!
+-designed to work with IW4X (funny how the GitHub description is now 100% accurate after almost 3 years)
+
+VERSION 1.2
+CHANGELOG:
+-didn't think you'd see me again did you?
+-lots of cleanup
+-event api @ /events (documentation soon)
+-gsc features work again ( excluding goto )
+-reworked plugin interface
+-added automatic restart plugin
+-fixed server stop event truncation
+-penalty reasons don't show appeal website or "Player kicked" anymore
+-fixed ban spacing issue
+-masked flag now saved to database
+-masked users level now hidden from !list 
+-fixed (crash?) with `!` in penalty reason
+-remove repz features as now defunct
+-banning from console now kicks the player if they are currently in game
+-updating permissions from console now saves for in game players
+-heartbeats re-enabled
+-public banlist is now json format.. why didn't I do this originally?
+-admins can execute commands directly from the web front
+-better build management
+-stats actually seems to be consistent
+              
+VERSION 1.1
 CHANGELOG:
 -fixed ban sorting ( and an overlooked bug )
 -added kicks, warnings and temp-bans to penalty list

@@ -18,11 +18,11 @@ namespace SharedLibrary
                 Con = new SQLiteConnection(DBCon);
             }
 
-            catch(System.DllNotFoundException)
+            catch(DllNotFoundException)
             {
                 Console.WriteLine("Fatal Error: could not locate the SQLite DLL(s)!\nEnsure they are located in the 'lib' folder");
                 Utilities.Wait(5);
-                System.Environment.Exit(0);
+                Environment.Exit(0);
             }
             
             Open = false;
@@ -33,50 +33,75 @@ namespace SharedLibrary
 
         protected bool Insert(String tableName, Dictionary<String, object> data)
         {
-            String columns = "";
-            String values = "";
-            Boolean returnCode = true;
-            foreach (KeyValuePair<String, object> val in data)
+            string names = "";
+            string parameters = "";
+            foreach (string key in data.Keys)
             {
-                columns += String.Format(" {0},", val.Key);
-                values += String.Format(" '{0}',", val.Value);
+                names += key + ',';
+                parameters += '@' + key + ',';
             }
-            columns = columns.Substring(0, columns.Length - 1);
-            values = values.Substring(0, values.Length - 1);
+            names = names.Substring(0, names.Length - 1);
+            parameters = parameters.Substring(0, parameters.Length - 1);
+
+            SQLiteCommand insertcmd = new SQLiteCommand();
+            insertcmd.Connection = this.Con;
+            insertcmd.CommandText = String.Format("INSERT INTO `{0}` ({1}) VALUES ({2});", tableName, names, parameters);
+
+            foreach (string key in data.Keys)
+            {
+                insertcmd.Parameters.AddWithValue('@' + key, data[key]);
+            }
+
             try
             {
-                this.ExecuteNonQuery(String.Format("insert into {0}({1}) values({2});", tableName, columns, values));
+                Con.Open();
+                insertcmd.ExecuteNonQuery();
+                Con.Close();
+                return true;
             }
-            catch (Exception fail)
+
+            catch (Exception)
             {
-                Console.WriteLine(fail.Message);
-                returnCode = false;
+                //LOGME
+                return false;
             }
-            return returnCode;
+
         }
 
-        protected bool Update(String tableName, Dictionary<String, object> data, String where)
+        protected bool Update(String tableName, Dictionary<String, object> data, KeyValuePair<string, object> where)
         {
-            String vals = "";
-            Boolean returnCode = true;
-            if (data.Count >= 1)
+            string parameters = "";
+            foreach (string key in data.Keys)
             {
-                foreach (KeyValuePair<String, object> val in data)
-                {
-                    vals += String.Format(" {0} = '{1}',", val.Key, val.Value);
-                }
-                vals = vals.Substring(0, vals.Length - 1);
+                parameters += key + '=' + '@' + key + ',';
             }
+
+            parameters = parameters.Substring(0, parameters.Length - 1);
+
+            SQLiteCommand updatecmd = new SQLiteCommand();
+            updatecmd.Connection = this.Con;
+            updatecmd.CommandText = String.Format("UPDATE `{0}` SET {1} WHERE {2}=@{2}", tableName, parameters, where.Key);
+
+            foreach (string key in data.Keys)
+            {
+                updatecmd.Parameters.AddWithValue('@' + key, data[key]);
+            }
+
+            updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
+
             try
             {
-                ExecuteNonQuery(String.Format("update {0} set {1} where {2};", tableName, vals, where));
+                Con.Open();
+                updatecmd.ExecuteNonQuery();
+                Con.Close();
+                return true;
             }
-            catch (Exception fail)
+
+            catch (Exception e)
             {
-                Console.WriteLine(fail.Message);
-                returnCode = false;
+                //LOGME
+                return false;
             }
-            return returnCode;
         }
 
         protected DataRow getDataRow(String Q)
@@ -89,17 +114,53 @@ namespace SharedLibrary
         {
             waitForClose();
             int rowsUpdated = 0;
+            Request = Request.Replace("!'", "").Replace("!", "") ;
+            try
+            {
+                lock (Con)
+                {
+                    Con.Open();
+                    SQLiteCommand CMD = new SQLiteCommand(Con);
+                    CMD.CommandText = Request;
+                    rowsUpdated = CMD.ExecuteNonQuery();
+                    Con.Close();
+                }
+                return rowsUpdated;
+            }
 
-            lock (Con)
+            catch (Exception E)
+            {
+                Console.WriteLine(E.Message);
+                Console.WriteLine(E.StackTrace);
+                Console.WriteLine(Request);
+                return 0;
+            }      
+        }
+
+        protected DataTable GetDataTable(string tableName, KeyValuePair<string, object> where)
+        {
+            DataTable dt = new DataTable();
+            SQLiteCommand updatecmd = new SQLiteCommand();
+            updatecmd.Connection = this.Con;
+            updatecmd.CommandText = String.Format("SELECT * FROM {0} WHERE `{1}`=@{1};", tableName, where.Key);
+            updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
+
+            try
             {
                 Con.Open();
-                SQLiteCommand CMD = new SQLiteCommand(Con);
-                CMD.CommandText = Request;
-                rowsUpdated = CMD.ExecuteNonQuery();
+                SQLiteDataReader reader = updatecmd.ExecuteReader();
+                dt.Load(reader);
+                reader.Close();
                 Con.Close();
             }
 
-            return rowsUpdated;
+            catch (Exception e)
+            {
+                //LOGME
+                Console.Write("Couldnotexecute");
+            }
+
+            return dt;
         }
 
         protected DataTable GetDataTable(String sql)
@@ -123,7 +184,7 @@ namespace SharedLibrary
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message + " GetDataTable");
                 return new DataTable();
             }
             return dt;
@@ -153,7 +214,7 @@ namespace SharedLibrary
         {
             if (!File.Exists(FileName))
             {
-                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL);";
+                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL, [UID] TEXT NULL, [Masked] INT DEFAULT 0);";
                 ExecuteNonQuery(Create);
                 Create = "CREATE TABLE [BANS] ( [TYPE] TEXT NULL, [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
                 ExecuteNonQuery(Create);
@@ -172,11 +233,31 @@ namespace SharedLibrary
                 DateTime lastCon = DateTime.MinValue;
                 DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
 
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon);
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon, ResponseRow["UID"].ToString(), ResponseRow["Masked"].ToString() == "1");
             }
 
             else
                 return null;
+        }
+
+        public List<Player> getRecentPlayers()
+        {
+            List<Player> returnssss = new List<Player>();
+            String Query = String.Format("SELECT * FROM CLIENTS ORDER BY LastConnection desc LIMIT 25");
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                foreach (DataRow ResponseRow in Result.Rows)
+                {
+                    DateTime lastCon = DateTime.MinValue;
+                    DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
+
+                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon, ResponseRow["UID"].ToString(), ResponseRow["Masked"].ToString() == "1"));
+                }
+            }
+
+            return returnssss;
         }
 
         public List<Player> getPlayers(List<String> npIDs)
@@ -194,7 +275,7 @@ namespace SharedLibrary
                     DateTime lastCon = DateTime.MinValue;
                     DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
 
-                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon));
+                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon, ResponseRow["UID"].ToString(), ResponseRow["Masked"].ToString() == "1"));
                 }
             }
 
@@ -216,7 +297,7 @@ namespace SharedLibrary
                     DateTime lastCon = DateTime.MinValue;
                     DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
 
-                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon));
+                    returnssss.Add(new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), -1, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon, ResponseRow["UID"].ToString(), ResponseRow["Masked"].ToString() == "1"));
                 }
             }
 
@@ -242,7 +323,7 @@ namespace SharedLibrary
                     LC = DateTime.MinValue;
                 }
 
-                return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC);
+                return new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC, p["UID"].ToString(), p["Masked"].ToString() == "1");
             }
 
             else
@@ -264,7 +345,7 @@ namespace SharedLibrary
                     try
                     {
                         LC = DateTime.Parse(p["LastConnection"].ToString());
-                        lastKnown.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32((DateTime.Now - LC).TotalSeconds), p["IP"].ToString(), LC));
+                        lastKnown.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32((DateTime.Now - LC).TotalSeconds), p["IP"].ToString(), LC, p["UID"].ToString(), p["Masked"].ToString() == "1"));
                     }
 
                     catch (Exception)
@@ -301,16 +382,21 @@ namespace SharedLibrary
                 foreach (DataRow p in Result.Rows)
                 {
                     DateTime LC;
+                    string Masked = null;
                     try
                     {
                         LC = DateTime.Parse(p["LastConnection"].ToString());
+                        Masked = p["Masked"].ToString();
+
                     }
                     catch (Exception)
                     {
+                        if (Masked == null)
+                            Masked = "0";
+
                         LC = DateTime.MinValue;
                     }
-
-                    Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC));
+                    Players.Add(new Player(p["Name"].ToString(), p["npID"].ToString(), -1, (Player.Permission)(p["Level"]), Convert.ToInt32(p["Number"]), p["LastOffense"].ToString(), Convert.ToInt32(p["Connections"]), p["IP"].ToString(), LC, p["IP"].ToString(), Masked == "1"));
                 }
                 return Players;
             }
@@ -352,7 +438,7 @@ namespace SharedLibrary
                 if (Row["TYPE"].ToString().Length != 0)
                     BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
 
-                Bans.Add(new Penalty(BanType, Row["Reason"].ToString(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+                Bans.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
           
             }
 
@@ -363,11 +449,11 @@ namespace SharedLibrary
         public List<Player> getAdmins()
         {
             List<Player> Admins = new List<Player>();
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE LEVEL > '{0}'", 1);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level >= '{0}'", (int)Player.Permission.Moderator);
             DataTable Result = GetDataTable(Query);
 
             foreach (DataRow P in Result.Rows)
-                Admins.Add(new Player(P["Name"].ToString(), P["npID"].ToString(), (Player.Permission)P["Level"], P["IP"].ToString()));
+                Admins.Add(new Player(P["Name"].ToString(), P["npID"].ToString(), (Player.Permission)P["Level"], P["IP"].ToString(), P["UID"].ToString()));
 
             return Admins;
         }
@@ -394,6 +480,8 @@ namespace SharedLibrary
             newPlayer.Add("Connections", 1);
             newPlayer.Add("IP", P.IP);
             newPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
+            newPlayer.Add("UID", P.UID);
+            newPlayer.Add("Masked", Convert.ToInt32(P.Masked));
 
             Insert("CLIENTS", newPlayer);
         }
@@ -410,8 +498,10 @@ namespace SharedLibrary
             updatedPlayer.Add("Connections", P.Connections);
             updatedPlayer.Add("IP", P.IP);
             updatedPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
+            updatedPlayer.Add("UID", P.UID);
+            updatedPlayer.Add("Masked", Convert.ToInt32(P.Masked));
 
-            Update("CLIENTS", updatedPlayer, String.Format("npID = '{0}'", P.npID));
+            Update("CLIENTS", updatedPlayer, new KeyValuePair<string, object>("npID", P.npID ));
         }
 
 
@@ -420,7 +510,7 @@ namespace SharedLibrary
         {
             Dictionary<String, object> newBan = new Dictionary<String, object>();
 
-            newBan.Add("Reason", B.Reason);
+            newBan.Add("Reason", Utilities.removeNastyChars(B.Reason));
             newBan.Add("npID", B.npID);
             newBan.Add("bannedByID", B.bannedByID);
             newBan.Add("IP", B.IP);
@@ -515,7 +605,7 @@ namespace SharedLibrary
             Dictionary<String, object> newPlayer = new Dictionary<String, object>();
 
             newPlayer.Add("Number", Alias.Number);
-            newPlayer.Add("NAMES", String.Join(";", Alias.Names));
+            newPlayer.Add("NAMES", Utilities.removeNastyChars(String.Join(";", Alias.Names)));
             newPlayer.Add("IPS", String.Join(";", Alias.IPS));
 
             Insert("ALIASES", newPlayer);
@@ -529,7 +619,7 @@ namespace SharedLibrary
             updatedPlayer.Add("NAMES", String.Join(";", Alias.Names));
             updatedPlayer.Add("IPS", String.Join(";", Alias.IPS));
 
-            Update("ALIASES", updatedPlayer, String.Format("Number = '{0}'", Alias.Number));
+            Update("ALIASES", updatedPlayer, new KeyValuePair<string, object>("Number", Alias.Number));
         }
     }
 }

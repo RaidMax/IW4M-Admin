@@ -1,0 +1,126 @@
+<div id="threadContainer">
+  <div id="textNav"><a class="themeBlue" href="home">Home</a> &raquo; </div>
+  <hr/>
+  <div class="threadStart table" style="width: 100%;">
+    <div class="userInfo tableCell">
+      <div class="userAvatar">
+            <i class="fa fa-user-secret" aria-hidden="true" style="font-size: 8em;"></i>
+      </div>
+      <a class="userProfileLink" href=""><span class="userTitle">_</span></a><br/>
+      <span style="font-size: 9pt;" class="timePosted">_</span>
+    </div>
+    <div class="threadInfo tableCell">
+      <div class="threadTitle" style="float: left;">_</div>
+      <div style="float: right;" id="replyThreadCaption">
+        <i class="fa fa-reply" aria-hidden="true"></i>
+        Reply
+      </div>
+      <div style="clear: both;"></div>
+      <div class="threadContent">_</div>
+    </div>
+  </div>
+</div>
+<div id="postReplyContainer" style="display: none;">
+  <hr/>
+  <div id="postReplyClose">
+    <i class="fa fa-times" aria-hidden="true"></i>
+  </div>
+  <div id="replyContentContainer">
+    <div class="alertBox">
+    </div>
+  <textarea placeholder="Reply content..." id="replyContentBox"></textarea>
+  <div id="submitReplyButton">
+    <i class="fa fa-reply" aria-hidden="true"></i>
+  </div>
+  </div>
+</div>
+<script>
+
+$( document ).on("actionEventLoad", function() {
+
+$.getJSON("_thread?id=" + parseGet('id'), function(Response) {
+
+  if (Response.errorCode != null)
+  {
+    alert('error!');
+  }
+  $('#textNav').append('<a class="themeBlue" href="category?id=' + Response.Thread.threadCategory.id + '">' + Response.Thread.threadCategory.title + '</a> &raquo; ' + decodeURIComponent(Response.Thread.title));
+  $('.threadStart .userTitle').html(Response.Thread.author.username);
+  $('.threadStart .timePosted').html(getDate(Response.Thread.creationDate));
+  $('.threadStart .threadTitle').html(decodeURIComponent(Response.Thread.title));
+  $('.threadStart a.userProfileLink').attr("href", "user?id=" + Response.Thread.author.id);
+  $('.threadStart .threadContent').html(decodeURIComponent(Response.Thread.content));
+  if (Response.Thread.author.avatarURL != "")
+    $('.threadStart .userAvatar').html("").attr("style", "background-image:url('" + Response.Thread.author.avatarURL + "');'");
+  $('#replyThreadButton').attr("href", "postthread?threadid=" + Response.Thread.id);
+
+  $.each(Response.Replies, function(i, eachReply) {
+
+    var cat = "<div class='threadStart table' style='width: 100%;'> \
+      <div class='userInfo tableCell'>";
+
+
+              if (eachReply.author.avatarURL == "")
+                cat += "<div class='userAvatar'><i class='fa fa-user-secret' aria-hidden='true' style='font-size: 8em;'></i>";
+              else
+                cat += "<div class='userAvatar' style=\"background-image:url('" + eachReply.author.avatarURL + "');\">";
+        cat +=
+        "</div> \
+        <a class='userProfileLink' href='user?id="+ eachReply.author.id +"'><span class='userTitle'>" + getColorForLevel(eachReply.author.ranking.name, eachReply.author.username) + "</span></a><br/> \
+        <span style='font-size: 9pt;' class='timePosted'>" + checkJustNow(eachReply.lastModificationString) + "</span> \
+      </div> \
+      <div class='threadInfo tableCell'> \
+        <i style=\"" + shouldHideAction(eachReply.author) + "\" replyid='" + eachReply.id + "' class=\"fa fa-times actionHover actionDelete\" aria-hidden=\"true\"></i> \
+        <div class='threadContent'>" + decodeURIComponent(eachReply.content) + "</div> \
+      </div> \
+    </div>";
+
+    $("#threadContainer").append(cat);
+  });
+});
+});
+
+
+$('#replyThreadCaption').click(function(e) {
+  e.preventDefault();
+  $('#postReplyContainer').slideDown('fast');
+
+});
+
+$('#postReplyClose').click(function(e) {
+  $(this).parent().slideUp('fast');
+});
+
+$("#submitReplyButton").click(function(e) {
+  e.preventDefault();
+
+    $.getJSON("_postthread",
+    {
+      content : $('#replyContentBox').val(),
+      title : "Reply",
+      threadid : parseGet("id")
+    },
+
+    function(result) {
+      if (result["errorCode"] == 0)
+        window.location.replace(result["destination"]);
+      else {
+        showErrorMessage(result["errorCode"]);
+      }
+    });
+});
+
+
+$('#content').on('click', '.actionDelete', function(e) {
+  $.getJSON("_editthread",
+  {
+    replyid : $(this).attr("replyid"),
+    delete : true
+  },
+  function(response) {
+      if (response.success)
+        window.location.replace(response.destination);
+  });
+});
+
+</script>

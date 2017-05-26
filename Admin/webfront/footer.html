@@ -1,40 +1,7 @@
-﻿<div id="footer">IW4M Admin v{{VERSION}} &mdash; <a href="http://raidmax.org/IW4MAdmin">RaidMax.org</a></div>
+</div>
+<div id="footer">&copy; RaidMax</div>
+</body>
 <script>
-    $(function () {
-        $("#history_dialog").dialog({
-            autoOpen: false,
-            modal: true,
-            width: 1100,
-            height: 450,
-            buttons: {
-                "Dismiss": function () {
-                    $(this).dialog("close");
-               } 
-            }
-        });
-        $("a.history").on("click", function (e) {
-            e.preventDefault();
-            $("#history_dialog").html("");
-            $("#history_dialog").dialog("option", "title", "Player History").dialog("open");
-            $("#history_dialog").load(this.href);
-        });
-    });
+getPages();
 </script>
-<script>
-    $(function () {
-        $('.pseudoLinkAlias').click(function (e) {
-            e.preventDefault();
-            $(this).next().toggle('fast');
-            return true;
-        });
-    });
-    $(function () {
-        $('.pseudoLinkIP').click(function (e) {
-            e.preventDefault();
-            $(this).next().toggle('fast');
-            return true;
-        });
-    });
-</script>
- </body>
 </html>

@@ -1,0 +1,77 @@
+<div id="consoleWrap">
+  <select id="serverSelection">
+  </select>
+  <hr/>
+  <div id="console">
+  </div>
+  <hr/>
+  <div class="playerSearchWrap table">
+    <input type="text" class="search tableCell" placeholder="Enter Command..."/>
+    <input type="button" class="searchButton tableCell" name="Search" value="Execute"/>
+  </div>
+</div>
+<script>
+var cmdResultQueue = [];
+$( document ).ready(function() {
+  cmdResultQueue = [];
+  $.getJSON("/_servers", function(servers) {
+    $.each(servers, function(i, server) {
+      $('select').append("<option value=\"" + server['serverPort'] + "\">" + server['serverName'] + "</option>");
+    });
+  });
+
+});
+
+function addCommandResult(result)
+{
+ $.each(result, function(i, line) {
+   if (line == "You entered an invalid command!" || line == "All commands must start with '!'" )
+   {
+      line = getColorForLevel("Banned", line);
+    }
+   else
+   {
+     line = getColorForLevel("Trusted", line);
+   }
+  if (cmdResultQueue.length > 12)
+    cmdResultQueue.shift();
+
+  cmdResultQueue.push(line);
+  });
+}
+
+function formatCommandResults()
+{
+  $('#console').html("");
+
+  for (i = 0; i < cmdResultQueue.length; i++)
+  $('#console').append("<span class=\"commandResult\">"
+   + cmdResultQueue[i] + "</span><br/>"
+  );
+}
+
+
+$('.searchButton').click(function() {
+    if ($('.search').val().length > 0)
+      {
+        if ($('.search').val()[0] != '!')
+        {
+          addCommandResult(["All commands must start with '!'"]);
+          formatCommandResults();
+          return false;
+        }
+
+        $.getJSON("/_console?command=" + $('.search').val() + "&server=" + $('select').val(), function(result) {
+                      $.each(result, function(i, line) {
+                            addCommandResult(line)
+                      });
+                }).done(function (data) { formatCommandResults(); $('.search').val(""); });
+      }
+});
+
+$(document).keypress(function(e) {
+    if(e.which == 13) {
+        $('.searchButton').click();
+    }
+});
+</script>

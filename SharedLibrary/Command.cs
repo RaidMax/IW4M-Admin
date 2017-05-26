@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
@@ -18,7 +19,7 @@ namespace SharedLibrary
         }
 
         //Execute the command
-        abstract public void Execute(Event E);
+        abstract public Task ExecuteAsync(Event E);
 
         public String Name { get; private set; }
         public String Description { get; private set; }

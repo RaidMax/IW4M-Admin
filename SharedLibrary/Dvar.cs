@@ -16,4 +16,15 @@ namespace SharedLibrary
         public int min;
         public int max;
     } 
+
+    public class _DVAR<T>
+    {
+        public string Name { get; private set; }
+        public T Value;
+
+        public _DVAR(string name)
+        {
+            Name = name;
+        }
+    }
 }

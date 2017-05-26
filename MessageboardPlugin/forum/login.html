@@ -1,0 +1,59 @@
+<div class="infoBox" style="display : none;">
+  <div class="header">
+    <i class="fa fa-user" aria-hidden="true"></i>
+    Login</div>
+  <div class="alertBox">
+  </div>
+  <form id="login" method="get">
+    <input id="username" name="username" type="text"/>
+    <label for="username">Username</label>
+    <input id="password" name="password" type="password"/>
+    <label for="password">Password</label>
+    <input id="loginButton" value="Login" type="submit"/>
+    <a href="register">Register</a>
+  </form>
+</div>
+
+<script>
+$( document ).ready(function() {
+
+checkPrivilege();
+
+});
+
+function  validateInput()
+{
+  var password = $('form #password');
+  var username = $('form #username');
+
+  if (password.val().length < 1) {
+      showErrorMessage("Password is required!");
+      return false;
+  }
+
+  if (username.val().length < 1) {
+    showErrorMessage("Username is required!");
+    return false;
+  }
+
+  return true;
+}
+
+$("#loginButton").click(function(e) {
+  e.preventDefault();
+  if (validateInput())
+    $.getJSON("_login",
+    {
+      username : $('form #username').val(),
+      password : $('form #password').val()
+    },
+    function(result) {
+      if (result["errorCode"] == 0)
+        window.location.replace(result["destination"]);
+      else {
+        showErrorMessage(result["errorCode"]);
+      }
+    }
+  );
+});
+</script>

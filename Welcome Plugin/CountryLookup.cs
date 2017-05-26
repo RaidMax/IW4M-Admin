@@ -60,7 +60,7 @@ namespace CountryLookupProj
             {
                 fileInput = new FileStream(fileName, FileMode.Open, FileAccess.Read);
             }
-            catch (FileNotFoundException e)
+            catch (FileNotFoundException)
             {
                 Console.WriteLine("File " + fileName + " not found.");
             }
@@ -73,7 +73,7 @@ namespace CountryLookupProj
             {
                 addr = IPAddress.Parse(str);
             }
-            catch (FormatException e)
+            catch (FormatException)
             {
                 return "--";
             }
@@ -109,7 +109,7 @@ namespace CountryLookupProj
             {
                 addr = IPAddress.Parse(str);
             }
-            catch (FormatException e)
+            catch (FormatException)
             {
                 return "N/A";
             }
@@ -134,7 +134,7 @@ namespace CountryLookupProj
                 fileInput.Seek(6 * offset, 0);
                 fileInput.Read(buf, 0, 6);
             }
-            catch (IOException e)
+            catch (IOException)
             {
                 Console.WriteLine("IO Exception");
             }

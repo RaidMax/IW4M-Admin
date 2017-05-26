@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
@@ -35,6 +36,11 @@ namespace SharedLibrary
             Console = 8,
         }
 
+        public override bool Equals(object obj)
+        {
+            return ((Player)obj).npID == this.npID;
+        }
+
         public Player(string n, string id, int num, int l)
         {
             Name = n;
@@ -59,12 +65,14 @@ namespace SharedLibrary
             LastConnection = DateTime.Now;
         }
 
-        public Player(string n, string id, Player.Permission P, String I)
+        public Player(String n, String id, Player.Permission P, String I, String UID)
         {
             Name = n;
             npID = id;
             Level = P;
             IP = I;
+            clientID = -1;
+            this.UID = UID;
         }
 
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)
@@ -85,7 +93,7 @@ namespace SharedLibrary
             LastConnection = DateTime.Now;
         }
 
-        public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2, DateTime LC)
+        public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2, DateTime LC, string UID, bool masked)
         {
             Name = n;
             npID = id;
@@ -101,6 +109,16 @@ namespace SharedLibrary
             Warnings = 0;
             Masked = false;
             LastConnection = LC;
+            this.UID = UID.Trim();
+            Masked = masked;
+        }
+
+        public bool registerUID(String UID)
+        {
+            if (UID.Length > 5)
+                this.UID = UID;
+
+            return this.UID == UID;
         }
 
         public String getLastConnection()
@@ -124,34 +142,29 @@ namespace SharedLibrary
             Level = Perm;
         }
 
-        public void Tell(String Message)
+        public async Task Tell(String Message)
         {
-            lastEvent.Owner.Tell(Message, this);
+            await lastEvent.Owner.Tell(Message, this);
         }
 
-        public void Kick(String Message, Player Sender)
+        public async Task Kick(String Message, Player Sender)
         {
-            lastEvent.Owner.Kick(Message, this, Sender);
+            await lastEvent.Owner.Kick(Message, this, Sender);
         }
 
-        public void tempBan(String Message, Player Sender)
+        public async Task TempBan(String Message, Player Sender)
         {
-            lastEvent.Owner.tempBan(Message, this, Sender);
+            await lastEvent.Owner.TempBan(Message, this, Sender);
         }
 
-        public void Warn(String Message, Player Sender)
+        public async Task Warn(String Message, Player Sender)
         {
-            lastEvent.Owner.Warn(Message, this, Sender);
+            await lastEvent.Owner.Warn(Message, this, Sender);
         }
 
-        public void Ban(String Message, Player Sender)
+        public async Task Ban(String Message, Player Sender)
         {
-            lastEvent.Owner.Ban(Message, this, Sender);
-        }
-
-        public void Alert()
-        {
-            lastEvent.Owner.Alert(this);
+            await lastEvent.Owner.Ban(Message, this, Sender);
         }
 
         public String Name { get; private set; }
@@ -161,6 +174,7 @@ namespace SharedLibrary
         public int databaseID { get; private set; }
         public int Connections { get; set; }
         public String IP { get; private set; }
+        public String UID { get; private set; }
         public DateTime LastConnection { get; private set; }
         public Server currentServer { get; private set; }
 
@@ -169,5 +183,6 @@ namespace SharedLibrary
         public int Warnings;
         public Aliases Alias;
         public bool Masked;
+        public int selectedServer;
     }
 }

@@ -5,13 +5,15 @@ using System.Text.RegularExpressions;
 
 namespace SharedLibrary
 {
+    [Serializable]
     public class Chat
     {
-        public Chat(Player O, String M, DateTime D)
+        public Chat(string O, String M, DateTime D)
         {
-            Origin = O;
+            Name = O;
             Message = M;
             Time = D;
+            
         }
 
         public String timeString()
@@ -19,10 +21,48 @@ namespace SharedLibrary
             return Time.ToShortTimeString();
         }
 
-        public Player Origin { get; private set; }
+        //public Player Origin { get; private set; }
         public String Message { get; private set; }
         public DateTime Time { get; private set; }
+        public string Name;
     }
+
+    [Serializable]
+    public struct RestEvent
+    {
+        public RestEvent(eType Ty, eVersion V, string M, string T, string O, string Ta)
+        {
+            Type = Ty;
+            Version = V;
+            Message = M;
+            Title = T;
+            Origin = O;
+            Target = Ta;
+
+            ID = Math.Abs(DateTime.Now.GetHashCode());
+        }
+
+        public enum eType
+        {
+            NOTIFICATION,
+            STATUS,
+            ALERT,
+        }
+
+        public enum eVersion
+        {
+            IW4MAdmin
+        }
+
+        public eType Type;
+        public eVersion Version;
+        public string Message;
+        public string Title;
+        public string Origin;
+        public string Target;
+        public int ID;
+    }
+
 
     public class Event
     {
@@ -44,7 +84,11 @@ namespace SharedLibrary
             Tell,
             Kick,
             Ban,
+            Remote,
             Unknown,
+
+            //FROM PLAYER
+            Report
         }
 
         public Event(GType t, string d, Player O, Player T, Server S)
@@ -100,7 +144,7 @@ namespace SharedLibrary
                 if (eventType == ":")
                     return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
-                if (line[0].Split('\\').Length > 5) // blaze it
+                if (line[0].Contains("InitGame")) // blaze it
                     return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
 
@@ -121,5 +165,6 @@ namespace SharedLibrary
         public Player Origin;
         public Player Target;
         public Server Owner;
+        public Boolean Remote = false;
     }
 }

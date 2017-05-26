@@ -15,5 +15,10 @@ namespace SharedLibrary
 
         public String Name { get; private set; }
         public String Alias { get; private set; }
+
+        public override string ToString()
+        {
+            return Alias;
+        }
     }
 }

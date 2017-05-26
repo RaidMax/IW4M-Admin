@@ -1,0 +1,8 @@
+@media screen and (max-width: 1200px)
+{
+  div#content { padding-left: 0; margin-left: 1em; padding-right: 0; margin-right: 1em; }
+  div#view { width: 100%; }
+  div#threadContainer { width: 90%; }
+  div#userInfoBox { width: 95%; }
+  div#userCover { width: 100%; left: 0; }
+}

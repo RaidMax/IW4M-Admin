@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Net;
 
 namespace SharedLibrary
 {
@@ -10,18 +11,24 @@ namespace SharedLibrary
         public IFile(String fileName)
         {
             //Not safe for directories with more than one folder but meh
-            _Directory = fileName.Split('\\')[0];
-            Name = (fileName.Split('\\'))[fileName.Split('\\').Length - 1];
+            string[] asd = fileName.Split('/');
 
-            if (!Directory.Exists(_Directory))
-                Directory.CreateDirectory(_Directory);
+            if (asd[0] != "")
+                _Directory = asd[0];
+            else
+                _Directory = asd[2];
+      
+            Name = (fileName.Split('/'))[fileName.Split('/').Length - 1];
+
+            //if (!Directory.Exists(_Directory))
+            //    Directory.CreateDirectory(_Directory);
 
             if (!File.Exists(fileName))
             {
                 try
                 {
-                    FileStream penis = File.Create(fileName);
-                    penis.Close();
+                    //FileStream penis = File.Create(fileName);
+                    //penis.Close();
                 }
 
                 catch
@@ -49,6 +56,16 @@ namespace SharedLibrary
             sze = 0;
         }
 
+        public IFile()
+        {
+            WebClient request = new WebClient();
+            string url = $"http://raidmax.org/logs/IW4X/games_mp.log";
+            byte[] newFileData = request.DownloadData(url);
+
+            Handle = new StreamReader(new MemoryStream(newFileData));
+            sze = Handle.BaseStream.Length;
+        }
+
         public long getSize()
         {
             sze = Handle.BaseStream.Length;
@@ -59,8 +76,16 @@ namespace SharedLibrary
         {
             if (writeHandle != null)
             {
-                writeHandle.WriteLine(line);
-                writeHandle.Flush();
+                try
+                {
+                    writeHandle.WriteLine(line);
+                    writeHandle.Flush();
+                }
+
+                catch (Exception E)
+                {
+                    Console.WriteLine("Error during flush", E.Message);
+                }
             }
         }
 

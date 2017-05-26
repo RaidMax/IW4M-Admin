@@ -1,5 +1,4 @@
-﻿#define REPZ_BUILD
-using System;
+﻿using System;
 using System.Threading;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -7,7 +6,7 @@ using System.Collections.Generic;
 
 namespace SharedLibrary
 {
-    public class Utilities
+    public static class Utilities
     {
         //Get string with specified number of spaces -- really only for visual output
         public static String getSpaces(int Num)
@@ -29,8 +28,11 @@ namespace SharedLibrary
         }
 
         //Remove words from a space delimited string
-        public static String removeWords(String str, int num)
+        public static String RemoveWords(this string str, int num)
         {
+            if (str == null || str.Length == 0)
+                return "";
+
             String newStr = String.Empty;
             String[] tmp = str.Split(' ');
 
@@ -62,27 +64,15 @@ namespace SharedLibrary
         public static String removeNastyChars(String str)
         {
             if (str != null)
-                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "").Replace("&amp;", "&").Replace("\"", "''").Replace("'", "");
+            {
+                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "").Replace("&amp;", "&").Replace("\"", "''").Replace("'", "").Replace("?", "");
+            }
+
             else
                 return String.Empty;
         }
 
-        public static int GetLineNumber(Exception ex)
-        {
-            var lineNumber = 0;
-            const string lineSearch = ":line ";
-            var index = ex.StackTrace.LastIndexOf(lineSearch);
-            if (index != -1)
-            {
-                var lineNumberText = ex.StackTrace.Substring(index + lineSearch.Length);
-                if (int.TryParse(lineNumberText, out lineNumber))
-                {
-                }
-            }
-            return lineNumber;
-        }
-
-        public static String cleanChars(String S)
+        public static String CleanChars(this string S)
         {
             if (S == null)
                 return "";
@@ -99,11 +89,11 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="str">String containing color codes</param>
         /// <returns></returns>
-        public static String stripColors(String str)
+        public static String StripColors(this string str)
         {
             if (str == null)
                 return "";
-            return Regex.Replace(str, @"\^[0-9]", "");
+            return Regex.Replace(str, @"\^([0-9]|\:)", "");
         }
 
         /// <summary>
@@ -130,83 +120,7 @@ namespace SharedLibrary
             }
         }
 
-        /// <summary>
-        /// HTML formatted level color
-        /// </summary>
-        /// <param name="Level">Specified player level</param>
-        /// <returns></returns>
-        public static String levelHTMLFormatted(Player.Permission Level)
-        {
-            switch (Level)
-            {
-                case Player.Permission.User:
-                    return "<span style='color:rgb(87, 150, 66)'>" + Level + "</span>";
-                case Player.Permission.Moderator:
-                    return "<span style='color:#e7b402'>" + Level + "</span>";
-                case Player.Permission.Administrator:
-                    return "<span style='color:#ec82de'>" + Level + "</span>";
-                case Player.Permission.SeniorAdmin:
-                    return "<span style='color:#2eb6bf'>" + Level + "</span>";
-                case Player.Permission.Owner:
-                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
-                case Player.Permission.Creator:
-                    return "<span style='color:rgb(38,120,230)'>" + Level + "</span>";
-                case Player.Permission.Banned:
-                    return "<span style='color:rgb(196, 22, 28)'>" + Level + "</span>";
-                case Player.Permission.Flagged:
-                    return "<span style='color:rgb(251, 124, 98)'>" + Level + "</span>";
-                case Player.Permission.Trusted:
-                    return "<span style='color:orange'>" + Level + "</span>";
-                default:
-                    return "<i>" + Level + "</i>";
-            }
-        }
-
-        public static String nameHTMLFormatted(Player P)
-        {
-            switch (P.Level)
-            {
-                case Player.Permission.User:
-                    return "<span style='color:rgb(87, 150, 66)'>" + P.Name + "</span>";
-                case Player.Permission.Moderator:
-                    return "<span style='color:#e7b402'>" + P.Name + "</span>";
-                case Player.Permission.Administrator:
-                    return "<span style='color:#ec82de'>" + P.Name + "</span>";
-                case Player.Permission.SeniorAdmin:
-                    return "<span style='color:#2eb6bf'>" + P.Name + "</span>";
-                case Player.Permission.Owner:
-                    return "<span style='color:rgb(38,120,230)'>" + P.Name + "</span>";
-                case Player.Permission.Creator:
-                    return "<span style='color:rgb(38,120,230)'>" + P.Name + "</span>";
-                case Player.Permission.Banned:
-                    return "<span style='color:rgb(196, 22, 28)'>" + P.Name + "</span>";
-                case Player.Permission.Flagged:
-                    return "<span style='color:rgb(251, 124, 98)'>" + P.Name + "</span>";
-                case Player.Permission.Trusted:
-                    return "<span style='color:orange'>" + P.Name + "</span>";
-                default:
-                    return "<i>" + P.Name + "</i>";
-            }
-        }
-
-        public static String penaltyHTMLFormatted(Penalty.Type BType)
-        {
-            switch(BType)
-            {
-                case Penalty.Type.Ban:
-                    return "<span style='color:rgb(196, 22, 28)'>" + BType.ToString() + "</span>";
-                case Penalty.Type.TempBan:
-                    return "<span style='color:#E6840C'>" + BType.ToString() + "</span>";
-                case Penalty.Type.Kick:
-                    return "<span style='color:#8A0578'>" + BType.ToString() + "</span>";
-                case Penalty.Type.Warning:
-                    return "<span style='color:#CAB11D'>" + BType.ToString() + "</span>";
-                default:
-                    return "";
-            }
-        }
-
-        public static String processMacro(Dictionary<String, Object> Dict, String str)
+        public static String LoadMacro(Dictionary<String, Object> Dict, String str)
         {
             MatchCollection Found = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
             foreach (Match M in Found)
@@ -280,32 +194,46 @@ namespace SharedLibrary
                 case "oneflag":
                     return "One Flag CTF";
                 default:
-                    return "Unknown";
+                    return input;
             }
         }
 
         public static String DateTimeSQLite(DateTime datetime)
         {
-            string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
-            return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second, datetime.Millisecond);
+            return datetime.ToString("yyyy-MM-dd H:mm:ss");
         }
 
         public static String timePassed(DateTime start)
         {
             TimeSpan Elapsed = DateTime.Now - start;
 
+            if (Elapsed.TotalSeconds < 30)
+                return "just now";
             if (Elapsed.TotalMinutes < 120)
+            {
+                if (Elapsed.TotalMinutes < 1.5)
+                    return "1 minute";
                 return Math.Round(Elapsed.TotalMinutes, 0) + " minutes";
+            }
             if (Elapsed.TotalHours <= 24)
+            {
+                if (Elapsed.TotalHours < 1.5)
+                    return "1 hour";
                 return Math.Round(Elapsed.TotalHours, 0) + " hours";
+            }
             if (Elapsed.TotalDays <= 365)
+            {
+                if (Elapsed.TotalDays  < 1.5)
+                    return "1 day";
                 return Math.Round(Elapsed.TotalDays, 0) + " days";
+            }
             else
                 return "a very long time";
         }
 
-        public static String timesConnected(int connection)
+        public static String TimesConnected(this Player P)
         {
+            int connection = P.Connections;
             String Prefix = String.Empty;
             if (connection % 10 > 3 || connection % 10 == 0 || (connection % 100 > 9 && connection % 100 < 19))
                 Prefix = "th";
@@ -348,18 +276,6 @@ namespace SharedLibrary
                 default:
                     return connection.ToString() + Prefix;
             }
-        }
-
-        public static Int64 getForumIDFromStr(String npID)
-        {
-            Int64 forumID = 0;
-            if (npID.Length == 16)
-            {
-                forumID = Int64.Parse(npID.Substring(0, 16), System.Globalization.NumberStyles.AllowHexSpecifier);
-                forumID = forumID - 76561197960265728;
-            }
-
-            return forumID;
         }
     }
 }

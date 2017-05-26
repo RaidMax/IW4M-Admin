@@ -10,16 +10,15 @@ namespace IW4MAdmin
         public Heartbeat(Server I)
         {
             Handle = new Connection("http://raidmax.org/IW4M/Admin");
-            Instance = I;
         }
 
-        public void Send()
+        public void Send(Server S)
         {
-            String URI = String.Format("http://raidmax.org/IW4M/Admin/heartbeat.php?address={0}&name={1}&map={2}&players={3}&version={4}", Instance.getPort().ToString(), Instance.getName(), Instance.getMap(), Instance.getClientNum() + '/' + Instance.getMaxClients().ToString(), IW4MAdmin.Program.Version.ToString());
+            String URI = String.Format("http://raidmax.org/IW4M/Admin/heartbeat.php?port={0}&name={1}&map={2}&players={3}&version={4}&gametype={5}&servercount={6}", S.getPort(), S.getName(), S.CurrentMap.Name, S.getPlayers().Count, IW4MAdmin.Program.Version.ToString(), S.Gametype, Manager.GetInstance().Servers);
+            // blind fire
             Handle.Request(URI);
         }
 
         private Connection Handle;
-        private Server Instance;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Text;
 using SharedLibrary;
 using System.Collections.Specialized;
@@ -17,7 +18,7 @@ namespace MessageBoard.Forum
         private const int MAX_SESSIONS          = 64;
         public const int TITLE_MAXLENGTH        = 30;
         public const int CONTENT_MAXLENGTH      = 8192;
-        public const int USERNAME_MAXLENGTH     = 16;
+        public const int USERNAME_MAXLENGTH     = 30;
         public const int PASSWORD_MAXLENGTH     = 64;
 
         public Rank guestRank;
@@ -36,6 +37,7 @@ namespace MessageBoard.Forum
             USER_NOTAUTHORIZED,
             USER_PASSWORDTOOLONG,
             USER_USERNAMETOOLONG,
+            USER_BADPROFILEDATA,
             SESSION_INVALID,
             THREAD_BADDATA,
             THREAD_EMPTYDATA,
@@ -44,7 +46,8 @@ namespace MessageBoard.Forum
             THREAD_INVALID,
             REPLY_SAVEFAILED,
             CATEGORY_INVALID,
-            CATEGORY_EMPTY
+            CATEGORY_EMPTY,
+            USER_MISMATCHEDPASSWORD
         }
 
         public Manager()
@@ -60,13 +63,13 @@ namespace MessageBoard.Forum
             {
                 Session newSession = getSession(sessionID);
                 newSession.sessionStartTime = DateTime.Now;
-                Console.WriteLine("Matching session was found - {0}", sessionID);
+                //Console.WriteLine("Matching session was found - {0}", sessionID);
                 addSession(newSession);
             }
 
             catch (Exceptions.SessionException)
             {
-                Console.WriteLine("No session was found so we are adding a new one");
+                //Console.WriteLine("No session was found so we are adding a new one");
                 Session newSession = new Session(new User(), sessionID);
                 addSession(newSession);
             }
@@ -88,6 +91,16 @@ namespace MessageBoard.Forum
         public User getUser(int userID)
         {
             User requestedUser = database.getUser(userID);
+
+            if (requestedUser == null)
+                throw new Exceptions.UserException("User not found");
+
+            return requestedUser;
+        }
+
+        public User getUser(string username)
+        {
+            User requestedUser = database.getUser(username);
 
             if (requestedUser == null)
                 throw new Exceptions.UserException("User not found");
@@ -150,7 +163,7 @@ namespace MessageBoard.Forum
             if (activeSessions.Count >= MAX_SESSIONS)
                 activeSessions.RemoveAt(0);
 
-            //activeSessions.RemoveAll(x => (x.sessionID == sess.sessionID && sess.sessionUser.ranking.equivalentRank > x.sessionUser.ranking.equivalentRank));
+            activeSessions.RemoveAll(x => x.sessionUser.ranking.name == "Guest" && x.sessionID == sess.sessionID);
 
             //Console.WriteLine(String.Format("Adding new session [{0}] [{1}]", sess.sessionID, sess.sessionUser.username));
 
@@ -158,7 +171,7 @@ namespace MessageBoard.Forum
                 activeSessions.Add(sess);
 
             // if it's a guest session, we don't want to save them in the database...
-            if (sess.sessionUser.ranking.equivalentRank > Player.Permission.User)
+            if (sess.sessionUser.ranking.name != "Guest")
             {
                 database.setSession(sess.sessionUser.id, sess.sessionID);
                 sess.sessionUser.lastLogin = DateTime.Now;
@@ -171,6 +184,24 @@ namespace MessageBoard.Forum
         public void removeSession(string sessID)
         {
             activeSessions.RemoveAll(x => x.sessionID == sessID);
+            database.removeSession(sessID);
+        }
+
+        public ProfileSettings getProfileSettings(int userid)
+        {
+            var retrieved = database.getProfileSettings(userid);
+            if (retrieved == null)
+            {
+                if (userid > 0)
+                {
+                    var profile = new ProfileSettings(userid);
+                    database.addProfileSettings(profile);
+                    return profile;
+                }
+                return new ProfileSettings(0);
+            }
+            else
+                return retrieved;
         }
 
         public ErrorCode addUser(User newUser, Session userSession)
@@ -183,12 +214,19 @@ namespace MessageBoard.Forum
                 newUser.ranking = AdminRank;
 
             User createdUser = database.addUser(newUser, userSession);
+            database.addProfileSettings(new ProfileSettings(createdUser.id));
+            removeSession(userSession.sessionID);
             return addSession(new Session(createdUser, userSession.sessionID));
         }
 
         public void updateUser(User updatedUser)
         {
             database.updateUser(updatedUser);
+        }
+
+        public void updateUserProfile(ProfileSettings updatedUserProfile)
+        {
+            database.updateProfileSettings(updatedUserProfile);
         }
 
         public ErrorCode updateThread(ForumThread newThread)
@@ -218,7 +256,7 @@ namespace MessageBoard.Forum
 
         public ErrorCode authorizeUser(string username, string password, string sessionID)
         {
-            User toAuth = database.getUser(username);
+            User toAuth = database.getUser(username.ToLower());
 
             if (toAuth == null)
                 return ErrorCode.USER_BADCREDENTIALS;
@@ -270,6 +308,8 @@ namespace MessageBoard.Forum
             var registerJSON        = new Pages.RegisterJSON();
             var userinfoJSON        = new Pages.userinfoJSON();
             var viewUser            = new Pages.ViewUser();
+            var userCP              = new Pages.UserCP();
+            var updateUserJSON      = new Pages.updateUserJSON();
             var categoriesJSON      = new Pages.categoriesJSON();
             var category            = new Pages.ViewCategory();
             var categorythreadsJSON = new Pages.categorythreadsJSON();
@@ -289,6 +329,8 @@ namespace MessageBoard.Forum
             forumPages.Add(registerJSON);
             forumPages.Add(userinfoJSON);
             forumPages.Add(viewUser);
+            forumPages.Add(userCP);
+            forumPages.Add(updateUserJSON);
             forumPages.Add(categoriesJSON);
             forumPages.Add(category);
             forumPages.Add(categorythreadsJSON);
@@ -308,6 +350,8 @@ namespace MessageBoard.Forum
             SharedLibrary.WebService.pageList.Add(registerJSON);
             SharedLibrary.WebService.pageList.Add(userinfoJSON);
             SharedLibrary.WebService.pageList.Add(viewUser);
+            SharedLibrary.WebService.pageList.Add(userCP);
+            SharedLibrary.WebService.pageList.Add(updateUserJSON);
             SharedLibrary.WebService.pageList.Add(categoriesJSON);
             SharedLibrary.WebService.pageList.Add(category);
             SharedLibrary.WebService.pageList.Add(categorythreadsJSON);
@@ -366,7 +410,7 @@ namespace MessageBoard.Forum
 
                 if (requestHeaders.ContainsKey("Cookie"))
                 {
-                    Console.WriteLine("JSON request contains session header - " + requestHeaders["Cookie"]);
+                    //Console.WriteLine("JSON request contains session header - " + requestHeaders["Cookie"]);
                     string cookie = requestHeaders["Cookie"].Split('=')[1];
                     Plugin.Main.forum.startSession(cookie);
                     currentSession = Plugin.Main.forum.getSession(cookie);
@@ -552,6 +596,30 @@ namespace MessageBoard.Forum
             }
         }
 
+        public class UserCP : ForumPage
+        {
+            public UserCP() : base(false)
+            {
+
+            }
+
+            public override string getName()
+            {
+                return "Forum - User Control Panel";
+            }
+
+            public override string getPath()
+            {
+                return base.getPath() + "/usercp";
+            }
+
+            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            {
+                string content = loadFile("forum\\usercp.html");
+                return templatation(content);
+            }
+        }
+
         public class ViewThread : ForumPage
         {
             public ViewThread() : base(false)
@@ -622,10 +690,29 @@ namespace MessageBoard.Forum
                 result.destination = base.getPath() + "/error";
                 
                 try {
+
+                    string username = DNA.Text.TextEngine.Text(querySet["username"]);
+                    string password = DNA.Text.TextEngine.Text(querySet["password"]);
+                    string email = DNA.Text.TextEngine.Text(querySet["email"]);
+
+                    bool validEmail = Regex.IsMatch(email,
+                        @"^(?("")("".+?(?<!\\)""@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^`\{\}\|~\w])*)(?<=[0-9a-z])@))" +
+                        @"(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-z][-\w]*[0-9a-z]*\.)+[a-z0-9][\-a-z0-9]{0,22}[a-z0-9]))$",
+                    RegexOptions.IgnoreCase) && email.Length < Manager.PASSWORD_MAXLENGTH;
+
+                    if (!validEmail)
+                        throw new Exceptions.UserException("Email is invalid");
+
+                    if (username.Length > Manager.USERNAME_MAXLENGTH)
+                        throw new Exceptions.UserException("Username is too long");
+
+                    if (password.Length > Manager.PASSWORD_MAXLENGTH)
+                        throw new Exceptions.UserException("Password is too long");
+
                     byte[] passwordSalt = Encryption.PasswordHasher.GenerateSalt();
-                    string b64PasswordHash = Convert.ToBase64String(Encryption.PasswordHasher.ComputeHash(querySet["password"], passwordSalt));
+                    string b64PasswordHash = Convert.ToBase64String(Encryption.PasswordHasher.ComputeHash(password, passwordSalt));
    
-                    User registeringUser = new User(querySet["username"], querySet["hiddenUsername"], querySet["email"], b64PasswordHash, Convert.ToBase64String(passwordSalt), Plugin.Main.forum.UserRank);
+                    User registeringUser = new User(username, querySet["hiddenUsername"], email, b64PasswordHash, Convert.ToBase64String(passwordSalt), Plugin.Main.forum.UserRank);
 
                     currentSession = new Session(registeringUser, currentSession.sessionID);
                     var addUserResult = Plugin.Main.forum.addUser(registeringUser, currentSession);
@@ -643,7 +730,9 @@ namespace MessageBoard.Forum
                     }
                 }
 
-                catch (Exception E) {
+                catch (Exception E)
+                {
+                    //logme
                     result.errorCode = Manager.ErrorCode.USER_INVALID;
                 }
 
@@ -665,11 +754,12 @@ namespace MessageBoard.Forum
 
                 UserInfo info = new UserInfo();
                 bool validUserSelection = true;
-                User requestedUser = null;
 
                 try
                 {
-                    requestedUser = Plugin.Main.forum.getUser(Convert.ToInt32(querySet["id"]));
+                    int userid = Convert.ToInt32(querySet["id"]);
+                    info.user = Plugin.Main.forum.getUser(userid);
+                    info.profile = Plugin.Main.forum.getProfileSettings(userid);
                 }
 
                 catch (FormatException)
@@ -684,41 +774,120 @@ namespace MessageBoard.Forum
                     validUserSelection = false;
                 }
 
-                if (validUserSelection)
+                if (!validUserSelection)
                 {
-                    resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedUser);
+                    info.user = currentSession.sessionUser;
+                    try
+                    {
+                        info.profile = Plugin.Main.forum.getProfileSettings(info.user.id);
+                    }
+
+                    catch (Exceptions.UserException)
+                    {
+                        //logme
+                    }
                 }
 
-                else
+                /*// this should not be a thing but ok...
+                Player matchedPlayer = Plugin.Main.stupidServer.clientDB.getPlayer(querySet["ip"]);
+
+                if (matchedPlayer != null)
+                    info.matchedUsername = matchedPlayer.Name;*/
+
+                resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(info);
+                return resp;
+            }
+        }
+
+        public class updateUserJSON : JSONPage
+        {
+            public override string getPath()
+            {
+                return base.getPath() + "/_updateuser";
+            }
+
+            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            {
+                var resp = base.getPage(querySet, requestHeaders);
+                var aResp = new ActionResponse();
+
+                bool passwordUpdateRequest = false;
+
+                if (querySet["username"] == null || currentSession.sessionUser.id == 0)
+                    aResp.errorCode = Manager.ErrorCode.USER_INVALID;
+                else if (querySet["bannercolor"] == null)
+                    aResp.errorCode = Manager.ErrorCode.USER_BADPROFILEDATA;
+                if (querySet["updatedpassword"] != null && querySet["updatedpasswordrepeat"] != null && querySet["updatedpassword"].Length > 0 && querySet["updatedpasswordrepeat"].Length > 0)
+                    passwordUpdateRequest = true;
+
+                if (aResp.errorCode == Manager.ErrorCode.NO_ERROR)
                 {
-                    if (querySet.Get("setavatarurl") != null)
+                    string username = DNA.Text.TextEngine.Text(querySet["username"]);
+                    string bannercolor = DNA.Text.TextEngine.Text(querySet["bannercolor"]);
+                    string avatarURL = DNA.Text.TextEngine.Text(querySet["avatarurl"]);
+                    string password = null;
+
+                    if (passwordUpdateRequest)
                     {
-                        if (currentSession.sessionUser.ranking.name != "Guest")
+                        password = DNA.Text.TextEngine.Text(querySet["updatedpassword"]);
+                        string passwordRepeat = DNA.Text.TextEngine.Text(querySet["updatedpasswordrepeat"]);
+                        if (!password.Equals(passwordRepeat))
                         {
-                            currentSession.sessionUser.avatarURL = querySet["setavatarurl"];
-                            Plugin.Main.forum.updateUser(currentSession.sessionUser);
-                            resp.content = "OK!";
-                            return resp;
+                            password = null;
+                            aResp.errorCode = Manager.ErrorCode.USER_MISMATCHEDPASSWORD;
+                        }
+
+                        else if (password.Length > Manager.PASSWORD_MAXLENGTH)
+                        {
+                            password = null;
+                            aResp.errorCode = Manager.ErrorCode.USER_PASSWORDTOOLONG;
                         }
                     }
 
+                    User existingUser = null;
+                    try
+                    {
+                        existingUser = Plugin.Main.forum.getUser(username);
+                    }
+
+                    catch (Exceptions.UserException)
+                    {
+
+                    }
+
+
+                    if (existingUser != null && existingUser.id != currentSession.sessionUser.id)
+                        aResp.errorCode = Manager.ErrorCode.USER_DUPLICATE;
                     else
                     {
-                        info.email = currentSession.sessionUser.email;
-                        info.username = currentSession.sessionUser.username;
-                        info.rank = currentSession.sessionUser.ranking;
+                        var profile = Plugin.Main.forum.getProfileSettings(currentSession.sessionUser.id);
+                        if (username.Length <= Manager.USERNAME_MAXLENGTH)
+                            currentSession.sessionUser.updateUsername(username);
+                        else
+                            aResp.errorCode = Manager.ErrorCode.USER_USERNAMETOOLONG;
+                        currentSession.sessionUser.updateAvatar(avatarURL);
 
-                        // this should not be a thing but ok...
-                        Player matchedPlayer = Plugin.Main.stupidServer.clientDB.getPlayer(querySet["ip"]);
+                        if (passwordUpdateRequest && aResp.errorCode == Manager.ErrorCode.NO_ERROR)
+                        {
+                            byte[] passwordSalt = Encryption.PasswordHasher.GenerateSalt();
+                            string b64PasswordHash = Convert.ToBase64String(Encryption.PasswordHasher.ComputeHash(password, passwordSalt));
+                            currentSession.sessionUser.updatePassword(Convert.ToBase64String(passwordSalt), b64PasswordHash);
+                        }
 
-                        if (matchedPlayer != null)
-                            info.matchedUsername = matchedPlayer.Name;
-
-                        resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(info);
+                        Plugin.Main.forum.updateUser(currentSession.sessionUser);
+                        if (bannercolor.Length == 7)
+                            profile.bannerColor = bannercolor;
+                        Plugin.Main.forum.updateUserProfile(profile);
+                        
                     }
                 }
 
-                return resp;
+                aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
+                if (aResp.success)
+                    aResp.destination = "usercp";
+
+                resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(aResp);
+                return resp;          
             }
         }
 
@@ -737,7 +906,10 @@ namespace MessageBoard.Forum
 
                 try
                 {
-                    var result = Plugin.Main.forum.authorizeUser(querySet["username"], querySet["password"], currentSession.sessionID);
+                    string username = DNA.Text.TextEngine.Text(querySet["username"]);
+                    string password = DNA.Text.TextEngine.Text(querySet["password"]);
+
+                    var result = Plugin.Main.forum.authorizeUser(username, password, currentSession.sessionID);
                     aResp.success = result == Manager.ErrorCode.NO_ERROR;
                     aResp.errorCode = result;
                     aResp.destination = "home";
@@ -881,11 +1053,22 @@ namespace MessageBoard.Forum
                         var thread = Plugin.Main.forum.getThread(Convert.ToInt32(querySet["id"]));
 
                         if ((thread.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.READ) != Permission.Action.READ)
-                            throw new Exceptions.PermissionException("You cannot view this post");
+                            throw new Exceptions.PermissionException("User cannot view this post");
 
                         var replies = Plugin.Main.forum.getReplies(thread.id);
 
                         resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(new ThreadView(thread, replies));
+                        aResp.success = true;
+                    }
+
+                    else if (querySet.Get("replyid") != null)
+                    {
+                        var thread = Plugin.Main.forum.getReply(Convert.ToInt32(querySet["replyid"]));
+
+                        //if ((thread.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.READ) != Permission.Action.READ)
+                        //    throw new Exceptions.PermissionException("User cannot view this post");
+
+                        resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(thread);
                         aResp.success = true;
                     }
                 }
@@ -961,15 +1144,15 @@ namespace MessageBoard.Forum
                             else
                             {
                                 //fixsecurity
-                                var markdownParser = new MarkdownDeep.Markdown();
-                                string markdownContent = markdownParser.Transform(querySet["content"]);
-                                markdownContent = Uri.EscapeDataString(markdownContent);
-                                string title = Uri.EscapeDataString(querySet["title"]);
+                                var fmtr = new DNA.Text.BBCodeFormatter();
+                                string content = fmtr.Format(Uri.UnescapeDataString(querySet["content"]));
+                                string title = DNA.Text.TextEngine.Text(Uri.UnescapeDataString(querySet["title"]));
 
-                                if (thread.updateTitle(title) && thread.updateContent(markdownContent))
+                                if (thread.updateTitle(title) && thread.updateContent(content))
                                 {
                                     aResp.errorCode = Plugin.Main.forum.updateThread(thread);
                                     aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
+                                    aResp.destination = "thread?id=" + thread.id;
                                 }
                                 else
                                     aResp.errorCode = Manager.ErrorCode.THREAD_EMPTYDATA;
@@ -980,7 +1163,7 @@ namespace MessageBoard.Forum
                     else if (querySet.Get("replyid") != null)
                     {
                         var reply = Plugin.Main.forum.getReply(Convert.ToInt32(querySet["replyid"]));
-
+        
                         if (currentSession.sessionUser.id == 0 || reply.author.id != currentSession.sessionUser.id && (reply.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.MODIFY) != Permission.Action.MODIFY)
                             throw new Exceptions.PermissionException("User cannot modify this reply");
 
@@ -990,6 +1173,40 @@ namespace MessageBoard.Forum
                             aResp.errorCode = Plugin.Main.forum.updateReply(reply);
                             aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                             aResp.destination = "thread?id=" + reply.threadid;
+                        }
+
+                        else if (querySet.Get("content") != null)
+                        {
+                            if (querySet.Get("content") == null || querySet.Get("title") == null)
+                                throw new Exceptions.ThreadException("Invalid update data");
+
+                            if (querySet.Get("content").Length > Manager.CONTENT_MAXLENGTH)
+                            {
+                                aResp.errorCode = Manager.ErrorCode.THREAD_CONTENTTOOLONG;
+                            }
+
+                            else if (querySet.Get("title").Length > Manager.TITLE_MAXLENGTH)
+                            {
+                                aResp.errorCode = Manager.ErrorCode.THREAD_TITLETOOLONG;
+                            }
+
+                            else
+                            {
+                                int threadID = Convert.ToInt32(querySet["threadid"]);
+                                //fixsecurity
+                                var fmtr = new DNA.Text.BBCodeFormatter();
+                                string content = fmtr.Format(Uri.UnescapeDataString(querySet["content"]));
+                                string title = DNA.Text.TextEngine.Text(Uri.UnescapeDataString(querySet["title"]));
+
+                                if (reply.updateTitle(title) && reply.updateContent(content))
+                                {
+                                    aResp.errorCode = Plugin.Main.forum.updateReply(reply);
+                                    aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
+                                    aResp.destination = "thread?id=" + threadID;
+                                }
+                                else
+                                    aResp.errorCode = Manager.ErrorCode.THREAD_EMPTYDATA;
+                            }
                         }
 
                     }
@@ -1043,15 +1260,14 @@ namespace MessageBoard.Forum
                         if (querySet["content"].Length < Manager.CONTENT_MAXLENGTH && querySet["title"].Length <= Manager.TITLE_MAXLENGTH)
                         {
 
-                            var markdownParser = new MarkdownDeep.Markdown();
-                            string markdownContent = markdownParser.Transform(querySet["content"]);
-                            markdownContent = Uri.EscapeDataString(markdownContent);
-                            string title = Uri.EscapeDataString(querySet["title"]);
+                            var fmtr = new DNA.Text.BBCodeFormatter();
+                            string content = fmtr.Format(Uri.UnescapeDataString(querySet["content"]));
+                            string title = DNA.Text.TextEngine.Text(Uri.UnescapeDataString(querySet["title"]));
 
                             if (querySet.Get("threadid") != null)
                             {
                                 var replyThread = Plugin.Main.forum.getThread(Convert.ToInt32(querySet.Get("threadid")));
-                                var reply = new Post(title, replyThread.getID(), markdownContent, currentSession.sessionUser);
+                                var reply = new Post(title, replyThread.getID(), content, currentSession.sessionUser);
 
                                 aResp.errorCode = Plugin.Main.forum.addPost(replyThread, reply);
                                 aResp.destination = String.Format("thread?id={0}", replyThread.id);
@@ -1064,7 +1280,7 @@ namespace MessageBoard.Forum
 
                                 if ((threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.WRITE) == Permission.Action.WRITE)
                                 {
-                                    ForumThread newThread = new ForumThread(title, markdownContent, currentSession.sessionUser, threadCategory);
+                                    ForumThread newThread = new ForumThread(title, content, currentSession.sessionUser, threadCategory);
 
                                     aResp.errorCode = Plugin.Main.forum.addThread(newThread);
                                     aResp.destination = String.Format("category?id={0}", threadCategory.id);
@@ -1118,6 +1334,7 @@ namespace MessageBoard.Forum
                     if (s.sessionUser.ranking.id > 0 && (DateTime.Now - s.sessionStartTime).TotalMinutes < 5 && s.sessionUser.username != "Guest")
                         stats.onlineUsers.Add(s.sessionUser);
                 }
+                stats.onlineUsers.OrderByDescending(x => x.ranking.equivalentRank);
 
                 resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(stats);
                 return resp;

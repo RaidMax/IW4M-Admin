@@ -14,7 +14,7 @@ namespace IW4MAdmin
         public override async Task ExecuteAsync(Event E)
         {
             await E.Origin.Tell("^5Loaded Plugins:");
-            foreach (SharedLibrary.Extensions.IPlugin P in PluginImporter.potentialPlugins)
+            foreach (SharedLibrary.Interfaces.IPlugin P in PluginImporter.potentialPlugins)
             {
                 await E.Origin.Tell(String.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
             }

@@ -1,18 +1,17 @@
 ﻿using System;
-using SharedLibrary;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
 using System.Data;
-
-using SharedLibrary.Extensions;
 using System.Threading.Tasks;
+
+using SharedLibrary;
 
 namespace StatsPlugin
 {
-    public class StatCommand : Command
+    public class CViewStats : Command
     {
-        public StatCommand() : base("stats", "view your stats. syntax !stats", "xlrstats", Player.Permission.User, 0, false) { }
+        public CViewStats() : base("stats", "view your stats. syntax !stats", "xlrstats", Player.Permission.User, 0, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -35,9 +34,9 @@ namespace StatsPlugin
         }
     }
 
-    public class TopStats : Command
+    public class CViewTopStats : Command
     {
-        public TopStats() : base("topstats", "view the top 5 players on this server. syntax !topstats", "!ts", Player.Permission.User, 0, false) { }
+        public CViewTopStats() : base("topstats", "view the top 5 players on this server. syntax !topstats", "!ts", Player.Permission.User, 0, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -59,7 +58,7 @@ namespace StatsPlugin
     /// Each server runs from the same plugin ( for easier reloading and reduced memory usage ).
     /// So, to have multiple stat tracking, we must store a stat struct for each server
     /// </summary>
-    public class Stats : IPlugin
+    public class Stats : SharedLibrary.Interfaces.IPlugin
     {
         public static List<StatTracking> statLists;
 
@@ -72,7 +71,7 @@ namespace StatsPlugin
 
             public StatTracking(int port)
             {
-                playerStats = new StatsDB("Database/stats_" + port + ".rm");
+                playerStats = new StatsDB("stats_" + port + ".rm");
                 inactiveMinutes = new int[18];
                 Kills = new int[18];
                 deathStreaks = new int[18];
@@ -101,18 +100,16 @@ namespace StatsPlugin
         public async Task OnLoad()
         {
             statLists = new List<StatTracking>();
-            await Task.Delay(0);
         }
 
         public async Task OnUnload()
         {
             statLists.Clear();
-            await Task.Delay(0);
         }
 
         public async Task OnTick(Server S)
         {
-            await Task.Delay(0);
+            return;
         }
 
         public async Task OnEvent(Event E, Server S)
@@ -324,8 +321,7 @@ namespace StatsPlugin
 
         public PlayerStats getStats(Player P)
         {
-            String Query = String.Format("SELECT * FROM STATS WHERE npID = '{0}'", P.npID);
-            DataTable Result = GetDataTable(Query);
+            DataTable Result = GetDataTable("STATS", new KeyValuePair<string, object>("npID", P.npID));
 
             if (Result != null && Result.Rows.Count > 0)
             {

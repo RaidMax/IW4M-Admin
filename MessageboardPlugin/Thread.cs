@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace MessageBoard
 {
@@ -66,6 +64,7 @@ namespace MessageBoard
     {
         public string title { get; private set; }
         public string content { get; private set; }
+        public string formattedContent { get; private set; }
         public User author { get; private set; }
         public Category threadCategory { get; private set; }
         public DateTime creationDate { get; private set; }
@@ -91,7 +90,7 @@ namespace MessageBoard
                 throw new Exceptions.ThreadException("Title is empty");
 
             this.title = title;
-            this.content = content;
+            this.content = content;  
             this.author = author;
             this.threadCategory = threadCategory;
             creationDate = DateTime.Now;
@@ -114,6 +113,7 @@ namespace MessageBoard
             this.replies = replies;
             this.title = title;
             this.content = content;
+            this.formattedContent = CodeKicker.BBCode.BBCode.ToHtml(this.content);
             this.author = author;
             this.threadCategory = threadCategory;
             this.creationDate = creationDate;

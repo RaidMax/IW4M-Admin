@@ -1,6 +1,6 @@
 ﻿using System;
 using SharedLibrary;
-using SharedLibrary.Extensions;
+using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
 namespace Auto_Restart_Plugin

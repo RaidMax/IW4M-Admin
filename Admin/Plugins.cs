@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using SharedLibrary;
-using SharedLibrary.Extensions;
+using SharedLibrary.Interfaces;
 
 namespace IW4MAdmin
 {

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using SharedLibrary;
 
 namespace MessageBoard
@@ -96,13 +94,75 @@ namespace MessageBoard
         {
             return this.passwordHash;
         }
+
+        public void updateUsername(string username)
+        {
+            if (username != null && username.Length > 0)
+                this.username = username;
+        }
+
+        public void updateAvatar(string avatarURL)
+        {
+            this.avatarURL = avatarURL;
+        }
+
+        public void updatePassword(string salt, string hash)
+        {
+            if (salt.Length > 0 && hash.Length > 0)
+            {
+                passwordHash = hash;
+                passwordSalt = salt;
+            }
+        }
+    }
+
+    public class ProfileSettings
+    {
+        public int id { get; private set; }
+        public int userid { get; private set; }
+        public bool showEmail { get; private set; }
+        public string bannerColor;
+        public DateTime birthday { get; private set; }
+        public bool showAge { get; private set; }
+
+        public ProfileSettings(int userid)
+        {
+            id = 0;
+            this.userid = userid;
+            showEmail = true;
+            showAge = true;
+        }
+
+        public ProfileSettings(int id, int userid, bool showEmail, string bannerColor, DateTime birthday, bool showAge)
+        {
+            this.id = id;
+            this.userid = userid;
+            this.showEmail = showEmail;
+            this.bannerColor = bannerColor;
+            this.birthday = birthday;
+            this.showAge = showAge;
+        }
+        
+        public void hideEmail(bool shouldHide)
+        {
+            if (shouldHide)
+                showEmail = false;
+            else
+                showEmail = true;
+        }
+
+        public void hideAge(bool shouldHide)
+        {
+            if (shouldHide)
+                showAge = false;
+            else
+                showAge = true;
+        }
     }
 
     public struct UserInfo
     {
-        public string username;
-        public string email;
-        public string matchedUsername;
-        public Rank rank;
+        public User user;
+        public ProfileSettings profile;
     }
 }

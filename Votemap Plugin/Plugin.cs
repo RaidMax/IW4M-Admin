@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using SharedLibrary;
 using SharedLibrary.Network;
-using SharedLibrary.Extensions;
+using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
 namespace Votemap_Plugin

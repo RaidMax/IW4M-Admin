@@ -38,13 +38,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
-      <Project>{d51eeceb-438a-47da-870f-7d7b41bc24d6}</Project>
-      <Name>SharedLibrary</Name>
-      <Private>False</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Encryption.cs" />
     <Compile Include="Events.cs" />
     <Compile Include="Exceptions.cs" />
@@ -58,11 +51,15 @@
     <Compile Include="User.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="CodeKicker.BBCode, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CodeKicker.BBCode.5.0.0.0\lib\net35\CodeKicker.BBCode.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="CryptSharp">
       <HintPath>..\packages\CryptSharp.1.2.0.1\lib\net35\CryptSharp.dll</HintPath>
     </Reference>
-    <Reference Include="MarkdownDeep, Version=1.5.4615.26275, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MarkdownDeep.NET.1.5\lib\.NetFramework 3.5\MarkdownDeep.dll</HintPath>
+    <Reference Include="DNA.Text, Version=2.1.1.10633, Culture=neutral, PublicKeyToken=f393b6ce92960100, processorArchitecture=MSIL">
+      <HintPath>..\packages\DNA.Text.2.1.1.10633\lib\DNA.Text.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
@@ -71,10 +68,16 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\SharedLibrary\bin\Release\System.Data.SQLite.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Security" />
+    <Reference Include="System.Web" />
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +102,19 @@
     <Content Include="forum\user.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="forum\usercp.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
+      <Project>{d51eeceb-438a-47da-870f-7d7b41bc24d6}</Project>
+      <Name>SharedLibrary</Name>
+      <Private>False</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -106,8 +122,10 @@
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\plugins\MessageBoardPlugin.dll"
 xcopy /E /Y "$(TargetDir)forum" "$(SolutionDir)Admin\bin\$(ConfigurationName)\forum"
 
-copy /Y "$(TargetDir)MarkdownDeep.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\MarkdownDeep.dll"
+copy /Y "$(TargetDir)DNA.Text.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\DNA.Text.dll"
 copy /Y "$(TargetDir)CryptSharp.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\CryptSharp.dll"
+
+copy /Y "$(TargetDir)CodeKicker.BBcode.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\CodeKicker.BBcode.dll"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

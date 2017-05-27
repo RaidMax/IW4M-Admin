@@ -9,11 +9,11 @@ using Kayak;
 
 namespace IW4MAdmin
 {
-    class Scheduler: ISchedulerDelegate
+    class Scheduler : ISchedulerDelegate
     {
         public void OnException(IScheduler scheduler, Exception e)
         {
-            Manager.GetInstance().Logger.Write("Web service has encountered an error - " + e.StackTrace);
+            Manager.GetInstance().Logger.Write("Web service has encountered an error - " + e.Message);
         }
 
         public void OnStop(IScheduler scheduler)
@@ -24,27 +24,27 @@ namespace IW4MAdmin
 
     class Request : IHttpRequestDelegate
     {
-        public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response)
+        public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response, string IP)
         {
-           // Manager.GetInstance().mainLog.Write("HTTP request received", SharedLibrary.Log.Level.Debug);
+            // Program.getManager().mainLog.Write("HTTP request received", SharedLibrary.Log.Level.Debug);
             NameValueCollection querySet = new NameValueCollection();
-            
+
             if (request.QueryString != null)
                 querySet = System.Web.HttpUtility.ParseQueryString(SharedLibrary.Utilities.removeNastyChars(request.QueryString));
 
-            querySet.Set("IP", ((DefaultKayakServer)(WebService.webService)).clientAddress.Address.ToString());
+            querySet.Set("IP", IP);
             SharedLibrary.HttpResponse requestedPage = WebService.getPage(request.Path, querySet, request.Headers);
 
             var headers = new HttpResponseHead()
-                {
-                    Status = "200 OK",
-                    Headers = new Dictionary<string, string>()
+            {
+                Status = "200 OK",
+                Headers = new Dictionary<string, string>()
                     {
                         { "Content-Type", requestedPage.contentType },
                         { "Content-Length", requestedPage.content.Length.ToString() },
                         { "Access-Control-Allow-Origin", "*" },
                     }
-                };
+            };
 
             foreach (var key in requestedPage.additionalHeaders.Keys)
                 headers.Headers.Add(key, requestedPage.additionalHeaders[key]);

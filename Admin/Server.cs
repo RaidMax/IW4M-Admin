@@ -58,12 +58,6 @@ namespace IW4MAdmin
             if (P.clientID < 0 || P.clientID > (Players.Count-1)) // invalid index
                 return false;
 
-            if (P.Name == null || P.Name == String.Empty || P.Name.Length <= 1)
-                await this.ExecuteCommandAsync("clientkick " + P.clientID + " \"Please set a name using /name ^7\"");
-
-           if (Players.Find(existingPlayer => (existingPlayer != null && existingPlayer.Name.Equals(P.Name)) && existingPlayer.clientID != P.clientID) != null)
-                await this.ExecuteCommandAsync("clientkick " + P.clientID + " \"Someone is using your name. Set a new name using ^5/name ^7\"");
-
             if (Players[P.clientID] != null && Players[P.clientID].npID == P.npID) // if someone has left and a new person has taken their spot between polls
                 return true;
 
@@ -224,10 +218,7 @@ namespace IW4MAdmin
 
                 Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
                 await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
-                lock (Players)
-                {
-                    Players[cNum] = null;
-                }
+                Players[cNum] = null;
 
                 ClientNum--;
             }
@@ -368,7 +359,7 @@ namespace IW4MAdmin
         {
             await ProcessEvent(E);
 
-            foreach (SharedLibrary.Extensions.IPlugin P in PluginImporter.potentialPlugins)
+            foreach (SharedLibrary.Interfaces.IPlugin P in PluginImporter.potentialPlugins)
             {
                 try
                 {
@@ -385,16 +376,19 @@ namespace IW4MAdmin
             }
         }
 
-        async Task PollPlayersAsync()
+         async Task PollPlayersAsync()
         {
             var CurrentPlayers = await this.GetStatusAsync();
 
             for (int i = 0; i < Players.Count; i++)
+            {
                 if (CurrentPlayers.Find(p => p.clientID == i) == null && Players[i] != null)
                     await RemovePlayer(i);
+            }
 
-            foreach (Player P in CurrentPlayers)
-               await AddPlayer(P);
+            foreach (var P in CurrentPlayers)
+                await AddPlayer(P);
+
         }
 
         long l_size = -1;

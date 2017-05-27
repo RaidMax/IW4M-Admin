@@ -44,9 +44,19 @@ namespace IW4MAdmin
                 string[] webConfig = System.IO.File.ReadAllLines("config\\web.cfg");
                 var address = Dns.GetHostAddresses(webConfig[0])[0];
                 int port = Convert.ToInt32(webConfig[1]);
- 
-                using (ss.Listen(new IPEndPoint(address, port)))
-                    S.Start();
+
+                try
+                {
+                    using (ss.Listen(new IPEndPoint(address, port)))
+                        S.Start();
+                }
+
+                catch (Exception e)
+                {
+                    Console.WriteLine("Unable to start webservice ( port is probably in use ): " + e.Message);
+                    Thread.Sleep(5000);
+                    Environment.Exit(-1);
+                }
             }
 
             catch (Exception)
@@ -68,7 +78,7 @@ namespace IW4MAdmin
                 {
                     IFile f = new IFile(path.Replace("/", "\\").Substring(1));
 
-     
+
                     if (path.Contains(".css"))
                     {
                         HttpResponse css = new HttpResponse();
@@ -77,7 +87,7 @@ namespace IW4MAdmin
                         css.contentType = "text/css";
                         f.Close();
                         return css;
-            
+
                     }
 
                     else if (path.Contains(".js"))
@@ -89,8 +99,8 @@ namespace IW4MAdmin
                         f.Close();
                         return css;
                     }
-                   f.Close();
-                    
+                    f.Close();
+
                 }
 
                 requestedPage = new Error404();
@@ -173,7 +183,7 @@ namespace IW4MAdmin
         {
             var info = new List<ServerInfo>();
 
-            foreach(Server S in Manager.GetInstance().Servers)
+            foreach (Server S in Manager.GetInstance().Servers)
             {
                 ServerInfo eachServer = new ServerInfo();
                 eachServer.serverName = S.getName();
@@ -289,7 +299,7 @@ namespace IW4MAdmin
 
                         S.ExecuteEvent(remoteEvent);
 
-                        while(S.commandResult.Count > 0)
+                        while (S.commandResult.Count > 0)
                             cmd.Result.Add(S.commandResult.Dequeue());
                     }
                     else
@@ -342,7 +352,8 @@ namespace IW4MAdmin
                 from = Int32.Parse(querySet["from"]);
             List<Penalty> selectedPenalties;
 
-            try {
+            try
+            {
                 selectedPenalties = Manager.GetInstance().Servers.First().Bans.OrderByDescending(x => x.When).ToList().GetRange(Convert.ToInt32(querySet["from"]), 15);
             }
 
@@ -415,7 +426,7 @@ namespace IW4MAdmin
             IFile penalities = new IFile("webfront\\penalties.html");
             S.Append(penalities.getLines());
             penalities.Close();
-          
+
             S.Append(loadFooter());
 
             return S.ToString();
@@ -476,7 +487,7 @@ namespace IW4MAdmin
         }
     }
 
-    class PubbansJSON: IPage
+    class PubbansJSON : IPage
     {
         public string getName()
         {
@@ -531,9 +542,9 @@ namespace IW4MAdmin
 
                 PageInfo pi = new PageInfo();
                 pi.pagePath = p.getPath();
-               // pi.pageType = p.getPage(querySet, headers).contentType;
+                // pi.pageType = p.getPage(querySet, headers).contentType;
                 pi.pageName = p.getName();
-                pi.visible  = p.isVisible();
+                pi.visible = p.isVisible();
                 pages.Add(pi);
             }
 
@@ -580,17 +591,19 @@ namespace IW4MAdmin
             resp.contentType = getContentType();
             resp.additionalHeaders = new Dictionary<string, string>();
 
+            bool authed = Manager.GetInstance().Servers.First().clientDB.getAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
+
             if (querySet["id"] != null)
             {
                 matchedPlayers.Add(Manager.GetInstance().Servers.First().clientDB.getPlayer(Convert.ToInt32(querySet["id"])));
             }
 
-            else if(querySet["npID"] != null)
+            else if (querySet["npID"] != null)
             {
                 matchedPlayers.Add(Manager.GetInstance().Servers.First().clientDB.getPlayers(new List<string> { querySet["npID"] }).First());
             }
 
-            else if(querySet["name"] != null)
+            else if (querySet["name"] != null)
             {
                 matchedPlayers = Manager.GetInstance().Servers.First().clientDB.findPlayers(querySet["name"]);
             }
@@ -607,7 +620,7 @@ namespace IW4MAdmin
             {
                 foreach (var pp in matchedPlayers)
                 {
-                    if (pp == null) continue; 
+                    if (pp == null) continue;
 
                     var playerAliases = Manager.GetInstance().Servers.First().getAliases(pp);
                     PlayerInfo eachPlayer = new PlayerInfo();
@@ -617,6 +630,9 @@ namespace IW4MAdmin
                     eachPlayer.playerName = pp.Name;
                     eachPlayer.playernpID = pp.npID;
                     eachPlayer.forumID = -1;
+                    eachPlayer.authed = authed;
+                    if (eachPlayer.forumID < 500000)
+                        eachPlayer.showV2Features = true;
 
                     foreach (var a in playerAliases)
                     {
@@ -625,10 +641,10 @@ namespace IW4MAdmin
                     }
 
                     eachPlayer.playerConnections = pp.Connections;
-                    eachPlayer.lastSeen = SharedLibrary.Utilities.timePassed(pp.LastConnection);
+                    eachPlayer.lastSeen = Utilities.timePassed(pp.LastConnection);
                     pInfo.Add(eachPlayer);
-                   
-                }           
+
+                }
 
                 resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(pInfo);
                 return resp;
@@ -669,6 +685,7 @@ namespace IW4MAdmin
     {
         public string pageName;
         public string pagePath;
+        public string pageType;
         public bool visible;
     }
 
@@ -685,6 +702,8 @@ namespace IW4MAdmin
         public List<string> playerIPs;
         public int playerConnections;
         public string lastSeen;
+        public bool showV2Features;
+        public bool authed;
     }
 
     [Serializable]

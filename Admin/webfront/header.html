@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
     <title>IW4MAdmin by RaidMax</title>
-    <meta name="description" content="Administration tool for IW4M servers. Created by RaidMax">
+    <meta name="description" content="Administration tool for IW4M servers. IW4MAdmin Created by RaidMax">
   <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
@@ -23,7 +23,71 @@ $.getJSON("_userinfo", function(response) {
 
 function showErrorMessage(msg)
 {
-    $('.alertBox').html(msg).addClass('error').slideDown("fast");
+    message = "An unknown error occurred!";
+    switch(msg)
+    {
+        case 0:
+            message = "No error";
+            break;
+        case 1:
+            message = "Permission denied";
+            break;
+        case 2:
+            message = "User exists";
+            break;
+        case 3:
+            message = "Invalid user";
+            break;
+        case 4:
+            message = "Incorrect username or password";
+            break;
+        case 5:
+            message = "No credentials entered";
+            break;
+        case 6:
+            message = "User not authorized";
+            break;
+        case 7:
+            message = "Password too long";
+            break;
+        case 8:
+            message = "Username too long";
+            break;
+        case 9:
+            message = "Bad profile data entered";
+            break;
+        case 10:
+            message = "Invalid session";
+            break;
+        case 11:
+            message = "Bad thread content entered";
+            break;
+        case 12:
+            message = "No thread content entered";
+            break;
+        case 13:
+            message = "Thread content too long";
+            break;
+        case 14:
+            message = "Thread title too long";
+            break;
+        case 15:
+            message = "Invalid thread specified";
+            break;
+        case 16:
+            message = "Could not save reply";
+            break;
+        case 17:
+            message = "Invalid category specified";
+            break;
+        case 18:
+            message = "Empty category";
+            break;
+        case 19:
+            message = "Password do not match";
+            break;
+    }
+    $('.alertBox').html(message).addClass('error').slideDown("fast");
 }
 
 function parseGet(val) {
@@ -74,7 +138,7 @@ function formatMessages(messages)
     var chats = "";
     $.each(messages, function(i, chat) {
       chats +=
-      "<div class='chatPlayerName tableCell'>" + chat['Name'] + ":</div><div class='chatPlayerMessage tableCell'>" + $("<div/>").html(chat['Message']).text() + "</div> \
+      "<div class='chatPlayerName tableCell'>" + $("<div/>").html(chat['Name']).text()+ ":</div><div class='chatPlayerMessage tableCell'>" + $("<div/>").html(chat['Message']).text() + "</div> \
       <div style='display:table-row'></div>"
     });
     return chats;
@@ -93,9 +157,9 @@ function getPages()
 function shouldHideAction(author)
 {
   // fixme dynamic
-    if (user.rank == null || author.ranking == null)
+    if (author.ranking == null)
       return " display: none";
-    else if (user.rank.name == "Moderator" || user.rank.name == "Administrator" || user.username == author.username)
+    else if (user.user.ranking.name == "Moderator" || user.user.ranking.name == "Administrator" || user.user.id == author.id)
       return "";
     else {
       return " display: none";
@@ -107,7 +171,7 @@ function formatPlayers(players)
   var p = "";
   for (i = 0; i < players.length; i++)
   {
-    p += "<div class='playerName tableCell'><a href=\"/players?id=" + players[1*i]['playerID'] + "\">" + getColorForLevel(players[1*i]['playerLevel'], players[1*i]['playerName']) + "</a></div>";
+    p += "<div class='playerName tableCell'><a href=\"/players?id=" + players[1*i]['playerID'] + "\">" + getColorForLevel(players[1*i]['playerLevel'], $("<div/>").html(players[1*i]['playerName']).text()) + "</a></div>";
     if (i % 2 == 1 && i != 0 )
       p += "<div style='display: table-row'></div>";
   }
@@ -132,7 +196,7 @@ function getDate(datestr)
 
 function checkPrivilege()
 {
-  $.getJSON("_userinfo", function(response) { if (response.rank.id != 1) window.location.replace("home"); else $('.infoBox').show(); });
+    $.getJSON("_userinfo", function (response) { if (response.user.ranking.id != 1) window.location.replace("home"); else $('.infoBox').show(); });
 }
 </script>
 <body>

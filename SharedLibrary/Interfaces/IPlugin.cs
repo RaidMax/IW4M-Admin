@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace SharedLibrary.Extensions
+namespace SharedLibrary.Interfaces
 {
     public interface IPlugin
     {

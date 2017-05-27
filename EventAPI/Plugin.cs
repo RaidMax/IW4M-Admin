@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using SharedLibrary;
-using SharedLibrary.Extensions;
+using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
 namespace EventAPI

@@ -13,10 +13,10 @@ namespace MessageBoard.Storage
         {
             if (!System.IO.File.Exists(FileName))
             {
-                string createClientTable = @"CREATE TABLE [USERS] ( 
+                string createClientTable = @"CREATE TABLE IF NOT EXISTS [USERS] ( 
                 [id] INTEGER PRIMARY KEY AUTOINCREMENT,
                 [ranking] INTEGER DEFAULT 0,
-                [username] TEXT NOT NULL,
+                [username] TEXT COLLATE NOCASE NOT NULL,
                 [email] TEXT NOT NULL, 
                 [passwordhash] TEXT NOT NULL,
                 [passwordsalt] TEXT NOT NULL,
@@ -26,26 +26,26 @@ namespace MessageBoard.Storage
                 [avatarurl] TEXT
                 );";
 
-                string createSessionTable = @"CREATE TABLE [SESSIONS] ( 
+                string createSessionTable = @"CREATE TABLE IF NOT EXISTS [SESSIONS] ( 
                 [sessionid] TEXT NOT NULL,
                 [sessionuserid] INTEGER NOT NULL,
                 FOREIGN KEY(sessionuserid) REFERENCES USERS(id)
                 );";
 
-                string createRankingTable = @"CREATE TABLE [RANKS] (
+                string createRankingTable = @"CREATE TABLE IF NOT EXISTS [RANKS] (
                 [id] INTEGER PRIMARY KEY AUTOINCREMENT,
                 [name] TEXT UNIQUE NOT NULL,
                 [equivalentrank] INTEGER DEFAULT 0
                 );";
 
-                string createCategoryTable = @"CREATE TABLE [CATEGORIES] (
+                string createCategoryTable = @"CREATE TABLE IF NOT EXISTS [CATEGORIES] (
                 [id] INTEGER PRIMARY KEY AUTOINCREMENT,
                 [title] TEXT NOT NULL,
                 [description] TEXT NOT NULL,
                 [permissions] BLOB
                 );";
     
-                string createThreadTable = @"CREATE TABLE [THREADS] ( 
+                string createThreadTable = @"CREATE TABLE IF NOT EXISTS [THREADS] ( 
                 [id] INTEGER PRIMARY KEY AUTOINCREMENT,
                 [title] TEXT NOT NULL,
                 [categoryid] INTEGER NOT NULL,
@@ -59,7 +59,7 @@ namespace MessageBoard.Storage
                 FOREIGN KEY(categoryid) REFERENCES CATEGORIES(id)
                 );";
 
-                string createReplyTable = @"CREATE TABLE [REPLIES] (
+                string createReplyTable = @"CREATE TABLE IF NOT EXISTS [REPLIES] (
                 [id] INTEGER PRIMARY KEY AUTOINCREMENT,
                 [title] TEXT NOT NULL,
                 [authorid] INT NOT NULL,
@@ -72,6 +72,15 @@ namespace MessageBoard.Storage
                 FOREIGN KEY(threadid) REFERENCES THREADS(id)
                 );";
 
+                string createUserProfileTable = @"CREATE TABLE IF NOT EXISTS [PROFILES] (
+                [id] INTEGER PRIMARY KEY AUTOINCREMENT,
+                [userid] INTEGER NOT NULL,
+                [showemail] INTEGER DEFAULT 1,
+                [bannercolor] TEXT DEFAULT '#ff6633',
+                [birthday] TEXT,
+                [showage] INTEGER DEFAULT 0
+                );";  
+
 
                 ExecuteNonQuery(createClientTable);
                 ExecuteNonQuery(createSessionTable);
@@ -79,6 +88,7 @@ namespace MessageBoard.Storage
                 ExecuteNonQuery(createCategoryTable);
                 ExecuteNonQuery(createThreadTable);
                 ExecuteNonQuery(createReplyTable);
+                ExecuteNonQuery(createUserProfileTable);
 
                 Rank guestRank  = new Rank(1, "Guest", SharedLibrary.Player.Permission.User);
                 Rank userRank   = new Rank(2, "User", SharedLibrary.Player.Permission.Trusted);
@@ -142,6 +152,11 @@ namespace MessageBoard.Storage
             Insert("SESSIONS", newSession);
 
             return getSession(sessionID);
+        }
+
+        public void removeSession(string sessionID)
+        {
+            ExecuteNonQuery(String.Format("DELETE FROM SESSIONS WHERE sessionid = '{0}'", sessionID));
         }
 
         public bool updateSession(string sessionID, int userID)
@@ -549,6 +564,60 @@ namespace MessageBoard.Storage
 
             return 0;
         }
+        #endregion
+
+        #region PROFILES
+        private ProfileSettings getProfileFromDataTable(DataTable Result)
+        {
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow ResponseRow = Result.Rows[0];
+                int id = Convert.ToInt32(ResponseRow["id"].ToString());
+                int userID = Convert.ToInt32(ResponseRow["userid"].ToString());
+                bool showEmail = Convert.ToBoolean(Convert.ToInt32(ResponseRow["showemail"].ToString()));
+                string bannerColor = ResponseRow["bannercolor"].ToString();
+                DateTime birthday = DateTime.Parse(ResponseRow["birthday"].ToString());
+                bool showAge = Convert.ToBoolean(Convert.ToInt32(ResponseRow["showage"].ToString()));
+
+                ProfileSettings foundProfile = new ProfileSettings(id, userID, showEmail, bannerColor, birthday, showAge);
+                return foundProfile;
+            }
+
+            return null;
+        }
+
+        private Dictionary<string, object> getDataTableFromProfile(ProfileSettings addedSettings)
+        {
+            Dictionary<String, object> newSettings = new Dictionary<String, object>();
+
+            if(addedSettings.id > 0)
+                newSettings.Add("id", addedSettings.id);
+            newSettings.Add("userid", addedSettings.userid);
+            newSettings.Add("showemail", Convert.ToInt32(addedSettings.showEmail));
+            newSettings.Add("bannercolor", addedSettings.bannerColor);
+            newSettings.Add("birthday", SharedLibrary.Utilities.DateTimeSQLite(addedSettings.birthday));
+            newSettings.Add("showage", Convert.ToInt32(addedSettings.showAge));
+
+            return newSettings;
+        }
+
+        public ProfileSettings getProfileSettings(int userid)
+        {
+            DataTable Result = GetDataTable("PROFILES", new KeyValuePair<string, object>("userid", userid));
+
+            return getProfileFromDataTable(Result);
+        }
+
+        public bool addProfileSettings(ProfileSettings newProfile)
+        {
+            return Insert("PROFILES", getDataTableFromProfile(newProfile));
+        }
+
+        public bool updateProfileSettings(ProfileSettings updatedProfile)
+        {
+            return Update("PROFILES", getDataTableFromProfile(updatedProfile), new KeyValuePair<string, object>("userid", updatedProfile.userid));
+        }
+
         #endregion
     }
 }

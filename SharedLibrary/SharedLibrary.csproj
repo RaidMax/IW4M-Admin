@@ -71,7 +71,7 @@
     <Compile Include="Map.cs" />
     <Compile Include="Miscellaneous.cs" />
     <Compile Include="Player.cs" />
-    <Compile Include="Extensions\IPlugin.cs" />
+    <Compile Include="Interfaces\IPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RCON.cs" />
     <Compile Include="Report.cs" />

@@ -1,6 +1,6 @@
 ﻿using System;
 using SharedLibrary;
-using SharedLibrary.Extensions;
+using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
 namespace MessageBoard.Plugin
@@ -36,11 +36,8 @@ namespace MessageBoard.Plugin
 
         public async Task OnLoad()
         {
-            await Task.Run(() =>
-            {
-               forum = new Forum.Manager();
-               forum.Start();
-            });
+            forum = new Forum.Manager();
+            forum.Start();
         }
 
         public async Task OnUnload()

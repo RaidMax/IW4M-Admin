@@ -69,7 +69,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = SharedLibrary.Utilities.RemoveWords(E.Data, 1);
+            E.Target.lastOffense = E.Data.RemoveWords(1);
             if (E.Origin.Level > E.Target.Level)
                 await E.Target.Kick(E.Target.lastOffense, E.Origin);
             else
@@ -102,9 +102,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class SBan : Command
+    class CBan : Command
     {
-        public SBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -125,9 +125,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Unban : Command
+    class CUnban : Command
     {
-        public Unban(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CUnban(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -136,9 +136,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class WhoAmI : Command
+    class CWhoAmI : Command
     {
-        public WhoAmI(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CWhoAmI(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -147,9 +147,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class List : Command
+    class CList : Command
     {
-        public List(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CList(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -180,9 +180,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Help : Command
+    class CHelp : Command
     {
-        public Help(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CHelp(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -230,9 +230,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class FastRestart : Command
+    class CFastRestart : Command
     {
-        public FastRestart(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFastRestart(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -242,9 +242,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class MapRotate : Command
+    class CMapRotate : Command
     {
-        public MapRotate(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CMapRotate(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -254,24 +254,30 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class SetLevel : Command
+    class CSetLevel : Command
     {
-        public SetLevel(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CSetLevel(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell("You can't set your own level, silly.");
+                await E.Origin.Tell("You cannot change your own level.");
                 return;
             }
 
             Player.Permission newPerm = Utilities.matchPermission(Utilities.RemoveWords(E.Data, 1));
 
+            if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
+                newPerm = Player.Permission.Banned;
+
+            bool playerInOtherServer = false;
+
             if (newPerm > Player.Permission.Banned)
             {
                 E.Target.setLevel(newPerm);
                 // prevent saving of old permissions on disconnect
+                // todo: manager DB
                 foreach (var server in E.Owner.Manager.GetServers())
                 {
                     foreach (var player in server.getPlayers())
@@ -280,11 +286,13 @@ namespace SharedLibrary.Commands
                         {
                             player.setLevel(newPerm);
                             await E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+                            playerInOtherServer = true;
                         }
                     }
                 }
 
-                await E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+                if (!playerInOtherServer)
+                    await E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
                 await E.Origin.Tell(E.Target.Name + " was successfully promoted!");
            
                 //NEEED TO MOVE
@@ -296,9 +304,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Usage : Command
+    class CUsage : Command
     {
-        public Usage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CUsage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -306,9 +314,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Uptime : Command
+    class CUptime : Command
     {
-        public Uptime(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CUptime(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -317,23 +325,24 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Admins : Command
+    class CListAdmins : Command
     {
-        public Admins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListAdmins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
-            List<Player> activePlayers = E.Owner.getPlayers();
-
-            foreach (Player P in E.Owner.getPlayers())
+            for (int i = 0; i < E.Owner.Players.Count; i++)
+            {
+                var P = E.Owner.Players[i];
                 if (P != null && P.Level > Player.Permission.Flagged && !P.Masked)
                     await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+            }
         }
     }
 
-    class MapCMD : Command
+    class CLoadMap : Command
     {
-        public MapCMD(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CLoadMap(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -355,9 +364,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Find : Command
+    class CFindPlayer : Command
     {
-        public Find(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFindPlayer(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -377,9 +386,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class FindAll : Command
+    class CFindAllPlayers : Command
     {
-        public FindAll(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFindAllPlayers(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -424,14 +433,14 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Rules : Command
+    class CListRules : Command
     {
-        public Rules(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListRules(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
             if (E.Owner.rules.Count < 1)
-                await E.Origin.Tell("This server has not set any rules.");
+                await E.Origin.Tell("The server onwer has not set any rules.");
             else
             {
                 foreach (String r in E.Owner.rules)
@@ -440,9 +449,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class PrivateMessage : Command
+    class CPrivateMessage : Command
     {
-        public PrivateMessage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CPrivateMessage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -452,9 +461,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Reload : Command
+    class CReload : Command
     {
-        public Reload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CReload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         { 
@@ -462,26 +471,6 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell("Sucessfully reloaded configs!");
             else
                 await E.Origin.Tell("Unable to reload configs :(");
-        }
-    }
-
-    class Balance : Command
-    {
-        public Balance(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
-
-        public override async Task ExecuteAsync(Event E)
-        {
-            await E.Owner.ExecuteCommandAsync(String.Format("admin_lastevent {0};{1}", "balance", E.Origin.npID)); //Let gsc do the magic
-        }
-    }
-
-    class GoTo : Command
-    {
-        public GoTo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
-
-        public override async Task ExecuteAsync(Event E)
-        {
-            await E.Owner.ExecuteCommandAsync(String.Format("admin_lastevent {0};{1};{2};{3}", "goto", E.Origin.npID, E.Target.Name, E.Data)); //Let gsc do the magic
         }
     }
 
@@ -513,9 +502,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class _Report : Command
+    class CReport : Command
     {
-        public _Report(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CReport(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -527,7 +516,7 @@ namespace SharedLibrary.Commands
 
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell("You cannot report yourself, silly.");
+                await E.Origin.Tell("You cannot report yourself.");
                 return;
             }
 
@@ -537,7 +526,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            E.Data = Utilities.RemoveWords(E.Data, 1);
+            E.Data = E.Data.RemoveWords(1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
             await E.Origin.Tell("Successfully reported " + E.Target.Name);
@@ -547,9 +536,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Reports : Command
+    class CListReports : Command
     {
-        public Reports(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListReports(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -571,20 +560,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class _Tell : Command
+    class CMask : Command
     {
-        public _Tell(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
-
-        public override async Task ExecuteAsync(Event E)
-        {
-            E.Data = Utilities.RemoveWords(E.Data, 1);
-            await E.Owner.ExecuteCommandAsync(String.Format("admin_lastevent tell;{0};{1};{2}", E.Origin.npID, E.Target.npID, E.Data));
-        }
-    }
-
-    class Mask : Command
-    {
-        public Mask(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CMask(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -601,9 +579,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class BanInfo : Command
+    class CListBanInfo : Command
     {
-        public BanInfo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListBanInfo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -633,9 +611,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Alias : Command
+    class CListAlias : Command
     {
-        public Alias(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListAlias(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -684,37 +662,14 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class _RCON : Command
+    class CExecuteRCON : Command
     {
-        public _RCON(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CExecuteRCON(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
             await E.Origin.currentServer.ExecuteCommandAsync(E.Data.Trim());
             await E.Origin.Tell("Successfuly sent RCON command!");
-        }
-    }
-
-    class Link : Command
-    {
-        public Link(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
-
-        public override async Task ExecuteAsync(Event E)
-        {
-            if (E.Data.Contains("show"))
-            {
-                if (E.Origin.UID == null || E.Origin.UID.Length == 0)
-                    await E.Origin.Tell("You have not linked an ID");
-                else
-                    await E.Origin.Tell("Your ID is " + E.Origin.UID);
-            }
-            else if (E.Origin.registerUID(E.Data))
-            {
-                E.Owner.clientDB.updatePlayer(E.Origin);
-                await E.Origin.Tell("Your ID has been linked");
-            }
-            else
-                await E.Origin.Tell("That ID is invalid");
         }
     }
 }

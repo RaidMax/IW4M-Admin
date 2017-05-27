@@ -18,13 +18,13 @@ namespace SharedLibrary
                 Con = new SQLiteConnection(DBCon);
             }
 
-            catch(DllNotFoundException)
+            catch (DllNotFoundException)
             {
                 Console.WriteLine("Fatal Error: could not locate the SQLite DLL(s)!\nEnsure they are located in the 'lib' folder");
                 Utilities.Wait(5);
                 Environment.Exit(0);
             }
-            
+
             Open = false;
             Init();
         }
@@ -114,7 +114,7 @@ namespace SharedLibrary
         {
             waitForClose();
             int rowsUpdated = 0;
-            Request = Request.Replace("!'", "").Replace("!", "") ;
+            Request = Request.Replace("!'", "").Replace("!", "");
             try
             {
                 lock (Con)
@@ -134,7 +134,7 @@ namespace SharedLibrary
                 Console.WriteLine(E.StackTrace);
                 Console.WriteLine(Request);
                 return 0;
-            }      
+            }
         }
 
         protected DataTable GetDataTable(string tableName, KeyValuePair<string, object> where)
@@ -157,6 +157,27 @@ namespace SharedLibrary
             catch (Exception e)
             {
                 //LOGME
+                Console.Write("Could not execute");
+            }
+
+            return dt;
+        }
+
+        protected DataTable GetDataTable(SQLiteCommand cmd)
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                Con.Open();
+                SQLiteDataReader reader = cmd.ExecuteReader();
+                dt.Load(reader);
+                reader.Close();
+                Con.Close();
+            }
+
+            catch (Exception e)
+            {
+                //LOGME
                 Console.Write("Couldnotexecute");
             }
 
@@ -166,7 +187,7 @@ namespace SharedLibrary
         protected DataTable GetDataTable(String sql)
         {
             DataTable dt = new DataTable();
-    
+
             try
             {
                 waitForClose();
@@ -214,7 +235,7 @@ namespace SharedLibrary
         {
             if (!File.Exists(FileName))
             {
-                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL, [UID] TEXT NULL, [Masked] INT DEFAULT 0);";
+                String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL, [UID] TEXT NULL, [Masked] INT DEFAULT 0, [Reserved] INT DEFAULT 0);";
                 ExecuteNonQuery(Create);
                 Create = "CREATE TABLE [BANS] ( [TYPE] TEXT NULL, [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
                 ExecuteNonQuery(Create);
@@ -224,8 +245,7 @@ namespace SharedLibrary
         //Returns a single player object with matching GUID, false if no matches
         public Player getPlayer(String ID, int cNum)
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE npID = '{0}' LIMIT 1", ID);
-            DataTable Result = GetDataTable(Query);
+            DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("npID", ID));
 
             if (Result != null && Result.Rows.Count > 0)
             {
@@ -243,7 +263,7 @@ namespace SharedLibrary
         public List<Player> getRecentPlayers()
         {
             List<Player> returnssss = new List<Player>();
-            String Query = String.Format("SELECT * FROM CLIENTS ORDER BY LastConnection desc LIMIT 25");
+            String Query = String.Format("SELECT * FROM CLIENTS ORDER BY Connections desc LIMIT 25");
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
@@ -260,11 +280,27 @@ namespace SharedLibrary
             return returnssss;
         }
 
+        public List<string> getReservedNPIDs()
+        {
+            List<string> npIDs = new List<string>();
+            String Query = String.Format("SELECT npID FROM CLIENTS WHERE Reserved = 1");
+            DataTable Result = GetDataTable(Query);
+
+            if (Result != null && Result.Rows.Count > 0)
+                foreach (DataRow ResponseRow in Result.Rows)
+                    npIDs.Add(ResponseRow["npID"].ToString());
+
+
+            return npIDs;
+        }
+
+
+
         public List<Player> getPlayers(List<String> npIDs)
         {
             List<Player> returnssss = new List<Player>();
             String test = String.Join("' OR npID = '", npIDs);
-           
+
             String Query = String.Format("SELECT * FROM CLIENTS WHERE npID = '{0}'", test);
             DataTable Result = GetDataTable(Query);
 
@@ -307,8 +343,7 @@ namespace SharedLibrary
         //Overloaded method for getPlayer, returns Client with matching DBIndex, null if none found
         public Player getPlayer(int dbIndex)
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Number = '{0}' LIMIT 1", dbIndex);
-            DataTable Result = GetDataTable(Query);
+            DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("Number", dbIndex));
 
             if (Result != null && Result.Rows.Count > 0)
             {
@@ -333,8 +368,7 @@ namespace SharedLibrary
         //get player by ip, (used for webfront)
         public Player getPlayer(String IP)
         {
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE IP = '{0}'", IP);
-            DataTable Result = GetDataTable(Query);
+            DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("IP", IP));
 
             if (Result != null && Result.Rows.Count > 0)
             {
@@ -371,9 +405,11 @@ namespace SharedLibrary
         //Returns a list of players matching name parameter, null if no players found matching
         public List<Player> findPlayers(String name)
         {
-            name = name.Replace("'", "");
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Name LIKE '%{0}%' LIMIT 32", name);
-            DataTable Result = GetDataTable(Query);
+            SQLiteCommand cmd = new SQLiteCommand(Con);
+            cmd.CommandText = "SELECT * FROM CLIENTS WHERE Name LIKE @Name LIMIT 32";
+            cmd.Parameters.AddWithValue("@Name", '%' + name + '%');
+
+            var Result = GetDataTable(cmd);
 
             List<Player> Players = new List<Player>();
 
@@ -439,7 +475,7 @@ namespace SharedLibrary
                     BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
 
                 Bans.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
-          
+
             }
 
             return Bans;
@@ -501,7 +537,7 @@ namespace SharedLibrary
             updatedPlayer.Add("UID", P.UID);
             updatedPlayer.Add("Masked", Convert.ToInt32(P.Masked));
 
-            Update("CLIENTS", updatedPlayer, new KeyValuePair<string, object>("npID", P.npID ));
+            Update("CLIENTS", updatedPlayer, new KeyValuePair<string, object>("npID", P.npID));
         }
 
 
@@ -530,7 +566,7 @@ namespace SharedLibrary
 
         public void removeBan(String GUID, String IP)
         {
-            String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}' or IP= '%{1}%'", GUID, IP);
+            String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}' or IP = '{1}'", GUID, IP);
             ExecuteNonQuery(Query);
         }
     }
@@ -565,8 +601,12 @@ namespace SharedLibrary
 
         public List<Aliases> getPlayer(String IP)
         {
-            String Query = String.Format("SELECT * FROM ALIASES WHERE IPS LIKE '%{0}%'", IP);
-            DataTable Result = GetDataTable(Query);
+            SQLiteCommand cmd = new SQLiteCommand(Con);
+            cmd.CommandText = "SELECT * FROM ALIASES WHERE IPS LIKE @IP";
+            cmd.Parameters.AddWithValue("@IP", IP);
+
+            var Result = GetDataTable(cmd);
+
             List<Aliases> players = new List<Aliases>();
 
             if (Result != null && Result.Rows.Count > 0)
@@ -586,8 +626,13 @@ namespace SharedLibrary
             if (EyePee.Length > 1)
                 Penor = (EyePee[0] + '.' + EyePee[1] + '.');
 
-            String Query = String.Format("SELECT * FROM ALIASES WHERE NAMES LIKE '%{0}%' OR IPS LIKE '%{1}%' LIMIT 15", name, Penor);
-            DataTable Result = GetDataTable(Query);
+            SQLiteCommand cmd = new SQLiteCommand(Con);
+            cmd.CommandText = "SELECT * FROM ALIASES WHERE NAMES LIKE @name OR IPS LIKE @ip LIMIT 15";
+            cmd.Parameters.AddWithValue("@name", name);
+            cmd.Parameters.AddWithValue("@ip", Penor);
+
+            var Result = GetDataTable(cmd);
+
 
             List<Aliases> players = new List<Aliases>();
 

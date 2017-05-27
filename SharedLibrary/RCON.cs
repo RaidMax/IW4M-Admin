@@ -47,7 +47,7 @@ namespace SharedLibrary.Network
 
         static string[] SendQuery(QueryType Type, Server QueryServer,  string Parameters = "")
         {
-            var ServerOOBConnection = new System.Net.Sockets.UdpClient();
+            var ServerOOBConnection = new UdpClient();
             ServerOOBConnection.Client.SendTimeout = 1000;
             ServerOOBConnection.Client.ReceiveTimeout = 1000;
             var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.getIP()), QueryServer.getPort());
@@ -72,7 +72,6 @@ namespace SharedLibrary.Network
 
             try
             {
-              
                 ServerOOBConnection.Connect(Endpoint);
                 ServerOOBConnection.Send(Payload, Payload.Length);
 

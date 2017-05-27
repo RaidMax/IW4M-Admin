@@ -15,7 +15,7 @@ div#header #navContainer .navEntry a {  padding: 1.2vw; width: 4vw; }
 div#header #navContainer .navEntry:hover { background-color: rgb(34, 34, 34); }
 
 div#content { margin: 3em 10%; }
-div#content .serverContainer { background-color: #191919; margin: 2em 0; font-size: 1.75vw; }
+div#content .serverContainer { background-color: #191919; margin: 2em 0; font-size: 1.25vw; }
 div#content hr { border-width: 0; height: 0.25em; background-color: #007ACC; }
 div#content .serverInfo { width: 100%; }
 div#content .serverInfo .tableCell { padding: 0 0.5em; }
@@ -25,10 +25,10 @@ div#content .serverPlayers { text-align: right; width: calc( 100% / 3); backgrou
 div#content .serverMap { text-align: center; width: calc( 100% / 3); background-color: #007ACC; }
 div#content .serverPlayerList {float: right; margin: 0.5em; }
 div#content .serverChatList { float: left; margin: 0.5em }
-div#content .playerName { font-size: 1.357vw; color: rgba(78, 140, 77, 0.64); width: 10em; text-align: right; }
+div#content .playerName { font-size: 1.1vw; color: rgba(78, 140, 77, 0.64); width: 10em; text-align: right; }
 div#content .playerName:hover {  color: rgb(0, 122, 204) !important; }
-div#content .chatPlayerName { font-weight: bold; font-size: 1.357vw; color:#fff; padding-right: 0.5em; opacity: 0.5; }
-div#content .chatPlayerMessage {font-size: 1.357vw; color: #fff; opacity: 1; }
+div#content .chatPlayerName { font-weight: bold; font-size: 1.1vw; color:#fff; padding-right: 0.5em; opacity: 0.5; }
+div#content .chatPlayerMessage {font-size: 1.1vw; color: #fff; opacity: 1; }
 
 div#content .playerPenalty, div#content .playerInfo { margin: 0 auto; padding: 1em 10px; background-color: #181818; width: calc(100% - 20px); }
 div#content .penaltyName { width: 14.28%; }
@@ -74,7 +74,7 @@ div.infoBox .header { text-align: center; background-color: #007ACC; padding: 0.
 div.infoBox form { padding: 10px; }
 div.infoBox { width: 50%; margin: 0 auto; background-color: #181818; border: 1em solid #007ACC; border-width: 0 0 0.25em 0; min-width: 550px;  }
 div.infoBox input[type="text"], div.infoBox input[type="password"] { width: 70%; }
-div.infoBox input[type="submit"] { width: 20%; background-color: #007ACC; font-size: 16pt; border: none; color: #fff;  font-size: 15pt; padding: 0.5em 10px; margin: 0.25em; }
+div.infoBox input[type="submit"], #userCP input[type="submit"] { width: 20%; background-color: #007ACC; font-size: 16pt; border: none; color: #fff;  font-size: 15pt; padding: 0.5em 10px; margin: 0.25em; }
 
 div.alertBox { display: none; margin-top: 15px; margin-left: 15px; }
 
@@ -88,8 +88,8 @@ div#recentTitle { position: relative; top: -1em; }
 div#view .threadPreview { background-color: #181818; padding: 0 10px; width: calc(100% - 20px); }
 div#view .threadPreview .threadTitle { padding: 0 0.5em; width: 80%; }
 div#view .threadPreview .threadInfo { font-size: 9pt; text-align: right; width: 50%; }
-div#view .categoryDescription { font-size: 9pt; opacity: 0.5; margin-left: 2em; position: relative; top: -2.5px;  }
-div#content .individualThreadInfo { border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding: 0.5em 0; display: table; width: 100%; }
+div#view .categoryDescription { font-size: 10.5pt; opacity: 0.5; margin-left: 2em; position: relative; top: -2.5px;  }
+div#content .individualThreadInfo { border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding: 0.5em 1em; display: table; width: calc(100% - 2em); }
 div#content .individualThreadInfo:nth-child(3) { border-bottom: none; padding-bottom: 0.5em; }
 div#content .individualThreadInfo i { font-size: 16pt; width: 16pt; }
 div.title a:link:hover, div.title a:visited:hover  { color: #ff6633 !important; }
@@ -123,6 +123,7 @@ div#threadContainer .threadContent { margin: 1em 0; font-size: 11pt;  word-break
 div#threadContainer .threadContent img { max-width: 100%;}
 div#threadContainer .threadContent a { color: rgb(0, 122, 204) !important; }
 div#threadContainer .threadContent a:hover { color: #fff !important; }
+div.threadContent ol, div.threadContent ol { margin: 1em; }
 div.categoryThread .threadActions { color: rgba(255, 69, 69, 0.85); font-size: 18pt; width: 19px; }
 
 
@@ -181,14 +182,19 @@ div#userAvatar { width: 20em; height: 20em; background-size: contain;  margin-ri
 .themeBlue { color: #007ACC !important; }
 .themeBlue:hover { color: #fff !important; }
 .themeOrange { color: #ff6633; }
-.themeOrage:hover{ color: #007ACC !important; }
+.themeOrange:hover{ color: #007ACC !important; }
 
-div.threadInfo .actionHover { float: right; color: rgba(255, 69, 69, 0.85); }
+div.threadInfo .actionHover { float: right; color: rgba(255, 69, 69, 0.85); margin: 0 4px; }
 .actionHover { cursor: pointer; }
 .actionHover:hover { color: #007ACC !important; }
+.actionHover.actionEdit { color:#007ACC !important; }
 
 .datThing { background-color: #007ACC; font-size: 16pt; border: none; color: #fff;  font-size: 15pt; padding: 0.5em 10px; }
 span.light { opacity: 0.5; }
 span.userTitle span:hover {color: #007ACC !important; }
+
+
+input#bannercolor { margin: 0.35em; width: 265px; border: none; height: 45px; }
+
 
 div#footer { position: fixed; bottom: 0.5em; right: 0.5em; opacity: 0.5; }

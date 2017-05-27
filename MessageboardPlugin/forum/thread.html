@@ -1,38 +1,43 @@
 <div id="threadContainer">
-  <div id="textNav"><a class="themeBlue" href="home">Home</a> &raquo; </div>
-  <hr/>
-  <div class="threadStart table" style="width: 100%;">
-    <div class="userInfo tableCell">
-      <div class="userAvatar">
-            <i class="fa fa-user-secret" aria-hidden="true" style="font-size: 8em;"></i>
-      </div>
-      <a class="userProfileLink" href=""><span class="userTitle">_</span></a><br/>
-      <span style="font-size: 9pt;" class="timePosted">_</span>
+    <div id="textNav"><a class="themeBlue" href="home">Home</a> &raquo; </div>
+    <hr />
+    <div class="threadStart table" style="width: 100%;">
+        <div class="userInfo tableCell">
+            <div class="userAvatar">
+                <i class="fa fa-user-secret" aria-hidden="true" style="font-size: 8em;"></i>
+            </div>
+            <a class="userProfileLink" href=""><span class="userTitle">_</span></a><br />
+            <span style="font-size: 9pt;" class="timePosted">_</span>
+        </div>
+        <div class="threadInfo tableCell">
+            <div class="threadTitle" style="float: left;">_</div>
+            <div style="float: right;" id="replyThreadCaption">
+                <i class="fa fa-reply" aria-hidden="true"></i>
+                Reply
+            </div>
+
+            <div style="clear: both;"></div>
+            <div style="float: right; display: none;" id="editThreadCaption">
+                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                Edit
+            </div>
+            <div class="threadContent">_</div>
+        </div>
     </div>
-    <div class="threadInfo tableCell">
-      <div class="threadTitle" style="float: left;">_</div>
-      <div style="float: right;" id="replyThreadCaption">
-        <i class="fa fa-reply" aria-hidden="true"></i>
-        Reply
-      </div>
-      <div style="clear: both;"></div>
-      <div class="threadContent">_</div>
-    </div>
-  </div>
 </div>
 <div id="postReplyContainer" style="display: none;">
-  <hr/>
-  <div id="postReplyClose">
-    <i class="fa fa-times" aria-hidden="true"></i>
-  </div>
-  <div id="replyContentContainer">
-    <div class="alertBox">
+    <hr />
+    <div id="postReplyClose">
+        <i class="fa fa-times" aria-hidden="true"></i>
     </div>
-  <textarea placeholder="Reply content..." id="replyContentBox"></textarea>
-  <div id="submitReplyButton">
-    <i class="fa fa-reply" aria-hidden="true"></i>
-  </div>
-  </div>
+    <div id="replyContentContainer">
+        <div class="alertBox">
+        </div>
+        <textarea placeholder="Reply content..." id="replyContentBox"></textarea>
+        <div id="submitReplyButton">
+            <i class="fa fa-reply" aria-hidden="true"></i>
+        </div>
+    </div>
 </div>
 <script>
 
@@ -49,10 +54,13 @@ $.getJSON("_thread?id=" + parseGet('id'), function(Response) {
   $('.threadStart .timePosted').html(getDate(Response.Thread.creationDate));
   $('.threadStart .threadTitle').html(decodeURIComponent(Response.Thread.title));
   $('.threadStart a.userProfileLink').attr("href", "user?id=" + Response.Thread.author.id);
-  $('.threadStart .threadContent').html(decodeURIComponent(Response.Thread.content));
+  $('.threadStart .threadContent').html(decodeURIComponent(Response.Thread.formattedContent));
   if (Response.Thread.author.avatarURL != "")
     $('.threadStart .userAvatar').html("").attr("style", "background-image:url('" + Response.Thread.author.avatarURL + "');'");
   $('#replyThreadButton').attr("href", "postthread?threadid=" + Response.Thread.id);
+
+  if (user.user.id == Response.Thread.author.id)
+    $('#editThreadCaption').css("display", "block");
 
   $.each(Response.Replies, function(i, eachReply) {
 
@@ -71,7 +79,8 @@ $.getJSON("_thread?id=" + parseGet('id'), function(Response) {
       </div> \
       <div class='threadInfo tableCell'> \
         <i style=\"" + shouldHideAction(eachReply.author) + "\" replyid='" + eachReply.id + "' class=\"fa fa-times actionHover actionDelete\" aria-hidden=\"true\"></i> \
-        <div class='threadContent'>" + decodeURIComponent(eachReply.content) + "</div> \
+        <i style=\"" + shouldHideAction(eachReply.author) + "\" replyid='" + eachReply.id + "' class=\"fa fa-pencil-square-o actionHover actionEdit\" aria-hidden=\"true\"></i> \
+        <div class='threadContent'>" + decodeURIComponent(eachReply.formattedContent) + "</div> \
       </div> \
     </div>";
 
@@ -94,6 +103,24 @@ $('#postReplyClose').click(function(e) {
 $("#submitReplyButton").click(function(e) {
   e.preventDefault();
 
+  if ($('#postReplyContainer').attr("editthread") == "true") {
+    $.getJSON("_editthread",
+    {
+      content : $('#replyContentBox').val(),
+      title : $('#postReplyContainer').attr("threadtitle"),
+      id : parseGet("id"),
+      update: true
+    },
+
+    function(result) {
+      if (result["errorCode"] == 0)
+        window.location.replace(result["destination"]);
+      else {
+        showErrorMessage(result["errorCode"]);
+      }
+    });
+  }
+    else if ($('#postReplyContainer').attr("editreply") != "true") {
     $.getJSON("_postthread",
     {
       content : $('#replyContentBox').val(),
@@ -108,6 +135,26 @@ $("#submitReplyButton").click(function(e) {
         showErrorMessage(result["errorCode"]);
       }
     });
+    }
+    else {
+
+      $.getJSON("_editthread",
+      {
+        content : $('#replyContentBox').val(),
+        title : "Reply",
+        replyid : $('#postReplyContainer').attr("replyid"),
+        threadid : parseGet("id")
+      },
+
+      function(result) {
+        if (result["errorCode"] == 0)
+          window.location.replace(result["destination"]);
+        else {
+          showErrorMessage(result["errorCode"]);
+        }
+      });
+      }
+
 });
 
 
@@ -120,6 +167,42 @@ $('#content').on('click', '.actionDelete', function(e) {
   function(response) {
       if (response.success)
         window.location.replace(response.destination);
+  });
+});
+
+
+$('#content').on('click', '.actionEdit', function (e) {
+    $('#postReplyContainer').slideDown('fast');
+    var id = $(this).attr("replyID")
+    $.getJSON("_thread?replyid=" + id, function(Response) {
+
+        $('#postReplyContainer').find("textarea").html(Response.content);
+        $('#postReplyContainer').attr("editReply", true);
+        $('#postReplyContainer').attr("replyid", id);
+
+    });
+
+    /*$.getJSON("_editthread",
+    {
+        replyid: $(this).attr("replyid"),
+        delete: false
+    },
+    function (response) {
+        if (response.success)
+            window.location.replace(response.destination);
+    });*/
+});
+
+
+$("#editThreadCaption").click(function(e) {
+  $('#postReplyContainer').slideDown('fast');
+  $.getJSON("_thread?id=" + parseGet("id"), function(Response) {
+
+      $('#postReplyContainer').find("textarea").html(Response.Thread.content);
+      $('#postReplyContainer').attr("editthread", true);
+      $('#postReplyContainer').attr("threadid", parseGet("id"));
+      $('#postReplyContainer').attr("threadtitle", Response.Thread.title);
+
   });
 });
 

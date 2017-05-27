@@ -46,7 +46,7 @@ namespace StatsPlugin
             await E.Origin.Tell("^5--Top Players--");
             foreach (KeyValuePair<String, PlayerStats> pStat in pStats)
             {
-                Player P = E.Owner.clientDB.getPlayer(pStat.Key, -1);
+                Player P = E.Owner.Manager.GetClientDatabase().getPlayer(pStat.Key, -1);
                 if (P == null)
                     continue;
                 await E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.Name, pStat.Value.KDR, pStat.Value.Skill));
@@ -71,7 +71,7 @@ namespace StatsPlugin
 
             public StatTracking(int port)
             {
-                playerStats = new StatsDB("stats_" + port + ".rm");
+                playerStats = new StatsDB("Database/stats_" + port + ".rm");
                 inactiveMinutes = new int[18];
                 Kills = new int[18];
                 deathStreaks = new int[18];
@@ -97,22 +97,22 @@ namespace StatsPlugin
             get { return "RaidMax"; }
         }
 
-        public async Task OnLoad()
+        public async Task OnLoadAsync()
         {
             statLists = new List<StatTracking>();
         }
 
-        public async Task OnUnload()
+        public async Task OnUnloadAsync()
         {
             statLists.Clear();
         }
 
-        public async Task OnTick(Server S)
+        public async Task OnTickAsync(Server S)
         {
             return;
         }
 
-        public async Task OnEvent(Event E, Server S)
+        public async Task OnEventAsync(Event E, Server S)
         {
             if (E.Type == Event.GType.Start)
             {
@@ -132,7 +132,7 @@ namespace StatsPlugin
                 if (checkForTrusted.playTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
                 {
                     E.Origin.setLevel(Player.Permission.Trusted);
-                    E.Owner.clientDB.updatePlayer(E.Origin);
+                    E.Owner.Manager.GetClientDatabase().updatePlayer(E.Origin);
                     await E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands.");
                     await E.Origin.Tell("You earned this by playing for ^53 ^7full days!");
                 }

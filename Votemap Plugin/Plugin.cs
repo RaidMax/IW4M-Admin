@@ -204,12 +204,12 @@ namespace Votemap_Plugin
             }
         }
 
-        public async Task OnLoad()
+        public async Task OnLoadAsync()
         {
             serverVotingList = new List<ServerVoting>();
         }
 
-        public async Task OnUnload()
+        public async Task OnUnloadAsync()
         {
             serverVotingList.Clear();
         }
@@ -219,7 +219,7 @@ namespace Votemap_Plugin
         /// This is not high-precision, but will run 1 time per second
         /// </summary>
         /// <param name="S"></param>
-        public async Task OnTick(Server S)
+        public async Task OnTickAsync(Server S)
         {
             var serverVotes = getServerVotes(S.getPort());
 
@@ -277,7 +277,7 @@ namespace Votemap_Plugin
             }
         }
 
-        public async Task OnEvent(Event E, Server S)
+        public async Task OnEventAsync(Event E, Server S)
         {
             if (E.Type == Event.GType.Start)
             {

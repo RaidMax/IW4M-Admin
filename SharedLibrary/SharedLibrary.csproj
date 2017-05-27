@@ -60,6 +60,7 @@
     <Compile Include="Exceptions\NetworkException.cs" />
     <Compile Include="Exceptions\ServerException.cs" />
     <Compile Include="Interfaces\IManager.cs" />
+    <Compile Include="Interfaces\IPenaltyList.cs" />
     <Compile Include="Interfaces\ISerializable.cs" />
     <Compile Include="Penalty.cs" />
     <Compile Include="Command.cs" />

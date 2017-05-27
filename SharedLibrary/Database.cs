@@ -157,7 +157,7 @@ namespace SharedLibrary
             catch (Exception e)
             {
                 //LOGME
-                Console.Write("Could not execute");
+                Console.WriteLine($"Line 160: {e.Message}");
             }
 
             return dt;
@@ -178,7 +178,7 @@ namespace SharedLibrary
             catch (Exception e)
             {
                 //LOGME
-                Console.Write("Couldnotexecute");
+                Console.Write($"Line 181: {e.Message}");
             }
 
             return dt;
@@ -263,7 +263,7 @@ namespace SharedLibrary
         public List<Player> getRecentPlayers()
         {
             List<Player> returnssss = new List<Player>();
-            String Query = String.Format("SELECT * FROM CLIENTS ORDER BY Connections desc LIMIT 25");
+            String Query = String.Format($"SELECT * FROM CLIENTS LIMIT 15 OFFSET (SELECT COUNT(*) FROM CLIENTS)-15");
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
@@ -277,24 +277,8 @@ namespace SharedLibrary
                 }
             }
 
-            return returnssss;
+            return returnssss.OrderByDescending(p => p.LastConnection).ToList(); ;
         }
-
-        public List<string> getReservedNPIDs()
-        {
-            List<string> npIDs = new List<string>();
-            String Query = String.Format("SELECT npID FROM CLIENTS WHERE Reserved = 1");
-            DataTable Result = GetDataTable(Query);
-
-            if (Result != null && Result.Rows.Count > 0)
-                foreach (DataRow ResponseRow in Result.Rows)
-                    npIDs.Add(ResponseRow["npID"].ToString());
-
-
-            return npIDs;
-        }
-
-
 
         public List<Player> getPlayers(List<String> npIDs)
         {
@@ -459,11 +443,11 @@ namespace SharedLibrary
                 return null;
         }
 
-        //Returns list of bans in database
-        public List<Penalty> getBans()
+        public List<Penalty> GetClientPenalties(Player P)
         {
-            List<Penalty> Bans = new List<Penalty>();
-            DataTable Result = GetDataTable("SELECT * FROM BANS ORDER BY TIME DESC");
+            List<Penalty> ClientPenalties = new List<Penalty>();
+            String Query = $"SELECT * FROM `BANS` WHERE `npID` = '{P.npID}' OR `IP` = '{P.IP}'";
+            DataTable Result = GetDataTable(Query);
 
             foreach (DataRow Row in Result.Rows)
             {
@@ -474,11 +458,32 @@ namespace SharedLibrary
                 if (Row["TYPE"].ToString().Length != 0)
                     BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
 
-                Bans.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+                ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
 
             }
 
-            return Bans;
+            return ClientPenalties;
+        }
+
+        public List<Penalty> GetPenaltiesChronologically(int offset, int count)
+        {
+            List<Penalty> ClientPenalties = new List<Penalty>();
+            DataTable Result = GetDataTable($"SELECT * FROM BANS LIMIT {count} OFFSET (SELECT COUNT(*) FROM BANS)-{offset + 10}");
+
+            foreach (DataRow Row in Result.Rows)
+            {
+                if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
+                    Row["TIME"] = DateTime.Now.ToString();
+
+                SharedLibrary.Penalty.Type BanType = Penalty.Type.Ban;
+                if (Row["TYPE"].ToString().Length != 0)
+                    BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
+
+                ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+
+            }
+
+            return ClientPenalties;
         }
 
         //Returns all players with level > Flagged

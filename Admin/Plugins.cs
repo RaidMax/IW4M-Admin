@@ -70,7 +70,7 @@ namespace IW4MAdmin
                             if (potentialPlugins.Find(x => x.Name == newNotify.Name) == null)
                             {
                                 potentialPlugins.Add(newNotify);
-                                newNotify.OnLoad();
+                                newNotify.OnLoadAsync();
                                 Manager.GetInstance().Logger.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
                                 totalLoaded++;
                             }

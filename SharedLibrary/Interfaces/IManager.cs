@@ -13,5 +13,7 @@ namespace SharedLibrary.Interfaces
         void Stop();
         List<Server> GetServers();
         List<Command> GetCommands();
+        IPenaltyList GetClientPenalties();
+        ClientsDB GetClientDatabase();
     }
 }

@@ -68,18 +68,18 @@ namespace IW4MAdmin
             try
 #endif
             {
-                Player NewPlayer = clientDB.getPlayer(P.npID, P.clientID);
+                Player NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
 
                 if (NewPlayer == null) // first time connecting
                 {
                     Log.Write("Client slot #" + P.clientID + " first time connecting", Log.Level.All);
-                    clientDB.addPlayer(P);
-                    NewPlayer = clientDB.getPlayer(P.npID, P.clientID);
+                    Manager.GetClientDatabase().addPlayer(P);
+                    NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
                     aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
                 }
 
 
-                List<Player> Admins = clientDB.getAdmins();
+                List<Player> Admins = Manager.GetClientDatabase().getAdmins();
                 if (Admins.Find(x => x.Name == P.Name) != null)
                 {
                     if ((Admins.Find(x => x.Name == P.Name).npID != P.npID) && NewPlayer.Level < Player.Permission.Moderator)
@@ -116,7 +116,7 @@ namespace IW4MAdmin
                 NewPlayer.updateIP(P.IP);
 
                 aliasDB.updatePlayer(NewPlayer.Alias);
-                clientDB.updatePlayer(NewPlayer);
+                Manager.GetClientDatabase().updatePlayer(NewPlayer);
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", NewPlayer, null, this));
 
@@ -214,7 +214,7 @@ namespace IW4MAdmin
             {
                 Player Leaving = Players[cNum];
                 Leaving.Connections++;
-                clientDB.updatePlayer(Leaving);
+                Manager.GetClientDatabase().updatePlayer(Leaving);
 
                 Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
                 await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
@@ -266,28 +266,7 @@ namespace IW4MAdmin
         //Check ban list for every banned player and return ban if match is found 
          override public Penalty isBanned(Player C)
          {
-                 if (C.Level == Player.Permission.Banned)
-                    return Bans.Find(p => p.npID.Equals(C.npID));
-
-                 foreach (Penalty B in Bans)
-                 {
-                     if (B.npID.Length < 5 || B.IP.Length < 5)
-                         continue;
-
-                     if (B.npID == null || C.npID == null)
-                         continue;
-
-                     if (B.npID == C.npID)
-                         return B;
-
-                     if (B.IP == null || C.IP == null)
-                         continue;
-
-                     if (C.IP == B.IP)
-                         return B;
-                 }
-
-            return null;
+            return Manager.GetClientPenalties().FindPenalties(C).Where(b => b.BType == Penalty.Type.Ban).FirstOrDefault(); 
          }
 
         //Process requested command correlating to an event
@@ -328,7 +307,7 @@ namespace IW4MAdmin
                     int.TryParse(Args[0].Substring(1, Args[0].Length-1), out dbID);
 
                     IW4MServer castServer = (IW4MServer)(E.Owner);
-                    Player found = castServer.clientDB.getPlayer(dbID);
+                    Player found = Manager.GetClientDatabase().getPlayer(dbID);
                     if (found != null)
                     {
                         E.Target = found;
@@ -363,7 +342,7 @@ namespace IW4MAdmin
             {
                 try
                 {
-                    await P.OnEvent(E, this);
+                    await P.OnEventAsync(E, this);
                 }
 
                 catch (Exception Except)
@@ -413,7 +392,7 @@ namespace IW4MAdmin
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
                     foreach (var Plugin in PluginImporter.potentialPlugins)
-                       await Plugin.OnTick(this);
+                       await Plugin.OnTickAsync(this);
 
                     tickTime = DateTime.Now;
                 }
@@ -555,7 +534,7 @@ namespace IW4MAdmin
             logFile = new IFile(logPath);
             Log.Write("Log file is " + logPath, Log.Level.Debug);
             await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
-            //Bans = clientDB.getBans();
+            //Bans = Manager.GetClientDatabase().getBans();
 #if !DEBUG
             Broadcast("IW4M Admin is now ^2ONLINE");
 #endif
@@ -706,10 +685,8 @@ namespace IW4MAdmin
                 await Target.Kick("Too many warnings!", Origin);
             else
             {
-                Penalty newPenalty = new Penalty(Penalty.Type.Warning, SharedLibrary.Utilities.StripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
-                clientDB.addBan(newPenalty);
-                foreach (var S in Manager.GetServers()) // make sure bans show up on the webfront
-                    S.Bans = S.clientDB.getBans();
+                Penalty newPenalty = new Penalty(Penalty.Type.Warning, Reason.StripColors(), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Manager.GetClientPenalties().AddPenalty(newPenalty);
                 Target.Warnings++;
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Target.lastOffense);
                 await Broadcast(Message);
@@ -721,10 +698,8 @@ namespace IW4MAdmin
             if (Target.clientID > -1)
             {
                 String Message = "^1Player Kicked: ^5" + Reason;
-                Penalty newPenalty = new Penalty(Penalty.Type.Kick, SharedLibrary.Utilities.StripColors(Reason.Trim()), Target.npID, Origin.npID, DateTime.Now, Target.IP);
-                clientDB.addBan(newPenalty);
-                foreach (Server S in Manager.GetServers()) // make sure bans show up on the webfront
-                    S.Bans = S.clientDB.getBans();
+                Penalty newPenalty = new Penalty(Penalty.Type.Kick, Reason.StripColors().Trim(), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Manager.GetClientPenalties().AddPenalty(newPenalty);
                 await this.ExecuteCommandAsync("clientkick " + Target.clientID + " \"" + Message + "^7\"");
             }
         }
@@ -737,10 +712,7 @@ namespace IW4MAdmin
                 Penalty newPenalty = new Penalty(Penalty.Type.TempBan, SharedLibrary.Utilities.StripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
                 await Task.Run(() =>
                 {
-                    // todo: single database.. again
-                   foreach (Server S in Manager.GetServers()) // make sure bans show up on the webfront
-                        S.Bans = S.clientDB.getBans();
-                   clientDB.addBan(newPenalty);
+                    Manager.GetClientPenalties().AddPenalty(newPenalty);
                 });
             }
         }
@@ -778,11 +750,8 @@ namespace IW4MAdmin
 
                 await Task.Run(() =>
                 {
-                   clientDB.addBan(newBan);
-                   clientDB.updatePlayer(Target);
-
-                   foreach (Server S in Manager.GetServers()) // make sure bans show up on the webfront
-                        S.Bans = S.clientDB.getBans();
+                    Manager.GetClientPenalties().AddPenalty(newBan);
+                    Manager.GetClientDatabase().updatePlayer(Target);
                 });
 
                 lock (Reports) // threading seems to do something weird here
@@ -803,27 +772,24 @@ namespace IW4MAdmin
             }
         }
 
-        override public async Task Unban(String GUID, Player Target)
+        override public async Task Unban(Player Target)
         {
-            foreach (Penalty B in Bans)
+            // database stuff can be time consuming
+            await Task.Run(() =>
             {
-                if (B.npID == Target.npID)
-                {
-                    // database stuff can be time consuming
-                    await Task.Run(() =>
-                    {
-                       clientDB.removeBan(Target.npID, Target.IP);
+                var FoundPenalaties = Manager.GetClientPenalties().FindPenalties(Target);
+                var PenaltyToRemove = FoundPenalaties.Find(b => b.BType == Penalty.Type.Ban);
 
-                       Player P = clientDB.getPlayer(Target.npID, -1);
-                       P.setLevel(Player.Permission.User);
-                       clientDB.updatePlayer(P);
+                if (PenaltyToRemove == null)
+                    return;
 
-                        // todo: single database
-                        foreach (Server S in Manager.GetServers()) // make sure bans show up on the webfront
-                            S.Bans = S.clientDB.getBans();
-                   });
-                }
-            }
+                Manager.GetClientPenalties().RemovePenalty(PenaltyToRemove);
+
+                Player P = Manager.GetClientDatabase().getPlayer(Target.npID, -1);
+                P.setLevel(Player.Permission.User);
+                Manager.GetClientDatabase().updatePlayer(P);
+            });
+
         }
 
         public override bool Reload()
@@ -856,7 +822,7 @@ namespace IW4MAdmin
         override public void initMacros()
         {
             Macros = new Dictionary<String, Object>();
-            Macros.Add("TOTALPLAYERS", clientDB.totalPlayers());
+            Macros.Add("TOTALPLAYERS", Manager.GetClientDatabase().totalPlayers());
             Macros.Add("TOTALKILLS", totalKills);
             Macros.Add("VERSION", IW4MAdmin.Program.Version);
         }

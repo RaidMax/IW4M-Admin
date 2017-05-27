@@ -31,22 +31,22 @@ namespace Welcome_Plugin
             }
         }
 
-        public async Task OnLoad()
+        public async Task OnLoadAsync()
         {
             return;
         }
 
-        public async Task OnUnload()
+        public async Task OnUnloadAsync()
         {
             return;
         }
 
-        public async Task OnTick(Server S)
+        public async Task OnTickAsync(Server S)
         {
             return;
         }
 
-        public async Task OnEvent(Event E, Server S)
+        public async Task OnEventAsync(Event E, Server S)
         {
             if (E.Type == Event.GType.Connect)
             {

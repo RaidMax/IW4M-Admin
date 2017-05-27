@@ -34,23 +34,23 @@ namespace MessageBoard.Plugin
             }
         }
 
-        public async Task OnLoad()
+        public async Task OnLoadAsync()
         {
             forum = new Forum.Manager();
             forum.Start();
         }
 
-        public async Task OnUnload()
+        public async Task OnUnloadAsync()
         {
             forum.Stop();
         }
 
-        public async Task OnTick(Server S)
+        public async Task OnTickAsync(Server S)
         {
             return;
         }
 
-        public async Task OnEvent(Event E, Server S)
+        public async Task OnEventAsync(Event E, Server S)
         {
             if (E.Type == Event.GType.Start)
             {

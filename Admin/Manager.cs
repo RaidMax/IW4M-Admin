@@ -17,6 +17,8 @@ namespace IW4MAdmin
     {
         static Manager Instance;
         public List<Server> Servers { get; private set; }
+        Database ClientDatabase;
+        SharedLibrary.Interfaces.IPenaltyList ClientPenalties;
         List<Command> Commands;
         Kayak.IScheduler webServiceTask;
         Thread WebThread;
@@ -35,6 +37,9 @@ namespace IW4MAdmin
             Logger = new Log(logFile, Log.Level.Production, 0);
             Servers = new List<Server>();
             Commands = new List<Command>();
+
+            ClientDatabase = new ClientsDB("Database/clients.rm");
+            ClientPenalties = new PenaltyList();
         }
 
         public List<Server> GetServers()
@@ -59,6 +64,7 @@ namespace IW4MAdmin
             if (Configs.Count() == 0)
                 Config.Generate();
 
+            SharedLibrary.WebService.Init();
             PluginImporter.Load();
 
             foreach (var file in Configs)
@@ -87,7 +93,6 @@ namespace IW4MAdmin
 
             }
 
-            SharedLibrary.WebService.Init();
             webServiceTask = WebService.getScheduler();
 
             WebThread = new Thread(webServiceTask.Start);
@@ -135,6 +140,16 @@ namespace IW4MAdmin
         public void Stop()
         {
             Running = false;
+        }
+
+        public ClientsDB GetClientDatabase()
+        {
+            return ClientDatabase as ClientsDB;
+        }
+
+        public SharedLibrary.Interfaces.IPenaltyList GetClientPenalties()
+        {
+            return ClientPenalties;
         }
     }
 }

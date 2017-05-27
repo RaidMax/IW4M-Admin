@@ -27,10 +27,8 @@ namespace SharedLibrary
 #else
             Log = new Log(logFile, Log.Level.Production, port);
 #endif
-            clientDB = new ClientsDB("Database/clients.rm");
             aliasDB = new AliasesDB("Database/aliases.rm");
 
-            Bans = new List<Penalty>();
             Players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
             Macros = new Dictionary<String, Object>();
@@ -47,7 +45,7 @@ namespace SharedLibrary
 
             var commands = mgr.GetCommands();
 
-            owner = clientDB.getOwner();
+            owner = Manager.GetClientDatabase().getOwner();
 
             if (owner == null)
                 commands.Add(new Owner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
@@ -118,11 +116,6 @@ namespace SharedLibrary
             return Players.FindAll(x => x != null);
         }
 
-        //Returns list of all active bans (loaded at runtime)
-        public List<Penalty> getBans()
-        {
-            return Bans;
-        }
 
         public int pID()
         {
@@ -142,7 +135,7 @@ namespace SharedLibrary
             foreach (Aliases A in getAliases(Origin))
                 databaseIDs.Add(A.Number);
 
-            return clientDB.getPlayers(databaseIDs);
+            return Manager.GetClientDatabase().getPlayers(databaseIDs);
         }
 
         /// <summary>
@@ -303,7 +296,7 @@ namespace SharedLibrary
         /// <param name="npID">npID of the player</param>
         /// <param name="Target">I don't remember what this is for</param>
         /// <returns></returns>
-        abstract public Task Unban(String npID, Player Target);
+        abstract public Task Unban(Player Target);
 
         /// <summary>
         /// Change the current searver map
@@ -437,7 +430,6 @@ namespace SharedLibrary
         //Objects
         public Interfaces.IManager Manager { get; protected set; }
         public Log Log { get; private set; }
-        public List<Penalty> Bans;
         public Player owner;
         public List<Map> maps;
         public List<String> rules;
@@ -479,7 +471,7 @@ namespace SharedLibrary
         protected String Mod;
 
         // Databases
-        public ClientsDB clientDB;
+        //public ClientsDB clientDB;
         public AliasesDB aliasDB;
 
         //Remote

@@ -288,7 +288,7 @@ namespace IW4MAdmin
 
                     if (S != null)
                     {
-                        Player admin = Manager.GetInstance().Servers.First().clientDB.getPlayer(querySet["IP"]);
+                        Player admin = Manager.GetInstance().GetClientDatabase().getPlayer(querySet["IP"]);
 
                         if (admin == null)
                             admin = new Player("RestUser", "-1", -1, (int)Player.Permission.User);
@@ -354,7 +354,8 @@ namespace IW4MAdmin
 
             try
             {
-                selectedPenalties = Manager.GetInstance().Servers.First().Bans.OrderByDescending(x => x.When).ToList().GetRange(Convert.ToInt32(querySet["from"]), 15);
+                //selectedPenalties = Manager.GetInstance().Servers.First().Bans.OrderByDescending(x => x.When).ToList().GetRange(Convert.ToInt32(querySet["from"]), 15);
+                selectedPenalties = ((Manager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15).OrderByDescending(b => b.When).ToList();
             }
 
             catch (Exception)
@@ -366,8 +367,8 @@ namespace IW4MAdmin
 
             foreach (var p in selectedPenalties)
             {
-                Player admin = Manager.GetInstance().Servers.First().clientDB.getPlayer(p.bannedByID, 0);
-                Player penalized = Manager.GetInstance().Servers.First().clientDB.getPlayer(p.npID, 0);
+                Player admin = Manager.GetInstance().GetClientDatabase().getPlayer(p.bannedByID, 0);
+                Player penalized = Manager.GetInstance().GetClientDatabase().getPlayer(p.npID, 0);
                 if (admin == null && penalized == null)
                     continue;
                 if (admin == null)
@@ -503,7 +504,7 @@ namespace IW4MAdmin
         {
             HttpResponse resp = new HttpResponse();
             resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(Manager.GetInstance().Servers[0].Bans.Where(x => x.BType == Penalty.Type.Ban), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() });
+            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(((Manager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() });
             resp.additionalHeaders = new Dictionary<string, string>();
             return resp;
         }
@@ -591,29 +592,26 @@ namespace IW4MAdmin
             resp.contentType = getContentType();
             resp.additionalHeaders = new Dictionary<string, string>();
 
-            bool authed = Manager.GetInstance().Servers.First().clientDB.getAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
+            bool authed = Manager.GetInstance().GetClientDatabase().getAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
 
             if (querySet["id"] != null)
             {
-                matchedPlayers.Add(Manager.GetInstance().Servers.First().clientDB.getPlayer(Convert.ToInt32(querySet["id"])));
+                matchedPlayers.Add(Manager.GetInstance().GetClientDatabase().getPlayer(Convert.ToInt32(querySet["id"])));
             }
 
             else if (querySet["npID"] != null)
             {
-                matchedPlayers.Add(Manager.GetInstance().Servers.First().clientDB.getPlayers(new List<string> { querySet["npID"] }).First());
+                matchedPlayers.Add(Manager.GetInstance().GetClientDatabase().getPlayers(new List<string> { querySet["npID"] }).First());
             }
 
             else if (querySet["name"] != null)
             {
-                matchedPlayers = Manager.GetInstance().Servers.First().clientDB.findPlayers(querySet["name"]);
+                matchedPlayers = Manager.GetInstance().GetClientDatabase().findPlayers(querySet["name"]);
             }
 
             else if (querySet["recent"] != null)
             {
-                if (Manager.GetInstance().Servers.Count > 0)
-                    matchedPlayers = Manager.GetInstance().Servers.First().clientDB.getRecentPlayers();
-                else
-                    resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(null);
+                 matchedPlayers = Manager.GetInstance().GetClientDatabase().getRecentPlayers();
             }
 
             if (matchedPlayers != null && matchedPlayers.Count > 0)
@@ -631,8 +629,7 @@ namespace IW4MAdmin
                     eachPlayer.playernpID = pp.npID;
                     eachPlayer.forumID = -1;
                     eachPlayer.authed = authed;
-                    if (eachPlayer.forumID < 500000)
-                        eachPlayer.showV2Features = true;
+                    eachPlayer.showV2Features = false;
 
                     foreach (var a in playerAliases)
                     {

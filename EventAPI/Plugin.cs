@@ -95,7 +95,7 @@ namespace EventAPI
             }
         }
 
-        public async Task OnLoad()
+        public async Task OnLoadAsync()
         {
             apiEvents = new Queue<RestEvent>();
             flaggedMessagesText = new List<string>();
@@ -103,29 +103,28 @@ namespace EventAPI
             WebService.pageList.Add(new EventsJSON());
         }
 
-        public async Task OnUnload()
+        public async Task OnUnloadAsync()
         {
             apiEvents.Clear();
             activeServers.Clear();
         }
 
-        public async Task OnTick(Server S)
+        public async Task OnTickAsync(Server S)
         {
             return;
         }
 
-        public async Task OnEvent(Event E, Server S)
+        public async Task OnEventAsync(Event E, Server S)
         {
             if (E.Type == Event.GType.Start)
             {
                 activeServers.Add(S);
-                S.Log.Write("Event API now running on " + S.getName(), Log.Level.Production);
             }
 
             if (E.Type == Event.GType.Stop)
             {
+                // fixme: this will be bad once FTP is working and there can be multiple servers on the same port.
                 activeServers.RemoveAll(s => s.getPort() == S.getPort());
-                S.Log.Write("Event API no longer running on " + S.getName(), Log.Level.Production);
             }
 
             if (E.Type == Event.GType.Connect)

@@ -24,12 +24,12 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.clientDB.getOwner() == null)
+            if (E.Owner.Manager.GetClientDatabase().getOwner() == null)
             {
                 E.Origin.setLevel(Player.Permission.Owner);
                 await E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
                 E.Owner.owner = E.Origin;
-                E.Owner.clientDB.updatePlayer(E.Origin);
+                E.Owner.Manager.GetClientDatabase().updatePlayer(E.Origin);
             }
             else
                 await E.Origin.Tell("This server already has an owner!");
@@ -131,7 +131,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Unban(E.Data.Trim(), E.Target);
+            await E.Owner.Unban(E.Target);
             await E.Origin.Tell($"Successfully unbanned {E.Target.Name}::{E.Target.npID}");
         }
     }
@@ -236,7 +236,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Broadcast("Performing fast restart...");
+            await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5{E.Origin.Name}]");
             await Task.Delay(3000);
             await E.Owner.ExecuteCommandAsync("fast_restart");
         }
@@ -248,8 +248,8 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Broadcast("Performing map rotate...");
-            await Task.Delay(3000);
+            await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5{E.Origin.Name}]");
+            await Task.Delay(5000);
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }
     }
@@ -296,7 +296,7 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell(E.Target.Name + " was successfully promoted!");
            
                 //NEEED TO MOVE
-                E.Owner.clientDB.updatePlayer(E.Target);
+                E.Owner.Manager.GetClientDatabase().updatePlayer(E.Target);
             }
 
             else
@@ -370,7 +370,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            var db_players = E.Owner.clientDB.findPlayers(E.Data.Trim());
+            var db_players = E.Owner.Manager.GetClientDatabase().findPlayers(E.Data.Trim());
 
             if (db_players == null)
             {
@@ -400,7 +400,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            //var db_players = E.Owner.clientDB.findPlayers(E.Data.Trim());
+            //var db_players = E.Owner.Manager.GetClientDatabase().findPlayers(E.Data.Trim());
             var db_aliases = E.Owner.aliasDB.findPlayers(E.Data);
 
             if (db_aliases == null)
@@ -422,7 +422,7 @@ namespace SharedLibrary.Commands
                         lookingFor = S;
                 }
 
-                Player Current = E.Owner.clientDB.getPlayer(P.Number);
+                Player Current = E.Owner.Manager.GetClientDatabase().getPlayer(P.Number);
 
                 if (Current != null)
                 {
@@ -498,7 +498,7 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }
 
-            E.Owner.clientDB.updatePlayer(E.Target);
+            E.Owner.Manager.GetClientDatabase().updatePlayer(E.Target);
         }
     }
 
@@ -591,15 +591,17 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            Penalty B = E.Owner.Bans.Find(b => b.npID.Equals(E.Target.npID));
-            
-            if (B == null)
+            var B = E.Owner.Manager.GetClientPenalties().FindPenalties(E.Target);
+            var BannedPenalty = B.Find(b => b.BType == Penalty.Type.Ban);
+
+
+            if (BannedPenalty == null)
             {
                 await E.Origin.Tell("No active ban was found for that player.");
                 return;
             }
 
-            Player Banner = E.Owner.clientDB.getPlayer(B.bannedByID, -1);
+            Player Banner = E.Owner.Manager.GetClientDatabase().getPlayer(BannedPenalty.bannedByID, -1);
 
             if (Banner == null)
             {
@@ -607,7 +609,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2}", E.Target.Name, Banner.Name, B.Reason));
+            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2}", E.Target.Name, Banner.Name, BannedPenalty.Reason));
         }
     }
 

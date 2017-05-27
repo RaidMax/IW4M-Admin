@@ -54,7 +54,7 @@ namespace MessageBoard.Forum
         {
             forumPages = new List<IPage>();
             activeSessions = new List<Session>();
-            database = new Storage.Database("forum.db");
+            database = new Storage.Database("Database/forum.db");
         }
 
         public void startSession(string sessionID)

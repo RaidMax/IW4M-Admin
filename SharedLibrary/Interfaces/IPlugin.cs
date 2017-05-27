@@ -5,10 +5,10 @@ namespace SharedLibrary.Interfaces
 {
     public interface IPlugin
     {
-        Task OnLoad();
-        Task OnUnload();
-        Task OnEvent(Event E, Server S);
-        Task OnTick(Server S);
+        Task OnLoadAsync();
+        Task OnUnloadAsync();
+        Task OnEventAsync(Event E, Server S);
+        Task OnTickAsync(Server S);
 
         //for logging purposes
         String Name { get; }

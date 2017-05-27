@@ -61,7 +61,7 @@ namespace IW4MAdmin
             if (Players[P.clientID] != null && Players[P.clientID].npID == P.npID) // if someone has left and a new person has taken their spot between polls
                 return true;
 
-            Log.Write("Client slot #" + P.clientID + " now reserved", Log.Level.Debug);
+            Logger.WriteDebug($"Client slot #{P.clientID} now reserved");
 
                 
 #if DEBUG == false
@@ -72,7 +72,7 @@ namespace IW4MAdmin
 
                 if (NewPlayer == null) // first time connecting
                 {
-                    Log.Write("Client slot #" + P.clientID + " first time connecting", Log.Level.All);
+                    Logger.WriteDebug($"Client slot #{P.clientID} first time connecting");
                     Manager.GetClientDatabase().addPlayer(P);
                     NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
                     aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
@@ -124,7 +124,7 @@ namespace IW4MAdmin
                 {
                     String Message;
 
-                    Log.Write("Banned client " + P.Name + " trying to connect...", Log.Level.Debug);
+                    Logger.WriteInfo($"Banned client {P.Name}::{P.npID} trying to connect...");
 
                     if (NewPlayer.lastOffense != null)
                         Message = "Previously banned for ^5" + NewPlayer.lastOffense;
@@ -158,7 +158,7 @@ namespace IW4MAdmin
 
                     if (B != null && B.BType == Penalty.Type.Ban)
                     {
-                        Log.Write(String.Format("Banned client {0} is connecting with new alias {1}", aP.Name, NewPlayer.Name), Log.Level.Debug);
+                        Logger.WriteDebug($"Banned client {aP.Name}::{aP.npID} is connecting with new alias {NewPlayer.Name}");
                         NewPlayer.lastOffense = String.Format("Evading ( {0} )", aP.Name);
 
                         if (B.Reason != null)
@@ -183,11 +183,9 @@ namespace IW4MAdmin
 #if DEBUG == FALSE
                 await NewPlayer.Tell($"Welcome ^5{NewPlayer.Name} ^7this is your ^5{NewPlayer.TimesConnected()} ^7time connecting!");
 #endif
-                if (NewPlayer.Name == "nosTEAM")
-                    await NewPlayer.Tell("We encourage you to change your ^5name ^7using ^5/name^7");
+                Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.npID} connecting..."); // they're clean
 
-                Log.Write("Client " + NewPlayer.Name + " connecting...", Log.Level.Debug); // they're clean
-
+                // todo: get this out of here
                 while (chatHistory.Count > Math.Ceiling((double)ClientNum / 2))
                     chatHistory.RemoveAt(0);
                 chatHistory.Add(new Chat(NewPlayer.Name, "<i>CONNECTED</i>", DateTime.Now));
@@ -216,7 +214,7 @@ namespace IW4MAdmin
                 Leaving.Connections++;
                 Manager.GetClientDatabase().updatePlayer(Leaving);
 
-                Log.Write("Client at " + cNum + " disconnecting...", Log.Level.Debug);
+                Logger.WriteInfo($"Client {Leaving.Name}::{Leaving.npID} disconnecting...");
                 await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
                 Players[cNum] = null;
 
@@ -229,7 +227,7 @@ namespace IW4MAdmin
         {
             if (L.Length < cIDPos)
             {
-                Log.Write("Line sent for client creation is not long enough!", Log.Level.Debug);
+                Logger.WriteError("Line sent for client creation is not long enough!");
                 return null;
             }
 
@@ -241,8 +239,8 @@ namespace IW4MAdmin
 
             if (pID < 0 || pID > 17)
             {
-                Log.Write("Error event player index " + pID + " is out of bounds!", Log.Level.Debug);
-                Log.Write("Offending line -- " + String.Join(";", L), Log.Level.Debug);
+                Logger.WriteError("Event player index " + pID + " is out of bounds!");
+                Logger.WriteDebug("Offending line -- " + String.Join(";", L));
                 return null;
             }
 
@@ -256,8 +254,8 @@ namespace IW4MAdmin
                 }
                 catch (Exception) 
                 { 
-                    Log.Write("Client index is invalid - " + pID, Log.Level.Debug);
-                    Log.Write(L.ToString(), Log.Level.Debug);
+                    Logger.WriteError("Client index is invalid - " + pID);
+                    Logger.WriteDebug(L.ToString());
                     return null;
                 }
             } 
@@ -347,9 +345,9 @@ namespace IW4MAdmin
 
                 catch (Exception Except)
                 {
-                    Log.Write(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name), Log.Level.Production);
-                    Log.Write(String.Format("Error Message: {0}", Except.Message), Log.Level.Debug);
-                    Log.Write(String.Format("Error Trace: {0}", Except.StackTrace), Log.Level.Debug);
+                    Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
+                    Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
+                    Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                     continue;
                 }
             }
@@ -528,11 +526,11 @@ namespace IW4MAdmin
 
             if (!File.Exists(logPath))
             {
-                Log.Write($"Gamelog {logPath} does not exist!", Log.Level.All);
+                Logger.WriteError($"Gamelog {logPath} does not exist!");
             }
 
             logFile = new IFile(logPath);
-            Log.Write("Log file is " + logPath, Log.Level.Debug);
+            Logger.WriteInfo("Log file is " + logPath);
             await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
             //Bans = Manager.GetClientDatabase().getBans();
 #if !DEBUG
@@ -552,7 +550,7 @@ namespace IW4MAdmin
             {
                 if (E.Origin == null)
                 {
-                    Log.Write("Disconnect event triggered, but no origin found.", Log.Level.Debug);
+                    Logger.WriteError("Disconnect event triggered, but no origin found.");
                     return;
                 }
 
@@ -568,7 +566,7 @@ namespace IW4MAdmin
             {
                 if (E.Origin == null)
                 {
-                    Log.Write("Kill event triggered, but no origin found!", Log.Level.Debug);
+                    Logger.WriteError("Kill event triggered, but no origin found!");
                     return;
                 }
 
@@ -591,14 +589,14 @@ namespace IW4MAdmin
 
                 if (E.Origin == null)
                 {
-                    Log.Write("Say event triggered, but no origin found! - " + E.Data, Log.Level.Debug);
+                    Logger.WriteError("Say event triggered, but no origin found! - " + E.Data);
                     return;
                 }
 
 
                 if (E.Owner == null)
                 {
-                    Log.Write("Say event does not have an owner!", Log.Level.Debug);
+                    Logger.WriteError("Say event does not have an owner!");
                     return;
                 }
 
@@ -613,7 +611,7 @@ namespace IW4MAdmin
                         {
                             if (C.needsTarget && E.Target == null)
                             {
-                                Log.Write("Requested event requiring target does not have a target!", Log.Level.Debug);
+                                Logger.WriteError("Requested event requiring target does not have a target!");
                                 return;
                             }
 
@@ -624,17 +622,11 @@ namespace IW4MAdmin
 
                             catch (Exception Except)
                             {
-                                Log.Write(String.Format("A command request \"{0}\" generated an error.", C.Name, Log.Level.Debug));
-                                Log.Write(String.Format("Error Message: {0}", Except.Message), Log.Level.Debug);
-                                Log.Write(String.Format("Error Trace: {0}", Except.StackTrace), Log.Level.Debug);
+                                Logger.WriteError(String.Format("A command request \"{0}\" generated an error.", C.Name));
+                                Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
+                                Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                                 return;
                             }
-                        }
-
-                        else
-                        {
-                            Log.Write("Player didn't properly enter command - " + E.Origin.Name, Log.Level.Debug);
-                            return;
                         }
                     }
 
@@ -659,7 +651,7 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.MapChange)
             {
-                Log.Write("New map loaded - " + ClientNum + " active players", Log.Level.Debug);
+                Logger.WriteInfo($"New map loaded - {ClientNum} active players");
 
                 // make async
                 Gametype = (await this.GetDvarAsync<string>("g_gametype")).Value.StripColors();
@@ -674,7 +666,7 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.MapEnd)
             {
-                Log.Write("Game ending...", Log.Level.Debug);
+                Logger.WriteInfo("Game ending...");
                 return;
             };
         }
@@ -728,7 +720,9 @@ namespace IW4MAdmin
         {
             if (Target == null)
             {
-                Log.Write("Something really bad happened, because there's no ban target!");
+                Logger.WriteError("Ban target is null");
+                Logger.WriteDebug($"Message: {Message}");
+                Logger.WriteDebug($"Origin: {Origin.Name}::{Origin.npID}");
                 return;
             }
 
@@ -746,7 +740,7 @@ namespace IW4MAdmin
             if (Origin != null)
             {
                 Target.setLevel(Player.Permission.Banned);
-                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, SharedLibrary.Utilities.StripColors(Target.npID), Origin.npID, DateTime.Now, Target.IP);
+                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.npID, Origin.npID, DateTime.Now, Target.IP);
 
                 await Task.Run(() =>
                 {
@@ -766,7 +760,7 @@ namespace IW4MAdmin
                     foreach (Report R in toRemove)
                     {
                         Reports.Remove(R);
-                        Log.Write("Removing report for banned GUID -- " + R.Origin.npID, Log.Level.Debug);
+                        Logger.WriteInfo("Removing report for banned GUID - " + R.Origin.npID);
                     }
                 }
             }
@@ -811,7 +805,7 @@ namespace IW4MAdmin
             }
             catch (Exception E)
             {
-                Log.Write("Unable to reload configs! - " + E.Message, Log.Level.Debug);
+                Logger.WriteError("Unable to reload configs! - " + E.Message);
                 messages = new List<String>();
                 maps = new List<Map>();
                 rules = new List<String>();

@@ -20,22 +20,6 @@ namespace SharedLibrary
       
             Name = (fileName.Split('/'))[fileName.Split('/').Length - 1];
 
-            //if (!Directory.Exists(_Directory))
-            //    Directory.CreateDirectory(_Directory);
-
-            if (!File.Exists(fileName))
-            {
-                try
-                {
-                    //FileStream penis = File.Create(fileName);
-                    //penis.Close();
-                }
-
-                catch
-                {
-                    Console.WriteLine("Unable to create file!");
-                }
-            }
 
             try
             {
@@ -89,20 +73,6 @@ namespace SharedLibrary
             }
         }
 
-        public String[] getParameters(int num)
-        {
-            if (sze > 0)
-            {
-                String firstLine = Handle.ReadLine();
-                String[] Parms = firstLine.Split(':');
-                if (Parms.Length < num)
-                    return null;
-                else
-                    return Parms;
-            }
-
-            return null;
-        }
 
         public void Close()
         {

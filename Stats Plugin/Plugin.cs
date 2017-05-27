@@ -149,7 +149,7 @@ namespace StatsPlugin
                     calculateAndSaveSkill(P, statLists.Find(x =>x.Port == S.getPort()));
                     resetCounters(P.clientID, S.getPort());
 
-                    E.Owner.Log.Write("Updated skill for client #" + P.databaseID, Log.Level.Debug);
+                    E.Owner.Logger.WriteInfo("Updated skill for client #" + P.databaseID);
                     //E.Owner.Log.Write(String.Format("\r\nJoin: {0}\r\nInactive Minutes: {1}\r\nnewPlayTime: {2}\r\nnewSPM: {3}\r\nkdrWeight: {4}\r\nMultiplier: {5}\r\nscoreWeight: {6}\r\nnewSkillFactor: {7}\r\nprojectedNewSkill: {8}\r\nKills: {9}\r\nDeaths: {10}", connectionTime[P.clientID].ToShortTimeString(), inactiveMinutes[P.clientID], newPlayTime, newSPM, kdrWeight, Multiplier, scoreWeight, newSkillFactor, disconnectStats.Skill, disconnectStats.Kills, disconnectStats.Deaths));
                 }
             }
@@ -158,7 +158,7 @@ namespace StatsPlugin
             {
                 calculateAndSaveSkill(E.Origin, statLists.Find(x=>x.Port == S.getPort()));
                 resetCounters(E.Origin.clientID, S.getPort());
-                E.Owner.Log.Write("Updated skill for disconnecting client #" + E.Origin.databaseID, Log.Level.Debug);
+                E.Owner.Logger.WriteInfo("Updated skill for disconnecting client #" + E.Origin.databaseID);
             }
 
             if (E.Type == Event.GType.Kill)

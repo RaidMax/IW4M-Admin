@@ -41,7 +41,7 @@ namespace Auto_Restart_Plugin
 
             catch (Exception E)
             {
-                goodBye.Log.Write("SOMETHING FUCKED UP BEYOND ALL REPAIR " + E.ToString());
+                //goodBye.Log.Write("SOMETHING FUCKED UP BEYOND ALL REPAIR " + E.ToString());
             }
         }
 

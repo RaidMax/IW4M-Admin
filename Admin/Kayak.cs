@@ -13,12 +13,12 @@ namespace IW4MAdmin
     {
         public void OnException(IScheduler scheduler, Exception e)
         {
-            Manager.GetInstance().Logger.Write("Web service has encountered an error - " + e.Message);
+            Manager.GetInstance().Logger.WriteError("Web service has encountered an error - " + e.Message);
         }
 
         public void OnStop(IScheduler scheduler)
         {
-            Manager.GetInstance().Logger.Write("Web service has been stopped...");
+            Manager.GetInstance().Logger.WriteDebug("Web service has been stopped...");
         }
     }
 

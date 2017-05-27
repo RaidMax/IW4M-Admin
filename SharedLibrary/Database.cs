@@ -13,18 +13,7 @@ namespace SharedLibrary
         {
             FileName = FN;
             DBCon = String.Format("Data Source={0}", FN);
-            try
-            {
-                Con = new SQLiteConnection(DBCon);
-            }
-
-            catch (DllNotFoundException)
-            {
-                Console.WriteLine("Fatal Error: could not locate the SQLite DLL(s)!\nEnsure they are located in the 'lib' folder");
-                Utilities.Wait(5);
-                Environment.Exit(0);
-            }
-
+            Con = new SQLiteConnection(DBCon);
             Open = false;
             Init();
         }
@@ -130,6 +119,7 @@ namespace SharedLibrary
 
             catch (Exception E)
             {
+                // fixme: this needs to have a reference to a logger..
                 Console.WriteLine(E.Message);
                 Console.WriteLine(E.StackTrace);
                 Console.WriteLine(Request);
@@ -205,7 +195,7 @@ namespace SharedLibrary
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message + " GetDataTable");
+                Console.WriteLine($"Line 198: {e.Message}");
                 return new DataTable();
             }
             return dt;

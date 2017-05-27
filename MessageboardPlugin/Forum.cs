@@ -63,7 +63,6 @@ namespace MessageBoard.Forum
             {
                 Session newSession = getSession(sessionID);
                 newSession.sessionStartTime = DateTime.Now;
-                //Console.WriteLine("Matching session was found - {0}", sessionID);
                 addSession(newSession);
             }
 

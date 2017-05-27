@@ -11,6 +11,7 @@ namespace SharedLibrary.Interfaces
         void Init();
         void Start();
         void Stop();
+        ILogger GetLogger();
         List<Server> GetServers();
         List<Command> GetCommands();
         IPenaltyList GetClientPenalties();

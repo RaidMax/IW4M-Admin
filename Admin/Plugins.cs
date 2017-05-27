@@ -24,13 +24,13 @@ namespace IW4MAdmin
 
             else
             {
-                Manager.GetInstance().Logger.Write("Plugin folder does not exist!", Log.Level.All);
+                Manager.GetInstance().Logger.WriteWarning("Plugin folder does not exist!");
                 return false;
             }
 
             if (dllFileNames == null || dllFileNames.Length == 0)
             {
-                Manager.GetInstance().Logger.Write("No plugins to load", Log.Level.All);
+                Manager.GetInstance().Logger.WriteDebug("No plugins to load");
                 return true;
             }
 
@@ -42,7 +42,8 @@ namespace IW4MAdmin
                 assemblies.Add(assembly);
             }
 
-            int totalLoaded = 0;
+            int LoadedPlugins = 0;
+            int LoadedCommands = 0;
             foreach (Assembly Plugin in assemblies)
             {
                 if (Plugin != null)
@@ -55,8 +56,8 @@ namespace IW4MAdmin
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             potentialCommands.Add(newCommand);
-                            Manager.GetInstance().Logger.Write("Registered command \"" + newCommand.Name + "\"", Log.Level.Debug);
-                            totalLoaded++;
+                            Manager.GetInstance().Logger.WriteDebug("Registered command \"" + newCommand.Name + "\"");
+                            LoadedCommands++;
                             continue;
                         }
 
@@ -71,20 +72,20 @@ namespace IW4MAdmin
                             {
                                 potentialPlugins.Add(newNotify);
                                 newNotify.OnLoadAsync();
-                                Manager.GetInstance().Logger.Write("Loaded plugin \"" + newNotify.Name + "\"" + " [" + newNotify.Version + "]", Log.Level.Debug);
-                                totalLoaded++;
+                                Manager.GetInstance().Logger.WriteDebug($"Loaded plugin \"{ newNotify.Name }\" [{newNotify.Version}]");
+                                LoadedPlugins++;
                             }
                         }
 
                         catch (Exception E)
                         {
-                            Manager.GetInstance().Logger.Write("Could not load plugin " + Plugin.Location + " - " + E.Message);
+                            Manager.GetInstance().Logger.WriteWarning($"Could not load plugin {Plugin.Location} - {E.Message}");
                         } 
                     }
                 }
             }
 
-            Manager.GetInstance().Logger.Write("Loaded " + totalLoaded + " plugins.", Log.Level.Production);
+            Manager.GetInstance().Logger.WriteInfo($"Loaded {LoadedPlugins} plugins and registered {LoadedCommands} commands.");
             return true;
         }
         

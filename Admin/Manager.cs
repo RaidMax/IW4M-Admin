@@ -22,6 +22,7 @@ namespace IW4MAdmin
         List<Command> Commands;
         Kayak.IScheduler webServiceTask;
         Thread WebThread;
+        public SharedLibrary.Interfaces.ILogger Logger { get; private set; }
         public bool Running { get; private set; }
 #if FTP_LOG
         const double UPDATE_FREQUENCY = 15000;
@@ -29,12 +30,11 @@ namespace IW4MAdmin
         const double UPDATE_FREQUENCY = 300;
 #endif
 
-        public Log Logger;
-
         private Manager()
         {
-            IFile logFile = new IFile("Logs/IW4MAdminManager.log", true);
-            Logger = new Log(logFile, Log.Level.Production, 0);
+            //IFile logFile = new IFile("Logs/IW4MAdminManager.log", true);
+            Logger = new Logger("Logs/IW4MAdmin.log");
+            //Logger = new Log(logFile, Log.Level.Production, 0);
             Servers = new List<Server>();
             Commands = new List<Command>();
 
@@ -54,7 +54,7 @@ namespace IW4MAdmin
 
         public static Manager GetInstance()
         {
-            return Instance == null ? Instance = new Manager() : Instance;
+            return Instance ?? (Instance = new Manager());
         }
 
         public void Init()
@@ -78,16 +78,16 @@ namespace IW4MAdmin
                     {
                         await ServerInstance.Initialize();
                         Servers.Add(ServerInstance);
-                        Logger.Write($"Now monitoring {ServerInstance.Hostname}", Log.Level.Production);
+                        Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
                     }
 
                     catch (SharedLibrary.Exceptions.ServerException e)
                     {
-                        Logger.Write($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors", Log.Level.Production);
+                        Logger.WriteWarning($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
                         if (e.GetType() == typeof(SharedLibrary.Exceptions.DvarException))
-                            Logger.Write($"Could not get the dvar value for {(e as SharedLibrary.Exceptions.DvarException).Data["dvar_name"]} (ensure the server has a map loaded)", Log.Level.Production);
+                            Logger.WriteError($"Could not get the dvar value for {(e as SharedLibrary.Exceptions.DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
                         else if (e.GetType() == typeof(SharedLibrary.Exceptions.NetworkException))
-                            Logger.Write("Could not communicate with the server (ensure the configuration is correct)", Log.Level.Production);
+                            Logger.WriteError("Could not communicate with the server (ensure the configuration is correct)");
                     }
                 });
 
@@ -150,6 +150,11 @@ namespace IW4MAdmin
         public SharedLibrary.Interfaces.IPenaltyList GetClientPenalties()
         {
             return ClientPenalties;
+        }
+
+        public SharedLibrary.Interfaces.ILogger GetLogger()
+        {
+            return Logger;
         }
     }
 }

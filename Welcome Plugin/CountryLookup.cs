@@ -40,7 +40,7 @@ namespace CountryLookupProj
 									"O1","AX","GG","IM","JE","BL","MF"
 									};
         private static string[] countryName = 
-								{"N/A","Asia/Pacific Region","Europe","Andorra","United Arab Emirates","Afghanistan","Antigua and Barbuda","Anguilla","Albania","Armenia","Netherlands Antilles","Angola","Antarctica","Argentina","American Samoa","Austria","Australia","Aruba","Azerbaijan","Bosnia and Herzegovina","Barbados","Bangladesh","Belgium",
+								{"An Unknown Country","Asia/Pacific Region","Europe","Andorra","United Arab Emirates","Afghanistan","Antigua and Barbuda","Anguilla","Albania","Armenia","Netherlands Antilles","Angola","Antarctica","Argentina","American Samoa","Austria","Australia","Aruba","Azerbaijan","Bosnia and Herzegovina","Barbados","Bangladesh","Belgium",
 									"Burkina Faso","Bulgaria","Bahrain","Burundi","Benin","Bermuda","Brunei Darussalam","Bolivia","Brazil","Bahamas","Bhutan","Bouvet Island","Botswana","Belarus","Belize","Canada","Cocos (Keeling) Islands","Congo, The Democratic Republic of the","Central African Republic","Congo","Switzerland","Cote D'Ivoire",
 									"Cook Islands","Chile","Cameroon","China","Colombia","Costa Rica","Cuba","Cape Verde","Christmas Island","Cyprus","Czech Republic","Germany","Djibouti","Denmark","Dominica","Dominican Republic","Algeria","Ecuador","Estonia","Egypt","Western Sahara","Eritrea","Spain","Ethiopia","Finland","Fiji","Falkland Islands (Malvinas)",
 									"Micronesia, Federated States of","Faroe Islands","France","France, Metropolitan","Gabon","United Kingdom","Grenada","Georgia","French Guiana","Ghana","Gibraltar","Greenland","Gambia","Guinea","Guadeloupe","Equatorial Guinea","Greece","South Georgia and the South Sandwich Islands","Guatemala","Guam","Guinea-Bissau","Guyana",
@@ -56,14 +56,7 @@ namespace CountryLookupProj
 
         public CountryLookup(string fileName)
         {
-            try
-            {
-                fileInput = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-            }
-            catch (FileNotFoundException)
-            {
-                Console.WriteLine("File " + fileName + " not found.");
-            }
+            fileInput = new FileStream(fileName, FileMode.Open, FileAccess.Read);
         }
 
         public string lookupCountryCode(string str)
@@ -93,13 +86,12 @@ namespace CountryLookupProj
                 }
                 ipnum += y << ((3 - i) * 8);
             }
-            //Console.WriteLine(ipnum);
             return ipnum;
         }
 
         public string lookupCountryCode(IPAddress addr)
         {
-            return (countryCode[(int)seekCountry(0, addrToNum(addr), 31)]);
+            return (countryCode[(int)SeekCountry(0, addrToNum(addr), 31)]);
         }
 
         public string lookupCountryName(string str)
@@ -111,33 +103,24 @@ namespace CountryLookupProj
             }
             catch (FormatException)
             {
-                return "N/A";
+                return "An Unknown Country";
             }
             return lookupCountryName(addr);
         }
 
         public string lookupCountryName(IPAddress addr)
         {
-            return (countryName[(int)seekCountry(0, addrToNum(addr), 31)]);
+            return (countryName[(int)SeekCountry(0, addrToNum(addr), 31)]);
         }
 
-        private long seekCountry(long offset, long ipnum, int depth)
+        private long SeekCountry(long offset, long ipnum, int depth)
         {
             byte[] buf = new byte[6];
             long[] x = new long[2];
-            if (depth == 0)
-            {
-                Console.WriteLine("Error seeking country.");
-            }
-            try
-            {
-                fileInput.Seek(6 * offset, 0);
-                fileInput.Read(buf, 0, 6);
-            }
-            catch (IOException)
-            {
-                Console.WriteLine("IO Exception");
-            }
+      
+            fileInput.Seek(6 * offset, 0);
+            fileInput.Read(buf, 0, 6);
+          
             for (int i = 0; i < 2; i++)
             {
                 x[i] = 0;
@@ -158,7 +141,7 @@ namespace CountryLookupProj
                 {
                     return x[1] - COUNTRY_BEGIN;
                 }
-                return seekCountry(x[1], ipnum, depth - 1);
+                return SeekCountry(x[1], ipnum, depth - 1);
             }
             else
             {
@@ -166,7 +149,7 @@ namespace CountryLookupProj
                 {
                     return x[0] - COUNTRY_BEGIN;
                 }
-                return seekCountry(x[0], ipnum, depth - 1);
+                return SeekCountry(x[0], ipnum, depth - 1);
             }
         }
     }

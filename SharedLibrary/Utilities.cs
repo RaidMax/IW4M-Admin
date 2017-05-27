@@ -127,8 +127,7 @@ namespace SharedLibrary
             {
                 String Match = M.Value;
                 String Identifier = M.Value.Substring(2, M.Length - 4);
-                Object foundVal;
-                Dict.TryGetValue(Identifier, out foundVal);
+                Dict.TryGetValue(Identifier, out object foundVal);
                 String Replacement;
 
                 if (foundVal != null)

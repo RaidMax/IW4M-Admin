@@ -113,6 +113,7 @@
     <Compile Include="Connection.cs" />
     <Compile Include="Heartbeat.cs" />
     <Compile Include="Kayak.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="PenaltyList.cs" />

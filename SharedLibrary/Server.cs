@@ -20,13 +20,8 @@ namespace SharedLibrary
             IP = address;
             Port = port;
             Manager = mgr;
+            Logger = Manager.GetLogger();
             ClientNum = 0;
-            logFile = new IFile($"Logs/{address}_{port}.log", true);
-#if DEBUG
-            Log = new Log(logFile, Log.Level.Debug, port);
-#else
-            Log = new Log(logFile, Log.Level.Production, port);
-#endif
             aliasDB = new AliasesDB("Database/aliases.rm");
 
             Players = new List<Player>(new Player[18]);
@@ -358,7 +353,7 @@ namespace SharedLibrary
                 }
             }     
             else
-                Log.Write("Maps configuration appears to be empty - skipping...", Log.Level.All);
+                Logger.WriteInfo("Maps configuration appears to be empty - skipping...");
         }
 
         /// <summary>
@@ -374,7 +369,7 @@ namespace SharedLibrary
 
             if (lines.Length < 2) //readAll returns minimum one empty string
             {
-                Log.Write("Messages configuration appears empty - skipping...", Log.Level.All);
+                Logger.WriteInfo("Messages configuration appears empty - skipping...");
                 return;
             }
 
@@ -417,7 +412,7 @@ namespace SharedLibrary
                 }
             }
             else
-                Log.Write("Rules configuration appears empty - skipping...", Log.Level.All);
+                Logger.WriteInfo("Rules configuration appears empty - skipping...");
 
             ruleFile.Close();
         }
@@ -429,7 +424,7 @@ namespace SharedLibrary
 
         //Objects
         public Interfaces.IManager Manager { get; protected set; }
-        public Log Log { get; private set; }
+        public Interfaces.ILogger Logger { get; private set; }
         public Player owner;
         public List<Map> maps;
         public List<String> rules;

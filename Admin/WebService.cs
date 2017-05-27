@@ -53,9 +53,8 @@ namespace IW4MAdmin
 
                 catch (Exception e)
                 {
-                    Console.WriteLine("Unable to start webservice ( port is probably in use ): " + e.Message);
-                    Thread.Sleep(5000);
-                    Environment.Exit(-1);
+                    Manager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");
+                    
                 }
             }
 

@@ -236,7 +236,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5{E.Origin.Name}]");
+            await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5{E.Origin.Name}^7]");
             await Task.Delay(3000);
             await E.Owner.ExecuteCommandAsync("fast_restart");
         }
@@ -248,7 +248,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5{E.Origin.Name}]");
+            await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5{E.Origin.Name}^7]");
             await Task.Delay(5000);
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }

@@ -60,8 +60,17 @@ namespace Welcome_Plugin
 
                 else
                 {
-                    CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
-                    await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IP)}");
+                    try
+                    {
+                        CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
+                        await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IP)}");
+                    }
+
+                    catch (Exception)
+                    {
+                        E.Owner.Manager.GetLogger().WriteError("Could not open file Plugins/GeoIP.dat for Welcome Plugin");
+                    }
+                    
                 }
             }
         }

@@ -117,6 +117,9 @@ namespace IW4MAdmin
 
             if (!Directory.Exists("Database"))
                 Directory.CreateDirectory("Database");
+
+            if (!Directory.Exists("Plugins"))
+                Directory.CreateDirectory("Plugins");
         }
     }
 }

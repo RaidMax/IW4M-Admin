@@ -153,7 +153,7 @@ namespace SharedLibrary
 #if DEBUG == false
             catch (Exception E)
             {
-                SV.Log.Write("Error requesting event " + E.Message, Log.Level.Debug);
+                SV.Manager.GetLogger().WriteError("Error requesting event " + E.Message);
                 return null;
             }
 #endif

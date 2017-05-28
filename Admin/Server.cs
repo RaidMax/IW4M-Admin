@@ -199,7 +199,7 @@ namespace IW4MAdmin
 #if DEBUG == false
             catch (Exception E)
             {
-                Log.Write("Unable to add player " + P.Name + " - " + E.Message, Log.Level.Debug);
+                Manager.GetLogger().WriteError("Unable to add player " + P.Name + " - " + E.Message);
                 return false;
             }
 #endif
@@ -376,7 +376,7 @@ namespace IW4MAdmin
         DateTime lastCount = DateTime.Now;
         DateTime tickTime = DateTime.Now;
 
-        override public async Task<int> ProcessUpdatesAsync()
+        override public async Task ProcessUpdatesAsync(CancellationToken cts)
         {
 #if DEBUG == false
                try
@@ -389,8 +389,13 @@ namespace IW4MAdmin
 
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
+                    // We don't want to await here, just in case user plugins are really slow :c
                     foreach (var Plugin in PluginImporter.potentialPlugins)
-                       await Plugin.OnTickAsync(this);
+#if !DEBUG
+                        Plugin.OnTickAsync(this);
+#else
+                        await Plugin.OnTickAsync(this);
+#endif
 
                     tickTime = DateTime.Now;
                 }
@@ -459,16 +464,13 @@ namespace IW4MAdmin
                 }
                 oldLines = lines;
                 l_size = logFile.getSize();
-
-                return 1;
-
             }
 #if DEBUG == false
                 catch (Exception E)
                 {
-                    Log.Write("Unexpected error on \"" + Hostname + "\"", Log.Level.Debug);
-                    Log.Write("Error Message: " + E.Message, Log.Level.Debug);
-                    Log.Write("Error Trace: " + E.StackTrace, Log.Level.Debug);
+                    Logger.WriteError("Unexpected error on \"" + Hostname + "\"");
+                    Logger.WriteDebug("Error Message: " + E.Message);
+                    Logger.WriteDebug("Error Trace: " + E.StackTrace);
                     return 1;
             }
 #endif
@@ -532,7 +534,6 @@ namespace IW4MAdmin
             logFile = new IFile(logPath);
             Logger.WriteInfo("Log file is " + logPath);
             await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
-            //Bans = Manager.GetClientDatabase().getBans();
 #if !DEBUG
             Broadcast("IW4M Admin is now ^2ONLINE");
 #endif

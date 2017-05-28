@@ -17,6 +17,7 @@ namespace IW4MAdmin
     {
         static Manager Instance;
         public List<Server> Servers { get; private set; }
+        List<AsyncStatus> TaskStatuses;
         Database ClientDatabase;
         SharedLibrary.Interfaces.IPenaltyList ClientPenalties;
         List<Command> Commands;
@@ -25,9 +26,9 @@ namespace IW4MAdmin
         public SharedLibrary.Interfaces.ILogger Logger { get; private set; }
         public bool Running { get; private set; }
 #if FTP_LOG
-        const double UPDATE_FREQUENCY = 15000;
+        const int UPDATE_FREQUENCY = 15000;
 #else
-        const double UPDATE_FREQUENCY = 300;
+        const int UPDATE_FREQUENCY = 300;
 #endif
 
         private Manager()
@@ -37,6 +38,8 @@ namespace IW4MAdmin
             //Logger = new Log(logFile, Log.Level.Production, 0);
             Servers = new List<Server>();
             Commands = new List<Command>();
+            TaskStatuses = new List<AsyncStatus>();
+
 
             ClientDatabase = new ClientsDB("Database/clients.rm");
             ClientPenalties = new PenaltyList();
@@ -78,6 +81,11 @@ namespace IW4MAdmin
                     {
                         await ServerInstance.Initialize();
                         Servers.Add(ServerInstance);
+
+                        // this way we can keep track of execution time and see if problems arise.
+                        var Status = new AsyncStatus(ServerInstance);
+                        TaskStatuses.Add(Status);
+
                         Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
                     }
 
@@ -95,12 +103,11 @@ namespace IW4MAdmin
 
             webServiceTask = WebService.getScheduler();
 
-            WebThread = new Thread(webServiceTask.Start);
-            WebThread.Name  = "Web Thread";
+            WebThread = new Thread(webServiceTask.Start)
+            {
+                Name = "Web Thread"
+            };
             WebThread.Start();
-
-            while (Servers.Count < 1)
-                Thread.Sleep(500);
 
             Running = true;
         }
@@ -108,24 +115,19 @@ namespace IW4MAdmin
 
         public void Start()
         {
-            int Processed;
-            DateTime Start;
-
-            while(Running)
+            while (Running)
             {
-                Processed = 0;
-                Start = DateTime.Now;
-                foreach (Server S in Servers)
-                    Processed += S.ProcessUpdatesAsync().Result;
-
-                // ideally we don't want to sleep on the thread, but polling 
-                // as much as possible will use unnecessary CPU
-                int ElapsedTime = (int)(DateTime.Now - Start).TotalMilliseconds;
-                while ((Processed != Servers.Count || ElapsedTime < UPDATE_FREQUENCY) && Running)
+                foreach (var Status in TaskStatuses)
                 {
-                    Thread.Sleep((int)(UPDATE_FREQUENCY - ElapsedTime));
-                    ElapsedTime = (int)(DateTime.Now - Start).TotalMilliseconds;
+                    if (Status.RequestedTask == null || Status.RequestedTask.IsCompleted)
+                    {
+                        Status.Update(new Task(() => (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken())));
+                        if (Status.RunAverage > 500)
+                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).getIP()}::{(Status.Dependant as Server).getPort()}");
+                    }
                 }
+
+                Thread.Sleep(UPDATE_FREQUENCY);
             }
 #if !DEBUG
             foreach (var S in Servers)

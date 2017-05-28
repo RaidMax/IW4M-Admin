@@ -189,7 +189,7 @@ namespace SharedLibrary
         /// <returns></returns>
         abstract public Task<Command> ProcessCommand(Event E, Command C);
 
-        virtual public Task<int> ProcessUpdatesAsync()
+        virtual public Task ProcessUpdatesAsync(CancellationToken cts)
         {
             return null;
         }

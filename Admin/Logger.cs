@@ -32,12 +32,12 @@ namespace IW4MAdmin
             // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
            
             Console.WriteLine(LogLine);
-            File.AppendAllText(FileName, LogLine);
+            File.AppendAllText(FileName, LogLine + Environment.NewLine);
 #else
             if (type == LogType.Error || type == LogType.Verbose)
                 Console.WriteLine(LogLine);
             if (type != LogType.Debug)
-                File.AppendAllText(FileName, LogLine);
+                File.AppendAllText(FileName, LogLine + Environment.NewLine);
 #endif
 
         }

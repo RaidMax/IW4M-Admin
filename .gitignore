@@ -190,3 +190,7 @@ ModelManifest.xml
 /.vs/IW4M Admin/v15
 /.vs/IW4M Admin/v15/Browse.VC.db
 /.vs/IW4M Admin/v15
+/DEPLOY
+/DEPLOY
+*.bat
+/DEPLOY/clean_for_publish.bat

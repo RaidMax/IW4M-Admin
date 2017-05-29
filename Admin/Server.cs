@@ -2,13 +2,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Linq;
 using SharedLibrary;
-
 using SharedLibrary.Network;
 using System.Threading.Tasks;
-using System.Net;
 
 namespace IW4MAdmin
 {
@@ -36,7 +33,7 @@ namespace IW4MAdmin
             }
         }
 
-        public override List<Aliases> getAliases(Player Origin)
+        public override List<Aliases> GetAliases(Player Origin)
         {
             List<Aliases> allAliases = new List<Aliases>();
             
@@ -52,14 +49,17 @@ namespace IW4MAdmin
             return allAliases;        
         }
 
-        //Add player object p to `players` list
         override public async Task<bool> AddPlayer(Player P)
         {
-            if (P.clientID < 0 || P.clientID > (Players.Count-1)) // invalid index
+            if (P.clientID < 0 || P.clientID > (Players.Count-1) || P.Ping < 1 || P.Ping == 999) // invalid index
                 return false;
 
             if (Players[P.clientID] != null && Players[P.clientID].npID == P.npID) // if someone has left and a new person has taken their spot between polls
+            {
+                // update their ping
+                Players[P.clientID].Ping = P.Ping; 
                 return true;
+            }
 
             Logger.WriteDebug($"Client slot #{P.clientID} now reserved");
 
@@ -86,6 +86,7 @@ namespace IW4MAdmin
                         await this.ExecuteCommandAsync("clientkick " + P.clientID + " \"Please do not impersonate an admin^7\"");
                 }
 
+                // below this needs to be optimized ~ 425ms runtime
                 NewPlayer.updateName(P.Name.Trim());
                 NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
 
@@ -122,24 +123,8 @@ namespace IW4MAdmin
 
                 if (NewPlayer.Level == Player.Permission.Banned) // their guid is already banned so no need to check aliases
                 {
-                    String Message;
-
                     Logger.WriteInfo($"Banned client {P.Name}::{P.npID} trying to connect...");
-
-                    if (NewPlayer.lastOffense != null)
-                        Message = "Previously banned for ^5" + NewPlayer.lastOffense;
-                    else
-                        Message = "Previous Ban";
-
-                    await NewPlayer.Kick(Message, NewPlayer);
-
-                    if (Players[NewPlayer.clientID] != null)
-                    {
-                        lock (Players)
-                        {
-                            Players[NewPlayer.clientID] = null;
-                        }
-                    }
+                    await NewPlayer.Kick(NewPlayer.lastOffense != null ? "^7Previously banned for ^5 " + NewPlayer.lastOffense : "^7Previous Ban", NewPlayer);
 
                     return true;
                 }
@@ -161,25 +146,15 @@ namespace IW4MAdmin
                         Logger.WriteDebug($"Banned client {aP.Name}::{aP.npID} is connecting with new alias {NewPlayer.Name}");
                         NewPlayer.lastOffense = String.Format("Evading ( {0} )", aP.Name);
 
-                        if (B.Reason != null)
-                            await NewPlayer.Ban("^7Previously Banned: ^5" + B.Reason, NewPlayer);
-                        else
-                            await NewPlayer.Ban("^7Previous Ban", NewPlayer);
+                        await NewPlayer.Ban(B.Reason != null ? "^7Previously banned for ^5 " + B.Reason : "^7Previous Ban", NewPlayer);
+                        Players[NewPlayer.clientID] = null;
 
-                        lock (Players)
-                        {
-                            if (Players[NewPlayer.clientID] != null)
-                                Players[NewPlayer.clientID] = null;
-                        }
                         return true;
                     }
                 }
-
-                lock (Players)
-                {
-                    Players[NewPlayer.clientID] = null; // just in case we have shit in the way
-                    Players[NewPlayer.clientID] = NewPlayer;
-                }
+    
+                Players[NewPlayer.clientID] = null; 
+                Players[NewPlayer.clientID] = NewPlayer;
 #if DEBUG == FALSE
                 await NewPlayer.Tell($"Welcome ^5{NewPlayer.Name} ^7this is your ^5{NewPlayer.TimesConnected()} ^7time connecting!");
 #endif
@@ -471,7 +446,6 @@ namespace IW4MAdmin
                     Logger.WriteError("Unexpected error on \"" + Hostname + "\"");
                     Logger.WriteDebug("Error Message: " + E.Message);
                     Logger.WriteDebug("Error Trace: " + E.StackTrace);
-                    return 1;
             }
 #endif
         }
@@ -702,7 +676,7 @@ namespace IW4MAdmin
             if (Target.clientID > -1)
             {
                 await this.ExecuteCommandAsync($"tempbanclient {Target.clientID } \"^1Player Temporarily Banned: ^5{ Reason } (1 hour)\"");
-                Penalty newPenalty = new Penalty(Penalty.Type.TempBan, SharedLibrary.Utilities.StripColors(Reason), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Penalty newPenalty = new Penalty(Penalty.Type.TempBan, Reason.StripColors(), Target.npID, Origin.npID, DateTime.Now, Target.IP);
                 await Task.Run(() =>
                 {
                     Manager.GetClientPenalties().AddPenalty(newPenalty);
@@ -710,11 +684,9 @@ namespace IW4MAdmin
             }
         }
 
-        private String getWebsiteString()
+        private String GetWebsiteString()
         {
-            if (Website != null)
-                return String.Format(" (appeal at {0})", Website);
-            return " (appeal at this server's website)";
+            return Website != null ? $" (appeal at {Website}" : " (appeal at this server's website)";
         }
 
         override public async Task Ban(String Message, Player Target, Player Origin)
@@ -734,7 +706,7 @@ namespace IW4MAdmin
                 {
                     var activeClient = server.getPlayers().Find(x => x.npID == Target.npID);
                     if (activeClient != null)
-                        await server.ExecuteCommandAsync("tempbanclient " + activeClient.clientID + " \"" + Message + "^7" + getWebsiteString() + "^7\"");
+                        await server.ExecuteCommandAsync("tempbanclient " + activeClient.clientID + " \"" + Message + "^7" + GetWebsiteString() + "^7\"");
                 }
             }
 

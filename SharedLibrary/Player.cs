@@ -41,6 +41,11 @@ namespace SharedLibrary
             return ((Player)obj).npID == this.npID;
         }
 
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         public Player(string n, string id, int num, int l)
         {
             Name = n;
@@ -177,6 +182,8 @@ namespace SharedLibrary
         public String UID { get; private set; }
         public DateTime LastConnection { get; private set; }
         public Server currentServer { get; private set; }
+
+        public int Ping;
 
         public Event lastEvent;
         public String lastOffense;

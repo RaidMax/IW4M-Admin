@@ -12,15 +12,17 @@ namespace SharedLibrary
         CancellationToken Token;
         DateTime StartTime;
         int TimesRun;
+        int UpdateFrequency;
         public double RunAverage { get; private set; }
         public object Dependant { get; private set; }
         public Task RequestedTask { get; private set; }
 
-        public AsyncStatus(object dependant)
+        public AsyncStatus(object dependant, int frequency)
         {
             Token = new CancellationToken();
             StartTime = DateTime.Now;
             Dependant = dependant;
+            UpdateFrequency = frequency;
             // technically 0 but it's faster than checking for division by 0
             TimesRun = 1;
         }
@@ -40,10 +42,10 @@ namespace SharedLibrary
             RequestedTask = T;
             RequestedTask.Start();
 
-            if (TimesRun > 100)
+            if (TimesRun > 25)
                 TimesRun = 1;
 
-            RunAverage = RunAverage + ((DateTime.Now - StartTime).TotalMilliseconds - RunAverage) / TimesRun;
+            RunAverage = RunAverage + ((DateTime.Now - StartTime).TotalMilliseconds - RunAverage - UpdateFrequency) / TimesRun;
             StartTime = DateTime.Now;
         }
     }

@@ -619,7 +619,7 @@ namespace IW4MAdmin
                 {
                     if (pp == null) continue;
 
-                    var playerAliases = Manager.GetInstance().Servers.First().getAliases(pp);
+                    var playerAliases = Manager.GetInstance().Servers.First().GetAliases(pp);
                     PlayerInfo eachPlayer = new PlayerInfo();
                     eachPlayer.playerID = pp.databaseID;
                     eachPlayer.playerIP = pp.IP;

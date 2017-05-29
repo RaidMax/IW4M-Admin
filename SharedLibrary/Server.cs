@@ -121,13 +121,13 @@ namespace SharedLibrary
         /// Get any know aliases ( name or ip based ) from the database
         /// </summary>
         /// <param name="Origin">Player to scan for aliases</param>
-        abstract public List<Aliases> getAliases(Player Origin);
+        abstract public List<Aliases> GetAliases(Player Origin);
 
         public List<Player> getPlayerAliases(Player Origin)
         {
             List<int> databaseIDs = new List<int>();
 
-            foreach (Aliases A in getAliases(Origin))
+            foreach (Aliases A in GetAliases(Origin))
                 databaseIDs.Add(A.Number);
 
             return Manager.GetClientDatabase().getPlayers(databaseIDs);

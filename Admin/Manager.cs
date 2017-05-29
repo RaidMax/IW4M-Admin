@@ -83,7 +83,7 @@ namespace IW4MAdmin
                         Servers.Add(ServerInstance);
 
                         // this way we can keep track of execution time and see if problems arise.
-                        var Status = new AsyncStatus(ServerInstance);
+                        var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
                         TaskStatuses.Add(Status);
 
                         Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
@@ -123,7 +123,7 @@ namespace IW4MAdmin
                     {
                         Status.Update(new Task(() => (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken())));
                         if (Status.RunAverage > 500)
-                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).getIP()}::{(Status.Dependant as Server).getPort()}");
+                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).getIP()}::{(Status.Dependant as Server).getPort()} [{Status.RunAverage}ms]");
                     }
                 }
 

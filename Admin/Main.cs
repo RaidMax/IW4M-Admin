@@ -16,11 +16,10 @@ namespace IW4MAdmin
         static void Main(string[] args)
         {
             Version = 1.3;
-            double latestVersion = 0;
             handler = new ConsoleEventDelegate(OnProcessExit);
             SetConsoleCtrlHandler(handler, true);
 
-            double.TryParse(CheckUpdate(), out latestVersion);
+            double.TryParse(CheckUpdate(), out double latestVersion);
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");

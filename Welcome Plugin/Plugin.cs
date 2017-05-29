@@ -53,10 +53,12 @@ namespace Welcome_Plugin
                 Player newPlayer = E.Origin;
 
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
-                   await  E.Owner.Broadcast(Utilities.levelToColor(newPlayer.Level) + " ^5" + newPlayer.Name + " ^7has joined the server.");
+                    await E.Owner.Broadcast(Utilities.levelToColor(newPlayer.Level) + " ^5" + newPlayer.Name + " ^7has joined the server.");
+
+                await newPlayer.Tell($"Welcome ^5{newPlayer.Name}^7, this your ^5{newPlayer.TimesConnected()} ^7time connecting!");
 
                 if (newPlayer.Level == Player.Permission.Flagged)
-                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name}^7 has joined!");
+                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name}^7 has joined!");     
 
                 else
                 {

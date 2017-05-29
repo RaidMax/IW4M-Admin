@@ -322,7 +322,7 @@ copy /Y "$(ProjectDir)lib\SQLite.Interop.dll" "$(SolutionDir)BUILD\lib"
 
 
 
-if $(ConfigurationName) == Release powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" %25iw4madmin_version%25</PostBuildEvent>
+if $(ConfigurationName) == Release powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.3</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

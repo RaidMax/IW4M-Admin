@@ -5,7 +5,6 @@ using SharedLibrary;
 using SharedLibrary.Network;
 using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace Votemap_Plugin
 {
@@ -223,7 +222,6 @@ namespace Votemap_Plugin
         public async Task OnTickAsync(Server S)
         {
             var serverVotes = getServerVotes(S.getPort());
-            Thread.Sleep(500);
 
             if (serverVotes != null)
             {

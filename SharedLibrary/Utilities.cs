@@ -268,9 +268,9 @@ namespace SharedLibrary
                 case 100:
                     return "One-Hundreth (amazing!)";
                 case 500:
-                    return "^7You're really ^5dedicated ^7to this server! This is your ^5500th ^7time connecting!";
+                    return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
                 case 1000:
-                    return "WOW! Soldier, it's your ^11000th ^7time connecting! You deserve a medal.";
+                    return "you deserve a medal. it's your ^11000th^7";
 
                 default:
                     return connection.ToString() + Prefix;

@@ -23,6 +23,9 @@ namespace IW4MAdmin
         public Logger(string fn)
         {
             FileName = fn;
+
+            if (File.Exists(fn))
+                File.Delete(fn);
         }
 
         void Write(string msg, LogType type)

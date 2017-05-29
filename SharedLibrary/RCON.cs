@@ -32,12 +32,13 @@ namespace SharedLibrary.Network
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     int cID = -1;
+                    int Ping = -1;
+                    Int32.TryParse(playerInfo[2], out Ping);
                     String cName = Utilities.StripColors(responseLine.Substring(46, 18)).Trim();
                     String npID = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
                     int.TryParse(playerInfo[0], out cID);
                     String cIP = responseLine.Substring(72, 20).Trim().Split(':')[0];
-
-                    Player P = new Player(cName, npID, cID, cIP);
+                    Player P = new Player(cName, npID, cID, cIP) { Ping = Ping };
                     StatusPlayers.Add(P);
                 }
             }

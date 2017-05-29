@@ -21,8 +21,7 @@ namespace SharedLibrary
             Port = port;
             Manager = mgr;
             Logger = Manager.GetLogger();
-            ClientNum = 0;
-            aliasDB = new AliasesDB("Database/aliases.rm");
+            ClientNum = 0;         
 
             Players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
@@ -221,6 +220,7 @@ namespace SharedLibrary
         /// <param name="Message">Message to be sent to all players</param>
         public async Task Broadcast(String Message)
         {
+            return;
             await this.ExecuteCommandAsync($"sayraw  {Message}");
         }
 
@@ -231,6 +231,7 @@ namespace SharedLibrary
         /// <param name="Target">Player to send message to</param>
         public async Task Tell(String Message, Player Target)
         {
+            return;
             if (Target.clientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
                 await this.ExecuteCommandAsync($"tellraw {Target.clientID} {Message}^7");
 
@@ -467,7 +468,7 @@ namespace SharedLibrary
 
         // Databases
         //public ClientsDB clientDB;
-        public AliasesDB aliasDB;
+        //public AliasesDB aliasDB;
 
         //Remote
         public Queue<String> commandResult = new Queue<string>();

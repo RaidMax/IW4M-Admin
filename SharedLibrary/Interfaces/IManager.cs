@@ -16,5 +16,6 @@ namespace SharedLibrary.Interfaces
         List<Command> GetCommands();
         IPenaltyList GetClientPenalties();
         ClientsDB GetClientDatabase();
+        AliasesDB GetAliasesDatabase();
     }
 }

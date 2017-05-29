@@ -19,6 +19,7 @@ namespace IW4MAdmin
         public List<Server> Servers { get; private set; }
         List<AsyncStatus> TaskStatuses;
         Database ClientDatabase;
+        Database AliasesDatabase;
         SharedLibrary.Interfaces.IPenaltyList ClientPenalties;
         List<Command> Commands;
         Kayak.IScheduler webServiceTask;
@@ -33,15 +34,13 @@ namespace IW4MAdmin
 
         private Manager()
         {
-            //IFile logFile = new IFile("Logs/IW4MAdminManager.log", true);
             Logger = new Logger("Logs/IW4MAdmin.log");
-            //Logger = new Log(logFile, Log.Level.Production, 0);
             Servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
 
-
             ClientDatabase = new ClientsDB("Database/clients.rm");
+            AliasesDatabase = new AliasesDB("Database/aliases.rm");
             ClientPenalties = new PenaltyList();
         }
 
@@ -147,6 +146,11 @@ namespace IW4MAdmin
         public ClientsDB GetClientDatabase()
         {
             return ClientDatabase as ClientsDB;
+        }
+
+        public AliasesDB GetAliasesDatabase()
+        {
+            return AliasesDatabase as AliasesDB;
         }
 
         public SharedLibrary.Interfaces.IPenaltyList GetClientPenalties()

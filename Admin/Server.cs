@@ -17,17 +17,17 @@ namespace IW4MAdmin
             initCommands();
         }
 
-        private void getAliases(List<Aliases> returnAliases, Aliases currentAlias)
+        private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)
         {
             foreach(String IP in currentAlias.IPS)
             {
-                List<Aliases> Matching = aliasDB.getPlayer(IP);
+                List<Aliases> Matching = Manager.GetAliasesDatabase().getPlayer(IP);
                 foreach(Aliases I in Matching)
                 {
                     if (!returnAliases.Contains(I) && returnAliases.Find(x => x.Number == I.Number) == null)
                     {
                         returnAliases.Add(I);
-                        getAliases(returnAliases, I);
+                        GetAliases(returnAliases, I);
                     }
                 }
             }
@@ -40,12 +40,12 @@ namespace IW4MAdmin
             if (Origin == null)
                 return allAliases;
 
-            Aliases currentIdentityAliases = aliasDB.getPlayer(Origin.databaseID);
+            Aliases currentIdentityAliases = Manager.GetAliasesDatabase().getPlayer(Origin.databaseID);
 
             if (currentIdentityAliases == null)
                 return allAliases;
 
-            getAliases(allAliases, currentIdentityAliases);
+            GetAliases(allAliases, currentIdentityAliases);
             return allAliases;        
         }
 
@@ -62,11 +62,8 @@ namespace IW4MAdmin
             }
 
             Logger.WriteDebug($"Client slot #{P.clientID} now reserved");
-
-                
-#if DEBUG == false
+               
             try
-#endif
             {
                 Player NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
 
@@ -75,7 +72,7 @@ namespace IW4MAdmin
                     Logger.WriteDebug($"Client slot #{P.clientID} first time connecting");
                     Manager.GetClientDatabase().addPlayer(P);
                     NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
-                    aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
+                    Manager.GetAliasesDatabase().addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
                 }
 
 
@@ -88,12 +85,12 @@ namespace IW4MAdmin
 
                 // below this needs to be optimized ~ 425ms runtime
                 NewPlayer.updateName(P.Name.Trim());
-                NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
+                NewPlayer.Alias = Manager.GetAliasesDatabase().getPlayer(NewPlayer.databaseID);
 
                 if (NewPlayer.Alias == null)
                 {
-                    aliasDB.addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
-                    NewPlayer.Alias = aliasDB.getPlayer(NewPlayer.databaseID);
+                    Manager.GetAliasesDatabase().addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
+                    NewPlayer.Alias = Manager.GetAliasesDatabase().getPlayer(NewPlayer.databaseID);
                 }
                 
                 if (P.lastEvent == null || P.lastEvent.Owner == null)
@@ -116,7 +113,7 @@ namespace IW4MAdmin
 
                 NewPlayer.updateIP(P.IP);
 
-                aliasDB.updatePlayer(NewPlayer.Alias);
+                Manager.GetAliasesDatabase().updatePlayer(NewPlayer.Alias);
                 Manager.GetClientDatabase().updatePlayer(NewPlayer);
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", NewPlayer, null, this));
@@ -171,13 +168,13 @@ namespace IW4MAdmin
                 ClientNum++;
                 return true;
             }
-#if DEBUG == false
+
             catch (Exception E)
             {
-                Manager.GetLogger().WriteError("Unable to add player " + P.Name + " - " + E.Message);
+                Manager.GetLogger().WriteError($"Unable to add player {P.Name}::{P.npID}");
+                Manager.GetLogger().WriteDebug(E.StackTrace);
                 return false;
             }
-#endif
         }
 
         //Remove player by CLIENT NUMBER

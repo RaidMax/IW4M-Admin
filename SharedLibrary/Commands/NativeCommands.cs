@@ -406,8 +406,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            //var db_players = E.Owner.Manager.GetClientDatabase().findPlayers(E.Data.Trim());
-            var db_aliases = E.Owner.aliasDB.findPlayers(E.Data);
+            var db_aliases = E.Owner.Manager.GetAliasesDatabase().findPlayers(E.Data);
 
             if (db_aliases == null)
             {
@@ -625,7 +624,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.Alias = E.Owner.aliasDB.getPlayer(E.Target.databaseID);
+            E.Target.Alias = E.Owner.Manager.GetAliasesDatabase().getPlayer(E.Target.databaseID);
 
             if (E.Target.Alias == null)
             {

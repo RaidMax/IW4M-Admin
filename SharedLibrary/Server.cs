@@ -39,7 +39,7 @@ namespace SharedLibrary
 
             var commands = mgr.GetCommands();
 
-            owner = Manager.GetClientDatabase().getOwner();
+            owner = Manager.GetClientDatabase().GetOwner();
 
             if (owner == null)
                 commands.Add(new Owner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
@@ -129,7 +129,7 @@ namespace SharedLibrary
             foreach (Aliases A in GetAliases(Origin))
                 databaseIDs.Add(A.Number);
 
-            return Manager.GetClientDatabase().getPlayers(databaseIDs);
+            return Manager.GetClientDatabase().GetPlayers(databaseIDs);
         }
 
         /// <summary>
@@ -220,7 +220,6 @@ namespace SharedLibrary
         /// <param name="Message">Message to be sent to all players</param>
         public async Task Broadcast(String Message)
         {
-            return;
             await this.ExecuteCommandAsync($"sayraw  {Message}");
         }
 
@@ -231,7 +230,6 @@ namespace SharedLibrary
         /// <param name="Target">Player to send message to</param>
         public async Task Tell(String Message, Player Target)
         {
-            return;
             if (Target.clientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
                 await this.ExecuteCommandAsync($"tellraw {Target.clientID} {Message}^7");
 

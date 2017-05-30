@@ -21,7 +21,7 @@ namespace IW4MAdmin
         {
             foreach(String IP in currentAlias.IPS)
             {
-                List<Aliases> Matching = Manager.GetAliasesDatabase().getPlayer(IP);
+                List<Aliases> Matching = Manager.GetAliasesDatabase().GetPlayerAliases(IP);
                 foreach(Aliases I in Matching)
                 {
                     if (!returnAliases.Contains(I) && returnAliases.Find(x => x.Number == I.Number) == null)
@@ -40,7 +40,7 @@ namespace IW4MAdmin
             if (Origin == null)
                 return allAliases;
 
-            Aliases currentIdentityAliases = Manager.GetAliasesDatabase().getPlayer(Origin.databaseID);
+            Aliases currentIdentityAliases = Manager.GetAliasesDatabase().GetPlayerAliases(Origin.databaseID);
 
             if (currentIdentityAliases == null)
                 return allAliases;
@@ -65,18 +65,18 @@ namespace IW4MAdmin
                
             try
             {
-                Player NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
+                Player NewPlayer = Manager.GetClientDatabase().GetPlayer(P.npID, P.clientID);
 
                 if (NewPlayer == null) // first time connecting
                 {
                     Logger.WriteDebug($"Client slot #{P.clientID} first time connecting");
-                    Manager.GetClientDatabase().addPlayer(P);
-                    NewPlayer = Manager.GetClientDatabase().getPlayer(P.npID, P.clientID);
-                    Manager.GetAliasesDatabase().addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
+                    Manager.GetClientDatabase().AddPlayer(P);
+                    NewPlayer = Manager.GetClientDatabase().GetPlayer(P.npID, P.clientID);
+                    Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
                 }
 
 
-                List<Player> Admins = Manager.GetClientDatabase().getAdmins();
+                List<Player> Admins = Manager.GetClientDatabase().GetAdmins();
                 if (Admins.Find(x => x.Name == P.Name) != null)
                 {
                     if ((Admins.Find(x => x.Name == P.Name).npID != P.npID) && NewPlayer.Level < Player.Permission.Moderator)
@@ -85,12 +85,12 @@ namespace IW4MAdmin
 
                 // below this needs to be optimized ~ 425ms runtime
                 NewPlayer.updateName(P.Name.Trim());
-                NewPlayer.Alias = Manager.GetAliasesDatabase().getPlayer(NewPlayer.databaseID);
+                NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.databaseID);
 
                 if (NewPlayer.Alias == null)
                 {
-                    Manager.GetAliasesDatabase().addPlayer(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
-                    NewPlayer.Alias = Manager.GetAliasesDatabase().getPlayer(NewPlayer.databaseID);
+                    Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
+                    NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.databaseID);
                 }
                 
                 if (P.lastEvent == null || P.lastEvent.Owner == null)
@@ -113,8 +113,8 @@ namespace IW4MAdmin
 
                 NewPlayer.updateIP(P.IP);
 
-                Manager.GetAliasesDatabase().updatePlayer(NewPlayer.Alias);
-                Manager.GetClientDatabase().updatePlayer(NewPlayer);
+                Manager.GetAliasesDatabase().UpdatePlayerAliases(NewPlayer.Alias);
+                Manager.GetClientDatabase().UpdatePlayer(NewPlayer);
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", NewPlayer, null, this));
 
@@ -152,9 +152,6 @@ namespace IW4MAdmin
     
                 Players[NewPlayer.clientID] = null; 
                 Players[NewPlayer.clientID] = NewPlayer;
-#if DEBUG == FALSE
-                await NewPlayer.Tell($"Welcome ^5{NewPlayer.Name} ^7this is your ^5{NewPlayer.TimesConnected()} ^7time connecting!");
-#endif
                 Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.npID} connecting..."); // they're clean
 
                 // todo: get this out of here
@@ -184,7 +181,7 @@ namespace IW4MAdmin
             {
                 Player Leaving = Players[cNum];
                 Leaving.Connections++;
-                Manager.GetClientDatabase().updatePlayer(Leaving);
+                Manager.GetClientDatabase().UpdatePlayer(Leaving);
 
                 Logger.WriteInfo($"Client {Leaving.Name}::{Leaving.npID} disconnecting...");
                 await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
@@ -277,7 +274,7 @@ namespace IW4MAdmin
                     int.TryParse(Args[0].Substring(1, Args[0].Length-1), out dbID);
 
                     IW4MServer castServer = (IW4MServer)(E.Owner);
-                    Player found = Manager.GetClientDatabase().getPlayer(dbID);
+                    Player found = Manager.GetClientDatabase().GetPlayer(dbID);
                     if (found != null)
                     {
                         E.Target = found;
@@ -715,7 +712,7 @@ namespace IW4MAdmin
                 await Task.Run(() =>
                 {
                     Manager.GetClientPenalties().AddPenalty(newBan);
-                    Manager.GetClientDatabase().updatePlayer(Target);
+                    Manager.GetClientDatabase().UpdatePlayer(Target);
                 });
 
                 lock (Reports) // threading seems to do something weird here
@@ -749,9 +746,9 @@ namespace IW4MAdmin
 
                 Manager.GetClientPenalties().RemovePenalty(PenaltyToRemove);
 
-                Player P = Manager.GetClientDatabase().getPlayer(Target.npID, -1);
+                Player P = Manager.GetClientDatabase().GetPlayer(Target.npID, -1);
                 P.setLevel(Player.Permission.User);
-                Manager.GetClientDatabase().updatePlayer(P);
+                Manager.GetClientDatabase().UpdatePlayer(P);
             });
 
         }
@@ -786,7 +783,7 @@ namespace IW4MAdmin
         override public void initMacros()
         {
             Macros = new Dictionary<String, Object>();
-            Macros.Add("TOTALPLAYERS", Manager.GetClientDatabase().totalPlayers());
+            Macros.Add("TOTALPLAYERS", Manager.GetClientDatabase().TotalPlayers());
             Macros.Add("TOTALKILLS", totalKills);
             Macros.Add("VERSION", IW4MAdmin.Program.Version);
         }

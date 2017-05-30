@@ -15,12 +15,12 @@ namespace IW4MAdmin
 
         public void AddPenalty(Penalty P)
         {
-            Manager.GetInstance().GetClientDatabase().addBan(P);
+            Manager.GetInstance().GetClientDatabase().AddBan(P);
         }
 
         public void RemovePenalty(Penalty P)
         {
-            Manager.GetInstance().GetClientDatabase().removeBan(P.npID);
+            Manager.GetInstance().GetClientDatabase().RemoveBan(P.npID);
         }
 
         public List<Penalty> FindPenalties(Player P)

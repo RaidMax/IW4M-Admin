@@ -12,10 +12,12 @@ namespace SharedLibrary
         public Database(String FN)
         {
             FileName = FN;
-            DBCon = String.Format("Data Source={0}", FN);
-            Con = new SQLiteConnection(DBCon);
-            Open = false;
             Init();
+        }
+
+        protected SQLiteConnection GetNewConnection()
+        {
+            return new SQLiteConnection($"Data Source={FileName}");
         }
 
         abstract public void Init();
@@ -32,10 +34,13 @@ namespace SharedLibrary
             names = names.Substring(0, names.Length - 1);
             parameters = parameters.Substring(0, parameters.Length - 1);
 
-            SQLiteCommand insertcmd = new SQLiteCommand();
-            insertcmd.Connection = this.Con;
-            insertcmd.CommandText = String.Format("INSERT INTO `{0}` ({1}) VALUES ({2});", tableName, names, parameters);
+            var Con = GetNewConnection();
 
+            SQLiteCommand insertcmd = new SQLiteCommand()
+            {
+                Connection = Con,
+                CommandText = String.Format("INSERT INTO `{0}` ({1}) VALUES ({2});", tableName, names, parameters)
+            };
             foreach (string key in data.Keys)
             {
                 insertcmd.Parameters.AddWithValue('@' + key, data[key]);
@@ -49,9 +54,9 @@ namespace SharedLibrary
                 return true;
             }
 
-            catch (Exception)
+            catch (Exception E)
             {
-                //LOGME
+                Console.WriteLine($"Line 58: {E.Message}");
                 return false;
             }
 
@@ -66,11 +71,13 @@ namespace SharedLibrary
             }
 
             parameters = parameters.Substring(0, parameters.Length - 1);
+            var Con = GetNewConnection();
 
-            SQLiteCommand updatecmd = new SQLiteCommand();
-            updatecmd.Connection = this.Con;
-            updatecmd.CommandText = String.Format("UPDATE `{0}` SET {1} WHERE {2}=@{2}", tableName, parameters, where.Key);
-
+            SQLiteCommand updatecmd = new SQLiteCommand()
+            {
+                Connection = Con,
+                CommandText = String.Format("UPDATE `{0}` SET {1} WHERE {2}=@{2}", tableName, parameters, where.Key)
+            };
             foreach (string key in data.Keys)
             {
                 updatecmd.Parameters.AddWithValue('@' + key, data[key]);
@@ -86,14 +93,14 @@ namespace SharedLibrary
                 return true;
             }
 
-            catch (Exception e)
+            catch (Exception E)
             {
-                //LOGME
+                Console.WriteLine($"Line 96: {E.Message}");
                 return false;
             }
         }
 
-        protected DataRow getDataRow(String Q)
+        protected DataRow GetDataRow(String Q)
         {
             DataRow Result = GetDataTable(Q).Rows[0];
             return Result;
@@ -101,19 +108,19 @@ namespace SharedLibrary
 
         protected int ExecuteNonQuery(String Request)
         {
-            waitForClose();
             int rowsUpdated = 0;
             Request = Request.Replace("!'", "").Replace("!", "");
+            var Con = GetNewConnection();
             try
             {
-                lock (Con)
-                {
+
                     Con.Open();
-                    SQLiteCommand CMD = new SQLiteCommand(Con);
-                    CMD.CommandText = Request;
-                    rowsUpdated = CMD.ExecuteNonQuery();
+                SQLiteCommand CMD = new SQLiteCommand(Con)
+                {
+                    CommandText = Request
+                };
+                rowsUpdated = CMD.ExecuteNonQuery();
                     Con.Close();
-                }
                 return rowsUpdated;
             }
 
@@ -130,10 +137,12 @@ namespace SharedLibrary
         protected DataTable GetDataTable(string tableName, KeyValuePair<string, object> where)
         {
             DataTable dt = new DataTable();
-            SQLiteCommand updatecmd = new SQLiteCommand();
-            updatecmd.Connection = this.Con;
-            updatecmd.CommandText = String.Format("SELECT * FROM {0} WHERE `{1}`=@{1};", tableName, where.Key);
+            SQLiteCommand updatecmd = new SQLiteCommand()
+            {
+                CommandText = String.Format("SELECT * FROM {0} WHERE `{1}`=@{1};", tableName, where.Key)
+            };
             updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
+            var Con = GetNewConnection();
 
             try
             {
@@ -156,6 +165,7 @@ namespace SharedLibrary
         protected DataTable GetDataTable(SQLiteCommand cmd)
         {
             DataTable dt = new DataTable();
+            var Con = GetNewConnection();
             try
             {
                 Con.Open();
@@ -177,20 +187,20 @@ namespace SharedLibrary
         protected DataTable GetDataTable(String sql)
         {
             DataTable dt = new DataTable();
+            var Con = GetNewConnection();
 
             try
             {
-                waitForClose();
-                lock (Con)
-                {
+
                     Con.Open();
-                    SQLiteCommand mycommand = new SQLiteCommand(Con);
-                    mycommand.CommandText = sql;
-                    SQLiteDataReader reader = mycommand.ExecuteReader();
+                SQLiteCommand mycommand = new SQLiteCommand(Con)
+                {
+                    CommandText = sql
+                };
+                SQLiteDataReader reader = mycommand.ExecuteReader();
                     dt.Load(reader);
                     reader.Close();
                     Con.Close();
-                }
 
             }
             catch (Exception e)
@@ -201,20 +211,7 @@ namespace SharedLibrary
             return dt;
         }
 
-        protected void waitForClose()
-        {
-            while (Con.State == ConnectionState.Open)
-            {
-                Utilities.Wait(0.01);
-            }
-
-            return;
-        }
-
         protected String FileName;
-        protected String DBCon;
-        protected SQLiteConnection Con;
-        protected bool Open;
     }
 
     public class ClientsDB : Database
@@ -232,25 +229,8 @@ namespace SharedLibrary
             }
         }
 
-        //Returns a single player object with matching GUID, false if no matches
-        public Player getPlayer(String ID, int cNum)
-        {
-            DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("npID", ID));
 
-            if (Result != null && Result.Rows.Count > 0)
-            {
-                DataRow ResponseRow = Result.Rows[0];
-                DateTime lastCon = DateTime.MinValue;
-                DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
-
-                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon, ResponseRow["UID"].ToString(), ResponseRow["Masked"].ToString() == "1");
-            }
-
-            else
-                return null;
-        }
-
-        public List<Player> getRecentPlayers()
+        public List<Player> GetRecentPlayers()
         {
             List<Player> returnssss = new List<Player>();
             String Query = String.Format($"SELECT * FROM CLIENTS LIMIT 15 OFFSET (SELECT COUNT(*) FROM CLIENTS)-15");
@@ -270,7 +250,7 @@ namespace SharedLibrary
             return returnssss.OrderByDescending(p => p.LastConnection).ToList(); ;
         }
 
-        public List<Player> getPlayers(List<String> npIDs)
+        public List<Player> GetPlayers(List<String> npIDs)
         {
             List<Player> returnssss = new List<Player>();
             String test = String.Join("' OR npID = '", npIDs);
@@ -292,12 +272,12 @@ namespace SharedLibrary
             return returnssss;
         }
 
-        public List<Player> getPlayers(List<int> databaseIDs)
+        public List<Player> GetPlayers(List<int> databaseIDs)
         {
             List<Player> returnssss = new List<Player>();
-            String test = String.Join("' OR Number = '", databaseIDs);
+            String Condition = String.Join("' OR Number = '", databaseIDs);
 
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Number = '{0}'", test);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Number = '{0}'", Condition);
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)
@@ -315,7 +295,7 @@ namespace SharedLibrary
         }
 
         //Overloaded method for getPlayer, returns Client with matching DBIndex, null if none found
-        public Player getPlayer(int dbIndex)
+        public Player GetPlayer(int dbIndex)
         {
             DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("Number", dbIndex));
 
@@ -340,7 +320,7 @@ namespace SharedLibrary
         }
 
         //get player by ip, (used for webfront)
-        public Player getPlayer(String IP)
+        public Player GetPlayer(String IP)
         {
             DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("IP", IP));
 
@@ -376,11 +356,32 @@ namespace SharedLibrary
                 return null;
         }
 
-        //Returns a list of players matching name parameter, null if no players found matching
-        public List<Player> findPlayers(String name)
+        //Returns a single player object with matching GUID, false if no matches
+        public Player GetPlayer(String ID, int cNum)
         {
-            SQLiteCommand cmd = new SQLiteCommand(Con);
-            cmd.CommandText = "SELECT * FROM CLIENTS WHERE Name LIKE @Name LIMIT 32";
+            DataTable Result = GetDataTable("CLIENTS", new KeyValuePair<string, object>("npID", ID));
+
+            if (Result != null && Result.Rows.Count > 0)
+            {
+                DataRow ResponseRow = Result.Rows[0];
+                DateTime lastCon = DateTime.MinValue;
+                DateTime.TryParse(ResponseRow["LastConnection"].ToString(), out lastCon);
+
+                return new Player(ResponseRow["Name"].ToString(), ResponseRow["npID"].ToString(), cNum, (Player.Permission)(ResponseRow["Level"]), Convert.ToInt32(ResponseRow["Number"]), ResponseRow["LastOffense"].ToString(), (int)ResponseRow["Connections"], ResponseRow["IP"].ToString(), lastCon, ResponseRow["UID"].ToString(), ResponseRow["Masked"].ToString() == "1");
+            }
+
+            else
+                return null;
+        }
+
+        //Returns a list of players matching name parameter, null if no players found matching
+        public List<Player> FindPlayers(String name)
+        {
+            var Con = GetNewConnection();
+            SQLiteCommand cmd = new SQLiteCommand(Con)
+            {
+                CommandText = "SELECT * FROM CLIENTS WHERE Name LIKE @Name LIMIT 32"
+            };
             cmd.Parameters.AddWithValue("@Name", '%' + name + '%');
 
             var Result = GetDataTable(cmd);
@@ -416,7 +417,7 @@ namespace SharedLibrary
         }
 
         //Returns any player with level 4 permissions, null if no owner found
-        public Player getOwner()
+        public Player GetOwner()
         {
             String Query = String.Format("SELECT * FROM CLIENTS WHERE Level > '{0}'", 4);
             DataTable Result = GetDataTable(Query);
@@ -444,7 +445,7 @@ namespace SharedLibrary
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
 
-                SharedLibrary.Penalty.Type BanType = Penalty.Type.Ban;
+                Penalty.Type BanType = Penalty.Type.Ban;
                 if (Row["TYPE"].ToString().Length != 0)
                     BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
 
@@ -465,7 +466,7 @@ namespace SharedLibrary
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
 
-                SharedLibrary.Penalty.Type BanType = Penalty.Type.Ban;
+                Penalty.Type BanType = Penalty.Type.Ban;
                 if (Row["TYPE"].ToString().Length != 0)
                     BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
 
@@ -477,7 +478,7 @@ namespace SharedLibrary
         }
 
         //Returns all players with level > Flagged
-        public List<Player> getAdmins()
+        public List<Player> GetAdmins()
         {
             List<Player> Admins = new List<Player>();
             String Query = String.Format("SELECT * FROM CLIENTS WHERE Level >= '{0}'", (int)Player.Permission.Moderator);
@@ -490,7 +491,7 @@ namespace SharedLibrary
         }
 
         //Returns total number of player entries in database
-        public int totalPlayers()
+        public int TotalPlayers()
         {
             DataTable Result = GetDataTable("SELECT * from CLIENTS ORDER BY Number DESC LIMIT 1");
             if (Result.Rows.Count > 0)
@@ -500,66 +501,66 @@ namespace SharedLibrary
         }
 
         //Add specified player to database
-        public void addPlayer(Player P)
+        public void AddPlayer(Player P)
         {
-            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
-
-            newPlayer.Add("Name", Utilities.removeNastyChars(P.Name));
-            newPlayer.Add("npID", P.npID);
-            newPlayer.Add("Level", (int)P.Level);
-            newPlayer.Add("LastOffense", "");
-            newPlayer.Add("Connections", 1);
-            newPlayer.Add("IP", P.IP);
-            newPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
-            newPlayer.Add("UID", P.UID);
-            newPlayer.Add("Masked", Convert.ToInt32(P.Masked));
-
+            Dictionary<String, object> newPlayer = new Dictionary<String, object>
+            {
+                { "Name", Utilities.removeNastyChars(P.Name) },
+                { "npID", P.npID },
+                { "Level", (int)P.Level },
+                { "LastOffense", "" },
+                { "Connections", 1 },
+                { "IP", P.IP },
+                { "LastConnection", Utilities.DateTimeSQLite(DateTime.Now) },
+                { "UID", P.UID },
+                { "Masked", Convert.ToInt32(P.Masked) }
+            };
             Insert("CLIENTS", newPlayer);
         }
 
         ///Update information of specified player
-        public void updatePlayer(Player P)
+        public void UpdatePlayer(Player P)
         {
-            Dictionary<String, Object> updatedPlayer = new Dictionary<String, Object>();
-
-            updatedPlayer.Add("Name", P.Name);
-            updatedPlayer.Add("npID", P.npID);
-            updatedPlayer.Add("Level", (int)P.Level);
-            updatedPlayer.Add("LastOffense", P.lastOffense);
-            updatedPlayer.Add("Connections", P.Connections);
-            updatedPlayer.Add("IP", P.IP);
-            updatedPlayer.Add("LastConnection", Utilities.DateTimeSQLite(DateTime.Now));
-            updatedPlayer.Add("UID", P.UID);
-            updatedPlayer.Add("Masked", Convert.ToInt32(P.Masked));
-
+            Dictionary<String, Object> updatedPlayer = new Dictionary<String, Object>
+            {
+                { "Name", P.Name },
+                { "npID", P.npID },
+                { "Level", (int)P.Level },
+                { "LastOffense", P.lastOffense },
+                { "Connections", P.Connections },
+                { "IP", P.IP },
+                { "LastConnection", Utilities.DateTimeSQLite(DateTime.Now) },
+                { "UID", P.UID },
+                { "Masked", Convert.ToInt32(P.Masked) }
+            };
             Update("CLIENTS", updatedPlayer, new KeyValuePair<string, object>("npID", P.npID));
         }
 
 
         //Add specified ban to database
-        public void addBan(Penalty B)
+        public void AddBan(Penalty B)
         {
-            Dictionary<String, object> newBan = new Dictionary<String, object>();
-
-            newBan.Add("Reason", Utilities.removeNastyChars(B.Reason));
-            newBan.Add("npID", B.npID);
-            newBan.Add("bannedByID", B.bannedByID);
-            newBan.Add("IP", B.IP);
-            newBan.Add("TIME", Utilities.DateTimeSQLite(DateTime.Now));
-            newBan.Add("TYPE", B.BType);
-
+            Dictionary<String, object> newBan = new Dictionary<String, object>
+            {
+                { "Reason", Utilities.removeNastyChars(B.Reason) },
+                { "npID", B.npID },
+                { "bannedByID", B.bannedByID },
+                { "IP", B.IP },
+                { "TIME", Utilities.DateTimeSQLite(DateTime.Now) },
+                { "TYPE", B.BType }
+            };
             Insert("BANS", newBan);
         }
 
 
         //Deletes ban with matching GUID
-        public void removeBan(String GUID)
+        public void RemoveBan(String GUID)
         {
             String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}'", GUID);
             ExecuteNonQuery(Query);
         }
 
-        public void removeBan(String GUID, String IP)
+        public void RemoveBan(String GUID, String IP)
         {
             String Query = String.Format("DELETE FROM BANS WHERE npID = '{0}' or IP = '{1}'", GUID, IP);
             ExecuteNonQuery(Query);
@@ -579,7 +580,7 @@ namespace SharedLibrary
             }
         }
 
-        public Aliases getPlayer(int dbIndex)
+        public Aliases GetPlayerAliases(int dbIndex)
         {
             String Query = String.Format("SELECT * FROM ALIASES WHERE Number = '{0}' LIMIT 1", dbIndex);
             DataTable Result = GetDataTable(Query);
@@ -594,10 +595,13 @@ namespace SharedLibrary
                 return null;
         }
 
-        public List<Aliases> getPlayer(String IP)
+        public List<Aliases> GetPlayerAliases(String IP)
         {
-            SQLiteCommand cmd = new SQLiteCommand(Con);
-            cmd.CommandText = "SELECT * FROM ALIASES WHERE IPS LIKE @IP";
+            var Con = GetNewConnection();
+            SQLiteCommand cmd = new SQLiteCommand(Con)
+            {
+                CommandText = "SELECT * FROM ALIASES WHERE IPS LIKE @IP"
+            };
             cmd.Parameters.AddWithValue("@IP", IP);
 
             var Result = GetDataTable(cmd);
@@ -613,18 +617,21 @@ namespace SharedLibrary
             return players;
         }
 
-        public List<Aliases> findPlayers(String name)
+        public List<Aliases> FindPlayerAliases(String name)
         {
             name = name.Replace("'", "");
-            String[] EyePee = name.Split('.');
-            String Penor = "THISISNOTANIP";
-            if (EyePee.Length > 1)
-                Penor = (EyePee[0] + '.' + EyePee[1] + '.');
+            String[] IP = name.Split('.');
+            String DefaultIP = "LEGACY_INVALID_IP";
+            if (IP.Length > 1)
+                DefaultIP = (IP[0] + '.' + IP[1] + '.');
+            var Con = GetNewConnection();
 
-            SQLiteCommand cmd = new SQLiteCommand(Con);
-            cmd.CommandText = "SELECT * FROM ALIASES WHERE NAMES LIKE @name OR IPS LIKE @ip LIMIT 15";
+            SQLiteCommand cmd = new SQLiteCommand(Con)
+            {
+                CommandText = "SELECT * FROM ALIASES WHERE NAMES LIKE @name OR IPS LIKE @ip LIMIT 15"
+            };
             cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@ip", Penor);
+            cmd.Parameters.AddWithValue("@ip", DefaultIP);
 
             var Result = GetDataTable(cmd);
 
@@ -640,25 +647,25 @@ namespace SharedLibrary
             return players;
         }
 
-        public void addPlayer(Aliases Alias)
+        public void AddPlayerAliases(Aliases Alias)
         {
-            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
-
-            newPlayer.Add("Number", Alias.Number);
-            newPlayer.Add("NAMES", Utilities.removeNastyChars(String.Join(";", Alias.Names)));
-            newPlayer.Add("IPS", String.Join(";", Alias.IPS));
-
+            Dictionary<String, object> newPlayer = new Dictionary<String, object>
+            {
+                { "Number", Alias.Number },
+                { "NAMES", Utilities.removeNastyChars(String.Join(";", Alias.Names)) },
+                { "IPS", String.Join(";", Alias.IPS) }
+            };
             Insert("ALIASES", newPlayer);
         }
 
-        public void updatePlayer(Aliases Alias)
+        public void UpdatePlayerAliases(Aliases Alias)
         {
-            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
-
-            updatedPlayer.Add("Number", Alias.Number);
-            updatedPlayer.Add("NAMES", String.Join(";", Alias.Names));
-            updatedPlayer.Add("IPS", String.Join(";", Alias.IPS));
-
+            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>
+            {
+                { "Number", Alias.Number },
+                { "NAMES", String.Join(";", Alias.Names) },
+                { "IPS", String.Join(";", Alias.IPS) }
+            };
             Update("ALIASES", updatedPlayer, new KeyValuePair<string, object>("Number", Alias.Number));
         }
     }

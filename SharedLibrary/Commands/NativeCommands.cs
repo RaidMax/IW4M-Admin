@@ -24,12 +24,12 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.Manager.GetClientDatabase().getOwner() == null)
+            if (E.Owner.Manager.GetClientDatabase().GetOwner() == null)
             {
                 E.Origin.setLevel(Player.Permission.Owner);
                 await E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
                 E.Owner.owner = E.Origin;
-                E.Owner.Manager.GetClientDatabase().updatePlayer(E.Origin);
+                E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
             }
             else
                 await E.Origin.Tell("This server already has an owner!");
@@ -302,7 +302,7 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell(E.Target.Name + " was successfully promoted!");
            
                 //NEEED TO MOVE
-                E.Owner.Manager.GetClientDatabase().updatePlayer(E.Target);
+                E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Target);
             }
 
             else
@@ -376,7 +376,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            var db_players = E.Owner.Manager.GetClientDatabase().findPlayers(E.Data.Trim());
+            var db_players = E.Owner.Manager.GetClientDatabase().FindPlayers(E.Data.Trim());
 
             if (db_players == null)
             {
@@ -406,7 +406,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            var db_aliases = E.Owner.Manager.GetAliasesDatabase().findPlayers(E.Data);
+            var db_aliases = E.Owner.Manager.GetAliasesDatabase().FindPlayerAliases(E.Data);
 
             if (db_aliases == null)
             {
@@ -427,7 +427,7 @@ namespace SharedLibrary.Commands
                         lookingFor = S;
                 }
 
-                Player Current = E.Owner.Manager.GetClientDatabase().getPlayer(P.Number);
+                Player Current = E.Owner.Manager.GetClientDatabase().GetPlayer(P.Number);
 
                 if (Current != null)
                 {
@@ -503,7 +503,7 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }
 
-            E.Owner.Manager.GetClientDatabase().updatePlayer(E.Target);
+            E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Target);
         }
     }
 
@@ -606,7 +606,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            Player Banner = E.Owner.Manager.GetClientDatabase().getPlayer(BannedPenalty.bannedByID, -1);
+            Player Banner = E.Owner.Manager.GetClientDatabase().GetPlayer(BannedPenalty.bannedByID, -1);
 
             if (Banner == null)
             {
@@ -624,7 +624,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.Alias = E.Owner.Manager.GetAliasesDatabase().getPlayer(E.Target.databaseID);
+            E.Target.Alias = E.Owner.Manager.GetAliasesDatabase().GetPlayerAliases(E.Target.databaseID);
 
             if (E.Target.Alias == null)
             {

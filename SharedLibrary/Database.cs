@@ -141,8 +141,10 @@ namespace SharedLibrary
             {
                 CommandText = String.Format("SELECT * FROM {0} WHERE `{1}`=@{1};", tableName, where.Key)
             };
-            updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
             var Con = GetNewConnection();
+            updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
+            updatecmd.Connection = Con;
+ 
 
             try
             {
@@ -166,6 +168,7 @@ namespace SharedLibrary
         {
             DataTable dt = new DataTable();
             var Con = GetNewConnection();
+            cmd.Connection = Con;
             try
             {
                 Con.Open();
@@ -178,7 +181,7 @@ namespace SharedLibrary
             catch (Exception e)
             {
                 //LOGME
-                Console.Write($"Line 181: {e.Message}");
+                Console.WriteLine($"Line 181: {e.Message}");
             }
 
             return dt;

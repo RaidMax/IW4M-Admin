@@ -112,7 +112,7 @@
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -154,6 +154,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="lib\SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="lib\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="version.txt">
@@ -325,13 +328,11 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>move "$(TargetDir)Newtonsoft.Json.dll" "$(TargetDir)lib\Newtonsoft.Json.dll"
-copy /Y "$(SolutionDir)lib\*.dll" "$(TargetDir)lib"
+    <PostBuildEvent>copy /Y "$(SolutionDir)lib\*.dll" "$(TargetDir)lib"
 
 copy /Y "$(TargetDir)$(TargetName).exe" "$(SolutionDir)BUILD"
 copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
-copy /Y "$(ProjectDir)lib\SQLite.Interop.dll" "$(SolutionDir)BUILD\lib"
 
 
 

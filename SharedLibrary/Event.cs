@@ -100,19 +100,6 @@ namespace SharedLibrary
             Owner = S;
         }
 
-        public Command isValidCMD(List<Command> list)
-        {
-            string[] cmd = this.Data.Substring(1, this.Data.Length - 1).Split(' ');
-
-            foreach (Command C in list)
-            {
-                if (C.Name == cmd[0].ToLower() || C.Alias == cmd[0].ToLower())
-                    return C;
-            }
-
-            return null;
-        }
-
         public static Event requestEvent(String[] line, Server SV)
         {
 #if DEBUG == false

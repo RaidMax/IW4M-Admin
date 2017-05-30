@@ -33,7 +33,7 @@ namespace IW4MAdmin
             string LogLine = $"[{DateTime.Now.ToString("HH:mm:ss")}] - {type}: {msg}";
 #if DEBUG
             // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
-           
+
             Console.WriteLine(LogLine);
             File.AppendAllText(FileName, LogLine + Environment.NewLine);
 #else

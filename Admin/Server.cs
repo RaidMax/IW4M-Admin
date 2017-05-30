@@ -238,21 +238,36 @@ namespace IW4MAdmin
 
         //Process requested command correlating to an event
         // todo: this needs to be removed out of here
-        override public async Task<Command> ProcessCommand(Event E, Command C)
+        override public async Task<Command> ValidateCommand(Event E)
         {
+            string CommandString = E.Data.Substring(1, E.Data.Length - 1).Split(' ')[0];
+
+            Command C = null;
+            foreach (Command cmd in Manager.GetCommands())
+            {
+                if (cmd.Name == CommandString.ToLower() || cmd.Alias == CommandString.ToLower())
+                    C = cmd;
+            }
+
+            if (C == null)
+            {
+                await E.Origin.Tell("You entered an unknown command");
+                throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
+            }
+
             E.Data = E.Data.RemoveWords(1);
             String[] Args = E.Data.Trim().Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
 
             if (E.Origin.Level < C.Permission)
             {
                 await E.Origin.Tell("You do not have access to that command!");
-                return null;
+                throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
             if (Args.Length < (C.requiredArgNum))
             {
-                await E.Origin.Tell("Not enough arguments supplied!");
-                return null;
+                await E.Origin.Tell($"Not enough arguments supplied! ^5({C.requiredArgNum} ^7required)");
+                throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
            if (C.needsTarget)
@@ -273,13 +288,12 @@ namespace IW4MAdmin
                     int dbID = -1;
                     int.TryParse(Args[0].Substring(1, Args[0].Length-1), out dbID);
 
-                    IW4MServer castServer = (IW4MServer)(E.Owner);
                     Player found = Manager.GetClientDatabase().GetPlayer(dbID);
                     if (found != null)
                     {
                         E.Target = found;
                         E.Target.lastEvent = E;
-                        E.Owner = this;
+                        E.Owner = this as IW4MServer;
                     }
                 }
 
@@ -295,7 +309,7 @@ namespace IW4MAdmin
                 if (E.Target == null)
                 {
                     await E.Origin.Tell("Unable to find specified player.");
-                    return null;
+                    throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
                 }
             }
             return C;
@@ -309,7 +323,11 @@ namespace IW4MAdmin
             {
                 try
                 {
+#if DEBUG
                     await P.OnEventAsync(E, this);
+#else
+                    P.OnEventAsync(E, this);
+#endif
                 }
 
                 catch (Exception Except)
@@ -348,7 +366,7 @@ namespace IW4MAdmin
         override public async Task ProcessUpdatesAsync(CancellationToken cts)
         {
 #if DEBUG == false
-               try
+            try
 #endif
             {
                 await PollPlayersAsync();
@@ -387,7 +405,7 @@ namespace IW4MAdmin
                         nextMessage++;
                     start = DateTime.Now;
                 }
-            
+
                 //logFile = new IFile();
                 if (l_size != logFile.getSize())
                 {
@@ -435,11 +453,16 @@ namespace IW4MAdmin
                 l_size = logFile.getSize();
             }
 #if DEBUG == false
-                catch (Exception E)
-                {
-                    Logger.WriteError("Unexpected error on \"" + Hostname + "\"");
-                    Logger.WriteDebug("Error Message: " + E.Message);
-                    Logger.WriteDebug("Error Trace: " + E.StackTrace);
+            catch (SharedLibrary.Exceptions.NetworkException)
+            {
+                Logger.WriteError($"Could not communicate with {IP}:{Port}");
+            }
+
+            catch (Exception E)
+            {
+                Logger.WriteError($"Encountered error on {IP}:{Port}");
+                Logger.WriteDebug("Error Message: " + E.Message);
+                Logger.WriteDebug("Error Trace: " + E.StackTrace);
             }
 #endif
         }
@@ -517,17 +540,11 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.Disconnect)
             {
-                if (E.Origin == null)
-                {
-                    Logger.WriteError("Disconnect event triggered, but no origin found.");
-                    return;
-                }
 
                 while (chatHistory.Count > Math.Ceiling(((double)ClientNum - 1) / 2))
                     chatHistory.RemoveAt(0);
                 chatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
 
-                //removePlayer(E.Origin.clientID);        
                 return;
             }
 
@@ -546,7 +563,7 @@ namespace IW4MAdmin
 
                 else // suicide/falling
                 {
-                    //Log.Write(E.Origin.Name + " suicided...", Log.Level.Debug);
+                    Logger.WriteDebug(E.Origin.Name + " suicided...");
                     await ExecuteEvent(new Event(Event.GType.Death, "suicide", E.Target, null, this));
                 }
             }
@@ -556,51 +573,42 @@ namespace IW4MAdmin
                 if (E.Data.Length < 2) // ITS A LIE!
                     return;
 
-                if (E.Origin == null)
-                {
-                    Logger.WriteError("Say event triggered, but no origin found! - " + E.Data);
-                    return;
-                }
-
-
-                if (E.Owner == null)
-                {
-                    Logger.WriteError("Say event does not have an owner!");
-                    return;
-                }
-
                 if (E.Data.Substring(0, 1) == "!" || E.Origin.Level == Player.Permission.Console)
                 {
-                    Command C = E.isValidCMD(Manager.GetCommands());
+                    Command C = null;
+
+                    try
+                    {
+                        C = await ValidateCommand(E);
+                    }
+
+                    catch (SharedLibrary.Exceptions.CommandException e)
+                    {
+                        Logger.WriteInfo(e.Message);
+                        return;
+                    }
 
                     if (C != null)
                     {
-                        C = await ProcessCommand(E, C);
-                        if (C != null)
+                        if (C.needsTarget && E.Target == null)
                         {
-                            if (C.needsTarget && E.Target == null)
-                            {
-                                Logger.WriteError("Requested event requiring target does not have a target!");
-                                return;
-                            }
+                            Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
+                            return;
+                        }
 
-                            try
-                            {
-                                await C.ExecuteAsync(E);
-                            }
+                        try
+                        {
+                            await C.ExecuteAsync(E);
+                        }
 
-                            catch (Exception Except)
-                            {
-                                Logger.WriteError(String.Format("A command request \"{0}\" generated an error.", C.Name));
-                                Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
-                                Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
-                                return;
-                            }
+                        catch (Exception Except)
+                        {
+                            Logger.WriteError(String.Format("A command request \"{0}\" generated an error.", C.Name));
+                            Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
+                            Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
+                            return;
                         }
                     }
-
-                    else
-                        await E.Origin.Tell("You entered an invalid command!");
                     return;
                 }
 
@@ -622,7 +630,6 @@ namespace IW4MAdmin
             {
                 Logger.WriteInfo($"New map loaded - {ClientNum} active players");
 
-                // make async
                 Gametype = (await this.GetDvarAsync<string>("g_gametype")).Value.StripColors();
                 Hostname = (await this.GetDvarAsync<string>("sv_hostname")).Value.StripColors();
                 FSGame = (await this.GetDvarAsync<string>("fs_game")).Value.StripColors();

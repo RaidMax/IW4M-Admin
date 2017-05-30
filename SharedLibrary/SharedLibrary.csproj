@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -53,8 +55,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite">
-      <HintPath>..\Admin\lib\System.Data.SQLite.dll</HintPath>
+    <Reference Include="System.Data.SQLite, Version=1.0.105.1, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Data.SQLite.Core.1.0.105.1\lib\net45\System.Data.SQLite.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -93,15 +96,31 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir "$(SolutionDir)Admin\$(OutDir)plugins
+    <PostBuildEvent>move "$(TargetDir)Newtonsoft.Json.dll" "$(TargetDir)lib\Newtonsoft.Json.dll"
+copy /Y "$(TargetDir)SQLite.Interop.dll" "$(SolutionDir)BUILD\lib"
+copy /Y "$(TargetDir)System.Data.SQLite.dll" "$(SolutionDir)BUILD\lib"
+copy /Y "$(TargetDir)SQLite.Interop.dll" "$(SolutionDir)Admin\lib"
+copy /Y "$(TargetDir)System.Data.SQLite.dll" "$(SolutionDir)Admin\lib"
+mkdir "$(SolutionDir)Admin\$(OutDir)plugins
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\lib"
-copy /Y "$(TargetDir)System.Data.SQLite.dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)Admin\lib"</PostBuildEvent>
   </PropertyGroup>
+  <Import Project="..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -13,7 +13,15 @@ namespace IW4MAdmin
     {
         public void OnException(IScheduler scheduler, Exception e)
         {
-            Manager.GetInstance().Logger.WriteError("Web service has encountered an error - " + e.Message);
+            Manager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);
+            Manager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
+
+            if (e.InnerException != null)
+            {
+                Manager.GetInstance().Logger.WriteDebug($"Inner Execption: {e.InnerException.Message}");
+                Manager.GetInstance().Logger.WriteDebug($"Inner Stack Trace: {e.InnerException.StackTrace}");
+            }
+
         }
 
         public void OnStop(IScheduler scheduler)

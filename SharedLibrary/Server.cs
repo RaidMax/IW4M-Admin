@@ -186,7 +186,7 @@ namespace SharedLibrary
         /// <param name="E">Event parameter</param>
         /// <param name="C">Command requested from the event</param>
         /// <returns></returns>
-        abstract public Task<Command> ProcessCommand(Event E, Command C);
+        abstract public Task<Command> ValidateCommand(Event E);
 
         virtual public Task ProcessUpdatesAsync(CancellationToken cts)
         {
@@ -220,6 +220,9 @@ namespace SharedLibrary
         /// <param name="Message">Message to be sent to all players</param>
         public async Task Broadcast(String Message)
         {
+#if DEBUG
+            return;
+#endif
             await this.ExecuteCommandAsync($"sayraw  {Message}");
         }
 
@@ -230,6 +233,9 @@ namespace SharedLibrary
         /// <param name="Target">Player to send message to</param>
         public async Task Tell(String Message, Player Target)
         {
+#if DEBUG
+            return;
+#endif
             if (Target.clientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
                 await this.ExecuteCommandAsync($"tellraw {Target.clientID} {Message}^7");
 

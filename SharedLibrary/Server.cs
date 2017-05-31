@@ -25,9 +25,7 @@ namespace SharedLibrary
 
             Players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
-            Macros = new Dictionary<String, Object>();
             Reports = new List<Report>();
-            statusPlayers = new Dictionary<string, Player>();
             playerHistory = new Queue<PlayerHistory>();
             chatHistory = new List<Chat>();
             lastWebChat = DateTime.Now;
@@ -44,10 +42,10 @@ namespace SharedLibrary
             if (owner == null)
                 commands.Add(new Owner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
 
-            commands.Add(new Quit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));
-            commands.Add(new Kick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
-            commands.Add(new Say("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
-            commands.Add(new TempBan("tempban", "temporarily ban a player for 1 hour. syntax: !tempban <player> <reason>.", "tb", Player.Permission.Moderator, 2, true));
+            commands.Add(new CQuit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));
+            commands.Add(new CKick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
+            commands.Add(new CSay("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
+            commands.Add(new CTempBan("tempban", "temporarily ban a player for 1 hour. syntax: !tempban <player> <reason>.", "tb", Player.Permission.Moderator, 2, true));
             commands.Add(new CBan("ban", "permanently ban a player from the server. syntax: !ban <player> <reason>", "b", Player.Permission.SeniorAdmin, 2, true));
             commands.Add(new CWhoAmI("whoami", "give information about yourself. syntax: !whoami.", "who", Player.Permission.User, 0, false));
             commands.Add(new CList("list", "list active clients syntax: !list.", "l", Player.Permission.Moderator, 0, false));
@@ -57,15 +55,15 @@ namespace SharedLibrary
             commands.Add(new CSetLevel("setlevel", "set player to specified administration level. syntax: !setlevel <player> <level>.", "sl", Player.Permission.Owner, 2, true));
             commands.Add(new CUsage("usage", "get current application memory usage. syntax: !usage.", "us", Player.Permission.Moderator, 0, false));
             commands.Add(new CUptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
-            commands.Add(new Warn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
-            commands.Add(new WarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Trusted, 1, true));
+            commands.Add(new Cwarn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
+            commands.Add(new CWarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Trusted, 1, true));
             commands.Add(new CUnban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
             commands.Add(new CListAdmins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
             commands.Add(new CLoadMap("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
             commands.Add(new CFindPlayer("find", "find player in database. syntax: !find <player>", "f", Player.Permission.SeniorAdmin, 1, false));
             commands.Add(new CListRules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
             commands.Add(new CPrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
-            commands.Add(new Flag("flag", "flag a suspicious player and announce to admins on join . syntax !flag <player>:", "flag", Player.Permission.Moderator, 1, true));
+            commands.Add(new CFlag("flag", "flag a suspicious player and announce to admins on join . syntax !flag <player> <reason>:", "flag", Player.Permission.Moderator, 2, true));
             commands.Add(new CReport("report", "report a player for suspicious behaivor. syntax !report <player> <reason>", "rep", Player.Permission.User, 2, true));
             commands.Add(new CListReports("reports", "get most recent reports. syntax !reports", "reports", Player.Permission.Moderator, 0, false));
             commands.Add(new CMask("mask", "hide your online presence from online admin list. syntax: !mask", "mask", Player.Permission.Administrator, 0, false));
@@ -234,10 +232,11 @@ namespace SharedLibrary
         public async Task Tell(String Message, Player Target)
         {
 #if DEBUG
-            return;
+            if (!Target.lastEvent.Remote)
+                return;
 #endif
-            if (Target.clientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
-                await this.ExecuteCommandAsync($"tellraw {Target.clientID} {Message}^7");
+            if (Target.ClientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
+                await this.ExecuteCommandAsync($"tellraw {Target.ClientID} {Message}^7");
 
             if (Target.Level == Player.Permission.Console)
             {
@@ -456,23 +455,14 @@ namespace SharedLibrary
         protected DateTime lastPoll;
         protected int nextMessage;
 
-        protected Dictionary<String, Object> Macros;
         protected DateTime lastWebChat;
         public string Password { get; private set; }
         public int Handle { get; private set; }
         protected int PID;
         protected IFile logFile;
 
-        // Will probably move this later
-        public Dictionary<String, Player> statusPlayers;
-        public bool isRunning;
-
         // Log stuff
         protected String Mod;
-
-        // Databases
-        //public ClientsDB clientDB;
-        //public AliasesDB aliasDB;
 
         //Remote
         public Queue<String> commandResult = new Queue<string>();

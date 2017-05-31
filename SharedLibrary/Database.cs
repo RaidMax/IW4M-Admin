@@ -440,7 +440,7 @@ namespace SharedLibrary
         public List<Penalty> GetClientPenalties(Player P)
         {
             List<Penalty> ClientPenalties = new List<Penalty>();
-            String Query = $"SELECT * FROM `BANS` WHERE `npID` = '{P.npID}' OR `IP` = '{P.IP}'";
+            String Query = $"SELECT * FROM `BANS` WHERE `npID` = '{P.NetworkID}' OR `IP` = '{P.IP}'";
             DataTable Result = GetDataTable(Query);
 
             foreach (DataRow Row in Result.Rows)
@@ -509,7 +509,7 @@ namespace SharedLibrary
             Dictionary<String, object> newPlayer = new Dictionary<String, object>
             {
                 { "Name", Utilities.removeNastyChars(P.Name) },
-                { "npID", P.npID },
+                { "npID", P.NetworkID },
                 { "Level", (int)P.Level },
                 { "LastOffense", "" },
                 { "Connections", 1 },
@@ -527,7 +527,7 @@ namespace SharedLibrary
             Dictionary<String, Object> updatedPlayer = new Dictionary<String, Object>
             {
                 { "Name", P.Name },
-                { "npID", P.npID },
+                { "npID", P.NetworkID },
                 { "Level", (int)P.Level },
                 { "LastOffense", P.lastOffense },
                 { "Connections", P.Connections },
@@ -536,7 +536,7 @@ namespace SharedLibrary
                 { "UID", P.UID },
                 { "Masked", Convert.ToInt32(P.Masked) }
             };
-            Update("CLIENTS", updatedPlayer, new KeyValuePair<string, object>("npID", P.npID));
+            Update("CLIENTS", updatedPlayer, new KeyValuePair<string, object>("npID", P.NetworkID));
         }
 
 
@@ -546,8 +546,8 @@ namespace SharedLibrary
             Dictionary<String, object> newBan = new Dictionary<String, object>
             {
                 { "Reason", Utilities.removeNastyChars(B.Reason) },
-                { "npID", B.npID },
-                { "bannedByID", B.bannedByID },
+                { "npID", B.OffenderID },
+                { "bannedByID", B.PenaltyOriginID },
                 { "IP", B.IP },
                 { "TIME", Utilities.DateTimeSQLite(DateTime.Now) },
                 { "TYPE", B.BType }

@@ -76,6 +76,7 @@
     <Compile Include="Interfaces\IManager.cs" />
     <Compile Include="Interfaces\IPenaltyList.cs" />
     <Compile Include="Interfaces\ISerializable.cs" />
+    <Compile Include="MessageToken.cs" />
     <Compile Include="Penalty.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Database.cs" />

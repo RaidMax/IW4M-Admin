@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -38,7 +37,7 @@ namespace SharedLibrary
 
         public override bool Equals(object obj)
         {
-            return ((Player)obj).npID == this.npID;
+            return ((Player)obj).NetworkID == NetworkID;
         }
 
         public override int GetHashCode()
@@ -49,8 +48,8 @@ namespace SharedLibrary
         public Player(string n, string id, int num, int l)
         {
             Name = n;
-            npID = id;
-            clientID = num;
+            NetworkID = id;
+            ClientID = num;
             Level = (Player.Permission)l;
             lastOffense = String.Empty;
             Connections = 0;
@@ -64,8 +63,8 @@ namespace SharedLibrary
         public Player(string n, string id, int num, String I)
         {
             Name = n;
-            npID = id;
-            clientID = num;
+            NetworkID = id;
+            ClientID = num;
             IP = I;
             LastConnection = DateTime.Now;
         }
@@ -73,20 +72,20 @@ namespace SharedLibrary
         public Player(String n, String id, Player.Permission P, String I, String UID)
         {
             Name = n;
-            npID = id;
+            NetworkID = id;
             Level = P;
             IP = I;
-            clientID = -1;
+            ClientID = -1;
             this.UID = UID;
         }
 
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)
         {
             Name = n;
-            npID = id;
-            clientID = num;
+            NetworkID = id;
+            ClientID = num;
             Level = l;
-            databaseID = cind;
+            DatabaseID = cind;
             if (lo == null)
                 lastOffense = String.Empty;
             else
@@ -101,10 +100,10 @@ namespace SharedLibrary
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2, DateTime LC, string UID, bool masked)
         {
             Name = n;
-            npID = id;
-            clientID = num;
+            NetworkID = id;
+            ClientID = num;
             Level = l;
-            databaseID = cind;
+            DatabaseID = cind;
             if (lo == null)
                 lastOffense = String.Empty;
             else
@@ -118,12 +117,9 @@ namespace SharedLibrary
             Masked = masked;
         }
 
-        public bool registerUID(String UID)
+        public override string ToString()
         {
-            if (UID.Length > 5)
-                this.UID = UID;
-
-            return this.UID == UID;
+            return $"{Name}::{NetworkID}";
         }
 
         public String getLastConnection()
@@ -142,7 +138,7 @@ namespace SharedLibrary
             IP = I;
         }
 
-        public void setLevel(Player.Permission Perm)
+        public void setLevel(Permission Perm)
         {
             Level = Perm;
         }
@@ -173,16 +169,14 @@ namespace SharedLibrary
         }
 
         public String Name { get; private set; }
-        public string npID { get; private set; }
-        public int clientID { get; private set; }
-        public Player.Permission Level { get; private set; }
-        public int databaseID { get; private set; }
+        public string NetworkID { get; private set; }
+        public int ClientID { get; private set; }
+        public Permission Level { get; private set; }
+        public int DatabaseID { get; private set; }
         public int Connections { get; set; }
         public String IP { get; private set; }
         public String UID { get; private set; }
         public DateTime LastConnection { get; private set; }
-        public Server currentServer { get; private set; }
-
         public int Ping;
 
         public Event lastEvent;

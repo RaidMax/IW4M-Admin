@@ -20,7 +20,7 @@ namespace IW4MAdmin
 
         public void RemovePenalty(Penalty P)
         {
-            Manager.GetInstance().GetClientDatabase().RemoveBan(P.npID);
+            Manager.GetInstance().GetClientDatabase().RemoveBan(P.OffenderID);
         }
 
         public List<Penalty> FindPenalties(Player P)

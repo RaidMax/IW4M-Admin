@@ -125,7 +125,7 @@ namespace SharedLibrary
                 {
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
                     string message = rgx.Replace(line[4], "");
-                    return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromEventLine(line, 2), null, SV);
+                    return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromEventLine(line, 2), null, SV) { Message = Utilities.removeNastyChars(message) };
                 }
 
                 if (eventType == ":")
@@ -149,6 +149,7 @@ namespace SharedLibrary
 
         public GType Type;
         public string Data; // Data is usually the message sent by player
+        public string Message;
         public Player Origin;
         public Player Target;
         public Server Owner;

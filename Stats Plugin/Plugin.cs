@@ -20,27 +20,34 @@ namespace StatsPlugin
 
             if (E.Target != null)
             {
-                pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.getStats(E.Target);
+                pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetStats(E.Target);
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 
             else
             {
-                pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.getStats(E.Origin);
+                pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetStats(E.Origin);
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 
-            await E.Origin.Tell(statLine);
+            if (E.Message.IsBroadcastCommand())
+            {
+                string name = E.Target == null ? E.Origin.Name : E.Target.Name;
+                await E.Owner.Broadcast($"Stats for ^5{name}^7");
+                await E.Owner.Broadcast(statLine);
+            }
+            else
+                await E.Origin.Tell(statLine);
         }
     }
 
     public class CViewTopStats : Command
     {
-        public CViewTopStats() : base("topstats", "view the top 5 players on this server. syntax !topstats", "!ts", Player.Permission.User, 0, false) { }
+        public CViewTopStats() : base("topstats", "view the top 5 players on this server. syntax !topstats", "ts", Player.Permission.User, 0, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
-            List<KeyValuePair<String, PlayerStats>> pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.topStats();
+            List<KeyValuePair<String, PlayerStats>> pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetTopStats();
             StringBuilder msgBlder = new StringBuilder();
 
             await E.Origin.Tell("^5--Top Players--");
@@ -51,6 +58,23 @@ namespace StatsPlugin
                     continue;
                 await E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.Name, pStat.Value.KDR, pStat.Value.Skill));
             }
+        }
+    }
+
+    public class CResetStats : Command
+    {
+        public CResetStats() : base("resetstats", "reset your stats to factory-new, !syntax !resetstats", "rs", Player.Permission.User, 0, false) { }
+
+        public override async Task ExecuteAsync(Event E)
+        {
+            var stats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetStats(E.Origin);
+            stats.Deaths = 0;
+            stats.Kills = 0;
+            stats.scorePerMinute = 0.0;
+            stats.Skill = 0;
+            stats.KDR = 0.0;
+            await Task.Run(() => { Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.UpdateStats(E.Origin, stats); });
+            await E.Origin.Tell("Your stats have been reset");
         }
     }
 
@@ -89,7 +113,7 @@ namespace StatsPlugin
 
         public float Version
         {
-            get { return 1f; }
+            get { return 1.1f; }
         }
 
         public string Author
@@ -117,6 +141,8 @@ namespace StatsPlugin
             if (E.Type == Event.GType.Start)
             {
                 statLists.Add(new StatTracking(S.getPort()));
+                S.Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", statLists.Find(c => c.Port == S.getPort()).playerStats.GetTotalPlaytime().ToString("#,##0").ToString));
+                S.Manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", statLists.Find(c => c.Port == S.getPort()).playerStats.GetTotalKills().ToString("#,##0").ToString));
             }
 
             if (E.Type == Event.GType.Stop)
@@ -126,10 +152,10 @@ namespace StatsPlugin
 
             if (E.Type == Event.GType.Connect)
             {
-                resetCounters(E.Origin.clientID, S.getPort());
+                ResetCounters(E.Origin.ClientID, S.getPort());
 
-                PlayerStats checkForTrusted = statLists.Find(x => x.Port == S.getPort()).playerStats.getStats(E.Origin);
-                if (checkForTrusted.playTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
+                PlayerStats checkForTrusted = statLists.Find(x => x.Port == S.getPort()).playerStats.GetStats(E.Origin);
+                if (checkForTrusted.TotalPlayTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
                 {
                     E.Origin.setLevel(Player.Permission.Trusted);
                     E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
@@ -146,19 +172,19 @@ namespace StatsPlugin
                     if (P == null)
                         continue;
 
-                    calculateAndSaveSkill(P, statLists.Find(x =>x.Port == S.getPort()));
-                    resetCounters(P.clientID, S.getPort());
+                    CalculateAndSaveSkill(P, statLists.Find(x =>x.Port == S.getPort()));
+                    ResetCounters(P.ClientID, S.getPort());
 
-                    E.Owner.Logger.WriteInfo("Updated skill for client #" + P.databaseID);
+                    E.Owner.Logger.WriteInfo("Updated skill for client #" + P.DatabaseID);
                     //E.Owner.Log.Write(String.Format("\r\nJoin: {0}\r\nInactive Minutes: {1}\r\nnewPlayTime: {2}\r\nnewSPM: {3}\r\nkdrWeight: {4}\r\nMultiplier: {5}\r\nscoreWeight: {6}\r\nnewSkillFactor: {7}\r\nprojectedNewSkill: {8}\r\nKills: {9}\r\nDeaths: {10}", connectionTime[P.clientID].ToShortTimeString(), inactiveMinutes[P.clientID], newPlayTime, newSPM, kdrWeight, Multiplier, scoreWeight, newSkillFactor, disconnectStats.Skill, disconnectStats.Kills, disconnectStats.Deaths));
                 }
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
-                calculateAndSaveSkill(E.Origin, statLists.Find(x=>x.Port == S.getPort()));
-                resetCounters(E.Origin.clientID, S.getPort());
-                E.Owner.Logger.WriteInfo("Updated skill for disconnecting client #" + E.Origin.databaseID);
+                CalculateAndSaveSkill(E.Origin, statLists.Find(x=>x.Port == S.getPort()));
+                ResetCounters(E.Origin.ClientID, S.getPort());
+                E.Owner.Logger.WriteInfo("Updated skill for disconnecting client #" + E.Origin.DatabaseID);
             }
 
             if (E.Type == Event.GType.Kill)
@@ -168,14 +194,14 @@ namespace StatsPlugin
 
                 Player Killer = E.Origin;
                 StatTracking curServer = statLists.Find(x => x.Port == S.getPort());
-                PlayerStats killerStats = curServer.playerStats.getStats(Killer);
+                PlayerStats killerStats = curServer.playerStats.GetStats(Killer);
 
 
-                curServer.lastKill[E.Origin.clientID] = DateTime.Now;
-                curServer.Kills[E.Origin.clientID]++;
+                curServer.lastKill[E.Origin.ClientID] = DateTime.Now;
+                curServer.Kills[E.Origin.ClientID]++;
 
-                if ((curServer.lastKill[E.Origin.clientID] - DateTime.Now).TotalSeconds > 60)
-                    curServer.inactiveMinutes[E.Origin.clientID]++;
+                if ((curServer.lastKill[E.Origin.ClientID] - DateTime.Now).TotalSeconds > 60)
+                    curServer.inactiveMinutes[E.Origin.ClientID]++;
  
                 killerStats.Kills++;
 
@@ -184,12 +210,12 @@ namespace StatsPlugin
                 else
                     killerStats.KDR = Math.Round((double)killerStats.Kills / (double)killerStats.Deaths, 2);
 
-                curServer.playerStats.updateStats(Killer, killerStats);
+                curServer.playerStats.UpdateStats(Killer, killerStats);
 
-                curServer.killStreaks[Killer.clientID] += 1;
-                curServer.deathStreaks[Killer.clientID] = 0;
+                curServer.killStreaks[Killer.ClientID] += 1;
+                curServer.deathStreaks[Killer.ClientID] = 0;
 
-                await Killer.Tell(messageOnStreak(curServer.killStreaks[Killer.clientID], curServer.deathStreaks[Killer.clientID]));
+                await Killer.Tell(MessageOnStreak(curServer.killStreaks[Killer.ClientID], curServer.deathStreaks[Killer.ClientID]));
             }
 
             if (E.Type == Event.GType.Death)
@@ -199,61 +225,63 @@ namespace StatsPlugin
 
                 Player Victim = E.Origin;
                 StatTracking curServer = statLists.Find(x => x.Port == S.getPort());
-                PlayerStats victimStats = curServer.playerStats.getStats(Victim);
+                PlayerStats victimStats = curServer.playerStats.GetStats(Victim);
                
                 victimStats.Deaths++;
                 victimStats.KDR = Math.Round((double)victimStats.Kills / (double)victimStats.Deaths, 2);
 
-                curServer.playerStats.updateStats(Victim, victimStats);
+                curServer.playerStats.UpdateStats(Victim, victimStats);
 
-                curServer.deathStreaks[Victim.clientID] += 1;
-                curServer.killStreaks[Victim.clientID] = 0;
+                curServer.deathStreaks[Victim.ClientID] += 1;
+                curServer.killStreaks[Victim.ClientID] = 0;
 
-                await Victim.Tell(messageOnStreak(curServer.killStreaks[Victim.clientID], curServer.deathStreaks[Victim.clientID]));
+                await Victim.Tell(MessageOnStreak(curServer.killStreaks[Victim.ClientID], curServer.deathStreaks[Victim.ClientID]));
             }
         }
 
-        private void calculateAndSaveSkill(Player P, StatTracking curServer)
+        private void CalculateAndSaveSkill(Player P, StatTracking curServer)
         {
             if (P == null)
                 return;
 
-            PlayerStats disconnectStats = curServer.playerStats.getStats(P);
-            if (curServer.Kills[P.clientID] == 0)
+            PlayerStats DisconnectingPlayerStats = curServer.playerStats.GetStats(P);
+            if (curServer.Kills[P.ClientID] == 0)
                 return;
 
-            else if (curServer.lastKill[P.clientID] > curServer.connectionTime[P.clientID])
-                curServer.inactiveMinutes[P.clientID] += (int)(DateTime.Now - curServer.lastKill[P.clientID]).TotalMinutes;
+            else if (curServer.lastKill[P.ClientID] > curServer.connectionTime[P.ClientID])
+                curServer.inactiveMinutes[P.ClientID] += (int)(DateTime.Now - curServer.lastKill[P.ClientID]).TotalMinutes;
 
-            int newPlayTime = (int)(DateTime.Now - curServer.connectionTime[P.clientID]).TotalMinutes - curServer.inactiveMinutes[P.clientID];
+            int newPlayTime = (int)(DateTime.Now - curServer.connectionTime[P.ClientID]).TotalMinutes - curServer.inactiveMinutes[P.ClientID];
 
             if (newPlayTime < 2)
                 return;
  
-            double newSPM = curServer.Kills[P.clientID] * 50 / Math.Max(1, newPlayTime);
-            double kdrWeight = Math.Round(Math.Pow(disconnectStats.KDR, 2 / Math.E), 3);
-            double Multiplier;
+            // calculate the players Score Per Minute for the current session
+            double SessionSPM = curServer.Kills[P.ClientID] * 100 / Math.Max(1, newPlayTime);
+            // calculate how much the KDR should way
+            // 0.81829 is a Eddie-Generated number that weights the KDR nicely
+            double KDRWeight = Math.Round(Math.Pow(DisconnectingPlayerStats.KDR, 1.637 / Math.E), 3);
+            double SPMWeightAgainstAverage;
 
-            if (disconnectStats.scorePerMinute == 1)
-                Multiplier = 1;
-            else
-                Multiplier = newSPM / disconnectStats.scorePerMinute;
+            // if no SPM, weight is 1 else the weight is the current sessions spm / lifetime average score per minute
+            SPMWeightAgainstAverage =  (DisconnectingPlayerStats.scorePerMinute == 1) ? 1 : SessionSPM / DisconnectingPlayerStats.scorePerMinute;
 
-            double scoreWeight = (newSPM * (newPlayTime / disconnectStats.playTime));
-            double newSkillFactor = Multiplier * scoreWeight;
+            // calculate the weight of the new play time againmst lifetime playtime
+            // 
+            double SPMAgainstPlayWeight = newPlayTime / Math.Min(600, DisconnectingPlayerStats.TotalPlayTime);
+            // calculate the new weight against average times the weight against play time
+            double newSkillFactor = SPMWeightAgainstAverage * SPMAgainstPlayWeight;
 
-            if (Multiplier >= 1)
-                disconnectStats.scorePerMinute += newSkillFactor;
-            else
-                disconnectStats.scorePerMinute -= (scoreWeight - newSkillFactor);
+            // if the weight is greater than 1, add, else subtract
+            DisconnectingPlayerStats.scorePerMinute += (SPMWeightAgainstAverage >= 1) ? newSkillFactor : -newSkillFactor;
 
-            disconnectStats.Skill = disconnectStats.scorePerMinute * kdrWeight / 10;
-            disconnectStats.playTime += newPlayTime;
+            DisconnectingPlayerStats.Skill = DisconnectingPlayerStats.scorePerMinute * KDRWeight / 10;
+            DisconnectingPlayerStats.TotalPlayTime += newPlayTime;
 
-            curServer.playerStats.updateStats(P, disconnectStats);
+            curServer.playerStats.UpdateStats(P, DisconnectingPlayerStats);
         }
 
-        private void resetCounters(int cID, int serverPort)
+        private void ResetCounters(int cID, int serverPort)
         {
             StatTracking selectedPlayers = statLists.Find(x => x.Port == serverPort);
 
@@ -264,7 +292,7 @@ namespace StatsPlugin
             selectedPlayers.killStreaks[cID] = 0;
         }
 
-        private String messageOnStreak(int killStreak, int deathStreak)
+        private String MessageOnStreak(int killStreak, int deathStreak)
         {
             String Message = "";
             switch (killStreak)
@@ -304,24 +332,24 @@ namespace StatsPlugin
             }
         }
 
-        public void addPlayer(Player P)
+        public void AddPlayer(Player P)
         {
-            Dictionary<String, object> newPlayer = new Dictionary<String, object>();
-
-            newPlayer.Add("npID", P.npID);
-            newPlayer.Add("KILLS", 0);
-            newPlayer.Add("DEATHS", 0);
-            newPlayer.Add("KDR", 0.0);
-            newPlayer.Add("SKILL", 1.0);
-            newPlayer.Add("SPM", 1.0);
-            newPlayer.Add("PLAYTIME", 1.0);
-
+            Dictionary<String, object> newPlayer = new Dictionary<String, object>
+            {
+                { "npID", P.NetworkID },
+                { "KILLS", 0 },
+                { "DEATHS", 0 },
+                { "KDR", 0.0 },
+                { "SKILL", 1.0 },
+                { "SPM", 1.0 },
+                { "PLAYTIME", 1.0 }
+            };
             Insert("STATS", newPlayer);
         }
 
-        public PlayerStats getStats(Player P)
+        public PlayerStats GetStats(Player P)
         {
-            DataTable Result = GetDataTable("STATS", new KeyValuePair<string, object>("npID", P.npID));
+            DataTable Result = GetDataTable("STATS", new KeyValuePair<string, object>("npID", P.NetworkID));
 
             if (Result != null && Result.Rows.Count > 0)
             {
@@ -338,26 +366,38 @@ namespace StatsPlugin
 
             else
             {
-                addPlayer(P);
-                return getStats(P);
+                AddPlayer(P);
+                return GetStats(P);
             }
         }
 
-        public void updateStats(Player P, PlayerStats S)
+        public int GetTotalKills()
         {
-            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>();
-
-            updatedPlayer.Add("KILLS", S.Kills);
-            updatedPlayer.Add("DEATHS", S.Deaths);
-            updatedPlayer.Add("KDR", Math.Round(S.KDR, 2));
-            updatedPlayer.Add("SKILL", Math.Round(S.Skill, 1));
-            updatedPlayer.Add("SPM", Math.Round(S.scorePerMinute, 1));
-            updatedPlayer.Add("PLAYTIME", S.playTime);
-
-            Update("STATS", updatedPlayer, new KeyValuePair<string, object>("npID", P.npID));
+            var Result = GetDataTable("SELECT SUM(KILLS) FROM STATS");
+            return Result.Rows[0][0].GetType() == typeof(DBNull) ? 0 : Convert.ToInt32(Result.Rows[0][0]);
         }
 
-        public List<KeyValuePair<String, PlayerStats>> topStats()
+        public int GetTotalPlaytime()
+        {
+            var Result = GetDataTable("SELECT SUM(PLAYTIME) FROM STATS");
+            return Result.Rows[0][0].GetType() == typeof(DBNull) ? 0 : Convert.ToInt32(Result.Rows[0][0]) / 60;
+        }
+
+        public void UpdateStats(Player P, PlayerStats S)
+        {
+            Dictionary<String, object> updatedPlayer = new Dictionary<String, object>
+            {
+                { "KILLS", S.Kills },
+                { "DEATHS", S.Deaths },
+                { "KDR", Math.Round(S.KDR, 2) },
+                { "SKILL", Math.Round(S.Skill, 1) },
+                { "SPM", Math.Round(S.scorePerMinute, 1) },
+                { "PLAYTIME", S.TotalPlayTime }
+            };
+            Update("STATS", updatedPlayer, new KeyValuePair<string, object>("npID", P.NetworkID));
+        }
+
+        public List<KeyValuePair<String, PlayerStats>> GetTopStats()
         {
             String Query = String.Format("SELECT * FROM STATS WHERE SKILL > 0 AND KDR < '{0}' AND KILLS > '{1}' AND PLAYTIME > '{2}' ORDER BY SKILL DESC LIMIT '{3}'", 10, 150, 60, 5);
             DataTable Result = GetDataTable(Query);
@@ -392,7 +432,7 @@ namespace StatsPlugin
             KDR = DR;
             Skill = S;
             scorePerMinute = sc;
-            playTime = P;
+            TotalPlayTime = P;
         }
 
         public int Kills;
@@ -400,6 +440,6 @@ namespace StatsPlugin
         public double KDR;
         public double Skill;
         public double scorePerMinute;
-        public int playTime;
+        public int TotalPlayTime;
     }
 }

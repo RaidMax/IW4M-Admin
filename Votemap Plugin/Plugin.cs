@@ -31,7 +31,7 @@ namespace Votemap_Plugin
             // we only want to allow a vote during a vote session
             if (voting.voteInSession)
             {
-                if (voting.hasVoted(E.Origin.npID))
+                if (voting.hasVoted(E.Origin.NetworkID))
                     await E.Origin.Tell("You have already voted. Use ^5!vc ^7to ^5cancel ^7your vote");
                 else
                 {
@@ -42,7 +42,7 @@ namespace Votemap_Plugin
                        await  E.Origin.Tell("^1" + E.Data + " is not a recognized map");
                     else
                     {
-                        voting.castVote(E.Origin.npID, votedMap);
+                        voting.castVote(E.Origin.NetworkID, votedMap);
                         await E.Origin.Tell("You voted for ^5" + votedMap.Alias);
                     }
                 }
@@ -63,9 +63,9 @@ namespace Votemap_Plugin
 
             if (voting.voteInSession)
             {
-                if (voting.hasVoted(E.Origin.npID))
+                if (voting.hasVoted(E.Origin.NetworkID))
                 {
-                    voting.cancelVote(E.Origin.npID);
+                    voting.cancelVote(E.Origin.NetworkID);
                     await E.Origin.Tell("Vote cancelled");
                 }
                     

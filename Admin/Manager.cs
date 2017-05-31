@@ -22,6 +22,7 @@ namespace IW4MAdmin
         Database AliasesDatabase;
         SharedLibrary.Interfaces.IPenaltyList ClientPenalties;
         List<Command> Commands;
+        List<MessageToken> MessageTokens;
         Kayak.IScheduler webServiceTask;
         Thread WebThread;
         public SharedLibrary.Interfaces.ILogger Logger { get; private set; }
@@ -38,6 +39,7 @@ namespace IW4MAdmin
             Servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
+            MessageTokens = new List<MessageToken>();
 
             ClientDatabase = new ClientsDB("Database/clients.rm");
             AliasesDatabase = new AliasesDB("Database/aliases.rm");
@@ -106,6 +108,7 @@ namespace IW4MAdmin
             {
                 Name = "Web Thread"
             };
+
             WebThread.Start();
 
             Running = true;
@@ -161,6 +164,11 @@ namespace IW4MAdmin
         public SharedLibrary.Interfaces.ILogger GetLogger()
         {
             return Logger;
+        }
+
+        public IList<MessageToken> GetMessageTokens()
+        {
+            return MessageTokens;
         }
     }
 }

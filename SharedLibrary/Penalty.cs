@@ -10,8 +10,8 @@ namespace SharedLibrary
         public Penalty(Type BType, String Reas, String TargID, String From, DateTime time, String ip)
         {
             Reason = Reas.Replace("!","");
-            npID = TargID;
-            bannedByID = From;
+            OffenderID = TargID;
+            PenaltyOriginID = From;
             When = time;
             IP = ip;
             this.BType = BType;
@@ -24,15 +24,17 @@ namespace SharedLibrary
 
         public enum Type
         {
+            Report,
             Warning,
+            Flag,
             Kick,
             TempBan,
             Ban
         }
 
         public String Reason { get; private set; }
-        public String npID { get; private set; }
-        public String bannedByID { get; private set; }
+        public String OffenderID { get; private set; }
+        public String PenaltyOriginID { get; private set; }
         public DateTime When { get; private set; }
         public String IP { get; private set; }
         public Type BType { get; private set; }

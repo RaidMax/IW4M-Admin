@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace SharedLibrary
@@ -120,25 +121,26 @@ namespace SharedLibrary
             }
         }
 
-        public static String LoadMacro(Dictionary<String, Object> Dict, String str)
+        public static String ProcessMessageToken(IList<MessageToken> tokens, String str)
         {
-            MatchCollection Found = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
-            foreach (Match M in Found)
+            MatchCollection RegexMatches = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
+            foreach (Match M in RegexMatches)
             {
                 String Match = M.Value;
                 String Identifier = M.Value.Substring(2, M.Length - 4);
-                Dict.TryGetValue(Identifier, out object foundVal);
-                String Replacement;
 
-                if (foundVal != null)
-                    Replacement = foundVal.ToString();
-                else
-                    Replacement = "";
+                var found = tokens.FirstOrDefault(t => t.Name.ToLower() == Identifier.ToLower());
 
-                str = str.Replace(Match, Replacement);
+                if (found != null)
+                    str = str.Replace(Match, found.ToString());
             }
 
             return str;
+        }
+
+        public static bool IsBroadcastCommand(this string str)
+        {
+            return str[0] == '@';
         }
 
         /// <summary>

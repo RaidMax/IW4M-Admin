@@ -196,7 +196,7 @@ namespace IW4MAdmin
                 foreach (Player P in S.getPlayers())
                 {
                     PlayerInfo pInfo = new PlayerInfo();
-                    pInfo.playerID = P.databaseID;
+                    pInfo.playerID = P.DatabaseID;
                     pInfo.playerName = P.Name;
                     pInfo.playerLevel = P.Level.ToString();
                     eachServer.players.Add(pInfo);
@@ -366,8 +366,8 @@ namespace IW4MAdmin
 
             foreach (var p in selectedPenalties)
             {
-                Player admin = Manager.GetInstance().GetClientDatabase().GetPlayer(p.bannedByID, 0);
-                Player penalized = Manager.GetInstance().GetClientDatabase().GetPlayer(p.npID, 0);
+                Player admin = Manager.GetInstance().GetClientDatabase().GetPlayer(p.PenaltyOriginID, 0);
+                Player penalized = Manager.GetInstance().GetClientDatabase().GetPlayer(p.OffenderID, 0);
                 if (admin == null && penalized == null)
                     continue;
                 if (admin == null)
@@ -379,8 +379,8 @@ namespace IW4MAdmin
                 pInfo.penaltyTime = SharedLibrary.Utilities.timePassed(p.When);
                 pInfo.penaltyType = p.BType.ToString();
                 pInfo.playerName = penalized.Name;
-                pInfo.playerID = penalized.databaseID;
-                if (admin.npID == penalized.npID)
+                pInfo.playerID = penalized.DatabaseID;
+                if (admin.NetworkID == penalized.NetworkID)
                 {
                     pInfo.adminName = "IW4MAdmin";
                     pInfo.adminLevel = Player.Permission.Console.ToString();
@@ -621,11 +621,11 @@ namespace IW4MAdmin
 
                     var playerAliases = Manager.GetInstance().Servers.First().GetAliases(pp);
                     PlayerInfo eachPlayer = new PlayerInfo();
-                    eachPlayer.playerID = pp.databaseID;
+                    eachPlayer.playerID = pp.DatabaseID;
                     eachPlayer.playerIP = pp.IP;
                     eachPlayer.playerLevel = pp.Level.ToString();
                     eachPlayer.playerName = pp.Name;
-                    eachPlayer.playernpID = pp.npID;
+                    eachPlayer.playernpID = pp.NetworkID;
                     eachPlayer.forumID = -1;
                     eachPlayer.authed = authed;
                     eachPlayer.showV2Features = false;

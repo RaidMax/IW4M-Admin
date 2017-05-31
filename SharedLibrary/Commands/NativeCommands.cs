@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Commands
 {
-    class Quit : Command
+    class CQuit : Command
     {
-        public Quit(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CQuit(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -36,9 +36,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Warn : Command
+    class Cwarn : Command
     {
-        public Warn(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public Cwarn(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -50,9 +50,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class WarnClear : Command
+    class CWarnClear : Command
     {
-        public WarnClear(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CWarnClear(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -63,9 +63,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Kick : Command
+    class CKick : Command
     {
-        public Kick(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CKick(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -77,9 +77,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Say : Command
+    class CSay : Command
     {
-        public Say(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CSay(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -87,16 +87,19 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class TempBan : Command
+    class CTempBan : Command
     {
-        public TempBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CTempBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
             E.Target.lastOffense = SharedLibrary.Utilities.RemoveWords(E.Data, 1);
             String Message = E.Target.lastOffense;
             if (E.Origin.Level > E.Target.Level)
+            {
                 await E.Target.TempBan(Message, E.Origin);
+                await E.Origin.Tell($"Successfully temp banned {E.Target.Name}");
+            }
             else
                 await E.Origin.Tell("You cannot temp ban " + E.Target.Name);
         }
@@ -118,7 +121,7 @@ namespace SharedLibrary.Commands
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Target.Ban(Message, E.Origin);
-                await E.Origin.Tell(String.Format("Sucessfully banned ^5{0} ^7({1})", E.Target.Name, E.Target.npID));
+                await E.Origin.Tell(String.Format("Sucessfully banned ^5{0} ^7({1})", E.Target.Name, E.Target.NetworkID));
             }
             else
                 await E.Origin.Tell("You cannot ban " + E.Target.Name);
@@ -132,7 +135,7 @@ namespace SharedLibrary.Commands
         public override async Task ExecuteAsync(Event E)
         {
             await E.Owner.Unban(E.Target);
-            await E.Origin.Tell($"Successfully unbanned {E.Target.Name}::{E.Target.npID}");
+            await E.Origin.Tell($"Successfully unbanned {E.Target.Name}::{E.Target.NetworkID}");
         }
     }
 
@@ -142,7 +145,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.clientID, E.Origin.npID, E.Origin.databaseID, SharedLibrary.Utilities.levelToColor(E.Origin.Level), E.Origin.IP);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientID, E.Origin.NetworkID, E.Origin.DatabaseID, SharedLibrary.Utilities.levelToColor(E.Origin.Level), E.Origin.IP);
             await E.Origin.Tell(You);
         }
     }
@@ -163,9 +166,9 @@ namespace SharedLibrary.Commands
                     continue;
 
                 if (P.Masked)
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(Player.Permission.User), P.clientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(Player.Permission.User), P.ClientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
                 else
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.Level), P.clientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.Level), P.ClientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
 
                 if (count == 2 || E.Owner.getPlayers().Count == 1)
                 {
@@ -217,7 +220,10 @@ namespace SharedLibrary.Commands
                         helpResponse.Append(" [^3" + C.Name + "^7] ");
                         if (count >= 4)
                         {
-                            await E.Origin.Tell(helpResponse.ToString());
+                            if (E.Message[0] == '@')
+                                await E.Owner.Broadcast(helpResponse.ToString());
+                            else
+                                await E.Origin.Tell(helpResponse.ToString());
                             helpResponse = new StringBuilder();
                             count = 0;
                         }
@@ -288,7 +294,7 @@ namespace SharedLibrary.Commands
                 {
                     foreach (var player in server.getPlayers())
                     {
-                        if (player != null && player.npID == E.Target.npID)
+                        if (player != null && player.NetworkID == E.Target.NetworkID)
                         {
                             player.setLevel(newPerm);
                             await E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
@@ -341,7 +347,12 @@ namespace SharedLibrary.Commands
             {
                 var P = E.Owner.Players[i];
                 if (P != null && P.Level > Player.Permission.Flagged && !P.Masked)
-                    await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+                {
+                    if (E.Message[0] == '@')
+                        await E.Owner.Broadcast(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+                    else
+                        await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+                }
             }
         }
     }
@@ -386,7 +397,7 @@ namespace SharedLibrary.Commands
 
             foreach (Player P in db_players)
             { 
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.databaseID, SharedLibrary.Utilities.levelToColor(P.Level), P.IP, P.getLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, SharedLibrary.Utilities.levelToColor(P.Level), P.IP, P.getLastConnection());
                 await E.Origin.Tell(mesg);
             }
         }
@@ -431,7 +442,7 @@ namespace SharedLibrary.Commands
 
                 if (Current != null)
                 {
-                    String mesg = String.Format("^1{0} ^7now goes by ^5{1}^7 [^3{2}^7]", lookingFor, Current.Name, Current.databaseID);
+                    String mesg = String.Format("^1{0} ^7now goes by ^5{1}^7 [^3{2}^7]", lookingFor, Current.Name, Current.DatabaseID);
                     await E.Origin.Tell(mesg);
                 }
             }
@@ -445,11 +456,22 @@ namespace SharedLibrary.Commands
         public override async Task ExecuteAsync(Event E)
         {
             if (E.Owner.rules.Count < 1)
-                await E.Origin.Tell("The server onwer has not set any rules.");
+            {
+                if (E.Message.IsBroadcastCommand())
+                    await E.Owner.Broadcast("The server owner has not set any rules.");
+                else
+                    await E.Origin.Tell("The server owner has not set any rules.");
+            }
+
             else
             {
                 foreach (String r in E.Owner.rules)
-                    await E.Origin.Tell("- " + r);
+                {
+                    if (E.Message.IsBroadcastCommand())
+                        await E.Owner.Broadcast("- " + r);
+                    else
+                        await E.Origin.Tell("- " + r);
+                }
             }
         }
     }
@@ -479,9 +501,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Flag : Command
+    class CFlag : Command
     {
-        public Flag(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFlag(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -499,7 +521,9 @@ namespace SharedLibrary.Commands
 
             else
             {
+                E.Data = Utilities.RemoveWords(E.Data, 1);
                 E.Target.setLevel(Player.Permission.Flagged);
+                E.Owner.Manager.GetClientPenalties().AddPenalty(new Penalty(Penalty.Type.Flag, E.Data, E.Target.NetworkID, E.Origin.NetworkID, DateTime.Now, E.Target.IP));
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }
 
@@ -513,7 +537,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.npID == E.Target.npID)) != null)
+            if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.NetworkID == E.Target.NetworkID)) != null)
             {
                 await E.Origin.Tell("You have already reported this player");
                 return;
@@ -606,7 +630,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            Player Banner = E.Owner.Manager.GetClientDatabase().GetPlayer(BannedPenalty.bannedByID, -1);
+            Player Banner = E.Owner.Manager.GetClientDatabase().GetPlayer(BannedPenalty.PenaltyOriginID, -1);
 
             if (Banner == null)
             {
@@ -624,7 +648,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.Alias = E.Owner.Manager.GetAliasesDatabase().GetPlayerAliases(E.Target.databaseID);
+            E.Target.Alias = E.Owner.Manager.GetAliasesDatabase().GetPlayerAliases(E.Target.DatabaseID);
 
             if (E.Target.Alias == null)
             {
@@ -675,7 +699,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Origin.currentServer.ExecuteCommandAsync(E.Data.Trim());
+            await E.Owner.ExecuteCommandAsync(E.Data.Trim());
             await E.Origin.Tell("Successfuly sent RCON command!");
         }
     }

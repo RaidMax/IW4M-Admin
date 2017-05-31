@@ -40,7 +40,7 @@ namespace IW4MAdmin
             if (Origin == null)
                 return allAliases;
 
-            Aliases currentIdentityAliases = Manager.GetAliasesDatabase().GetPlayerAliases(Origin.databaseID);
+            Aliases currentIdentityAliases = Manager.GetAliasesDatabase().GetPlayerAliases(Origin.DatabaseID);
 
             if (currentIdentityAliases == null)
                 return allAliases;
@@ -51,50 +51,50 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player P)
         {
-            if (P.clientID < 0 || P.clientID > (Players.Count-1) || P.Ping < 1 || P.Ping == 999) // invalid index
+            if (P.ClientID < 0 || P.ClientID > (Players.Count-1) || P.Ping < 1 || P.Ping == 999) // invalid index
                 return false;
 
-            if (Players[P.clientID] != null && Players[P.clientID].npID == P.npID) // if someone has left and a new person has taken their spot between polls
+            if (Players[P.ClientID] != null && Players[P.ClientID].NetworkID == P.NetworkID) // if someone has left and a new person has taken their spot between polls
             {
                 // update their ping
-                Players[P.clientID].Ping = P.Ping; 
+                Players[P.ClientID].Ping = P.Ping; 
                 return true;
             }
 
-            Logger.WriteDebug($"Client slot #{P.clientID} now reserved");
+            Logger.WriteDebug($"Client slot #{P.ClientID} now reserved");
                
             try
             {
-                Player NewPlayer = Manager.GetClientDatabase().GetPlayer(P.npID, P.clientID);
+                Player NewPlayer = Manager.GetClientDatabase().GetPlayer(P.NetworkID, P.ClientID);
 
                 if (NewPlayer == null) // first time connecting
                 {
-                    Logger.WriteDebug($"Client slot #{P.clientID} first time connecting");
+                    Logger.WriteDebug($"Client slot #{P.ClientID} first time connecting");
                     Manager.GetClientDatabase().AddPlayer(P);
-                    NewPlayer = Manager.GetClientDatabase().GetPlayer(P.npID, P.clientID);
-                    Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
+                    NewPlayer = Manager.GetClientDatabase().GetPlayer(P.NetworkID, P.ClientID);
+                    Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.DatabaseID, NewPlayer.Name, NewPlayer.IP));
                 }
 
 
                 List<Player> Admins = Manager.GetClientDatabase().GetAdmins();
                 if (Admins.Find(x => x.Name == P.Name) != null)
                 {
-                    if ((Admins.Find(x => x.Name == P.Name).npID != P.npID) && NewPlayer.Level < Player.Permission.Moderator)
-                        await this.ExecuteCommandAsync("clientkick " + P.clientID + " \"Please do not impersonate an admin^7\"");
+                    if ((Admins.Find(x => x.Name == P.Name).NetworkID != P.NetworkID) && NewPlayer.Level < Player.Permission.Moderator)
+                        await this.ExecuteCommandAsync("clientkick " + P.ClientID + " \"Please do not impersonate an admin^7\"");
                 }
 
                 // below this needs to be optimized ~ 425ms runtime
                 NewPlayer.updateName(P.Name.Trim());
-                NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.databaseID);
+                NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.DatabaseID);
 
                 if (NewPlayer.Alias == null)
                 {
-                    Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.databaseID, NewPlayer.Name, NewPlayer.IP));
-                    NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.databaseID);
+                    Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.DatabaseID, NewPlayer.Name, NewPlayer.IP));
+                    NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.DatabaseID);
                 }
                 
                 if (P.lastEvent == null || P.lastEvent.Owner == null)
-                    NewPlayer.lastEvent = new Event(Event.GType.Say, null, NewPlayer, null, this); // this is messy but its throwing an error when they've started it too late
+                    NewPlayer.lastEvent = new Event(Event.GType.Say, null, NewPlayer, null, this); // this is messy but its throwing an error when they've started in too late
                 else
                     NewPlayer.lastEvent = P.lastEvent;
            
@@ -120,7 +120,7 @@ namespace IW4MAdmin
 
                 if (NewPlayer.Level == Player.Permission.Banned) // their guid is already banned so no need to check aliases
                 {
-                    Logger.WriteInfo($"Banned client {P.Name}::{P.npID} trying to connect...");
+                    Logger.WriteInfo($"Banned client {P.Name}::{P.NetworkID} trying to connect...");
                     await NewPlayer.Kick(NewPlayer.lastOffense != null ? "^7Previously banned for ^5 " + NewPlayer.lastOffense : "^7Previous Ban", NewPlayer);
 
                     return true;
@@ -140,19 +140,19 @@ namespace IW4MAdmin
 
                     if (B != null && B.BType == Penalty.Type.Ban)
                     {
-                        Logger.WriteDebug($"Banned client {aP.Name}::{aP.npID} is connecting with new alias {NewPlayer.Name}");
+                        Logger.WriteDebug($"Banned client {aP.Name}::{aP.NetworkID} is connecting with new alias {NewPlayer.Name}");
                         NewPlayer.lastOffense = String.Format("Evading ( {0} )", aP.Name);
 
                         await NewPlayer.Ban(B.Reason != null ? "^7Previously banned for ^5 " + B.Reason : "^7Previous Ban", NewPlayer);
-                        Players[NewPlayer.clientID] = null;
+                        Players[NewPlayer.ClientID] = null;
 
                         return true;
                     }
                 }
     
-                Players[NewPlayer.clientID] = null; 
-                Players[NewPlayer.clientID] = NewPlayer;
-                Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.npID} connecting..."); // they're clean
+                Players[NewPlayer.ClientID] = null; 
+                Players[NewPlayer.ClientID] = NewPlayer;
+                Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.NetworkID} connecting..."); // they're clean
 
                 // todo: get this out of here
                 while (chatHistory.Count > Math.Ceiling((double)ClientNum / 2))
@@ -168,7 +168,7 @@ namespace IW4MAdmin
 
             catch (Exception E)
             {
-                Manager.GetLogger().WriteError($"Unable to add player {P.Name}::{P.npID}");
+                Manager.GetLogger().WriteError($"Unable to add player {P.Name}::{P.NetworkID}");
                 Manager.GetLogger().WriteDebug(E.StackTrace);
                 return false;
             }
@@ -183,7 +183,7 @@ namespace IW4MAdmin
                 Leaving.Connections++;
                 Manager.GetClientDatabase().UpdatePlayer(Leaving);
 
-                Logger.WriteInfo($"Client {Leaving.Name}::{Leaving.npID} disconnecting...");
+                Logger.WriteInfo($"Client {Leaving.Name}::{Leaving.NetworkID} disconnecting...");
                 await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
                 Players[cNum] = null;
 
@@ -241,6 +241,7 @@ namespace IW4MAdmin
         override public async Task<Command> ValidateCommand(Event E)
         {
             string CommandString = E.Data.Substring(1, E.Data.Length - 1).Split(' ')[0];
+            E.Message = E.Data;
 
             Command C = null;
             foreach (Command cmd in Manager.GetCommands())
@@ -270,14 +271,11 @@ namespace IW4MAdmin
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
-           if (C.needsTarget)
+           if (C.needsTarget || Args.Length > 0)
             {
                 int cNum = -1;
                 int.TryParse(Args[0], out cNum);
 
-                // this is so ugly wtf is it doing here?
-                if (C.Name == "stats" && Args.Length == 1)
-                    E.Target = E.Origin;
 
                 if (Args[0] == String.Empty)
                     return C;
@@ -346,7 +344,7 @@ namespace IW4MAdmin
 
             for (int i = 0; i < Players.Count; i++)
             {
-                if (CurrentPlayers.Find(p => p.clientID == i) == null && Players[i] != null)
+                if (CurrentPlayers.Find(p => p.ClientID == i) == null && Players[i] != null)
                     await RemovePlayer(i);
             }
 
@@ -397,8 +395,7 @@ namespace IW4MAdmin
 
                 if (lastMessage.TotalSeconds > messageTime && messages.Count > 0 && Players.Count > 0)
                 {
-                    initMacros(); // somethings dynamically change so we have to re-init the dictionary
-                    await Broadcast(Utilities.LoadMacro(Macros, messages[nextMessage]));
+                    await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), messages[nextMessage]));
                     if (nextMessage == (messages.Count - 1))
                         nextMessage = 0;
                     else
@@ -653,7 +650,7 @@ namespace IW4MAdmin
                 await Target.Kick("Too many warnings!", Origin);
             else
             {
-                Penalty newPenalty = new Penalty(Penalty.Type.Warning, Reason.StripColors(), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Penalty newPenalty = new Penalty(Penalty.Type.Warning, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
                 Manager.GetClientPenalties().AddPenalty(newPenalty);
                 Target.Warnings++;
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Target.lastOffense);
@@ -663,21 +660,21 @@ namespace IW4MAdmin
 
         public override async Task Kick(String Reason, Player Target, Player Origin)
         {
-            if (Target.clientID > -1)
+            if (Target.ClientID > -1)
             {
                 String Message = "^1Player Kicked: ^5" + Reason;
-                Penalty newPenalty = new Penalty(Penalty.Type.Kick, Reason.StripColors().Trim(), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Penalty newPenalty = new Penalty(Penalty.Type.Kick, Reason.StripColors().Trim(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
                 Manager.GetClientPenalties().AddPenalty(newPenalty);
-                await this.ExecuteCommandAsync("clientkick " + Target.clientID + " \"" + Message + "^7\"");
+                await this.ExecuteCommandAsync("clientkick " + Target.ClientID + " \"" + Message + "^7\"");
             }
         }
 
         public override async Task TempBan(String Reason, Player Target, Player Origin)
         {
-            if (Target.clientID > -1)
+            if (Target.ClientID > -1)
             {
-                await this.ExecuteCommandAsync($"tempbanclient {Target.clientID } \"^1Player Temporarily Banned: ^5{ Reason } (1 hour)\"");
-                Penalty newPenalty = new Penalty(Penalty.Type.TempBan, Reason.StripColors(), Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                await this.ExecuteCommandAsync($"tempbanclient {Target.ClientID } \"^1Player Temporarily Banned: ^5{ Reason } (1 hour)\"");
+                Penalty newPenalty = new Penalty(Penalty.Type.TempBan, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
                 await Task.Run(() =>
                 {
                     Manager.GetClientPenalties().AddPenalty(newPenalty);
@@ -696,7 +693,7 @@ namespace IW4MAdmin
             {
                 Logger.WriteError("Ban target is null");
                 Logger.WriteDebug($"Message: {Message}");
-                Logger.WriteDebug($"Origin: {Origin.Name}::{Origin.npID}");
+                Logger.WriteDebug($"Origin: {Origin.Name}::{Origin.NetworkID}");
                 return;
             }
 
@@ -705,16 +702,16 @@ namespace IW4MAdmin
             {
                 if (server.getPlayers().Count > 0)
                 {
-                    var activeClient = server.getPlayers().Find(x => x.npID == Target.npID);
+                    var activeClient = server.getPlayers().Find(x => x.NetworkID == Target.NetworkID);
                     if (activeClient != null)
-                        await server.ExecuteCommandAsync("tempbanclient " + activeClient.clientID + " \"" + Message + "^7" + GetWebsiteString() + "^7\"");
+                        await server.ExecuteCommandAsync("tempbanclient " + activeClient.ClientID + " \"" + Message + "^7" + GetWebsiteString() + "^7\"");
                 }
             }
 
             if (Origin != null)
             {
                 Target.setLevel(Player.Permission.Banned);
-                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.npID, Origin.npID, DateTime.Now, Target.IP);
+                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
 
                 await Task.Run(() =>
                 {
@@ -727,14 +724,14 @@ namespace IW4MAdmin
                     List<Report> toRemove = new List<Report>();
                     foreach (Report R in Reports)
                     {
-                        if (R.Target.npID == Target.npID)
+                        if (R.Target.NetworkID == Target.NetworkID)
                             toRemove.Add(R);
                     }
 
                     foreach (Report R in toRemove)
                     {
                         Reports.Remove(R);
-                        Logger.WriteInfo("Removing report for banned GUID - " + R.Origin.npID);
+                        Logger.WriteInfo("Removing report for banned GUID - " + R.Origin.NetworkID);
                     }
                 }
             }
@@ -753,7 +750,7 @@ namespace IW4MAdmin
 
                 Manager.GetClientPenalties().RemovePenalty(PenaltyToRemove);
 
-                Player P = Manager.GetClientDatabase().GetPlayer(Target.npID, -1);
+                Player P = Manager.GetClientDatabase().GetPlayer(Target.NetworkID, -1);
                 P.setLevel(Player.Permission.User);
                 Manager.GetClientDatabase().UpdatePlayer(P);
             });
@@ -789,10 +786,8 @@ namespace IW4MAdmin
 
         override public void initMacros()
         {
-            Macros = new Dictionary<String, Object>();
-            Macros.Add("TOTALPLAYERS", Manager.GetClientDatabase().TotalPlayers());
-            Macros.Add("TOTALKILLS", totalKills);
-            Macros.Add("VERSION", IW4MAdmin.Program.Version);
+            Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", Manager.GetClientDatabase().TotalPlayers().ToString));
+            Manager.GetMessageTokens().Add(new MessageToken("VERSION", Program.Version.ToString));
         }
 
         override public void initCommands()

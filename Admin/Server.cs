@@ -46,6 +46,8 @@ namespace IW4MAdmin
                 return allAliases;
 
             GetAliases(allAliases, currentIdentityAliases);
+            if (Origin.Alias != null)
+                allAliases.Add(Origin.Alias);
             return allAliases;        
         }
 
@@ -188,6 +190,8 @@ namespace IW4MAdmin
                 Players[cNum] = null;
 
                 ClientNum--;
+                if (ClientNum == 0)
+                    chatHistory.Clear();
             }
         }
 
@@ -304,7 +308,7 @@ namespace IW4MAdmin
                 else
                     E.Target = clientFromName(Args[0]);
 
-                if (E.Target == null)
+                if (E.Target == null && C.needsTarget)
                 {
                     await E.Origin.Tell("Unable to find specified player.");
                     throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
@@ -570,7 +574,7 @@ namespace IW4MAdmin
                 if (E.Data.Length < 2) // ITS A LIE!
                     return;
 
-                if (E.Data.Substring(0, 1) == "!" || E.Origin.Level == Player.Permission.Console)
+                if (E.Data.Substring(0, 1) == "!"  || E.Data.Substring(0, 1) == "@"  || E.Origin.Level == Player.Permission.Console)
                 {
                     Command C = null;
 
@@ -603,6 +607,10 @@ namespace IW4MAdmin
                             Logger.WriteError(String.Format("A command request \"{0}\" generated an error.", C.Name));
                             Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
                             Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
+                            await E.Origin.Tell("^1An internal error occured while processing your command^7");
+#if DEBUG
+                            await E.Origin.Tell(Except.Message);
+#endif
                             return;
                         }
                     }

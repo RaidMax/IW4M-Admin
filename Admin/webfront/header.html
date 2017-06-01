@@ -115,6 +115,7 @@ function getColorForLevel(level, name)
     case "User":
       return "<span style='color: rgba(116,147,99,1);''>" + name + "</span>";
     case "Flagged":
+    case "Flag":
     case "TempBan":
       return "<span style='color: rgba(253, 139, 22, 0.85);'>" + name + "</span>";
     case "Banned":
@@ -123,6 +124,7 @@ function getColorForLevel(level, name)
       return "<span style='color: rgba(255, 69, 69, 0.85);'>" + name + "</span>";
     case "Moderator":
     case "Warning":
+    case "Report":
       return "<span style='color: rgba(235, 211, 101, 0.75);'>" + name + "</span>";
     case "Administrator":
       return "<span style='color: rgba(236, 130, 222, 0.69);'>" + name + "</span>";

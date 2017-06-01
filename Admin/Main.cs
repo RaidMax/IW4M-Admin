@@ -36,7 +36,7 @@ namespace IW4MAdmin
                 ServerManager = Manager.GetInstance();
                 ServerManager.Init();
 
-                /*Task.Run(() =>
+                Task.Run(() =>
                 {
                     String userInput;
                     Player Origin = new Player("IW4MAdmin", "", -1, Player.Permission.Console, -1, "", 0, "");
@@ -56,7 +56,7 @@ namespace IW4MAdmin
                         Console.Write('>');
 
                     } while (userInput != null && ServerManager.Running);
-                });*/
+                });
 
             }
 

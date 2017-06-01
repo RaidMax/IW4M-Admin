@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using SharedLibrary;
 using SharedLibrary.Network;
 using System.Threading.Tasks;
@@ -659,37 +660,27 @@ namespace SharedLibrary.Commands
             await E.Target.Tell("[^3" + E.Target.Name + "^7]");
             StringBuilder message = new StringBuilder();
 
-            List<Player> playerAliases = E.Owner.getPlayerAliases(E.Target);
+            var playerAliases = E.Owner.GetAliases(E.Target);
                
             message.Append("Aliases: ");
 
-            foreach (Player P in playerAliases)
+            var names = new List<string>();
+            var ips = new List<string>();
+
+            foreach (var alias in playerAliases)
             {
-                foreach (String S in P.Alias.Names)
-                {
-                    if (S != String.Empty && S != E.Target.Name)
-                        message.Append(S + "  | ");
-                }
+                names.AddRange(alias.Names);
+                ips.AddRange(alias.IPS);
             }
+            message.Append(String.Join(" | ", names.Distinct()));
+
             await E.Origin.Tell(message.ToString());
 
-            message = new StringBuilder();
+            message.Clear();
+            message.Append("IPs: ");
+            message.Append(String.Join(" | ", ips.Distinct()));
 
-            if (E.Target.Alias.IPS != null)
-            {
-                message.Append("IPs: ");
-
-                foreach (Player P2 in playerAliases)
-                {
-                    foreach (String IP in P2.Alias.IPS)
-                    {
-                        if (IP.Split('.').Length > 3 && IP != String.Empty && !message.ToString().Contains(IP))
-                            message.Append (IP + "  | ");
-                    }
-                }
-
-                await E.Origin.Tell(message.ToString());
-            }
+            await E.Origin.Tell(message.ToString());
         }
     }
 

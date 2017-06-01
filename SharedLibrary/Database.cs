@@ -236,7 +236,8 @@ namespace SharedLibrary
         public List<Player> GetRecentPlayers()
         {
             List<Player> returnssss = new List<Player>();
-            String Query = String.Format($"SELECT * FROM CLIENTS LIMIT 15 OFFSET (SELECT COUNT(*) FROM CLIENTS)-15");
+            //String Query = String.Format($"SELECT * FROM CLIENTS LIMIT 15 OFFSET (SELECT COUNT(*) FROM CLIENTS)-15");
+            String Query = "SELECT * FROM CLIENTS ORDER BY LastConnection DESC LIMIT 25";
             DataTable Result = GetDataTable(Query);
 
             if (Result != null && Result.Rows.Count > 0)

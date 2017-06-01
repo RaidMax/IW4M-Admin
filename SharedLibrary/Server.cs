@@ -219,7 +219,7 @@ namespace SharedLibrary
         public async Task Broadcast(String Message)
         {
 #if DEBUG
-            return;
+           // return;
 #endif
             await this.ExecuteCommandAsync($"sayraw  {Message}");
         }
@@ -232,8 +232,8 @@ namespace SharedLibrary
         public async Task Tell(String Message, Player Target)
         {
 #if DEBUG
-            if (!Target.lastEvent.Remote)
-                return;
+            //if (!Target.lastEvent.Remote)
+            //    return;
 #endif
             if (Target.ClientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
                 await this.ExecuteCommandAsync($"tellraw {Target.ClientID} {Message}^7");

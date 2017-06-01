@@ -592,6 +592,7 @@ namespace IW4MAdmin
             resp.additionalHeaders = new Dictionary<string, string>();
 
             bool authed = Manager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
+            bool recent = false;
 
             if (querySet["id"] != null)
             {
@@ -611,6 +612,7 @@ namespace IW4MAdmin
             else if (querySet["recent"] != null)
             {
                  matchedPlayers = Manager.GetInstance().GetClientDatabase().GetRecentPlayers();
+                recent = true;
             }
 
             if (matchedPlayers != null && matchedPlayers.Count > 0)
@@ -618,8 +620,6 @@ namespace IW4MAdmin
                 foreach (var pp in matchedPlayers)
                 {
                     if (pp == null) continue;
-
-                    var playerAliases = Manager.GetInstance().Servers.First().GetAliases(pp);
                     PlayerInfo eachPlayer = new PlayerInfo();
                     eachPlayer.playerID = pp.DatabaseID;
                     eachPlayer.playerIP = pp.IP;
@@ -630,10 +630,13 @@ namespace IW4MAdmin
                     eachPlayer.authed = authed;
                     eachPlayer.showV2Features = false;
 
-                    foreach (var a in playerAliases)
+                    if (!recent)
                     {
-                        eachPlayer.playerAliases = a.Names;
-                        eachPlayer.playerIPs = a.IPS;
+                        foreach (var a in Manager.GetInstance().Servers.First().GetAliases(pp))
+                        {
+                            eachPlayer.playerAliases = a.Names;
+                            eachPlayer.playerIPs = a.IPS;
+                        }
                     }
 
                     eachPlayer.playerConnections = pp.Connections;

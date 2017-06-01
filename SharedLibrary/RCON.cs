@@ -38,6 +38,8 @@ namespace SharedLibrary.Network
                     String npID = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
                     int.TryParse(playerInfo[0], out cID);
                     String cIP = responseLine.Substring(72, 20).Trim().Split(':')[0];
+                    if (cIP.Split(' ').Count() > 1)
+                        cIP = cIP.Split(' ')[1];
                     Player P = new Player(cName, npID, cID, cIP) { Ping = Ping };
                     StatusPlayers.Add(P);
                 }

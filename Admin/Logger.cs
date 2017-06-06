@@ -44,9 +44,8 @@ namespace IW4MAdmin
                 Console.WriteLine(LogLine);
                 //if (type != LogType.Debug)
                 File.AppendAllText(FileName, LogLine + Environment.NewLine);
-            }
 #endif
-
+            }
         }
 
         public void WriteVerbose(string msg)

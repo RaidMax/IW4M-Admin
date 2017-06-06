@@ -85,7 +85,7 @@ namespace SharedLibrary.Network
                 {
                     ReceiveBuffer = ServerOOBConnection.Receive(ref Endpoint);
                     QueryResponseString.Append(Encoding.ASCII.GetString(ReceiveBuffer).TrimEnd('\0'));
-                } while (ServerOOBConnection.Available > 0);
+                } while (ServerOOBConnection.Available > 0 && ServerOOBConnection.Client.Connected);
 
                 ServerOOBConnection.Close();
 

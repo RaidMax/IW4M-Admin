@@ -335,9 +335,12 @@ copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 
 
-
 if $(ConfigurationName) == Release powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.3
 if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.3</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

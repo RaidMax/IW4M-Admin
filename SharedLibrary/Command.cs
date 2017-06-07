@@ -14,8 +14,8 @@ namespace SharedLibrary
             Description = D;
             Alias = A;
             Permission = P;
-            requiredArgNum = args;
-            needsTarget = nT;
+            RequiredArgumentCount = args;
+            RequiresTarget = nT;
         }
 
         //Execute the command
@@ -24,8 +24,8 @@ namespace SharedLibrary
         public String Name { get; private set; }
         public String Description { get; private set; }
         public String Alias { get; private set; }
-        public int requiredArgNum { get; private set; }
-        public bool needsTarget { get; private set; }
+        public int RequiredArgumentCount { get; private set; }
+        public bool RequiresTarget { get; private set; }
         public Player.Permission Permission { get; private set; }
     }
 }

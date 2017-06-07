@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SharedLibrary
 {
@@ -17,7 +14,7 @@ namespace SharedLibrary
             this.BType = BType;
         }
 
-        public String getWhen()
+        public String GetWhenFormatted()
         {
             return When.ToString("MM/dd/yy HH:mm:ss"); ;
         }

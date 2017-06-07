@@ -20,34 +20,6 @@ namespace SharedLibrary.Network
             COMMAND,
         }
 
-        public static List<Player> PlayersFromStatus(String[] Status)
-        {
-            List<Player> StatusPlayers = new List<Player>();
-
-            foreach (String S in Status)
-            {
-                String responseLine = S.Trim();
-
-                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 72) // its a client line!
-                {
-                    String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    int cID = -1;
-                    int Ping = -1;
-                    Int32.TryParse(playerInfo[2], out Ping);
-                    String cName = Utilities.StripColors(responseLine.Substring(46, 18)).Trim();
-                    String npID = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
-                    int.TryParse(playerInfo[0], out cID);
-                    String cIP = responseLine.Substring(72, 20).Trim().Split(':')[0];
-                    if (cIP.Split(' ').Count() > 1)
-                        cIP = cIP.Split(' ')[1];
-                    Player P = new Player(cName, npID, cID, cIP) { Ping = Ping };
-                    StatusPlayers.Add(P);
-                }
-            }
-
-            return StatusPlayers;
-        }
-
         static string[] SendQuery(QueryType Type, Server QueryServer,  string Parameters = "")
         {
             var ServerOOBConnection = new UdpClient();
@@ -113,7 +85,7 @@ namespace SharedLibrary.Network
             }
         }
 
-        public static async Task<_DVAR<T>> GetDvarAsync<T>(this Server server, string dvarName)
+        public static async Task<DVAR<T>> GetDvarAsync<T>(this Server server, string dvarName)
         {          
             string[] LineSplit = await Task.FromResult(SendQuery(QueryType.DVAR, server, dvarName));
 
@@ -137,7 +109,7 @@ namespace SharedLibrary.Network
             string DvarCurrentValue = Regex.Replace(ValueSplit[2], @"\^[0-9]", "");
             string DvarDefaultValue = Regex.Replace(ValueSplit[4], @"\^[0-9]", "");
 
-            return new _DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
+            return new DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
         }
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
@@ -145,15 +117,15 @@ namespace SharedLibrary.Network
             await Task.FromResult(SendQuery(QueryType.DVAR, server, $"{dvarName} {dvarValue}"));
         }
 
-        public static async Task ExecuteCommandAsync(this Server server, string commandName)
+        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
         {
-            await Task.FromResult(SendQuery(QueryType.COMMAND, server, commandName));
+            return await Task.FromResult(SendQuery(QueryType.COMMAND, server, commandName).Skip(1).ToArray());
         }
 
         public static async Task<List<Player>> GetStatusAsync(this Server server)
         {
             string[] response = await Task.FromResult(SendQuery(QueryType.DVAR, server, "status"));
-            return PlayersFromStatus(response);
+            return Utilities.PlayersFromStatus(response);
         }
 
 

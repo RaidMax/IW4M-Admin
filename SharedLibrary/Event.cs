@@ -100,7 +100,7 @@ namespace SharedLibrary
             Owner = S;
         }
 
-        public static Event requestEvent(String[] line, Server SV)
+        public static Event ParseEventString(String[] line, Server SV)
         {
 #if DEBUG == false
             try
@@ -118,20 +118,20 @@ namespace SharedLibrary
                             Data.Append(line[i] + ";");
                     }
 
-                    return new Event(GType.Kill, Data.ToString(), SV.clientFromEventLine(line, 6), SV.clientFromEventLine(line, 2), SV);
+                    return new Event(GType.Kill, Data.ToString(), SV.ParseClientFromString(line, 6), SV.ParseClientFromString(line, 2), SV);
                 }
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
                 {
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
                     string message = rgx.Replace(line[4], "");
-                    return new Event(GType.Say, Utilities.removeNastyChars(message), SV.clientFromEventLine(line, 2), null, SV) { Message = Utilities.removeNastyChars(message) };
+                    return new Event(GType.Say, Utilities.removeNastyChars(message).StripColors(), SV.ParseClientFromString(line, 2), null, SV) { Message = Utilities.removeNastyChars(message).StripColors() };
                 }
 
                 if (eventType == ":")
                     return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
-                if (line[0].Contains("InitGame")) // blaze it
+                if (line[0].Contains("InitGame"))
                     return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
 

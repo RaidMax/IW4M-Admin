@@ -13,7 +13,6 @@ namespace IW4MAdmin
     {
         public IW4MServer(SharedLibrary.Interfaces.IManager mgr, string address, int port, string password) : base(mgr, address, port, password) 
         {
-            commandQueue = new Queue<string>();
             initCommands();
         }
 
@@ -138,7 +137,7 @@ namespace IW4MAdmin
                     if (aP.Level == Player.Permission.Flagged)
                         NewPlayer.setLevel(Player.Permission.Flagged);
 
-                    Penalty B = isBanned(aP);
+                    Penalty B = IsBanned(aP);
 
                     if (B != null && B.BType == Penalty.Type.Ban)
                     {
@@ -196,7 +195,7 @@ namespace IW4MAdmin
         }
 
         //Another version of client from line, written for the line created by a kill or death event
-        override public Player clientFromEventLine(String[] L, int cIDPos)
+        override public Player ParseClientFromString(String[] L, int cIDPos)
         {
             if (L.Length < cIDPos)
             {
@@ -235,7 +234,7 @@ namespace IW4MAdmin
         }
 
         //Check ban list for every banned player and return ban if match is found 
-         override public Penalty isBanned(Player C)
+         override public Penalty IsBanned(Player C)
          {
             return Manager.GetClientPenalties().FindPenalties(C).Where(b => b.BType == Penalty.Type.Ban).FirstOrDefault(); 
          }
@@ -269,13 +268,13 @@ namespace IW4MAdmin
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
-            if (Args.Length < (C.requiredArgNum))
+            if (Args.Length < (C.RequiredArgumentCount))
             {
-                await E.Origin.Tell($"Not enough arguments supplied! ^5({C.requiredArgNum} ^7required)");
+                await E.Origin.Tell($"Not enough arguments supplied! ^5({C.RequiredArgumentCount} ^7required)");
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
-           if (C.needsTarget || Args.Length > 0)
+           if (C.RequiresTarget || Args.Length > 0)
             {
                 int cNum = -1;
                 int.TryParse(Args[0], out cNum);
@@ -306,9 +305,9 @@ namespace IW4MAdmin
                 }
 
                 else
-                    E.Target = clientFromName(Args[0]);
+                    E.Target = GetClientByName(Args[0]);
 
-                if (E.Target == null && C.needsTarget)
+                if (E.Target == null && C.RequiresTarget)
                 {
                     await E.Origin.Tell("Unable to find specified player.");
                     throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
@@ -435,7 +434,7 @@ namespace IW4MAdmin
                             else
                             {
                                 string[] game_event = lines[count].Split(';');
-                                Event event_ = Event.requestEvent(game_event, this);
+                                Event event_ = Event.ParseEventString(game_event, this);
                                 if (event_ != null)
                                 {
                                     if (event_.Origin == null)
@@ -591,7 +590,7 @@ namespace IW4MAdmin
 
                     if (C != null)
                     {
-                        if (C.needsTarget && E.Target == null)
+                        if (C.RequiresTarget && E.Target == null)
                         {
                             Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
                             return;
@@ -765,18 +764,11 @@ namespace IW4MAdmin
 
         }
 
-        public override bool Reload()
-        {
-            return false;
-        }
 
-        public override bool _Reload()
+        public override bool Reload()
         {
             try
             {
-                messages = null;
-                maps = null;
-                rules = null;
                 initMaps();
                 initMessages();
                 initRules();
@@ -808,13 +800,5 @@ namespace IW4MAdmin
             Manager.GetCommands().Add(new Plugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
          
         }
-
-        public bool commandQueueEmpty()
-        {
-            return commandQueue.Count == 0;
-        }
-
-        //Objects
-        private Queue<String> commandQueue;
     }
 }

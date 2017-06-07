@@ -46,6 +46,34 @@ namespace SharedLibrary
             return newStr;
         }
 
+        public static List<Player> PlayersFromStatus(String[] Status)
+        {
+            List<Player> StatusPlayers = new List<Player>();
+
+            foreach (String S in Status)
+            {
+                String responseLine = S.Trim();
+
+                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 72) // its a client line!
+                {
+                    String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    int cID = -1;
+                    int Ping = -1;
+                    Int32.TryParse(playerInfo[2], out Ping);
+                    String cName = Utilities.StripColors(responseLine.Substring(46, 18)).Trim();
+                    String npID = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
+                    int.TryParse(playerInfo[0], out cID);
+                    String cIP = responseLine.Substring(72, 20).Trim().Split(':')[0];
+                    if (cIP.Split(' ').Count() > 1)
+                        cIP = cIP.Split(' ')[1];
+                    Player P = new Player(cName, npID, cID, cIP) { Ping = Ping };
+                    StatusPlayers.Add(P);
+                }
+            }
+
+            return StatusPlayers;
+        }
+
         public static Player.Permission matchPermission(String str)
         {
             String lookingFor = str.ToLower();

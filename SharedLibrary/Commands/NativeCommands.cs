@@ -496,9 +496,9 @@ namespace SharedLibrary.Commands
         public override async Task ExecuteAsync(Event E)
         { 
             if (E.Owner.Reload())
-                await E.Origin.Tell("Sucessfully reloaded configs!");
+                await E.Origin.Tell("Sucessfully reloaded configuration files");
             else
-                await E.Origin.Tell("Unable to reload configs :(");
+                await E.Origin.Tell("Unable to reload configuration files");
         }
     }
 
@@ -690,8 +690,11 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.ExecuteCommandAsync(E.Data.Trim());
-            await E.Origin.Tell("Successfuly sent RCON command!");
+            var Response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
+            foreach (string S in Response)
+                await E.Origin.Tell(S.StripColors());
+            if (Response.Length == 0)
+                await E.Origin.Tell("Successfully sent RCON command!");
         }
     }
 }

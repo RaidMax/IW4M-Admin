@@ -93,8 +93,9 @@ namespace IW4MAdmin
 
         static private String CheckUpdate()
         {
-            Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
-            return Ver.Read();
+            //Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
+            //return Ver.Read();
+            return "0";
         }
 
         static void CheckDirectories()

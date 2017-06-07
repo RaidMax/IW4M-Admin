@@ -150,25 +150,16 @@ namespace SharedLibrary
         /// <param name="L">Game log line containing event</param>
         /// <param name="cIDPos">Position in the line where the cliet ID is written</param>
         /// <returns>Matching player if found</returns>
-        abstract public Player clientFromEventLine(String[] L, int cIDPos);
+        abstract public Player ParseClientFromString(String[] L, int cIDPos);
 
         /// <summary>
         /// Get a player by name
         /// </summary>
         /// <param name="pName">Player name to search for</param>
         /// <returns>Matching player if found</returns>
-        public Player clientFromName(String pName)
+        public Player GetClientByName(String pName)
         {
-            lock (Players)
-            {
-                foreach (var P in Players)
-                {
-                    if (P != null && P.Name.ToLower().Contains(pName.ToLower()))
-                        return P;
-                }
-            }
-
-            return null;
+            return Players.FirstOrDefault(p => p.Name.ToLower() == pName.ToLower());
         }
 
         /// <summary>
@@ -176,7 +167,7 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="C">Player to check if banned</param>
         /// <returns>Matching ban if found</returns>
-        abstract public Penalty isBanned(Player C);
+        abstract public Penalty IsBanned(Player C);
 
         /// <summary>
         /// Process requested command correlating to an event
@@ -210,7 +201,6 @@ namespace SharedLibrary
         /// </summary>
         /// <returns>True on sucess</returns>
         abstract public bool Reload();
-        abstract public bool _Reload();
 
         /// <summary>
         /// Send a message to all players

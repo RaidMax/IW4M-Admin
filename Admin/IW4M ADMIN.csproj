@@ -124,8 +124,6 @@
   <ItemGroup>
     <Compile Include="Commands.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="Connection.cs" />
-    <Compile Include="Heartbeat.cs" />
     <Compile Include="Kayak.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Main.cs" />
@@ -333,6 +331,8 @@
 copy /Y "$(TargetDir)$(TargetName).exe" "$(SolutionDir)BUILD"
 copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
+
+xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
 
 
 if $(ConfigurationName) == Release powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.3

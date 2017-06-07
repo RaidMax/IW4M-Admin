@@ -102,7 +102,7 @@ namespace IW4MAdmin
 
             }
 
-            webServiceTask = WebService.getScheduler();
+            webServiceTask = WebService.GetScheduler();
 
             WebThread = new Thread(webServiceTask.Start)
             {

@@ -71,6 +71,7 @@
     <Compile Include="Exceptions\CommandException.cs" />
     <Compile Include="Exceptions\DvarException.cs" />
     <Compile Include="Exceptions\NetworkException.cs" />
+    <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\ServerException.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IManager.cs" />

@@ -421,6 +421,11 @@ namespace SharedLibrary
             ruleFile.Close();
         }
 
+        public override string ToString()
+        {
+            return $"{IP}_{Port}";
+        }
+
         /// <summary>
         /// Load up the built in commands
         /// </summary>

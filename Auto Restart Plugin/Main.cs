@@ -3,6 +3,7 @@ using SharedLibrary;
 using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
+#if DEBUG
 namespace Auto_Restart_Plugin
 {
     public class Main : IPlugin
@@ -70,3 +71,4 @@ namespace Auto_Restart_Plugin
         }
     }
 }
+#endif

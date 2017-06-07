@@ -18,7 +18,7 @@ namespace IW4MAdmin
 
             if (e.InnerException != null)
             {
-                Manager.GetInstance().Logger.WriteDebug($"Inner Execption: {e.InnerException.Message}");
+                Manager.GetInstance().Logger.WriteDebug($"Inner Exception: {e.InnerException.Message}");
                 Manager.GetInstance().Logger.WriteDebug($"Inner Stack Trace: {e.InnerException.StackTrace}");
             }
 
@@ -34,14 +34,13 @@ namespace IW4MAdmin
     {
         public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response, string IP)
         {
-            // Program.getManager().mainLog.Write("HTTP request received", SharedLibrary.Log.Level.Debug);
             NameValueCollection querySet = new NameValueCollection();
 
             if (request.QueryString != null)
                 querySet = System.Web.HttpUtility.ParseQueryString(SharedLibrary.Utilities.removeNastyChars(request.QueryString));
 
             querySet.Set("IP", IP);
-            SharedLibrary.HttpResponse requestedPage = WebService.getPage(request.Path, querySet, request.Headers);
+            SharedLibrary.HttpResponse requestedPage = WebService.GetPage(request.Path, querySet, request.Headers);
 
             var headers = new HttpResponseHead()
             {
@@ -102,7 +101,7 @@ namespace IW4MAdmin
 
         public void OnError(Exception error)
         {
-            errorCallback(error);
+            errorCallback?.Invoke(error);
         }
 
         public void OnEnd()

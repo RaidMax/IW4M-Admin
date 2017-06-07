@@ -11,11 +11,6 @@ namespace SharedLibrary.Interfaces
         void Write();
     }
 
-    public class SerializeException : Exception
-    {
-       public SerializeException(string msg) : base(msg) { }
-    }
-
     public class Serialize<T> : ISerializable<T>
     {
         public static T Read(string filename)
@@ -28,7 +23,7 @@ namespace SharedLibrary.Interfaces
 
             catch (Exception e)
             {
-                throw new SerializeException($"Could not desialize file {filename}: {e.Message}");
+                throw new Exceptions.SerializeException($"Could not desialize file {filename}: {e.Message}");
             }
         }
 
@@ -42,10 +37,24 @@ namespace SharedLibrary.Interfaces
 
             catch (Exception e)
             {
-                throw new SerializeException($"Could not serialize file {Filename()}: {e.Message}");
+                throw new Exceptions.SerializeException($"Could not serialize file {Filename()}: {e.Message}");
             }
         }
 
-        public virtual string Filename() { return this.ToString();  }
+        public static void Write(string filename, T data)
+        {
+            try
+            {
+                string configText = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+                File.WriteAllText(filename, configText);
+            }
+
+            catch (Exception e)
+            {
+                throw new Exceptions.SerializeException($"Could not serialize file {filename}: {e.Message}");
+            }
+        }
+
+        public virtual string Filename() { return ToString();  }
     }
 }

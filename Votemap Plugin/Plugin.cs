@@ -6,6 +6,7 @@ using SharedLibrary.Network;
 using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
+#if DEBUG
 namespace Votemap_Plugin
 {
     /// <summary>
@@ -305,3 +306,4 @@ namespace Votemap_Plugin
         }
     }
 }
+#endif

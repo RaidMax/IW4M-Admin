@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Kayak;
+using Kayak.Http;
+using SharedLibrary;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Kayak;
-using Kayak.Http;
 using System.Net;
+using System.Text;
 using System.Threading;
-using SharedLibrary;
 
 namespace IW4MAdmin
 {
@@ -14,7 +14,7 @@ namespace IW4MAdmin
     {
         public static IServer webService;
 
-        public static IScheduler getScheduler()
+        public static IScheduler GetScheduler()
         {
             var webScheduler = Kayak.KayakScheduler.Factory.Create(new Scheduler());
             webService = KayakServer.Factory.CreateHttp(new Request(), webScheduler);
@@ -30,14 +30,14 @@ namespace IW4MAdmin
             SharedLibrary.WebService.pageList.Add(new ConsoleJSON());
             SharedLibrary.WebService.pageList.Add(new PubbansJSON());
 
-            Thread scheduleThread = new Thread(() => { scheduleThreadStart(webScheduler, webService); });
+            Thread scheduleThread = new Thread(() => { ScheduleThreadStart(webScheduler, webService); });
             scheduleThread.Name = "Web Service Thread";
             scheduleThread.Start();
 
             return webScheduler;
         }
 
-        private static void scheduleThreadStart(IScheduler S, IServer ss)
+        private static void ScheduleThreadStart(IScheduler S, IServer ss)
         {
             try
             {
@@ -65,8 +65,14 @@ namespace IW4MAdmin
             }
         }
 
-        public static HttpResponse getPage(string path, System.Collections.Specialized.NameValueCollection queryset, IDictionary<string, string> headers)
+        public static HttpResponse GetPage(string path, System.Collections.Specialized.NameValueCollection queryset, IDictionary<string, string> headers)
         {
+            if (SharedLibrary.WebService.pageList == null || SharedLibrary.WebService.pageList.Count == 0)
+                return new HttpResponse() { content = "Error: page list not initialized!", contentType = "text/plaintext" };
+
+            if (path == null)
+                return new HttpResponse() { content = "Error: no path specified", contentType = "text/plaintext" };
+
             IPage requestedPage = SharedLibrary.WebService.pageList.Find(x => x.getPath().ToLower() == path.ToLower());
 
             if (requestedPage != null)

@@ -53,8 +53,7 @@ namespace IW4MAdmin
 
                 catch (Exception e)
                 {
-                    Manager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");
-                    
+                    Manager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");           
                 }
             }
 
@@ -196,10 +195,10 @@ namespace IW4MAdmin
                 eachServer.maxPlayers = S.MaxClients;
                 eachServer.mapName = S.CurrentMap.Alias;
                 eachServer.gameType = Utilities.gametypeLocalized(S.getGametype());
-                eachServer.currentPlayers = S.getPlayers().Count;
-                eachServer.chatHistory = S.chatHistory;
+                eachServer.currentPlayers = S.GetPlayersAsList().Count;
+                eachServer.chatHistory = S.ChatHistory;
                 eachServer.players = new List<PlayerInfo>();
-                foreach (Player P in S.getPlayers())
+                foreach (Player P in S.GetPlayersAsList())
                 {
                     PlayerInfo pInfo = new PlayerInfo();
                     pInfo.playerID = P.DatabaseID;

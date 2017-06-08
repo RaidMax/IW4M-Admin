@@ -266,7 +266,7 @@ namespace Votemap_Plugin
                         MapResult m = serverVotes.getTopMap();
                         await S.Broadcast("Voting has ended!");
 
-                        if (m.voteNum < minVotes && S.getPlayers().Count > 4)
+                        if (m.voteNum < minVotes && S.GetPlayersAsList().Count > 4)
                             await S.Broadcast("Vote map failed. At least ^5" + minVotes + " ^7people must choose the same map");
                         else
                         {

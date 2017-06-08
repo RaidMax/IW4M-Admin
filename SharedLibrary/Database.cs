@@ -384,7 +384,7 @@ namespace SharedLibrary
             var Con = GetNewConnection();
             SQLiteCommand cmd = new SQLiteCommand(Con)
             {
-                CommandText = "SELECT * FROM CLIENTS WHERE Name LIKE @Name LIMIT 32"
+                CommandText = "SELECT * FROM CLIENTS WHERE Name LIKE @Name"
             };
             cmd.Parameters.AddWithValue("@Name", '%' + name + '%');
 

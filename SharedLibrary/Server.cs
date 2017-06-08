@@ -27,7 +27,7 @@ namespace SharedLibrary
             events = new Queue<Event>();
             Reports = new List<Report>();
             playerHistory = new Queue<PlayerHistory>();
-            chatHistory = new List<Chat>();
+            ChatHistory = new List<Chat>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
             initMacros();
@@ -96,23 +96,12 @@ namespace SharedLibrary
             return Port;
         }
 
-        //Returns number of active clients on server -- *INT*
-        public int getNumPlayers()
-        {
-            return ClientNum;
-        }
-
         //Returns list of all current players
-        public List<Player> getPlayers()
+        public List<Player> GetPlayersAsList()
         {
             return Players.FindAll(x => x != null);
         }
 
-
-        public int pID()
-        {
-            return this.PID;
-        }
 
         /// <summary>
         /// Get any know aliases ( name or ip based ) from the database
@@ -159,7 +148,7 @@ namespace SharedLibrary
         /// <returns>Matching player if found</returns>
         public Player GetClientByName(String pName)
         {
-            return Players.FirstOrDefault(p => p.Name.ToLower() == pName.ToLower());
+            return Players.FirstOrDefault(p => p != null && p.Name.ToLower() == pName.ToLower());
         }
 
         /// <summary>
@@ -209,7 +198,7 @@ namespace SharedLibrary
         public async Task Broadcast(String Message)
         {
 #if DEBUG
-           // return;
+            return;
 #endif
             await this.ExecuteCommandAsync($"sayraw  {Message}");
         }
@@ -222,8 +211,8 @@ namespace SharedLibrary
         public async Task Tell(String Message, Player Target)
         {
 #if DEBUG
-            //if (!Target.lastEvent.Remote)
-            //    return;
+            if (!Target.lastEvent.Remote)
+               return;
 #endif
             if (Target.ClientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
                 await this.ExecuteCommandAsync($"tellraw {Target.ClientID} {Message}^7");
@@ -308,13 +297,11 @@ namespace SharedLibrary
             if ((requestTime - lastWebChat).TotalSeconds > 1)
             {
                 Broadcast("^1[WEBCHAT] ^5" + P.Name + "^7 - " + Message);
-                while (chatHistory.Count > Math.Ceiling((double)ClientNum / 2))
-                    chatHistory.RemoveAt(0);
 
                 if (Message.Length > 50)
                     Message = Message.Substring(0, 50) + "...";
 
-                chatHistory.Add(new Chat(P.Name, Utilities.StripColors(Message), DateTime.Now));
+                ChatHistory.Add(new Chat(P.Name, Utilities.StripColors(Message), DateTime.Now));
                 lastWebChat = DateTime.Now;
             }
         }
@@ -432,7 +419,7 @@ namespace SharedLibrary
         public String Gametype;
         public int totalKills = 0;
         public List<Report> Reports;
-        public List<Chat> chatHistory;
+        public List<Chat> ChatHistory;
         public Queue<PlayerHistory> playerHistory { get; private set; }
 
         //Info
@@ -452,8 +439,6 @@ namespace SharedLibrary
 
         protected DateTime lastWebChat;
         public string Password { get; private set; }
-        public int Handle { get; private set; }
-        protected int PID;
         protected IFile logFile;
 
         // Log stuff

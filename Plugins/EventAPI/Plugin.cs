@@ -35,7 +35,7 @@ namespace EventAPI
             {
                 StringBuilder s = new StringBuilder();
                 foreach (var S in Events.activeServers)
-                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.getName(), S.getPlayers().Count, Utilities.gametypeLocalized(S.getGametype()), S.CurrentMap.Name, S.MaxClients));
+                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.getName(), S.GetPlayersAsList().Count, Utilities.gametypeLocalized(S.getGametype()), S.CurrentMap.Name, S.MaxClients));
                 requestedEvent.Event = new RestEvent(RestEvent.eType.STATUS, RestEvent.eVersion.IW4MAdmin, s.ToString(), "Status", "", "");
                 requestedEvent.eventCount = 1; 
             }

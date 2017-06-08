@@ -181,7 +181,7 @@ namespace StatsPlugin
 
             if (E.Type == Event.GType.MapEnd || E.Type == Event.GType.Stop)
             {
-                foreach (Player P in S.getPlayers())
+                foreach (Player P in S.GetPlayersAsList())
                 {
 
                     if (P == null)

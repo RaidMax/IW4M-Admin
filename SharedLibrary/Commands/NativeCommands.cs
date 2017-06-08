@@ -171,7 +171,7 @@ namespace SharedLibrary.Commands
                 else
                     playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.Level), P.ClientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
 
-                if (count == 2 || E.Owner.getPlayers().Count == 1)
+                if (count == 2 || E.Owner.GetPlayersAsList().Count == 1)
                 {
                     await E.Origin.Tell(playerList.ToString());
                     count = 0;
@@ -293,7 +293,7 @@ namespace SharedLibrary.Commands
                 // todo: manager DB
                 foreach (var server in E.Owner.Manager.GetServers())
                 {
-                    foreach (var player in server.getPlayers())
+                    foreach (var player in server.GetPlayersAsList())
                     {
                         if (player != null && player.NetworkID == E.Target.NetworkID)
                         {
@@ -623,7 +623,6 @@ namespace SharedLibrary.Commands
 
             var B = E.Owner.Manager.GetClientPenalties().FindPenalties(E.Target);
             var BannedPenalty = B.Find(b => b.BType == Penalty.Type.Ban);
-
 
             if (BannedPenalty == null)
             {

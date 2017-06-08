@@ -153,12 +153,7 @@ namespace IW4MAdmin
     
                 Players[NewPlayer.ClientID] = null; 
                 Players[NewPlayer.ClientID] = NewPlayer;
-                Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.NetworkID} connecting..."); // they're clean
-
-                // todo: get this out of here
-                while (chatHistory.Count > Math.Ceiling((double)ClientNum / 2))
-                    chatHistory.RemoveAt(0);
-                chatHistory.Add(new Chat(NewPlayer.Name, "<i>CONNECTED</i>", DateTime.Now));
+                Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.NetworkID} connecting..."); // they're clean          
 
                 if (NewPlayer.Level > Player.Permission.Moderator)
                     await NewPlayer.Tell("There are ^5" + Reports.Count + " ^7recent reports!");
@@ -189,8 +184,6 @@ namespace IW4MAdmin
                 Players[cNum] = null;
 
                 ClientNum--;
-                if (ClientNum == 0)
-                    chatHistory.Clear();
             }
         }
 
@@ -533,17 +526,22 @@ namespace IW4MAdmin
         //Process any server event
         override protected async Task ProcessEvent(Event E)
         {
+            //todo: move
+            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
+                ChatHistory.RemoveAt(0);
+
             if (E.Type == Event.GType.Connect)
             {
+                ChatHistory.Add(new Chat(E.Origin.Name, "<i>CONNECTED</i>", DateTime.Now));
                 return;
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
+                ChatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
 
-                while (chatHistory.Count > Math.Ceiling(((double)ClientNum - 1) / 2))
-                    chatHistory.RemoveAt(0);
-                chatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
+                if (ClientNum == 0)
+                    ChatHistory.Clear();
 
                 return;
             }
@@ -621,10 +619,8 @@ namespace IW4MAdmin
                     E.Data = E.Data.StripColors().CleanChars();
                     if (E.Data.Length > 50)
                         E.Data = E.Data.Substring(0, 50) + "...";
-                    while (chatHistory.Count > Math.Ceiling((double)ClientNum / 2))
-                        chatHistory.RemoveAt(0);
 
-                    chatHistory.Add(new Chat(E.Origin.Name, E.Data, DateTime.Now));
+                    ChatHistory.Add(new Chat(E.Origin.Name, E.Data, DateTime.Now));
 
                     return;
                 }
@@ -707,9 +703,9 @@ namespace IW4MAdmin
             // banned from all servers if active
             foreach (var server in Manager.GetServers())
             {
-                if (server.getPlayers().Count > 0)
+                if (server.GetPlayersAsList().Count > 0)
                 {
-                    var activeClient = server.getPlayers().Find(x => x.NetworkID == Target.NetworkID);
+                    var activeClient = server.GetPlayersAsList().Find(x => x.NetworkID == Target.NetworkID);
                     if (activeClient != null)
                         await server.ExecuteCommandAsync("tempbanclient " + activeClient.ClientID + " \"" + Message + "^7" + GetWebsiteString() + "^7\"");
                 }

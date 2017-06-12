@@ -75,8 +75,8 @@ namespace IW4MAdmin
 
         public IDisposable Connect(IDataConsumer channel)
         {
-            channel.OnData(data, null);
-            channel.OnEnd();
+            channel?.OnData(data, null);
+            channel?.OnEnd();
             return null;
         }
     }
@@ -95,7 +95,7 @@ namespace IW4MAdmin
 
         public bool OnData(ArraySegment<byte> data, Action continuation)
         {
-            buffer.Add(data);
+            buffer?.Add(data);
             return false;
         }
 

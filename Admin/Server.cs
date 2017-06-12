@@ -334,7 +334,7 @@ namespace IW4MAdmin
             }
         }
 
-         async Task PollPlayersAsync()
+        async Task PollPlayersAsync()
         {
             var CurrentPlayers = await this.GetStatusAsync();
 
@@ -346,7 +346,6 @@ namespace IW4MAdmin
 
             foreach (var P in CurrentPlayers)
                 await AddPlayer(P);
-
         }
 
         long l_size = -1;
@@ -363,7 +362,23 @@ namespace IW4MAdmin
             try
 #endif
             {
-                await PollPlayersAsync();
+
+                if ((DateTime.Now - LastPoll).TotalMinutes < 5 && ConnectionErrors > 1)
+                    return;
+
+                try
+                {
+                    await PollPlayersAsync();
+                    ConnectionErrors = 0;
+                    LastPoll = DateTime.Now;
+                }
+
+                catch(SharedLibrary.Exceptions.NetworkException e)
+                {
+                    ConnectionErrors++;
+                    if (ConnectionErrors > 1)
+                        Logger.WriteError($"{e.Message} {IP}:{Port}, reducing polling rate");
+                }
 
                 lastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
@@ -540,7 +555,9 @@ namespace IW4MAdmin
             {
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
 
-                if (ClientNum == 0)
+                // the last client hasn't fully disconnected yet
+                // so there will still be at least 1 client left
+                if (ClientNum < 2)
                     ChatHistory.Clear();
 
                 return;
@@ -788,11 +805,9 @@ namespace IW4MAdmin
 
         override public void initCommands()
         {
-
             foreach (Command C in PluginImporter.potentialCommands)
                 Manager.GetCommands().Add(C);
 
-        
             Manager.GetCommands().Add(new Plugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
          
         }

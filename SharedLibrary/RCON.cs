@@ -69,7 +69,7 @@ namespace SharedLibrary.Network
                 return SplitResponse;
             }
 
-            catch (SocketException)
+            catch (Exception)
             {
                 attempts++;
                 if (attempts > 5)
@@ -131,7 +131,6 @@ namespace SharedLibrary.Network
 
         static byte[] GetRequestBytes(string Request)
         {
-
             Byte[] initialRequestBytes = Encoding.Unicode.GetBytes(Request);
             Byte[] fixedRequest = new Byte[initialRequestBytes.Length / 2];
 

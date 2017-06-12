@@ -172,12 +172,6 @@ namespace SharedLibrary
         }
 
         /// <summary>
-        /// Set up the basic variables ( base path / hostname / etc ) that allow the monitor thread to work
-        /// </summary>
-        /// <returns>True if no issues initializing, false otherwise</returns>
-        //abstract public bool intializeBasics();
-
-        /// <summary>
         /// Process any server event
         /// </summary>
         /// <param name="E">Event</param>
@@ -421,6 +415,9 @@ namespace SharedLibrary
         public List<Report> Reports;
         public List<Chat> ChatHistory;
         public Queue<PlayerHistory> playerHistory { get; private set; }
+
+        protected int ConnectionErrors;
+        protected DateTime LastPoll;
 
         //Info
         protected String IP;

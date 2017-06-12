@@ -119,7 +119,7 @@ namespace SharedLibrary
                 {
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
                     string message = rgx.Replace(line[4], "");
-                    return new Event(GType.Say, Utilities.removeNastyChars(message).StripColors(), SV.ParseClientFromString(line, 2), null, SV) { Message = Utilities.removeNastyChars(message).StripColors() };
+                    return new Event(GType.Say, Utilities.StripIllegalCharacters(message).StripColors(), SV.ParseClientFromString(line, 2), null, SV) { Message = Utilities.StripIllegalCharacters(message).StripColors() };
                 }
 
                 if (eventType == ":")

@@ -24,7 +24,7 @@ namespace MessageBoard
 
         public Post(int id, int threadid, bool visible, string title, string content, User author, DateTime creationDate, DateTime updatedDate) : base(id, title, visible, content, 0, author, null, creationDate, updatedDate)
         {
-            this.lastModificationString = SharedLibrary.Utilities.timePassed(creationDate);
+            this.lastModificationString = SharedLibrary.Utilities.GetTimePassed(creationDate);
             this.threadid = threadid;
         }
         
@@ -118,7 +118,7 @@ namespace MessageBoard
             this.threadCategory = threadCategory;
             this.creationDate = creationDate;
             this.updatedDate = updatedDate;
-            this.lastModificationString = SharedLibrary.Utilities.timePassed(updatedDate);
+            this.lastModificationString = SharedLibrary.Utilities.GetTimePassed(updatedDate);
             this.visible = visible;
         }
 

@@ -202,7 +202,7 @@ namespace IW4MAdmin
                     serverPort = S.GetPort(),
                     maxPlayers = S.MaxClients,
                     mapName = S.CurrentMap.Alias,
-                    gameType = Utilities.gametypeLocalized(S.Gametype),
+                    gameType = Utilities.GetLocalizedGametype(S.Gametype),
                     currentPlayers = S.GetPlayersAsList().Count,
                     chatHistory = S.ChatHistory,
                     players = new List<PlayerInfo>()
@@ -406,7 +406,7 @@ namespace IW4MAdmin
                     adminName = admin.Name,
                     adminLevel = admin.Level.ToString(),
                     penaltyReason = p.Reason,
-                    penaltyTime = SharedLibrary.Utilities.timePassed(p.When),
+                    penaltyTime = SharedLibrary.Utilities.GetTimePassed(p.When),
                     penaltyType = p.BType.ToString(),
                     playerName = penalized.Name,
                     playerID = penalized.DatabaseID
@@ -683,7 +683,7 @@ namespace IW4MAdmin
                     }
 
                     eachPlayer.playerConnections = pp.Connections;
-                    eachPlayer.lastSeen = Utilities.timePassed(pp.LastConnection);
+                    eachPlayer.lastSeen = Utilities.GetTimePassed(pp.LastConnection);
                     pInfo.Add(eachPlayer);
 
                 }

@@ -124,7 +124,7 @@ namespace SharedLibrary
 
         public String GetLastConnection()
         {
-            return Utilities.timePassed(LastConnection);
+            return Utilities.GetTimePassed(LastConnection);
         }
 
         public void UpdateName(String n)

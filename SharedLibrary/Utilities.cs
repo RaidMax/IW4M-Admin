@@ -10,7 +10,7 @@ namespace SharedLibrary
     public static class Utilities
     {
         //Get string with specified number of spaces -- really only for visual output
-        public static String getSpaces(int Num)
+        public static String GetSpaces(int Num)
         {
             String SpaceString = String.Empty;
             while (Num > 0)
@@ -20,12 +20,6 @@ namespace SharedLibrary
             }
 
             return SpaceString;
-        }
-
-        //Sleep for x amount of seconds
-        public static void Wait(double time)
-        {
-            Thread.Sleep((int)Math.Ceiling(time * 1000));
         }
 
         //Remove words from a space delimited string
@@ -74,14 +68,11 @@ namespace SharedLibrary
             return StatusPlayers;
         }
 
-        public static Player.Permission matchPermission(String str)
+        public static Player.Permission MatchPermission(String str)
         {
             String lookingFor = str.ToLower();
-#if REPZ_BUILD
-            for (Player.Permission Perm = Player.Permission.User; Perm <= Player.Permission.Owner; Perm++)
-#else
+
             for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Owner; Perm++)
-#endif
             {
                 if (lookingFor.Contains(Perm.ToString().ToLower()))
                     return Perm;
@@ -90,12 +81,10 @@ namespace SharedLibrary
             return Player.Permission.Banned;
         }
 
-        public static String removeNastyChars(String str)
+        public static String StripIllegalCharacters(String str)
         {
             if (str != null)
-            {
                 return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "").Replace("&amp;", "&").Replace("\"", "''").Replace("'", "").Replace("?", "");
-            }
 
             else
                 return String.Empty;
@@ -130,7 +119,7 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="level">Specified player level</param>
         /// <returns></returns>
-        public static String levelToColor(Player.Permission level)
+        public static String ConvertLevelToColor(Player.Permission level)
         {
             switch (level)
             {
@@ -149,7 +138,7 @@ namespace SharedLibrary
             }
         }
 
-        public static String ProcessMessageToken(IList<MessageToken> tokens, String str)
+        public static String ProcessMessageToken(IList<Helpers.MessageToken> tokens, String str)
         {
             MatchCollection RegexMatches = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
             foreach (Match M in RegexMatches)
@@ -176,7 +165,7 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="input">Shorthand gametype reported from server</param>
         /// <returns></returns>
-        public static String gametypeLocalized(String input)
+        public static String GetLocalizedGametype(String input)
         {
             switch (input)
             {
@@ -232,7 +221,7 @@ namespace SharedLibrary
             return datetime.ToString("yyyy-MM-dd H:mm:ss");
         }
 
-        public static String timePassed(DateTime start)
+        public static String GetTimePassed(DateTime start)
         {
             TimeSpan Elapsed = DateTime.Now - start;
 
@@ -258,53 +247,6 @@ namespace SharedLibrary
             }
             else
                 return "a very long time";
-        }
-
-        public static String TimesConnected(this Player P)
-        {
-            int connection = P.Connections;
-            String Prefix = String.Empty;
-            if (connection % 10 > 3 || connection % 10 == 0 || (connection % 100 > 9 && connection % 100 < 19))
-                Prefix = "th";
-            else
-            {
-                switch (connection % 10)
-                {
-                    case 1:
-                        Prefix = "st";
-                        break;
-                    case 2:
-                        Prefix = "nd";
-                        break;
-                    case 3:
-                        Prefix = "rd";
-                        break;
-                }
-            }
-
-            switch (connection)
-            {
-                case 0:
-                case 1:
-                    return "first";
-                case 2:
-                    return "second";
-                case 3:
-                    return "third";
-                case 4:
-                    return "fourth";
-                case 5:
-                    return "fifth";
-                case 100:
-                    return "One-Hundreth (amazing!)";
-                case 500:
-                    return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
-                case 1000:
-                    return "you deserve a medal. it's your ^11000th^7";
-
-                default:
-                    return connection.ToString() + Prefix;
-            }
         }
     }
 }

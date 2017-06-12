@@ -66,18 +66,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsyncStatus.cs" />
+    <Compile Include="Helpers\AsyncStatus.cs" />
     <Compile Include="Commands\NativeCommands.cs" />
     <Compile Include="Exceptions\CommandException.cs" />
     <Compile Include="Exceptions\DvarException.cs" />
     <Compile Include="Exceptions\NetworkException.cs" />
     <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\ServerException.cs" />
+    <Compile Include="Helpers\Configuration.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IManager.cs" />
     <Compile Include="Interfaces\IPenaltyList.cs" />
     <Compile Include="Interfaces\ISerializable.cs" />
-    <Compile Include="MessageToken.cs" />
+    <Compile Include="Helpers\MessageToken.cs" />
     <Compile Include="Penalty.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Database.cs" />
@@ -85,12 +86,12 @@
     <Compile Include="File.cs" />
     <Compile Include="Dvar.cs" />
     <Compile Include="Map.cs" />
-    <Compile Include="Miscellaneous.cs" />
+    <Compile Include="Helpers\PlayerHistory.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Interfaces\IPlugin.cs" />
+    <Compile Include="PluginImporter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RCON.cs" />
-    <Compile Include="Report.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WebService.cs" />

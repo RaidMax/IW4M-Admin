@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Net;
 using System.Threading;
 using SharedLibrary;
 using System.IO;
-using SharedLibrary.Network;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin
@@ -17,12 +12,12 @@ namespace IW4MAdmin
     {
         static Manager Instance;
         public List<Server> Servers { get; private set; }
-        List<AsyncStatus> TaskStatuses;
+        List<SharedLibrary.Helpers.AsyncStatus> TaskStatuses;
         Database ClientDatabase;
         Database AliasesDatabase;
         SharedLibrary.Interfaces.IPenaltyList ClientPenalties;
         List<Command> Commands;
-        List<MessageToken> MessageTokens;
+        List<SharedLibrary.Helpers.MessageToken> MessageTokens;
         Kayak.IScheduler webServiceTask;
         Thread WebThread;
         public SharedLibrary.Interfaces.ILogger Logger { get; private set; }
@@ -38,8 +33,8 @@ namespace IW4MAdmin
             Logger = new Logger("Logs/IW4MAdmin.log");
             Servers = new List<Server>();
             Commands = new List<Command>();
-            TaskStatuses = new List<AsyncStatus>();
-            MessageTokens = new List<MessageToken>();
+            TaskStatuses = new List<SharedLibrary.Helpers.AsyncStatus>();
+            MessageTokens = new List<SharedLibrary.Helpers.MessageToken>();
 
             ClientDatabase = new ClientsDB("Database/clients.rm");
             AliasesDatabase = new AliasesDB("Database/aliases.rm");
@@ -69,7 +64,7 @@ namespace IW4MAdmin
                 ServerConfig.Generate();
 
             SharedLibrary.WebService.Init();
-            PluginImporter.Load();
+            SharedLibrary.Plugins.PluginImporter.Load(this);
 
             foreach (var file in Configs)
             {
@@ -84,8 +79,11 @@ namespace IW4MAdmin
                         Servers.Add(ServerInstance);
 
                         // this way we can keep track of execution time and see if problems arise.
-                        var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
+                        var Status = new SharedLibrary.Helpers.AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
                         TaskStatuses.Add(Status);
+
+                        foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+                            await Plugin.OnLoadAsync(ServerInstance);
 
                         Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
                     }
@@ -114,7 +112,6 @@ namespace IW4MAdmin
             Running = true;
         }
         
-
         public void Start()
         {
             while (Running)
@@ -166,7 +163,7 @@ namespace IW4MAdmin
             return Logger;
         }
 
-        public IList<MessageToken> GetMessageTokens()
+        public IList<SharedLibrary.Helpers.MessageToken> GetMessageTokens()
         {
             return MessageTokens;
         }

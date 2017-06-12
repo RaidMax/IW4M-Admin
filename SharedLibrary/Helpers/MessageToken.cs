@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SharedLibrary
+namespace SharedLibrary.Helpers
 {
     public class MessageToken
     {

@@ -42,7 +42,7 @@ namespace IW4MAdmin
             NameValueCollection querySet = new NameValueCollection();
 
             if (request.QueryString != null)
-                querySet = System.Web.HttpUtility.ParseQueryString(SharedLibrary.Utilities.removeNastyChars(request.QueryString));
+                querySet = System.Web.HttpUtility.ParseQueryString(SharedLibrary.Utilities.StripIllegalCharacters(request.QueryString));
 
             querySet.Set("IP", IP);
             SharedLibrary.HttpResponse requestedPage = WebService.GetPage(request.Path, querySet, request.Headers);

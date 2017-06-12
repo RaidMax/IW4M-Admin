@@ -77,7 +77,7 @@ namespace MessageBoard
             this.avatarURL = avatarURL;
             this.posts = posts;
 
-            this.lastLoginString = SharedLibrary.Utilities.timePassed(lastLogin);
+            this.lastLoginString = SharedLibrary.Utilities.GetTimePassed(lastLogin);
         }
 
         public int getID()

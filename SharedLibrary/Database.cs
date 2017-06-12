@@ -509,7 +509,7 @@ namespace SharedLibrary
         {
             Dictionary<String, object> newPlayer = new Dictionary<String, object>
             {
-                { "Name", Utilities.removeNastyChars(P.Name) },
+                { "Name", Utilities.StripIllegalCharacters(P.Name) },
                 { "npID", P.NetworkID },
                 { "Level", (int)P.Level },
                 { "LastOffense", "" },
@@ -546,7 +546,7 @@ namespace SharedLibrary
         {
             Dictionary<String, object> newBan = new Dictionary<String, object>
             {
-                { "Reason", Utilities.removeNastyChars(B.Reason) },
+                { "Reason", Utilities.StripIllegalCharacters(B.Reason) },
                 { "npID", B.OffenderID },
                 { "bannedByID", B.PenaltyOriginID },
                 { "IP", B.IP },
@@ -656,7 +656,7 @@ namespace SharedLibrary
             Dictionary<String, object> newPlayer = new Dictionary<String, object>
             {
                 { "Number", Alias.Number },
-                { "NAMES", Utilities.removeNastyChars(String.Join(";", Alias.Names)) },
+                { "NAMES", Utilities.StripIllegalCharacters(String.Join(";", Alias.Names)) },
                 { "IPS", String.Join(";", Alias.IPS) }
             };
             Insert("ALIASES", newPlayer);

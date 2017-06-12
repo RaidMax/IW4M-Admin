@@ -133,12 +133,12 @@ namespace StatsPlugin
             get { return "RaidMax"; }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(Server S)
         {
             statLists = new List<StatTracking>();
         }
 
-        public async Task OnUnloadAsync()
+        public async Task OnUnloadAsync(Server S)
         {
             statLists.Clear();
         }
@@ -155,8 +155,8 @@ namespace StatsPlugin
                 statLists.Add(new StatTracking(S.GetPort()));
                 if (statLists.Count == 1)
                 {
-                    S.Manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
-                    S.Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
+                    S.Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("TOTALKILLS", GetTotalKills));
+                    S.Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
                 }
             }
 

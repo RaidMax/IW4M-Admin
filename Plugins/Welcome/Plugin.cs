@@ -13,6 +13,53 @@ namespace Welcome_Plugin
         Dictionary<int, float> PlayerPings;
         int PingAverageCount;
 
+        String TimesConnected(Player P)
+        {
+            int connection = P.Connections;
+            String Prefix = String.Empty;
+            if (connection % 10 > 3 || connection % 10 == 0 || (connection % 100 > 9 && connection % 100 < 19))
+                Prefix = "th";
+            else
+            {
+                switch (connection % 10)
+                {
+                    case 1:
+                        Prefix = "st";
+                        break;
+                    case 2:
+                        Prefix = "nd";
+                        break;
+                    case 3:
+                        Prefix = "rd";
+                        break;
+                }
+            }
+
+            switch (connection)
+            {
+                case 0:
+                case 1:
+                    return "first";
+                case 2:
+                    return "second";
+                case 3:
+                    return "third";
+                case 4:
+                    return "fourth";
+                case 5:
+                    return "fifth";
+                case 100:
+                    return "One-Hundreth (amazing!)";
+                case 500:
+                    return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
+                case 1000:
+                    return "you deserve a medal. it's your ^11000th^7";
+
+                default:
+                    return connection.ToString() + Prefix;
+            }
+        }
+
         public string Author
         {
             get
@@ -37,13 +84,13 @@ namespace Welcome_Plugin
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(Server S)
         {
             PlayerPings = new Dictionary<int, float>();
             PingAverageCount = 1;
         }
 
-        public async Task OnUnloadAsync()
+        public async Task OnUnloadAsync(Server S)
         {
             PlayerPings.Clear();
             PlayerPings = null;
@@ -75,9 +122,9 @@ namespace Welcome_Plugin
                 Player newPlayer = E.Origin;
 
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
-                    await E.Owner.Broadcast(Utilities.levelToColor(newPlayer.Level) + " ^5" + newPlayer.Name + " ^7has joined the server.");
+                    await E.Owner.Broadcast(Utilities.ConvertLevelToColor(newPlayer.Level) + " ^5" + newPlayer.Name + " ^7has joined the server.");
 
-                await newPlayer.Tell($"Welcome ^5{newPlayer.Name}^7, this your ^5{newPlayer.TimesConnected()} ^7time connecting!");
+                await newPlayer.Tell($"Welcome ^5{newPlayer.Name}^7, this your ^5{TimesConnected(newPlayer)} ^7time connecting!");
 
                 if (newPlayer.Level == Player.Permission.Flagged)
                     await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name}^7 has joined!");

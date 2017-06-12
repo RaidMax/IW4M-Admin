@@ -114,7 +114,7 @@ namespace SharedLibrary.Network
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
         {
-            await Task.FromResult(SendQuery(QueryType.DVAR, server, $"{dvarName} {dvarValue}"));
+            await Task.FromResult(SendQuery(QueryType.DVAR, server, $"set {dvarName} {dvarValue}"));
         }
 
         public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
@@ -139,7 +139,6 @@ namespace SharedLibrary.Network
                     fixedRequest[i / 2] = initialRequestBytes[i];
 
             return fixedRequest;
-
         }
     }
 }

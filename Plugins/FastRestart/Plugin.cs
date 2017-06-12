@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 using SharedLibrary;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Network;
+using SharedLibrary.Helpers;
 
 namespace Plugin
 {
@@ -21,9 +19,11 @@ namespace Plugin
 
         public override async Task ExecuteAsync(Event E)
         {
-            FastRestartPlugin.Config = new FastRestartConfig() { Enabled = true };
-            Serialize<FastRestartConfig>.Write($"config/fastrestartconfig_{E.Owner}.cfg", FastRestartPlugin.Config);
-            await E.Origin.Tell("Fast restarting is now enabled for this server");
+            var Config = new FastRestartConfig() { Enabled = true };
+            if (!new Configuration<FastRestartConfig>(E.Owner).Write(Config))
+                await E.Origin.Tell("Failed to save the configuration file for fast restart");
+            else
+                await E.Origin.Tell("Fast restarting is now enabled for this server");
         }
     }
 
@@ -33,9 +33,11 @@ namespace Plugin
 
         public override async Task ExecuteAsync(Event E)
         {
-            FastRestartPlugin.Config = new FastRestartConfig() { Enabled = false };
-            Serialize<FastRestartConfig>.Write($"config/fastrestartconfig_{E.Owner}.cfg", FastRestartPlugin.Config);
-            await E.Origin.Tell("Fast restarting is now disabled for this server");
+            var Config = new FastRestartConfig() { Enabled = false };
+            if (!new Configuration<FastRestartConfig>(E.Owner).Write(Config))
+                await E.Origin.Tell("Failed to save the configuration file for fast restart");
+            else
+                await E.Origin.Tell("Fast restarting is now disabled for this server");
         }
     }
 
@@ -43,7 +45,6 @@ namespace Plugin
     {
         bool MatchEnded;
         DateTime MatchEndTime;
-        public static FastRestartConfig Config;
 
         public string Name { get { return "Fast Restarter"; } }
 
@@ -58,30 +59,24 @@ namespace Plugin
                 try
                 {
                     await S.GetDvarAsync<int>("scr_intermission_time");
-                    Config = Serialize<FastRestartConfig>.Read($"config/fastrestartconfig_{E.Owner}.cfg");
                 }
 
                 catch (SharedLibrary.Exceptions.DvarException)
                 {
-                    await S.ExecuteCommandAsync("set scr_intermission_time 20");
-                }
-
-                catch (SharedLibrary.Exceptions.SerializeException)
-                {
-                    Config = new FastRestartConfig() { Enabled = false };
-                    Serialize<FastRestartConfig>.Write($"config/fastrestartconfig_{E.Owner}.cfg", Config);
+                    await S.SetDvarAsync("scr_intermission_time", 20);
                 }
             }
         }
 
-        public Task OnLoadAsync()
+        public async Task OnLoadAsync(Server S)
         {
-            return null;
+            // this initializes the file if it doesn't exist already
+            new Configuration<FastRestartConfig>(S).Read();
         }
 
         public async Task OnTickAsync(Server S)
         {
-            if (!Config.Enabled)
+            if (!new Configuration<FastRestartConfig>(S).Read().Enabled)
                 return;
 
             MatchEnded = (await S.GetDvarAsync<int>("scr_gameended")).Value == 1;
@@ -97,7 +92,7 @@ namespace Plugin
             }
         }
 
-        public Task OnUnloadAsync()
+        public Task OnUnloadAsync(Server S)
         {
             return null;
         }

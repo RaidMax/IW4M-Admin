@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4M ADMIN", "Admin\IW4M ADMIN.csproj", "{DD5DCDA2-51DB-4B1A-922F-5705546E6115}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Admin\Application.csproj", "{DD5DCDA2-51DB-4B1A-922F-5705546E6115}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AF097E6B-48D5-4452-9CCF-0A81A21F341D} = {AF097E6B-48D5-4452-9CCF-0A81A21F341D}
 		{4785AB75-66F3-4391-985D-63A5A049A0FA} = {4785AB75-66F3-4391-985D-63A5A049A0FA}
@@ -13,19 +13,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4M ADMIN", "Admin\IW4M AD
 		{D51EECEB-438A-47DA-870F-7D7B41BC24D6} = {D51EECEB-438A-47DA-870F-7D7B41BC24D6}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stats Plugin", "Plugins\SimpleStats\Stats Plugin.csproj", "{4785AB75-66F3-4391-985D-63A5A049A0FA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatsPlugin", "Plugins\SimpleStats\StatsPlugin.csproj", "{4785AB75-66F3-4391-985D-63A5A049A0FA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D51EECEB-438A-47DA-870F-7D7B41BC24D6} = {D51EECEB-438A-47DA-870F-7D7B41BC24D6}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{D51EECEB-438A-47DA-870F-7D7B41BC24D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Welcome Plugin", "Plugins\Welcome\Welcome Plugin.csproj", "{AF097E6B-48D5-4452-9CCF-0A81A21F341D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WelcomePlugin", "Plugins\Welcome\WelcomePlugin.csproj", "{AF097E6B-48D5-4452-9CCF-0A81A21F341D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D51EECEB-438A-47DA-870F-7D7B41BC24D6} = {D51EECEB-438A-47DA-870F-7D7B41BC24D6}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Votemap Plugin", "Plugins\VoteMap\Votemap Plugin.csproj", "{428D8EB9-ECA3-4A66-AA59-3A944378C33F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VotemapPlugin", "Plugins\VoteMap\VotemapPlugin.csproj", "{428D8EB9-ECA3-4A66-AA59-3A944378C33F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageboardPlugin", "Plugins\MessageBoard\MessageboardPlugin.csproj", "{E46C85BD-A99C-484E-BCCE-0F1831C5925E}"
 EndProject

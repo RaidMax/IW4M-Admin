@@ -205,12 +205,12 @@ namespace Votemap_Plugin
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(Server S)
         {
             serverVotingList = new List<ServerVoting>();
         }
 
-        public async Task OnUnloadAsync()
+        public async Task OnUnloadAsync(Server S)
         {
             serverVotingList.Clear();
         }

@@ -13,7 +13,7 @@ namespace SharedLibrary.Interfaces
         IPenaltyList GetClientPenalties();
         ClientsDB GetClientDatabase();
         AliasesDB GetAliasesDatabase();
-        IList<MessageToken> GetMessageTokens();
+        IList<Helpers.MessageToken> GetMessageTokens();
         IList<Player> GetActiveClients();
     }
 }

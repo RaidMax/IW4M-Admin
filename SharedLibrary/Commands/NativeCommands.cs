@@ -18,8 +18,7 @@ namespace SharedLibrary.Commands
     }
 
     class COwner : Command
-    {
-        
+    {   
         public COwner(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
@@ -145,7 +144,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientID, E.Origin.NetworkID, E.Origin.DatabaseID, SharedLibrary.Utilities.levelToColor(E.Origin.Level), E.Origin.IP);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientID, E.Origin.NetworkID, E.Origin.DatabaseID, SharedLibrary.Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IP);
             await E.Origin.Tell(You);
         }
     }
@@ -166,9 +165,9 @@ namespace SharedLibrary.Commands
                     continue;
 
                 if (P.Masked)
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(Player.Permission.User), P.ClientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User), P.ClientID, P.Name, SharedLibrary.Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
                 else
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.levelToColor(P.Level), P.ClientID, P.Name, SharedLibrary.Utilities.getSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level), P.ClientID, P.Name, SharedLibrary.Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
 
                 if (count == 2 || E.Owner.GetPlayersAsList().Count == 1)
                 {
@@ -278,7 +277,7 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            Player.Permission newPerm = Utilities.matchPermission(Utilities.RemoveWords(E.Data, 1));
+            Player.Permission newPerm = Utilities.MatchPermission(Utilities.RemoveWords(E.Data, 1));
 
             if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
                 newPerm = Player.Permission.Banned;
@@ -333,9 +332,9 @@ namespace SharedLibrary.Commands
                 if (P != null && P.Level > Player.Permission.Flagged && !P.Masked)
                 {
                     if (E.Message[0] == '@')
-                        await E.Owner.Broadcast(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+                        await E.Owner.Broadcast(String.Format("[^3{0}^7] {1}", Utilities.ConvertLevelToColor(P.Level), P.Name));
                     else
-                        await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.levelToColor(P.Level), P.Name));
+                        await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.ConvertLevelToColor(P.Level), P.Name));
                 }
             }
         }
@@ -381,7 +380,7 @@ namespace SharedLibrary.Commands
 
             foreach (Player P in db_players)
             { 
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, SharedLibrary.Utilities.levelToColor(P.Level), P.IP, P.GetLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, SharedLibrary.Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
                 await E.Origin.Tell(mesg);
             }
         }
@@ -677,6 +676,20 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell(S.StripColors());
             if (Response.Length == 0)
                 await E.Origin.Tell("Successfully sent RCON command!");
+        }
+    }
+
+    class CPlugins : Command
+    {
+        public CPlugins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override async Task ExecuteAsync(Event E)
+        {
+            await E.Origin.Tell("^5Loaded Plugins:");
+            foreach (var P in Plugins.PluginImporter.ActivePlugins)
+            {
+                await E.Origin.Tell(String.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
+            }
         }
     }
 }

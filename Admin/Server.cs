@@ -313,7 +313,7 @@ namespace IW4MAdmin
         {
             await ProcessEvent(E);
 
-            foreach (SharedLibrary.Interfaces.IPlugin P in PluginImporter.potentialPlugins)
+            foreach (SharedLibrary.Interfaces.IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
             {
                 try
                 {
@@ -386,7 +386,7 @@ namespace IW4MAdmin
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
                     // We don't want to await here, just in case user plugins are really slow :c
-                    foreach (var Plugin in PluginImporter.potentialPlugins)
+                    foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
 #if !DEBUG
                         Plugin.OnTickAsync(this);
 #else
@@ -400,7 +400,7 @@ namespace IW4MAdmin
                 {
                     while (PlayerHistory.Count > 144) // 12 times a minute for 12 hours
                         PlayerHistory.Dequeue();
-                    PlayerHistory.Enqueue(new PlayerHistory(lastCount, ClientNum));
+                    PlayerHistory.Enqueue(new SharedLibrary.Helpers.PlayerHistory(lastCount, ClientNum));
                     playerCountStart = DateTime.Now;
                 }
 
@@ -786,16 +786,8 @@ namespace IW4MAdmin
 
         override public void InitializeTokens()
         {
-            Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", Manager.GetClientDatabase().TotalPlayers().ToString));
-            Manager.GetMessageTokens().Add(new MessageToken("VERSION", Program.Version.ToString));
-        }
-
-        override public void InitializeCommands()
-        {
-            foreach (Command C in PluginImporter.potentialCommands)
-                Manager.GetCommands().Add(C);
-
-            Manager.GetCommands().Add(new Plugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
+            Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("TOTALPLAYERS", Manager.GetClientDatabase().TotalPlayers().ToString));
+            Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("VERSION", Program.Version.ToString));
         }
     }
 }

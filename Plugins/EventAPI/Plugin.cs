@@ -35,7 +35,7 @@ namespace EventAPI
             {
                 StringBuilder s = new StringBuilder();
                 foreach (var S in Events.ActiveServers)
-                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.Hostname, S.GetPlayersAsList().Count, Utilities.gametypeLocalized(S.Gametype), S.CurrentMap.Name, S.MaxClients));
+                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.Hostname, S.GetPlayersAsList().Count, Utilities.GetLocalizedGametype(S.Gametype), S.CurrentMap.Name, S.MaxClients));
                 requestedEvent.Event = new RestEvent(RestEvent.EventType.STATUS, RestEvent.EventVersion.IW4MAdmin, s.ToString(), "Status", "", "");
                 requestedEvent.eventCount = 1; 
             }
@@ -95,7 +95,7 @@ namespace EventAPI
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(Server S)
         {
             APIEvents = new Queue<RestEvent>();
             flaggedMessagesText = new List<string>();
@@ -103,7 +103,7 @@ namespace EventAPI
             WebService.PageList.Add(new EventsJSON());
         }
 
-        public async Task OnUnloadAsync()
+        public async Task OnUnloadAsync(Server S)
         {
             APIEvents.Clear();
             ActiveServers.Clear();

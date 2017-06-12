@@ -26,7 +26,7 @@ namespace SharedLibrary
             Players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
             Reports = new List<Report>();
-            PlayerHistory = new Queue<PlayerHistory>();
+            PlayerHistory = new Queue<SharedLibrary.Helpers.PlayerHistory>();
             ChatHistory = new List<Chat>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
@@ -71,6 +71,7 @@ namespace SharedLibrary
             commands.Add(new CListAlias("alias", "get past aliases and ips of a player. syntax: !alias <player>", "known", Player.Permission.Moderator, 1, true));
             commands.Add(new CExecuteRCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
             commands.Add(new CFindAllPlayers("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
+            commands.Add(new CPlugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
         }
 
         //Returns current server IP set by `net_ip` -- *STRING*
@@ -375,7 +376,11 @@ namespace SharedLibrary
         /// <summary>
         /// Load up the built in commands
         /// </summary>
-        abstract public void InitializeCommands();
+        public void InitializeCommands()
+        {
+            foreach (Command C in Plugins.PluginImporter.ActiveCommands)
+                Manager.GetCommands().Add(C);
+        }
 
         //Objects
         public Interfaces.IManager Manager { get; protected set; }
@@ -389,7 +394,7 @@ namespace SharedLibrary
         public int totalKills = 0;
         public List<Report> Reports;
         public List<Chat> ChatHistory;
-        public Queue<PlayerHistory> PlayerHistory { get; private set; }
+        public Queue<Helpers.PlayerHistory> PlayerHistory { get; private set; }
 
         protected int ConnectionErrors;
         protected DateTime LastPoll;

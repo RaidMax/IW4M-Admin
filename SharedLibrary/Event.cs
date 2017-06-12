@@ -16,12 +16,6 @@ namespace SharedLibrary
             
         }
 
-        public String timeString()
-        {
-            return Time.ToShortTimeString();
-        }
-
-        //public Player Origin { get; private set; }
         public String Message { get; private set; }
         public DateTime Time { get; private set; }
         public string Name;
@@ -30,7 +24,7 @@ namespace SharedLibrary
     [Serializable]
     public struct RestEvent
     {
-        public RestEvent(eType Ty, eVersion V, string M, string T, string O, string Ta)
+        public RestEvent(EventType Ty, EventVersion V, string M, string T, string O, string Ta)
         {
             Type = Ty;
             Version = V;
@@ -42,20 +36,20 @@ namespace SharedLibrary
             ID = Math.Abs(DateTime.Now.GetHashCode());
         }
 
-        public enum eType
+        public enum EventType
         {
             NOTIFICATION,
             STATUS,
             ALERT,
         }
 
-        public enum eVersion
+        public enum EventVersion
         {
             IW4MAdmin
         }
 
-        public eType Type;
-        public eVersion Version;
+        public EventType Type;
+        public EventVersion Version;
         public string Message;
         public string Title;
         public string Origin;

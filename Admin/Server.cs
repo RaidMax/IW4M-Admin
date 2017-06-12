@@ -13,7 +13,7 @@ namespace IW4MAdmin
     {
         public IW4MServer(SharedLibrary.Interfaces.IManager mgr, string address, int port, string password) : base(mgr, address, port, password) 
         {
-            initCommands();
+            InitializeCommands();
         }
 
         private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)
@@ -85,7 +85,7 @@ namespace IW4MAdmin
                 }
 
                 // below this needs to be optimized ~ 425ms runtime
-                NewPlayer.updateName(P.Name.Trim());
+                NewPlayer.UpdateName(P.Name.Trim());
                 NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.DatabaseID);
 
                 if (NewPlayer.Alias == null)
@@ -102,7 +102,7 @@ namespace IW4MAdmin
                 // lets check aliases 
                 if ((NewPlayer.Alias.Names.Find(m => m.Equals(P.Name))) == null || NewPlayer.Name == null || NewPlayer.Name == String.Empty) 
                 {
-                    NewPlayer.updateName(P.Name.Trim());
+                    NewPlayer.UpdateName(P.Name.Trim());
                     NewPlayer.Alias.Names.Add(NewPlayer.Name);
                 }
                
@@ -112,7 +112,7 @@ namespace IW4MAdmin
                     NewPlayer.Alias.IPS.Add(P.IP);
                 }
 
-                NewPlayer.updateIP(P.IP);
+                NewPlayer.SetIP(P.IP);
 
                 Manager.GetAliasesDatabase().UpdatePlayerAliases(NewPlayer.Alias);
                 Manager.GetClientDatabase().UpdatePlayer(NewPlayer);
@@ -127,7 +127,7 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                List<Player> newPlayerAliases = getPlayerAliases(NewPlayer);
+                List<Player> newPlayerAliases = GetPlayerAliases(NewPlayer);
 
                 foreach (Player aP in newPlayerAliases) // lets check their aliases
                 {
@@ -135,7 +135,7 @@ namespace IW4MAdmin
                         continue;
 
                     if (aP.Level == Player.Permission.Flagged)
-                        NewPlayer.setLevel(Player.Permission.Flagged);
+                        NewPlayer.SetLevel(Player.Permission.Flagged);
 
                     Penalty B = IsBanned(aP);
 
@@ -398,9 +398,9 @@ namespace IW4MAdmin
 
                 if ((lastCount - playerCountStart).TotalMinutes > 4)
                 {
-                    while (playerHistory.Count > 144) // 12 times a minute for 12 hours
-                        playerHistory.Dequeue();
-                    playerHistory.Enqueue(new PlayerHistory(lastCount, ClientNum));
+                    while (PlayerHistory.Count > 144) // 12 times a minute for 12 hours
+                        PlayerHistory.Dequeue();
+                    PlayerHistory.Enqueue(new PlayerHistory(lastCount, ClientNum));
                     playerCountStart = DateTime.Now;
                 }
 
@@ -415,13 +415,13 @@ namespace IW4MAdmin
                 }
 
                 //logFile = new IFile();
-                if (l_size != logFile.getSize())
+                if (l_size != logFile.Length())
                 {
                     // this should be the longest running task
                     await Task.FromResult(lines = logFile.Tail(12));
                     if (lines != oldLines)
                     {
-                        l_size = logFile.getSize();
+                        l_size = logFile.Length();
                         int end;
                         if (lines.Length == oldLines.Length)
                             end = lines.Length - 1;
@@ -458,7 +458,7 @@ namespace IW4MAdmin
                     }
                 }
                 oldLines = lines;
-                l_size = logFile.getSize();
+                l_size = logFile.Length();
             }
 #if DEBUG == false
             catch (SharedLibrary.Exceptions.NetworkException)
@@ -486,6 +486,7 @@ namespace IW4MAdmin
             var game = await this.GetDvarAsync<string>("fs_game");
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
+            var onelog = await this.GetDvarAsync<int>("iw4x_onelog");
 
             try
             {
@@ -512,22 +513,21 @@ namespace IW4MAdmin
                 // this DVAR isn't set until the a map is loaded
                 await this.SetDvarAsync("g_logsync", 1);
                 await this.SetDvarAsync("g_log", "logs/games_mp.log");
+                Logger.WriteWarning("Game log file not properly initialized, restarting map...");
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");
             }
 #if DEBUG
             basepath.Value = @"\\tsclient\K\MW2";
 #endif
-            string logPath = string.Empty;
-
-            if (game.Value == "")
-                logPath = $"{basepath.Value.Replace("\\", "/")}/userraw/{logfile.Value}";
-            else
-                logPath = $"{basepath.Value.Replace("\\", "/")}/{game.Value}/{logfile.Value}";
+            string logPath = (game.Value == "" || onelog.Value == 1) ? $"{basepath.Value.Replace("\\", "/")}/userraw/{logfile.Value}" : $"{basepath.Value.Replace("\\", "/")}/{game.Value}/{logfile.Value}";
 
             if (!File.Exists(logPath))
             {
                 Logger.WriteError($"Gamelog {logPath} does not exist!");
+#if !DEBUG
+                throw new SharedLibrary.Exceptions.ServerException($"Invalid gamelog file {logPath}");
+#endif
             }
 
             logFile = new IFile(logPath);
@@ -565,22 +565,11 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.Kill)
             {
-                if (E.Origin == null)
-                {
-                    Logger.WriteError("Kill event triggered, but no origin found!");
-                    return;
-                }
-
                 if (E.Origin != E.Target)
-                {
                     await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, null, this));
-                }
 
                 else // suicide/falling
-                {
-                    Logger.WriteDebug(E.Origin.Name + " suicided...");
                     await ExecuteEvent(new Event(Event.GType.Death, "suicide", E.Target, null, this));
-                }
             }
 
             if (E.Type == Event.GType.Say)
@@ -730,7 +719,7 @@ namespace IW4MAdmin
 
             if (Origin != null)
             {
-                Target.setLevel(Player.Permission.Banned);
+                Target.SetLevel(Player.Permission.Banned);
                 Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
 
                 await Task.Run(() =>
@@ -771,20 +760,18 @@ namespace IW4MAdmin
                 Manager.GetClientPenalties().RemovePenalty(PenaltyToRemove);
 
                 Player P = Manager.GetClientDatabase().GetPlayer(Target.NetworkID, -1);
-                P.setLevel(Player.Permission.User);
+                P.SetLevel(Player.Permission.User);
                 Manager.GetClientDatabase().UpdatePlayer(P);
             });
-
         }
-
 
         public override bool Reload()
         {
             try
             {
-                initMaps();
-                initMessages();
-                initRules();
+                InitializeMaps();
+                InitializeAutoMessages();
+                InitializeRules();
                 return true;
             }
             catch (Exception E)
@@ -797,19 +784,18 @@ namespace IW4MAdmin
             }
         }
 
-        override public void initMacros()
+        override public void InitializeTokens()
         {
             Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", Manager.GetClientDatabase().TotalPlayers().ToString));
             Manager.GetMessageTokens().Add(new MessageToken("VERSION", Program.Version.ToString));
         }
 
-        override public void initCommands()
+        override public void InitializeCommands()
         {
             foreach (Command C in PluginImporter.potentialCommands)
                 Manager.GetCommands().Add(C);
 
             Manager.GetCommands().Add(new Plugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
-         
         }
     }
 }

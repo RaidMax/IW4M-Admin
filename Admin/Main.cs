@@ -44,6 +44,7 @@ namespace IW4MAdmin
                     do
                     {
                         userInput = Console.ReadLine();
+
                         if (userInput.ToLower() == "quit")
                             ServerManager.Stop();
 
@@ -55,7 +56,7 @@ namespace IW4MAdmin
                         ServerManager.Servers[0].ExecuteEvent(E);
                         Console.Write('>');
 
-                    } while (userInput != null && ServerManager.Running);
+                    } while (ServerManager.Running);
                 });
 
             }

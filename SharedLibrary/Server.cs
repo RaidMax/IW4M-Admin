@@ -26,21 +26,21 @@ namespace SharedLibrary
             Players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
             Reports = new List<Report>();
-            playerHistory = new Queue<PlayerHistory>();
+            PlayerHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<Chat>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
-            initMacros();
-            initMessages();
-            initMaps();
-            initRules();
+            InitializeTokens();
+            InitializeAutoMessages();
+            InitializeMaps();
+            InitializeRules();
 
             var commands = mgr.GetCommands();
 
             owner = Manager.GetClientDatabase().GetOwner();
 
             if (owner == null)
-                commands.Add(new Owner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
+                commands.Add(new COwner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
 
             commands.Add(new CQuit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));
             commands.Add(new CKick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
@@ -73,25 +73,14 @@ namespace SharedLibrary
             commands.Add(new CFindAllPlayers("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
         }
 
-        //Returns the current server name -- *STRING*
-        public String getName()
-        {
-            return Hostname;
-        }
-
-        public String getGametype()
-        {
-            return Gametype;
-        }
-
         //Returns current server IP set by `net_ip` -- *STRING*
-        public String getIP()
+        public String GetIP()
         {
             return IP;
         }
 
         //Returns current server port set by `net_port` -- *INT*
-        public int getPort()
+        public int GetPort()
         {
             return Port;
         }
@@ -109,7 +98,7 @@ namespace SharedLibrary
         /// <param name="Origin">Player to scan for aliases</param>
         abstract public List<Aliases> GetAliases(Player Origin);
 
-        public List<Player> getPlayerAliases(Player Origin)
+        public List<Player> GetPlayerAliases(Player Origin)
         {
             List<int> databaseIDs = new List<int>();
 
@@ -284,36 +273,20 @@ namespace SharedLibrary
             await this.ExecuteCommandAsync($"map {newMap.Name}");
         }
 
-        public void webChat(Player P, String Message)
-        {
-            DateTime requestTime = DateTime.Now;
-
-            if ((requestTime - lastWebChat).TotalSeconds > 1)
-            {
-                Broadcast("^1[WEBCHAT] ^5" + P.Name + "^7 - " + Message);
-
-                if (Message.Length > 50)
-                    Message = Message.Substring(0, 50) + "...";
-
-                ChatHistory.Add(new Chat(P.Name, Utilities.StripColors(Message), DateTime.Now));
-                lastWebChat = DateTime.Now;
-            }
-        }
-
         /// <summary>
         /// Initalize the macro variables
         /// </summary>
-        abstract public void initMacros();
+        abstract public void InitializeTokens();
 
         /// <summary>
         /// Read the map configuration
         /// </summary>
-        protected void initMaps()
+        protected void InitializeMaps()
         {
             maps = new List<Map>();
 
             IFile mapfile = new IFile("config/maps.cfg");
-            String[] _maps = mapfile.readAll();
+            String[] _maps = mapfile.ReadAllLines();
             mapfile.Close();
             if (_maps.Length > 2) // readAll returns minimum one empty string
             {
@@ -333,13 +306,14 @@ namespace SharedLibrary
 
         /// <summary>
         /// Initialize the messages to be broadcasted
+        /// todo: this needs to be a serialized file
         /// </summary>
-        protected void initMessages()
+        protected void InitializeAutoMessages()
         {
             messages = new List<String>();
 
             IFile messageCFG = new IFile("config/messages.cfg");
-            String[] lines = messageCFG.readAll();
+            String[] lines = messageCFG.ReadAllLines();
             messageCFG.Close();
 
             if (lines.Length < 2) //readAll returns minimum one empty string
@@ -370,13 +344,14 @@ namespace SharedLibrary
 
         /// <summary>
         /// Initialize the rules configuration
+        /// todo: this needs to be a serialized file
         /// </summary>
-        protected void initRules()
+        protected void InitializeRules()
         {
             rules = new List<String>();
 
             IFile ruleFile = new IFile("config/rules.cfg");
-            String[] _rules = ruleFile.readAll();
+            String[] _rules = ruleFile.ReadAllLines();
             ruleFile.Close();
             if (_rules.Length > 2) // readAll returns minimum one empty string
             {
@@ -400,7 +375,7 @@ namespace SharedLibrary
         /// <summary>
         /// Load up the built in commands
         /// </summary>
-        abstract public void initCommands();
+        abstract public void InitializeCommands();
 
         //Objects
         public Interfaces.IManager Manager { get; protected set; }
@@ -414,7 +389,7 @@ namespace SharedLibrary
         public int totalKills = 0;
         public List<Report> Reports;
         public List<Chat> ChatHistory;
-        public Queue<PlayerHistory> playerHistory { get; private set; }
+        public Queue<PlayerHistory> PlayerHistory { get; private set; }
 
         protected int ConnectionErrors;
         protected DateTime LastPoll;

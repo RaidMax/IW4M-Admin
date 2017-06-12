@@ -15,17 +15,17 @@ namespace EventAPI
             public RestEvent Event;
         }
 
-        public string getName()
+        public string GetName()
         {
             return "Events";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/api/events";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             bool shouldQuery = querySet.Get("status") != null;
             EventResponse requestedEvent = new EventResponse();
@@ -34,15 +34,15 @@ namespace EventAPI
             if (shouldQuery)
             {
                 StringBuilder s = new StringBuilder();
-                foreach (var S in Events.activeServers)
-                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.getName(), S.GetPlayersAsList().Count, Utilities.gametypeLocalized(S.getGametype()), S.CurrentMap.Name, S.MaxClients));
-                requestedEvent.Event = new RestEvent(RestEvent.eType.STATUS, RestEvent.eVersion.IW4MAdmin, s.ToString(), "Status", "", "");
+                foreach (var S in Events.ActiveServers)
+                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.Hostname, S.GetPlayersAsList().Count, Utilities.gametypeLocalized(S.Gametype), S.CurrentMap.Name, S.MaxClients));
+                requestedEvent.Event = new RestEvent(RestEvent.EventType.STATUS, RestEvent.EventVersion.IW4MAdmin, s.ToString(), "Status", "", "");
                 requestedEvent.eventCount = 1; 
             }
 
-            else if (Events.apiEvents.Count > 0)
+            else if (Events.APIEvents.Count > 0)
             {
-                requestedEvent.Event = Events.apiEvents.Dequeue();
+                requestedEvent.Event = Events.APIEvents.Dequeue();
                 requestedEvent.eventCount = 1;       
             }
 
@@ -52,17 +52,17 @@ namespace EventAPI
             }
 
             resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedEvent);
-            resp.contentType = getContentType();           
+            resp.contentType = GetContentType();           
             resp.additionalHeaders = new Dictionary<string, string>();
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -70,8 +70,8 @@ namespace EventAPI
 
     class Events : IPlugin
     {
-        public static Queue<RestEvent> apiEvents { get; private set; }
-        public static List<Server> activeServers;
+        public static Queue<RestEvent> APIEvents { get; private set; }
+        public static List<Server> ActiveServers;
 
         DateTime lastClear;
         int flaggedMessages;
@@ -97,16 +97,16 @@ namespace EventAPI
 
         public async Task OnLoadAsync()
         {
-            apiEvents = new Queue<RestEvent>();
+            APIEvents = new Queue<RestEvent>();
             flaggedMessagesText = new List<string>();
-            activeServers = new List<Server>();
-            WebService.pageList.Add(new EventsJSON());
+            ActiveServers = new List<Server>();
+            WebService.PageList.Add(new EventsJSON());
         }
 
         public async Task OnUnloadAsync()
         {
-            apiEvents.Clear();
-            activeServers.Clear();
+            APIEvents.Clear();
+            ActiveServers.Clear();
         }
 
         public async Task OnTickAsync(Server S)
@@ -118,29 +118,29 @@ namespace EventAPI
         {
             if (E.Type == Event.GType.Start)
             {
-                activeServers.Add(S);
+                ActiveServers.Add(S);
             }
 
             if (E.Type == Event.GType.Stop)
             {
                 // fixme: this will be bad once FTP is working and there can be multiple servers on the same port.
-                activeServers.RemoveAll(s => s.getPort() == S.getPort());
+                ActiveServers.RemoveAll(s => s.GetPort() == S.GetPort());
             }
 
             if (E.Type == Event.GType.Connect)
             {
-                addRestEvent(new RestEvent(RestEvent.eType.NOTIFICATION, RestEvent.eVersion.IW4MAdmin, E.Origin.Name + " has joined " + S.getName(), E.Type.ToString(), S.getName(), E.Origin.Name));
+                AddRestEvent(new RestEvent(RestEvent.EventType.NOTIFICATION, RestEvent.EventVersion.IW4MAdmin, E.Origin.Name + " has joined " + S.Hostname, E.Type.ToString(), S.Hostname, E.Origin.Name));
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
-                addRestEvent(new RestEvent(RestEvent.eType.NOTIFICATION, RestEvent.eVersion.IW4MAdmin, E.Origin.Name + " has left " + S.getName(), E.Type.ToString(), S.getName(), E.Origin.Name));
+                AddRestEvent(new RestEvent(RestEvent.EventType.NOTIFICATION, RestEvent.EventVersion.IW4MAdmin, E.Origin.Name + " has left " + S.Hostname, E.Type.ToString(), S.Hostname, E.Origin.Name));
             }
 
             if (E.Type == Event.GType.Say)
             {
                 if (E.Data.Length != 0 && E.Data[0] != '!')
-                    addRestEvent(new RestEvent(RestEvent.eType.NOTIFICATION, RestEvent.eVersion.IW4MAdmin, E.Data, "Chat", E.Origin.Name, ""));
+                    AddRestEvent(new RestEvent(RestEvent.EventType.NOTIFICATION, RestEvent.EventVersion.IW4MAdmin, E.Data, "Chat", E.Origin.Name, ""));
             }
 
             if (E.Type == Event.GType.Say && E.Origin.Level < Player.Permission.Moderator)
@@ -158,8 +158,8 @@ namespace EventAPI
                 {
                     await E.Owner.Broadcast("If you suspect someone of ^5CHEATING ^7use the ^5!report ^7command");
 
-                    addRestEvent(new RestEvent(RestEvent.eType.ALERT, RestEvent.eVersion.IW4MAdmin, "Chat indicates there may be a cheater", "Alert", E.Owner.getName(), ""));
-                    addRestEvent(new RestEvent(RestEvent.eType.NOTIFICATION, RestEvent.eVersion.IW4MAdmin, String.Join("\n", flaggedMessagesText), "Chat Monitor", E.Owner.getName(), ""));
+                    AddRestEvent(new RestEvent(RestEvent.EventType.ALERT, RestEvent.EventVersion.IW4MAdmin, "Chat indicates there may be a cheater", "Alert", E.Owner.Hostname, ""));
+                    AddRestEvent(new RestEvent(RestEvent.EventType.NOTIFICATION, RestEvent.EventVersion.IW4MAdmin, String.Join("\n", flaggedMessagesText), "Chat Monitor", E.Owner.Hostname, ""));
                     flaggedMessages = 0;
                 }
 
@@ -172,11 +172,11 @@ namespace EventAPI
             }
         }
 
-        public static void addRestEvent(RestEvent E)
+        public static void AddRestEvent(RestEvent E)
         {
-            if (apiEvents.Count > 10)
-                apiEvents.Dequeue();
-            apiEvents.Enqueue(E);
+            if (APIEvents.Count > 10)
+                APIEvents.Dequeue();
+            APIEvents.Enqueue(E);
         }
     }
 }

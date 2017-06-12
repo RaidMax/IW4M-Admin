@@ -122,23 +122,23 @@ namespace SharedLibrary
             return $"{Name}::{NetworkID}";
         }
 
-        public String getLastConnection()
+        public String GetLastConnection()
         {
             return Utilities.timePassed(LastConnection);
         }
 
-        public void updateName(String n)
+        public void UpdateName(String n)
         {
             if (n.Trim() != String.Empty)
                 Name = n;
         }
 
-        public void updateIP(String I)
+        public void SetIP(String I)
         {
             IP = I;
         }
 
-        public void setLevel(Permission Perm)
+        public void SetLevel(Permission Perm)
         {
             Level = Perm;
         }
@@ -184,6 +184,5 @@ namespace SharedLibrary
         public int Warnings;
         public Aliases Alias;
         public bool Masked;
-        public int selectedServer;
     }
 }

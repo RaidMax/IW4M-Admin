@@ -26,13 +26,13 @@ namespace StatsPlugin
 
             if (E.Target != null)
             {
-                pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetStats(E.Target);
+                pStats = Stats.statLists.Find(x => x.Port == E.Owner.GetPort()).playerStats.GetStats(E.Target);
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 
             else
             {
-                pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetStats(E.Origin);
+                pStats = Stats.statLists.Find(x => x.Port == E.Owner.GetPort()).playerStats.GetStats(E.Origin);
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 
@@ -58,7 +58,7 @@ namespace StatsPlugin
 
         public override async Task ExecuteAsync(Event E)
         {
-            List<KeyValuePair<String, PlayerStats>> pStats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetTopStats();
+            List<KeyValuePair<String, PlayerStats>> pStats = Stats.statLists.Find(x => x.Port == E.Owner.GetPort()).playerStats.GetTopStats();
             StringBuilder msgBlder = new StringBuilder();
 
             await E.Origin.Tell("^5--Top Players--");
@@ -79,13 +79,13 @@ namespace StatsPlugin
 
         public override async Task ExecuteAsync(Event E)
         {
-            var stats = Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.GetStats(E.Origin);
+            var stats = Stats.statLists.Find(x => x.Port == E.Owner.GetPort()).playerStats.GetStats(E.Origin);
             stats.Deaths = 0;
             stats.Kills = 0;
             stats.scorePerMinute = 1.0;
             stats.Skill = 1;
             stats.KDR = 0.0;
-            await Task.Run(() => { Stats.statLists.Find(x => x.Port == E.Owner.getPort()).playerStats.UpdateStats(E.Origin, stats); });
+            await Task.Run(() => { Stats.statLists.Find(x => x.Port == E.Owner.GetPort()).playerStats.UpdateStats(E.Origin, stats); });
             await E.Origin.Tell("Your stats have been reset");
         }
     }
@@ -152,7 +152,7 @@ namespace StatsPlugin
         {
             if (E.Type == Event.GType.Start)
             {
-                statLists.Add(new StatTracking(S.getPort()));
+                statLists.Add(new StatTracking(S.GetPort()));
                 if (statLists.Count == 1)
                 {
                     S.Manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
@@ -162,17 +162,17 @@ namespace StatsPlugin
 
             if (E.Type == Event.GType.Stop)
             {
-                statLists.RemoveAll(x => x.Port == S.getPort());
+                statLists.RemoveAll(x => x.Port == S.GetPort());
             }
 
             if (E.Type == Event.GType.Connect)
             {
-                ResetCounters(E.Origin.ClientID, S.getPort());
+                ResetCounters(E.Origin.ClientID, S.GetPort());
 
-                PlayerStats checkForTrusted = statLists.Find(x => x.Port == S.getPort()).playerStats.GetStats(E.Origin);
+                PlayerStats checkForTrusted = statLists.Find(x => x.Port == S.GetPort()).playerStats.GetStats(E.Origin);
                 if (checkForTrusted.TotalPlayTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
                 {
-                    E.Origin.setLevel(Player.Permission.Trusted);
+                    E.Origin.SetLevel(Player.Permission.Trusted);
                     E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
                     await E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands.");
                     await E.Origin.Tell("You earned this by playing for ^53 ^7full days!");
@@ -187,8 +187,8 @@ namespace StatsPlugin
                     if (P == null)
                         continue;
 
-                    CalculateAndSaveSkill(P, statLists.Find(x =>x.Port == S.getPort()));
-                    ResetCounters(P.ClientID, S.getPort());
+                    CalculateAndSaveSkill(P, statLists.Find(x =>x.Port == S.GetPort()));
+                    ResetCounters(P.ClientID, S.GetPort());
 
                     E.Owner.Logger.WriteInfo("Updated skill for client #" + P.DatabaseID);
                     //E.Owner.Log.Write(String.Format("\r\nJoin: {0}\r\nInactive Minutes: {1}\r\nnewPlayTime: {2}\r\nnewSPM: {3}\r\nkdrWeight: {4}\r\nMultiplier: {5}\r\nscoreWeight: {6}\r\nnewSkillFactor: {7}\r\nprojectedNewSkill: {8}\r\nKills: {9}\r\nDeaths: {10}", connectionTime[P.clientID].ToShortTimeString(), inactiveMinutes[P.clientID], newPlayTime, newSPM, kdrWeight, Multiplier, scoreWeight, newSkillFactor, disconnectStats.Skill, disconnectStats.Kills, disconnectStats.Deaths));
@@ -197,8 +197,8 @@ namespace StatsPlugin
 
             if (E.Type == Event.GType.Disconnect)
             {
-                CalculateAndSaveSkill(E.Origin, statLists.Find(x=>x.Port == S.getPort()));
-                ResetCounters(E.Origin.ClientID, S.getPort());
+                CalculateAndSaveSkill(E.Origin, statLists.Find(x=>x.Port == S.GetPort()));
+                ResetCounters(E.Origin.ClientID, S.GetPort());
                 E.Owner.Logger.WriteInfo("Updated skill for disconnecting client #" + E.Origin.DatabaseID);
             }
 
@@ -208,7 +208,7 @@ namespace StatsPlugin
                     return;
 
                 Player Killer = E.Origin;
-                StatTracking curServer = statLists.Find(x => x.Port == S.getPort());
+                StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
                 PlayerStats killerStats = curServer.playerStats.GetStats(Killer);
 
 
@@ -237,7 +237,7 @@ namespace StatsPlugin
                     return;
 
                 Player Victim = E.Origin;
-                StatTracking curServer = statLists.Find(x => x.Port == S.getPort());
+                StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
                 PlayerStats victimStats = curServer.playerStats.GetStats(Victim);
                
                 victimStats.Deaths++;

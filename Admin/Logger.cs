@@ -40,8 +40,8 @@ namespace IW4MAdmin
             Console.WriteLine(LogLine);
             File.AppendAllText(FileName, LogLine + Environment.NewLine);
 #else
-                //if (type == LogType.Error || type == LogType.Verbose)
-                Console.WriteLine(LogLine);
+                if (type == LogType.Error || type == LogType.Verbose)
+                    Console.WriteLine(LogLine);
                 //if (type != LogType.Debug)
                 File.AppendAllText(FileName, LogLine + Environment.NewLine);
 #endif

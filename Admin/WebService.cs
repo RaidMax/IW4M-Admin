@@ -19,19 +19,21 @@ namespace IW4MAdmin
             var webScheduler = Kayak.KayakScheduler.Factory.Create(new Scheduler());
             webService = KayakServer.Factory.CreateHttp(new Request(), webScheduler);
 
-            SharedLibrary.WebService.pageList.Add(new Pages());
-            SharedLibrary.WebService.pageList.Add(new Homepage());
-            SharedLibrary.WebService.pageList.Add(new ServersJSON());
-            SharedLibrary.WebService.pageList.Add(new Penalties());
-            SharedLibrary.WebService.pageList.Add(new PenaltiesJSON());
-            SharedLibrary.WebService.pageList.Add(new Players());
-            SharedLibrary.WebService.pageList.Add(new GetPlayer());
-            SharedLibrary.WebService.pageList.Add(new WebConsole());
-            SharedLibrary.WebService.pageList.Add(new ConsoleJSON());
-            SharedLibrary.WebService.pageList.Add(new PubbansJSON());
+            SharedLibrary.WebService.PageList.Add(new Pages());
+            SharedLibrary.WebService.PageList.Add(new Homepage());
+            SharedLibrary.WebService.PageList.Add(new ServersJSON());
+            SharedLibrary.WebService.PageList.Add(new Penalties());
+            SharedLibrary.WebService.PageList.Add(new PenaltiesJSON());
+            SharedLibrary.WebService.PageList.Add(new Players());
+            SharedLibrary.WebService.PageList.Add(new GetPlayer());
+            SharedLibrary.WebService.PageList.Add(new WebConsole());
+            SharedLibrary.WebService.PageList.Add(new ConsoleJSON());
+            SharedLibrary.WebService.PageList.Add(new PubbansJSON());
 
-            Thread scheduleThread = new Thread(() => { ScheduleThreadStart(webScheduler, webService); });
-            scheduleThread.Name = "Web Service Thread";
+            Thread scheduleThread = new Thread(() => { ScheduleThreadStart(webScheduler, webService); })
+            {
+                Name = "Web Service Thread"
+            };
             scheduleThread.Start();
 
             return webScheduler;
@@ -66,16 +68,16 @@ namespace IW4MAdmin
 
         public static HttpResponse GetPage(string path, System.Collections.Specialized.NameValueCollection queryset, IDictionary<string, string> headers)
         {
-            if (SharedLibrary.WebService.pageList == null || SharedLibrary.WebService.pageList.Count == 0)
+            if (SharedLibrary.WebService.PageList == null || SharedLibrary.WebService.PageList.Count == 0)
                 return new HttpResponse() { content = "Error: page list not initialized!", contentType = "text/plaintext" };
 
             if (path == null)
                 return new HttpResponse() { content = "Error: no path specified", contentType = "text/plaintext" };
 
-            IPage requestedPage = SharedLibrary.WebService.pageList.Find(x => x.getPath().ToLower() == path.ToLower());
+            IPage requestedPage = SharedLibrary.WebService.PageList.Find(x => x.GetPath().ToLower() == path.ToLower());
 
             if (requestedPage != null)
-                return requestedPage.getPage(queryset, headers);
+                return requestedPage.GetPage(queryset, headers);
             else
             {
                 if (System.IO.File.Exists(path.Replace("/", "\\").Substring(1)))
@@ -85,10 +87,12 @@ namespace IW4MAdmin
 
                     if (path.Contains(".css"))
                     {
-                        HttpResponse css = new HttpResponse();
-                        css.additionalHeaders = new Dictionary<string, string>();
-                        css.content = f.getLines();
-                        css.contentType = "text/css";
+                        HttpResponse css = new HttpResponse()
+                        {
+                            additionalHeaders = new Dictionary<string, string>(),
+                            content = f.GetText(),
+                            contentType = "text/css"
+                        };
                         f.Close();
                         return css;
 
@@ -96,10 +100,12 @@ namespace IW4MAdmin
 
                     else if (path.Contains(".js"))
                     {
-                        HttpResponse css = new HttpResponse();
-                        css.additionalHeaders = new Dictionary<string, string>();
-                        css.content = f.getLines();
-                        css.contentType = "application/javascript";
+                        HttpResponse css = new HttpResponse()
+                        {
+                            additionalHeaders = new Dictionary<string, string>(),
+                            content = f.GetText(),
+                            contentType = "application/javascript"
+                        };
                         f.Close();
                         return css;
                     }
@@ -108,39 +114,40 @@ namespace IW4MAdmin
                 }
 
                 requestedPage = new Error404();
-                return requestedPage.getPage(queryset, headers);
+                return requestedPage.GetPage(queryset, headers);
             }
         }
     }
 
     class Error404 : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "404";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            HttpResponse resp = new HttpResponse();
-            resp.additionalHeaders = new Dictionary<string, string>();
-            resp.content = "404 not found!";
-            resp.contentType = getContentType();
-
+            HttpResponse resp = new HttpResponse()
+            {
+                additionalHeaders = new Dictionary<string, string>(),
+                content = "404 not found!",
+                contentType = GetContentType()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "text/html";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -148,24 +155,24 @@ namespace IW4MAdmin
 
     class Homepage : HTMLPage
     {
-        public override string getName()
+        public override string GetName()
         {
             return "Home";
         }
 
-        public override string getPath()
+        public override string GetPath()
         {
             return "/";
         }
 
-        public override string getContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public override string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             StringBuilder S = new StringBuilder();
-            S.Append(loadHeader());
+            S.Append(LoadHeader());
             IFile p = new IFile("webfront\\main.html");
-            S.Append(p.getLines());
+            S.Append(p.GetText());
             p.Close();
-            S.Append(loadFooter());
+            S.Append(LoadFooter());
 
             return S.ToString();
         }
@@ -173,37 +180,42 @@ namespace IW4MAdmin
 
     class ServersJSON : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "Servers";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/_servers";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             var info = new List<ServerInfo>();
 
             foreach (Server S in Manager.GetInstance().Servers)
             {
-                ServerInfo eachServer = new ServerInfo();
-                eachServer.serverName = S.getName();
-                eachServer.serverPort = S.getPort();
-                eachServer.maxPlayers = S.MaxClients;
-                eachServer.mapName = S.CurrentMap.Alias;
-                eachServer.gameType = Utilities.gametypeLocalized(S.getGametype());
-                eachServer.currentPlayers = S.GetPlayersAsList().Count;
-                eachServer.chatHistory = S.ChatHistory;
-                eachServer.players = new List<PlayerInfo>();
+                ServerInfo eachServer = new ServerInfo()
+                {
+                    serverName = S.Hostname,
+                    serverPort = S.GetPort(),
+                    maxPlayers = S.MaxClients,
+                    mapName = S.CurrentMap.Alias,
+                    gameType = Utilities.gametypeLocalized(S.Gametype),
+                    currentPlayers = S.GetPlayersAsList().Count,
+                    chatHistory = S.ChatHistory,
+                    players = new List<PlayerInfo>()
+                };
+
                 foreach (Player P in S.GetPlayersAsList())
                 {
-                    PlayerInfo pInfo = new PlayerInfo();
-                    pInfo.playerID = P.DatabaseID;
-                    pInfo.playerName = P.Name;
-                    pInfo.playerLevel = P.Level.ToString();
+                    PlayerInfo pInfo = new PlayerInfo()
+                    {
+                        playerID = P.DatabaseID,
+                        playerName = P.Name,
+                        playerLevel = P.Level.ToString()
+                    };
                     eachServer.players.Add(pInfo);
                 }
 
@@ -211,19 +223,21 @@ namespace IW4MAdmin
             }
 
 
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(info);
-            resp.additionalHeaders = new Dictionary<string, string>();
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(info),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -231,35 +245,38 @@ namespace IW4MAdmin
 
     class Info : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "Info";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/_info";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            ApplicationInfo info = new ApplicationInfo();
-            info.name = "IW4MAdmin";
-            info.version = Program.Version;
-
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(info);
-            resp.additionalHeaders = new Dictionary<string, string>();
+            ApplicationInfo info = new ApplicationInfo()
+            {
+                name = "IW4MAdmin",
+                version = Program.Version
+            };
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(info),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -268,27 +285,29 @@ namespace IW4MAdmin
 
     class ConsoleJSON : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "_Console";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/_console";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            CommandInfo cmd = new CommandInfo();
-            cmd.Result = new List<string>();
+            CommandInfo cmd = new CommandInfo()
+            {
+                Result = new List<string>()
+            };
 
             if (querySet["command"] != null)
             {
 
                 if (querySet["server"] != null)
                 {
-                    Server S = Manager.GetInstance().Servers.ToList().Find(x => (x.getPort().ToString() == querySet["server"]));
+                    Server S = Manager.GetInstance().Servers.ToList().Find(x => (x.GetPort().ToString() == querySet["server"]));
 
                     if (S != null)
                     {
@@ -297,8 +316,10 @@ namespace IW4MAdmin
                         if (admin == null)
                             admin = new Player("RestUser", "-1", -1, (int)Player.Permission.User);
 
-                        Event remoteEvent = new Event(Event.GType.Say, querySet["command"], admin, null, S);
-                        remoteEvent.Remote = true;
+                        Event remoteEvent = new Event(Event.GType.Say, querySet["command"], admin, null, S)
+                        {
+                            Remote = true
+                        };
                         admin.lastEvent = remoteEvent;
 
                         S.ExecuteEvent(remoteEvent);
@@ -318,19 +339,21 @@ namespace IW4MAdmin
                 cmd.Result.Add("No command entered.");
             }
 
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(cmd);
-            resp.additionalHeaders = new Dictionary<string, string>();
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(cmd),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -339,17 +362,17 @@ namespace IW4MAdmin
 
     class PenaltiesJSON : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "Penalties";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/_penalties";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             int from = 0;
             if (querySet["from"] != null)
@@ -377,14 +400,18 @@ namespace IW4MAdmin
                     continue;
                 if (admin == null)
                     admin = new Player("Unknown", "-1", -1, (int)Player.Permission.Banned);
-                PenaltyInfo pInfo = new PenaltyInfo();
-                pInfo.adminName = admin.Name;
-                pInfo.adminLevel = admin.Level.ToString();
-                pInfo.penaltyReason = p.Reason;
-                pInfo.penaltyTime = SharedLibrary.Utilities.timePassed(p.When);
-                pInfo.penaltyType = p.BType.ToString();
-                pInfo.playerName = penalized.Name;
-                pInfo.playerID = penalized.DatabaseID;
+
+                PenaltyInfo pInfo = new PenaltyInfo()
+                {
+                    adminName = admin.Name,
+                    adminLevel = admin.Level.ToString(),
+                    penaltyReason = p.Reason,
+                    penaltyTime = SharedLibrary.Utilities.timePassed(p.When),
+                    penaltyType = p.BType.ToString(),
+                    playerName = penalized.Name,
+                    playerID = penalized.DatabaseID
+                };
+
                 if (admin.NetworkID == penalized.NetworkID)
                 {
                     pInfo.adminName = "IW4MAdmin";
@@ -393,19 +420,21 @@ namespace IW4MAdmin
                 info.Add(pInfo);
             }
 
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(info);
-            resp.additionalHeaders = new Dictionary<string, string>();
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(info),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -413,26 +442,26 @@ namespace IW4MAdmin
 
     class Penalties : HTMLPage
     {
-        public override string getName()
+        public override string GetName()
         {
             return "Penalties";
         }
 
-        public override string getPath()
+        public override string GetPath()
         {
             return "/penalties";
         }
 
-        public override string getContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public override string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             StringBuilder S = new StringBuilder();
-            S.Append(loadHeader());
+            S.Append(LoadHeader());
 
             IFile penalities = new IFile("webfront\\penalties.html");
-            S.Append(penalities.getLines());
+            S.Append(penalities.GetText());
             penalities.Close();
 
-            S.Append(loadFooter());
+            S.Append(LoadFooter());
 
             return S.ToString();
         }
@@ -440,26 +469,26 @@ namespace IW4MAdmin
 
     class WebConsole : HTMLPage
     {
-        public override string getName()
+        public override string GetName()
         {
             return "Console";
         }
 
-        public override string getPath()
+        public override string GetPath()
         {
             return "/console";
         }
 
-        public override string getContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public override string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             StringBuilder S = new StringBuilder();
-            S.Append(loadHeader());
+            S.Append(LoadHeader());
 
             IFile console = new IFile("webfront\\console.html");
-            S.Append(console.getLines());
+            S.Append(console.GetText());
             console.Close();
 
-            S.Append(loadFooter());
+            S.Append(LoadFooter());
 
             return S.ToString();
         }
@@ -467,26 +496,26 @@ namespace IW4MAdmin
 
     class Players : HTMLPage
     {
-        public override string getName()
+        public override string GetName()
         {
             return "Players";
         }
 
-        public override string getPath()
+        public override string GetPath()
         {
             return "/players";
         }
 
-        public override string getContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public override string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             StringBuilder S = new StringBuilder();
-            S.Append(loadHeader());
+            S.Append(LoadHeader());
 
             IFile penalities = new IFile("webfront\\players.html");
-            S.Append(penalities.getLines());
+            S.Append(penalities.GetText());
             penalities.Close();
 
-            S.Append(loadFooter());
+            S.Append(LoadFooter());
 
             return S.ToString();
         }
@@ -494,31 +523,33 @@ namespace IW4MAdmin
 
     class PubbansJSON : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "Public Ban List";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/pubbans";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(((Manager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() });
-            resp.additionalHeaders = new Dictionary<string, string>();
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(((Manager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() }),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -526,46 +557,49 @@ namespace IW4MAdmin
 
     class Pages : IPage
     {
-        public string getName()
+        public string GetName()
         {
             return "Pages";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/pages";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             List<PageInfo> pages = new List<PageInfo>();
 
-            foreach (var p in SharedLibrary.WebService.pageList.Where(x => x.isVisible()))
+            foreach (var p in SharedLibrary.WebService.PageList.Where(x => x.Visible()))
             {
                 if (p == this)
                     continue;
 
-                PageInfo pi = new PageInfo();
-                pi.pagePath = p.getPath();
-                // pi.pageType = p.getPage(querySet, headers).contentType;
-                pi.pageName = p.getName();
-                pi.visible = p.isVisible();
+                PageInfo pi = new PageInfo()
+                {
+                    pagePath = p.GetPath(), 
+                    pageName = p.GetName(),
+                    visible = p.Visible()
+                };
                 pages.Add(pi);
             }
 
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(pages);
-            resp.additionalHeaders = new Dictionary<string, string>();
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(pages),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             return resp;
         }
 
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }
@@ -573,29 +607,30 @@ namespace IW4MAdmin
 
     class GetPlayer : IPage
     {
-        public string getContentType()
+        public string GetContentType()
         {
             return "application/json";
         }
 
-        public string getPath()
+        public string GetPath()
         {
             return "/getplayer";
         }
 
-        public string getName()
+        public string GetName()
         {
             return "GetPlayer";
         }
 
-        public HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             List<PlayerInfo> pInfo = new List<PlayerInfo>();
             List<Player> matchedPlayers = new List<Player>();
-            HttpResponse resp = new HttpResponse();
-            resp.contentType = getContentType();
-            resp.additionalHeaders = new Dictionary<string, string>();
-
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                additionalHeaders = new Dictionary<string, string>()
+            };
             bool authed = Manager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
             bool recent = false;
 
@@ -625,15 +660,18 @@ namespace IW4MAdmin
                 foreach (var pp in matchedPlayers)
                 {
                     if (pp == null) continue;
-                    PlayerInfo eachPlayer = new PlayerInfo();
-                    eachPlayer.playerID = pp.DatabaseID;
-                    eachPlayer.playerIP = pp.IP;
-                    eachPlayer.playerLevel = pp.Level.ToString();
-                    eachPlayer.playerName = pp.Name;
-                    eachPlayer.playernpID = pp.NetworkID;
-                    eachPlayer.forumID = -1;
-                    eachPlayer.authed = authed;
-                    eachPlayer.showV2Features = false;
+
+                    PlayerInfo eachPlayer = new PlayerInfo()
+                    {
+                        playerID = pp.DatabaseID,
+                        playerIP = pp.IP,
+                        playerLevel = pp.Level.ToString(),
+                        playerName = pp.Name,
+                        playernpID = pp.NetworkID,
+                        forumID = -1,
+                        authed = authed,
+                        showV2Features = false
+                    };
 
                     if (!recent)
                     {
@@ -658,7 +696,7 @@ namespace IW4MAdmin
             return resp;
         }
 
-        public bool isVisible()
+        public bool Visible()
         {
             return false;
         }

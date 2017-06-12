@@ -14,5 +14,6 @@ namespace SharedLibrary.Interfaces
         ClientsDB GetClientDatabase();
         AliasesDB GetAliasesDatabase();
         IList<MessageToken> GetMessageTokens();
+        IList<Player> GetActiveClients();
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-using SharedLibrary;
 using SharedLibrary.Network;
 using System.Threading.Tasks;
 
@@ -12,22 +11,22 @@ namespace SharedLibrary.Commands
     {
         public CQuit(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override Task ExecuteAsync(Event E)
         {
-            E.Owner.Manager.Stop();
+            return Task.Run(() => { E.Owner.Manager.Stop(); });
         }
     }
 
-    class Owner : Command
+    class COwner : Command
     {
         
-        public Owner(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public COwner(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
             if (E.Owner.Manager.GetClientDatabase().GetOwner() == null)
             {
-                E.Origin.setLevel(Player.Permission.Owner);
+                E.Origin.SetLevel(Player.Permission.Owner);
                 await E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
                 E.Owner.owner = E.Origin;
                 E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
@@ -74,7 +73,7 @@ namespace SharedLibrary.Commands
             if (E.Origin.Level > E.Target.Level)
                 await E.Target.Kick(E.Target.lastOffense, E.Origin);
             else
-                await E.Origin.Tell("You cannot kick " + E.Target.Name);            
+                await E.Origin.Tell($"You cannot kick {E.Target.Name}");            
         }
     }
 
@@ -84,7 +83,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Broadcast("^1" + E.Origin.Name + " - ^6" + E.Data + "^7");
+            await E.Owner.Broadcast($"^:{E.Origin.Name} - ^6{E.Data}^7");
         }
     }
 
@@ -284,31 +283,15 @@ namespace SharedLibrary.Commands
             if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
                 newPerm = Player.Permission.Banned;
 
-            bool playerInOtherServer = false;
-
             if (newPerm > Player.Permission.Banned)
             {
-                E.Target.setLevel(newPerm);
-                // prevent saving of old permissions on disconnect
-                // todo: manager DB
-                foreach (var server in E.Owner.Manager.GetServers())
-                {
-                    foreach (var player in server.GetPlayersAsList())
-                    {
-                        if (player != null && player.NetworkID == E.Target.NetworkID)
-                        {
-                            player.setLevel(newPerm);
-                            await E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
-                            playerInOtherServer = true;
-                        }
-                    }
-                }
+                var ActiveClient = E.Owner.Manager.GetActiveClients().First(p => p.NetworkID == E.Target.NetworkID);
+                ActiveClient?.SetLevel(newPerm);
 
-                if (!playerInOtherServer)
-                    await E.Target.Tell("Congratulations! You have been promoted to ^3" + newPerm);
-                await E.Origin.Tell(E.Target.Name + " was successfully promoted!");
-           
-                //NEEED TO MOVE
+                await ActiveClient?.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+                await E.Origin.Tell($"{E.Target.Name} was successfully promoted!");
+
+                E.Target.SetLevel(newPerm);
                 E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Target);
             }
 
@@ -398,7 +381,7 @@ namespace SharedLibrary.Commands
 
             foreach (Player P in db_players)
             { 
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, SharedLibrary.Utilities.levelToColor(P.Level), P.IP, P.getLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, SharedLibrary.Utilities.levelToColor(P.Level), P.IP, P.GetLastConnection());
                 await E.Origin.Tell(mesg);
             }
         }
@@ -516,14 +499,14 @@ namespace SharedLibrary.Commands
 
             if (E.Target.Level == Player.Permission.Flagged)
             {
-                E.Target.setLevel(Player.Permission.User);
+                E.Target.SetLevel(Player.Permission.User);
                 await E.Origin.Tell("You have ^5unflagged ^7" + E.Target.Name);
             }
 
             else
             {
                 E.Data = Utilities.RemoveWords(E.Data, 1);
-                E.Target.setLevel(Player.Permission.Flagged);
+                E.Target.SetLevel(Player.Permission.Flagged);
                 E.Owner.Manager.GetClientPenalties().AddPenalty(new Penalty(Penalty.Type.Flag, E.Data, E.Target.NetworkID, E.Origin.NetworkID, DateTime.Now, E.Target.IP));
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }

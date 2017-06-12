@@ -25,7 +25,7 @@ namespace SharedLibrary.Network
             var ServerOOBConnection = new UdpClient();
             ServerOOBConnection.Client.SendTimeout = 1000;
             ServerOOBConnection.Client.ReceiveTimeout = 1000;
-            var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.getIP()), QueryServer.getPort());
+            var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.GetIP()), QueryServer.GetPort());
 
             string QueryString = String.Empty;
 

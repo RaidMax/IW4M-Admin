@@ -13,6 +13,11 @@ namespace IW4MAdmin
     {
         public void OnException(IScheduler scheduler, Exception e)
         {
+            // it looks like there's a library error in
+            // Kayak.Http.HttpServerTransactionDelegate.OnError
+            if (e.GetType() == typeof(NullReferenceException))
+                return;
+
             Manager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);
             Manager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
 
@@ -26,7 +31,7 @@ namespace IW4MAdmin
 
         public void OnStop(IScheduler scheduler)
         {
-            Manager.GetInstance().Logger.WriteDebug("Web service has been stopped...");
+            Manager.GetInstance().Logger.WriteInfo("Web service has been stopped...");
         }
     }
 

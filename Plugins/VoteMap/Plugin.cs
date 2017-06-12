@@ -27,7 +27,7 @@ namespace Votemap_Plugin
         /// <param name="E">This is the `say` event that comes from the server</param>
         public override async Task ExecuteAsync(Event E)
         {
-            var voting = Vote.getServerVotes(E.Owner.getPort());
+            var voting = Vote.getServerVotes(E.Owner.GetPort());
 
             // we only want to allow a vote during a vote session
             if (voting.voteInSession)
@@ -60,7 +60,7 @@ namespace Votemap_Plugin
 
         public override async Task  ExecuteAsync(Event E)
         {
-            var voting = Vote.getServerVotes(E.Owner.getPort());
+            var voting = Vote.getServerVotes(E.Owner.GetPort());
 
             if (voting.voteInSession)
             {
@@ -222,7 +222,7 @@ namespace Votemap_Plugin
         /// <param name="S"></param>
         public async Task OnTickAsync(Server S)
         {
-            var serverVotes = getServerVotes(S.getPort());
+            var serverVotes = getServerVotes(S.GetPort());
 
             if (serverVotes != null)
             {
@@ -282,17 +282,17 @@ namespace Votemap_Plugin
         {
             if (E.Type == Event.GType.Start)
             {
-                serverVotingList.Add(new ServerVoting(S.getPort()));
+                serverVotingList.Add(new ServerVoting(S.GetPort()));
             }
 
             if (E.Type == Event.GType.Stop)
             {
-                serverVotingList.RemoveAll(x => x.serverID == S.getPort());
+                serverVotingList.RemoveAll(x => x.serverID == S.GetPort());
             }
 
             if (E.Type == Event.GType.MapEnd || E.Type == Event.GType.MapChange)
             {
-                var serverVotes = getServerVotes(S.getPort());
+                var serverVotes = getServerVotes(S.GetPort());
                 serverVotes.voteList.Clear();
                 serverVotes.voteTimeStart   = DateTime.MinValue;
                 serverVotes.loadStartTime   = DateTime.Now;

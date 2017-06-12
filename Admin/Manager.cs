@@ -66,14 +66,14 @@ namespace IW4MAdmin
             var Configs = Directory.EnumerateFiles("config/servers").Where(x => x.Contains(".cfg"));
 
             if (Configs.Count() == 0)
-                Config.Generate();
+                ServerConfig.Generate();
 
             SharedLibrary.WebService.Init();
             PluginImporter.Load();
 
             foreach (var file in Configs)
             {
-                var Conf = Config.Read(file);
+                var Conf = ServerConfig.Read(file);
                 var ServerInstance = new IW4MServer(this, Conf.IP, Conf.Port, Conf.Password);
 
                 Task.Run(async () =>
@@ -125,7 +125,7 @@ namespace IW4MAdmin
                     {
                         Status.Update(new Task(() => (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken())));
                         if (Status.RunAverage > 500)
-                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).getIP()}::{(Status.Dependant as Server).getPort()} [{Status.RunAverage}ms]");
+                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).GetIP()}::{(Status.Dependant as Server).GetPort()} [{Status.RunAverage}ms]");
                     }
                 }
 
@@ -169,6 +169,16 @@ namespace IW4MAdmin
         public IList<MessageToken> GetMessageTokens()
         {
             return MessageTokens;
+        }
+
+        public IList<Player> GetActiveClients()
+        {
+            var ActiveClients = new List<Player>();
+
+            foreach (var server in Servers)
+                ActiveClients.AddRange(server.Players.Where(p => p != null));
+
+            return ActiveClients;
         }
     }
 }

@@ -343,26 +343,26 @@ namespace MessageBoard.Forum
             forumPages.Add(logout);
             forumPages.Add(stats);
 
-            SharedLibrary.WebService.pageList.Add(login);
-            SharedLibrary.WebService.pageList.Add(loginJSON);
-            SharedLibrary.WebService.pageList.Add(register);
-            SharedLibrary.WebService.pageList.Add(registerJSON);
-            SharedLibrary.WebService.pageList.Add(userinfoJSON);
-            SharedLibrary.WebService.pageList.Add(viewUser);
-            SharedLibrary.WebService.pageList.Add(userCP);
-            SharedLibrary.WebService.pageList.Add(updateUserJSON);
-            SharedLibrary.WebService.pageList.Add(categoriesJSON);
-            SharedLibrary.WebService.pageList.Add(category);
-            SharedLibrary.WebService.pageList.Add(categorythreadsJSON);
-            SharedLibrary.WebService.pageList.Add(home);
-            SharedLibrary.WebService.pageList.Add(recentthreadsJSON);
-            SharedLibrary.WebService.pageList.Add(postthread);
-            SharedLibrary.WebService.pageList.Add(postthreadJSON);
-            SharedLibrary.WebService.pageList.Add(editthreadJSON);
-            SharedLibrary.WebService.pageList.Add(threadJSON);
-            SharedLibrary.WebService.pageList.Add(viewthread);
-            SharedLibrary.WebService.pageList.Add(logout);
-            SharedLibrary.WebService.pageList.Add(stats);
+            SharedLibrary.WebService.PageList.Add(login);
+            SharedLibrary.WebService.PageList.Add(loginJSON);
+            SharedLibrary.WebService.PageList.Add(register);
+            SharedLibrary.WebService.PageList.Add(registerJSON);
+            SharedLibrary.WebService.PageList.Add(userinfoJSON);
+            SharedLibrary.WebService.PageList.Add(viewUser);
+            SharedLibrary.WebService.PageList.Add(userCP);
+            SharedLibrary.WebService.PageList.Add(updateUserJSON);
+            SharedLibrary.WebService.PageList.Add(categoriesJSON);
+            SharedLibrary.WebService.PageList.Add(category);
+            SharedLibrary.WebService.PageList.Add(categorythreadsJSON);
+            SharedLibrary.WebService.PageList.Add(home);
+            SharedLibrary.WebService.PageList.Add(recentthreadsJSON);
+            SharedLibrary.WebService.PageList.Add(postthread);
+            SharedLibrary.WebService.PageList.Add(postthreadJSON);
+            SharedLibrary.WebService.PageList.Add(editthreadJSON);
+            SharedLibrary.WebService.PageList.Add(threadJSON);
+            SharedLibrary.WebService.PageList.Add(viewthread);
+            SharedLibrary.WebService.PageList.Add(logout);
+            SharedLibrary.WebService.PageList.Add(stats);
 
             guestRank   = database.getRank("Guest");
             UserRank    = database.getRank("User");
@@ -375,7 +375,7 @@ namespace MessageBoard.Forum
             //session logouts
             //checkme
             foreach (var page in forumPages)
-                SharedLibrary.WebService.pageList.Remove(page);
+                SharedLibrary.WebService.PageList.Remove(page);
         }
     }
 
@@ -386,22 +386,22 @@ namespace MessageBoard.Forum
         {
             protected Session currentSession; 
 
-            public bool isVisible()
+            public bool Visible()
             {
                 return false;
             }
             
-            public virtual string getPath()
+            public virtual string GetPath()
             {
                 return "/forum";
             }
 
-            public string getName()
+            public string GetName()
             {
                 return "JSONPage";
             } 
 
-            public virtual HttpResponse getPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public virtual HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
                 HttpResponse resp = new HttpResponse();
                 resp.contentType = "application/json";
@@ -431,22 +431,22 @@ namespace MessageBoard.Forum
         abstract public class ForumPage : HTMLPage
         {
             public ForumPage(bool visible) : base(visible) { }
-            public abstract override string getName();
-            public override string getPath()
+            public abstract override string GetName();
+            public override string GetPath()
             {
-                return base.getPath() + "/forum";
+                return base.GetPath() + "/forum";
             }
-            public override Dictionary<string, string> getHeaders(IDictionary<string, string> requestHeaders)
+            public override Dictionary<string, string> GetHeaders(IDictionary<string, string> requestHeaders)
             {
-                return base.getHeaders(requestHeaders);
+                return base.GetHeaders(requestHeaders);
             }
 
             protected string templatation(string bodyContent)
             {
                 StringBuilder S = new StringBuilder();
-                S.Append(base.loadHeader());
+                S.Append(base.LoadHeader());
                 S.Append(bodyContent);
-                S.Append(base.loadFooter());
+                S.Append(base.LoadFooter());
 
                 return S.ToString();
             }
@@ -459,19 +459,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/login";
+                return base.GetPath() + "/login";
             }
             
-            public override string getContent(NameValueCollection querySet, IDictionary<string,string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string,string> headers)
             {
-                return templatation(loadFile("forum\\login.html"));
+                return templatation(LoadFile("forum\\login.html"));
             }
         }
 
@@ -482,19 +482,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Register";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/register";
+                return base.GetPath() + "/register";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\register.html");
+                string content = LoadFile("forum\\register.html");
                 return templatation(content);
             }
         }
@@ -506,19 +506,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - Home";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/home";
+                return base.GetPath() + "/home";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\home.html");
+                string content = LoadFile("forum\\home.html");
                 return templatation(content);
             }
         }
@@ -530,19 +530,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - Post New Thread";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/postthread";
+                return base.GetPath() + "/postthread";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\postthread.html");
+                string content = LoadFile("forum\\postthread.html");
                 return templatation(content);
             }
         }
@@ -554,19 +554,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - Category View";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/category";
+                return base.GetPath() + "/category";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\category.html");
+                string content = LoadFile("forum\\category.html");
                 return templatation(content);
             }
         }
@@ -578,19 +578,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - View User";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/user";
+                return base.GetPath() + "/user";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\user.html");
+                string content = LoadFile("forum\\user.html");
                 return templatation(content);
             }
         }
@@ -602,19 +602,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - User Control Panel";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/usercp";
+                return base.GetPath() + "/usercp";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\usercp.html");
+                string content = LoadFile("forum\\usercp.html");
                 return templatation(content);
             }
         }
@@ -626,19 +626,19 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - View Thread";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/thread";
+                return base.GetPath() + "/thread";
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
-                string content = loadFile("forum\\thread.html");
+                string content = LoadFile("forum\\thread.html");
                 return templatation(content);
             }
         }
@@ -650,23 +650,23 @@ namespace MessageBoard.Forum
 
             }
 
-            public override string getName()
+            public override string GetName()
             {
                 return "Forum - Log Out";
             }
 
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/logout";
+                return base.GetPath() + "/logout";
             }
 
-            public override Dictionary<string, string> getHeaders(IDictionary<string, string> requestHeaders)
+            public override Dictionary<string, string> GetHeaders(IDictionary<string, string> requestHeaders)
             {
                 Plugin.Main.forum.removeSession(requestHeaders["Cookie"].Split('=')[1]);
                 return new Dictionary<string, string>() { { "Set-Cookie", "IW4MAdmin_ForumSession=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" } };
             }
 
-            public override string getContent(NameValueCollection querySet, IDictionary<string, string> headers)
+            public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
             {
                 string content = @"<meta http-equiv='refresh' content='0; url = login' />";
                 return templatation(content);
@@ -675,18 +675,18 @@ namespace MessageBoard.Forum
 
         public class RegisterJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_register";
+                return base.GetPath() + "/_register";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
           
                 var result = new ActionResponse();
                 result.success = false;
-                result.destination = base.getPath() + "/error";
+                result.destination = base.GetPath() + "/error";
                 
                 try {
 
@@ -723,7 +723,7 @@ namespace MessageBoard.Forum
 
                     else
                     {
-                        result.destination = base.getPath() + "/home";
+                        result.destination = base.GetPath() + "/home";
                         result.success = true;
                         result.errorCode = Manager.ErrorCode.NO_ERROR;
                     }
@@ -742,14 +742,14 @@ namespace MessageBoard.Forum
 
         public class userinfoJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_userinfo";
+                return base.GetPath() + "/_userinfo";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
 
                 UserInfo info = new UserInfo();
                 bool validUserSelection = true;
@@ -800,14 +800,14 @@ namespace MessageBoard.Forum
 
         public class updateUserJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_updateuser";
+                return base.GetPath() + "/_updateuser";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 var aResp = new ActionResponse();
 
                 bool passwordUpdateRequest = false;
@@ -892,14 +892,14 @@ namespace MessageBoard.Forum
 
         public class LoginJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_login";
+                return base.GetPath() + "/_login";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 ActionResponse aResp = new ActionResponse();
                 aResp.success = false;
 
@@ -926,14 +926,14 @@ namespace MessageBoard.Forum
 
         public class categoriesJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_categories";
+                return base.GetPath() + "/_categories";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 var categories = Plugin.Main.forum.getAllCategories();
      
 
@@ -944,14 +944,14 @@ namespace MessageBoard.Forum
 
         public class recentthreadsJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_recentthreads";
+                return base.GetPath() + "/_recentthreads";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
 
                 try
                 {
@@ -986,14 +986,14 @@ namespace MessageBoard.Forum
 
         public class categorythreadsJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_categorythreads";
+                return base.GetPath() + "/_categorythreads";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 var aResp = new ActionResponse();
 
                 try
@@ -1033,14 +1033,14 @@ namespace MessageBoard.Forum
 
         public class threadJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_thread";
+                return base.GetPath() + "/_thread";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 var aResp = new ActionResponse();
                 aResp.success = false;
                 aResp.errorCode = Manager.ErrorCode.NO_ERROR;
@@ -1096,14 +1096,14 @@ namespace MessageBoard.Forum
 
         public class editthreadJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_editthread";
+                return base.GetPath() + "/_editthread";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 var aResp = new ActionResponse();
                 aResp.success = false;
                 aResp.errorCode = Manager.ErrorCode.NO_ERROR;
@@ -1237,14 +1237,14 @@ namespace MessageBoard.Forum
 
         public class postthreadJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_postthread";
+                return base.GetPath() + "/_postthread";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 ActionResponse aResp = new ActionResponse();
 
                 if (currentSession.sessionUser.ranking.equivalentRank < Player.Permission.Trusted)
@@ -1316,14 +1316,14 @@ namespace MessageBoard.Forum
 
         public class StatsJSON : JSONPage
         {
-            public override string getPath()
+            public override string GetPath()
             {
-                return base.getPath() + "/_stats";
+                return base.GetPath() + "/_stats";
             }
 
-            public override HttpResponse getPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
+            public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
-                var resp = base.getPage(querySet, requestHeaders);
+                var resp = base.GetPage(querySet, requestHeaders);
                 StatView stats = new StatView();
 
                 stats.onlineUsers = new List<User>();

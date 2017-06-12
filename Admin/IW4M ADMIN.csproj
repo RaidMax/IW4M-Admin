@@ -123,7 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands.cs" />
-    <Compile Include="Config.cs" />
+    <Compile Include="ServerConfig.cs" />
     <Compile Include="Kayak.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Main.cs" />

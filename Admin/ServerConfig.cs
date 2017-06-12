@@ -9,7 +9,7 @@ using SharedLibrary.Interfaces;
 
 namespace IW4MAdmin
 {
-    public class Config : Serialize<Config>
+    public class ServerConfig : Serialize<ServerConfig>
     {
         public string IP;
         public int Port;
@@ -21,7 +21,7 @@ namespace IW4MAdmin
             return $"config/servers/{IP}_{Port}.cfg";
         }
 
-        public static Config Generate()
+        public static ServerConfig Generate()
         {
             string IP = String.Empty;
             int Port = 0;
@@ -60,7 +60,7 @@ namespace IW4MAdmin
             Console.Write("Enter server RCON password: ");
             Password = Console.ReadLine();
 
-            var config = new Config() { IP = IP, Password = Password, Port = Port };
+            var config = new ServerConfig() { IP = IP, Password = Password, Port = Port };
             config.Write();
 
             Console.WriteLine("Config saved, add another? [y/n]:");

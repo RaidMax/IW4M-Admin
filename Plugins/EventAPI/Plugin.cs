@@ -95,7 +95,7 @@ namespace EventAPI
             }
         }
 
-        public async Task OnLoadAsync(Server S)
+        public async Task OnLoadAsync()
         {
             APIEvents = new Queue<RestEvent>();
             flaggedMessagesText = new List<string>();
@@ -103,7 +103,7 @@ namespace EventAPI
             WebService.PageList.Add(new EventsJSON());
         }
 
-        public async Task OnUnloadAsync(Server S)
+        public async Task OnUnloadAsync()
         {
             APIEvents.Clear();
             ActiveServers.Clear();

@@ -5,8 +5,8 @@ namespace SharedLibrary.Interfaces
 {
     public interface IPlugin
     {
-        Task OnLoadAsync(Server S);
-        Task OnUnloadAsync(Server S);
+        Task OnLoadAsync();
+        Task OnUnloadAsync();
         Task OnEventAsync(Event E, Server S);
         Task OnTickAsync(Server S);
 

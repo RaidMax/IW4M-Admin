@@ -529,8 +529,9 @@ namespace IW4MAdmin
                 throw new SharedLibrary.Exceptions.ServerException($"Invalid gamelog file {logPath}");
 #endif
             }
+            else
+                logFile = new IFile(logPath);
 
-            logFile = new IFile(logPath);
             Logger.WriteInfo("Log file is " + logPath);
             await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
 #if !DEBUG

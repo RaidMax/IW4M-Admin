@@ -22,10 +22,11 @@ namespace SharedLibrary.Helpers
                 ConfigurationSet.Add(S.ToString(), Config);
             }
 
-            catch(Exceptions.SerializeException)
+            catch (Exceptions.SerializeException)
             {
                 ConfigurationSet.Add(S.ToString(), new Dictionary<string, object>());
             }
+
         }
 
         public void AddProperty(Server S, KeyValuePair<string, object> Property)

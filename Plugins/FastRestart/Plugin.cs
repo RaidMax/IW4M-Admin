@@ -53,6 +53,10 @@ namespace Plugin
         {
            if (E.Type == Event.GType.Start)
             {
+                ConfigManager.AddConfiguration(S);
+                if (ConfigManager.GetConfiguration(S).Keys.Count == 0)
+                    ConfigManager.AddProperty(S, new KeyValuePair<string, object>("Enabled", false));
+
                 try
                 {
                     await S.GetDvarAsync<int>("scr_intermission_time");
@@ -65,13 +69,9 @@ namespace Plugin
             }
         }
 
-        public async Task OnLoadAsync(Server S)
+        public async Task OnLoadAsync()
         {
-            ConfigManager = new ConfigurationManager(typeof(FastRestartPlugin));
-            ConfigManager.AddConfiguration(S);
-
-            if (ConfigManager.GetConfiguration(S).Keys.Count == 0)
-                ConfigManager.AddProperty(S, new KeyValuePair<string, object>("Enabled", false));
+            ConfigManager = new ConfigurationManager(typeof(FastRestartPlugin));      
         }
 
         public async Task OnTickAsync(Server S)
@@ -92,7 +92,7 @@ namespace Plugin
             }
         }
 
-        public Task OnUnloadAsync(Server S)
+        public Task OnUnloadAsync()
         {
             return null;
         }

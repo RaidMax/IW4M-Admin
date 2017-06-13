@@ -58,13 +58,28 @@ namespace IW4MAdmin
 
         public void Init()
         {
+            SharedLibrary.WebService.Init();
+            SharedLibrary.Plugins.PluginImporter.Load(this);
+
+            foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+            {
+                try
+                {
+                    Plugin.OnLoadAsync();
+                }
+
+                catch (Exception e)
+                {
+                    Logger.WriteError($"An error occured loading plugin {Plugin.Name}");
+                    Logger.WriteDebug($"Exception: {e.Message}");
+                    Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
+                }
+            }
+
             var Configs = Directory.EnumerateFiles("config/servers").Where(x => x.Contains(".cfg"));
 
             if (Configs.Count() == 0)
                 ServerConfig.Generate();
-
-            SharedLibrary.WebService.Init();
-            SharedLibrary.Plugins.PluginImporter.Load(this);
 
             foreach (var file in Configs)
             {
@@ -75,9 +90,6 @@ namespace IW4MAdmin
                 {
                     try
                     {
-                        foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
-                            await Plugin.OnLoadAsync(ServerInstance);
-
                         await ServerInstance.Initialize();
                         Servers.Add(ServerInstance);
 

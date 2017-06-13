@@ -7,8 +7,7 @@ namespace MessageBoard.Plugin
 {
     public class Main : IPlugin
     {
-        public static Forum.Manager forum { get; private set; }
-        public static Server stupidServer { get; private set; }
+        public static Forum.Manager ManagerInstance { get; private set; }
 
         public string Author
         {
@@ -36,13 +35,13 @@ namespace MessageBoard.Plugin
 
         public async Task OnLoadAsync()
         {
-            forum = new Forum.Manager();
-            forum.Start();
+            ManagerInstance = new Forum.Manager();
+            ManagerInstance.Start();
         }
 
         public async Task OnUnloadAsync()
         {
-            forum.Stop();
+            ManagerInstance.Stop();
         }
 
         public async Task OnTickAsync(Server S)
@@ -52,11 +51,6 @@ namespace MessageBoard.Plugin
 
         public async Task OnEventAsync(Event E, Server S)
         {
-            if (E.Type == Event.GType.Start)
-            {
-                if (stupidServer == null)
-                    stupidServer = S;
-            }
         }
     }
 }

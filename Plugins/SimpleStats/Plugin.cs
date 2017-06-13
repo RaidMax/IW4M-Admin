@@ -133,12 +133,12 @@ namespace StatsPlugin
             get { return "RaidMax"; }
         }
 
-        public async Task OnLoadAsync(Server S)
+        public async Task OnLoadAsync()
         {
             statLists = new List<StatTracking>();
         }
 
-        public async Task OnUnloadAsync(Server S)
+        public async Task OnUnloadAsync()
         {
             statLists.Clear();
         }

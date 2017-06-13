@@ -27,7 +27,7 @@ namespace MessageBoard
         public User()
         {
             username = "Guest";
-            ranking = Plugin.Main.forum.guestRank;
+            ranking = Plugin.Main.ManagerInstance.guestRank;
         }
 
         /// <summary>

@@ -411,8 +411,8 @@ namespace MessageBoard.Forum
                 {
                     //Console.WriteLine("JSON request contains session header - " + requestHeaders["Cookie"]);
                     string cookie = requestHeaders["Cookie"].Split('=')[1];
-                    Plugin.Main.forum.startSession(cookie);
-                    currentSession = Plugin.Main.forum.getSession(cookie);
+                    Plugin.Main.ManagerInstance.startSession(cookie);
+                    currentSession = Plugin.Main.ManagerInstance.getSession(cookie);
                 }
 
                 else
@@ -420,8 +420,8 @@ namespace MessageBoard.Forum
                     string sessionID = Convert.ToBase64String(Encryption.PasswordHasher.GenerateSalt());
                     resp.additionalHeaders.Add("Set-Cookie", "IW4MAdmin_ForumSession=" + sessionID + "; path=/; expires=Sat, 01 May 2025 12:00:00 GMT");
                     currentSession = new Session(new User(), sessionID);
-                    Plugin.Main.forum.startSession(sessionID);
-                    currentSession = Plugin.Main.forum.getSession(sessionID);
+                    Plugin.Main.ManagerInstance.startSession(sessionID);
+                    currentSession = Plugin.Main.ManagerInstance.getSession(sessionID);
                 }
 
                 return resp;
@@ -662,7 +662,7 @@ namespace MessageBoard.Forum
 
             public override Dictionary<string, string> GetHeaders(IDictionary<string, string> requestHeaders)
             {
-                Plugin.Main.forum.removeSession(requestHeaders["Cookie"].Split('=')[1]);
+                Plugin.Main.ManagerInstance.removeSession(requestHeaders["Cookie"].Split('=')[1]);
                 return new Dictionary<string, string>() { { "Set-Cookie", "IW4MAdmin_ForumSession=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" } };
             }
 
@@ -711,10 +711,10 @@ namespace MessageBoard.Forum
                     byte[] passwordSalt = Encryption.PasswordHasher.GenerateSalt();
                     string b64PasswordHash = Convert.ToBase64String(Encryption.PasswordHasher.ComputeHash(password, passwordSalt));
    
-                    User registeringUser = new User(username, querySet["hiddenUsername"], email, b64PasswordHash, Convert.ToBase64String(passwordSalt), Plugin.Main.forum.UserRank);
+                    User registeringUser = new User(username, querySet["hiddenUsername"], email, b64PasswordHash, Convert.ToBase64String(passwordSalt), Plugin.Main.ManagerInstance.UserRank);
 
                     currentSession = new Session(registeringUser, currentSession.sessionID);
-                    var addUserResult = Plugin.Main.forum.addUser(registeringUser, currentSession);
+                    var addUserResult = Plugin.Main.ManagerInstance.addUser(registeringUser, currentSession);
 
                     if (addUserResult != Manager.ErrorCode.NO_ERROR)
                     {
@@ -757,8 +757,8 @@ namespace MessageBoard.Forum
                 try
                 {
                     int userid = Convert.ToInt32(querySet["id"]);
-                    info.user = Plugin.Main.forum.getUser(userid);
-                    info.profile = Plugin.Main.forum.getProfileSettings(userid);
+                    info.user = Plugin.Main.ManagerInstance.getUser(userid);
+                    info.profile = Plugin.Main.ManagerInstance.getProfileSettings(userid);
                 }
 
                 catch (FormatException)
@@ -778,7 +778,7 @@ namespace MessageBoard.Forum
                     info.user = currentSession.sessionUser;
                     try
                     {
-                        info.profile = Plugin.Main.forum.getProfileSettings(info.user.id);
+                        info.profile = Plugin.Main.ManagerInstance.getProfileSettings(info.user.id);
                     }
 
                     catch (Exceptions.UserException)
@@ -846,7 +846,7 @@ namespace MessageBoard.Forum
                     User existingUser = null;
                     try
                     {
-                        existingUser = Plugin.Main.forum.getUser(username);
+                        existingUser = Plugin.Main.ManagerInstance.getUser(username);
                     }
 
                     catch (Exceptions.UserException)
@@ -859,7 +859,7 @@ namespace MessageBoard.Forum
                         aResp.errorCode = Manager.ErrorCode.USER_DUPLICATE;
                     else
                     {
-                        var profile = Plugin.Main.forum.getProfileSettings(currentSession.sessionUser.id);
+                        var profile = Plugin.Main.ManagerInstance.getProfileSettings(currentSession.sessionUser.id);
                         if (username.Length <= Manager.USERNAME_MAXLENGTH)
                             currentSession.sessionUser.updateUsername(username);
                         else
@@ -873,10 +873,10 @@ namespace MessageBoard.Forum
                             currentSession.sessionUser.updatePassword(Convert.ToBase64String(passwordSalt), b64PasswordHash);
                         }
 
-                        Plugin.Main.forum.updateUser(currentSession.sessionUser);
+                        Plugin.Main.ManagerInstance.updateUser(currentSession.sessionUser);
                         if (bannercolor.Length == 7)
                             profile.bannerColor = bannercolor;
-                        Plugin.Main.forum.updateUserProfile(profile);
+                        Plugin.Main.ManagerInstance.updateUserProfile(profile);
                         
                     }
                 }
@@ -908,7 +908,7 @@ namespace MessageBoard.Forum
                     string username = DNA.Text.TextEngine.Text(querySet["username"]);
                     string password = DNA.Text.TextEngine.Text(querySet["password"]);
 
-                    var result = Plugin.Main.forum.authorizeUser(username, password, currentSession.sessionID);
+                    var result = Plugin.Main.ManagerInstance.authorizeUser(username, password, currentSession.sessionID);
                     aResp.success = result == Manager.ErrorCode.NO_ERROR;
                     aResp.errorCode = result;
                     aResp.destination = "home";
@@ -934,7 +934,7 @@ namespace MessageBoard.Forum
             public override HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> requestHeaders)
             {
                 var resp = base.GetPage(querySet, requestHeaders);
-                var categories = Plugin.Main.forum.getAllCategories();
+                var categories = Plugin.Main.ManagerInstance.getAllCategories();
      
 
                 resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(categories);
@@ -956,7 +956,7 @@ namespace MessageBoard.Forum
                 try
                 {
                     List<HomeThread> threads    = new List<HomeThread>();
-                    var categories              = Plugin.Main.forum.getAllCategories();
+                    var categories              = Plugin.Main.ManagerInstance.getAllCategories();
 
                     foreach (var t in categories)
                     {
@@ -967,7 +967,7 @@ namespace MessageBoard.Forum
                         thread.categoryTitle        = t.title;
                         thread.categoryDescription  = t.description;
                         thread.categoryID           = t.id;
-                        thread.recentThreads        = Plugin.Main.forum.getRecentThreads(t.id);
+                        thread.recentThreads        = Plugin.Main.ManagerInstance.getRecentThreads(t.id);
 
                         threads.Add(thread);
                     }
@@ -998,12 +998,12 @@ namespace MessageBoard.Forum
 
                 try
                 {
-                    var category = Plugin.Main.forum.getCategory(Convert.ToInt32(querySet["id"]));
+                    var category = Plugin.Main.ManagerInstance.getCategory(Convert.ToInt32(querySet["id"]));
 
                     if ((category.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.READ) != Permission.Action.READ)
                         throw new Exceptions.PermissionException("User cannot view this category");
 
-                    var categoryThreads = Plugin.Main.forum.getCategoryThreads(category.id);
+                    var categoryThreads = Plugin.Main.ManagerInstance.getCategoryThreads(category.id);
 
                     resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(categoryThreads);
                     return resp;
@@ -1049,12 +1049,12 @@ namespace MessageBoard.Forum
                 {
                     if (querySet.Get("id") != null)
                     {
-                        var thread = Plugin.Main.forum.getThread(Convert.ToInt32(querySet["id"]));
+                        var thread = Plugin.Main.ManagerInstance.getThread(Convert.ToInt32(querySet["id"]));
 
                         if ((thread.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.READ) != Permission.Action.READ)
                             throw new Exceptions.PermissionException("User cannot view this post");
 
-                        var replies = Plugin.Main.forum.getReplies(thread.id);
+                        var replies = Plugin.Main.ManagerInstance.getReplies(thread.id);
 
                         resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(new ThreadView(thread, replies));
                         aResp.success = true;
@@ -1062,7 +1062,7 @@ namespace MessageBoard.Forum
 
                     else if (querySet.Get("replyid") != null)
                     {
-                        var thread = Plugin.Main.forum.getReply(Convert.ToInt32(querySet["replyid"]));
+                        var thread = Plugin.Main.ManagerInstance.getReply(Convert.ToInt32(querySet["replyid"]));
 
                         //if ((thread.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.READ) != Permission.Action.READ)
                         //    throw new Exceptions.PermissionException("User cannot view this post");
@@ -1112,7 +1112,7 @@ namespace MessageBoard.Forum
                 {
                     if (querySet.Get("id") != null)
                     {
-                        var thread = Plugin.Main.forum.getThread(Convert.ToInt32(querySet["id"]));
+                        var thread = Plugin.Main.ManagerInstance.getThread(Convert.ToInt32(querySet["id"]));
 
                         if (thread.author.id != currentSession.sessionUser.id && (thread.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.MODIFY) != Permission.Action.MODIFY)
                             throw new Exceptions.PermissionException("User cannot modify this post");
@@ -1120,7 +1120,7 @@ namespace MessageBoard.Forum
                         if (querySet.Get("delete") != null)
                         {
                             thread.visible = false;
-                            aResp.errorCode = Plugin.Main.forum.updateThread(thread);
+                            aResp.errorCode = Plugin.Main.ManagerInstance.updateThread(thread);
                             aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                             aResp.destination = "category?id=" + thread.threadCategory.id;
                         }
@@ -1149,7 +1149,7 @@ namespace MessageBoard.Forum
 
                                 if (thread.updateTitle(title) && thread.updateContent(content))
                                 {
-                                    aResp.errorCode = Plugin.Main.forum.updateThread(thread);
+                                    aResp.errorCode = Plugin.Main.ManagerInstance.updateThread(thread);
                                     aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                                     aResp.destination = "thread?id=" + thread.id;
                                 }
@@ -1161,7 +1161,7 @@ namespace MessageBoard.Forum
 
                     else if (querySet.Get("replyid") != null)
                     {
-                        var reply = Plugin.Main.forum.getReply(Convert.ToInt32(querySet["replyid"]));
+                        var reply = Plugin.Main.ManagerInstance.getReply(Convert.ToInt32(querySet["replyid"]));
         
                         if (currentSession.sessionUser.id == 0 || reply.author.id != currentSession.sessionUser.id && (reply.threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.MODIFY) != Permission.Action.MODIFY)
                             throw new Exceptions.PermissionException("User cannot modify this reply");
@@ -1169,7 +1169,7 @@ namespace MessageBoard.Forum
                         if (querySet.Get("delete") != null)
                         {
                             reply.visible = false;
-                            aResp.errorCode = Plugin.Main.forum.updateReply(reply);
+                            aResp.errorCode = Plugin.Main.ManagerInstance.updateReply(reply);
                             aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                             aResp.destination = "thread?id=" + reply.threadid;
                         }
@@ -1199,7 +1199,7 @@ namespace MessageBoard.Forum
 
                                 if (reply.updateTitle(title) && reply.updateContent(content))
                                 {
-                                    aResp.errorCode = Plugin.Main.forum.updateReply(reply);
+                                    aResp.errorCode = Plugin.Main.ManagerInstance.updateReply(reply);
                                     aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                                     aResp.destination = "thread?id=" + threadID;
                                 }
@@ -1265,23 +1265,23 @@ namespace MessageBoard.Forum
 
                             if (querySet.Get("threadid") != null)
                             {
-                                var replyThread = Plugin.Main.forum.getThread(Convert.ToInt32(querySet.Get("threadid")));
+                                var replyThread = Plugin.Main.ManagerInstance.getThread(Convert.ToInt32(querySet.Get("threadid")));
                                 var reply = new Post(title, replyThread.getID(), content, currentSession.sessionUser);
 
-                                aResp.errorCode = Plugin.Main.forum.addPost(replyThread, reply);
+                                aResp.errorCode = Plugin.Main.ManagerInstance.addPost(replyThread, reply);
                                 aResp.destination = String.Format("thread?id={0}", replyThread.id);
                                 aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                             }
 
                             else
                             {
-                                Category threadCategory = Plugin.Main.forum.getCategory(Convert.ToInt32(querySet["category"]));
+                                Category threadCategory = Plugin.Main.ManagerInstance.getCategory(Convert.ToInt32(querySet["category"]));
 
                                 if ((threadCategory.permissions.Find(x => x.rankID == currentSession.sessionUser.ranking.id).actionable & Permission.Action.WRITE) == Permission.Action.WRITE)
                                 {
                                     ForumThread newThread = new ForumThread(title, content, currentSession.sessionUser, threadCategory);
 
-                                    aResp.errorCode = Plugin.Main.forum.addThread(newThread);
+                                    aResp.errorCode = Plugin.Main.ManagerInstance.addThread(newThread);
                                     aResp.destination = String.Format("category?id={0}", threadCategory.id);
                                     aResp.success = aResp.errorCode == Manager.ErrorCode.NO_ERROR;
                                 }
@@ -1328,7 +1328,7 @@ namespace MessageBoard.Forum
 
                 stats.onlineUsers = new List<User>();
 
-                foreach (Session s in Plugin.Main.forum.getSessions())
+                foreach (Session s in Plugin.Main.ManagerInstance.getSessions())
                 {
                     if (s.sessionUser.ranking.id > 0 && (DateTime.Now - s.sessionStartTime).TotalMinutes < 5 && s.sessionUser.username != "Guest")
                         stats.onlineUsers.Add(s.sessionUser);

@@ -84,13 +84,13 @@ namespace Welcome_Plugin
             }
         }
 
-        public async Task OnLoadAsync(Server S)
+        public async Task OnLoadAsync()
         {
             PlayerPings = new Dictionary<int, float>();
             PingAverageCount = 1;
         }
 
-        public async Task OnUnloadAsync(Server S)
+        public async Task OnUnloadAsync()
         {
             PlayerPings.Clear();
             PlayerPings = null;

@@ -27,12 +27,12 @@ namespace Votemap_Plugin
         /// <param name="E">This is the `say` event that comes from the server</param>
         public override async Task ExecuteAsync(Event E)
         {
-            var voting = Vote.getServerVotes(E.Owner.GetPort());
+            var voting = Vote.GetServerVotes(E.Owner.GetPort());
 
             // we only want to allow a vote during a vote session
             if (voting.voteInSession)
             {
-                if (voting.hasVoted(E.Origin.NetworkID))
+                if (voting.ClientHasVoted(E.Origin.NetworkID))
                     await E.Origin.Tell("You have already voted. Use ^5!vc ^7to ^5cancel ^7your vote");
                 else
                 {
@@ -43,7 +43,7 @@ namespace Votemap_Plugin
                        await  E.Origin.Tell("^1" + E.Data + " is not a recognized map");
                     else
                     {
-                        voting.castVote(E.Origin.NetworkID, votedMap);
+                        voting.CastClientVote(E.Origin.NetworkID, votedMap);
                         await E.Origin.Tell("You voted for ^5" + votedMap.Alias);
                     }
                 }
@@ -60,13 +60,13 @@ namespace Votemap_Plugin
 
         public override async Task  ExecuteAsync(Event E)
         {
-            var voting = Vote.getServerVotes(E.Owner.GetPort());
+            var voting = Vote.GetServerVotes(E.Owner.GetPort());
 
             if (voting.voteInSession)
             {
-                if (voting.hasVoted(E.Origin.NetworkID))
+                if (voting.ClientHasVoted(E.Origin.NetworkID))
                 {
-                    voting.cancelVote(E.Origin.NetworkID);
+                    voting.CancelClientVote(E.Origin.NetworkID);
                     await E.Origin.Tell("Vote cancelled");
                 }
                     
@@ -97,7 +97,7 @@ namespace Votemap_Plugin
 
         public class ServerVoting
         {
-            public int serverID
+            public int ServerId
             {
                 get; private set;
             }
@@ -107,58 +107,63 @@ namespace Votemap_Plugin
             public bool waitForLoad;
             public DateTime voteTimeStart;
             public DateTime loadStartTime;
-            public List<VoteData> voteList
+            public List<VoteData> VoteList
             {
                 get; private set;
             }
 
             public ServerVoting(int id)
             {
-                serverID        = id;
+                ServerId        = id;
                 voteInSession   = false;
                 votePassed      = false;
                 matchEnded      = false;
                 waitForLoad     = true;
-                voteList        = new List<VoteData>();
+                VoteList        = new List<VoteData>();
             }
 
-            public int getTotalVotes()
+            public int GetTotalVotes()
             {
-                return voteList.Count;
+                return VoteList.Count;
             }
 
-            public bool hasVoted(string guid)
+            public bool ClientHasVoted(string guid)
             {
-                return voteList.Exists(x => (x.guid == guid));
+                return VoteList.Exists(x => (x.guid == guid));
             }
 
-            public void castVote(string guid, Map map)
+            public void CastClientVote(string guid, Map map)
             {
-                var vote = new VoteData();
-                vote.guid = guid;
-                vote.map = map;
-                voteList.Add(vote);
+                var vote = new VoteData()
+                {
+                    guid = guid,
+                    map = map
+                };
+                VoteList.Add(vote);
             }
 
-            public void cancelVote(string guid)
+            public void CancelClientVote(string guid)
             {
-                voteList.RemoveAll(x => (x.guid == guid));
+                VoteList.RemoveAll(x => (x.guid == guid));
             }
 
-            public MapResult getTopMap()
+            public MapResult GetTopVotedMap()
             {
                 List<MapResult> results = new List<MapResult>();
-                MapResult result = new MapResult();
-                result.map = new Map("Remain", "Remain");
-                result.voteNum = 0;
-
-                foreach (var vote in voteList)
+                MapResult result = new MapResult()
+                {
+                    map = new Map("Remain", "Remain"),
+                    voteNum = 0
+                };
+                foreach (var vote in VoteList)
                 {
                     if (!results.Exists(x => (x.map.Name == vote.map.Name)))
                     {
-                        MapResult newResult = new MapResult();
-                        newResult.map = vote.map;
-                        newResult.voteNum = 1;
+                        MapResult newResult = new MapResult()
+                        {
+                            map = vote.map,
+                            voteNum = 1
+                        };
                         results.Add(newResult);
                     }
 
@@ -205,12 +210,12 @@ namespace Votemap_Plugin
             }
         }
 
-        public async Task OnLoadAsync(Server S)
+        public async Task OnLoadAsync()
         {
             serverVotingList = new List<ServerVoting>();
         }
 
-        public async Task OnUnloadAsync(Server S)
+        public async Task OnUnloadAsync()
         {
             serverVotingList.Clear();
         }
@@ -223,7 +228,7 @@ namespace Votemap_Plugin
         public async Task OnTickAsync(Server S)
         {
             return;
-            var serverVotes = getServerVotes(S.GetPort());
+            var serverVotes = GetServerVotes(S.GetPort());
 
             if (serverVotes != null)
             {
@@ -253,7 +258,7 @@ namespace Votemap_Plugin
 
                 if (!serverVotes.voteInSession && serverVotes.votePassed && (DateTime.Now - serverVotes.voteTimeStart).TotalSeconds > 30)
                 {
-                    await S.ExecuteCommandAsync("map " + serverVotes.getTopMap().map.Name);
+                    await S.ExecuteCommandAsync("map " + serverVotes.GetTopVotedMap().map.Name);
                     serverVotes.votePassed  = false;
                     return;
                 }
@@ -264,14 +269,14 @@ namespace Votemap_Plugin
                     {
                         serverVotes.voteInSession = false;
 
-                        MapResult m = serverVotes.getTopMap();
+                        MapResult m = serverVotes.GetTopVotedMap();
                         await S.Broadcast("Voting has ended!");
 
                         if (m.voteNum < minVotes && S.GetPlayersAsList().Count > 4)
                             await S.Broadcast("Vote map failed. At least ^5" + minVotes + " ^7people must choose the same map");
                         else
                         {
-                            await S.Broadcast(String.Format("Next map is ^5{0} ^7- [^2{1}/{2}^7] votes", m.map.Alias, m.voteNum, serverVotes.getTotalVotes()));
+                            await S.Broadcast(String.Format("Next map is ^5{0} ^7- [^2{1}/{2}^7] votes", m.map.Alias, m.voteNum, serverVotes.GetTotalVotes()));
                             serverVotes.votePassed = true;
                         }
                     }
@@ -289,22 +294,22 @@ namespace Votemap_Plugin
 
             if (E.Type == Event.GType.Stop)
             {
-                serverVotingList.RemoveAll(x => x.serverID == S.GetPort());
+                serverVotingList.RemoveAll(x => x.ServerId == S.GetPort());
             }
 
             if (E.Type == Event.GType.MapEnd || E.Type == Event.GType.MapChange)
             {
-                var serverVotes = getServerVotes(S.GetPort());
-                serverVotes.voteList.Clear();
+                var serverVotes = GetServerVotes(S.GetPort());
+                serverVotes.VoteList.Clear();
                 serverVotes.voteTimeStart   = DateTime.MinValue;
                 serverVotes.loadStartTime   = DateTime.Now;
                 serverVotes.waitForLoad     = true;
             }
         }
  
-        public static ServerVoting getServerVotes(int serverID)
+        public static ServerVoting GetServerVotes(int serverID)
         {
-            return serverVotingList.Find(x => (x.serverID == serverID));
+            return serverVotingList.Find(x => (x.ServerId == serverID));
         }
     }
 }

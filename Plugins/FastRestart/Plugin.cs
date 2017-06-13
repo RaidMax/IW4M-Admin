@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using SharedLibrary;
 using SharedLibrary.Interfaces;
@@ -19,11 +20,8 @@ namespace Plugin
 
         public override async Task ExecuteAsync(Event E)
         {
-            var Config = new FastRestartConfig() { Enabled = true };
-            if (!new Configuration<FastRestartConfig>(E.Owner).Write(Config))
-                await E.Origin.Tell("Failed to save the configuration file for fast restart");
-            else
-                await E.Origin.Tell("Fast restarting is now enabled for this server");
+            FastRestartPlugin.ConfigManager.UpdateProperty(E.Owner, new KeyValuePair<string, object>("Enabled", true));
+            await E.Origin.Tell("Fast restarting is now enabled for this server");
         }
     }
 
@@ -33,11 +31,8 @@ namespace Plugin
 
         public override async Task ExecuteAsync(Event E)
         {
-            var Config = new FastRestartConfig() { Enabled = false };
-            if (!new Configuration<FastRestartConfig>(E.Owner).Write(Config))
-                await E.Origin.Tell("Failed to save the configuration file for fast restart");
-            else
-                await E.Origin.Tell("Fast restarting is now disabled for this server");
+            FastRestartPlugin.ConfigManager.UpdateProperty(E.Owner, new KeyValuePair<string, object>("Enabled", false));
+            await E.Origin.Tell("Fast restarting is now disabled for this server");
         }
     }
 
@@ -45,6 +40,8 @@ namespace Plugin
     {
         bool MatchEnded;
         DateTime MatchEndTime;
+
+        public static ConfigurationManager ConfigManager { get; private set; }
 
         public string Name { get { return "Fast Restarter"; } }
 
@@ -70,13 +67,16 @@ namespace Plugin
 
         public async Task OnLoadAsync(Server S)
         {
-            // this initializes the file if it doesn't exist already
-            new Configuration<FastRestartConfig>(S).Read();
+            ConfigManager = new ConfigurationManager(typeof(FastRestartPlugin));
+            ConfigManager.AddConfiguration(S);
+
+            if (ConfigManager.GetConfiguration(S).Keys.Count == 0)
+                ConfigManager.AddProperty(S, new KeyValuePair<string, object>("Enabled", false));
         }
 
         public async Task OnTickAsync(Server S)
         {
-            if (!new Configuration<FastRestartConfig>(S).Read().Enabled)
+            if ((bool)ConfigManager.GetConfiguration(S)["Enabled"] == false)
                 return;
 
             MatchEnded = (await S.GetDvarAsync<int>("scr_gameended")).Value == 1;

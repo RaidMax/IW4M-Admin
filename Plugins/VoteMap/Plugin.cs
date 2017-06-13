@@ -222,6 +222,7 @@ namespace Votemap_Plugin
         /// <param name="S"></param>
         public async Task OnTickAsync(Server S)
         {
+            return;
             var serverVotes = getServerVotes(S.GetPort());
 
             if (serverVotes != null)
@@ -280,6 +281,7 @@ namespace Votemap_Plugin
 
         public async Task OnEventAsync(Event E, Server S)
         {
+            return;
             if (E.Type == Event.GType.Start)
             {
                 serverVotingList.Add(new ServerVoting(S.GetPort()));

@@ -23,7 +23,7 @@ namespace SharedLibrary.Interfaces
 
             catch (Exception e)
             {
-                throw new Exceptions.SerializeException($"Could not desialize file {filename}: {e.Message}");
+                throw new Exceptions.SerializeException($"Could not deserialize file {filename}: {e.Message}");
             }
         }
 

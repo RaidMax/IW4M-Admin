@@ -75,15 +75,15 @@ namespace IW4MAdmin
                 {
                     try
                     {
+                        foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+                            await Plugin.OnLoadAsync(ServerInstance);
+
                         await ServerInstance.Initialize();
                         Servers.Add(ServerInstance);
 
                         // this way we can keep track of execution time and see if problems arise.
                         var Status = new SharedLibrary.Helpers.AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
                         TaskStatuses.Add(Status);
-
-                        foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
-                            await Plugin.OnLoadAsync(ServerInstance);
 
                         Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
                     }

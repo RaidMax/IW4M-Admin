@@ -276,7 +276,6 @@ namespace IW4MAdmin
                 if (Args[0] == String.Empty)
                     return C;
 
-
                 if (Args[0][0] == '@') // user specifying target by database ID
                 {
                     int dbID = -1;
@@ -297,7 +296,9 @@ namespace IW4MAdmin
                         E.Target = Players[cNum];
                 }
 
-                else
+                E.Target = GetClientByName(E.Data.Trim());
+
+                if (E.Target == null)
                     E.Target = GetClientByName(Args[0]);
 
                 if (E.Target == null && C.RequiresTarget)

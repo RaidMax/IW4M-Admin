@@ -26,7 +26,7 @@ namespace SharedLibrary
             Players = new List<Player>(new Player[18]);
             events = new Queue<Event>();
             Reports = new List<Report>();
-            PlayerHistory = new Queue<SharedLibrary.Helpers.PlayerHistory>();
+            PlayerHistory = new Queue<Helpers.PlayerHistory>();
             ChatHistory = new List<Chat>();
             lastWebChat = DateTime.Now;
             nextMessage = 0;
@@ -138,7 +138,10 @@ namespace SharedLibrary
         /// <returns>Matching player if found</returns>
         public Player GetClientByName(String pName)
         {
-            return Players.FirstOrDefault(p => p != null && p.Name.ToLower() == pName.ToLower());
+            string[] QuoteSplit = pName.Split('"');
+            if (QuoteSplit.Length > 1)
+                pName = QuoteSplit[1];
+            return Players.FirstOrDefault(p => p != null && p.Name.ToLower().Contains(pName.ToLower()));
         }
 
         /// <summary>

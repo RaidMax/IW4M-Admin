@@ -9,6 +9,7 @@ using SharedLibrary;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Commands;
 using SharedLibrary.Helpers;
+using SharedLibrary.Exceptions;
 
 namespace IW4MAdmin
 {
@@ -82,22 +83,21 @@ namespace IW4MAdmin
                         Servers.Add(ServerInstance);
 
                         // this way we can keep track of execution time and see if problems arise.
-                        var Status = new SharedLibrary.Helpers.AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
+                        var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
                         TaskStatuses.Add(Status);
 
                         Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
                     }
 
-                    catch (SharedLibrary.Exceptions.ServerException e)
+                    catch (ServerException e)
                     {
                         Logger.WriteWarning($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
-                        if (e.GetType() == typeof(SharedLibrary.Exceptions.DvarException))
-                            Logger.WriteError($"Could not get the dvar value for {(e as SharedLibrary.Exceptions.DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
-                        else if (e.GetType() == typeof(SharedLibrary.Exceptions.NetworkException))
+                        if (e.GetType() == typeof(DvarException))
+                            Logger.WriteError($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
+                        else if (e.GetType() == typeof(NetworkException))
                             Logger.WriteError("Could not communicate with the server (ensure the configuration is correct)");
                     }
                 });
-
             }
             #endregion
 
@@ -137,7 +137,7 @@ namespace IW4MAdmin
             Commands.Add(new CSetLevel("setlevel", "set player to specified administration level. syntax: !setlevel <player> <level>.", "sl", Player.Permission.Owner, 2, true));
             Commands.Add(new CUsage("usage", "get current application memory usage. syntax: !usage.", "us", Player.Permission.Moderator, 0, false));
             Commands.Add(new CUptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
-            Commands.Add(new Cwarn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
+            Commands.Add(new CWarn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
             Commands.Add(new CWarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Trusted, 1, true));
             Commands.Add(new CUnban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
             Commands.Add(new CListAdmins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));

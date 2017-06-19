@@ -343,7 +343,7 @@ namespace SharedLibrary
         public ServerConfiguration Config { get; private set; }
         public List<Map> Maps { get; protected set; }
         public List<string> Rules { get; protected set; }
-        public List<Report> Reports { get; protected set; }
+        public List<Report> Reports { get; set;  }
         public List<Chat> ChatHistory { get; protected set; }
         public Queue<Helpers.PlayerHistory> PlayerHistory { get; private set; }
 

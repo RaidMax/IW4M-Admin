@@ -34,9 +34,9 @@ namespace SharedLibrary.Commands
         }
     }
 
-    public class Cwarn : Command
+    public class CWarn : Command
     {
-        public Cwarn(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CWarn(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -112,7 +112,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = SharedLibrary.Utilities.RemoveWords(E.Data, 1);
+            E.Target.lastOffense = Utilities.RemoveWords(E.Data, 1);
             E.Target.lastEvent = E; // needs to be fixed
             String Message;
             if (E.Owner.Website == null)
@@ -168,9 +168,9 @@ namespace SharedLibrary.Commands
                     continue;
 
                 if (P.Masked)
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User), P.ClientID, P.Name, SharedLibrary.Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User), P.ClientID, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
                 else
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level), P.ClientID, P.Name, SharedLibrary.Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level), P.ClientID, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
 
                 if (count == 2 || E.Owner.GetPlayersAsList().Count == 1)
                 {
@@ -198,7 +198,7 @@ namespace SharedLibrary.Commands
                 bool found = false;
                 foreach (Command C in E.Owner.Manager.GetCommands())
                 {
-                    if (C.Name.Contains(cmd) || C.Name == cmd)
+                    if (C.Name.Contains(cmd))
                     {
                         await E.Origin.Tell(" [^3" + C.Name + "^7] " + C.Description);
                         found = true;
@@ -391,7 +391,7 @@ namespace SharedLibrary.Commands
 
             foreach (Player P in db_players)
             { 
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, SharedLibrary.Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
                 await E.Origin.Tell(mesg);
             }
         }

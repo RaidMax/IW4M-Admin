@@ -124,7 +124,7 @@ namespace Welcome_Plugin
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
                     await E.Owner.Broadcast(Utilities.ConvertLevelToColor(newPlayer.Level) + " ^5" + newPlayer.Name + " ^7has joined the server.");
 
-                await newPlayer.Tell($"Welcome ^5{newPlayer.Name}^7, this your ^5{TimesConnected(newPlayer)} ^7time connecting!");
+                await newPlayer.Tell($"Welcome ^5{newPlayer.Name}^7, this is your ^5{TimesConnected(newPlayer)} ^7time connecting!");
 
                 if (newPlayer.Level == Player.Permission.Flagged)
                     await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name}^7 has joined!");

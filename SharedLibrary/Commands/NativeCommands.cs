@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Commands
 {
-    class CQuit : Command
+    public class CQuit : Command
     {
         public CQuit(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -17,7 +17,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class COwner : Command
+    public class COwner : Command
     {   
         public COwner(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -27,7 +27,6 @@ namespace SharedLibrary.Commands
             {
                 E.Origin.SetLevel(Player.Permission.Owner);
                 await E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
-                E.Owner.owner = E.Origin;
                 E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
             }
             else
@@ -35,7 +34,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class Cwarn : Command
+    public class Cwarn : Command
     {
         public Cwarn(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -43,13 +42,13 @@ namespace SharedLibrary.Commands
         {
             E.Target.lastOffense = E.Data.RemoveWords(1);
             if (E.Origin.Level <= E.Target.Level)
-                await E.Origin.Tell("You cannot warn " + E.Target.Name);
+                await E.Origin.Tell($"You do not have the required privileges to warn {E.Target.Name}");
             else
                 await E.Target.Warn(E.Target.lastOffense, E.Origin);   
         }
     }
 
-    class CWarnClear : Command
+    public class CWarnClear : Command
     {
         public CWarnClear(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -62,7 +61,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CKick : Command
+    public class CKick : Command
     {
         public CKick(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -70,13 +69,16 @@ namespace SharedLibrary.Commands
         {
             E.Target.lastOffense = E.Data.RemoveWords(1);
             if (E.Origin.Level > E.Target.Level)
+            {
+                await E.Owner.ExecuteEvent(new Event(Event.GType.Kick, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Kick(E.Target.lastOffense, E.Origin);
+            }
             else
-                await E.Origin.Tell($"You cannot kick {E.Target.Name}");            
+                await E.Origin.Tell($"You do not have the required privileges to kick {E.Target.Name}");            
         }
     }
 
-    class CSay : Command
+    public class CSay : Command
     {
         public CSay(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -86,13 +88,13 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CTempBan : Command
+    public class CTempBan : Command
     {
         public CTempBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = SharedLibrary.Utilities.RemoveWords(E.Data, 1);
+            E.Target.lastOffense = Utilities.RemoveWords(E.Data, 1);
             String Message = E.Target.lastOffense;
             if (E.Origin.Level > E.Target.Level)
             {
@@ -104,7 +106,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CBan : Command
+    public class CBan : Command
     {
         public CBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -119,6 +121,7 @@ namespace SharedLibrary.Commands
                 Message = "^1Player Banned: ^5" + E.Target.lastOffense;
             if (E.Origin.Level > E.Target.Level)
             {
+                await E.Owner.ExecuteEvent(new Event(Event.GType.Ban, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Ban(Message, E.Origin);
                 await E.Origin.Tell(String.Format("Sucessfully banned ^5{0} ^7({1})", E.Target.Name, E.Target.NetworkID));
             }
@@ -127,7 +130,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CUnban : Command
+    public class CUnban : Command
     {
         public CUnban(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -138,7 +141,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CWhoAmI : Command
+    public class CWhoAmI : Command
     {
         public CWhoAmI(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -149,7 +152,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CList : Command
+    public class CList : Command
     {
         public CList(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -182,7 +185,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CHelp : Command
+    public class CHelp : Command
     {
         public CHelp(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -235,7 +238,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CFastRestart : Command
+    public class CFastRestart : Command
     {
         public CFastRestart(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -250,7 +253,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CMapRotate : Command
+    public class CMapRotate : Command
     {
         public CMapRotate(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -265,7 +268,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CSetLevel : Command
+    public class CSetLevel : Command
     {
         public CSetLevel(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -282,12 +285,20 @@ namespace SharedLibrary.Commands
             if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
                 newPerm = Player.Permission.Banned;
 
+            if (newPerm == Player.Permission.Owner && !E.Owner.Config.AllowMultipleOwners)
+            {
+                await E.Origin.Tell("There can only be 1 owner. Modify your server configuration if multiple owners are required");
+                return;
+            }
+
             if (newPerm > Player.Permission.Banned)
             {
-                var ActiveClient = E.Owner.Manager.GetActiveClients().First(p => p.NetworkID == E.Target.NetworkID);
+                var ActiveClient = E.Owner.Manager.GetActiveClients().FirstOrDefault(p => p.NetworkID == E.Target.NetworkID);
                 ActiveClient?.SetLevel(newPerm);
 
-                await ActiveClient?.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+                if (ActiveClient != null)
+                    await ActiveClient.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+
                 await E.Origin.Tell($"{E.Target.Name} was successfully promoted!");
 
                 E.Target.SetLevel(newPerm);
@@ -299,7 +310,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CUsage : Command
+    public class CUsage : Command
     {
         public CUsage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -309,7 +320,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CUptime : Command
+    public class CUptime : Command
     {
         public CUptime(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -320,7 +331,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CListAdmins : Command
+    public class CListAdmins : Command
     {
         public CListAdmins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -340,14 +351,14 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CLoadMap : Command
+    public class CLoadMap : Command
     {
         public CLoadMap(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
             string newMap = E.Data.Trim().ToLower();
-            foreach (Map m in E.Owner.maps)
+            foreach (Map m in E.Owner.Maps)
             {
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
@@ -364,7 +375,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CFindPlayer : Command
+    public class CFindPlayer : Command
     {
         public CFindPlayer(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -386,7 +397,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CFindAllPlayers : Command
+    public class CFindAllPlayers : Command
     {
         public CFindAllPlayers(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -432,13 +443,13 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CListRules : Command
+    public class CListRules : Command
     {
         public CListRules(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.rules.Count < 1)
+            if (E.Owner.Rules.Count < 1)
             {
                 if (E.Message.IsBroadcastCommand())
                     await E.Owner.Broadcast("The server owner has not set any rules.");
@@ -448,7 +459,7 @@ namespace SharedLibrary.Commands
 
             else
             {
-                foreach (String r in E.Owner.rules)
+                foreach (String r in E.Owner.Rules)
                 {
                     if (E.Message.IsBroadcastCommand())
                         await E.Owner.Broadcast("- " + r);
@@ -459,7 +470,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CPrivateMessage : Command
+    public class CPrivateMessage : Command
     {
         public CPrivateMessage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -471,7 +482,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CReload : Command
+    public class CReload : Command
     {
         public CReload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -484,7 +495,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CFlag : Command
+    public class CFlag : Command
     {
         public CFlag(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -507,6 +518,7 @@ namespace SharedLibrary.Commands
                 E.Data = Utilities.RemoveWords(E.Data, 1);
                 E.Target.SetLevel(Player.Permission.Flagged);
                 E.Owner.Manager.GetClientPenalties().AddPenalty(new Penalty(Penalty.Type.Flag, E.Data, E.Target.NetworkID, E.Origin.NetworkID, DateTime.Now, E.Target.IP));
+                await E.Owner.ExecuteEvent(new Event(Event.GType.Flag, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }
 
@@ -514,7 +526,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CReport : Command
+    public class CReport : Command
     {
         public CReport(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -543,12 +555,11 @@ namespace SharedLibrary.Commands
 
             await E.Origin.Tell("Successfully reported " + E.Target.Name);
             await E.Owner.ExecuteEvent(new Event(Event.GType.Report, E.Data, E.Origin, E.Target, E.Owner));
-
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
     }
 
-    class CListReports : Command
+    public class CListReports : Command
     {
         public CListReports(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -572,7 +583,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CMask : Command
+    public class CMask : Command
     {
         public CMask(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -588,10 +599,12 @@ namespace SharedLibrary.Commands
                 E.Origin.Masked = true;
                 await E.Origin.Tell("You are now masked");
             }
+
+            E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
         }
     }
 
-    class CListBanInfo : Command
+    public class CListBanInfo : Command
     {
         public CListBanInfo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -624,7 +637,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CListAlias : Command
+    public class CListAlias : Command
     {
         public CListAlias(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -665,7 +678,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CExecuteRCON : Command
+    public class CExecuteRCON : Command
     {
         public CExecuteRCON(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
@@ -679,7 +692,7 @@ namespace SharedLibrary.Commands
         }
     }
 
-    class CPlugins : Command
+    public class CPlugins : Command
     {
         public CPlugins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 

@@ -122,7 +122,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ServerConfig.cs" />
     <Compile Include="Kayak.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Main.cs" />
@@ -135,6 +134,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Server.cs" />
+    <Compile Include="ServerConfigurationGenerator.cs" />
     <Compile Include="WebService.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -72,11 +72,9 @@ namespace SharedLibrary
         {
             String lookingFor = str.ToLower();
 
-            for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Owner; Perm++)
-            {
+            for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Console; Perm++)
                 if (lookingFor.Contains(Perm.ToString().ToLower()))
                     return Perm;
-            }
 
             return Player.Permission.Banned;
         }

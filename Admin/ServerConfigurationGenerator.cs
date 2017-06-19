@@ -1,33 +1,23 @@
-﻿using System;
+﻿using SharedLibrary;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Net;
-
-using SharedLibrary.Interfaces;
-
+using System.Text;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin
 {
-    public class ServerConfig : Serialize<ServerConfig>
+    class ServerConfigurationGenerator
     {
-        public string IP;
-        public int Port;
-        public string Password;
-        public string FtpPrefix;
-
-        public override string Filename()
-        {
-            return $"config/servers/{IP}_{Port}.cfg";
-        }
-
-        public static ServerConfig Generate()
+        public static ServerConfiguration Generate()
         {
             string IP = String.Empty;
             int Port = 0;
             string Password;
+            bool AllowMultipleOwners;
 
-            while(IP == String.Empty)
+            while (IP == String.Empty)
             {
                 try
                 {
@@ -43,7 +33,7 @@ namespace IW4MAdmin
                 }
             }
 
-            while(Port == 0)
+            while (Port == 0)
             {
                 try
                 {
@@ -60,10 +50,13 @@ namespace IW4MAdmin
             Console.Write("Enter server RCON password: ");
             Password = Console.ReadLine();
 
-            var config = new ServerConfig() { IP = IP, Password = Password, Port = Port };
+            Console.Write("Allow multiple owners? [y/n]: ");
+            AllowMultipleOwners = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+
+            var config = new ServerConfiguration() { IP = IP, Password = Password, Port = Port, AllowMultipleOwners = AllowMultipleOwners };
             config.Write();
 
-            Console.WriteLine("Config saved, add another? [y/n]:");
+            Console.Write("Configuration saved, add another? [y/n]:");
             if (Console.ReadLine().ToLower().First() == 'y')
                 Generate();
 

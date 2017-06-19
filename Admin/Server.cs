@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+
 using SharedLibrary;
 using SharedLibrary.Network;
-using System.Threading.Tasks;
+using SharedLibrary.Interfaces;
 
 namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
-        public IW4MServer(SharedLibrary.Interfaces.IManager mgr, string address, int port, string password) : base(mgr, address, port, password) 
-        {
-            InitializeCommands();
-        }
+        public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
         private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)
         {
@@ -76,7 +75,6 @@ namespace IW4MAdmin
                     Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.DatabaseID, NewPlayer.Name, NewPlayer.IP));
                 }
 
-
                 List<Player> Admins = Manager.GetClientDatabase().GetAdmins();
                 if (Admins.Find(x => x.Name == P.Name) != null)
                 {
@@ -108,9 +106,7 @@ namespace IW4MAdmin
                
                 // and ips
                 if (NewPlayer.Alias.IPS.Find(i => i.Equals(P.IP)) == null || P.IP == null || P.IP == String.Empty)
-                {
                     NewPlayer.Alias.IPS.Add(P.IP);
-                }
 
                 NewPlayer.SetIP(P.IP);
 
@@ -127,7 +123,7 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                List<Player> newPlayerAliases = GetPlayerAliases(NewPlayer);
+                var newPlayerAliases = GetPlayerAliases(NewPlayer);
 
                 foreach (Player aP in newPlayerAliases) // lets check their aliases
                 {
@@ -209,21 +205,7 @@ namespace IW4MAdmin
                 return null;
             }
 
-            else
-            {
-                Player P = null;
-                try 
-                { 
-                    P = Players[pID];
-                    return P;
-                }
-                catch (Exception) 
-                { 
-                    Logger.WriteError("Client index is invalid - " + pID);
-                    Logger.WriteDebug(L.ToString());
-                    return null;
-                }
-            } 
+            return Players[pID];
         }
 
         //Check ban list for every banned player and return ban if match is found 
@@ -272,7 +254,6 @@ namespace IW4MAdmin
                 int cNum = -1;
                 int.TryParse(Args[0], out cNum);
 
-
                 if (Args[0] == String.Empty)
                     return C;
 
@@ -296,9 +277,10 @@ namespace IW4MAdmin
                         E.Target = Players[cNum];
                 }
 
-                E.Target = GetClientByName(E.Data.Trim());
+                if (E.Target == null) // Find active player including quotes (multiple words)
+                    E.Target = GetClientByName(E.Data.Trim());
 
-                if (E.Target == null)
+                if (E.Target == null) // Find active player as single word
                     E.Target = GetClientByName(Args[0]);
 
                 if (E.Target == null && C.RequiresTarget)
@@ -312,17 +294,13 @@ namespace IW4MAdmin
 
         public override async Task ExecuteEvent(Event E)
         {
-            await ProcessEvent(E);
+           await ProcessEvent(E);
 
-            foreach (SharedLibrary.Interfaces.IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+            foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
             {
                 try
                 {
-#if DEBUG
                     await P.OnEventAsync(E, this);
-#else
-                    P.OnEventAsync(E, this);
-#endif
                 }
 
                 catch (Exception Except)
@@ -381,19 +359,13 @@ namespace IW4MAdmin
                         Logger.WriteError($"{e.Message} {IP}:{Port}, reducing polling rate");
                 }
 
-                lastMessage = DateTime.Now - start;
+                LastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
 
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
-                    // We don't want to await here, just in case user plugins are really slow :c
                     foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
-#if !DEBUG
-                        Plugin.OnTickAsync(this);
-#else
                         await Plugin.OnTickAsync(this);
-#endif
-
                     tickTime = DateTime.Now;
                 }
 
@@ -405,24 +377,24 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
-                if (lastMessage.TotalSeconds > messageTime && messages.Count > 0 && Players.Count > 0)
+                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && Players.Count > 0)
                 {
-                    await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), messages[nextMessage]));
-                    if (nextMessage == (messages.Count - 1))
-                        nextMessage = 0;
+                    await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
+                    if (NextMessage == (BroadcastMessages.Count - 1))
+                        NextMessage = 0;
                     else
-                        nextMessage++;
+                        NextMessage++;
                     start = DateTime.Now;
                 }
 
                 //logFile = new IFile();
-                if (l_size != logFile.Length())
+                if (l_size != LogFile.Length())
                 {
                     // this should be the longest running task
-                    await Task.FromResult(lines = logFile.Tail(12));
+                    await Task.FromResult(lines = LogFile.Tail(12));
                     if (lines != oldLines)
                     {
-                        l_size = logFile.Length();
+                        l_size = LogFile.Length();
                         int end;
                         if (lines.Length == oldLines.Length)
                             end = lines.Length - 1;
@@ -459,7 +431,7 @@ namespace IW4MAdmin
                     }
                 }
                 oldLines = lines;
-                l_size = logFile.Length();
+                l_size = LogFile.Length();
             }
 #if DEBUG == false
             catch (SharedLibrary.Exceptions.NetworkException)
@@ -501,7 +473,7 @@ namespace IW4MAdmin
             }
 
             this.Hostname = hostname.Value.StripColors();
-            this.CurrentMap = maps.Find(m => m.Name == mapname.Value) ?? new Map(mapname.Value, mapname.Value);
+            this.CurrentMap = Maps.Find(m => m.Name == mapname.Value) ?? new Map(mapname.Value, mapname.Value);
             this.MaxClients = maxplayers.Value;
             this.FSGame = game.Value;
 
@@ -531,7 +503,7 @@ namespace IW4MAdmin
 #endif
             }
             else
-                logFile = new IFile(logPath);
+                LogFile = new IFile(logPath);
 
             Logger.WriteInfo("Log file is " + logPath);
             await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
@@ -543,26 +515,15 @@ namespace IW4MAdmin
         //Process any server event
         override protected async Task ProcessEvent(Event E)
         {
-            //todo: move
-            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
-                ChatHistory.RemoveAt(0);
 
             if (E.Type == Event.GType.Connect)
             {
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>CONNECTED</i>", DateTime.Now));
-                return;
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
-
-                // the last client hasn't fully disconnected yet
-                // so there will still be at least 1 client left
-                if (ClientNum < 2)
-                    ChatHistory.Clear();
-
-                return;
             }
 
             if (E.Type == Event.GType.Kill)
@@ -573,6 +534,15 @@ namespace IW4MAdmin
                 else // suicide/falling
                     await ExecuteEvent(new Event(Event.GType.Death, "suicide", E.Target, null, this));
             }
+
+            //todo: move
+            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
+                ChatHistory.RemoveAt(0);
+
+            // the last client hasn't fully disconnected yet
+            // so there will still be at least 1 client left
+            if (ClientNum < 2)
+                ChatHistory.Clear();
 
             if (E.Type == Event.GType.Say)
             {
@@ -643,7 +613,7 @@ namespace IW4MAdmin
                 FSGame = (await this.GetDvarAsync<string>("fs_game")).Value.StripColors();
 
                 string mapname = this.GetDvarAsync<string>("mapname").Result.Value;
-                CurrentMap = maps.Find(m => m.Name == mapname) ?? new Map(mapname, mapname);
+                CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map(mapname, mapname);
 
                 return;
             }
@@ -779,9 +749,9 @@ namespace IW4MAdmin
             catch (Exception E)
             {
                 Logger.WriteError("Unable to reload configs! - " + E.Message);
-                messages = new List<String>();
-                maps = new List<Map>();
-                rules = new List<String>();
+                BroadcastMessages = new List<String>();
+                Maps = new List<Map>();
+                Rules = new List<String>();
                 return false;
             }
         }

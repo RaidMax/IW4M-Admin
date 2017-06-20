@@ -14,64 +14,25 @@ namespace SharedLibrary
     [Guid("61d3829e-fcbe-44d3-bb7c-51db8c2d7ac5")]
     public abstract class Server
     {
-        public Server(Interfaces.IManager mgr, string address, int port, string password)
+        public Server(Interfaces.IManager mgr, ServerConfiguration config)
         {
-            Password = password;
-            IP = address;
-            Port = port;
+            Password = config.Password;
+            IP = config.IP;
+            Port = config.Port;
             Manager = mgr;
             Logger = Manager.GetLogger();
-            ClientNum = 0;         
+            ClientNum = 0;
+            Config = config;
 
             Players = new List<Player>(new Player[18]);
-            events = new Queue<Event>();
             Reports = new List<Report>();
             PlayerHistory = new Queue<Helpers.PlayerHistory>();
             ChatHistory = new List<Chat>();
-            lastWebChat = DateTime.Now;
-            nextMessage = 0;
+            NextMessage = 0;
             InitializeTokens();
             InitializeAutoMessages();
             InitializeMaps();
             InitializeRules();
-
-            var commands = mgr.GetCommands();
-
-            owner = Manager.GetClientDatabase().GetOwner();
-
-            if (owner == null)
-                commands.Add(new COwner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
-
-            commands.Add(new CQuit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));
-            commands.Add(new CKick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
-            commands.Add(new CSay("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
-            commands.Add(new CTempBan("tempban", "temporarily ban a player for 1 hour. syntax: !tempban <player> <reason>.", "tb", Player.Permission.Moderator, 2, true));
-            commands.Add(new CBan("ban", "permanently ban a player from the server. syntax: !ban <player> <reason>", "b", Player.Permission.SeniorAdmin, 2, true));
-            commands.Add(new CWhoAmI("whoami", "give information about yourself. syntax: !whoami.", "who", Player.Permission.User, 0, false));
-            commands.Add(new CList("list", "list active clients syntax: !list.", "l", Player.Permission.Moderator, 0, false));
-            commands.Add(new CHelp("help", "list all available commands. syntax: !help.", "h", Player.Permission.User, 0, false));
-            commands.Add(new CFastRestart("fastrestart", "fast restart current map. syntax: !fastrestart.", "fr", Player.Permission.Moderator, 0, false));
-            commands.Add(new CMapRotate("maprotate", "cycle to the next map in rotation. syntax: !maprotate.", "mr", Player.Permission.Administrator, 0, false));
-            commands.Add(new CSetLevel("setlevel", "set player to specified administration level. syntax: !setlevel <player> <level>.", "sl", Player.Permission.Owner, 2, true));
-            commands.Add(new CUsage("usage", "get current application memory usage. syntax: !usage.", "us", Player.Permission.Moderator, 0, false));
-            commands.Add(new CUptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
-            commands.Add(new Cwarn("warn", "warn player for infringing rules syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
-            commands.Add(new CWarnClear("warnclear", "remove all warning for a player syntax: !warnclear <player>.", "wc", Player.Permission.Trusted, 1, true));
-            commands.Add(new CUnban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
-            commands.Add(new CListAdmins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
-            commands.Add(new CLoadMap("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
-            commands.Add(new CFindPlayer("find", "find player in database. syntax: !find <player>", "f", Player.Permission.SeniorAdmin, 1, false));
-            commands.Add(new CListRules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
-            commands.Add(new CPrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
-            commands.Add(new CFlag("flag", "flag a suspicious player and announce to admins on join . syntax !flag <player> <reason>:", "flag", Player.Permission.Moderator, 2, true));
-            commands.Add(new CReport("report", "report a player for suspicious behaivor. syntax !report <player> <reason>", "rep", Player.Permission.User, 2, true));
-            commands.Add(new CListReports("reports", "get most recent reports. syntax !reports", "reports", Player.Permission.Moderator, 0, false));
-            commands.Add(new CMask("mask", "hide your online presence from online admin list. syntax: !mask", "mask", Player.Permission.Administrator, 0, false));
-            commands.Add(new CListBanInfo("baninfo", "get information about a ban for a player. syntax: !baninfo <player>", "bi", Player.Permission.Moderator, 1, true));
-            commands.Add(new CListAlias("alias", "get past aliases and ips of a player. syntax: !alias <player>", "known", Player.Permission.Moderator, 1, true));
-            commands.Add(new CExecuteRCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
-            commands.Add(new CFindAllPlayers("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
-            commands.Add(new CPlugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
         }
 
         //Returns current server IP set by `net_ip` -- *STRING*
@@ -287,7 +248,7 @@ namespace SharedLibrary
         /// </summary>
         protected void InitializeMaps()
         {
-            maps = new List<Map>();
+            Maps = new List<Map>();
 
             IFile mapfile = new IFile("config/maps.cfg");
             String[] _maps = mapfile.ReadAllLines();
@@ -300,7 +261,7 @@ namespace SharedLibrary
                     if (m2.Length > 1)
                     {
                         Map map = new Map(m2[0].Trim(), m2[1].Trim());
-                        maps.Add(map);
+                        Maps.Add(map);
                     }
                 }
             }     
@@ -314,7 +275,7 @@ namespace SharedLibrary
         /// </summary>
         protected void InitializeAutoMessages()
         {
-            messages = new List<String>();
+            BroadcastMessages = new List<String>();
 
             IFile messageCFG = new IFile("config/messages.cfg");
             String[] lines = messageCFG.ReadAllLines();
@@ -329,15 +290,15 @@ namespace SharedLibrary
             int mTime = -1;
             int.TryParse(lines[0], out mTime);
 
-            if (messageTime == -1)
-                messageTime = 60;
+            if (MessageTime == -1)
+                MessageTime = 60;
             else
-                messageTime = mTime;
+                MessageTime = mTime;
             
             foreach (String l in lines)
             {
                 if (lines[0] != l && l.Length > 1)
-                    messages.Add(l);
+                    BroadcastMessages.Add(l);
             }
 
             messageCFG.Close();
@@ -352,7 +313,7 @@ namespace SharedLibrary
         /// </summary>
         protected void InitializeRules()
         {
-            rules = new List<String>();
+            Rules = new List<String>();
 
             IFile ruleFile = new IFile("config/rules.cfg");
             String[] _rules = ruleFile.ReadAllLines();
@@ -362,7 +323,7 @@ namespace SharedLibrary
                 foreach (String r in _rules)
                 {
                     if (r.Length > 1)
-                        rules.Add(r);
+                        Rules.Add(r);
                 }
             }
             else
@@ -376,55 +337,39 @@ namespace SharedLibrary
             return $"{IP}_{Port}";
         }
 
-        /// <summary>
-        /// Load up the built in commands
-        /// </summary>
-        public void InitializeCommands()
-        {
-            foreach (Command C in Plugins.PluginImporter.ActiveCommands)
-                Manager.GetCommands().Add(C);
-        }
-
-        //Objects
+        // Objects
         public Interfaces.IManager Manager { get; protected set; }
         public Interfaces.ILogger Logger { get; private set; }
-        public Player owner;
-        public List<Map> maps;
-        public List<String> rules;
-        public Queue<Event> events;
-        public String Website;
-        public String Gametype;
-        public int totalKills = 0;
-        public List<Report> Reports;
-        public List<Chat> ChatHistory;
+        public ServerConfiguration Config { get; private set; }
+        public List<Map> Maps { get; protected set; }
+        public List<string> Rules { get; protected set; }
+        public List<Report> Reports { get; set;  }
+        public List<Chat> ChatHistory { get; protected set; }
         public Queue<Helpers.PlayerHistory> PlayerHistory { get; private set; }
 
-        protected int ConnectionErrors;
-        protected DateTime LastPoll;
-
-        //Info
-        protected String IP;
-        protected int Port;
-        public String Hostname { get; protected set; }
+        // Info
+        public string Hostname { get; protected set; }
+        public string Website { get; protected set; }
+        public string Gametype { get; protected set; }
         public Map CurrentMap { get; protected set; }
-        protected string FSGame;
         public int ClientNum { get; protected set; }
         public int MaxClients { get; protected set; }
         public List<Player> Players { get; protected set; }
-        protected List<String> messages;
-        protected int messageTime;
-        protected TimeSpan lastMessage;
-        protected DateTime lastPoll;
-        protected int nextMessage;
-
-        protected DateTime lastWebChat;
         public string Password { get; private set; }
-        protected IFile logFile;
 
-        // Log stuff
-        protected String Mod;
+        // Internal
+        protected string IP;
+        protected int Port;
+        protected string FSGame;
+        protected int MessageTime;
+        protected int NextMessage;
+        protected int ConnectionErrors;
+        protected List<string> BroadcastMessages;
+        protected TimeSpan LastMessage;
+        protected IFile LogFile;
+        protected DateTime LastPoll;
 
         //Remote
-        public Queue<String> commandResult = new Queue<string>();
+        public Queue<string> commandResult = new Queue<string>();
     }
 }

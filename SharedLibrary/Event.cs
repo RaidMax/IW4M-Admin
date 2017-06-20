@@ -82,7 +82,8 @@ namespace SharedLibrary
             Unknown,
 
             //FROM PLAYER
-            Report
+            Report,
+            Flag
         }
 
         public Event(GType t, string d, Player O, Player T, Server S)

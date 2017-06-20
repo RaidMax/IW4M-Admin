@@ -55,7 +55,7 @@ namespace IW4MAdmin
 
                 catch (Exception e)
                 {
-                    Manager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");           
+                    ApplicationManager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");           
                 }
             }
 
@@ -194,7 +194,7 @@ namespace IW4MAdmin
         {
             var info = new List<ServerInfo>();
 
-            foreach (Server S in Manager.GetInstance().Servers)
+            foreach (Server S in ApplicationManager.GetInstance().Servers)
             {
                 ServerInfo eachServer = new ServerInfo()
                 {
@@ -307,11 +307,11 @@ namespace IW4MAdmin
 
                 if (querySet["server"] != null)
                 {
-                    Server S = Manager.GetInstance().Servers.ToList().Find(x => (x.GetPort().ToString() == querySet["server"]));
+                    Server S = ApplicationManager.GetInstance().Servers.ToList().Find(x => (x.GetPort().ToString() == querySet["server"]));
 
                     if (S != null)
                     {
-                        Player admin = Manager.GetInstance().GetClientDatabase().GetPlayer(querySet["IP"]);
+                        Player admin = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(querySet["IP"]);
 
                         if (admin == null)
                             admin = new Player("RestUser", "-1", -1, (int)Player.Permission.User);
@@ -382,7 +382,7 @@ namespace IW4MAdmin
             try
             {
                 //selectedPenalties = Manager.GetInstance().Servers.First().Bans.OrderByDescending(x => x.When).ToList().GetRange(Convert.ToInt32(querySet["from"]), 15);
-                selectedPenalties = ((Manager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15).OrderByDescending(b => b.When).ToList();
+                selectedPenalties = ((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15).OrderByDescending(b => b.When).ToList();
             }
 
             catch (Exception)
@@ -394,8 +394,8 @@ namespace IW4MAdmin
 
             foreach (var p in selectedPenalties)
             {
-                Player admin = Manager.GetInstance().GetClientDatabase().GetPlayer(p.PenaltyOriginID, 0);
-                Player penalized = Manager.GetInstance().GetClientDatabase().GetPlayer(p.OffenderID, 0);
+                Player admin = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.PenaltyOriginID, 0);
+                Player penalized = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.OffenderID, 0);
                 if (admin == null && penalized == null)
                     continue;
                 if (admin == null)
@@ -538,7 +538,7 @@ namespace IW4MAdmin
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
-                content = Newtonsoft.Json.JsonConvert.SerializeObject(((Manager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() }),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() }),
                 additionalHeaders = new Dictionary<string, string>()
             };
             return resp;
@@ -631,27 +631,27 @@ namespace IW4MAdmin
                 contentType = GetContentType(),
                 additionalHeaders = new Dictionary<string, string>()
             };
-            bool authed = Manager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
+            bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
             bool recent = false;
 
             if (querySet["id"] != null)
             {
-                matchedPlayers.Add(Manager.GetInstance().GetClientDatabase().GetPlayer(Convert.ToInt32(querySet["id"])));
+                matchedPlayers.Add(ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(Convert.ToInt32(querySet["id"])));
             }
 
             else if (querySet["npID"] != null)
             {
-                matchedPlayers.Add(Manager.GetInstance().GetClientDatabase().GetPlayers(new List<string> { querySet["npID"] }).First());
+                matchedPlayers.Add(ApplicationManager.GetInstance().GetClientDatabase().GetPlayers(new List<string> { querySet["npID"] }).First());
             }
 
             else if (querySet["name"] != null)
             {
-                matchedPlayers = Manager.GetInstance().GetClientDatabase().FindPlayers(querySet["name"]);
+                matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().FindPlayers(querySet["name"]);
             }
 
             else if (querySet["recent"] != null)
             {
-                 matchedPlayers = Manager.GetInstance().GetClientDatabase().GetRecentPlayers();
+                 matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().GetRecentPlayers();
                 recent = true;
             }
 
@@ -675,7 +675,7 @@ namespace IW4MAdmin
 
                     if (!recent)
                     {
-                        foreach (var a in Manager.GetInstance().Servers.First().GetAliases(pp))
+                        foreach (var a in ApplicationManager.GetInstance().Servers.First().GetAliases(pp))
                         {
                             eachPlayer.playerAliases = a.Names;
                             eachPlayer.playerIPs = a.IPS;

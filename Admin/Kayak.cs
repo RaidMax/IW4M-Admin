@@ -18,20 +18,20 @@ namespace IW4MAdmin
             if (e.GetType() == typeof(NullReferenceException))
                 return;
 
-            Manager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);
-            Manager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
+            ApplicationManager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);
+            ApplicationManager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
 
             if (e.InnerException != null)
             {
-                Manager.GetInstance().Logger.WriteDebug($"Inner Exception: {e.InnerException.Message}");
-                Manager.GetInstance().Logger.WriteDebug($"Inner Stack Trace: {e.InnerException.StackTrace}");
+                ApplicationManager.GetInstance().Logger.WriteDebug($"Inner Exception: {e.InnerException.Message}");
+                ApplicationManager.GetInstance().Logger.WriteDebug($"Inner Stack Trace: {e.InnerException.StackTrace}");
             }
 
         }
 
         public void OnStop(IScheduler scheduler)
         {
-            Manager.GetInstance().Logger.WriteInfo("Web service has been stopped...");
+            ApplicationManager.GetInstance().Logger.WriteInfo("Web service has been stopped...");
         }
     }
 

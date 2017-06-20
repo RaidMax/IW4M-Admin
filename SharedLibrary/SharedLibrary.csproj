@@ -93,6 +93,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RCON.cs" />
     <Compile Include="Server.cs" />
+    <Compile Include="ServerConfiguration.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WebService.cs" />
   </ItemGroup>

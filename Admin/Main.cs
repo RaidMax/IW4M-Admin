@@ -11,7 +11,7 @@ namespace IW4MAdmin
     class Program
     {
         static public double Version { get; private set; }
-        static private Manager ServerManager;
+        static private ApplicationManager ServerManager;
 
         static void Main(string[] args)
         {
@@ -33,7 +33,7 @@ namespace IW4MAdmin
             {
                 CheckDirectories();
 
-                ServerManager = Manager.GetInstance();
+                ServerManager = ApplicationManager.GetInstance();
                 ServerManager.Init();
 
                 Task.Run(() =>

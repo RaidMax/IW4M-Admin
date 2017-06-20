@@ -15,22 +15,22 @@ namespace IW4MAdmin
 
         public void AddPenalty(Penalty P)
         {
-            Manager.GetInstance().GetClientDatabase().AddBan(P);
+            ApplicationManager.GetInstance().GetClientDatabase().AddBan(P);
         }
 
         public void RemovePenalty(Penalty P)
         {
-            Manager.GetInstance().GetClientDatabase().RemoveBan(P.OffenderID);
+            ApplicationManager.GetInstance().GetClientDatabase().RemoveBan(P.OffenderID);
         }
 
         public List<Penalty> FindPenalties(Player P)
         {
-            return Manager.GetInstance().GetClientDatabase().GetClientPenalties(P);
+            return ApplicationManager.GetInstance().GetClientDatabase().GetClientPenalties(P);
         }
 
         public List<Penalty> AsChronoList(int offset, int count)
         {
-            return Manager.GetInstance().GetClientDatabase().GetPenaltiesChronologically(offset, count);
+            return ApplicationManager.GetInstance().GetClientDatabase().GetPenaltiesChronologically(offset, count);
         }
     }
 }

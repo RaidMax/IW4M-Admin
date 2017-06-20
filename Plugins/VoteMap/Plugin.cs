@@ -38,7 +38,7 @@ namespace Votemap_Plugin
                 {
                     string mapSearch = E.Data.ToLower().Trim();
                     // probably not the most optimized way to match the map.. but nothing is time critical here
-                    Map votedMap = E.Owner.maps.Find(m => (m.Alias.ToLower().Contains(mapSearch) || m.Name.Contains(mapSearch)));
+                    Map votedMap = E.Owner.Maps.Find(m => (m.Alias.ToLower().Contains(mapSearch) || m.Name.Contains(mapSearch)));
                     if (votedMap == null)
                        await  E.Origin.Tell("^1" + E.Data + " is not a recognized map");
                     else

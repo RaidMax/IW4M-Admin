@@ -19,7 +19,10 @@ namespace SharedLibrary.Helpers
             try
             {
                 var Config = Interfaces.Serialize<Dictionary<string, object>>.Read($"config/{PluginType.ToString()}_{S.ToString()}.cfg");
-                ConfigurationSet.Add(S.ToString(), Config);
+                lock (ConfigurationSet)
+                {
+                    ConfigurationSet.Add(S.ToString(), Config);
+                }
             }
 
             catch (Exceptions.SerializeException)

@@ -293,6 +293,9 @@ namespace IW4MAdmin
 
         public override async Task ExecuteEvent(Event E)
         {
+            if (Throttled)
+                return;
+
            await ProcessEvent(E);
 
             foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
@@ -341,15 +344,18 @@ namespace IW4MAdmin
 #endif
             {
 
-                if ((DateTime.Now - LastPoll).TotalMinutes < 5 && ConnectionErrors > 1)
+                if ((DateTime.Now - LastPoll).TotalMinutes < 2 && ConnectionErrors >= 1)
                     return;
 
                 try
                 {
                     await PollPlayersAsync();
-                    
+
                     if (ConnectionErrors > 0)
+                    {
                         Logger.WriteInfo($"Connection has been reestablished with {IP}:{Port}");
+                        Throttled = false;
+                    }
                     ConnectionErrors = 0;
                     LastPoll = DateTime.Now;
                 }
@@ -358,7 +364,11 @@ namespace IW4MAdmin
                 {
                     ConnectionErrors++;
                     if (ConnectionErrors == 1)
+                    {
                         Logger.WriteError($"{e.Message} {IP}:{Port}, reducing polling rate");
+                        Throttled = true;
+                    }
+                    return;
                 }
 
                 LastMessage = DateTime.Now - start;

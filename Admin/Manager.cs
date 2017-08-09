@@ -64,43 +64,6 @@ namespace IW4MAdmin
 
         public void Init()
         {
-            #region CONFIG
-            var Configs = Directory.EnumerateFiles("config/servers").Where(x => x.Contains(".cfg"));
-
-            if (Configs.Count() == 0)
-                ServerConfigurationGenerator.Generate();
-
-            foreach (var file in Configs)
-            {
-                var Conf = ServerConfiguration.Read(file);
-                var ServerInstance = new IW4MServer(this, Conf);
-
-                Task.Run(async () =>
-                {
-                    try
-                    {
-                        await ServerInstance.Initialize();
-                        Servers.Add(ServerInstance);
-
-                        // this way we can keep track of execution time and see if problems arise.
-                        var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
-                        TaskStatuses.Add(Status);
-
-                        Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
-                    }
-
-                    catch (ServerException e)
-                    {
-                        Logger.WriteWarning($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
-                        if (e.GetType() == typeof(DvarException))
-                            Logger.WriteError($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
-                        else if (e.GetType() == typeof(NetworkException))
-                            Logger.WriteError(e.Message);
-                    }
-                });
-            }
-            #endregion
-
             #region PLUGINS
             SharedLibrary.Plugins.PluginImporter.Load(this);
 
@@ -117,6 +80,50 @@ namespace IW4MAdmin
                     Logger.WriteDebug($"Exception: {e.Message}");
                     Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
                 }
+            }
+            #endregion
+
+            #region CONFIG
+            var Configs = Directory.EnumerateFiles("config/servers").Where(x => x.Contains(".cfg"));
+
+            if (Configs.Count() == 0)
+                ServerConfigurationGenerator.Generate();
+
+            foreach (var file in Configs)
+            {
+                var Conf = ServerConfiguration.Read(file);
+
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var ServerInstance = new IW4MServer(this, Conf);
+                        await ServerInstance.Initialize();
+
+                        lock (Servers)
+                        {
+                            Servers.Add(ServerInstance);
+                        }
+
+                        Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
+
+                        // this way we can keep track of execution time and see if problems arise.
+                        var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
+                        lock (TaskStatuses)
+                        {
+                            TaskStatuses.Add(Status);
+                        }
+                    }
+
+                    catch (ServerException e)
+                    {
+                        Logger.WriteWarning($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
+                        if (e.GetType() == typeof(DvarException))
+                            Logger.WriteError($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
+                        else if (e.GetType() == typeof(NetworkException))
+                            Logger.WriteError(e.Message);
+                    }
+                });
             }
             #endregion
 
@@ -173,22 +180,23 @@ namespace IW4MAdmin
 
             Running = true;
         }
-        
+
         public void Start()
         {
             while (Running)
             {
-                foreach (var Status in TaskStatuses)
+                for (int i = 0; i < TaskStatuses.Count; i++)
                 {
+                    var Status = TaskStatuses[i];
                     if (Status.RequestedTask == null || Status.RequestedTask.IsCompleted)
                     {
                         Status.Update(new Task(() => (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken())));
-                        if (Status.RunAverage > 500)
+                        if (Status.RunAverage > 1000)
                             Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).GetIP()}::{(Status.Dependant as Server).GetPort()} [{Status.RunAverage}ms]");
                     }
                 }
 
-                Thread.Sleep(UPDATE_FREQUENCY);
+                Thread.Sleep(300);
             }
 #if !DEBUG
             foreach (var S in Servers)
@@ -199,7 +207,7 @@ namespace IW4MAdmin
             webServiceTask.Stop();
         }
 
-           
+
         public void Stop()
         {
             Running = false;

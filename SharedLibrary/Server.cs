@@ -370,6 +370,7 @@ namespace SharedLibrary
         public int MaxClients { get; protected set; }
         public List<Player> Players { get; protected set; }
         public string Password { get; private set; }
+        public bool Throttled { get; protected set; }
 
         // Internal
         protected string IP;

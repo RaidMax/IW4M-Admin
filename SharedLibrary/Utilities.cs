@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
+using static SharedLibrary.Server;
 
 namespace SharedLibrary
 {
@@ -245,6 +246,22 @@ namespace SharedLibrary
             }
             else
                 return "a very long time";
+        }
+
+        public static Game GetGame(string gameName)
+        {
+            if (gameName.Contains("IW4"))
+                return Game.IW4;
+            if (gameName.Contains("CoD4"))
+                return Game.IW3;
+            if (gameName.Contains("WaW"))
+                return Game.T4;
+            if (gameName.Contains("COD_T5_S"))
+                return Game.T5;
+            if (gameName.Contains("IW5"))
+                return Game.IW5;
+
+            return Game.UKN;
         }
     }
 }

@@ -95,7 +95,7 @@ namespace IW4MAdmin
                         if (e.GetType() == typeof(DvarException))
                             Logger.WriteError($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
                         else if (e.GetType() == typeof(NetworkException))
-                            Logger.WriteError("Could not communicate with the server (ensure the configuration is correct)");
+                            Logger.WriteError(e.Message);
                     }
                 });
             }
@@ -121,7 +121,7 @@ namespace IW4MAdmin
             #endregion
 
             #region COMMANDS
-            if ((ClientDatabase as ClientsDB).GetOwner() != null)
+            if ((ClientDatabase as ClientsDB).GetOwner() == null)
                 Commands.Add(new COwner("owner", "claim ownership of the server", "owner", Player.Permission.User, 0, false));
 
             Commands.Add(new CQuit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));

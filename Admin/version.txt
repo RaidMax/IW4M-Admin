@@ -1,8 +1,17 @@
-﻿VERSION 1.3
+﻿VERSION 1.4
+CHANGELOG:
+-works: with COD, WaW, MW3, BO1 (preliminary without extensive testing)
+-fixed the issue with webfront chat history
+-fixed console issue of spamming 'polling rate decreased' when server goes offline
+-'unknown' admin in webfront defaults to 'IW4MAdmin'
+
+
+VERSION 1.3
 CHANGELOG:
 -complete rewrite of lots of parts
 -async EVERYTHING!!!
 -designed to work with IW4X (funny how the GitHub description is now 100% accurate after almost 3 years)
+-gsc features deprecated
 
 VERSION 1.2
 CHANGELOG:

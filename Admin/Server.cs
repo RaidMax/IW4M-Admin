@@ -147,7 +147,6 @@ namespace IW4MAdmin
                     }
                 }
     
-                Players[NewPlayer.ClientID] = null; 
                 Players[NewPlayer.ClientID] = NewPlayer;
                 Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.NetworkID} connecting..."); // they're clean          
 
@@ -348,6 +347,9 @@ namespace IW4MAdmin
                 try
                 {
                     await PollPlayersAsync();
+                    
+                    if (ConnectionErrors > 0)
+                        Logger.WriteInfo($"Connection has been reestablished with {IP}:{Port}");
                     ConnectionErrors = 0;
                     LastPoll = DateTime.Now;
                 }
@@ -355,7 +357,7 @@ namespace IW4MAdmin
                 catch(SharedLibrary.Exceptions.NetworkException e)
                 {
                     ConnectionErrors++;
-                    if (ConnectionErrors > 1)
+                    if (ConnectionErrors == 1)
                         Logger.WriteError($"{e.Message} {IP}:{Port}, reducing polling rate");
                 }
 
@@ -380,10 +382,7 @@ namespace IW4MAdmin
                 if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && Players.Count > 0)
                 {
                     await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
-                    if (NextMessage == (BroadcastMessages.Count - 1))
-                        NextMessage = 0;
-                    else
-                        NextMessage++;
+                    NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage++;
                     start = DateTime.Now;
                 }
 
@@ -450,16 +449,27 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
+            var version = await this.GetDvarAsync<string>("version");
+            GameName = Utilities.GetGame(version.Value);
+
+            if (GameName == Game.UKN)
+                Logger.WriteWarning($"Game name not recognized: {version}");
+
             var shortversion = await this.GetDvarAsync<string>("shortversion");
             var hostname = await this.GetDvarAsync<string>("sv_hostname");
             var mapname = await this.GetDvarAsync<string>("mapname");
-            var maxplayers = await this.GetDvarAsync<int>("party_maxplayers");
+            var maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
+                await this.GetDvarAsync<int>("party_maxplayers") :
+                await this.GetDvarAsync<int>("sv_maxclients");
             var gametype = await this.GetDvarAsync<string>("g_gametype");
             var basepath = await this.GetDvarAsync<string>("fs_basepath");
             var game = await this.GetDvarAsync<string>("fs_game");
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
-            var onelog = await this.GetDvarAsync<int>("iw4x_onelog");
+
+            DVAR<int> onelog = null;
+            if (GameName == Game.IW4)
+                onelog = await this.GetDvarAsync<int>("iw4x_onelog");
 
             try
             {
@@ -481,19 +491,26 @@ namespace IW4MAdmin
             await this.SetDvarAsync("sv_network_fps", 1000);
             await this.SetDvarAsync("com_maxfps", 1000);
 
-            if (logsync.Value != 1 || logfile.Value == string.Empty)
+            if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
                 // this DVAR isn't set until the a map is loaded
-                await this.SetDvarAsync("g_logsync", 1);
-                await this.SetDvarAsync("g_log", "logs/games_mp.log");
+                await this.SetDvarAsync("logfile", 2);
+                await this.SetDvarAsync("g_logsync", 2); // set to 2 for continous in other games, clamps to 1 for IW4
+                await this.SetDvarAsync("g_log", "games_mp.log");
                 Logger.WriteWarning("Game log file not properly initialized, restarting map...");
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");
             }
 #if DEBUG
-            basepath.Value = @"\\tsclient\K\MW2";
+            basepath.Value = (GameName == Game.IW4) ? 
+                @"\\tsclient\K\MW2" : 
+                @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
 #endif
-            string logPath = (game.Value == "" || onelog.Value == 1) ? $"{basepath.Value.Replace("\\", "/")}/userraw/{logfile.Value}" : $"{basepath.Value.Replace("\\", "/")}/{game.Value}/{logfile.Value}";
+            string mainPath = (GameName == Game.IW4) ? "userraw" : "main";
+
+            string logPath = (game.Value == "" || onelog?.Value == 1) ? 
+                $"{ basepath.Value.Replace("\\", "/")}/{mainPath}/{logfile.Value}" : 
+                $"{basepath.Value.Replace("\\", "/")}/{game.Value}/{logfile.Value}";
 
             if (!File.Exists(logPath))
             {
@@ -521,12 +538,12 @@ namespace IW4MAdmin
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>CONNECTED</i>", DateTime.Now));
             }
 
-            if (E.Type == Event.GType.Disconnect)
+            else if (E.Type == Event.GType.Disconnect)
             {
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
             }
 
-            if (E.Type == Event.GType.Kill)
+            else if (E.Type == Event.GType.Kill)
             {
                 if (E.Origin != E.Target)
                     await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, null, this));
@@ -535,20 +552,8 @@ namespace IW4MAdmin
                     await ExecuteEvent(new Event(Event.GType.Death, "suicide", E.Target, null, this));
             }
 
-            //todo: move
-            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
-                ChatHistory.RemoveAt(0);
-
-            // the last client hasn't fully disconnected yet
-            // so there will still be at least 1 client left
-            if (ClientNum < 2)
-                ChatHistory.Clear();
-
-            if (E.Type == Event.GType.Say)
+            if (E.Type == Event.GType.Say && E.Data.Length >= 2)
             {
-                if (E.Data.Length < 2) // ITS A LIE!
-                    return;
-
                 if (E.Data.Substring(0, 1) == "!"  || E.Data.Substring(0, 1) == "@"  || E.Origin.Level == Player.Permission.Console)
                 {
                     Command C = null;
@@ -561,7 +566,6 @@ namespace IW4MAdmin
                     catch (SharedLibrary.Exceptions.CommandException e)
                     {
                         Logger.WriteInfo(e.Message);
-                        return;
                     }
 
                     if (C != null)
@@ -569,7 +573,6 @@ namespace IW4MAdmin
                         if (C.RequiresTarget && E.Target == null)
                         {
                             Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
-                            return;
                         }
 
                         try
@@ -586,10 +589,8 @@ namespace IW4MAdmin
 #if DEBUG
                             await E.Origin.Tell(Except.Message);
 #endif
-                            return;
                         }
                     }
-                    return;
                 }
 
                 else // Not a command
@@ -599,8 +600,6 @@ namespace IW4MAdmin
                         E.Data = E.Data.Substring(0, 50) + "...";
 
                     ChatHistory.Add(new Chat(E.Origin.Name, E.Data, DateTime.Now));
-
-                    return;
                 }
             }
 
@@ -614,15 +613,21 @@ namespace IW4MAdmin
 
                 string mapname = this.GetDvarAsync<string>("mapname").Result.Value;
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map(mapname, mapname);
-
-                return;
             }
 
             if (E.Type == Event.GType.MapEnd)
             {
                 Logger.WriteInfo("Game ending...");
-                return;
-            };
+            }
+
+            //todo: move
+            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
+                ChatHistory.RemoveAt(0);
+
+            // the last client hasn't fully disconnected yet
+            // so there will still be at least 1 client left
+            if (ClientNum < 2)
+                ChatHistory.Clear();
         }
 
         public override async Task Warn(String Reason, Player Target, Player Origin)
@@ -646,7 +651,7 @@ namespace IW4MAdmin
                 String Message = "^1Player Kicked: ^5" + Reason;
                 Penalty newPenalty = new Penalty(Penalty.Type.Kick, Reason.StripColors().Trim(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
                 Manager.GetClientPenalties().AddPenalty(newPenalty);
-                await this.ExecuteCommandAsync("clientkick " + Target.ClientID + " \"" + Message + "^7\"");
+                await this.ExecuteCommandAsync($"clientkick {Target.ClientID}  \"{Message}^7\"");
             }
         }
 
@@ -661,11 +666,6 @@ namespace IW4MAdmin
                     Manager.GetClientPenalties().AddPenalty(newPenalty);
                 });
             }
-        }
-
-        private String GetWebsiteString()
-        {
-            return Website != null ? $" (appeal at {Website}" : " (appeal at this server's website)";
         }
 
         override public async Task Ban(String Message, Player Target, Player Origin)
@@ -685,7 +685,10 @@ namespace IW4MAdmin
                 {
                     var activeClient = server.GetPlayersAsList().Find(x => x.NetworkID == Target.NetworkID);
                     if (activeClient != null)
-                        await server.ExecuteCommandAsync("tempbanclient " + activeClient.ClientID + " \"" + Message + "^7" + GetWebsiteString() + "^7\"");
+                    {
+                        await server.ExecuteCommandAsync($"tempbanclient {activeClient.ClientID}  \"{Message} ^7 ({Website}) ^7\"");
+                        break;
+                    }
                 }
             }
 

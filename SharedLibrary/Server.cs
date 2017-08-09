@@ -14,6 +14,16 @@ namespace SharedLibrary
     [Guid("61d3829e-fcbe-44d3-bb7c-51db8c2d7ac5")]
     public abstract class Server
     {
+        public enum Game
+        {
+            UKN,
+            IW3,
+            IW4,
+            IW5,
+            T4,
+            T5,
+        }
+
         public Server(Interfaces.IManager mgr, ServerConfiguration config)
         {
             Password = config.Password;
@@ -146,9 +156,10 @@ namespace SharedLibrary
         public async Task Broadcast(String Message)
         {
 #if DEBUG
-            return;
+            //return;
 #endif
-            await this.ExecuteCommandAsync($"sayraw  {Message}");
+            string sayCommand = (GameName == Game.IW4) ? "sayraw" : "say";
+            await this.ExecuteCommandAsync($"{sayCommand} {Message}");
         }
 
         /// <summary>
@@ -159,11 +170,13 @@ namespace SharedLibrary
         public async Task Tell(String Message, Player Target)
         {
 #if DEBUG
-            if (!Target.lastEvent.Remote)
-               return;
+            //if (!Target.lastEvent.Remote)
+             //  return;
 #endif
+            string tellCommand = (GameName == Game.IW4) ? "tellraw" : "tell";
+
             if (Target.ClientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
-                await this.ExecuteCommandAsync($"tellraw {Target.ClientID} {Message}^7");
+                await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientID} {Message}^7");
 
             if (Target.Level == Player.Permission.Console)
             {
@@ -346,6 +359,7 @@ namespace SharedLibrary
         public List<Report> Reports { get; set;  }
         public List<Chat> ChatHistory { get; protected set; }
         public Queue<Helpers.PlayerHistory> PlayerHistory { get; private set; }
+        public Game GameName { get; protected set; }
 
         // Info
         public string Hostname { get; protected set; }

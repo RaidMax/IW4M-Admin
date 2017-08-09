@@ -15,18 +15,15 @@ namespace IW4MAdmin
 
         static void Main(string[] args)
         {
-            Version = 1.3;
+            Version = 1.4;
             handler = new ConsoleEventDelegate(OnProcessExit);
             SetConsoleCtrlHandler(handler, true);
 
-            double.TryParse(CheckUpdate(), out double latestVersion);
+            //double.TryParse(CheckUpdate(), out double latestVersion);
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
-            if (latestVersion != 0)
-                Console.WriteLine(" Version " + Version + " (latest " + latestVersion + ")");
-            else
-                Console.WriteLine(" Version " + Version + " (unable to retrieve latest)");
+            Console.WriteLine($" Version {Version}");
             Console.WriteLine("=====================================================");
 
             try
@@ -45,7 +42,7 @@ namespace IW4MAdmin
                     {
                         userInput = Console.ReadLine();
 
-                        if (userInput.ToLower() == "quit")
+                        if (userInput?.ToLower() == "quit")
                             ServerManager.Stop();
 
                         if (ServerManager.Servers.Count == 0)
@@ -91,13 +88,6 @@ namespace IW4MAdmin
         private delegate bool ConsoleEventDelegate(int eventType);
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
-
-        static private String CheckUpdate()
-        {
-            //Connection Ver = new Connection("http://raidmax.org/IW4M/Admin/version.php");
-            //return Ver.Read();
-            return "0";
-        }
 
         static void CheckDirectories()
         {

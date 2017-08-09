@@ -394,19 +394,19 @@ namespace IW4MAdmin
 
             foreach (var p in selectedPenalties)
             {
-                Player admin = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.PenaltyOriginID, 0);
+                Player admin = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.PenaltyOriginID, 0) ??
+                    new Player("IW4MAdmin", "-1", -1, (int)Player.Permission.Banned);
+
                 Player penalized = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.OffenderID, 0);
                 if (admin == null && penalized == null)
                     continue;
-                if (admin == null)
-                    admin = new Player("Unknown", "-1", -1, (int)Player.Permission.Banned);
 
                 PenaltyInfo pInfo = new PenaltyInfo()
                 {
                     adminName = admin.Name,
                     adminLevel = admin.Level.ToString(),
                     penaltyReason = p.Reason,
-                    penaltyTime = SharedLibrary.Utilities.GetTimePassed(p.When),
+                    penaltyTime = Utilities.GetTimePassed(p.When),
                     penaltyType = p.BType.ToString(),
                     playerName = penalized.Name,
                     playerID = penalized.DatabaseID

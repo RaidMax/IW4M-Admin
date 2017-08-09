@@ -23,8 +23,8 @@ namespace SharedLibrary.Network
         static string[] SendQuery(QueryType Type, Server QueryServer,  string Parameters = "")
         {
             var ServerOOBConnection = new UdpClient();
-            ServerOOBConnection.Client.SendTimeout = 1000;
-            ServerOOBConnection.Client.ReceiveTimeout = 1000;
+            ServerOOBConnection.Client.SendTimeout = 3000;
+            ServerOOBConnection.Client.ReceiveTimeout = 3000;
             var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.GetIP()), QueryServer.GetPort());
 
             string QueryString = String.Empty;
@@ -63,10 +63,17 @@ namespace SharedLibrary.Network
 
                 if (QueryResponseString.ToString().Contains("Invalid password"))
                     throw new Exceptions.NetworkException("RCON password is invalid");
+                if (QueryResponseString.ToString().Contains("rcon_password"))
+                    throw new Exceptions.NetworkException("RCON password has not been set");
 
                 int num = int.Parse("0a", System.Globalization.NumberStyles.AllowHexSpecifier);
                 string[] SplitResponse = QueryResponseString.ToString().Split(new char[] { (char)num }, StringSplitOptions.RemoveEmptyEntries);
                 return SplitResponse;
+            }
+
+            catch (Exceptions.NetworkException e)
+            {
+                throw e;
             }
 
             catch (Exception)
@@ -74,7 +81,7 @@ namespace SharedLibrary.Network
                 attempts++;
                 if (attempts > 5)
                 {
-                    var e = new Exceptions.NetworkException("Cannot communicate with server");
+                    var e = new Exceptions.NetworkException("Could not communicate with the server (ensure the configuration is correct)");
                     e.Data["server_address"] = ServerOOBConnection.Client.RemoteEndPoint.ToString();
                     ServerOOBConnection.Close();
                     throw e;

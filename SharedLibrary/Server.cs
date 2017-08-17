@@ -63,23 +63,6 @@ namespace SharedLibrary
             return Players.FindAll(x => x != null);
         }
 
-
-        /// <summary>
-        /// Get any know aliases ( name or ip based ) from the database
-        /// </summary>
-        /// <param name="Origin">Player to scan for aliases</param>
-        abstract public List<Aliases> GetAliases(Player Origin);
-
-        public List<Player> GetPlayerAliases(Player Origin)
-        {
-            List<int> databaseIDs = new List<int>();
-
-            foreach (Aliases A in GetAliases(Origin))
-                databaseIDs.Add(A.Number);
-
-            return Manager.GetClientDatabase().GetPlayers(databaseIDs);
-        }
-
         /// <summary>
         /// Add a player to the server's player list
         /// </summary>
@@ -133,6 +116,16 @@ namespace SharedLibrary
         virtual public Task ProcessUpdatesAsync(CancellationToken cts)
         {
             return null;
+        }
+        
+        /// <summary>
+        /// Legacy method for the alias command
+        /// </summary>
+        /// <param name="P"></param>
+        /// <returns></returns>
+        public IList<Aliases> GetAliases(Player P)
+        {
+            return Manager.GetAliases(P);
         }
 
         /// <summary>

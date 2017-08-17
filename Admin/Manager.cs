@@ -161,6 +161,7 @@ namespace IW4MAdmin
             Commands.Add(new CExecuteRCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
             Commands.Add(new CFindAllPlayers("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
             Commands.Add(new CPlugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
+            Commands.Add(new CIP("ip", "view your external IP address. syntax: !ip", "getexternalip", Player.Permission.User, 0, false));
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
@@ -246,6 +247,50 @@ namespace IW4MAdmin
                 ActiveClients.AddRange(server.Players.Where(p => p != null));
 
             return ActiveClients;
+        }
+
+        public IList<Player> GetAliasClients(Player Origin)
+        {
+            List<int> databaseIDs = new List<int>();
+
+            foreach (Aliases A in GetAliases(Origin))
+                databaseIDs.Add(A.Number);
+
+            return GetClientDatabase().GetPlayers(databaseIDs);
+        }
+
+        public IList<Aliases> GetAliases(Player Origin)
+        {
+            List<Aliases> allAliases = new List<Aliases>();
+
+            if (Origin == null)
+                return allAliases;
+
+            Aliases currentIdentityAliases = GetAliasesDatabase().GetPlayerAliases(Origin.DatabaseID);
+
+            if (currentIdentityAliases == null)
+                return allAliases;
+
+            GetAliases(allAliases, currentIdentityAliases);
+            if (Origin.Alias != null)
+                allAliases.Add(Origin.Alias);
+            return allAliases;
+        }
+
+        private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)
+        {
+            foreach (String IP in currentAlias.IPS)
+            {
+                List<Aliases> Matching = GetAliasesDatabase().GetPlayerAliases(IP);
+                foreach (Aliases I in Matching)
+                {
+                    if (!returnAliases.Contains(I) && returnAliases.Find(x => x.Number == I.Number) == null)
+                    {
+                        returnAliases.Add(I);
+                        GetAliases(returnAliases, I);
+                    }
+                }
+            }
         }
     }
 }

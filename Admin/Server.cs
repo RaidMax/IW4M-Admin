@@ -15,40 +15,6 @@ namespace IW4MAdmin
     {
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
-        private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)
-        {
-            foreach(String IP in currentAlias.IPS)
-            {
-                List<Aliases> Matching = Manager.GetAliasesDatabase().GetPlayerAliases(IP);
-                foreach(Aliases I in Matching)
-                {
-                    if (!returnAliases.Contains(I) && returnAliases.Find(x => x.Number == I.Number) == null)
-                    {
-                        returnAliases.Add(I);
-                        GetAliases(returnAliases, I);
-                    }
-                }
-            }
-        }
-
-        public override List<Aliases> GetAliases(Player Origin)
-        {
-            List<Aliases> allAliases = new List<Aliases>();
-            
-            if (Origin == null)
-                return allAliases;
-
-            Aliases currentIdentityAliases = Manager.GetAliasesDatabase().GetPlayerAliases(Origin.DatabaseID);
-
-            if (currentIdentityAliases == null)
-                return allAliases;
-
-            GetAliases(allAliases, currentIdentityAliases);
-            if (Origin.Alias != null)
-                allAliases.Add(Origin.Alias);
-            return allAliases;        
-        }
-
         override public async Task<bool> AddPlayer(Player P)
         {
             if (P.ClientID < 0 || P.ClientID > (Players.Count-1) || P.Ping < 1 || P.Ping == 999) // invalid index
@@ -123,7 +89,7 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                var newPlayerAliases = GetPlayerAliases(NewPlayer);
+                var newPlayerAliases = Manager.GetAliasClients(NewPlayer);
 
                 foreach (Player aP in newPlayerAliases) // lets check their aliases
                 {
@@ -153,7 +119,6 @@ namespace IW4MAdmin
                 if (NewPlayer.Level > Player.Permission.Moderator)
                     await NewPlayer.Tell("There are ^5" + Reports.Count + " ^7recent reports!");
 
-                ClientNum++;
                 return true;
             }
 
@@ -168,7 +133,7 @@ namespace IW4MAdmin
         //Remove player by CLIENT NUMBER
         override public async Task RemovePlayer(int cNum)
         {
-            if (cNum >= 0 && cNum < Players.Count)
+            if (cNum >= 0)
             {
                 Player Leaving = Players[cNum];
                 Leaving.Connections++;
@@ -177,8 +142,6 @@ namespace IW4MAdmin
                 Logger.WriteInfo($"Client {Leaving.Name}::{Leaving.NetworkID} disconnecting...");
                 await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
                 Players[cNum] = null;
-
-                ClientNum--;
             }
         }
 
@@ -315,7 +278,7 @@ namespace IW4MAdmin
             }
         }
 
-        async Task PollPlayersAsync()
+        async Task<int> PollPlayersAsync()
         {
             var CurrentPlayers = await this.GetStatusAsync();
 
@@ -327,6 +290,8 @@ namespace IW4MAdmin
 
             foreach (var P in CurrentPlayers)
                 await AddPlayer(P);
+
+            return CurrentPlayers.Count;
         }
 
         long l_size = -1;
@@ -349,7 +314,7 @@ namespace IW4MAdmin
 
                 try
                 {
-                    await PollPlayersAsync();
+                    ClientNum = await PollPlayersAsync();
 
                     if (ConnectionErrors > 0)
                     {
@@ -389,10 +354,10 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
-                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && Players.Count > 0)
+                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && ClientNum > 0)
                 {
-                    await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
-                    NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage++;
+                    Console.WriteLine(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
+                    NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
                     start = DateTime.Now;
                 }
 

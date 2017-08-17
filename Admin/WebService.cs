@@ -29,6 +29,8 @@ namespace IW4MAdmin
             SharedLibrary.WebService.PageList.Add(new WebConsole());
             SharedLibrary.WebService.PageList.Add(new ConsoleJSON());
             SharedLibrary.WebService.PageList.Add(new PubbansJSON());
+            SharedLibrary.WebService.PageList.Add(new AdminsJSON());
+            SharedLibrary.WebService.PageList.Add(new Admins());
 
             Thread scheduleThread = new Thread(() => { ScheduleThreadStart(webScheduler, webService); })
             {
@@ -521,6 +523,69 @@ namespace IW4MAdmin
         }
     }
 
+
+    class Admins : HTMLPage
+    {
+        public override string GetName()
+        {
+            return "Admins";
+        }
+
+        public override string GetPath()
+        {
+            return "/Admins";
+        }
+
+        public override string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        {
+            StringBuilder S = new StringBuilder();
+            S.Append(LoadHeader());
+
+            IFile admins = new IFile("webfront\\admins.html");
+            S.Append(admins.GetText());
+            admins.Close();
+
+            S.Append(LoadFooter());
+
+            return S.ToString();
+        }
+    }
+
+    class AdminsJSON : IPage
+    {
+        public string GetName()
+        {
+            return "Admins Json";
+        }
+
+        public string GetPath()
+        {
+            return "/GetAdmins";
+        }
+
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        {
+            var Admins = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().OrderByDescending(a => a.Level);
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(Admins, Newtonsoft.Json.Formatting.Indented),
+                additionalHeaders = new Dictionary<string, string>()
+            };
+            return resp;
+        }
+
+        public string GetContentType()
+        {
+            return "application/json";
+        }
+
+        public bool Visible()
+        {
+            return false;
+        }
+    }
+
     class PubbansJSON : IPage
     {
         public string GetName()
@@ -604,7 +669,7 @@ namespace IW4MAdmin
             return false;
         }
     }
-
+   
     class GetPlayer : IPage
     {
         public string GetContentType()
@@ -631,7 +696,8 @@ namespace IW4MAdmin
                 contentType = GetContentType(),
                 additionalHeaders = new Dictionary<string, string>()
             };
-            bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"]).Count > 0;
+            bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"] && x.Level > Player.Permission.Trusted).Count > 0
+                || querySet["IP"] == "127.0.0.1";
             bool recent = false;
 
             if (querySet["id"] != null)
@@ -675,7 +741,7 @@ namespace IW4MAdmin
 
                     if (!recent)
                     {
-                        foreach (var a in ApplicationManager.GetInstance().Servers.First().GetAliases(pp))
+                        foreach (var a in ApplicationManager.GetInstance().GetAliases(pp))
                         {
                             eachPlayer.playerAliases = a.Names;
                             eachPlayer.playerIPs = a.IPS;
@@ -764,5 +830,12 @@ namespace IW4MAdmin
     struct CommandInfo
     {
         public List<string> Result;
+    }
+
+    [Serializable]
+    class PrivilegedUsers
+    {
+        public Player.Permission Permission { get; set; }
+        public List<Player> Players { get; set; }
     }
 }

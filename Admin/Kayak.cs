@@ -45,23 +45,41 @@ namespace IW4MAdmin
                 querySet = System.Web.HttpUtility.ParseQueryString(SharedLibrary.Utilities.StripIllegalCharacters(request.QueryString));
 
             querySet.Set("IP", IP);
-            SharedLibrary.HttpResponse requestedPage = WebService.GetPage(request.Path, querySet, request.Headers);
 
-            var headers = new HttpResponseHead()
+            try
             {
-                Status = "200 OK",
-                Headers = new Dictionary<string, string>()
+                SharedLibrary.HttpResponse requestedPage = WebService.GetPage(request.Path, querySet, request.Headers);
+
+                var headers = new HttpResponseHead()
+                {
+                    Status = "200 OK",
+                    Headers = new Dictionary<string, string>()
                     {
                         { "Content-Type", requestedPage.contentType },
                         { "Content-Length", requestedPage.content.Length.ToString() },
                         { "Access-Control-Allow-Origin", "*" },
                     }
-            };
+                };
 
-            foreach (var key in requestedPage.additionalHeaders.Keys)
-                headers.Headers.Add(key, requestedPage.additionalHeaders[key]);
+                foreach (var key in requestedPage.additionalHeaders.Keys)
+                    headers.Headers.Add(key, requestedPage.additionalHeaders[key]);
 
-            response.OnResponse(headers, new BufferedProducer(requestedPage.content));
+                response.OnResponse(headers, new BufferedProducer(requestedPage.content));
+            }
+
+            catch (Exception e)
+            {
+                ApplicationManager.GetInstance().Logger.WriteError($"Webfront error during request: {e.Message}");
+                response.OnResponse(new HttpResponseHead()
+                {
+                    Status = "500 Internal Server Error",
+                    Headers = new Dictionary<string, string>()
+                    {
+                        { "Content-Type", "text/html" },
+                        { "Content-Length", "0"},
+                    }
+                }, new BufferedProducer(""));
+            }
         }
     }
 

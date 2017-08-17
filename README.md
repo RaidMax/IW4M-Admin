@@ -1,6 +1,6 @@
 # <span style="color: #007ACC;">IW4MAdmin</span>
 ### <span style="color: #007ACC; opacity:0.75;">Quick Start Guide</span>
-### Version 1.2
+### Version 1.4
 _______
 
 ### Setup
@@ -46,7 +46,6 @@ ___
 |owner         |claim ownership of your server                          | False         | 0             | None         |
 |setlevel      |set player to specified administration level            | True          | 2             | Owner        |
 |rcon          |send rcon command to server                             | False         | 1             | Owner        |
-|reserve       |give player reserved status to join on full server      | True          | 1             | Owner        |
 |ban           |permanently ban a player from the server                | True          | 2             | SeniorAdmin  |
 |unban         |unban player by database id                             | True          | 1             | SeniorAdmin  |
 |find          |find player in the database                             | False         | 1             | SeniorAdmin  |

@@ -18,7 +18,7 @@ namespace SharedLibrary.Commands
     }
 
     public class COwner : Command
-    {   
+    {
         public COwner(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
@@ -44,7 +44,7 @@ namespace SharedLibrary.Commands
             if (E.Origin.Level <= E.Target.Level)
                 await E.Origin.Tell($"You do not have the required privileges to warn {E.Target.Name}");
             else
-                await E.Target.Warn(E.Target.lastOffense, E.Origin);   
+                await E.Target.Warn(E.Target.lastOffense, E.Origin);
         }
     }
 
@@ -74,7 +74,7 @@ namespace SharedLibrary.Commands
                 await E.Target.Kick(E.Target.lastOffense, E.Origin);
             }
             else
-                await E.Origin.Tell($"You do not have the required privileges to kick {E.Target.Name}");            
+                await E.Origin.Tell($"You do not have the required privileges to kick {E.Target.Name}");
         }
     }
 
@@ -216,7 +216,7 @@ namespace SharedLibrary.Commands
                 List<Command> CommandList = E.Owner.Manager.GetCommands();
 
                 foreach (Command C in CommandList)
-                {        
+                {
                     if (E.Origin.Level >= C.Permission)
                     {
                         helpResponse.Append(" [^3" + C.Name + "^7] ");
@@ -390,7 +390,7 @@ namespace SharedLibrary.Commands
             }
 
             foreach (Player P in db_players)
-            { 
+            {
                 String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
                 await E.Origin.Tell(mesg);
             }
@@ -426,7 +426,7 @@ namespace SharedLibrary.Commands
 
                 String lookingFor = String.Empty;
 
-                foreach(String S in P.Names)
+                foreach (String S in P.Names)
                 {
                     if (S.Contains(E.Data))
                         lookingFor = S;
@@ -434,7 +434,7 @@ namespace SharedLibrary.Commands
 
                 Player Current = E.Owner.Manager.GetClientDatabase().GetPlayer(P.Number);
 
-                if (Current != null)
+                if (Current != null && Current.Name != lookingFor)
                 {
                     String mesg = String.Format("^1{0} ^7now goes by ^5{1}^7 [^3{2}^7]", lookingFor, Current.Name, Current.DatabaseID);
                     await E.Origin.Tell(mesg);
@@ -487,7 +487,7 @@ namespace SharedLibrary.Commands
         public CReload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
 
         public override async Task ExecuteAsync(Event E)
-        { 
+        {
             if (E.Owner.Reload())
                 await E.Origin.Tell("Sucessfully reloaded configuration files");
             else
@@ -655,7 +655,7 @@ namespace SharedLibrary.Commands
             StringBuilder message = new StringBuilder();
 
             var playerAliases = E.Owner.GetAliases(E.Target);
-               
+
             message.Append("Aliases: ");
 
             var names = new List<string>();
@@ -705,5 +705,16 @@ namespace SharedLibrary.Commands
             }
         }
     }
+
+    public class CIP : Command
+    {
+        public CIP(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+
+        public override async Task ExecuteAsync(Event E)
+        {
+            await E.Origin.Tell($"Your external IP is ^5{E.Origin.IP}");
+        }
+    }
 }
+
     

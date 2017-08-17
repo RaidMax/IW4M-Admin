@@ -485,11 +485,11 @@ namespace SharedLibrary
         public List<Player> GetAdmins()
         {
             List<Player> Admins = new List<Player>();
-            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level >= '{0}'", (int)Player.Permission.Moderator);
+            String Query = String.Format("SELECT * FROM CLIENTS WHERE Level >= '{0}' ORDER BY Name", (int)Player.Permission.Trusted);
             DataTable Result = GetDataTable(Query);
 
             foreach (DataRow P in Result.Rows)
-                Admins.Add(new Player(P["Name"].ToString(), P["npID"].ToString(), (Player.Permission)P["Level"], P["IP"].ToString(), P["UID"].ToString()));
+                Admins.Add(new Player(P["Name"].ToString(), P["npID"].ToString(), (Player.Permission)P["Level"], P["IP"].ToString(), P["UID"].ToString(), Convert.ToInt32(P["Number"].ToString())));
 
             return Admins;
         }
@@ -634,8 +634,8 @@ namespace SharedLibrary
             {
                 CommandText = "SELECT * FROM ALIASES WHERE NAMES LIKE @name OR IPS LIKE @ip LIMIT 15"
             };
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@ip", DefaultIP);
+            cmd.Parameters.AddWithValue("@name", '%' + name + '%');
+            cmd.Parameters.AddWithValue("@ip", '%' + DefaultIP + '%');
 
             var Result = GetDataTable(cmd);
 

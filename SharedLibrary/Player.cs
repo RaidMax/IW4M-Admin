@@ -69,7 +69,7 @@ namespace SharedLibrary
             LastConnection = DateTime.Now;
         }
 
-        public Player(String n, String id, Player.Permission P, String I, String UID)
+        public Player(String n, String id, Player.Permission P, String I, String UID, int dbid)
         {
             Name = n;
             NetworkID = id;
@@ -77,6 +77,7 @@ namespace SharedLibrary
             IP = I;
             ClientID = -1;
             this.UID = UID;
+            DatabaseID = dbid;
         }
 
         public Player(string n, string id, int num, Player.Permission l, int cind, String lo, int con, String IP2)

@@ -22,9 +22,6 @@ namespace SharedLibrary.Network
 
         static string[] SendQuery(QueryType Type, Server QueryServer,  string Parameters = "")
         {
-            if (QueryServer.Throttled)
-                throw new Exceptions.DvarException("Server is RCON throttled");
-
             var ServerOOBConnection = new UdpClient();
             ServerOOBConnection.Client.SendTimeout = 1000;
             ServerOOBConnection.Client.ReceiveTimeout = 1000;
@@ -97,9 +94,6 @@ namespace SharedLibrary.Network
 
         public static async Task<DVAR<T>> GetDvarAsync<T>(this Server server, string dvarName)
         {
-            if (server.Throttled)
-                throw new Exceptions.DvarException("Server is RCON throttled");
-
             string[] LineSplit = await Task.FromResult(SendQuery(QueryType.DVAR, server, dvarName));
 
             if (LineSplit.Length != 3)
@@ -113,7 +107,7 @@ namespace SharedLibrary.Network
 
             if (ValueSplit.Length != 5)
             {
-                var e = new Exceptions.DvarException("DVAR does not exist");
+                var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
                 e.Data["dvar_name"] = dvarName;
                 throw e;
             }
@@ -127,25 +121,16 @@ namespace SharedLibrary.Network
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
         {
-            if (server.Throttled)
-                throw new Exceptions.DvarException("Server is RCON throttled");
-
             await Task.FromResult(SendQuery(QueryType.DVAR, server, $"set {dvarName} {dvarValue}"));
         }
 
         public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
         {
-            if (server.Throttled)
-                throw new Exceptions.DvarException("Server is RCON throttled");
-
             return await Task.FromResult(SendQuery(QueryType.COMMAND, server, commandName).Skip(1).ToArray());
         }
 
         public static async Task<List<Player>> GetStatusAsync(this Server server)
         {
-            if (server.Throttled)
-                throw new Exceptions.DvarException("Server is RCON throttled");
-
             string[] response = await Task.FromResult(SendQuery(QueryType.DVAR, server, "status"));
             return Utilities.PlayersFromStatus(response);
         }

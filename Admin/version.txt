@@ -3,8 +3,13 @@ CHANGELOG:
 -works: with COD, WaW, MW3, BO1 (preliminary without extensive testing)
 -fixed the issue with webfront chat history
 -fixed console issue of spamming 'polling rate decreased' when server goes offline
--'unknown' admin in webfront defaults to 'IW4MAdmin'
+-'unknown' admin in webfront defaults to 'IW4MAdmin' (refactoring mistake)
 -streamlined the async server initialization
+-added !ip command (prints a client's external IP)
+-fixed up the findall command
+-moved aliases to the manager
+-added admins page to view privileged users
+-fixed refactoring mistake with messages
 
 
 VERSION 1.3

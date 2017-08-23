@@ -126,8 +126,6 @@ div#threadContainer .threadContent a:hover { color: #fff !important; }
 div.threadContent ol, div.threadContent ol { margin: 1em; }
 div.categoryThread .threadActions { color: rgba(255, 69, 69, 0.85); font-size: 18pt; width: 19px; }
 
-
-
 div#postReplyContainer { position: fixed; bottom: 0; left: 0; width: 100%; height: 20em; background-color: #181818; }
 div#postReplyClose { position: absolute; right: 0.25em; font-size: 24pt;  }
 div#postReplyClose:hover { color: #007ACC; cursor: pointer;  }
@@ -192,9 +190,12 @@ div.threadInfo .actionHover { float: right; color: rgba(255, 69, 69, 0.85); marg
 .datThing { background-color: #007ACC; font-size: 16pt; border: none; color: #fff;  font-size: 15pt; padding: 0.5em 10px; }
 span.light { opacity: 0.5; }
 span.userTitle span:hover {color: #007ACC !important; }
-
-
 input#bannercolor { margin: 0.35em; width: 265px; border: none; height: 45px; }
-
-
 div#footer { position: fixed; bottom: 0.5em; right: 0.5em; opacity: 0.5; }
+
+.privilege-title { font-size: 24pt; }
+.privilege-title + hr { margin-bottom: 10px; }
+.privilege hr { margin-top: 10px !important; }
+.admin-name a { font-size: 14pt; color: #007ACC !important; }
+.admin-name a:hover { color: #fff !important; }
+.clients { margin: 0.5em; }

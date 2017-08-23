@@ -183,10 +183,7 @@ function formatPlayers(players)
 
 function checkJustNow(timestr)
 {
-  if (timestr.includes("just now"))
-    return timestr;
-  else
-    return timestr + " ago";
+  return timestr
 }
 
 function getDate(datestr)

@@ -209,6 +209,8 @@ namespace IW4MAdmin
                     chatHistory = S.ChatHistory,
                     players = new List<PlayerInfo>()
                 };
+                bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"] && x.Level > Player.Permission.Trusted).Count > 0
+                || querySet["IP"] == "127.0.0.1";
 
                 foreach (Player P in S.GetPlayersAsList())
                 {
@@ -216,7 +218,7 @@ namespace IW4MAdmin
                     {
                         playerID = P.DatabaseID,
                         playerName = P.Name,
-                        playerLevel = P.Level.ToString()
+                        playerLevel = authed ? P.Level.ToString() : Player.Permission.User.ToString()
                     };
                     eachServer.players.Add(pInfo);
                 }
@@ -383,7 +385,6 @@ namespace IW4MAdmin
 
             try
             {
-                //selectedPenalties = Manager.GetInstance().Servers.First().Bans.OrderByDescending(x => x.When).ToList().GetRange(Convert.ToInt32(querySet["from"]), 15);
                 selectedPenalties = ((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15).OrderByDescending(b => b.When).ToList();
             }
 

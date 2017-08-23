@@ -17,18 +17,18 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player P)
         {
-            if (P.ClientID < 0 || P.ClientID > (Players.Count-1) || P.Ping < 1 || P.Ping == 999) // invalid index
+            if (P.ClientID < 0 || P.ClientID > (Players.Count - 1) || P.Ping < 1 || P.Ping == 999) // invalid index
                 return false;
 
             if (Players[P.ClientID] != null && Players[P.ClientID].NetworkID == P.NetworkID) // if someone has left and a new person has taken their spot between polls
             {
                 // update their ping
-                Players[P.ClientID].Ping = P.Ping; 
+                Players[P.ClientID].Ping = P.Ping;
                 return true;
             }
 
             Logger.WriteDebug($"Client slot #{P.ClientID} now reserved");
-               
+
             try
             {
                 Player NewPlayer = Manager.GetClientDatabase().GetPlayer(P.NetworkID, P.ClientID);
@@ -57,19 +57,19 @@ namespace IW4MAdmin
                     Manager.GetAliasesDatabase().AddPlayerAliases(new Aliases(NewPlayer.DatabaseID, NewPlayer.Name, NewPlayer.IP));
                     NewPlayer.Alias = Manager.GetAliasesDatabase().GetPlayerAliases(NewPlayer.DatabaseID);
                 }
-                
+
                 if (P.lastEvent == null || P.lastEvent.Owner == null)
                     NewPlayer.lastEvent = new Event(Event.GType.Say, null, NewPlayer, null, this); // this is messy but its throwing an error when they've started in too late
                 else
                     NewPlayer.lastEvent = P.lastEvent;
-           
+
                 // lets check aliases 
-                if ((NewPlayer.Alias.Names.Find(m => m.Equals(P.Name))) == null || NewPlayer.Name == null || NewPlayer.Name == String.Empty) 
+                if ((NewPlayer.Alias.Names.Find(m => m.Equals(P.Name))) == null || NewPlayer.Name == null || NewPlayer.Name == String.Empty)
                 {
                     NewPlayer.UpdateName(P.Name.Trim());
                     NewPlayer.Alias.Names.Add(NewPlayer.Name);
                 }
-               
+
                 // and ips
                 if (NewPlayer.Alias.IPS.Find(i => i.Equals(P.IP)) == null || P.IP == null || P.IP == String.Empty)
                     NewPlayer.Alias.IPS.Add(P.IP);
@@ -111,8 +111,14 @@ namespace IW4MAdmin
 
                         return true;
                     }
+
+                    var activeTB = IsTempBanned(aP);
+                    if (activeTB != null)
+                    {
+                        await this.ExecuteCommandAsync($"clientkick {NewPlayer.ClientID} \"You are temporarily banned. ({(activeTB.Expires - DateTime.Now).TimeSpanText()} left)\"");
+                    }
                 }
-    
+
                 Players[NewPlayer.ClientID] = NewPlayer;
                 Logger.WriteInfo($"Client {NewPlayer.Name}::{NewPlayer.NetworkID} connecting..."); // they're clean          
 
@@ -171,10 +177,15 @@ namespace IW4MAdmin
         }
 
         //Check ban list for every banned player and return ban if match is found 
-         override public Penalty IsBanned(Player C)
-         {
-            return Manager.GetClientPenalties().FindPenalties(C).Where(b => b.BType == Penalty.Type.Ban).FirstOrDefault(); 
-         }
+        override public Penalty IsBanned(Player C)
+        {
+            return Manager.GetClientPenalties().FindPenalties(C).Where(b => b.BType == Penalty.Type.Ban).FirstOrDefault();
+        }
+
+        public Penalty IsTempBanned(Player C)
+        {
+            return Manager.GetClientPenalties().FindPenalties(C).FirstOrDefault(b => b.BType == Penalty.Type.TempBan && b.Expires > DateTime.Now);
+        }
 
         //Process requested command correlating to an event
         // todo: this needs to be removed out of here
@@ -197,7 +208,7 @@ namespace IW4MAdmin
             }
 
             E.Data = E.Data.RemoveWords(1);
-            String[] Args = E.Data.Trim().Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+            String[] Args = E.Data.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (E.Origin.Level < C.Permission)
             {
@@ -211,7 +222,7 @@ namespace IW4MAdmin
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
-           if (C.RequiresTarget || Args.Length > 0)
+            if (C.RequiresTarget || Args.Length > 0)
             {
                 int cNum = -1;
                 int.TryParse(Args[0], out cNum);
@@ -222,7 +233,7 @@ namespace IW4MAdmin
                 if (Args[0][0] == '@') // user specifying target by database ID
                 {
                     int dbID = -1;
-                    int.TryParse(Args[0].Substring(1, Args[0].Length-1), out dbID);
+                    int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out dbID);
 
                     Player found = Manager.GetClientDatabase().GetPlayer(dbID);
                     if (found != null)
@@ -233,7 +244,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                else if(Args[0].Length < 3 && cNum > -1 && cNum < 18) // user specifying target by client num
+                else if (Args[0].Length < 3 && cNum > -1 && cNum < 18) // user specifying target by client num
                 {
                     if (Players[cNum] != null)
                         E.Target = Players[cNum];
@@ -259,7 +270,7 @@ namespace IW4MAdmin
             if (Throttled)
                 return;
 
-           await ProcessEvent(E);
+            await ProcessEvent(E);
 
             foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
             {
@@ -325,7 +336,7 @@ namespace IW4MAdmin
                     LastPoll = DateTime.Now;
                 }
 
-                catch(SharedLibrary.Exceptions.NetworkException e)
+                catch (SharedLibrary.Exceptions.NetworkException e)
                 {
                     ConnectionErrors++;
                     if (ConnectionErrors == 1)
@@ -354,9 +365,9 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
-                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && ClientNum > 0)
+                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 /*&& ClientNum > 0*/)
                 {
-                    Console.WriteLine(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
+                    await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
                     start = DateTime.Now;
                 }
@@ -477,14 +488,14 @@ namespace IW4MAdmin
                 logfile = await this.GetDvarAsync<string>("g_log");
             }
 #if DEBUG
-            basepath.Value = (GameName == Game.IW4) ? 
-                @"\\tsclient\K\MW2" : 
+            basepath.Value = (GameName == Game.IW4) ?
+                @"\\tsclient\K\MW2" :
                 @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
 #endif
             string mainPath = (GameName == Game.IW4) ? "userraw" : "main";
 
-            string logPath = (game.Value == "" || onelog?.Value == 1) ? 
-                $"{ basepath.Value.Replace("\\", "/")}/{mainPath}/{logfile.Value}" : 
+            string logPath = (game.Value == "" || onelog?.Value == 1) ?
+                $"{ basepath.Value.Replace("\\", "/")}/{mainPath}/{logfile.Value}" :
                 $"{basepath.Value.Replace("\\", "/")}/{game.Value}/{logfile.Value}";
 
             if (!File.Exists(logPath))
@@ -529,7 +540,7 @@ namespace IW4MAdmin
 
             if (E.Type == Event.GType.Say && E.Data.Length >= 2)
             {
-                if (E.Data.Substring(0, 1) == "!"  || E.Data.Substring(0, 1) == "@"  || E.Origin.Level == Player.Permission.Console)
+                if (E.Data.Substring(0, 1) == "!" || E.Data.Substring(0, 1) == "@" || E.Origin.Level == Player.Permission.Console)
                 {
                     Command C = null;
 
@@ -611,7 +622,7 @@ namespace IW4MAdmin
                 await Target.Kick("Too many warnings!", Origin);
             else
             {
-                Penalty newPenalty = new Penalty(Penalty.Type.Warning, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
+                Penalty newPenalty = new Penalty(Penalty.Type.Warning, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP, DateTime.Now);
                 Manager.GetClientPenalties().AddPenalty(newPenalty);
                 Target.Warnings++;
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Target.lastOffense);
@@ -624,23 +635,20 @@ namespace IW4MAdmin
             if (Target.ClientID > -1)
             {
                 String Message = "^1Player Kicked: ^5" + Reason;
-                Penalty newPenalty = new Penalty(Penalty.Type.Kick, Reason.StripColors().Trim(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
+                Penalty newPenalty = new Penalty(Penalty.Type.Kick, Reason.StripColors().Trim(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP, DateTime.Now);
                 Manager.GetClientPenalties().AddPenalty(newPenalty);
                 await this.ExecuteCommandAsync($"clientkick {Target.ClientID}  \"{Message}^7\"");
             }
         }
 
-        public override async Task TempBan(String Reason, Player Target, Player Origin)
+        public override async Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin)
         {
-            if (Target.ClientID > -1)
+            await this.ExecuteCommandAsync($"tempbanclient {Target.ClientID } \"^1Player Temporarily Banned: ^5{ Reason }\"");
+            Penalty newPenalty = new Penalty(Penalty.Type.TempBan, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP, DateTime.Now + length);
+            await Task.Run(() =>
             {
-                await this.ExecuteCommandAsync($"tempbanclient {Target.ClientID } \"^1Player Temporarily Banned: ^5{ Reason } (1 hour)\"");
-                Penalty newPenalty = new Penalty(Penalty.Type.TempBan, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
-                await Task.Run(() =>
-                {
-                    Manager.GetClientPenalties().AddPenalty(newPenalty);
-                });
-            }
+                Manager.GetClientPenalties().AddPenalty(newPenalty);
+            });
         }
 
         override public async Task Ban(String Message, Player Target, Player Origin)
@@ -670,7 +678,7 @@ namespace IW4MAdmin
             if (Origin != null)
             {
                 Target.SetLevel(Player.Permission.Banned);
-                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP);
+                Penalty newBan = new Penalty(Penalty.Type.Ban, Target.lastOffense, Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP, DateTime.MaxValue);
 
                 await Task.Run(() =>
                 {
@@ -701,17 +709,21 @@ namespace IW4MAdmin
             // database stuff can be time consuming
             await Task.Run(() =>
             {
-                var FoundPenalaties = Manager.GetClientPenalties().FindPenalties(Target);
-                var PenaltyToRemove = FoundPenalaties.Find(b => b.BType == Penalty.Type.Ban);
+                var FoundPenalties = Manager.GetClientPenalties().FindPenalties(Target);
 
-                if (PenaltyToRemove == null)
-                    return;
-
-                Manager.GetClientPenalties().RemovePenalty(PenaltyToRemove);
+                FoundPenalties.Where(p => p.BType > Penalty.Type.Kick)
+                    .All(p =>
+                    {
+                        Manager.GetClientPenalties().RemovePenalty(p);
+                        return true;
+                    });
 
                 Player P = Manager.GetClientDatabase().GetPlayer(Target.NetworkID, -1);
-                P.SetLevel(Player.Permission.User);
-                Manager.GetClientDatabase().UpdatePlayer(P);
+                if (P.Level < Player.Permission.Trusted)
+                {
+                    P.SetLevel(Player.Permission.User);
+                    Manager.GetClientDatabase().UpdatePlayer(P);
+                }
             });
         }
 

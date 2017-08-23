@@ -5,12 +5,13 @@ namespace SharedLibrary
 {
     public class Penalty
     {
-        public Penalty(Type BType, String Reas, String TargID, String From, DateTime time, String ip)
+        public Penalty(Type BType, String Reas, String TargID, String From, DateTime time, String ip, DateTime exp)
         {
             Reason = Reas.CleanChars().StripColors();
             OffenderID = TargID;
             PenaltyOriginID = From;
             When = time;
+            Expires = exp;
             IP = ip;
             this.BType = BType;
         }
@@ -34,6 +35,7 @@ namespace SharedLibrary
         public String OffenderID { get; private set; }
         public String PenaltyOriginID { get; private set; }
         public DateTime When { get; private set; }
+        public DateTime Expires { get; private set; }
         public String IP { get; private set; }
         public Type BType { get; private set; }
     }

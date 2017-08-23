@@ -98,6 +98,10 @@ namespace Welcome_Plugin
 
         public async Task OnTickAsync(Server S)
         {
+            return;
+
+            // TODO: check if this works
+
             int MaxPing = (await S.GetDvarAsync<int>("sv_maxping")).Value;
 
             if (MaxPing == 0)
@@ -144,12 +148,12 @@ namespace Welcome_Plugin
 
                 }
 
-                PlayerPings.Add(E.Origin.DatabaseID, 1.0f);
+                //PlayerPings.Add(E.Origin.DatabaseID, 1.0f);
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
-                PlayerPings.Remove(E.Origin.DatabaseID);
+                //PlayerPings.Remove(E.Origin.DatabaseID);
             }
         }
     }

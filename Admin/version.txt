@@ -10,6 +10,10 @@ CHANGELOG:
 -moved aliases to the manager
 -added admins page to view privileged users
 -fixed refactoring mistake with messages
+-removes flag penality when unflagging a player
+-fixed 'just now ago' on webfront
+-webfront playerlist level colors are hidden to non admin users
+-tempban length can now be specified (<int>m, <int>h, <int>d,  <int>y)
 
 
 VERSION 1.3

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using SharedLibrary.Network;
+using SharedLibrary.Helpers;
 using System.Threading.Tasks;
 
 namespace SharedLibrary.Commands
@@ -96,10 +97,15 @@ namespace SharedLibrary.Commands
         {
             E.Target.lastOffense = Utilities.RemoveWords(E.Data, 1);
             String Message = E.Target.lastOffense;
+            var length = Message.ParseTimespan();
+
+            if (length.TotalHours != 1)
+                Message = Utilities.RemoveWords(Message, 1);
+
             if (E.Origin.Level > E.Target.Level)
             {
-                await E.Target.TempBan(Message, E.Origin);
-                await E.Origin.Tell($"Successfully temp banned {E.Target.Name}");
+                await E.Target.TempBan(Message, length, E.Origin);
+                await E.Origin.Tell($"Successfully temp banned ^5{E.Target.Name} ^7for ^5{length.TimeSpanText()}");
             }
             else
                 await E.Origin.Tell("You cannot temp ban " + E.Target.Name);
@@ -391,7 +397,7 @@ namespace SharedLibrary.Commands
 
             foreach (Player P in db_players)
             {
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4} ago", P.Name, P.DatabaseID, Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4}", P.Name, P.DatabaseID, Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
                 await E.Origin.Tell(mesg);
             }
         }
@@ -510,6 +516,7 @@ namespace SharedLibrary.Commands
             if (E.Target.Level == Player.Permission.Flagged)
             {
                 E.Target.SetLevel(Player.Permission.User);
+                E.Owner.Manager.GetClientPenalties().RemovePenalty(new Penalty(Penalty.Type.Flag, "", E.Target.NetworkID, "", DateTime.Now, "", DateTime.Now));
                 await E.Origin.Tell("You have ^5unflagged ^7" + E.Target.Name);
             }
 
@@ -517,7 +524,7 @@ namespace SharedLibrary.Commands
             {
                 E.Data = Utilities.RemoveWords(E.Data, 1);
                 E.Target.SetLevel(Player.Permission.Flagged);
-                E.Owner.Manager.GetClientPenalties().AddPenalty(new Penalty(Penalty.Type.Flag, E.Data, E.Target.NetworkID, E.Origin.NetworkID, DateTime.Now, E.Target.IP));
+                E.Owner.Manager.GetClientPenalties().AddPenalty(new Penalty(Penalty.Type.Flag, E.Data, E.Target.NetworkID, E.Origin.NetworkID, DateTime.Now, E.Target.IP, DateTime.Now));
                 await E.Owner.ExecuteEvent(new Event(Event.GType.Flag, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }
@@ -617,7 +624,7 @@ namespace SharedLibrary.Commands
             }
 
             var B = E.Owner.Manager.GetClientPenalties().FindPenalties(E.Target);
-            var BannedPenalty = B.Find(b => b.BType == Penalty.Type.Ban);
+            var BannedPenalty = B.Find(b => b.BType > Penalty.Type.Kick && b.Expires > DateTime.Now);
 
             if (BannedPenalty == null)
             {
@@ -627,13 +634,7 @@ namespace SharedLibrary.Commands
 
             Player Banner = E.Owner.Manager.GetClientDatabase().GetPlayer(BannedPenalty.PenaltyOriginID, -1);
 
-            if (Banner == null)
-            {
-                await E.Origin.Tell("Ban was found for the player, but origin of the ban is unavailable.");
-                return;
-            }
-
-            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2}", E.Target.Name, Banner.Name, BannedPenalty.Reason));
+            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2} {3}", E.Target.Name, Banner?.Name ?? "IW4MAdmin", BannedPenalty.Reason, BannedPenalty.BType == Penalty.Type.TempBan ? $"({(BannedPenalty.Expires - DateTime.Now).TimeSpanText()} remaining)" : ""));
         }
     }
 

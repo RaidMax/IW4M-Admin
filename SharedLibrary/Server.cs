@@ -210,7 +210,7 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="Reason">Reason for banning the player</param>
         /// <param name="Target">The player to ban</param>
-        abstract public Task TempBan(String Reason, Player Target, Player Origin);
+        abstract public Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin);
 
         /// <summary>
         /// Perm ban a player from the server

@@ -15,7 +15,7 @@ namespace IW4MAdmin
 
         public void AddPenalty(Penalty P)
         {
-            ApplicationManager.GetInstance().GetClientDatabase().AddBan(P);
+            ApplicationManager.GetInstance().GetClientDatabase().AddPenalty(P);
         }
 
         public void RemovePenalty(Penalty P)

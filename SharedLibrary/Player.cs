@@ -154,9 +154,9 @@ namespace SharedLibrary
             await lastEvent.Owner.Kick(Message, this, Sender);
         }
 
-        public async Task TempBan(String Message, Player Sender)
+        public async Task TempBan(String Message, TimeSpan Length, Player Sender)
         {
-            await lastEvent.Owner.TempBan(Message, this, Sender);
+            await lastEvent.Owner.TempBan(Message, Length, this, Sender);
         }
 
         public async Task Warn(String Message, Player Sender)

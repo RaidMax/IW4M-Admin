@@ -229,23 +229,23 @@ namespace SharedLibrary
             if (Elapsed.TotalMinutes < 120)
             {
                 if (Elapsed.TotalMinutes < 1.5)
-                    return "1 minute";
-                return Math.Round(Elapsed.TotalMinutes, 0) + " minutes";
+                    return "1 minute ago";
+                return Math.Round(Elapsed.TotalMinutes, 0) + " minutes ago";
             }
             if (Elapsed.TotalHours <= 24)
             {
                 if (Elapsed.TotalHours < 1.5)
-                    return "1 hour";
-                return Math.Round(Elapsed.TotalHours, 0) + " hours";
+                    return "1 hour ago";
+                return Math.Round(Elapsed.TotalHours, 0) + " hours ago";
             }
             if (Elapsed.TotalDays <= 365)
             {
                 if (Elapsed.TotalDays  < 1.5)
-                    return "1 day";
-                return Math.Round(Elapsed.TotalDays, 0) + " days";
+                    return "1 day ago";
+                return Math.Round(Elapsed.TotalDays, 0) + " days ago";
             }
             else
-                return "a very long time";
+                return "a very long time ago";
         }
 
         public static Game GetGame(string gameName)
@@ -262,6 +262,49 @@ namespace SharedLibrary
                 return Game.IW5;
 
             return Game.UKN;
+        }
+
+        public static TimeSpan ParseTimespan(this string input)
+        {
+            var expressionMatch = Regex.Match(input, @"[0-9]+.\b");
+
+            if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
+                return new TimeSpan(1, 0, 0);
+
+            char lengthDenote = expressionMatch.Value[expressionMatch.Value.Length - 1];
+            int length = Int32.Parse(expressionMatch.Value.Substring(0, expressionMatch.Value.Length - 1));
+
+            switch (lengthDenote)
+            {
+                case 'm':
+                    return new TimeSpan(0, length, 0);
+                case 'h':
+                    return new TimeSpan(length, 0, 0);
+                case 'd':
+                    return new TimeSpan(length, 0, 0, 0);
+                case 'w':
+                    return new TimeSpan(length * 7, 0, 0, 0);
+                case 'y':
+                    return new TimeSpan(length * 365, 0, 0, 0);
+                default:
+                    return new TimeSpan(1, 0, 0);
+            }
+        }
+
+        public static string TimeSpanText(this TimeSpan span)
+        {
+            if (span.TotalMinutes < 6)
+                return $"{span.Minutes} minutes";
+            else if (span.TotalHours < 24)
+                return $"{span.Hours} hours";
+            else if (span.TotalDays < 7)
+                return $"{span.Days} days";
+            else if (span.TotalDays > 7 && span.TotalDays < 365)
+                return $"{Math.Ceiling(span.Days / 7.0)} weeks";
+            else if (span.TotalDays >= 365)
+                return $"{Math.Ceiling(span.Days / 365.0)} years";
+
+            return "1 hour";
         }
     }
 }

@@ -1,71 +1,71 @@
 <script>
-function printPlayer(player, i)
-{
-    var p = "";
-    p +=
-      "<div class=\"playerInfo table alternate_" + i % 2 + "\"> \
-       <div class=\"tableCell\"><a href=\"/players?id=" + player['playerID'] + "\">" + player['playerName'] + "</a></div> \
-       <div class=\"tableCell\">" + formatHidden(player['playerAliases'], player.authed) + "</div> \
-       <div class=\"tableCell\">" + formatHidden(player['playerIPs'], player.authed) + "</div> \
-       <div class=\"tableCell\">" + getColorForLevel(player['playerLevel'], player['playerLevel']) + "</div> \
-       <div class=\"tableCell\">" + player['playerConnections'] + "</div>";
-
-    if (player.showV2Features)
-    {
-        p +=
-        "<div class=\"tableCell actionButton\" style='width: 2em;'> \
-          <a target=\"_blank\" href='http://server.nbsclan.org/screen.php?id=" + player.forumID + "&name=" + player.playerName + "'> \
-            <i class=\"fa fa-camera\" aria-hidden=\"true\"></i> \
-          </a> \
-          <a target=\"_blank\" href='https://v2.mcsebi.ru/memberlist.php?mode=viewprofile&u=" + player.forumID + "'> \
-            <i class=\"fa fa-user tableCell\" aria-hidden=\"true\"></i> \
-          </a> \
-        </div> ";
+    function printPlayer(player, i) {
+        var playerText = '<div class="admin-name"><a href="/players?id=' + player.DatabaseID + '">' + player.Name + "</a></div>";
+        switch (player.Level) {
+            case 6:
+                $('#owner-privilege .clients').append(playerText);
+                break;
+            case 5:
+                $('#senioradmin-privilege .clients').append(playerText);
+                break;
+            case 4:
+                $('#admin-privilege .clients').append(playerText);
+                break;
+            case 3:
+                $('#mod-privilege .clients').append(playerText);
+                break;
+            case 2:
+                $('#trusted-privilege .clients').append(playerText);
+                break;
+        }
     }
 
-    else
-    {
-        p+=
-            "<div class=\"tableCell\" style='width: 2em;'><i class=\"fa fa-ban\" aria-hidden=\"true\"></i></div>"
+    function getAdmins() {
+        $.getJSON('/GetAdmins', function (result) {
+            $.each(result, function (i, player) {
+                printPlayer(player, i);
+            });
+        });
     }
 
-    p +=
-        "<div class=\"tableCell alignRight\">" + checkJustNow(player['lastSeen']) + "</div> \
-    </div>";
-
-    $("#playersTable").append(p);
-
-}
-
-function getAdmins() {
-    $.getJSON('/GetAdmins', function(result) {
-                  $.each(result, function(i, player) {
-                        printPlayer(player, i);
-                  });
-            }).done(function (data) { $(".loader").fadeOut(); });
-}
-
-$( document ).ready(function() {
-    getAdmins();
-});
-
-
+    $(document).ready(function () {
+        getAdmins();
+    });
 </script>
 
-<div class="playerSearchWrap">
-  <input type="button" class="searchButton" name="Search" value="Search"/>
-  <input type="text" class="search" placeholder="Player Name..."/>
+
+<div class="privilege" id="owner-privilege">
+    <div class="contentHeader table">
+        <div class="contentColumn tableCell">Owner</div>
+    </div>
+    <div class="clients"></div>
 </div>
 
-<div class="contentHeader table">
-  <div class="contentColumn tableCell">Name</div>
-  <div class="contentColumn tableCell">Aliases</div>
-  <div class="contentColumn tableCell">IP</div>
-  <div class="contentColumn tableCell">Level</div>
-  <div class="contentColumn tableCell">Connections</div>
-  <div class="contentColumn tableCell" style="width: 1em;">V2</div>
-  <div class="contentColumn tableCell alignRight">Last Seen</div>
+<div class="privilege" id="senioradmin-privilege">
+    <div class="contentHeader table">
+        <div class="contentColumn tableCell">Senior Administrator</div>
+    </div>
+    <div class="clients"></div>
 </div>
-<div id="playersTable">
+
+<div class="privilege" id="admin-privilege">
+    <div class="contentHeader table">
+        <div class="contentColumn tableCell">Administrator</div>
+    </div>
+    <div class="clients"></div>
 </div>
-<hr/>
+
+<div class="privilege" id="mod-privilege">
+    <div class="contentHeader table">
+        <div class="contentColumn tableCell">Moderator</div>
+    </div>
+    <div class="clients"></div>
+</div>
+
+<div class="privilege" id="trusted-privilege">
+    <div class="contentHeader table">
+        <div class="contentColumn tableCell">Trusted</div>
+    </div>
+    <div class="clients"></div>
+</div>
+<hr />

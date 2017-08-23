@@ -227,7 +227,7 @@ namespace SharedLibrary
             {
                 String Create = "CREATE TABLE [CLIENTS] ( [Name] TEXT  NULL, [npID] TEXT  NULL, [Number] INTEGER PRIMARY KEY AUTOINCREMENT, [Level] INT DEFAULT 0 NULL, [LastOffense] TEXT NULL, [Connections] INT DEFAULT 1 NULL, [IP] TEXT NULL, [LastConnection] TEXT NULL, [UID] TEXT NULL, [Masked] INT DEFAULT 0, [Reserved] INT DEFAULT 0);";
                 ExecuteNonQuery(Create);
-                Create = "CREATE TABLE [BANS] ( [TYPE] TEXT NULL, [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL);";
+                Create = "CREATE TABLE [BANS] ( [TYPE] TEXT NULL, [Reason] TEXT NULL, [npID] TEXT NULL, [bannedByID] TEXT NULL, [IP] TEXT NULL, [TIME] TEXT NULL, [EXPIRES] TEXT);";
                 ExecuteNonQuery(Create);
             }
         }
@@ -453,7 +453,7 @@ namespace SharedLibrary
                 if (Row["TYPE"].ToString().Length != 0)
                     BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
 
-                ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
+                ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString(), DateTime.Parse(Row["EXPIRES"].ToString())));
 
             }
 
@@ -470,12 +470,8 @@ namespace SharedLibrary
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
 
-                Penalty.Type BanType = Penalty.Type.Ban;
-                if (Row["TYPE"].ToString().Length != 0)
-                    BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
-
-                ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString()));
-
+                var  BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
+                ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString(), DateTime.Parse(Row["EXPIRES"].ToString())));
             }
 
             return ClientPenalties;
@@ -542,7 +538,7 @@ namespace SharedLibrary
 
 
         //Add specified ban to database
-        public void AddBan(Penalty B)
+        public void AddPenalty(Penalty B)
         {
             Dictionary<String, object> newBan = new Dictionary<String, object>
             {
@@ -551,7 +547,8 @@ namespace SharedLibrary
                 { "bannedByID", B.PenaltyOriginID },
                 { "IP", B.IP },
                 { "TIME", Utilities.DateTimeSQLite(DateTime.Now) },
-                { "TYPE", B.BType }
+                { "TYPE", B.BType },
+                { "EXPIRES", B.Expires }
             };
             Insert("BANS", newBan);
         }

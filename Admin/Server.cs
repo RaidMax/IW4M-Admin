@@ -291,6 +291,9 @@ namespace IW4MAdmin
 
         async Task<int> PollPlayersAsync()
         {
+#if DEBUG
+            return Players.Where(p => p != null).Count();
+#endif
             var CurrentPlayers = await this.GetStatusAsync();
 
             for (int i = 0; i < Players.Count; i++)
@@ -357,15 +360,15 @@ namespace IW4MAdmin
                     tickTime = DateTime.Now;
                 }
 
-                if ((lastCount - playerCountStart).TotalMinutes > 4)
+                if ((lastCount - playerCountStart).TotalMinutes >= 15)
                 {
-                    while (PlayerHistory.Count > 144) // 12 times a minute for 12 hours
+                    while (PlayerHistory.Count > 48) // 4 times a hour for 12 hours
                         PlayerHistory.Dequeue();
-                    PlayerHistory.Enqueue(new SharedLibrary.Helpers.PlayerHistory(lastCount, ClientNum));
+                    PlayerHistory.Enqueue(new SharedLibrary.Helpers.PlayerHistory(ClientNum));
                     playerCountStart = DateTime.Now;
                 }
 
-                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 /*&& ClientNum > 0*/)
+                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && ClientNum > 0)
                 {
                     await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
@@ -489,7 +492,7 @@ namespace IW4MAdmin
             }
 #if DEBUG
             basepath.Value = (GameName == Game.IW4) ?
-                @"\\tsclient\K\MW2" :
+                @"\\tsclient\J\WIN7_10.25\MW2" :
                 @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
 #endif
             string mainPath = (GameName == Game.IW4) ? "userraw" : "main";

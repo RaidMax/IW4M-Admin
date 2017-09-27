@@ -22,6 +22,7 @@ namespace IW4MAdmin
             SharedLibrary.WebService.PageList.Add(new Pages());
             SharedLibrary.WebService.PageList.Add(new Homepage());
             SharedLibrary.WebService.PageList.Add(new ServersJSON());
+            SharedLibrary.WebService.PageList.Add(new PlayerHistoryJSON());
             SharedLibrary.WebService.PageList.Add(new Penalties());
             SharedLibrary.WebService.PageList.Add(new PenaltiesJSON());
             SharedLibrary.WebService.PageList.Add(new Players());
@@ -57,7 +58,7 @@ namespace IW4MAdmin
 
                 catch (Exception e)
                 {
-                    ApplicationManager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");           
+                    ApplicationManager.GetInstance().Logger.WriteError($"Unable to start webservice ( port is probably in use ): {e.Message}");
                 }
             }
 
@@ -196,6 +197,7 @@ namespace IW4MAdmin
         {
             var info = new List<ServerInfo>();
 
+            int i = 0;
             foreach (Server S in ApplicationManager.GetInstance().Servers)
             {
                 ServerInfo eachServer = new ServerInfo()
@@ -207,10 +209,16 @@ namespace IW4MAdmin
                     gameType = Utilities.GetLocalizedGametype(S.Gametype),
                     currentPlayers = S.GetPlayersAsList().Count,
                     chatHistory = S.ChatHistory,
-                    players = new List<PlayerInfo>()
+                    players = new List<PlayerInfo>(),
+                    ID = i
                 };
-                bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"] && x.Level > Player.Permission.Trusted).Count > 0
-                || querySet["IP"] == "127.0.0.1";
+
+                i++;
+
+                bool authed = ApplicationManager.GetInstance().GetPrivilegedClients()
+                    .Where(x => x.IP == querySet["IP"])
+                    .Where(x => x.Level > Player.Permission.Trusted).Count() > 0
+                    || querySet["IP"] == "127.0.0.1";
 
                 foreach (Player P in S.GetPlayersAsList())
                 {
@@ -226,11 +234,58 @@ namespace IW4MAdmin
                 info.Add(eachServer);
             }
 
-
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
                 content = Newtonsoft.Json.JsonConvert.SerializeObject(info),
+                additionalHeaders = new Dictionary<string, string>()
+            };
+            return resp;
+        }
+
+        public string GetContentType()
+        {
+            return "application/json";
+        }
+
+        public bool Visible()
+        {
+            return false;
+        }
+    }
+
+
+    class PlayerHistoryJSON : IPage
+    {
+        public string GetName()
+        {
+            return "Player History";
+        }
+
+        public string GetPath()
+        {
+            return "/_playerhistory";
+        }
+
+        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        {
+
+            var history = new SharedLibrary.Helpers.PlayerHistory[0];
+            try
+            {
+                int id = Int32.Parse(querySet["server"]);
+                history = ApplicationManager.GetInstance().GetServers()[id].PlayerHistory.ToArray();
+            }
+
+            catch (Exception)
+            {
+
+            }
+
+            HttpResponse resp = new HttpResponse()
+            {
+                contentType = GetContentType(),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(history),
                 additionalHeaders = new Dictionary<string, string>()
             };
             return resp;
@@ -412,7 +467,8 @@ namespace IW4MAdmin
                     penaltyTime = Utilities.GetTimePassed(p.When),
                     penaltyType = p.BType.ToString(),
                     playerName = penalized.Name,
-                    playerID = penalized.DatabaseID
+                    playerID = penalized.DatabaseID,
+                    Expires = p.Expires > DateTime.Now ? (p.Expires - DateTime.Now).TimeSpanText() : ""
                 };
 
                 if (admin.NetworkID == penalized.NetworkID)
@@ -644,7 +700,7 @@ namespace IW4MAdmin
 
                 PageInfo pi = new PageInfo()
                 {
-                    pagePath = p.GetPath(), 
+                    pagePath = p.GetPath(),
                     pageName = p.GetName(),
                     visible = p.Visible()
                 };
@@ -670,7 +726,7 @@ namespace IW4MAdmin
             return false;
         }
     }
-   
+
     class GetPlayer : IPage
     {
         public string GetContentType()
@@ -718,7 +774,7 @@ namespace IW4MAdmin
 
             else if (querySet["recent"] != null)
             {
-                 matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().GetRecentPlayers();
+                matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().GetRecentPlayers();
                 recent = true;
             }
 
@@ -780,6 +836,7 @@ namespace IW4MAdmin
         public int maxPlayers;
         public List<Chat> chatHistory;
         public List<PlayerInfo> players;
+        public int ID;
     }
 
     [Serializable]
@@ -825,6 +882,7 @@ namespace IW4MAdmin
         public string penaltyType;
         public string penaltyReason;
         public string penaltyTime;
+        public string Expires;
     }
 
     [Serializable]

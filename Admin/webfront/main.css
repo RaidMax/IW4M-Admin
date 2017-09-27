@@ -15,7 +15,7 @@ div#header #navContainer .navEntry a {  padding: 1.2vw; width: 4vw; }
 div#header #navContainer .navEntry:hover { background-color: rgb(34, 34, 34); }
 
 div#content { margin: 3em 10%; }
-div#content .serverContainer { background-color: #191919; margin: 2em 0; font-size: 1.25vw; }
+div#content .serverContainer { background-color: #191919; margin-top 0; margin-bottom: 0; font-size: 1.25vw;  padding-bottom: 100px; }
 div#content hr { border-width: 0; height: 0.25em; background-color: #007ACC; }
 div#content .serverInfo { width: 100%; }
 div#content .serverInfo .tableCell { padding: 0 0.5em; }
@@ -31,13 +31,15 @@ div#content .chatPlayerName { font-weight: bold; font-size: 1.1vw; color:#fff; p
 div#content .chatPlayerMessage {font-size: 1.1vw; color: #fff; opacity: 1; }
 
 div#content .playerPenalty, div#content .playerInfo { margin: 0 auto; padding: 1em 10px; background-color: #181818; width: calc(100% - 20px); }
-div#content .penaltyName { width: 14.28%; }
+div#content .penaltyName { width: 15%; }
 div#content .penaltyName a:link, div#content .penaltyName a:visited, div#content .playerInfo a:link, div#content .playerInfo a:visited  { color: rgb(0, 122, 204) !important; }
 div#content .penaltyName a:hover, div#content .playerInfo a:hover { color: rgb(255, 255, 255) !important; opacity: 0.75; }
-div#content .penaltyTime { text-align: right; width: 12.5%; }
+div#content .penaltyTime { text-align: left; width:8%; }
+div#content .penaltyOrigin {width: 12%;}
+div#content .penaltyRemaining { text-align: right; width: 10%:}
 div#content .playerPenalty .penaltyTime { opacity: 0.5; }
-div#content .penaltyType { width: 12.5%; }
-div#content .penaltyReason { width: 50%; }
+div#content .penaltyType { width: 10%; }
+div#content .penaltyReason { width: 45%; }
 div#content .playerPenalty .tableCell { }
 div#content .penaltyHeader, div#content .contentHeader { width: calc(100% - 20px); background-color: #007ACC; font-size: 15pt; padding: 0.5em 10px; }
 div#content .alternate_1 { background-color: rgb(34, 34, 34); }
@@ -199,3 +201,5 @@ div#footer { position: fixed; bottom: 0.5em; right: 0.5em; opacity: 0.5; }
 .admin-name a { font-size: 14pt; color: #007ACC !important; }
 .admin-name a:hover { color: #fff !important; }
 .clients { margin: 0.5em; }
+.canvasjs-chart-credit { display: none; }
+.player-history { margin-top: -100px;  height: 100px; }

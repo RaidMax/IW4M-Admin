@@ -17,5 +17,6 @@ namespace SharedLibrary.Interfaces
         IList<Player> GetActiveClients();
         IList<Player> GetAliasClients(Player player);
         IList<Aliases> GetAliases(Player player);
+        IList<Player> GetPrivilegedClients();
     }
 }

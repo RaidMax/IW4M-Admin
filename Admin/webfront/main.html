@@ -1,31 +1,101 @@
 <script>
-function getServers()
-{
-  $.getJSON("/_servers", function(result){
-    $("#serverList").html("");
-         $.each(result, function(i, server){
-           $("#serverList").append("<div class=serverContainer> \
+    var chartsRendered = false;
+
+    function renderPlayerHistory(id) {
+        $.getJSON("/_playerhistory?server=" + id, function (playerHistory) {
+
+            var i = id;
+            if ($("#server-" + i).children().length > 1)
+                return false;
+
+            $("#server-" + i).append("<div class='player-history' id='graph-player-history-" + i + "'></div><hr/><br/><br/>");
+
+            ///////////////////////////////////////
+            var chart = new CanvasJS.Chart("graph-player-history-" + i,
+              {
+                  backgroundColor: "#191919",
+                  height: 100,
+                  animationEnabled: true,
+
+                  toolTip: {
+                      contentFormatter: function (e) {
+                          var date = new Date(e.entries[0].dataPoint.x * 1000);
+                          return date.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: true }) + " - " + e.entries[0].dataPoint.y + " players";
+                      }
+                  },
+
+                  axisX: {
+                      interval: 1,
+                      gridThickness: 0,
+                      lineThickness: 0,
+                      tickThickness: 0,
+                      margin: 0,
+                      valueFormatString: " ",
+                  },
+
+                  axisY: {
+                      gridThickness: 0,
+                      lineThickness: 0,
+                      tickThickness: 0,
+                      minimum: 0,
+                      margin: 0,
+                      valueFormatString: " ",
+                      labelMaxWidth: 0,
+                  },
+
+                  legend: {
+                      maxWidth: 0,
+                      maxHeight: 0,
+                      dockInsidePlotArea: true,
+                  },
+
+                  data: [{
+                      showInLegend: false,
+                      type: "splineArea",
+                      color: "rgba(0, 122, 204, 0.432)",
+                      markerSize: 0,
+                      dataPoints: playerHistory,
+                  }]
+              });
+            chart.render();
+            //////////////////////////////////////
+        });
+    }
+
+    function getServers() {
+        $.getJSON("/_servers", function (result) {
+            result = result.sort(function (a, b) { return a.currentPlayers < b.currentPlayers });
+            $.each(result, function (i, server) {
+
+                if ($('#server-' + i).length < 1)
+                    $('#serverList').append("<div id='server-" + i + "'></div>")
+
+                $('#server-' + i + ' .serverContainer').remove();
+
+                $('#server-' + i).prepend("<div class='serverContainer'> \
              <div class='serverInfo table'> \
                <div class='serverTitle tableCell'>" + server['serverName'] + "</div> \
                <div class='serverMap tableCell'>" + server['mapName'] + "</div> \
                <div class='serverPlayers tableCell'>" + server['currentPlayers'] + "/" + server['maxPlayers'] + "</div> \
              </div>  \
              <div class='serverChatList table'>" +
-               formatMessages(server['chatHistory'])
-             + "</div> \
+        formatMessages(server['chatHistory'])
+      + "</div> \
              <div class='serverPlayerList table'>" +
-                formatPlayers(server['players'])
-             + "</div> \
-             <div style='clear: both;'></div><hr/></div>"
-           );
-         });
-     });
-}
+         formatPlayers(server['players'])
+      + "</div> \
+             <div style='clear: both;'></div><hr/></div> \
+          </div>"
+     );
+                renderPlayerHistory(i);
+            });
+        });
+    }
 
-$( document ).ready(function() {
-    getServers();
-    setInterval(getServers, 1000)
-});
+    $(document).ready(function () {
+        getServers();
+        setInterval(getServers, 1000)
+    });
 </script>
 <div id="serverList">
 </div>

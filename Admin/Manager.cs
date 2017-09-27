@@ -28,6 +28,7 @@ namespace IW4MAdmin
         List<MessageToken> MessageTokens;
         Kayak.IScheduler webServiceTask;
         Thread WebThread;
+        List<Player> PrivilegedClients;
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 15000;
 #else
@@ -179,11 +180,17 @@ namespace IW4MAdmin
             WebThread.Start();
             #endregion
 
+            #region ADMINS
+            PrivilegedClients = GetClientDatabase().GetAdmins();
+            #endregion
+
+
             Running = true;
         }
 
         public void Start()
         {
+            var a = Utilities.DateTimeSQLite(DateTime.MinValue);
             while (Running)
             {
                 for (int i = 0; i < TaskStatuses.Count; i++)
@@ -197,7 +204,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                Thread.Sleep(300);
+                Thread.Sleep(UPDATE_FREQUENCY);
             }
 #if !DEBUG
             foreach (var S in Servers)
@@ -275,6 +282,11 @@ namespace IW4MAdmin
             if (Origin.Alias != null)
                 allAliases.Add(Origin.Alias);
             return allAliases;
+        }
+
+        public IList<Player> GetPrivilegedClients()
+        {
+            return PrivilegedClients;
         }
 
         private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)

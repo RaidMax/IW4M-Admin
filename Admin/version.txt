@@ -1,4 +1,11 @@
-﻿VERSION 1.4
+﻿Versino 1.5
+CHANGELOG:
+-added back player history graphs (past 12 hours every 15 minutes)
+-fixed issue with configurationmanager files and threading
+-servers on webfront listed in descending player count
+-fixed resolution of tempban times from console feedback
+
+VERSION 1.4
 CHANGELOG:
 -works: with COD, WaW, MW3, BO1 (preliminary without extensive testing)
 -fixed the issue with webfront chat history

@@ -34,6 +34,7 @@ function getPenalties(from)
              <div class=\"penaltyReason tableCell\">"+ penalty['penaltyReason'] + "</div> \
              <div class=\"penaltyOrigin tableCell\">"+ getColorForLevel(penalty['adminLevel'], penalty['adminName']) + "</div> \
              <div class=\"penaltyTime tableCell\">"+ penalty['penaltyTime'] + "</div> \
+            <div class=\" penaltyRemaining tableCell\">" + penalty['Expires'] + "</div> \
           </div>"
         )
       });
@@ -51,6 +52,7 @@ $( document ).ready(function() {
   <div class="penaltyReason tableCell">Reason</div>
   <div class="penaltyOrigin tableCell">Admin</div>
   <div class="penaltyTime tableCell">Time</div>
+  <div class="penaltyRemaining tableCell">Remaining</div>
 </div>
 <div id="penaltyList">
 </div>

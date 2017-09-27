@@ -293,16 +293,18 @@ namespace SharedLibrary
 
         public static string TimeSpanText(this TimeSpan span)
         {
-            if (span.TotalMinutes < 6)
-                return $"{span.Minutes} minutes";
-            else if (span.TotalHours < 24)
-                return $"{span.Hours} hours";
-            else if (span.TotalDays < 7)
-                return $"{span.Days} days";
-            else if (span.TotalDays > 7 && span.TotalDays < 365)
-                return $"{Math.Ceiling(span.Days / 7.0)} weeks";
-            else if (span.TotalDays >= 365)
-                return $"{Math.Ceiling(span.Days / 365.0)} years";
+            if (span.TotalMinutes < 60)
+                return $"{span.Minutes} minute(s)";
+            else if (span.Hours >= 1 && span.TotalHours < 24)
+                return $"{span.Hours} hour(s)";
+            else if (span.TotalDays >= 1 && span.TotalDays < 7)
+                return $"{span.Days} day(s)";
+            else if (span.TotalDays >= 7 && span.TotalDays < 365)
+                return $"{Math.Ceiling(span.Days / 7.0)} week(s)";
+            else if (span.TotalDays >= 365 && span.TotalDays < 36500)
+                return $"{Math.Ceiling(span.Days / 365.0)} year(s)";
+            else if (span.TotalDays >= 36500)
+                return "Forever";
 
             return "1 hour";
         }

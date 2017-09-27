@@ -4,12 +4,45 @@ namespace SharedLibrary.Helpers
 {
     public class PlayerHistory
     {
-        public PlayerHistory(DateTime w, int cNum)
+        public PlayerHistory(int cNum)
         {
-            When = w;
-            Players = cNum;
+            DateTime t = DateTime.UtcNow;
+            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, 5 * (int)Math.Round(t.Minute / 5.0), 0);
+            PlayerCount = cNum;
         }
-        public DateTime When { get; private set; }
-        public int Players { get; private set; }
+
+#if DEBUG
+        public PlayerHistory(DateTime t, int cNum)
+        {
+            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, 15 * (int)Math.Round(t.Minute / 15.0), 0);
+            PlayerCount = cNum;
+        }
+#endif 
+
+        private DateTime When;
+        private int PlayerCount;
+
+        /// <summary>
+        /// Used by CanvasJS as a point on the x axis
+        /// </summary>
+        public double x
+        {
+            get
+            {
+                return (When - DateTime.MinValue).TotalSeconds;
+            }
+        }
+
+
+        /// <summary>
+        /// Used by CanvasJS as a point on the y axis
+        /// </summary>
+        public int y
+        {
+            get
+            {
+                return PlayerCount;
+            }
+        }
     }
 }

@@ -98,7 +98,7 @@ namespace SharedLibrary.Network
 
             if (LineSplit.Length != 3)
             {
-                var e = new Exceptions.DvarException("DVAR does not exist");
+                var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
                 e.Data["dvar_name"] = dvarName;
                 throw e;
             }

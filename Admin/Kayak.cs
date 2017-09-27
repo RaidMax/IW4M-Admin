@@ -69,7 +69,10 @@ namespace IW4MAdmin
 
             catch (Exception e)
             {
-                ApplicationManager.GetInstance().Logger.WriteError($"Webfront error during request: {e.Message}");
+                ApplicationManager.GetInstance().Logger.WriteError($"Webfront error during request");
+                ApplicationManager.GetInstance().Logger.WriteDebug($"Message: {e.Message}");
+                ApplicationManager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
+
                 response.OnResponse(new HttpResponseHead()
                 {
                     Status = "500 Internal Server Error",

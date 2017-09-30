@@ -24,9 +24,9 @@ namespace SharedLibrary.Plugins
             ICollection<Assembly> assemblies = new List<Assembly>(dllFileNames.Length);
             foreach (string dllFile in dllFileNames)
             {
-                byte[] rawDLL = File.ReadAllBytes(dllFile);
-                Assembly assembly = Assembly.Load(rawDLL);
-                assemblies.Add(assembly);
+               // byte[] rawDLL = File.ReadAllBytes(dllFile);
+                //Assembly assembly = Assembly.Load(rawDLL);
+                assemblies.Add(Assembly.LoadFrom(dllFile));
             }
 
             int LoadedPlugins = 0;

@@ -24,7 +24,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Nightly|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
@@ -46,6 +46,21 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Nightly|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-Stable|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Release-Stable\</OutputPath>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Encryption.cs" />
     <Compile Include="Events.cs" />
@@ -61,23 +76,21 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CodeKicker.BBCode, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\CodeKicker.BBCode.5.0.0.0\lib\net35\CodeKicker.BBCode.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\..\packages\CodeKicker.BBCode.5.0.0.0\lib\net35\CodeKicker.BBCode.dll</HintPath>
     </Reference>
-    <Reference Include="CryptSharp">
-      <HintPath>..\packages\CryptSharp.1.2.0.1\lib\net35\CryptSharp.dll</HintPath>
+    <Reference Include="CryptSharp, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\CryptSharp.1.2.0.1\lib\net35\CryptSharp.dll</HintPath>
     </Reference>
     <Reference Include="DNA.Text, Version=2.1.1.10633, Culture=neutral, PublicKeyToken=f393b6ce92960100, processorArchitecture=MSIL">
-      <HintPath>..\packages\DNA.Text.2.1.1.10633\lib\DNA.Text.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\..\packages\DNA.Text.2.1.1.10633\lib\DNA.Text.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SQLite">
-      <HintPath>..\Admin\lib\System.Data.SQLite.dll</HintPath>
+      <HintPath>..\..\Admin\lib\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Security" />
     <Reference Include="System.Web" />
@@ -126,13 +139,13 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(SolutionDir)Admin\bin\$(ConfigurationName)\forum"
-copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\plugins\MessageBoardPlugin.dll"
+
 xcopy /E /Y "$(TargetDir)forum" "$(SolutionDir)Admin\bin\$(ConfigurationName)\forum"
 
 copy /Y "$(TargetDir)DNA.Text.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\DNA.Text.dll"
 copy /Y "$(TargetDir)CryptSharp.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\CryptSharp.dll"
-
 copy /Y "$(TargetDir)CodeKicker.BBcode.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\CodeKicker.BBcode.dll"
+
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

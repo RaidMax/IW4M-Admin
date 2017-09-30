@@ -491,9 +491,17 @@ namespace IW4MAdmin
                 logfile = await this.GetDvarAsync<string>("g_log");
             }
 #if DEBUG
-            basepath.Value = (GameName == Game.IW4) ?
-                @"\\tsclient\J\WIN7_10.25\MW2" :
-                @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
+            if (Environment.OSVersion.VersionString != "Microsoft Windows NT 6.2.9200.0")
+            {
+                basepath.Value = (GameName == Game.IW4) ?
+                    @"\\tsclient\J\WIN7_10.25\MW2" :
+                    @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
+            }
+
+            else
+            {
+                basepath.Value = @"C:\MW2";
+            }
 #endif
             string mainPath = (GameName == Game.IW4) ? "userraw" : "main";
 
@@ -521,7 +529,6 @@ namespace IW4MAdmin
         //Process any server event
         override protected async Task ProcessEvent(Event E)
         {
-
             if (E.Type == Event.GType.Connect)
             {
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>CONNECTED</i>", DateTime.Now));
@@ -532,13 +539,15 @@ namespace IW4MAdmin
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
             }
 
-            else if (E.Type == Event.GType.Kill)
+            else if (E.Type == Event.GType.Script)
             {
-                if (E.Origin != E.Target)
-                    await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, null, this));
-
-                else // suicide/falling
-                    await ExecuteEvent(new Event(Event.GType.Death, "suicide", E.Target, null, this));
+                if (E.Origin == E.Target)// suicide/falling
+                    await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Target, this));
+                else
+                {
+                    await ExecuteEvent(new Event(Event.GType.Kill, E.Data, E.Origin, E.Target, this));
+                    await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Origin, this));
+                }
             }
 
             if (E.Type == Event.GType.Say && E.Data.Length >= 2)

@@ -7,7 +7,7 @@ namespace SharedLibrary
 {
     public class WebService
     {
-        public static List<IPage> PageList { get; private set; }
+        public static List<IPage> PageList { get; set; }
 
         public static void Init()
         {

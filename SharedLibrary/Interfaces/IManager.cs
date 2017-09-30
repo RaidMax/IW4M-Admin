@@ -8,8 +8,8 @@ namespace SharedLibrary.Interfaces
         void Start();
         void Stop();
         ILogger GetLogger();
-        List<Server> GetServers();
-        List<Command> GetCommands();
+        IList<Server> GetServers();
+        IList<Command> GetCommands();
         IPenaltyList GetClientPenalties();
         ClientsDB GetClientDatabase();
         AliasesDB GetAliasesDatabase();

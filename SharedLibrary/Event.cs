@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -68,8 +69,6 @@ namespace SharedLibrary
             Connect,
             Disconnect,
             Say,
-            Kill,
-            Death,
             MapChange,
             MapEnd,
 
@@ -83,7 +82,12 @@ namespace SharedLibrary
 
             //FROM PLAYER
             Report,
-            Flag
+            Flag,
+
+            // FROM GAME
+            Script,
+            Kill,
+            Death,
         }
 
         public Event(GType t, string d, Player O, Player T, Server S)
@@ -101,10 +105,9 @@ namespace SharedLibrary
             try
 #endif
             {
-                String eventType = line[0].Substring(line[0].Length - 1);
-                eventType = eventType.Trim();
+                string  removeTime = Regex.Replace(line[0], @"[0-9]+:[0-9]+\ ", "");
 
-                if (eventType == "K")
+                if (removeTime[0] == 'K')
                 {
                     StringBuilder Data = new StringBuilder();
                     if (line.Length > 9)
@@ -113,7 +116,7 @@ namespace SharedLibrary
                             Data.Append(line[i] + ";");
                     }
 
-                    return new Event(GType.Kill, Data.ToString(), SV.ParseClientFromString(line, 6), SV.ParseClientFromString(line, 2), SV);
+                    return new Event(GType.Script, Data.ToString(), SV.ParseClientFromString(line, 6), SV.ParseClientFromString(line, 2), SV);
                 }
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")
@@ -123,10 +126,15 @@ namespace SharedLibrary
                     return new Event(GType.Say, Utilities.StripIllegalCharacters(message).StripColors(), SV.ParseClientFromString(line, 2), null, SV) { Message = Utilities.StripIllegalCharacters(message).StripColors() };
                 }
 
-                if (eventType == ":")
+                if (removeTime.Contains("ScriptKill"))
+                {
+                    return new Event(GType.Script, String.Join(";", line), SV.Players.FirstOrDefault(p => p != null && p.NetworkID == line[1]), SV.Players.FirstOrDefault(p => p != null && p.NetworkID == line[2]), SV);
+                }
+
+                if (removeTime.Contains("ExitLevel"))
                     return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
-                if (line[0].Contains("InitGame"))
+                if (removeTime.Contains("InitGame"))
                     return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
 
 

@@ -14,7 +14,7 @@ namespace SharedLibrary.Helpers
 #if DEBUG
         public PlayerHistory(DateTime t, int cNum)
         {
-            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, 15 * (int)Math.Round(t.Minute / 15.0), 0);
+            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, 15 * (int)Math.Round(t.Minute / 15.0)), 0);
             PlayerCount = cNum;
         }
 #endif 

@@ -48,12 +48,12 @@ namespace IW4MAdmin
             ClientPenalties = new PenaltyList();
         }
 
-        public List<Server> GetServers()
+        public IList<Server> GetServers()
         {
             return Servers;
         }
 
-        public List<Command> GetCommands()
+        public IList<Command> GetCommands()
         {
             return Commands;
         }
@@ -65,6 +65,18 @@ namespace IW4MAdmin
 
         public void Init()
         {
+            #region WEBSERVICE
+            SharedLibrary.WebService.Init();
+            webServiceTask = WebService.GetScheduler();
+
+            WebThread = new Thread(webServiceTask.Start)
+            {
+                Name = "Web Thread"
+            };
+
+            WebThread.Start();
+            #endregion
+
             #region PLUGINS
             SharedLibrary.Plugins.PluginImporter.Load(this);
 
@@ -166,18 +178,6 @@ namespace IW4MAdmin
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
-            #endregion
-
-            #region WEBSERVICE
-            SharedLibrary.WebService.Init();
-            webServiceTask = WebService.GetScheduler();
-
-            WebThread = new Thread(webServiceTask.Start)
-            {
-                Name = "Web Thread"
-            };
-
-            WebThread.Start();
             #endregion
 
             #region ADMINS

@@ -4,6 +4,8 @@ CHANGELOG:
 -fixed issue with configurationmanager files and threading
 -servers on webfront listed in descending player count
 -fixed resolution of tempban times from console feedback
+-reconfigured solution and projects to be correct debug/release and files copy properly
+-started working on more advanced statistics
 
 VERSION 1.4
 CHANGELOG:

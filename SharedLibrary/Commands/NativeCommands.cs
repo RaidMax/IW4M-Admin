@@ -219,7 +219,7 @@ namespace SharedLibrary.Commands
             {
                 int count = 0;
                 StringBuilder helpResponse = new StringBuilder();
-                List<Command> CommandList = E.Owner.Manager.GetCommands();
+                var CommandList = E.Owner.Manager.GetCommands();
 
                 foreach (Command C in CommandList)
                 {

@@ -96,6 +96,35 @@ namespace StatsPlugin
     /// </summary>
     public class Stats : SharedLibrary.Interfaces.IPlugin
     {
+        private class KillEvent
+        {
+            public IW4Info.HitLocation HitLoc { get; set; }
+            public IW4Info.MeansOfDeath DeathType { get; set; }
+            public int Damage { get; set; }
+            public IW4Info.WeaponName Weapon { get; set; }
+            public Vector3 KillOrigin { get; set; }
+            public Vector3 DeathOrigin { get; set; }
+
+            public KillEvent(string hit, string type, string damage, string weapon, string kOrigin, string dOrigin)
+            {
+                HitLoc = (IW4Info.HitLocation)Enum.Parse(typeof(IW4Info.HitLocation), hit);
+                DeathType = (IW4Info.MeansOfDeath)Enum.Parse(typeof(IW4Info.MeansOfDeath), type);
+                Damage = Int32.Parse(damage);
+                try
+                {
+                    Weapon = (IW4Info.WeaponName)Enum.Parse(typeof(IW4Info.WeaponName), weapon);
+                }
+
+                catch (Exception)
+                {
+                    Weapon = IW4Info.WeaponName.defaultweapon_mp;
+                }
+
+                KillOrigin = Vector3.Parse(kOrigin);
+                DeathOrigin = Vector3.Parse(dOrigin);
+            }
+        }
+
         public static List<StatTracking> statLists;
 
         public struct StatTracking
@@ -187,7 +216,7 @@ namespace StatsPlugin
                     if (P == null)
                         continue;
 
-                    CalculateAndSaveSkill(P, statLists.Find(x =>x.Port == S.GetPort()));
+                    CalculateAndSaveSkill(P, statLists.Find(x => x.Port == S.GetPort()));
                     ResetCounters(P.ClientID, S.GetPort());
 
                     E.Owner.Logger.WriteInfo("Updated skill for client #" + P.DatabaseID);
@@ -197,7 +226,7 @@ namespace StatsPlugin
 
             if (E.Type == Event.GType.Disconnect)
             {
-                CalculateAndSaveSkill(E.Origin, statLists.Find(x=>x.Port == S.GetPort()));
+                CalculateAndSaveSkill(E.Origin, statLists.Find(x => x.Port == S.GetPort()));
                 ResetCounters(E.Origin.ClientID, S.GetPort());
                 E.Owner.Logger.WriteInfo("Updated skill for disconnecting client #" + E.Origin.DatabaseID);
             }
@@ -206,6 +235,12 @@ namespace StatsPlugin
             {
                 if (E.Origin == E.Target || E.Origin == null)
                     return;
+
+                string[] killInfo = E.Data.Split(';');
+
+                var killEvent = new KillEvent(killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);
+
+                S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
 
                 Player Killer = E.Origin;
                 StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
@@ -217,11 +252,11 @@ namespace StatsPlugin
 
                 if ((DateTime.Now - curServer.lastKill[E.Origin.ClientID]).TotalSeconds > 120)
                     curServer.inactiveMinutes[E.Origin.ClientID] += 2;
- 
+
                 killerStats.Kills++;
 
                 killerStats.KDR = (killerStats.Deaths == 0) ? killerStats.Kills : killerStats.KDR = Math.Round((double)killerStats.Kills / (double)killerStats.Deaths, 2);
-                 
+
 
                 curServer.playerStats.UpdateStats(Killer, killerStats);
 
@@ -239,7 +274,7 @@ namespace StatsPlugin
                 Player Victim = E.Origin;
                 StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
                 PlayerStats victimStats = curServer.playerStats.GetStats(Victim);
-               
+
                 victimStats.Deaths++;
                 victimStats.KDR = Math.Round(victimStats.Kills / (double)victimStats.Deaths, 2);
 
@@ -252,7 +287,7 @@ namespace StatsPlugin
             }
         }
 
-        public static string  GetTotalKills()
+        public static string GetTotalKills()
         {
             long Kills = 0;
             foreach (var S in statLists)
@@ -284,7 +319,7 @@ namespace StatsPlugin
 
             if (newPlayTime < 2)
                 return;
- 
+
             // calculate the players Score Per Minute for the current session
             double SessionSPM = curServer.Kills[P.ClientID] * 100 / Math.Max(1, newPlayTime);
             // calculate how much the KDR should way
@@ -293,7 +328,7 @@ namespace StatsPlugin
             double SPMWeightAgainstAverage;
 
             // if no SPM, weight is 1 else the weight is the current sessions spm / lifetime average score per minute
-            SPMWeightAgainstAverage =  (DisconnectingPlayerStats.scorePerMinute == 1) ? 1 : SessionSPM / DisconnectingPlayerStats.scorePerMinute;
+            SPMWeightAgainstAverage = (DisconnectingPlayerStats.scorePerMinute == 1) ? 1 : SessionSPM / DisconnectingPlayerStats.scorePerMinute;
 
             // calculate the weight of the new play time againmst lifetime playtime
             // 
@@ -357,7 +392,18 @@ namespace StatsPlugin
             if (!File.Exists(FileName))
             {
                 String Create = "CREATE TABLE [STATS] ( [npID] TEXT, [KILLS] INTEGER DEFAULT 0, [DEATHS] INTEGER DEFAULT 0, [KDR] REAL DEFAULT 0, [SKILL] REAL DEFAULT 0, [MEAN] REAL DEFAULT 0, [DEV] REAL DEFAULT 0, [SPM] REAL DEFAULT 0, [PLAYTIME] INTEGER DEFAULT 0);";
+                String createKillsTable = @"CREATE TABLE `KILLS` (
+	                                                                `KillerID`	INTEGER NOT NULL,
+	                                                                `VictimID`	INTEGER NOT NULL,
+	                                                                `DeathOrigin`	TEXT NOT NULL,
+	                                                                `MeansOfDeath`	INTEGER NOT NULL,
+	                                                                 `Weapon`	INTEGER NOT NULL,
+	                                                                 `HitLocation`	INTEGER NOT NULL,
+	                                                                `Damage`	INTEGER,
+	                                                                `KillOrigin`	TEXT NOT NULL
+                                                                    ); ";
                 ExecuteNonQuery(Create);
+                ExecuteNonQuery(createKillsTable);
             }
         }
 
@@ -436,7 +482,7 @@ namespace StatsPlugin
             {
                 foreach (DataRow ResponseRow in Result.Rows)
                 {
-                    pStats.Add( new KeyValuePair<String, PlayerStats>(ResponseRow["npID"].ToString(), 
+                    pStats.Add(new KeyValuePair<String, PlayerStats>(ResponseRow["npID"].ToString(),
                         new PlayerStats(
                                         Convert.ToInt32(ResponseRow["KILLS"]),
                                         Convert.ToInt32(ResponseRow["DEATHS"]),

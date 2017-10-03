@@ -1,0 +1,134 @@
+﻿<div id="stats">
+    <div id="stats-info">
+        <input type="range" min="1" max="1000" value="100" class="slider" id="KillEventCount">
+        <label for="KillEventCount">Showing 100 Kills</label>
+    </div> 
+</div>
+
+<script>
+    var killsList = [];
+
+    function drawCircle(context, x, y, color) {
+        context.beginPath();
+        context.arc(x, y, 3.5, 0, 2 * Math.PI, false);
+        context.fillStyle = color;
+        context.fill();
+        context.lineWidth = 0.5;
+        context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        context.stroke();
+    }
+
+    function drawLine(context, x1, y1, x2, y2, color) {
+        context.beginPath();
+        context.lineWidth = '1';
+
+        var grad = context.createLinearGradient(x1, y1, x2, y2);
+        grad.addColorStop(0, 'rgba(0, 255, 0, 0.75)');
+        grad.addColorStop(0.75, 'rgba(223, 66, 244, 0.8)');
+        context.strokeStyle = grad;
+
+        context.moveTo(x1, y1);
+        context.lineTo(x2, y2);
+        context.stroke();
+    }
+
+    function clearCanvas(canvas) {
+        var context = canvas[0].getContext("2d");
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    }
+
+    function checkCanvasSize(canvas, context, minimap, minimapInfo) {
+        var height = minimap.height() - minimapInfo.Top - minimapInfo.Bottom;
+        var width = minimap.width() - minimapInfo.Left - minimapInfo.Right;
+
+        if (context.canvas.height != height || context.canvas.width != width) {
+            context.canvas.height = height;
+            context.canvas.width = width;
+
+            canvas.css('position', 'absolute');
+            canvas.css('left', minimapInfo.Left + minimap.offset().left);
+            canvas.css('top', minimapInfo.Top + minimap.offset().top);
+        }
+    }
+
+    function drawKill(opacity, canvas, server, kill) {
+        var context = canvas[0].getContext("2d");
+        var minimapInfo = server.Minimap[0];
+
+        var calcX1 = (minimapInfo.MaxLeft - kill.KillOrigin.Y) / (minimapInfo.Width / canvas.width());
+        var calcY1 = (minimapInfo.MaxTop - kill.KillOrigin.X) / (minimapInfo.Height / canvas.height());
+
+        var calcX2 = (minimapInfo.MaxLeft - kill.DeathOrigin.Y) / (minimapInfo.Width / canvas.width());
+        var calcY2 = (minimapInfo.MaxTop - kill.DeathOrigin.X) / (minimapInfo.Height / canvas.height());
+
+        drawCircle(context, calcX1, calcY1, 'rgba(0, 122, 204, ' + opacity + ')');
+        drawLine(context, calcX1, calcY1, calcX2, calcY2, 'rgba(0, 255, 0, 0.1)');
+        drawCircle(context, calcX2, calcY2, 'rgba(255, 0, 0, ' + opacity + ')');
+    }
+
+    function loadKills() {
+        $.getJSON("/_killstats?count=" + $('#KillEventCount').val(), function (result) {
+
+            $.each(result.Servers, function (i, server) {
+
+                if (server.Minimap.length == 0) {
+                    //console.log("missing minimap data for " + server.ServerName);
+                    return true;
+                }
+
+                if ($('#minimap-overlay-' + i).length == 0) {
+                    var html = '<div style="clear: both;"></div><div id="stats-container-' + i + '"><div class="stats-minimap-container" id="stats-minimap-' + i + '"><h2 class="datThing">' + server.ServerName + '</h2><img class="stats-minimap-image" src="/webfront/images/minimap_' + server.Minimap[0].MapName + '.png" /> </div>';
+                    html += '<div class="stats-serverinfo"></div><canvas id="minimap-overlay-' + i + '"></canvas></div>';
+                    $('#stats').append(html);
+                }
+
+                server.MapKills = server.MapKills.reverse();
+
+                var newKills = [];
+                var oldKills = [];
+                if (killsList[i] != undefined) {
+                    newKills = server.MapKills.filter(x => killsList[i].filter(x2 => x2.ID == x.ID).length == 0);
+                    oldKills = server.MapKills.filter(x => newKills.findIndex(x2 => x2.ID == x.ID) === -1);
+                }
+
+                killsList[i] = server.MapKills;
+
+                var canvas = $('#minimap-overlay-' + i);
+                var minimap = $('#stats-minimap-' + i + ' img');
+
+                clearCanvas(canvas);
+                checkCanvasSize(canvas, canvas[0].getContext("2d"), minimap, server.Minimap[0]);
+
+                var furthestKill = 0;
+                $.each(newKills, function (i, kill) {
+                    drawKill('1', canvas, server, kill);
+                });
+
+                $.each(oldKills, function (i, kill) {
+                    if (kill.Distance > furthestKill)
+                        furthestKill = kill.Distance;
+                    drawKill('0.35', canvas, server, kill);
+                });
+
+                var html = '<span>' + server.ServerInfo.Uptime + ' of uptime</span><br/><span>Round started ' + server.ServerInfo.ElapsedRoundTime + '</span><br/>';
+                html += '<span>Furthest kill from ' + Math.round(furthestKill * 10) / 10 + ' meters</span><br/>';
+                if (newKills.length > 0)
+                    html += '<span class="last-kill">' + newKills[0].KillerPlayer + ' killed ' + newKills[0].VictimPlayer + '</span><br/>';
+                else
+                    html += '<span class="last-kill">' + $('#stats-container-' + i).find('.last-kill').text() + '</span><br/>';
+                $('#stats-container-' + i + ' .stats-serverinfo').html(html);
+
+            });
+        });
+    }
+
+    $(document).ready(function () {
+        $('#KillEventCount').on('input change', function () {
+            $(this).next().text('Showing ' + $(this).val() + ' Kills');
+        });
+
+        loadKills();
+        setInterval(loadKills, 1000);
+
+    });
+</script>

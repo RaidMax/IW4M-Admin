@@ -222,30 +222,36 @@ namespace SharedLibrary
 
         public static String GetTimePassed(DateTime start)
         {
-            TimeSpan Elapsed = DateTime.Now - start;
+            return GetTimePassed(start, true);
+        }
 
-            if (Elapsed.TotalSeconds < 30)
+        public static String GetTimePassed(DateTime start, bool includeAgo)
+        {
+            TimeSpan Elapsed = DateTime.Now - start;
+            string ago = includeAgo ? " ago" : "";
+
+            if (Elapsed.TotalSeconds < 30 && includeAgo)
                 return "just now";
             if (Elapsed.TotalMinutes < 120)
             {
                 if (Elapsed.TotalMinutes < 1.5)
-                    return "1 minute ago";
-                return Math.Round(Elapsed.TotalMinutes, 0) + " minutes ago";
+                    return $"1 minute{ago}";
+                return Math.Round(Elapsed.TotalMinutes, 0) + $" minutes{ago}";
             }
             if (Elapsed.TotalHours <= 24)
             {
                 if (Elapsed.TotalHours < 1.5)
-                    return "1 hour ago";
-                return Math.Round(Elapsed.TotalHours, 0) + " hours ago";
+                    return $"1 hour{ago}";
+                return Math.Round(Elapsed.TotalHours, 0) + $" hours{ago}";
             }
             if (Elapsed.TotalDays <= 365)
             {
                 if (Elapsed.TotalDays  < 1.5)
-                    return "1 day ago";
-                return Math.Round(Elapsed.TotalDays, 0) + " days ago";
+                    return $"1 day{ago}";
+                return Math.Round(Elapsed.TotalDays, 0) + $" days{ago}";
             }
             else
-                return "a very long time ago";
+                return $"a very long time{ago}";
         }
 
         public static Game GetGame(string gameName)

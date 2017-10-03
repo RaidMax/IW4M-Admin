@@ -1,11 +1,11 @@
-﻿using System;
-using System.Text;
-using System.IO;
+﻿using SharedLibrary;
+using SharedLibrary.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
-
-using SharedLibrary;
 
 namespace StatsPlugin
 {
@@ -96,30 +96,57 @@ namespace StatsPlugin
     /// </summary>
     public class Stats : SharedLibrary.Interfaces.IPlugin
     {
-        private class KillEvent
+        public static SharedLibrary.Interfaces.IManager ManagerInstance;
+        public static int MAX_KILLEVENTS = 1000;
+        public static Dictionary<int, ServerStatInfo> ServerStats { get; private set; }
+
+        public class ServerStatInfo
+        {
+            public ServerStatInfo()
+            {
+                KillQueue = new Queue<KillInfo>();
+                ServerStartTime = DateTime.Now;
+            }
+
+            public DateTime ServerStartTime { get; private set; }
+            public DateTime RoundStartTime { get; set; }
+            public string Uptime => Utilities.GetTimePassed(ServerStartTime, false);
+            public string ElapsedRoundTime => Utilities.GetTimePassed(RoundStartTime);
+            private Queue<KillInfo> KillQueue { get; set; }
+            public Queue<KillInfo> GetKillQueue() { return KillQueue; }
+        }
+
+        public class KillInfo
         {
             public IW4Info.HitLocation HitLoc { get; set; }
+            public string HitLocString => HitLoc.ToString();
             public IW4Info.MeansOfDeath DeathType { get; set; }
+            public string DeathTypeString => DeathType.ToString();
             public int Damage { get; set; }
             public IW4Info.WeaponName Weapon { get; set; }
+            public string WeaponString => Weapon.ToString();
             public Vector3 KillOrigin { get; set; }
             public Vector3 DeathOrigin { get; set; }
+            // http://wiki.modsrepository.com/index.php?title=Call_of_Duty_5:_Gameplay_standards for conversion to meters
+            public double Distance => Vector3.Distance(KillOrigin, DeathOrigin) * 0.0254;
+            public string KillerPlayer { get; set; }
+            public int KillerPlayerID { get; set; }
+            public string VictimPlayer { get; set; }
+            public int VictimPlayerID { get; set; }
+            public IW4Info.MapName Map { get; set; }
+            public int ID => GetHashCode();
 
-            public KillEvent(string hit, string type, string damage, string weapon, string kOrigin, string dOrigin)
+            public KillInfo() { }
+
+            public KillInfo(int killer, int victim, string map, string hit, string type, string damage, string weapon, string kOrigin, string dOrigin)
             {
-                HitLoc = (IW4Info.HitLocation)Enum.Parse(typeof(IW4Info.HitLocation), hit);
-                DeathType = (IW4Info.MeansOfDeath)Enum.Parse(typeof(IW4Info.MeansOfDeath), type);
+                KillerPlayerID = killer;
+                VictimPlayerID = victim;
+                Map = ParseEnum<IW4Info.MapName>.Get(map, typeof(IW4Info.MapName));
+                HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hit, typeof(IW4Info.HitLocation));
+                DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath));
                 Damage = Int32.Parse(damage);
-                try
-                {
-                    Weapon = (IW4Info.WeaponName)Enum.Parse(typeof(IW4Info.WeaponName), weapon);
-                }
-
-                catch (Exception)
-                {
-                    Weapon = IW4Info.WeaponName.defaultweapon_mp;
-                }
-
+                Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName));
                 KillOrigin = Vector3.Parse(kOrigin);
                 DeathOrigin = Vector3.Parse(dOrigin);
             }
@@ -165,6 +192,17 @@ namespace StatsPlugin
         public async Task OnLoadAsync()
         {
             statLists = new List<StatTracking>();
+            ServerStats = new Dictionary<int, ServerStatInfo>();
+
+            try
+            {
+                var minimapConfig = MinimapConfig.Read("Config/minimaps.cfg");
+            }
+
+            catch (SharedLibrary.Exceptions.SerializeException e)
+            {
+                MinimapConfig.Write("Config/minimaps.cfg", MinimapConfig.IW4Minimaps());
+            }
         }
 
         public async Task OnUnloadAsync()
@@ -181,17 +219,28 @@ namespace StatsPlugin
         {
             if (E.Type == Event.GType.Start)
             {
+                if (ManagerInstance == null)
+                {
+                    ManagerInstance = S.Manager;
+                    WebService.PageList.Add(new StatsPage());
+                    WebService.PageList.Add(new KillStatsJSON());
+                }
+
                 statLists.Add(new StatTracking(S.GetPort()));
+
                 if (statLists.Count == 1)
                 {
-                    S.Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("TOTALKILLS", GetTotalKills));
-                    S.Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
+                    S.Manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
+                    S.Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
                 }
+
+                ServerStats.Add(S.GetPort(), new ServerStatInfo());
             }
 
             if (E.Type == Event.GType.Stop)
             {
-                statLists.RemoveAll(x => x.Port == S.GetPort());
+                statLists.RemoveAll(s => s.Port == S.GetPort());
+                ServerStats.Remove(S.GetPort());
             }
 
             if (E.Type == Event.GType.Connect)
@@ -224,6 +273,12 @@ namespace StatsPlugin
                 }
             }
 
+            if (E.Type == Event.GType.MapChange)
+            {
+                ServerStats[S.GetPort()].GetKillQueue().Clear();
+                ServerStats[S.GetPort()].RoundStartTime = DateTime.Now;
+            }
+
             if (E.Type == Event.GType.Disconnect)
             {
                 CalculateAndSaveSkill(E.Origin, statLists.Find(x => x.Port == S.GetPort()));
@@ -238,14 +293,26 @@ namespace StatsPlugin
 
                 string[] killInfo = E.Data.Split(';');
 
-                var killEvent = new KillEvent(killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);
-
-                S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
-
                 Player Killer = E.Origin;
                 StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
                 PlayerStats killerStats = curServer.playerStats.GetStats(Killer);
 
+
+                if (killInfo.Length >= 9)
+                {
+                    var killEvent = new KillInfo(E.Origin.DatabaseID, E.Target.DatabaseID, S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4])
+                    {
+                        KillerPlayer = E.Origin.Name,
+                        VictimPlayer = E.Target.Name,
+                    };
+
+                    if (ServerStats[S.GetPort()].GetKillQueue().Count > MAX_KILLEVENTS - 1)
+                        ServerStats[S.GetPort()].GetKillQueue().Dequeue();
+                    ServerStats[S.GetPort()].GetKillQueue().Enqueue(killEvent);
+                    //S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
+                    curServer.playerStats.AddKill(killEvent);
+                    return;
+                }
 
                 curServer.lastKill[E.Origin.ClientID] = DateTime.Now;
                 curServer.Kills[E.Origin.ClientID]++;
@@ -395,6 +462,7 @@ namespace StatsPlugin
                 String createKillsTable = @"CREATE TABLE `KILLS` (
 	                                                                `KillerID`	INTEGER NOT NULL,
 	                                                                `VictimID`	INTEGER NOT NULL,
+                                                                    `MapID`     INTEGER NOT NULL,
 	                                                                `DeathOrigin`	TEXT NOT NULL,
 	                                                                `MeansOfDeath`	INTEGER NOT NULL,
 	                                                                 `Weapon`	INTEGER NOT NULL,
@@ -405,6 +473,81 @@ namespace StatsPlugin
                 ExecuteNonQuery(Create);
                 ExecuteNonQuery(createKillsTable);
             }
+        }
+
+        public void AddKill(Stats.KillInfo info)
+        {
+            var kill = new Dictionary<string, object>
+            {
+                { "KillerID", info.KillerPlayerID },
+                { "VictimID", info.VictimPlayerID },
+                { "MapID", (int)info.Map },
+                { "KillOrigin", info.KillOrigin.ToString() },
+                { "DeathOrigin", info.DeathOrigin.ToString() },
+                { "MeansOfDeath", (int)info.DeathType },
+                { "Weapon", (int)info.Weapon },
+                { "HitLocation", (int)info.HitLoc },
+                { "Damage", info.Damage }
+            };
+
+            Insert("KILLS", kill);
+        }
+
+        public List<Stats.KillInfo> GetKillsByPlayer(int databaseID)
+        {
+            var queryResult = GetDataTable("KILLS", new KeyValuePair<string, object>("KillerID", databaseID));
+            var resultList = new List<Stats.KillInfo>();
+
+            if (queryResult?.Rows.Count > 0)
+            {
+                foreach (DataRow resultRow in queryResult.Rows)
+                {
+                    resultList.Add(new Stats.KillInfo()
+                    {
+                        KillerPlayerID = Convert.ToInt32(resultRow["KillerID"]),
+                        VictimPlayerID = Convert.ToInt32(resultRow["VictimID"]),
+                        Map = (IW4Info.MapName)resultRow["MapID"],
+                        HitLoc = (IW4Info.HitLocation)resultRow["HitLocation"],
+                        DeathType = (IW4Info.MeansOfDeath)resultRow["MeansOfDeath"],
+                        Damage = (int)resultRow["Damage"],
+                        Weapon = (IW4Info.WeaponName)resultRow["Weapon"],
+                        KillOrigin = Vector3.Parse(resultRow["KillOrigin"].ToString()),
+                        DeathOrigin = Vector3.Parse(resultRow["DeathOrigin"].ToString())
+
+                    });
+                }
+            }
+
+            return resultList;
+        }
+
+        public List<Stats.KillInfo> GetKillsByMap(Map map)
+        {
+            var mapID = ParseEnum<IW4Info.MapName>.Get(map.Name, typeof(IW4Info.MapName));
+            var queryResult = GetDataTable($"select * from KILLS where MapID == {(int)mapID} LIMIT 500 OFFSET (SELECT COUNT(*) FROM KILLS)-500"); //GetDataTable("KILLS", new KeyValuePair<string, object>("MapID", mapID));
+            var resultList = new List<Stats.KillInfo>();
+
+            if (queryResult?.Rows.Count > 0)
+            {
+                foreach (DataRow resultRow in queryResult.Rows)
+                {
+                    resultList.Add(new Stats.KillInfo()
+                    {
+                        KillerPlayerID = Convert.ToInt32(resultRow["KillerID"]),
+                        VictimPlayerID = Convert.ToInt32(resultRow["VictimID"]),
+                        Map = ParseEnum<IW4Info.MapName>.Get(resultRow["MapID"].ToString(), typeof(IW4Info.MapName)),
+                        HitLoc = ParseEnum<IW4Info.HitLocation>.Get(resultRow["HitLocation"].ToString(), typeof(IW4Info.HitLocation)),
+                        DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(resultRow["MeansOfDeath"].ToString(), typeof(IW4Info.MeansOfDeath)),
+                        Damage = Convert.ToInt32(resultRow["Damage"]),
+                        Weapon = ParseEnum<IW4Info.WeaponName>.Get(resultRow["Weapon"].ToString(), typeof(IW4Info.WeaponName)),
+                        KillOrigin = Vector3.Parse(resultRow["KillOrigin"].ToString()),
+                        DeathOrigin = Vector3.Parse(resultRow["DeathOrigin"].ToString())
+
+                    });
+                }
+            }
+
+            return resultList;
         }
 
         public void AddPlayer(Player P)

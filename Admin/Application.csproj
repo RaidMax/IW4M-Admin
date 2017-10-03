@@ -156,6 +156,15 @@
     <Compile Include="WebService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="webfront\images\minimap_mp_rust.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="webfront\images\minimap_mp_terminal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="webfront\stats.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="app.manifest" />
     <Content Include="IW4AdminIcon.ico" />
     <Content Include="lib\Kayak.dll">
@@ -351,11 +360,11 @@ copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
 
 
-if $(ConfigurationName) == Release powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.4
+if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.4
 if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.4</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>xcopy "$(SolutionDir)BUILD\plugins" "$(TargetDir)plugins" /Y</PreBuildEvent>
+    <PreBuildEvent>xcopy /Y "$(SolutionDir)BUILD\Plugins" "$(TargetDir)Plugins\"</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

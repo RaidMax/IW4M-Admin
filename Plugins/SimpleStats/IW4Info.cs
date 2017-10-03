@@ -32,7 +32,8 @@ namespace StatsPlugin
             MOD_HIT_BY_OBJECT,
             MOD_DROWN,
             MOD_GAS,
-            MOD_NUM
+            MOD_NUM,
+            MOD_EXPLOSIVE_BULLET
         }
 
         public enum HitLocation
@@ -1225,6 +1226,13 @@ namespace StatsPlugin
             barrel_mp = 1191,
             lightstick_mp = 1192,
             throwingknife_rhand_mp = 1193
+        }
+
+        public enum MapName
+        {
+            mp_unknown,
+            mp_terminal,
+            mp_rust
         }
     }
 }

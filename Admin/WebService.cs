@@ -3,6 +3,7 @@ using Kayak.Http;
 using SharedLibrary;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -85,7 +86,7 @@ namespace IW4MAdmin
             {
                 if (System.IO.File.Exists(path.Replace("/", "\\").Substring(1)))
                 {
-                    IFile f = new IFile(path.Replace("/", "\\").Substring(1));
+                    var f = File.ReadAllBytes(path.Replace("/", "\\").Substring(1));
 
 
                     if (path.Contains(".css"))
@@ -93,10 +94,9 @@ namespace IW4MAdmin
                         HttpResponse css = new HttpResponse()
                         {
                             additionalHeaders = new Dictionary<string, string>(),
-                            content = f.GetText(),
+                            content = Encoding.ASCII.GetString(f),
                             contentType = "text/css"
                         };
-                        f.Close();
                         return css;
 
                     }
@@ -106,13 +106,23 @@ namespace IW4MAdmin
                         HttpResponse css = new HttpResponse()
                         {
                             additionalHeaders = new Dictionary<string, string>(),
-                            content = f.GetText(),
+                            content = Encoding.ASCII.GetString(f),
                             contentType = "application/javascript"
                         };
-                        f.Close();
                         return css;
                     }
-                    f.Close();
+
+                    else if (path.Contains(".png"))
+                    {
+                        HttpResponse png = new HttpResponse()
+                        {
+                            additionalHeaders = new Dictionary<string, string>(),
+                            BinaryContent = f,
+                            contentType = "image/png"
+                        };
+
+                        return png;
+                    }
 
                 }
 

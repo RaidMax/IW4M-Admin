@@ -18,7 +18,8 @@ namespace SharedLibrary
     public struct HttpResponse
     {
         public string contentType;
-        public string content;
+        public object content;
+        public byte[] BinaryContent;
         public Dictionary<string, string> additionalHeaders;
     }
 

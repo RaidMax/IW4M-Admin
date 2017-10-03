@@ -50,21 +50,27 @@ namespace IW4MAdmin
             {
                 SharedLibrary.HttpResponse requestedPage = WebService.GetPage(request.Path, querySet, request.Headers);
 
+                bool binaryContent = requestedPage.BinaryContent != null;
+                if (requestedPage.content != null && requestedPage.content.GetType() != typeof(string))
+                    requestedPage.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedPage.content);
+
                 var headers = new HttpResponseHead()
                 {
                     Status = "200 OK",
                     Headers = new Dictionary<string, string>()
                     {
                         { "Content-Type", requestedPage.contentType },
-                        { "Content-Length", requestedPage.content.Length.ToString() },
+                        { "Content-Length", binaryContent ? requestedPage.BinaryContent.Length.ToString() : requestedPage.content.ToString().Length.ToString() },
                         { "Access-Control-Allow-Origin", "*" },
                     }
                 };
 
                 foreach (var key in requestedPage.additionalHeaders.Keys)
                     headers.Headers.Add(key, requestedPage.additionalHeaders[key]);
-
-                response.OnResponse(headers, new BufferedProducer(requestedPage.content));
+                if (!binaryContent)
+                    response.OnResponse(headers, new BufferedProducer((string)requestedPage.content));
+                else
+                    response.OnResponse(headers, new BufferedProducer(requestedPage.BinaryContent));
             }
 
             catch (Exception e)

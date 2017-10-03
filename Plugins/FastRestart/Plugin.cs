@@ -92,9 +92,9 @@ namespace Plugin
             }
         }
 
-        public Task OnUnloadAsync()
+        public async Task OnUnloadAsync()
         {
-            return null;
+            
         }
     }
 }

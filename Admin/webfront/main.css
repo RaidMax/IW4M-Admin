@@ -1,5 +1,6 @@
 * { margin: 0; padding: 0; }
 html { background-color: rgb(34, 34, 34); color: rgb(204, 204, 204); font-family: 'Open Sans', serif; min-width: 720px; }
+body { background-color: rgb(34,34,34); color: rgb(204, 204, 204); font-family: 'Open Sans'; }
 
 a:link, a:visited, input[type="submit"], input[type="submit"]:hover { -webkit-transition: color 100ms ease-out; -moz-transition: color 100ms ease-out; -o-transition: color 100ms ease-out; transition: color 100ms ease-out; text-decoration: none; color: rgb(204, 204, 204); }
 a:link:hover, a:visited:hover { color: rgb(0, 122, 204); }
@@ -203,3 +204,38 @@ div#footer { position: fixed; bottom: 0.5em; right: 0.5em; opacity: 0.5; }
 .clients { margin: 0.5em; }
 .canvasjs-chart-credit { display: none; }
 .player-history { margin-top: -100px;  height: 100px; }
+
+.stats-minimap-image { height: 512px; width: 512px; }
+.stats-minimap-container { max-width: 512px; margin: 2em 0; float: left;}
+#stats { width: 100%; }
+.stats-serverinfo { float: left;margin: 2em 1em; font-size: 16pt; }
+#KillEventCount { margin-bottom: 1em; }
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    background: rgb(24,24,24);
+    outline: 1px rgba(255, 255, 255, 0.1) solid;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%; 
+    background: #007ACC;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #007ACC;
+    cursor: pointer;
+}

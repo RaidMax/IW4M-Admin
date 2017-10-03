@@ -86,8 +86,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"
-copy /Y "$(ProjectDir)GeoIP.dat" "$(SolutionDir)Admin\bin\$(ConfigurationName)\GeoIP.dat"</PostBuildEvent>
+    <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\$(TargetName).dll"
+copy /Y "$(ProjectDir)GeoIP.dat" "$(SolutionDir)BUILD\plugins\GeoIP.dat"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

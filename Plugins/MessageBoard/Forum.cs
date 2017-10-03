@@ -255,7 +255,7 @@ namespace MessageBoard.Forum
 
         public ErrorCode authorizeUser(string username, string password, string sessionID)
         {
-            User toAuth = database.getUser(username.ToLower());
+            User toAuth = database.getUser(username);
 
             if (toAuth == null)
                 return ErrorCode.USER_BADCREDENTIALS;

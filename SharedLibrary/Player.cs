@@ -35,11 +35,6 @@ namespace SharedLibrary
             Console = 8,
         }
 
-        public override bool Equals(object obj)
-        {
-            return ((Player)obj).NetworkID == NetworkID;
-        }
-
         public override int GetHashCode()
         {
             return base.GetHashCode();

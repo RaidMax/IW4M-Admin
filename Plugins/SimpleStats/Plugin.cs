@@ -268,7 +268,7 @@ namespace StatsPlugin
                     CalculateAndSaveSkill(P, statLists.Find(x => x.Port == S.GetPort()));
                     ResetCounters(P.ClientID, S.GetPort());
 
-                    E.Owner.Logger.WriteInfo("Updated skill for client #" + P.DatabaseID);
+                    E.Owner.Logger.WriteInfo($"Updated skill for {P}");
                     //E.Owner.Log.Write(String.Format("\r\nJoin: {0}\r\nInactive Minutes: {1}\r\nnewPlayTime: {2}\r\nnewSPM: {3}\r\nkdrWeight: {4}\r\nMultiplier: {5}\r\nscoreWeight: {6}\r\nnewSkillFactor: {7}\r\nprojectedNewSkill: {8}\r\nKills: {9}\r\nDeaths: {10}", connectionTime[P.clientID].ToShortTimeString(), inactiveMinutes[P.clientID], newPlayTime, newSPM, kdrWeight, Multiplier, scoreWeight, newSkillFactor, disconnectStats.Skill, disconnectStats.Kills, disconnectStats.Deaths));
                 }
             }
@@ -311,6 +311,7 @@ namespace StatsPlugin
                     ServerStats[S.GetPort()].GetKillQueue().Enqueue(killEvent);
                     //S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
                     curServer.playerStats.AddKill(killEvent);
+                    S.Logger.WriteInfo(killEvent.ID.ToString());
                     return;
                 }
 
@@ -521,10 +522,10 @@ namespace StatsPlugin
             return resultList;
         }
 
-        public List<Stats.KillInfo> GetKillsByMap(Map map)
+        public List<Stats.KillInfo> GetKillsByMap(Map map, int count)
         {
             var mapID = ParseEnum<IW4Info.MapName>.Get(map.Name, typeof(IW4Info.MapName));
-            var queryResult = GetDataTable($"select * from KILLS where MapID == {(int)mapID} LIMIT 500 OFFSET (SELECT COUNT(*) FROM KILLS)-500"); //GetDataTable("KILLS", new KeyValuePair<string, object>("MapID", mapID));
+            var queryResult = GetDataTable($"select * from KILLS where MapID == {(int)mapID} LIMIT {count} OFFSET (SELECT COUNT(*) FROM KILLS)-500"); //GetDataTable("KILLS", new KeyValuePair<string, object>("MapID", mapID));
             var resultList = new List<Stats.KillInfo>();
 
             if (queryResult?.Rows.Count > 0)

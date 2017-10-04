@@ -74,14 +74,17 @@ namespace IW4MAdmin.Plugins
 
                     string[] eventLine = null;
 
-                    if (S.GameName == Server.Game.IW4)
+                    for (int i = 0; i < 1; i++)
                     {
-                        // attackerID ; victimID ; attackerOrigin ; victimOrigin ; Damage ; Weapon ; hitLocation ; meansOfDeath
-                        var minimapInfo = StatsPlugin.MinimapConfig.IW4Minimaps().MapInfo.FirstOrDefault(m => m.MapName == S.CurrentMap.Name);
-                        if (minimapInfo == null)
-                            return;
-                        eventLine = new string[]
+                        if (S.GameName == Server.Game.IW4)
                         {
+
+                            // attackerID ; victimID ; attackerOrigin ; victimOrigin ; Damage ; Weapon ; hitLocation ; meansOfDeath
+                            var minimapInfo = StatsPlugin.MinimapConfig.IW4Minimaps().MapInfo.FirstOrDefault(m => m.MapName == S.CurrentMap.Name);
+                            if (minimapInfo == null)
+                                return;
+                            eventLine = new string[]
+                            {
                             "ScriptKill",
                             attackerPlayer.NetworkID,
                             victimPlayer.NetworkID,
@@ -91,13 +94,13 @@ namespace IW4MAdmin.Plugins
                             ((StatsPlugin.IW4Info.WeaponName)rand.Next(0, Enum.GetValues(typeof(StatsPlugin.IW4Info.WeaponName)).Length - 1)).ToString(),
                             ((StatsPlugin.IW4Info.HitLocation)rand.Next(0, Enum.GetValues(typeof(StatsPlugin.IW4Info.HitLocation)).Length - 1)).ToString(),
                             ((StatsPlugin.IW4Info.MeansOfDeath)rand.Next(0, Enum.GetValues(typeof(StatsPlugin.IW4Info.MeansOfDeath)).Length - 1)).ToString()
-                        };
-                    }
+                            };
 
-                    else
-                    {
-                        eventLine = new string[]
-                       {
+                        }
+                        else
+                        {
+                            eventLine = new string[]
+                           {
                             "K",
                             victimPlayer.NetworkID,
                             victimPlayer.ClientID.ToString(),
@@ -111,11 +114,12 @@ namespace IW4MAdmin.Plugins
                             rand.Next(50, 105).ToString(),                                  // Damage
                             ((StatsPlugin.IW4Info.MeansOfDeath)rand.Next(0, Enum.GetValues(typeof(StatsPlugin.IW4Info.MeansOfDeath)).Length - 1)).ToString(),  // Means of Death
                             ((StatsPlugin.IW4Info.HitLocation)rand.Next(0, Enum.GetValues(typeof(StatsPlugin.IW4Info.HitLocation)).Length - 1)).ToString(),                 // Hit Location
-                       };
-                    }
+                           };
+                        }
 
-                    var _event = Event.ParseEventString(eventLine, S);
-                    await S.ExecuteEvent(_event);
+                        var _event = Event.ParseEventString(eventLine, S);
+                        await S.ExecuteEvent(_event);
+                    }
                 }
             }
 

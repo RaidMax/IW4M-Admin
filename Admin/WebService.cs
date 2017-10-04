@@ -206,8 +206,6 @@ namespace IW4MAdmin
         public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             var info = new List<ServerInfo>();
-
-            int i = 0;
             foreach (Server S in ApplicationManager.GetInstance().Servers)
             {
                 ServerInfo eachServer = new ServerInfo()
@@ -220,10 +218,8 @@ namespace IW4MAdmin
                     currentPlayers = S.GetPlayersAsList().Count,
                     chatHistory = S.ChatHistory,
                     players = new List<PlayerInfo>(),
-                    ID = i
+                    PlayerHistory = S.PlayerHistory.ToArray()
                 };
-
-                i++;
 
                 bool authed = ApplicationManager.GetInstance().GetPrivilegedClients()
                     .Where(x => x.IP == querySet["IP"])
@@ -253,7 +249,7 @@ namespace IW4MAdmin
             return resp;
         }
 
-        public string GetContentType()
+        public string GetContentType()                                                                                                                                  
         {
             return "application/json";
         }
@@ -701,26 +697,18 @@ namespace IW4MAdmin
 
         public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            List<PageInfo> pages = new List<PageInfo>();
-
-            foreach (var p in SharedLibrary.WebService.PageList.Where(x => x.Visible()))
+  
+            var pages = SharedLibrary.WebService.PageList.Select(p => new
             {
-                if (p == this)
-                    continue;
-
-                PageInfo pi = new PageInfo()
-                {
-                    pagePath = p.GetPath(),
-                    pageName = p.GetName(),
-                    visible = p.Visible()
-                };
-                pages.Add(pi);
-            }
+                pagePath = p.GetPath(),
+                pageName = p.GetName(),
+                visible = p.Visible(),
+            });
 
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
-                content = Newtonsoft.Json.JsonConvert.SerializeObject(pages),
+                content = Newtonsoft.Json.JsonConvert.SerializeObject(pages.ToArray()),
                 additionalHeaders = new Dictionary<string, string>()
             };
             return resp;
@@ -846,6 +834,7 @@ namespace IW4MAdmin
         public int maxPlayers;
         public List<Chat> chatHistory;
         public List<PlayerInfo> players;
+        public SharedLibrary.Helpers.PlayerHistory[] PlayerHistory;
         public int ID;
     }
 

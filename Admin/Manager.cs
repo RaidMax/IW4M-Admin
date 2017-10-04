@@ -15,7 +15,8 @@ namespace IW4MAdmin
 {
     class ApplicationManager : IManager
     {
-        public List<Server> Servers { get; private set; }
+        private List<Server> _servers;
+        public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
 
@@ -38,7 +39,7 @@ namespace IW4MAdmin
         private ApplicationManager()
         {
             Logger = new Logger("Logs/IW4MAdmin.log");
-            Servers = new List<Server>();
+            _servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
             MessageTokens = new List<MessageToken>();
@@ -113,9 +114,9 @@ namespace IW4MAdmin
                         var ServerInstance = new IW4MServer(this, Conf);
                         await ServerInstance.Initialize();
 
-                        lock (Servers)
+                        lock (_servers)
                         {
-                            Servers.Add(ServerInstance);
+                            _servers.Add(ServerInstance);
                         }
 
                         Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
@@ -210,7 +211,7 @@ namespace IW4MAdmin
             foreach (var S in Servers)
                 S.Broadcast("^1IW4MAdmin going offline!");
 #endif
-            Servers.Clear();
+            _servers.Clear();
             WebThread.Abort();
             webServiceTask.Stop();
         }
@@ -250,7 +251,7 @@ namespace IW4MAdmin
         {
             var ActiveClients = new List<Player>();
 
-            foreach (var server in Servers)
+            foreach (var server in _servers)
                 ActiveClients.AddRange(server.Players.Where(p => p != null));
 
             return ActiveClients;

@@ -7,6 +7,7 @@
 
 <script>
     var killsList = [];
+    var refreshInterval = 250;
 
     function drawCircle(context, x, y, color) {
         context.beginPath();
@@ -100,7 +101,10 @@
                 checkCanvasSize(canvas, canvas[0].getContext("2d"), minimap, server.Minimap[0]);
 
                 var furthestKill = 0;
+
                 $.each(newKills, function (i, kill) {
+                    if (kill.Distance > furthestKill)
+                        furthestKill = kill.Distance;
                     drawKill('1', canvas, server, kill);
                 });
 
@@ -112,23 +116,31 @@
 
                 var html = '<span>' + server.ServerInfo.Uptime + ' of uptime</span><br/><span>Round started ' + server.ServerInfo.ElapsedRoundTime + '</span><br/>';
                 html += '<span>Furthest kill from ' + Math.round(furthestKill * 10) / 10 + ' meters</span><br/>';
-                if (newKills.length > 0)
-                    html += '<span class="last-kill">' + newKills[0].KillerPlayer + ' killed ' + newKills[0].VictimPlayer + '</span><br/>';
+                if (newKills.length > 0) {
+                    if (newKills[0].KillerPlayer != null)
+                        html += '<span class="last-kill">' + newKills[0].KillerPlayer + ' killed ' + newKills[0].VictimPlayer + '</span><br/>';
+                    else
+                        html += `<span class="last-kill">Kill information pulled from database</span><br/>`;
+                }
                 else
                     html += '<span class="last-kill">' + $('#stats-container-' + i).find('.last-kill').text() + '</span><br/>';
                 $('#stats-container-' + i + ' .stats-serverinfo').html(html);
 
             });
         });
+
+        setTimeout(loadKills, refreshInterval)
     }
 
     $(document).ready(function () {
         $('#KillEventCount').on('input change', function () {
             $(this).next().text('Showing ' + $(this).val() + ' Kills');
+            if ($(this).val() > 300)
+                refreshInterval = 500;
+            else
+                refreshInterval = 250;
         });
 
         loadKills();
-        setInterval(loadKills, 1000);
-
     });
 </script>

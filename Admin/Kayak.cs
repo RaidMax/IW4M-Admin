@@ -54,6 +54,7 @@ namespace IW4MAdmin
                 if (requestedPage.content != null && requestedPage.content.GetType() != typeof(string))
                     requestedPage.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedPage.content);
 
+                string maxAge = requestedPage.contentType == "application/json" ? "0" : "31536000";
                 var headers = new HttpResponseHead()
                 {
                     Status = "200 OK",
@@ -62,6 +63,7 @@ namespace IW4MAdmin
                         { "Content-Type", requestedPage.contentType },
                         { "Content-Length", binaryContent ? requestedPage.BinaryContent.Length.ToString() : requestedPage.content.ToString().Length.ToString() },
                         { "Access-Control-Allow-Origin", "*" },
+                        { "Cache-Control", $"public,max-age={maxAge}"}
                     }
                 };
 

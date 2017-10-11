@@ -40,6 +40,7 @@ namespace Plugin
     {
         bool MatchEnded;
         DateTime MatchEndTime;
+        Dictionary<int, int> FastRestarts;
 
         public static ConfigurationManager ConfigManager { get; private set; }
 
@@ -57,6 +58,8 @@ namespace Plugin
                 if (ConfigManager.GetConfiguration(S).Keys.Count == 0)
                     ConfigManager.AddProperty(S, new KeyValuePair<string, object>("Enabled", false));
 
+                FastRestarts.Add(S.GetHashCode(), 0);
+
                 try
                 {
                     await S.GetDvarAsync<int>("scr_intermission_time");
@@ -64,14 +67,15 @@ namespace Plugin
 
                 catch (SharedLibrary.Exceptions.DvarException)
                 {
-                    await S.SetDvarAsync("scr_intermission_time", 20);
+                    await S.ExecuteCommandAsync("set src_intermission_time 20");
                 }
             }
         }
 
         public async Task OnLoadAsync()
         {
-            ConfigManager = new ConfigurationManager(typeof(FastRestartPlugin));      
+            ConfigManager = new ConfigurationManager(typeof(FastRestartPlugin));
+            FastRestarts = new Dictionary<int, int>();
         }
 
         public async Task OnTickAsync(Server S)
@@ -84,10 +88,34 @@ namespace Plugin
             if (MatchEnded && MatchEndTime == DateTime.MinValue)
                 MatchEndTime = DateTime.Now;
 
-            // I'm pretty sure the timelength from game ended to scoreboard popup is 2000ms
-            if (MatchEnded && (DateTime.Now - MatchEndTime).TotalSeconds >= ((await S.GetDvarAsync<int>("scr_intermission_time")).Value - 2))
+            int intermissionTime = 20;
+
+            try
             {
-                await S.ExecuteCommandAsync("fast_restart");
+                var intermissionTimeDvar = await S.GetDvarAsync<int>("scr_intermission_time");
+                intermissionTime = intermissionTimeDvar.Value;
+            }
+            
+            catch(SharedLibrary.Exceptions.DvarException)
+            {
+                await S.SetDvarAsync("scr_intermission_time", 20);
+            }
+
+            // I'm pretty sure the timelength from game ended to scoreboard popup is 2000ms
+            if (MatchEnded && (DateTime.Now - MatchEndTime).TotalSeconds >= intermissionTime - 2)
+            {
+                if (FastRestarts[S.GetHashCode()] >= 8)
+                {
+                    await S.ExecuteCommandAsync("map_restart");
+                    FastRestarts[S.GetHashCode()] = 0;
+                }
+
+                else
+                {
+                    await S.ExecuteCommandAsync("fast_restart");
+                    FastRestarts[S.GetHashCode()] = FastRestarts[S.GetHashCode()] + 1;
+                }
+
                 MatchEndTime = DateTime.MinValue;
             }
         }

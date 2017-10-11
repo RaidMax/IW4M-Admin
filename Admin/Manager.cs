@@ -191,7 +191,6 @@ namespace IW4MAdmin
 
         public void Start()
         {
-            var a = Utilities.DateTimeSQLite(DateTime.MinValue);
             while (Running)
             {
                 for (int i = 0; i < TaskStatuses.Count; i++)

@@ -52,9 +52,9 @@ $.getJSON("_thread?id=" + parseGet('id'), function(Response) {
   $('#textNav').append('<a class="themeBlue" href="category?id=' + Response.Thread.threadCategory.id + '">' + Response.Thread.threadCategory.title + '</a> &raquo; ' + decodeURIComponent(Response.Thread.title));
   $('.threadStart .userTitle').html(Response.Thread.author.username);
   $('.threadStart .timePosted').html(getDate(Response.Thread.creationDate));
-  $('.threadStart .threadTitle').html(decodeURIComponent(Response.Thread.title));
+  $('.threadStart .threadTitle').html(Response.Thread.title);
   $('.threadStart a.userProfileLink').attr("href", "user?id=" + Response.Thread.author.id);
-  $('.threadStart .threadContent').html(decodeURIComponent(Response.Thread.formattedContent));
+  $('.threadStart .threadContent').html(Response.Thread.formattedContent);
   if (Response.Thread.author.avatarURL != "")
     $('.threadStart .userAvatar').html("").attr("style", "background-image:url('" + Response.Thread.author.avatarURL + "');'");
   $('#replyThreadButton').attr("href", "postthread?threadid=" + Response.Thread.id);

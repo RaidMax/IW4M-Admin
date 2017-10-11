@@ -248,6 +248,7 @@ namespace StatsPlugin
                 ResetCounters(E.Origin.ClientID, S.GetPort());
 
                 PlayerStats checkForTrusted = statLists.Find(x => x.Port == S.GetPort()).playerStats.GetStats(E.Origin);
+                //todo: move this out of here!!
                 if (checkForTrusted.TotalPlayTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
                 {
                     E.Origin.SetLevel(Player.Permission.Trusted);
@@ -283,7 +284,7 @@ namespace StatsPlugin
             {
                 CalculateAndSaveSkill(E.Origin, statLists.Find(x => x.Port == S.GetPort()));
                 ResetCounters(E.Origin.ClientID, S.GetPort());
-                E.Owner.Logger.WriteInfo("Updated skill for disconnecting client #" + E.Origin.DatabaseID);
+                E.Owner.Logger.WriteInfo($"Updated skill for disconnecting client {E.Origin}");
             }
 
             if (E.Type == Event.GType.Kill)
@@ -292,13 +293,7 @@ namespace StatsPlugin
                     return;
 
                 string[] killInfo = E.Data.Split(';');
-
-                Player Killer = E.Origin;
-                StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
-                PlayerStats killerStats = curServer.playerStats.GetStats(Killer);
-
-
-                if (killInfo.Length >= 9)
+                if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
                 {
                     var killEvent = new KillInfo(E.Origin.DatabaseID, E.Target.DatabaseID, S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4])
                     {
@@ -310,10 +305,14 @@ namespace StatsPlugin
                         ServerStats[S.GetPort()].GetKillQueue().Dequeue();
                     ServerStats[S.GetPort()].GetKillQueue().Enqueue(killEvent);
                     //S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
-                    curServer.playerStats.AddKill(killEvent);
-                    S.Logger.WriteInfo(killEvent.ID.ToString());
+                    var cs= statLists.Find(x => x.Port == S.GetPort());
+                    cs.playerStats.AddKill(killEvent);
                     return;
                 }
+
+                Player Killer = E.Origin;
+                StatTracking curServer = statLists.Find(x => x.Port == S.GetPort());
+                PlayerStats killerStats = curServer.playerStats.GetStats(Killer);
 
                 curServer.lastKill[E.Origin.ClientID] = DateTime.Now;
                 curServer.Kills[E.Origin.ClientID]++;
@@ -324,7 +323,6 @@ namespace StatsPlugin
                 killerStats.Kills++;
 
                 killerStats.KDR = (killerStats.Deaths == 0) ? killerStats.Kills : killerStats.KDR = Math.Round((double)killerStats.Kills / (double)killerStats.Deaths, 2);
-
 
                 curServer.playerStats.UpdateStats(Killer, killerStats);
 

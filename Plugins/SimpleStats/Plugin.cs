@@ -154,7 +154,7 @@ namespace StatsPlugin
 
         public static List<StatTracking> statLists;
 
-        public struct StatTracking
+        public class StatTracking
         {
             public StatsDB playerStats;
             public DateTime[] lastKill, connectionTime;
@@ -222,8 +222,11 @@ namespace StatsPlugin
                 if (ManagerInstance == null)
                 {
                     ManagerInstance = S.Manager;
-                    WebService.PageList.Add(new StatsPage());
-                    WebService.PageList.Add(new KillStatsJSON());
+                    lock (WebService.PageList)
+                    {
+                        WebService.PageList.Add(new StatsPage());
+                        WebService.PageList.Add(new KillStatsJSON());
+                    }
                 }
 
                 statLists.Add(new StatTracking(S.GetPort()));
@@ -292,7 +295,8 @@ namespace StatsPlugin
                 if (E.Origin == E.Target || E.Origin == null)
                     return;
 
-                string[] killInfo = E.Data.Split(';');
+                string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
+
                 if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
                 {
                     var killEvent = new KillInfo(E.Origin.DatabaseID, E.Target.DatabaseID, S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4])
@@ -305,7 +309,7 @@ namespace StatsPlugin
                         ServerStats[S.GetPort()].GetKillQueue().Dequeue();
                     ServerStats[S.GetPort()].GetKillQueue().Enqueue(killEvent);
                     //S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
-                    var cs= statLists.Find(x => x.Port == S.GetPort());
+                    var cs = statLists.Find(x => x.Port == S.GetPort());
                     cs.playerStats.AddKill(killEvent);
                     return;
                 }
@@ -415,6 +419,8 @@ namespace StatsPlugin
         {
             StatTracking selectedPlayers = statLists.Find(x => x.Port == serverPort);
 
+            if (selectedPlayers == null)
+                return;
             selectedPlayers.Kills[cID] = 0;
             selectedPlayers.connectionTime[cID] = DateTime.Now;
             selectedPlayers.inactiveMinutes[cID] = 0;
@@ -640,7 +646,7 @@ namespace StatsPlugin
         }
     }
 
-    public struct PlayerStats
+    public class PlayerStats
     {
         public PlayerStats(int K, int D, double DR, double S, double sc, int P)
         {

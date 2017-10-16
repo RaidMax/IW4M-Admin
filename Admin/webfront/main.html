@@ -1,6 +1,13 @@
 <script>
     function getPlayerHistoryChart(playerHistory, i) {
         ///////////////////////////////////////
+
+        // thanks to cnavas js :(
+        playerHistory.forEach(function(item, i) {
+            playerHistory[i].x = new Date(playerHistory[i].x);
+  
+        });        
+
         return new CanvasJS.Chart(`graph-player-history-${i}`, {
             backgroundColor: "#191919",
             height: 100,
@@ -8,7 +15,7 @@
 
             toolTip: {
                 contentFormatter: function (e) {
-                    var date = new Date(e.entries[0].dataPoint.x * 1000);
+                    var date = new Date(e.entries[0].dataPoint.x);
                     return date.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: true }) + " - " + e.entries[0].dataPoint.y + " players";
                 }
             },

@@ -31,7 +31,6 @@ namespace SharedLibrary
             Port = config.Port;
             Manager = mgr;
             Logger = Manager.GetLogger();
-            ClientNum = 0;
             Config = config;
 
             Players = new List<Player>(new Player[18]);
@@ -117,7 +116,7 @@ namespace SharedLibrary
         {
             return null;
         }
-        
+
         /// <summary>
         /// Legacy method for the alias command
         /// </summary>
@@ -164,7 +163,7 @@ namespace SharedLibrary
         {
 #if DEBUG
             //if (!Target.lastEvent.Remote)
-             //  return;
+            //  return;
 #endif
             string tellCommand = (GameName == Game.IW4) ? "tellraw" : "tell";
 
@@ -270,7 +269,7 @@ namespace SharedLibrary
                         Maps.Add(map);
                     }
                 }
-            }     
+            }
             else
                 Logger.WriteInfo("Maps configuration appears to be empty - skipping...");
         }
@@ -300,7 +299,7 @@ namespace SharedLibrary
                 MessageTime = 60;
             else
                 MessageTime = mTime;
-            
+
             foreach (String l in lines)
             {
                 if (lines[0] != l && l.Length > 1)
@@ -310,7 +309,7 @@ namespace SharedLibrary
             messageCFG.Close();
 
             //if (Program.Version != Program.latestVersion && Program.latestVersion != 0)
-              // messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
+            // messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
         }
 
         /// <summary>
@@ -349,7 +348,7 @@ namespace SharedLibrary
         public ServerConfiguration Config { get; private set; }
         public List<Map> Maps { get; protected set; }
         public List<string> Rules { get; protected set; }
-        public List<Report> Reports { get; set;  }
+        public List<Report> Reports { get; set; }
         public List<Chat> ChatHistory { get; protected set; }
         public Queue<Helpers.PlayerHistory> PlayerHistory { get; private set; }
         public Game GameName { get; protected set; }
@@ -359,7 +358,13 @@ namespace SharedLibrary
         public string Website { get; protected set; }
         public string Gametype { get; protected set; }
         public Map CurrentMap { get; protected set; }
-        public int ClientNum { get; protected set; }
+        public int ClientNum
+        {
+            get
+            {
+                return Players.Where(p => p != null).Count();
+            }
+        }
         public int MaxClients { get; protected set; }
         public List<Player> Players { get; protected set; }
         public string Password { get; private set; }

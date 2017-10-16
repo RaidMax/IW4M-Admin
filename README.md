@@ -5,7 +5,7 @@ _______
 
 ### Setup
 IW4MAdmin requires minimal configuration to run. There is only one prerequisite.  
-2. [.NET Framework 4.5](https://www.microsoft.com/en-us/download/details.aspx?id=30653) *or better*  
+1. [.NET Framework 4.5](https://www.microsoft.com/en-us/download/details.aspx?id=30653) *or newer*  
 
 Extract `IW4MAdmin.zip`  
 Run `IW4MAdmin.exe`

@@ -328,7 +328,7 @@ namespace IW4MAdmin
 
                 try
                 {
-                    ClientNum = await PollPlayersAsync();
+                    await PollPlayersAsync();
 
                     if (ConnectionErrors > 0)
                     {
@@ -375,7 +375,9 @@ namespace IW4MAdmin
                     start = DateTime.Now;
                 }
 
-                //logFile = new IFile();
+                if (LogFile == null)
+                    return;
+
                 if (l_size != LogFile.Length())
                 {
                     // this should be the longest running task

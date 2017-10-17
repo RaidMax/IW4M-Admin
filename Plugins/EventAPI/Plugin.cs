@@ -95,7 +95,7 @@ namespace EventAPI
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(IManager manager)
         {
             APIEvents = new Queue<RestEvent>();
             flaggedMessagesText = new List<string>();

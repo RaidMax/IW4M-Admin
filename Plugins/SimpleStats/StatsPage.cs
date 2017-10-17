@@ -55,7 +55,7 @@ namespace StatsPlugin
                         ServerMap = s.CurrentMap.Alias,
                         ServerInfo = Stats.ServerStats[s.GetPort()],
                         Minimap = MinimapConfig.Read(@"Config\minimaps.cfg").MapInfo.Where(m => m.MapName == s.CurrentMap.Name),
-                        MapKills = selectCount < 300 ? Stats.ServerStats[s.GetPort()].GetKillQueue().ToArray()
+                        MapKills = selectCount < 999 ? Stats.ServerStats[s.GetPort()].GetKillQueue().ToArray()
                                                         .Skip(Math.Min(Stats.MAX_KILLEVENTS - selectCount, Stats.ServerStats[s.GetPort()].GetKillQueue().Count - selectCount)) :
                                                         Stats.statLists.FirstOrDefault(x => x.Port == s.GetPort()).playerStats.GetKillsByMap(s.CurrentMap, selectCount)
                     })

@@ -72,7 +72,7 @@ namespace Plugin
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(IManager manager)
         {
             ConfigManager = new ConfigurationManager(typeof(FastRestartPlugin));
             FastRestarts = new Dictionary<int, int>();

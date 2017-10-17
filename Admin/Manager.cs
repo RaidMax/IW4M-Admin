@@ -85,7 +85,7 @@ namespace IW4MAdmin
             {
                 try
                 {
-                    Plugin.OnLoadAsync();
+                    Plugin.OnLoadAsync(this);
                 }
 
                 catch (Exception e)

@@ -189,10 +189,18 @@ namespace StatsPlugin
             get { return "RaidMax"; }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(SharedLibrary.Interfaces.IManager manager)
         {
             statLists = new List<StatTracking>();
             ServerStats = new Dictionary<int, ServerStatInfo>();
+            ManagerInstance = manager;
+
+            WebService.PageList.Add(new StatsPage());
+            WebService.PageList.Add(new KillStatsJSON());
+
+            ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
+            ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
+
 
             try
             {
@@ -219,24 +227,7 @@ namespace StatsPlugin
         {
             if (E.Type == Event.GType.Start)
             {
-                if (ManagerInstance == null)
-                {
-                    ManagerInstance = S.Manager;
-                    lock (WebService.PageList)
-                    {
-                        WebService.PageList.Add(new StatsPage());
-                        WebService.PageList.Add(new KillStatsJSON());
-                    }
-                }
-
                 statLists.Add(new StatTracking(S.GetPort()));
-
-                if (statLists.Count == 1)
-                {
-                    S.Manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
-                    S.Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
-                }
-
                 ServerStats.Add(S.GetPort(), new ServerStatInfo());
             }
 
@@ -529,7 +520,7 @@ namespace StatsPlugin
         public List<Stats.KillInfo> GetKillsByMap(Map map, int count)
         {
             var mapID = ParseEnum<IW4Info.MapName>.Get(map.Name, typeof(IW4Info.MapName));
-            var queryResult = GetDataTable($"select * from KILLS where MapID == {(int)mapID} LIMIT {count} OFFSET (SELECT COUNT(*) FROM KILLS)-500"); //GetDataTable("KILLS", new KeyValuePair<string, object>("MapID", mapID));
+            var queryResult = GetDataTable($"select * from KILLS where MapID == {(int)mapID} LIMIT {count} OFFSET (SELECT COUNT(*) FROM KILLS) - {count}");
             var resultList = new List<Stats.KillInfo>();
 
             if (queryResult?.Rows.Count > 0)

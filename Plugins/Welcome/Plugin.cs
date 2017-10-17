@@ -84,7 +84,7 @@ namespace Welcome_Plugin
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(IManager manager)
         {
             PlayerPings = new Dictionary<int, float>();
             PingAverageCount = 1;

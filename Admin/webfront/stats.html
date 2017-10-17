@@ -1,6 +1,6 @@
 ﻿<div id="stats">
     <div id="stats-info">
-        <input type="range" min="1" max="1000" value="100" class="slider" id="KillEventCount">
+        <input type="range" min="1" max="2500" value="100" class="slider" id="KillEventCount">
         <label for="KillEventCount">Showing 100 Kills</label>
     </div> 
 </div>
@@ -135,8 +135,8 @@
     $(document).ready(function () {
         $('#KillEventCount').on('input change', function () {
             $(this).next().text('Showing ' + $(this).val() + ' Kills');
-            if ($(this).val() > 300)
-                refreshInterval = 500;
+            if ($(this).val() > 999)
+                refreshInterval = 5000;
             else
                 refreshInterval = 250;
         });

@@ -33,7 +33,7 @@ namespace MessageBoard.Plugin
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(IManager manager)
         {
             ManagerInstance = new Forum.Manager();
             ManagerInstance.Start();

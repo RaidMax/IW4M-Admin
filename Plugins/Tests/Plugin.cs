@@ -43,7 +43,7 @@ namespace IW4MAdmin.Plugins
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(IManager manager)
         {
             Interval = DateTime.Now;
         }

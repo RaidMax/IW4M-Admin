@@ -210,7 +210,7 @@ namespace Votemap_Plugin
             }
         }
 
-        public async Task OnLoadAsync()
+        public async Task OnLoadAsync(IManager manager)
         {
             serverVotingList = new List<ServerVoting>();
         }

@@ -33,10 +33,10 @@ namespace IW4MAdmin.Plugins
                      if (S.PlayerHistory.Count > 0)
                          return;
 
-                     while (S.PlayerHistory.Count < 48)
+                     while (S.PlayerHistory.Count < 144)
                      {
                          S.PlayerHistory.Enqueue(new PlayerHistory(time, rand.Next(7, 18)));
-                         time = time.AddMinutes(15);
+                         time = time.AddMinutes(PlayerHistory.UpdateInterval);
                      }
                  });
                 #endregion

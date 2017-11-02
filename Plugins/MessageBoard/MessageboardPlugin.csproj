@@ -146,7 +146,7 @@ copy /Y "$(TargetDir)DNA.Text.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)
 copy /Y "$(TargetDir)CryptSharp.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\CryptSharp.dll"
 copy /Y "$(TargetDir)CodeKicker.BBcode.dll" "$(SolutionDir)Admin\bin\$(ConfigurationName)\lib\CodeKicker.BBcode.dll"
 
-copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"</PostBuildEvent>
+if $(ConfigurationName) == Debug copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

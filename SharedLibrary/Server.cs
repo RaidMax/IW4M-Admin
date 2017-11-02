@@ -8,6 +8,7 @@ using System.Threading;
 using SharedLibrary.Network;
 using SharedLibrary.Commands;
 using System.Threading.Tasks;
+using SharedLibrary.Helpers;
 
 namespace SharedLibrary
 {
@@ -37,6 +38,7 @@ namespace SharedLibrary
             Reports = new List<Report>();
             PlayerHistory = new Queue<Helpers.PlayerHistory>();
             ChatHistory = new List<Chat>();
+            Configuration = new ConfigurationManager(this.GetType());
             NextMessage = 0;
             InitializeTokens();
             InitializeAutoMessages();
@@ -337,9 +339,24 @@ namespace SharedLibrary
             ruleFile.Close();
         }
 
+        public ConfigurationManager Configuration { get; private set; }
+
         public override string ToString()
         {
             return $"{IP}_{Port}";
+        }
+
+        protected async  Task<bool> ScriptLoaded()
+        {
+            try
+            {
+                return (await this.GetDvarAsync<string>("sv_customcallbacks")).Value == "1";
+            }
+            
+            catch(Exceptions.DvarException)
+            {
+                return false;
+            }
         }
 
         // Objects
@@ -369,6 +386,7 @@ namespace SharedLibrary
         public List<Player> Players { get; protected set; }
         public string Password { get; private set; }
         public bool Throttled { get; protected set; }
+        public bool CustomCallback { get; protected set; }
 
         // Internal
         protected string IP;

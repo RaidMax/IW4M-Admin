@@ -44,11 +44,11 @@ namespace Plugin
 
         public static ConfigurationManager ConfigManager { get; private set; }
 
-        public string Name { get { return "Fast Restarter"; } }
+        public string Name => "Fast Restarter";
 
-        public float Version { get { return 1.0f; } }
+        public float Version => 1.0f;
 
-        public string Author { get { return "RaidMax"; } }
+        public string Author => "RaidMax";
 
         public async Task OnEventAsync(Event E, Server S)
         {
@@ -67,7 +67,7 @@ namespace Plugin
 
                 catch (SharedLibrary.Exceptions.DvarException)
                 {
-                    await S.ExecuteCommandAsync("set src_intermission_time 20");
+                    await S.SetDvarAsync("scr_intermission_time", 20);
                 }
             }
         }

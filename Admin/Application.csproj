@@ -351,7 +351,8 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(SolutionDir)lib\*.dll" "$(TargetDir)lib"
+    <PostBuildEvent>xcopy /E "$(SolutionDir)lib" "$(TargetDir)lib"
+copy /Y "$(SolutionDir)_customcallbacks.gsc" "$(SolutionDir)BUILD\userraw\scripts\_customcallbacks.gsc"
 
 copy /Y "$(TargetDir)$(TargetName).exe" "$(SolutionDir)BUILD"
 copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"

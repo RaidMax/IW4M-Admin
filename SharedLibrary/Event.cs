@@ -116,7 +116,8 @@ namespace SharedLibrary
                             Data.Append(line[i] + ";");
                     }
 
-                    return new Event(GType.Script, Data.ToString(), SV.ParseClientFromString(line, 6), SV.ParseClientFromString(line, 2), SV);
+                    if (!SV.CustomCallback)
+                        return new Event(GType.Script, Data.ToString(), SV.ParseClientFromString(line, 6), SV.ParseClientFromString(line, 2), SV);
                 }
 
                 if (line[0].Substring(line[0].Length - 3).Trim() == "say")

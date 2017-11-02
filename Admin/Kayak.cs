@@ -15,7 +15,7 @@ namespace IW4MAdmin
         {
             // it looks like there's a library error in
             // Kayak.Http.HttpServerTransactionDelegate.OnError
-            if (e.GetType() == typeof(NullReferenceException))
+            if ((uint)e.HResult ==0x80004003)
                 return;
 
             ApplicationManager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);

@@ -146,7 +146,14 @@ namespace EventAPI
             if (E.Type == Event.GType.Say && E.Origin.Level < Player.Permission.Moderator)
             {
                 string message = E.Data.ToLower();
-                bool flagged = message.Contains(" wh ") || message.Contains("hax") || message.Contains("cheat") || message.Contains("hack") || message.Contains("aim") || message.Contains("wall") || message.Contains("cheto") || message.Contains("hak");
+                bool flagged = message.Contains(" wh ") ||
+                    message.Contains("hax") || 
+                    message.Contains("cheat") || 
+                    message.Contains(" hack ") || 
+                    message.Contains("aim") || 
+                    message.Contains("wall") || 
+                    message.Contains("cheto") ||
+                    message.Contains("hak");
 
                 if (flagged)
                 {

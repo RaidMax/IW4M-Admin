@@ -11,7 +11,7 @@ namespace StatsPlugin
 {
     public class CViewStats : Command
     {
-        public CViewStats() : base("stats", "view your stats. syntax !stats", "xlrstats", Player.Permission.User, 0, false) { }
+        public CViewStats() : base("stats", "view your stats. syntax: !stats", "xlrstats", Player.Permission.User, 0, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -54,7 +54,7 @@ namespace StatsPlugin
 
     public class CViewTopStats : Command
     {
-        public CViewTopStats() : base("topstats", "view the top 5 players on this server. syntax !topstats", "ts", Player.Permission.User, 0, false) { }
+        public CViewTopStats() : base("topstats", "view the top 5 players on this server. syntax: !topstats", "ts", Player.Permission.User, 0, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -75,7 +75,7 @@ namespace StatsPlugin
 
     public class CResetStats : Command
     {
-        public CResetStats() : base("resetstats", "reset your stats to factory-new, !syntax !resetstats", "rs", Player.Permission.User, 0, false) { }
+        public CResetStats() : base("resetstats", "reset your stats to factory-new. syntax: !resetstats", "rs", Player.Permission.User, 0, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -201,7 +201,6 @@ namespace StatsPlugin
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
 
-
             try
             {
                 var minimapConfig = MinimapConfig.Read("Config/minimaps.cfg");
@@ -229,6 +228,10 @@ namespace StatsPlugin
             {
                 statLists.Add(new StatTracking(S.GetPort()));
                 ServerStats.Add(S.GetPort(), new ServerStatInfo());
+
+                var config = new ConfigurationManager(S);
+                if (config.GetProperty("EnableTrusted") == null)
+                    config.AddProperty(new KeyValuePair<string, object>("EnableTrusted", true));
             }
 
             if (E.Type == Event.GType.Stop)
@@ -241,9 +244,14 @@ namespace StatsPlugin
             {
                 ResetCounters(E.Origin.ClientID, S.GetPort());
 
+                var config = new ConfigurationManager(E.Owner);
+
+                if (!(bool)config.GetProperty("EnableTrusted"))
+                    return;
+
                 PlayerStats checkForTrusted = statLists.Find(x => x.Port == S.GetPort()).playerStats.GetStats(E.Origin);
                 //todo: move this out of here!!
-                if (checkForTrusted.TotalPlayTime >= 4320 && E.Origin.Level < Player.Permission.Trusted)
+                if (checkForTrusted.TotalPlayTime >= 4320 && E.Origin.Level < Player.Permission.Trusted && E.Origin.Level != Player.Permission.Flagged)
                 {
                     E.Origin.SetLevel(Player.Permission.Trusted);
                     E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);

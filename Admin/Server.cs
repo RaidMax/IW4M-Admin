@@ -360,9 +360,9 @@ namespace IW4MAdmin
                     tickTime = DateTime.Now;
                 }
 
-                if ((lastCount - playerCountStart).TotalMinutes >= 15)
+                if ((lastCount - playerCountStart).TotalMinutes >= SharedLibrary.Helpers.PlayerHistory.UpdateInterval)
                 {
-                    while (PlayerHistory.Count > 48) // 4 times a hour for 12 hours
+                    while (PlayerHistory.Count > ((60 / SharedLibrary.Helpers.PlayerHistory.UpdateInterval) * 12 )) // 12 times a hour for 12 hours
                         PlayerHistory.Dequeue();
                     PlayerHistory.Enqueue(new SharedLibrary.Helpers.PlayerHistory(ClientNum));
                     playerCountStart = DateTime.Now;
@@ -492,18 +492,15 @@ namespace IW4MAdmin
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");
             }
+
+            CustomCallback = await ScriptLoaded();
 #if DEBUG
-            //if (Environment.OSVersion.VersionString != "Microsoft Windows NT 6.2.9200.0")
             {
                 basepath.Value = (GameName == Game.IW4) ?
                     @"\\tsclient\J\WIN7_10.25\MW2" :
                     @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
             }
 
-          //  else
-        //    {
-         //       basepath.Value = @"C:\MW2";
-         //   }
 #endif
             string mainPath = (GameName == Game.IW4) ? "userraw" : "main";
 

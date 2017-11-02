@@ -4,17 +4,20 @@ namespace SharedLibrary.Helpers
 {
     public class PlayerHistory
     {
+        // how many minutes between updates
+        public static readonly int UpdateInterval = 5;
+
         public PlayerHistory(int cNum)
         {
             DateTime t = DateTime.UtcNow;
-            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, 15 * (int)Math.Round(t.Minute / 15.0)), 0);
+            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, UpdateInterval * (int)Math.Round(t.Minute / (float)UpdateInterval)), 0);
             PlayerCount = cNum;
         }
 
 #if DEBUG
         public PlayerHistory(DateTime t, int cNum)
         {
-            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, 15 * (int)Math.Round(t.Minute / 15.0)), 0);
+            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, UpdateInterval * (int)Math.Round(t.Minute / (float)UpdateInterval)), 0);
             PlayerCount = cNum;
         }
 #endif 

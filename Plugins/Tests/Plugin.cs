@@ -65,12 +65,16 @@ namespace IW4MAdmin.Plugins
                     await S.RemovePlayer(index);
                 await S.AddPlayer(p);
 
+
                 Interval = DateTime.Now;
                 if (S.ClientNum > 0)
                 {
+
                     //"K;26d2f66b95184934;1;allies;egor;5c56fef676b3818d;0;axis;1_din;m21_heartbeat_mp;98;MOD_RIFLE_BULLET;torso_lower";
                     var victimPlayer = S.Players.Where(pl => pl != null).ToList()[rand.Next(0, S.ClientNum - 1)];
                     var attackerPlayer = S.Players.Where(pl => pl != null).ToList()[rand.Next(0, S.ClientNum - 1)];
+
+                    await S.ExecuteEvent(new Event(Event.GType.Say, $"test_{attackerPlayer.ClientID}", victimPlayer, attackerPlayer, S));
 
                     string[] eventLine = null;
 

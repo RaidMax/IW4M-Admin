@@ -22,7 +22,7 @@ namespace SharedLibrary
 
         abstract public void Init();
 
-        protected bool Insert(String tableName, Dictionary<String, object> data)
+        protected bool Insert(String tableName, Dictionary<String, object> data, bool ignore = false)
         {
             string names = "";
             string parameters = "";
@@ -36,10 +36,12 @@ namespace SharedLibrary
 
             var Con = GetNewConnection();
 
+            string ignoreCmd = ignore ? " OR IGNORE " : " ";
+
             SQLiteCommand insertcmd = new SQLiteCommand()
             {
                 Connection = Con,
-                CommandText = String.Format("INSERT INTO `{0}` ({1}) VALUES ({2});", tableName, names, parameters)
+                CommandText = String.Format("INSERT{0}INTO `{1}` ({2}) VALUES ({3});", ignoreCmd, tableName, names, parameters)
             };
             foreach (string key in data.Keys)
             {

@@ -156,6 +156,9 @@
     <Compile Include="WebService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="webfront\chat.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="webfront\images\minimap_mp_rust.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

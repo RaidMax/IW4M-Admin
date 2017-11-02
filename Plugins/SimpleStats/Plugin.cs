@@ -99,6 +99,7 @@ namespace StatsPlugin
         public static SharedLibrary.Interfaces.IManager ManagerInstance;
         public static int MAX_KILLEVENTS = 1000;
         public static Dictionary<int, ServerStatInfo> ServerStats { get; private set; }
+        public static ChatDatabase ChatDB { get; private set; }
 
         public class ServerStatInfo
         {
@@ -197,9 +198,14 @@ namespace StatsPlugin
 
             WebService.PageList.Add(new StatsPage());
             WebService.PageList.Add(new KillStatsJSON());
+            WebService.PageList.Add(new Chat.WordCloudJSON());
+            WebService.PageList.Add(new Chat.ClientChatJSON());
+            WebService.PageList.Add(new Chat.ChatPage());
 
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
+
+            ChatDB = new ChatDatabase("Database/ChatHistory.rm");
 
             try
             {
@@ -353,6 +359,11 @@ namespace StatsPlugin
                 curServer.killStreaks[Victim.ClientID] = 0;
 
                 await Victim.Tell(MessageOnStreak(curServer.killStreaks[Victim.ClientID], curServer.deathStreaks[Victim.ClientID]));
+            }
+
+            if (E.Type == Event.GType.Say)
+            {
+                ChatDB.AddChatHistory(E.Origin.DatabaseID, E.Owner.GetPort(), E.Data);
             }
         }
 

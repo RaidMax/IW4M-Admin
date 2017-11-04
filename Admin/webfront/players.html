@@ -1,134 +1,113 @@
 <script>
-var curFrom = 0;
+    var curFrom = 0;
 
-function getNextPage()
-{
-  curFrom += 15;
-  return curFrom;
-}
-
-function getPrevPage()
-{
-  if ((curFrom - 15) >= 0)
-  {
-    curFrom -= 15;
-    return (curFrom - 15);
-  }
-  else
-    return 0;
-}
-
-function formatHidden(data, authed)
-{
-    var p = "<div class=\"hiddenWrapper\"><span>Expand</span><div class=\"hiddenElements\">";
-
-    if (authed) {
-        $.each(data, function (i, dat) {
-            p += "<span>" + dat + "</span><br/>"
-        })
+    function getNextPage() {
+        curFrom += 15;
+        return curFrom;
     }
 
-    else
-        p += "Hidden";
+    function getPrevPage() {
+        if ((curFrom - 15) >= 0) {
+            curFrom -= 15;
+            return (curFrom - 15);
+        }
+        else
+            return 0;
+    }
 
-  p += "</div></div>"
+    function formatHidden(data, authed) {
+        var p = "<div class=\"hiddenWrapper\"><span>Expand</span><div class=\"hiddenElements\">";
 
-  return p;
-}
+        if (authed) {
+            $.each(data, function (i, dat) {
+                p += "<span>" + dat + "</span><br/>"
+            })
+        }
 
-function printPlayer(player, i)
-{
-    var p = "";
-    p +=
-      "<div class=\"playerInfo table alternate_" + i % 2 + "\"> \
+        else
+            p += "Hidden";
+
+        p += "</div></div>"
+
+        return p;
+    }
+
+    function printPlayer(player, i) {
+        var p = "";
+        p +=
+          "<div class=\"playerInfo table alternate_" + i % 2 + "\"> \
        <div class=\"tableCell\"><a href=\"/players?id=" + player['playerID'] + "\">" + player['playerName'] + "</a></div> \
        <div class=\"tableCell\">" + formatHidden(player['playerAliases'], player.authed) + "</div> \
        <div class=\"tableCell\">" + formatHidden(player['playerIPs'], player.authed) + "</div> \
        <div class=\"tableCell\">" + getColorForLevel(player['playerLevel'], player['playerLevel']) + "</div> \
        <div class=\"tableCell\">" + player['playerConnections'] + "</div>";
 
-    if (player.showV2Features)
-    {
+
         p +=
-        "<div class=\"tableCell actionButton\" style='width: 2em;'> \
-          <a target=\"_blank\" href='http://server.nbsclan.org/screen.php?id=" + player.forumID + "&name=" + player.playerName + "'> \
-            <i class=\"fa fa-camera\" aria-hidden=\"true\"></i> \
-          </a> \
-          <a target=\"_blank\" href='https://v2.mcsebi.ru/memberlist.php?mode=viewprofile&u=" + player.forumID + "'> \
-            <i class=\"fa fa-user tableCell\" aria-hidden=\"true\"></i> \
-          </a> \
-        </div> ";
-    }
+            "<div class=\"tableCell\" style='width: 2em;'><a href=\"/chat?clientid=" + player.playerID + "\"><i class=\"fa fa-comments\" aria-hidden=\"true\"></i></a></div>"
 
-    else
-    {
-        p+=
-            "<div class=\"tableCell\" style='width: 2em;'><i class=\"fa fa-ban\" aria-hidden=\"true\"></i></div>"
-    }
-
-    p +=
-        "<div class=\"tableCell alignRight\">" + checkJustNow(player['lastSeen']) + "</div> \
+        p +=
+            "<div class=\"tableCell alignRight\">" + checkJustNow(player['lastSeen']) + "</div> \
     </div>";
 
-    $("#playersTable").append(p);
+        $("#playersTable").append(p);
 
-}
-
-function getPlayer(ident, identValue)
-{
-  $("#playersTable").html("");
-  $(".loader").fadeIn();
-
-    $.getJSON("/getplayer?" + ident + "=" + identValue, function(result) {
-                  $.each(result, function(i, player) {
-                        printPlayer(player, i);
-                  });
-            }).done(function (data) { $(".loader").fadeOut(); });
-}
-
-$( document ).ready(function() {
-    if (parseGet('id') != "undefined")
-      getPlayer('id', parseGet('id'));
-    else if (parseGet('name') != "undefined")
-        getPlayer('name', parseGet('name'));
-    else {
-      getPlayer('recent', '1');
     }
-});
 
-$('#content').on('click', 'div.hiddenWrapper span', function(){
-    $(this).parent().find('.hiddenElements').toggle()
-});
+    function getPlayer(ident, identValue) {
+        $("#playersTable").html("");
+        $(".loader").fadeIn();
+
+        $.getJSON("/getplayer?" + ident + "=" + identValue, function (result) {
+            $.each(result, function (i, player) {
+                printPlayer(player, i);
+            });
+        }).done(function (data) { $(".loader").fadeOut(); });
+    }
+
+    $(document).ready(function () {
+        if (parseGet('id') != "undefined")
+            getPlayer('id', parseGet('id'));
+        else if (parseGet('name') != "undefined")
+            getPlayer('name', parseGet('name'));
+        else {
+            getPlayer('recent', '1');
+        }
+    });
+
+    $('#content').on('click', 'div.hiddenWrapper span', function () {
+        $(this).parent().find('.hiddenElements').toggle()
+    });
 
 </script>
 
 <div class="playerSearchWrap">
-  <input type="button" class="searchButton" name="Search" value="Search"/>
-  <input type="text" class="search" placeholder="Player Name..."/>
+    <input type="button" class="searchButton" name="Search" value="Search" />
+    <input type="text" class="search" placeholder="Player Name..." />
 </div>
 
 <div class="contentHeader table">
-  <div class="contentColumn tableCell">Name</div>
-  <div class="contentColumn tableCell">Aliases</div>
-  <div class="contentColumn tableCell">IP</div>
-  <div class="contentColumn tableCell">Level</div>
-  <div class="contentColumn tableCell">Connections</div>
-  <div class="contentColumn tableCell" style="width: 1em;">V2</div>
-  <div class="contentColumn tableCell alignRight">Last Seen</div>
+    <div class="contentColumn tableCell">Name</div>
+    <div class="contentColumn tableCell">Aliases</div>
+    <div class="contentColumn tableCell">IP</div>
+    <div class="contentColumn tableCell">Level</div>
+    <div class="contentColumn tableCell">Connections</div>
+    <div class="contentColumn tableCell" style="width: 1em;">Chat</div>
+    <div class="contentColumn tableCell alignRight">Last Seen</div>
 </div>
 <div id="playersTable">
 </div>
-<hr/>
+<hr />
 
 <script>
-$('.searchButton').click(function() {
-    if ($('.search').val().length > 0)
-      getPlayer('name', $('.search').val());
-});
+    $('.searchButton').click(function () {
+        if ($('.search').val().length > 0)
+            getPlayer('name', $('.search').val());
+    });
 
-$(document).keypress(function(e) {
-    if(e.which == 13) {
-        $('.searchButton').click();
-    }
-});
+    $(document).keypress(function (e) {
+        if (e.which == 13) {
+            $('.searchButton').click();
+        }
+    });
 </script>

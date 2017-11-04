@@ -12,6 +12,86 @@ namespace StatsPlugin
 {
     public class ChatDatabase : Database
     {
+        private string[] CommonWords = new string[] { "for",
+"with",
+"from",
+"about",
+"into",
+"over",
+"after",
+"that",
+"not",
+"you",
+"this",
+"but",
+"his",
+"they",
+"her",
+"she",
+"will",
+"one",
+"all",
+"would",
+"there",
+"their",
+"have",
+"say",
+"get",
+"make",
+"know",
+"take",
+"see",
+"come",
+"think",
+"look",
+"want",
+"give",
+"use",
+"find",
+"tell",
+"ask",
+"work",
+"seem",
+"feel",
+"try",
+"leave",
+"call",
+"good",
+"new",
+"first",
+"last",
+"long",
+"great",
+"little",
+"own",
+"other",
+"old",
+"right",
+"big",
+"high",
+"small",
+"large",
+"next",
+"early",
+"young",
+"important",
+"few",
+"public",
+"same",
+"able",
+"the",
+"and",
+"that",
+"have",
+"this",
+"one",
+"would",
+ "yeah",
+        "yah",
+        "why",
+        "who" ,
+            "when"};
+
         public ChatDatabase(string FN) : base(FN)
         {
         }
@@ -65,6 +145,9 @@ namespace StatsPlugin
 
         public void AddChatHistory(int clientID, int serverID, string message)
         {
+            if (message.Length < 3)
+                return;
+
             var chat = new Dictionary<string, object>()
             {
                 { "ClientID", clientID },
@@ -75,20 +158,22 @@ namespace StatsPlugin
 
             Insert("CHATHISTORY", chat);
 
-            message.Split(' ').Where(word => word.Length >= 3).Any(word =>
-               {
-                   word = word.ToLower();
-                   Insert("WORDSTATS", new Dictionary<string, object>() { { "Word", word } }, true);
-                   // shush :^)
-                   ExecuteNonQuery($"UPDATE WORDSTATS SET Count = Count + 1 WHERE Word='{word.CleanChars()}'");
-                   return true;
-               }
-            );
+            var eachWord = message.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where (word => word.Length >= 3)
+                .Where(word => CommonWords.FirstOrDefault(c => c == word.ToLower()) == null)
+                .ToList();
+
+            foreach (string _word in eachWord)
+            {
+                string word = _word.ToLower();
+                Insert("WORDSTATS", new Dictionary<string, object>() { { "Word", word } }, true);
+                UpdateIncrement("WORDSTATS", "Count", new Dictionary<string, object>() { { "Count", 1 } }, new KeyValuePair<string, object>("Word", word));
+            }
         }
 
         public KeyValuePair<string, int>[] GetWords()
         {
-            var result = GetDataTable("SELECT * FROM WORDSTATS ORDER BY Count desc LIMIT 100");
+            var result = GetDataTable("SELECT * FROM WORDSTATS ORDER BY Count desc LIMIT 200");
             return result.Select().Select(w => new KeyValuePair<string, int>(w["Word"].ToString(), Convert.ToInt32(w["Count"].ToString()))).ToArray();
         }
     }

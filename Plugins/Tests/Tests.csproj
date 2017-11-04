@@ -91,6 +91,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Debug copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"</PostBuildEvent>
+    <PostBuildEvent>if $(ConfigurationName) == Debug (copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\")</PostBuildEvent>
   </PropertyGroup>
 </Project>

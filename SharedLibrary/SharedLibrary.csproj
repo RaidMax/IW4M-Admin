@@ -143,9 +143,11 @@ copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)Admin\lib"</PostBuildEv
     <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets'))" />
   </Target>
   <PropertyGroup>
-    <PreBuildEvent>if not exist "$(SolutionDir)BUILD" mkdir  "$(SolutionDir)BUILD"
+    <PreBuildEvent>if exist  "$(SolutionDir)BUILD\Plugins" rmdir /Q /S "$(SolutionDir)BUILD\Plugins"
+mkdir  "$(SolutionDir)BUILD\Plugins"
+
+if not exist "$(SolutionDir)BUILD" mkdir  "$(SolutionDir)BUILD"
 if not exist  "$(SolutionDir)BUILD\Lib" mkdir  "$(SolutionDir)BUILD\Lib"
-if not exist  "$(SolutionDir)BUILD\Plugins" mkdir  "$(SolutionDir)BUILD\Plugins"
 if not exist "$(SolutionDir)BUILD\userraw\scripts" mkdir "$(SolutionDir)BUILD\userraw\scripts"</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

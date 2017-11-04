@@ -316,7 +316,6 @@ namespace StatsPlugin
                     //S.Logger.WriteInfo($"{E.Origin.Name} killed {E.Target.Name} with a {killEvent.Weapon} from a distance of {Vector3.Distance(killEvent.KillOrigin, killEvent.DeathOrigin)} with {killEvent.Damage} damage, at {killEvent.HitLoc}");
                     var cs = statLists.Find(x => x.Port == S.GetPort());
                     cs.playerStats.AddKill(killEvent);
-                    return;
                 }
 
                 Player Killer = E.Origin;

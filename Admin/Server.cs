@@ -362,7 +362,7 @@ namespace IW4MAdmin
 
                 if ((lastCount - playerCountStart).TotalMinutes >= SharedLibrary.Helpers.PlayerHistory.UpdateInterval)
                 {
-                    while (PlayerHistory.Count > ((60 / SharedLibrary.Helpers.PlayerHistory.UpdateInterval) * 12 )) // 12 times a hour for 12 hours
+                    while (PlayerHistory.Count > ((60 / SharedLibrary.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
                         PlayerHistory.Dequeue();
                     PlayerHistory.Enqueue(new SharedLibrary.Helpers.PlayerHistory(ClientNum));
                     playerCountStart = DateTime.Now;
@@ -593,8 +593,9 @@ namespace IW4MAdmin
                 else // Not a command
                 {
                     E.Data = E.Data.StripColors().CleanChars();
-                    if (E.Data.Length > 50)
-                        E.Data = E.Data.Substring(0, 50) + "...";
+                    // this should not be done for all messages.
+                    //if (E.Data.Length > 50)
+                    //   E.Data = E.Data.Substring(0, 50) + "...";
 
                     ChatHistory.Add(new Chat(E.Origin.Name, E.Data, DateTime.Now));
                 }

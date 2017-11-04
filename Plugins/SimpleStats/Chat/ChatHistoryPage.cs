@@ -11,8 +11,6 @@ namespace StatsPlugin.Chat
 {
     public class ChatPage : HTMLPage
     {
-        public ChatPage() : base(false) { }
-
         public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
         {
             StringBuilder S = new StringBuilder();
@@ -27,7 +25,7 @@ namespace StatsPlugin.Chat
             return S.ToString();
         }
 
-        public override string GetName() => "Chat Stats";
+        public override string GetName() => "Word Cloud";
         public override string GetPath() => "/chat";
     }
 
@@ -68,11 +66,20 @@ namespace StatsPlugin.Chat
 
         public HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
         {
+            int clientID = Convert.ToInt32(querySet["clientid"]);
+            var client = Stats.ManagerInstance.GetClientDatabase().GetPlayer(clientID);
 
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
-                content = Stats.ChatDB.GetChatForPlayer(Convert.ToInt32(querySet["clientid"])).ToArray(),
+                content = Stats.ChatDB.GetChatForPlayer(clientID).ToArray().Select(c => new
+                {
+                    ClientID = c.ClientID,
+                    ServerID = c.ServerID,
+                    Message = c.Message,
+                    TimeSent = c.TimeSent,
+                    Client = client
+                }),
                 additionalHeaders = new Dictionary<string, string>()
             };
 

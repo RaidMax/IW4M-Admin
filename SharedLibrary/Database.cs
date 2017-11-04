@@ -64,6 +64,42 @@ namespace SharedLibrary
 
         }
 
+        protected void UpdateIncrement(String tableName, string columnName, Dictionary<String, object> data, KeyValuePair<string, object> where)
+        {
+            string parameters = "";
+            foreach (string key in data.Keys)
+            {
+                parameters += $"{key}={key}+1,";
+            }
+
+            parameters = parameters.Substring(0, parameters.Length - 1);
+            var Con = GetNewConnection();
+
+            SQLiteCommand updatecmd = new SQLiteCommand()
+            {
+                Connection = Con,
+                CommandText = String.Format("UPDATE `{0}` SET {1} WHERE {2}=@{2}", tableName, parameters, where.Key)
+            };
+            foreach (string key in data.Keys)
+            {
+                updatecmd.Parameters.AddWithValue('@' + key, data[key]);
+            }
+
+            updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
+
+            try
+            {
+                Con.Open();
+                updatecmd.ExecuteNonQuery();
+                Con.Close();
+            }
+
+            catch (Exception E)
+            {
+                Console.WriteLine($"Line 96: {E.Message}");
+            }
+        }
+
         protected bool Update(String tableName, Dictionary<String, object> data, KeyValuePair<string, object> where)
         {
             string parameters = "";

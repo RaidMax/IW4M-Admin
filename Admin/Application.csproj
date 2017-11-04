@@ -165,6 +165,9 @@
     <Content Include="webfront\images\minimap_mp_terminal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="webfront\scripts\wordcloud2.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="webfront\stats.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -362,7 +365,6 @@ copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
-
 
 if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.4
 if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.4</PostBuildEvent>

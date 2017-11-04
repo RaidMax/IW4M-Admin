@@ -1,1 +1,31 @@
-﻿
+﻿<script src="/webfront/scripts/wordcloud2.js"></script>
+<div class="chat-history"></div>
+<canvas id="chat-word-cloud" width="625" height="625"></canvas>
+<script>
+    if (parseGet("clientid") == "undefined") {
+        $.getJSON("/_words", function (result) {
+            var wordList = [];
+            $.each(result, function (i, word) {
+                wordList.push([word.Word, word.Count]);
+            });
+
+            WordCloud(document.getElementById('chat-word-cloud'), { list: wordList, backgroundColor: "rgb(34,34,34)", minSize: "14pt", color: "rgb(0, 122, 204)", wait: 20, weightFactor: 2 });
+        });
+
+    }
+
+    else {
+        $.getJSON("/_clientchat?clientid=" + parseGet("clientid"), function (result) {
+            result = result.sort(function (a, b) {
+                // Turn your strings into dates, and then subtract them
+                // to get a value that is either negative, positive, or zero.
+                return new Date(b.TimeSent) - new Date(a.TimeSent);
+            });
+
+            $.each(result, function (i, chat) {
+                var date = new Date(chat.TimeSent);
+                $('.chat-history').append("<div><span>" + date.toLocaleString() + " &mdash; </span><span><b>" + chat.Client.Name + "</b></span>: <span>" + chat.Message + "</span></div>");
+            });
+        });
+    }
+</script>

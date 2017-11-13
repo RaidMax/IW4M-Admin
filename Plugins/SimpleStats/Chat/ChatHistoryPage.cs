@@ -78,7 +78,7 @@ namespace StatsPlugin.Chat
                     ServerID = c.ServerID,
                     Message = c.Message,
                     TimeSent = c.TimeSent,
-                    Client = client
+                    ClientName = client.Name,
                 }),
                 additionalHeaders = new Dictionary<string, string>()
             };

@@ -23,8 +23,8 @@ namespace SharedLibrary.Network
         static string[] SendQuery(QueryType Type, Server QueryServer,  string Parameters = "")
         {
             var ServerOOBConnection = new UdpClient();
-            ServerOOBConnection.Client.SendTimeout = 1000;
-            ServerOOBConnection.Client.ReceiveTimeout = 1000;
+            ServerOOBConnection.Client.SendTimeout = 5000;
+            ServerOOBConnection.Client.ReceiveTimeout = 5000;
             var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.GetIP()), QueryServer.GetPort());
 
             string QueryString = String.Empty;
@@ -76,15 +76,16 @@ namespace SharedLibrary.Network
                 throw e;
             }
 
-            catch (Exception)
+            catch (Exception e)
             {
                 attempts++;
-                if (attempts > 5)
+                if (attempts > 2)
                 {
-                    var e = new Exceptions.NetworkException("Could not communicate with the server");
-                    e.Data["server_address"] = ServerOOBConnection.Client.RemoteEndPoint.ToString();
+                    var ne = new Exceptions.NetworkException("Could not communicate with the server");
+                    ne.Data["internal_exception"] = e.Message;
+                    ne.Data["server_address"] = ServerOOBConnection.Client.RemoteEndPoint.ToString();
                     ServerOOBConnection.Close();
-                    throw e;
+                    throw ne;
                 }
 
                 Thread.Sleep(1000);

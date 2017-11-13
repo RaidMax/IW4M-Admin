@@ -131,11 +131,14 @@ namespace IW4MAdmin
 
                     catch (ServerException e)
                     {
-                        Logger.WriteWarning($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
+                        Logger.WriteError($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
                         if (e.GetType() == typeof(DvarException))
-                            Logger.WriteError($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
+                            Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
                         else if (e.GetType() == typeof(NetworkException))
-                            Logger.WriteError(e.Message);
+                        {
+                            Logger.WriteDebug(e.Message);
+                            Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
+                        }
                     }
                 });
             }
@@ -148,7 +151,7 @@ namespace IW4MAdmin
             Commands.Add(new CQuit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));
             Commands.Add(new CKick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
             Commands.Add(new CSay("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
-            Commands.Add(new CTempBan("tempban", "temporarily ban a player for 1 hour. syntax: !tempban <player> <reason>.", "tb", Player.Permission.Moderator, 2, true));
+            Commands.Add(new CTempBan("tempban", "temporarily ban a player for for specified time (defaults to 1 hour). syntax: !tempban <player> <time>(m|h|d|w|y) <reason>.", "tb", Player.Permission.Moderator, 2, true));
             Commands.Add(new CBan("ban", "permanently ban a player from the server. syntax: !ban <player> <reason>", "b", Player.Permission.SeniorAdmin, 2, true));
             Commands.Add(new CWhoAmI("whoami", "give information about yourself. syntax: !whoami.", "who", Player.Permission.User, 0, false));
             Commands.Add(new CList("list", "list active clients syntax: !list.", "l", Player.Permission.Moderator, 0, false));
@@ -199,7 +202,7 @@ namespace IW4MAdmin
                     if (Status.RequestedTask == null || Status.RequestedTask.IsCompleted)
                     {
                         Status.Update(new Task(() => (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken())));
-                        if (Status.RunAverage > 1000)
+                        if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
                             Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).GetIP()}::{(Status.Dependant as Server).GetPort()} [{Status.RunAverage}ms]");
                     }
                 }

@@ -1,30 +1,47 @@
 ﻿<script src="/webfront/scripts/wordcloud2.js"></script>
-<div class="chat-history"></div>
-<canvas id="chat-word-cloud" width="625" height="625"></canvas>
+<div style="display:none;" class="chat-history">
+    <h2>Chat history </h2>
+    <br/>
+</div>
+<div id="word-cloud-wrapper" style="text-align: center; display: none;">
+    <canvas id="chat-word-cloud" width="750" height="750"></canvas>
+</div>
 <script>
     if (parseGet("clientid") == "undefined") {
+        $('#word-cloud-wrapper').show();
         $.getJSON("/_words", function (result) {
             var wordList = [];
+            var largestWord = 0;
             $.each(result, function (i, word) {
+                if (word.Count > largestWord)
+                    largestWord = word.Count;
                 wordList.push([word.Word, word.Count]);
             });
-
-            WordCloud(document.getElementById('chat-word-cloud'), { list: wordList, backgroundColor: "rgb(34,34,34)", minSize: "14pt", color: "rgb(0, 122, 204)", wait: 20, weightFactor: 2 });
+            var _weightFactor = Math.min(1, (1 / largestWord) / 0.003599);
+            WordCloud(document.getElementById('chat-word-cloud'), { list: wordList, backgroundColor: "rgb(34,34,34)", color: "rgb(0, 122, 204)", wait: 0, weightFactor: _weightFactor });
         });
-
     }
 
     else {
+        $('.chat-history').show();
         $.getJSON("/_clientchat?clientid=" + parseGet("clientid"), function (result) {
             result = result.sort(function (a, b) {
-                // Turn your strings into dates, and then subtract them
-                // to get a value that is either negative, positive, or zero.
                 return new Date(b.TimeSent) - new Date(a.TimeSent);
             });
 
+
+
+            if (result.length == 0) {
+                $('.chat-history h2').append('is empty.');
+            }
+
+            else {
+                $('.chat-history h2').append('for <b>' + result[0].ClientName + '</b> (' + result.length + ' messages)');
+            }
+
             $.each(result, function (i, chat) {
                 var date = new Date(chat.TimeSent);
-                $('.chat-history').append("<div><span>" + date.toLocaleString() + " &mdash; </span><span><b>" + chat.Client.Name + "</b></span>: <span>" + chat.Message + "</span></div>");
+                $('.chat-history').append("<div><span>" + date.toLocaleString() + " &mdash; </span><span><b>" + chat.ClientName + "</b></span>: <span>" + chat.Message + "</span></div>");
             });
         });
     }

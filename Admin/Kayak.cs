@@ -15,7 +15,7 @@ namespace IW4MAdmin
         {
             // it looks like there's a library error in
             // Kayak.Http.HttpServerTransactionDelegate.OnError
-            if ((uint)e.HResult ==0x80004003)
+            if ((uint)e.HResult == 0x80004003)
                 return;
 
             ApplicationManager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);
@@ -77,19 +77,39 @@ namespace IW4MAdmin
 
             catch (Exception e)
             {
-                ApplicationManager.GetInstance().Logger.WriteError($"Webfront error during request");
-                ApplicationManager.GetInstance().Logger.WriteDebug($"Message: {e.Message}");
-                ApplicationManager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
-
-                response.OnResponse(new HttpResponseHead()
+                if (e.GetType() == typeof(FormatException))
                 {
-                    Status = "500 Internal Server Error",
-                    Headers = new Dictionary<string, string>()
+                    ApplicationManager.GetInstance().Logger.WriteWarning("Request parameter data format was incorrect");
+                    ApplicationManager.GetInstance().Logger.WriteDebug($"Request Path {request.Path}");
+                    ApplicationManager.GetInstance().Logger.WriteDebug($"Request Query String {request.QueryString}");
+
+                    response.OnResponse(new HttpResponseHead()
+                    {
+                        Status = "400 Bad Request",
+                        Headers = new Dictionary<string, string>()
+                        {
+                            { "Content-Type", "text/html" },
+                            { "Content-Length", "0"},
+                        }
+                    }, new BufferedProducer(""));
+                }
+
+                else
+                {
+                    ApplicationManager.GetInstance().Logger.WriteError($"Webfront error during request");
+                    ApplicationManager.GetInstance().Logger.WriteDebug($"Message: {e.Message}");
+                    ApplicationManager.GetInstance().Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
+
+                    response.OnResponse(new HttpResponseHead()
+                    {
+                        Status = "500 Internal Server Error",
+                        Headers = new Dictionary<string, string>()
                     {
                         { "Content-Type", "text/html" },
                         { "Content-Length", "0"},
                     }
-                }, new BufferedProducer(""));
+                    }, new BufferedProducer(""));
+                }
             }
         }
     }
@@ -98,7 +118,7 @@ namespace IW4MAdmin
     {
         ArraySegment<byte> data;
 
-        public BufferedProducer(string data) : this(data, Encoding.UTF8) { }
+        public BufferedProducer(string data) : this(data, Encoding.ASCII) { }
         public BufferedProducer(string data, Encoding encoding) : this(encoding.GetBytes(data)) { }
         public BufferedProducer(byte[] data) : this(new ArraySegment<byte>(data)) { }
 
@@ -109,8 +129,17 @@ namespace IW4MAdmin
 
         public IDisposable Connect(IDataConsumer channel)
         {
-            channel?.OnData(data, null);
-            channel?.OnEnd();
+            try
+            {
+                channel?.OnData(data, null);
+                channel?.OnEnd();
+            }
+
+            catch (Exception)
+            {
+
+            }
+
             return null;
         }
     }
@@ -129,19 +158,20 @@ namespace IW4MAdmin
 
         public bool OnData(ArraySegment<byte> data, Action continuation)
         {
-            buffer?.Add(data);
+            // this should hopefully clean the non ascii characters out.
+            buffer?.Add(new ArraySegment<byte>(Encoding.ASCII.GetBytes(Encoding.ASCII.GetString(data.ToArray()))));
             return false;
         }
 
         public void OnError(Exception error)
         {
-            errorCallback?.Invoke(error);
+            //  errorCallback?.Invoke(error);
         }
 
         public void OnEnd()
         {
             var str = buffer
-                .Select(b => Encoding.UTF8.GetString(b.Array, b.Offset, b.Count))
+                .Select(b => Encoding.ASCII.GetString(b.Array, b.Offset, b.Count))
                 .Aggregate((result, next) => result + next);
 
             resultCallback(str);

@@ -27,6 +27,12 @@ namespace IW4MAdmin
                 return true;
             }
 
+            if (P.Name.Length < 3)
+            {
+                await this.ExecuteCommandAsync($"clientkick {P.ClientID} \"Your name must contain atleast 3 characters.\"");
+                return false;
+            }
+
             Logger.WriteDebug($"Client slot #{P.ClientID} now reserved");
 
             try
@@ -332,7 +338,7 @@ namespace IW4MAdmin
 
                     if (ConnectionErrors > 0)
                     {
-                        Logger.WriteInfo($"Connection has been reestablished with {IP}:{Port}");
+                        Logger.WriteVerbose($"Connection has been reestablished with {IP}:{Port}");
                         Throttled = false;
                     }
                     ConnectionErrors = 0;
@@ -345,6 +351,7 @@ namespace IW4MAdmin
                     if (ConnectionErrors == 1)
                     {
                         Logger.WriteError($"{e.Message} {IP}:{Port}, reducing polling rate");
+                        Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
                         Throttled = true;
                     }
                     return;
@@ -478,7 +485,7 @@ namespace IW4MAdmin
             this.MaxClients = maxplayers.Value;
             this.FSGame = game.Value;
 
-            await this.SetDvarAsync("sv_kickbantime", 3600);
+            await this.SetDvarAsync("sv_kickbantime", 60);
             await this.SetDvarAsync("sv_network_fps", 1000);
             await this.SetDvarAsync("com_maxfps", 1000);
 
@@ -655,7 +662,7 @@ namespace IW4MAdmin
 
         public override async Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin)
         {
-            await this.ExecuteCommandAsync($"tempbanclient {Target.ClientID } \"^1Player Temporarily Banned: ^5{ Reason }\"");
+            await this.ExecuteCommandAsync($"clientkick {Target.ClientID } \"^1Player Temporarily Banned: ^5{ Reason }\"");
             Penalty newPenalty = new Penalty(Penalty.Type.TempBan, Reason.StripColors(), Target.NetworkID, Origin.NetworkID, DateTime.Now, Target.IP, DateTime.Now + length);
             await Task.Run(() =>
             {
@@ -678,10 +685,10 @@ namespace IW4MAdmin
             {
                 if (server.GetPlayersAsList().Count > 0)
                 {
-                    var activeClient = server.GetPlayersAsList().Find(x => x.NetworkID == Target.NetworkID);
+                    var activeClient = server.GetPlayersAsList().SingleOrDefault(x => x.NetworkID == Target.NetworkID);
                     if (activeClient != null)
                     {
-                        await server.ExecuteCommandAsync($"tempbanclient {activeClient.ClientID}  \"{Message} ^7 ({Website}) ^7\"");
+                        await server.ExecuteCommandAsync($"clientkick {activeClient.ClientID}  \"{Message} ^7 ({Website}) ^7\"");
                         break;
                     }
                 }

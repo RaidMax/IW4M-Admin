@@ -143,17 +143,23 @@ namespace EventAPI
                     AddRestEvent(new RestEvent(RestEvent.EventType.NOTIFICATION, RestEvent.EventVersion.IW4MAdmin, E.Data, "Chat", E.Origin.Name, ""));
             }
 
+            if (E.Type == Event.GType.Report)
+            {
+                AddRestEvent(new RestEvent(RestEvent.EventType.ALERT, RestEvent.EventVersion.IW4MAdmin, $"**{E.Origin.Name}** has reported **{E.Target.Name}** for: {E.Data.Trim()}", E.Target.Name, E.Origin.Name, ""));
+            }
+
             if (E.Type == Event.GType.Say && E.Origin.Level < Player.Permission.Moderator)
             {
                 string message = E.Data.ToLower();
                 bool flagged = message.Contains(" wh ") ||
-                    message.Contains("hax") || 
-                    message.Contains("cheat") || 
-                    message.Contains(" hack ") || 
-                    message.Contains("aim") || 
-                    message.Contains("wall") || 
+                    message.Contains("hax") ||
+                    message.Contains("cheat") ||
+                    message.Contains(" hack ") ||
+                    message.Contains("aim") ||
+                    message.Contains("wall") ||
                     message.Contains("cheto") ||
-                    message.Contains("hak");
+                    message.Contains("hak") ||
+                    message.Contains("bot");
 
                 if (flagged)
                 {
@@ -181,7 +187,7 @@ namespace EventAPI
 
         public static void AddRestEvent(RestEvent E)
         {
-            if (APIEvents.Count > 10)
+            if (APIEvents.Count > 20)
                 APIEvents.Dequeue();
             APIEvents.Enqueue(E);
         }

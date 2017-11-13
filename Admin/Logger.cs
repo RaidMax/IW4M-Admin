@@ -15,7 +15,8 @@ namespace IW4MAdmin
             Info,
             Debug,
             Warning,
-            Error
+            Error,
+            Assert
         }
 
         string FileName;
@@ -71,6 +72,12 @@ namespace IW4MAdmin
         public void WriteWarning(string msg)
         {
             Write(msg, LogType.Warning);
+        }
+
+        public void WriteAssert(bool condition, string msg)
+        {
+            if (!condition)
+                Write(msg, LogType.Assert);
         }
     }
 }

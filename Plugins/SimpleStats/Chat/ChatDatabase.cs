@@ -16,6 +16,8 @@ namespace StatsPlugin
 "with",
 "from",
 "about",
+"your",
+"just",
 "into",
 "over",
 "after",
@@ -26,6 +28,7 @@ namespace StatsPlugin
 "but",
 "his",
 "they",
+"then",
 "her",
 "she",
 "will",
@@ -45,6 +48,8 @@ namespace StatsPlugin
 "think",
 "look",
 "want",
+"can",
+"was",
 "give",
 "use",
 "find",
@@ -82,6 +87,7 @@ namespace StatsPlugin
 "the",
 "and",
 "that",
+"than",
 "have",
 "this",
 "one",
@@ -90,7 +96,9 @@ namespace StatsPlugin
         "yah",
         "why",
         "who" ,
-            "when"};
+            "when",
+        "where",
+        };
 
         public ChatDatabase(string FN) : base(FN)
         {

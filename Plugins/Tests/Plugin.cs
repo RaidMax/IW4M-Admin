@@ -40,6 +40,14 @@ namespace IW4MAdmin.Plugins
                      }
                  });
                 #endregion
+
+                #region PLUGIN_INFO
+                foreach (var command in S.Manager.GetCommands().OrderByDescending(c => c.Permission).ThenBy(c => c.Name))
+                {
+                    //|Name|Description|Requires Target|Arg Count|Required Level|
+                   Console.WriteLine($"|{command.Name}|{command.Alias}|{command.Description.Split('.')[0]}|{command.RequiresTarget}|{command.RequiredArgumentCount}|{command.Permission}|");
+                }
+                #endregion
             }
         }
 

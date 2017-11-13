@@ -156,93 +156,93 @@
     <Compile Include="WebService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="webfront\chat.html">
+    <Content Include="Webfront\chat.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\images\minimap_mp_rust.png">
+    <Content Include="Webfront\images\minimap_mp_rust.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\images\minimap_mp_terminal.png">
+    <Content Include="Webfront\images\minimap_mp_terminal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\scripts\wordcloud2.js">
+    <Content Include="Webfront\scripts\wordcloud2.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\stats.html">
+    <Content Include="Webfront\stats.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="app.manifest" />
     <Content Include="IW4AdminIcon.ico" />
-    <Content Include="lib\Kayak.dll">
+    <Content Include="Lib\Kayak.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="lib\Newtonsoft.Json.dll">
+    <Content Include="Lib\Newtonsoft.Json.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="lib\SharedLibrary.dll">
+    <Content Include="Lib\SharedLibrary.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="lib\SQLite.Interop.dll">
+    <Content Include="Lib\SQLite.Interop.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="lib\System.Data.SQLite.dll">
+    <Content Include="Lib\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="version.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\admins.html">
+    <Content Include="Webfront\admins.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\bans.html">
+    <Content Include="Webfront\bans.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\console.html">
+    <Content Include="Webfront\console.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\error.html">
+    <Content Include="Webfront\error.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\footer.html">
+    <Content Include="Webfront\footer.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\header.html">
+    <Content Include="Webfront\header.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\login.html">
+    <Content Include="Webfront\login.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\main.css">
+    <Content Include="Webfront\main.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\main.html">
+    <Content Include="Webfront\main.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\mobile.css">
+    <Content Include="Webfront\mobile.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\notfound.html">
+    <Content Include="Webfront\notfound.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\penalties.html">
+    <Content Include="Webfront\penalties.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="webfront\players.html">
+    <Content Include="Webfront\players.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="config\maps.cfg">
+    <Content Include="Config\maps.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="config\messages.cfg">
+    <Content Include="Config\messages.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="config\rules.cfg">
+    <Content Include="Config\rules.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="app.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Content Include="config\web.cfg">
+    <Content Include="Config\web.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="IW4MAdmin.exe.config" />
@@ -276,7 +276,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <PublishFile Include="config\maps.cfg">
+    <PublishFile Include="Config\maps.cfg">
       <Visible>False</Visible>
       <Group>
       </Group>
@@ -286,7 +286,7 @@
       <IncludeHash>True</IncludeHash>
       <FileType>File</FileType>
     </PublishFile>
-    <PublishFile Include="config\messages.cfg">
+    <PublishFile Include="Config\messages.cfg">
       <Visible>False</Visible>
       <Group>
       </Group>
@@ -296,7 +296,7 @@
       <IncludeHash>True</IncludeHash>
       <FileType>File</FileType>
     </PublishFile>
-    <PublishFile Include="config\rules.cfg">
+    <PublishFile Include="Config\rules.cfg">
       <Visible>False</Visible>
       <Group>
       </Group>
@@ -365,9 +365,13 @@ copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
+xcopy /Y /I /E "$(TagetDir)Config\*" "$(SolutionDir)BUILD\Config"
 
-if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.4
-if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.4</PostBuildEvent>
+
+if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.5
+if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.5
+
+</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>xcopy /Y "$(SolutionDir)BUILD\Plugins" "$(TargetDir)Plugins\"</PreBuildEvent>

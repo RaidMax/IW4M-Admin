@@ -1,6 +1,6 @@
 # <span style="color: #007ACC;">IW4MAdmin</span>
 ### <span style="color: #007ACC; opacity:0.75;">Quick Start Guide</span>
-### Version 1.4
+### Version 1.5
 _______
 
 ### Setup
@@ -14,12 +14,8 @@ ___
 ### Configuration
 _If you wish to customize your experience of IW4MAdmin, the following configuration files will allow you to changes core options._
 
-`auth.cfg`
-  * This is the configuration file that sets the authorization password for the [React](http://reactiongaming.us) client
-  * Modify the _first_ line only
-
 `maps.cfg`
-  * This is the configuration file that links an IW4 map file name to it's common/ingame name
+  * This is the configuration file that links an IW4 map file name to its common/in-game name
   * This can be safely modified to add additional SP/DLC maps
 
 `messages.cfg`
@@ -36,52 +32,64 @@ _If you wish to customize your experience of IW4MAdmin, the following configurat
 
 `web.cfg`
   * This is the configuration file that specifies the web front bindings
-  * The first line specifies the _IP or Hostname_ to bind to
-  * The second line specifies the _port_ to bind to
+  * The first line specifies the `IP` or `Hostname` to bind to
+  * The second line specifies the `port` to bind to
 
 ___
 ### Commands
-|Name          |Description                                             |Requires Target|Arguments      |Required Level|
-|--------------|--------------------------------------------------------|---------------|---------------|--------------|
-|owner         |claim ownership of your server                          | False         | 0             | None         |
-|setlevel      |set player to specified administration level            | True          | 2             | Owner        |
-|rcon          |send rcon command to server                             | False         | 1             | Owner        |
-|ban           |permanently ban a player from the server                | True          | 2             | SeniorAdmin  |
-|unban         |unban player by database id                             | True          | 1             | SeniorAdmin  |
-|find          |find player in the database                             | False         | 1             | SeniorAdmin  |
-|maprotate     |cycle to next map in rotation                           | False         | 0             | Administrator|
-|map           |change to specified map                                 | False         | 1             | Administrator|
-|mask          |hide your online presence from online admin list        | False         | 0             | Administrator|
-|plugins       |view all loaded plugins                                 | False         | 0             | Administrator|
-|say           |broadcast message to all players                        | False         | 1             | Moderator    |
-|tempban       |temporarily ban a player for 1 hour                     | True          | 2             | Moderator    |
-|list          |list all active clients                                 | False         | 0             | Moderator    |
-|fastrestart   |fast restart current map                                | False         | 0             | Moderator    |
-|usage         |get current application memory usage                    | False         | 0             | Moderator    |
-|uptime        |get current application running time                    | False         | 0             | Moderator    |
-|balance       |balance the in game teams                               | False         | 0             | Moderator    |
-|flag          |flag a suspicious player and announce to admins on join | True          | 1             | Moderator    |
-|reports       |get most recent reports                                 | False         | 1 _opt_       | Moderator    |
-|tell          |send onscreen message to player                         | True          | 2             | Moderator    |
-|baninfo       |get information about a ban for a player                | True          | 1             | Moderator    |
-|alias         |get past aliases and ips of a player                    | True          | 1             | Moderator    |
-|findall       |find a player by their aliase(s)                        | False         | 1             | Moderator    |
-|whoami        |list information about yourself                         | False         | 0             | User         |
-|help          |list all available commands                             | False         | 0             | User         |
-|admins        |list currently connected admins                         | False         | 0             | User         |
-|rules         |list server rules                                       | False         | 0             | User         |
-|privatemessage|send message to other player                            | True          | 2             | User         |
-|report        |report a player for suspicious behavior                 | True          | 2             | User         |
+|Name          |Alias|Description                                             |Requires Target|Arguments      |Required Level|
+|--------------|-----|--------------------------------------------------------|---------------|---------------|--------------|
+|disabletrusted|dt|disable trusted player group for the server|False|0|Owner|
+|enabletrusted|et|enable trusted player group for the server|False|0|Owner|
+|quit|q|quit IW4MAdmin|False|0|Owner|
+|rcon|rcon|send rcon command to server|False|1|Owner|
+|setlevel|sl|set player to specified administration level|True|2|Owner|
+|ban|b|permanently ban a player from the server|True|2|SeniorAdmin|
+|find|f|find player in database|False|1|SeniorAdmin|
+|fredisable|frd|disable fast restarting at the end of a map|False|0|SeniorAdmin|
+|frenable|fre|enable fast restarting at the end of a map|False|0|SeniorAdmin|
+|unban|ub|unban player by database id|True|1|SeniorAdmin|
+|map|m|change to specified map|False|1|Administrator|
+|maprotate|mr|cycle to the next map in rotation|False|0|Administrator|
+|mask|hide|hide your online presence from online admin list|False|0|Administrator|
+|plugins|p|view all loaded plugins|False|0|Administrator|
+|alias|known|get past aliases and ips of a player|True|1|Moderator|
+|baninfo|bi|get information about a ban for a player|True|1|Moderator|
+|fastrestart|fr|fast restart current map|False|0|Moderator|
+|findall|fa|find a player by their aliase(s)|False|1|Moderator|
+|flag|fp|flag a suspicious player and announce to admins on join|True|2|Moderator|
+|list|l|list active clients|False|0|Moderator|
+|reports|reps|get most recent reports|False|0|Moderator|
+|say|s|broadcast message to all players|False|1|Moderator|
+|tempban|tb|temporarily ban a player for for specified time (defaults to 1 hour)|True|2|Moderator|
+|uptime|up|get current application running time|False|0|Moderator|
+|usage|us|get current application memory usage|False|0|Moderator|
+|kick|k|kick a player by name|True|2|Trusted|
+|warn|w|warn player for infringing rules|True|2|Trusted|
+|warnclear|wc|remove all warning for a player|True|1|Trusted|
+|admins|a|list currently connected admins|False|0|User|
+|getexternalip|ip|view your external IP address|False|0|User|
+|help|h|list all available commands|False|0|User|
+|owner|o|claim ownership of the server|False|0|User|
+|privatemessage|pm|send message to other player|True|2|User|
+|report|rep|report a player for suspicious behaivor|True|2|User|
+|resetstats|rs|reset your stats to factory-new|False|0|User|
+|rules|r|list server rules|False|0|User|
+|stats|xlrstats|view your stats|False|0|User|
+|topstats|ts|view the top 5 players on this server|False|0|User|
+|vote|v|vote for the next map|False|1|User|
+|votecancel|vc|cancel your vote for the next map|False|0|User|
+|whoami|who|give information about yourself|False|0|User|
 
 #### Player Identification
-All players are identified 4 ways   
+All players are identified 4 seperate ways   
 1. `npID/GUID/XUID` - The ID corresponding to the player's hardware or forum account   
 2. `IP` - The player's IP Address   
 3. `Database ID` - The internal reference to a player, generated by IW4MAdmin   
 4. `Name` - The visible player name as it appears in game   
 
 For most commands players are identified by their `Name`  
-However, if they are currently offline, or their name contains un-typable characters, a `Database ID` must be used   
+However, if they are currently offline, or their name contains un-typable characters, their `Database ID` must be used   
 
 The `dbID` is specified by prefixing a player's reference number with `@`.  
 For example, `@123` would reference the player with a `dbID` of 123.  
@@ -103,6 +111,13 @@ Players can also be referenced by `clientID`, which is simply their slot (0 - 17
 - _Parameter 1_ - Player to ban
 - _Parameter 2_ - Reason for ban
 - _Example_ - `!ban Player1 caught cheating`, `!b @123 GUID Spoofing`
+
+`tempban`
+- _Shortcut_ - `tb`
+- _Parameter 1_ - Player to ban
+- _Parameter 2_ - Ban length (minutes|hours|days|weeks|years)
+- _Parameter 3_ - Reason for ban
+- _Example_ - `!tempban Player1 3w racism`, `!tb @123 8h Abusive behaivor`
 
 `reports`  
 - _Shortcut_ - `reps`
@@ -134,15 +149,7 @@ ___
 - Additional Features will be added in the future   
 #### Welcome   
 - This plugin uses geolocation data to welcome a player based on their IP's country
-- All privileged users ( Trusted or higher ) recieve a specialized welcome message as well
-- For React servers, the password authentication system is bundled in this plugin..  
-
-**Commands added by this plugin**    
-
-
-|Name          |Description                                             |Requires Target|Arg Count      |Required Level|
-|--------------|--------------------------------------------------------|---------------|---------------|--------------|
-|login         |authenticate with IW4MAdmin.                            | False         | 1             | User         |
+- All privileged users ( Trusted or higher ) recieve a specialized welcome message as well 
 
 #### Stats
 - This plugin calculates basic player performance, skill approximation, and kill/death ratio
@@ -152,10 +159,13 @@ ___
 **Commands added by this plugin** 
 
 
-|Name          |Description                                             |Requires Target|Arg Count      |Required Level|
-|--------------|--------------------------------------------------------|---------------|---------------|--------------|
-|stats         |view your or another player's stats                     | False         | 1 _opt_       | User         |
-|topstats      |view the top 5 players on this server                   | False         | 0             | User         |
+|Name          |Alias|Description                                             |Requires Target|Arguments      |Required Level|
+|--------------|-----|--------------------------------------------------------|---------------|---------------|--------------|
+|disabletrusted|dt|disable trusted player group for the server|False|0|Owner|
+|enabletrusted|et|enable trusted player group for the server|False|0|Owner|
+|resetstats|rs|reset your stats to factory-new|False|0|User|
+|stats|xlrstats|view your stats|False|0|User|
+|topstats|ts|view the top 5 players on this server|False|0|User|
 
 - To qualify for top stats, a player must meet the following criteria
   * `Skill` > 10

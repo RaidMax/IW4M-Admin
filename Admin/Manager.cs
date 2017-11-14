@@ -44,8 +44,8 @@ namespace IW4MAdmin
             TaskStatuses = new List<AsyncStatus>();
             MessageTokens = new List<MessageToken>();
 
-            ClientDatabase = new ClientsDB("Database/clients.rm");
-            AliasesDatabase = new AliasesDB("Database/aliases.rm");
+            ClientDatabase = new ClientsDB("Database/clients.rm", Logger);
+            AliasesDatabase = new AliasesDB("Database/aliases.rm", Logger);
             ClientPenalties = new PenaltyList();
         }
 

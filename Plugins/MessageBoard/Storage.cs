@@ -7,7 +7,7 @@ namespace MessageBoard.Storage
 {
     class Database : SharedLibrary.Database
     {
-        public Database(String FN) : base(FN) { }
+        public Database(String FN, SharedLibrary.Interfaces.ILogger logger) : base(FN, logger) { }
 
         public override void Init()
         {

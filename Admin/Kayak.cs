@@ -15,7 +15,7 @@ namespace IW4MAdmin
         {
             // it looks like there's a library error in
             // Kayak.Http.HttpServerTransactionDelegate.OnError
-            if ((uint)e.HResult == 0x80004003)
+            if ((uint)e.HResult == 0x80004003 || (uint)e.InnerException?.HResult == 0x80004003)
                 return;
 
             ApplicationManager.GetInstance().Logger.WriteWarning("Web service has encountered an error - " + e.Message);
@@ -39,6 +39,11 @@ namespace IW4MAdmin
     {
         public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response, string IP)
         {
+            var logger = ApplicationManager.GetInstance().GetLogger();
+            logger.WriteInfo($"HTTP request {request.Path}");
+            logger.WriteInfo($"QueryString: {request.QueryString}");
+            logger.WriteInfo($"IP: {IP}");
+
             NameValueCollection querySet = new NameValueCollection();
 
             if (request.QueryString != null)

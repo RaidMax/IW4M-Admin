@@ -9,9 +9,12 @@ namespace SharedLibrary
 {
     public abstract class Database
     {
-        public Database(String FN)
+        private Interfaces.ILogger Logger;
+
+        public Database(String FN, Interfaces.ILogger logger)
         {
             FileName = FN;
+            Logger = logger;
             Init();
         }
 
@@ -58,7 +61,10 @@ namespace SharedLibrary
 
             catch (Exception E)
             {
-                Console.WriteLine($"Line 58: {E.Message}");
+                Logger.WriteWarning($"Database Insert failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL command: {insertcmd.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
                 return false;
             }
 
@@ -96,7 +102,10 @@ namespace SharedLibrary
 
             catch (Exception E)
             {
-                Console.WriteLine($"Line 96: {E.Message}");
+                Logger.WriteWarning($"Database UpdateIncrement failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL command: {updatecmd?.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
             }
         }
 
@@ -133,7 +142,10 @@ namespace SharedLibrary
 
             catch (Exception E)
             {
-                Console.WriteLine($"Line 96: {E.Message}");
+                Logger.WriteWarning($"Database update failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL Query: {updatecmd.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
                 return false;
             }
         }
@@ -149,25 +161,26 @@ namespace SharedLibrary
             int rowsUpdated = 0;
             Request = Request.Replace("!'", "").Replace("!", "");
             var Con = GetNewConnection();
+            SQLiteCommand CMD = null;
             try
             {
 
-                    Con.Open();
-                SQLiteCommand CMD = new SQLiteCommand(Con)
+                Con.Open();
+                CMD = new SQLiteCommand(Con)
                 {
                     CommandText = Request
                 };
                 rowsUpdated = CMD.ExecuteNonQuery();
-                    Con.Close();
+                Con.Close();
                 return rowsUpdated;
             }
 
             catch (Exception E)
             {
-                // fixme: this needs to have a reference to a logger..
-                Console.WriteLine(E.Message);
-                Console.WriteLine(E.StackTrace);
-                Console.WriteLine(Request);
+                Logger.WriteWarning($"Database command failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL command: {CMD?.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
                 return 0;
             }
         }
@@ -182,7 +195,7 @@ namespace SharedLibrary
             var Con = GetNewConnection();
             updatecmd.Parameters.AddWithValue('@' + where.Key, where.Value);
             updatecmd.Connection = Con;
- 
+
 
             try
             {
@@ -193,10 +206,12 @@ namespace SharedLibrary
                 Con.Close();
             }
 
-            catch (Exception e)
+            catch (Exception E)
             {
-                //LOGME
-                Console.WriteLine($"Line 160: {e.Message}");
+                Logger.WriteWarning($"Database GetDataTable failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL command: {updatecmd.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
             }
 
             return dt;
@@ -216,10 +231,12 @@ namespace SharedLibrary
                 Con.Close();
             }
 
-            catch (Exception e)
+            catch (Exception E)
             {
-                //LOGME
-                Console.WriteLine($"Line 181: {e.Message}");
+                Logger.WriteWarning($"Database GetDataTable failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL command: {cmd.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
             }
 
             return dt;
@@ -229,24 +246,28 @@ namespace SharedLibrary
         {
             DataTable dt = new DataTable();
             var Con = GetNewConnection();
+            SQLiteCommand cmd = null;
 
             try
             {
 
-                    Con.Open();
-                SQLiteCommand mycommand = new SQLiteCommand(Con)
+                Con.Open();
+                cmd = new SQLiteCommand(Con)
                 {
                     CommandText = sql
                 };
-                SQLiteDataReader reader = mycommand.ExecuteReader();
-                    dt.Load(reader);
-                    reader.Close();
-                    Con.Close();
+                SQLiteDataReader reader = cmd.ExecuteReader();
+                dt.Load(reader);
+                reader.Close();
+                Con.Close();
 
             }
-            catch (Exception e)
+            catch (Exception E)
             {
-                Console.WriteLine($"Line 198: {e.Message}");
+                Logger.WriteWarning($"Database GetDataTable failed");
+                Logger.WriteDebug($"Exception Message: {E.Message}");
+                Logger.WriteDebug($"SQL command: {cmd?.CommandText}");
+                Logger.WriteDebug($"Database File: {FileName}");
                 return new DataTable();
             }
             return dt;
@@ -257,7 +278,7 @@ namespace SharedLibrary
 
     public class ClientsDB : Database
     {
-        public ClientsDB(String FN) : base(FN) { }
+        public ClientsDB(String FN, Interfaces.ILogger logger) : base(FN, logger) { }
 
         public override void Init()
         {
@@ -508,7 +529,7 @@ namespace SharedLibrary
                 if (Row["TIME"].ToString().Length < 2) //compatibility with my old database
                     Row["TIME"] = DateTime.Now.ToString();
 
-                var  BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
+                var BanType = (Penalty.Type)Enum.Parse(typeof(Penalty.Type), Row["TYPE"].ToString());
                 ClientPenalties.Add(new Penalty(BanType, Row["Reason"].ToString().Trim(), Row["npID"].ToString(), Row["bannedByID"].ToString(), DateTime.Parse(Row["TIME"].ToString()), Row["IP"].ToString(), DateTime.Parse(Row["EXPIRES"].ToString())));
             }
 
@@ -608,7 +629,7 @@ namespace SharedLibrary
 
     public class AliasesDB : Database
     {
-        public AliasesDB(String FN) : base(FN) { }
+        public AliasesDB(String FN, Interfaces.ILogger logger) : base(FN, logger) { }
 
         public override void Init()
         {

@@ -164,7 +164,7 @@ namespace StatsPlugin
 
             public StatTracking(int port)
             {
-                playerStats = new StatsDB("Database/stats_" + port + ".rm");
+                playerStats = new StatsDB("Database/stats_" + port + ".rm", ManagerInstance.GetLogger());
                 inactiveMinutes = new int[18];
                 Kills = new int[18];
                 deathStreaks = new int[18];
@@ -205,7 +205,7 @@ namespace StatsPlugin
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
 
-            ChatDB = new ChatDatabase("Database/ChatHistory.rm");
+            ChatDB = new ChatDatabase("Database/ChatHistory.rm", ManagerInstance.GetLogger());
 
             try
             {
@@ -484,7 +484,7 @@ namespace StatsPlugin
 
     public class StatsDB : Database
     {
-        public StatsDB(String FN) : base(FN) { }
+        public StatsDB(String FN, SharedLibrary.Interfaces.ILogger logger) : base(FN, logger) { }
 
         public override void Init()
         {

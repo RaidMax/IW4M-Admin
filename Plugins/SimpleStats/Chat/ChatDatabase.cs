@@ -100,7 +100,7 @@ namespace StatsPlugin
         "where",
         };
 
-        public ChatDatabase(string FN) : base(FN)
+        public ChatDatabase(string FN, SharedLibrary.Interfaces.ILogger logger) : base(FN, logger)
         {
         }
 

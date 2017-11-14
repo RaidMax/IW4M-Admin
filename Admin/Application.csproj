@@ -365,8 +365,7 @@ copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
-xcopy /Y /I /E "$(TagetDir)Config\*" "$(SolutionDir)BUILD\Config"
-
+xcopy /Y /I /E "$(SolutionDir)Admin\Config\*" "$(SolutionDir)BUILD\Config"
 
 if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.5
 if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.5

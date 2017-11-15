@@ -11,7 +11,15 @@ namespace StatsPlugin
 {
     public class CViewStats : Command
     {
-        public CViewStats() : base("stats", "view your stats. syntax: !stats", "xlrstats", Player.Permission.User, 0, false) { }
+        public CViewStats() : base("stats", "view your stats", "xlrstats", Player.Permission.User, false, new CommandArgument[]
+            {
+                new CommandArgument()
+                {
+                    Name = "player",
+                    Required = true
+                }
+            })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -54,7 +62,9 @@ namespace StatsPlugin
 
     public class CViewTopStats : Command
     {
-        public CViewTopStats() : base("topstats", "view the top 5 players on this server. syntax: !topstats", "ts", Player.Permission.User, 0, false) { }
+        public CViewTopStats() :
+            base("topstats", "view the top 5 players on this server", "ts", Player.Permission.User, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -75,7 +85,7 @@ namespace StatsPlugin
 
     public class CResetStats : Command
     {
-        public CResetStats() : base("resetstats", "reset your stats to factory-new. syntax: !resetstats", "rs", Player.Permission.User, 0, false) { }
+        public CResetStats() : base("resetstats", "reset your stats to factory-new", "rs", Player.Permission.User, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -175,20 +185,11 @@ namespace StatsPlugin
             }
         }
 
-        public string Name
-        {
-            get { return "Basic Stats"; }
-        }
+        public string Name => "Basic Stats";
 
-        public float Version
-        {
-            get { return 1.1f; }
-        }
+        public float Version => 1.1f;
 
-        public string Author
-        {
-            get { return "RaidMax"; }
-        }
+        public string Author => "RaidMax";
 
         public async Task OnLoadAsync(SharedLibrary.Interfaces.IManager manager)
         {

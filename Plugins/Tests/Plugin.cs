@@ -44,8 +44,8 @@ namespace IW4MAdmin.Plugins
                 #region PLUGIN_INFO
                 foreach (var command in S.Manager.GetCommands().OrderByDescending(c => c.Permission).ThenBy(c => c.Name))
                 {
-                    //|Name|Description|Requires Target|Arg Count|Required Level|
-                   Console.WriteLine($"|{command.Name}|{command.Alias}|{command.Description.Split('.')[0]}|{command.RequiresTarget}|{command.RequiredArgumentCount}|{command.Permission}|");
+                    //|Name|Alias|Description|Requires Target|Syntax|Required Level|
+                   Console.WriteLine($"|{command.Name}|{command.Alias}|{command.Description}|{command.RequiresTarget}|{command.Syntax.Substring(8)}|{command.Permission}|");
                 }
                 #endregion
             }

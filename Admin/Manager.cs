@@ -146,39 +146,39 @@ namespace IW4MAdmin
 
             #region COMMANDS
             if ((ClientDatabase as ClientsDB).GetOwner() == null)
-                Commands.Add(new COwner("owner", "claim ownership of the server", "o", Player.Permission.User, 0, false));
+                Commands.Add(new COwner());
 
-            Commands.Add(new CQuit("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, 0, false));
-            Commands.Add(new CKick("kick", "kick a player by name. syntax: !kick <player> <reason>.", "k", Player.Permission.Trusted, 2, true));
-            Commands.Add(new CSay("say", "broadcast message to all players. syntax: !say <message>.", "s", Player.Permission.Moderator, 1, false));
-            Commands.Add(new CTempBan("tempban", "temporarily ban a player for for specified time (defaults to 1 hour). syntax: !tempban <player> <time>(m|h|d|w|y) <reason>.", "tb", Player.Permission.Moderator, 2, true));
-            Commands.Add(new CBan("ban", "permanently ban a player from the server. syntax: !ban <player> <reason>", "b", Player.Permission.SeniorAdmin, 2, true));
-            Commands.Add(new CWhoAmI("whoami", "give information about yourself. syntax: !whoami.", "who", Player.Permission.User, 0, false));
-            Commands.Add(new CList("list", "list active clients. syntax: !list.", "l", Player.Permission.Moderator, 0, false));
-            Commands.Add(new CHelp("help", "list all available commands. syntax: !help.", "h", Player.Permission.User, 0, false));
-            Commands.Add(new CFastRestart("fastrestart", "fast restart current map. syntax: !fastrestart.", "fr", Player.Permission.Moderator, 0, false));
-            Commands.Add(new CMapRotate("maprotate", "cycle to the next map in rotation. syntax: !maprotate.", "mr", Player.Permission.Administrator, 0, false));
-            Commands.Add(new CSetLevel("setlevel", "set player to specified administration level. syntax: !setlevel <player> <level>.", "sl", Player.Permission.Owner, 2, true));
-            Commands.Add(new CUsage("usage", "get current application memory usage. syntax: !usage.", "us", Player.Permission.Moderator, 0, false));
-            Commands.Add(new CUptime("uptime", "get current application running time. syntax: !uptime.", "up", Player.Permission.Moderator, 0, false));
-            Commands.Add(new CWarn("warn", "warn player for infringing rules. syntax: !warn <player> <reason>.", "w", Player.Permission.Trusted, 2, true));
-            Commands.Add(new CWarnClear("warnclear", "remove all warning for a player. syntax: !warnclear <player>.", "wc", Player.Permission.Trusted, 1, true));
-            Commands.Add(new CUnban("unban", "unban player by database id. syntax: !unban @<id>.", "ub", Player.Permission.SeniorAdmin, 1, true));
-            Commands.Add(new CListAdmins("admins", "list currently connected admins. syntax: !admins.", "a", Player.Permission.User, 0, false));
-            Commands.Add(new CLoadMap("map", "change to specified map. syntax: !map", "m", Player.Permission.Administrator, 1, false));
-            Commands.Add(new CFindPlayer("find", "find player in database. syntax: !find <player>", "f", Player.Permission.SeniorAdmin, 1, false));
-            Commands.Add(new CListRules("rules", "list server rules. syntax: !rules", "r", Player.Permission.User, 0, false));
-            Commands.Add(new CPrivateMessage("privatemessage", "send message to other player. syntax: !pm <player> <message>", "pm", Player.Permission.User, 2, true));
-            Commands.Add(new CFlag("flag", "flag a suspicious player and announce to admins on join. syntax !flag <player> <reason>:", "fp", Player.Permission.Moderator, 2, true));
-            Commands.Add(new CReport("report", "report a player for suspicious behaivor. syntax !report <player> <reason>", "rep", Player.Permission.User, 2, true));
-            Commands.Add(new CListReports("reports", "get most recent reports. syntax !reports", "reps", Player.Permission.Moderator, 0, false));
-            Commands.Add(new CMask("mask", "hide your online presence from online admin list. syntax: !mask", "hide", Player.Permission.Administrator, 0, false));
-            Commands.Add(new CListBanInfo("baninfo", "get information about a ban for a player. syntax: !baninfo <player>", "bi", Player.Permission.Moderator, 1, true));
-            Commands.Add(new CListAlias("alias", "get past aliases and ips of a player. syntax: !alias <player>", "known", Player.Permission.Moderator, 1, true));
-            Commands.Add(new CExecuteRCON("rcon", "send rcon command to server. syntax: !rcon <command>", "rcon", Player.Permission.Owner, 1, false));
-            Commands.Add(new CFindAllPlayers("findall", "find a player by their aliase(s). syntax: !findall <player>", "fa", Player.Permission.Moderator, 1, false));
-            Commands.Add(new CPlugins("plugins", "view all loaded plugins. syntax: !plugins", "p", Player.Permission.Administrator, 0, false));
-            Commands.Add(new CIP("getexternalip", "view your external IP address. syntax: !ip", "ip", Player.Permission.User, 0, false));
+            Commands.Add(new CQuit());
+            Commands.Add(new CKick());
+            Commands.Add(new CSay());
+            Commands.Add(new CTempBan());
+            Commands.Add(new CBan());
+            Commands.Add(new CWhoAmI());
+            Commands.Add(new CList());
+            Commands.Add(new CHelp());
+            Commands.Add(new CFastRestart());
+            Commands.Add(new CMapRotate());
+            Commands.Add(new CSetLevel());
+            Commands.Add(new CUsage());
+            Commands.Add(new CUptime());
+            Commands.Add(new CWarn());
+            Commands.Add(new CWarnClear());
+            Commands.Add(new CUnban());
+            Commands.Add(new CListAdmins());
+            Commands.Add(new CLoadMap());
+            Commands.Add(new CFindPlayer());
+            Commands.Add(new CListRules());
+            Commands.Add(new CPrivateMessage());
+            Commands.Add(new CReload());
+            Commands.Add(new CFlag());
+            Commands.Add(new CReport());
+            Commands.Add(new CListReports());
+            Commands.Add(new CListBanInfo());
+            Commands.Add(new CListAlias());
+            Commands.Add(new CExecuteRCON());
+            Commands.Add(new CFindAllPlayers());
+            Commands.Add(new CPlugins());
+            Commands.Add(new CIP());
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

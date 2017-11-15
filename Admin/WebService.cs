@@ -84,7 +84,7 @@ namespace IW4MAdmin
                 return requestedPage.GetPage(queryset, headers);
             else
             {
-                if (System.IO.File.Exists(path.Replace("/", "\\").Substring(1)))
+                if (File.Exists(path.Replace("/", "\\").Substring(1)))
                 {
                     var f = File.ReadAllBytes(path.Replace("/", "\\").Substring(1));
 
@@ -666,7 +666,11 @@ namespace IW4MAdmin
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
-                content = Newtonsoft.Json.JsonConvert.SerializeObject(((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() }),
+                content = Newtonsoft.Json.JsonConvert
+                    .SerializeObject(((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList)
+                    .AsChronoList(Convert.ToInt32(querySet["from"]), 50, Penalty.Type.Ban), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] {
+                        new Newtonsoft.Json.Converters.StringEnumConverter()
+                    }),
                 additionalHeaders = new Dictionary<string, string>()
             };
             return resp;

@@ -28,7 +28,8 @@ namespace SharedLibrary
             Flag,
             Kick,
             TempBan,
-            Ban
+            Ban,
+            Any,
         }
 
         public String Reason { get; private set; }

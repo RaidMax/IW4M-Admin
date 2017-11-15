@@ -10,7 +10,9 @@ namespace SharedLibrary.Commands
 {
     public class CQuit : Command
     {
-        public CQuit(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CQuit() :
+            base("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, false)
+        { }
 
         public override Task ExecuteAsync(Event E)
         {
@@ -20,7 +22,9 @@ namespace SharedLibrary.Commands
 
     public class COwner : Command
     {
-        public COwner(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public COwner() :
+            base("owner", "claim ownership of the server", "o", Player.Permission.User, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -37,7 +41,21 @@ namespace SharedLibrary.Commands
 
     public class CWarn : Command
     {
-        public CWarn(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CWarn() :
+            base("warn", "warn player for infringing rules", "w", Player.Permission.Trusted, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "reason",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -51,7 +69,16 @@ namespace SharedLibrary.Commands
 
     public class CWarnClear : Command
     {
-        public CWarnClear(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CWarnClear() :
+            base("warnclear", "remove all warning for a player", "wc", Player.Permission.Trusted, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -64,7 +91,21 @@ namespace SharedLibrary.Commands
 
     public class CKick : Command
     {
-        public CKick(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CKick() :
+            base("kick", "kick a player by name", "k", Player.Permission.Trusted, true, new CommandArgument[]
+            {
+                new CommandArgument()
+                {
+                    Name = "player",
+                    Required = true
+                },
+                new CommandArgument()
+                {
+                Name = "reason",
+                Required = true
+                }
+            })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -81,7 +122,16 @@ namespace SharedLibrary.Commands
 
     public class CSay : Command
     {
-        public CSay(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CSay() :
+            base("say", "broadcast message to all players", "s", Player.Permission.Moderator, false, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "message",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -91,7 +141,26 @@ namespace SharedLibrary.Commands
 
     public class CTempBan : Command
     {
-        public CTempBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CTempBan() :
+            base("tempban", "temporarily ban a player for specified time (defaults to 1 hour)", "tb", Player.Permission.Moderator, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "duration (m|d|w|y|)",
+                        Required = true,
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "reason",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -114,7 +183,21 @@ namespace SharedLibrary.Commands
 
     public class CBan : Command
     {
-        public CBan(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CBan() :
+            base("ban", "permanently ban a player from the server", "b", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+            {
+                new CommandArgument()
+                {
+                    Name = "player",
+                    Required = true
+                },
+                new CommandArgument()
+                {
+                Name = "reason",
+                Required = true
+                }
+            })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -138,7 +221,16 @@ namespace SharedLibrary.Commands
 
     public class CUnban : Command
     {
-        public CUnban(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CUnban() :
+            base("unban", "unban player by database id", "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "databaseID",
+                        Required = true,
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -149,7 +241,9 @@ namespace SharedLibrary.Commands
 
     public class CWhoAmI : Command
     {
-        public CWhoAmI(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CWhoAmI() :
+            base("whoami", "give information about yourself.", "who", Player.Permission.User, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -160,7 +254,9 @@ namespace SharedLibrary.Commands
 
     public class CList : Command
     {
-        public CList(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CList() :
+            base("list", "list active clients", "l", Player.Permission.Moderator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -193,7 +289,16 @@ namespace SharedLibrary.Commands
 
     public class CHelp : Command
     {
-        public CHelp(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CHelp() :
+            base("help", "list all available commands", "h", Player.Permission.User, false, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "command",
+                        Required = false
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -204,9 +309,10 @@ namespace SharedLibrary.Commands
                 bool found = false;
                 foreach (Command C in E.Owner.Manager.GetCommands())
                 {
-                    if (C.Name.Contains(cmd))
+                    if (C.Name == cmd.ToLower())
                     {
-                        await E.Origin.Tell(" [^3" + C.Name + "^7] " + C.Description);
+                        await E.Origin.Tell("[^3" + C.Name + "^7] " + C.Description);
+                        await E.Origin.Tell(C.Syntax);
                         found = true;
                     }
                 }
@@ -239,14 +345,16 @@ namespace SharedLibrary.Commands
                     }
                 }
                 await E.Origin.Tell(helpResponse.ToString());
-                await E.Origin.Tell("Type !help <cmd> to get command usage example");
+                await E.Origin.Tell("Type !help <cmd> to get command usage syntax");
             }
         }
     }
 
     public class CFastRestart : Command
     {
-        public CFastRestart(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFastRestart() :
+            base("fastrestart", "fast restart current map", "fr", Player.Permission.Moderator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -261,7 +369,9 @@ namespace SharedLibrary.Commands
 
     public class CMapRotate : Command
     {
-        public CMapRotate(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CMapRotate() :
+            base("maprotate", "cycle to the next map in rotation", "mr", Player.Permission.Administrator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -276,7 +386,21 @@ namespace SharedLibrary.Commands
 
     public class CSetLevel : Command
     {
-        public CSetLevel(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CSetLevel() :
+            base("setlevel", "set player to specified administration level", "sl", Player.Permission.Owner, true, new CommandArgument[]
+                {
+                     new CommandArgument()
+                     {
+                         Name = "player",
+                         Required = true
+                     },
+                     new CommandArgument()
+                     {
+                         Name = "level",
+                         Required = true
+                     }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -318,7 +442,9 @@ namespace SharedLibrary.Commands
 
     public class CUsage : Command
     {
-        public CUsage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CUsage() :
+            base("usage", "get current application memory usage", "us", Player.Permission.Moderator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -328,7 +454,9 @@ namespace SharedLibrary.Commands
 
     public class CUptime : Command
     {
-        public CUptime(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CUptime() :
+            base("uptime", "get current application running time", "up", Player.Permission.Moderator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -339,7 +467,9 @@ namespace SharedLibrary.Commands
 
     public class CListAdmins : Command
     {
-        public CListAdmins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListAdmins() :
+            base("admins", "list currently connected admins", "a", Player.Permission.User, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -359,7 +489,16 @@ namespace SharedLibrary.Commands
 
     public class CLoadMap : Command
     {
-        public CLoadMap(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CLoadMap() :
+            base("map", "change to specified map", "m", Player.Permission.Administrator, false, new CommandArgument[]
+            {
+                 new CommandArgument()
+                 {
+                     Name = "map",
+                     Required = true
+                 }
+            })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -383,7 +522,16 @@ namespace SharedLibrary.Commands
 
     public class CFindPlayer : Command
     {
-        public CFindPlayer(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFindPlayer() :
+            base("find", "find player in database", "f", Player.Permission.Administrator, false, new CommandArgument[]
+            {
+                new CommandArgument()
+                {
+                    Name = "player",
+                    Required = true
+                }
+            })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -405,7 +553,16 @@ namespace SharedLibrary.Commands
 
     public class CFindAllPlayers : Command
     {
-        public CFindAllPlayers(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFindAllPlayers() :
+            base("findall", "find a player by their aliase(s)", "fa", Player.Permission.Administrator, false, new CommandArgument[]
+                {
+                     new CommandArgument()
+                     {
+                         Name = "player",
+                         Required = true,
+                     }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -451,7 +608,9 @@ namespace SharedLibrary.Commands
 
     public class CListRules : Command
     {
-        public CListRules(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListRules() :
+            base("rules", "list server rules", "r", Player.Permission.User, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -478,7 +637,21 @@ namespace SharedLibrary.Commands
 
     public class CPrivateMessage : Command
     {
-        public CPrivateMessage(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CPrivateMessage() :
+            base("privatemessage", "send message to other player", "pm", Player.Permission.User, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "message",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -490,7 +663,8 @@ namespace SharedLibrary.Commands
 
     public class CReload : Command
     {
-        public CReload(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CReload() : 
+            base("reload", "reload configuration files", "rl", Player.Permission.Owner, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -503,7 +677,21 @@ namespace SharedLibrary.Commands
 
     public class CFlag : Command
     {
-        public CFlag(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CFlag() :
+            base("flag", "flag a suspicious player and announce to admins on join", "fp", Player.Permission.Moderator, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "reason",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -535,7 +723,21 @@ namespace SharedLibrary.Commands
 
     public class CReport : Command
     {
-        public CReport(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CReport() :
+            base("report", "report a player for suspicious behavior", "rep", Player.Permission.User, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "reason",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -568,7 +770,16 @@ namespace SharedLibrary.Commands
 
     public class CListReports : Command
     {
-        public CListReports(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListReports() :
+            base("reports", "get or clear recent reports", "reps", Player.Permission.Moderator, false, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "clear",
+                        Required = false
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -592,7 +803,9 @@ namespace SharedLibrary.Commands
 
     public class CMask : Command
     {
-        public CMask(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CMask() :
+            base("mask", "hide your online presence from online admin list", "hide", Player.Permission.Administrator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -613,7 +826,16 @@ namespace SharedLibrary.Commands
 
     public class CListBanInfo : Command
     {
-        public CListBanInfo(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListBanInfo() :
+            base("baninfo", "get information about a ban for a player", "bi", Player.Permission.Moderator, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                    Name = "player",
+                    Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -640,7 +862,16 @@ namespace SharedLibrary.Commands
 
     public class CListAlias : Command
     {
-        public CListAlias(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CListAlias() :
+            base("alias", "get past aliases and ips of a player", "known", Player.Permission.Moderator, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "player",
+                        Required = true,
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -681,7 +912,16 @@ namespace SharedLibrary.Commands
 
     public class CExecuteRCON : Command
     {
-        public CExecuteRCON(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CExecuteRCON() :
+            base("rcon", "send rcon command to server", "rcon", Player.Permission.Owner, false, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = "command",
+                        Required = true
+                    }
+                })
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -695,7 +935,9 @@ namespace SharedLibrary.Commands
 
     public class CPlugins : Command
     {
-        public CPlugins(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CPlugins() :
+            base("plugins", "view all loaded plugins", "p", Player.Permission.Administrator, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -709,7 +951,9 @@ namespace SharedLibrary.Commands
 
     public class CIP : Command
     {
-        public CIP(String N, String D, String U, Player.Permission P, int args, bool nT) : base(N, D, U, P, args, nT) { }
+        public CIP() :
+            base("getexternalip", "view your external IP address", "ip", Player.Permission.User, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -718,4 +962,3 @@ namespace SharedLibrary.Commands
     }
 }
 
-    

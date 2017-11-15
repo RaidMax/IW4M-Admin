@@ -16,7 +16,7 @@ div#header #navContainer .navEntry a {  padding: 1.2vw; width: 4vw; }
 div#header #navContainer .navEntry:hover { background-color: rgb(34, 34, 34); }
 
 div#content { margin: 3em 10%; }
-div#content .serverContainer { background-color: #191919; margin-top 0; margin-bottom: 0; font-size: 1.25vw;  padding-bottom: 100px; }
+div#content .serverContainer { background-color: #191919; margin-top: 0; margin-bottom: 0; font-size: 1.25vw;  padding-bottom: 100px; }
 div#content hr { border-width: 0; height: 0.25em; background-color: #007ACC; }
 div#content .serverInfo { width: 100%; }
 div#content .serverInfo .tableCell { padding: 0 0.5em; }
@@ -37,11 +37,10 @@ div#content .penaltyName a:link, div#content .penaltyName a:visited, div#content
 div#content .penaltyName a:hover, div#content .playerInfo a:hover { color: rgb(255, 255, 255) !important; opacity: 0.75; }
 div#content .penaltyTime { text-align: left; width:8%; }
 div#content .penaltyOrigin {width: 12%;}
-div#content .penaltyRemaining { text-align: right; width: 10%:}
+div#content .penaltyRemaining { text-align: right; width: 10%; }
 div#content .playerPenalty .penaltyTime { opacity: 0.5; }
 div#content .penaltyType { width: 10%; }
 div#content .penaltyReason { width: 45%; }
-div#content .playerPenalty .tableCell { }
 div#content .penaltyHeader, div#content .contentHeader { width: calc(100% - 20px); background-color: #007ACC; font-size: 15pt; padding: 0.5em 10px; }
 div#content .alternate_1 { background-color: rgb(34, 34, 34); }
 
@@ -86,7 +85,6 @@ div#consoleWrap select { width: 100%; }
 div#view { width: 100%; margin: 0 auto; }
 div#threadView { width: 80%; padding-right: 3em;}
 div#threadView hr { width: 100%; }
-div#recentView { }
 div#recentTitle { position: relative; top: -1em; }
 div#view .threadPreview { background-color: #181818; padding: 0 10px; width: calc(100% - 20px); }
 div#view .threadPreview .threadTitle { padding: 0 0.5em; width: 80%; }
@@ -153,8 +151,6 @@ div #userCover {
 	margin-top: -1.5em;
 }
 
-div #userInfoBox .table { }
-
 div#userInfoBox { background-color: #181818; padding: 1em; padding-top: 2em; width: 65%; margin: 0 auto; }
 div#userInfoBox .fa { font-size: 3em; width: 65px; padding: 0.25em 0; }
 div.userInfoField .tableCell { vertical-align: middle; padding-right: 1em; padding-left: 0.25em; }
@@ -172,7 +168,7 @@ div#userAvatar { width: 20em; height: 20em; background-size: contain;  margin-ri
   background-repeat: no-repeat;
   background-position: center center;
   background-size: 5%;
-  opacity: : 0.5;
+  opacity: 0.5;
   display: none;
 }
 

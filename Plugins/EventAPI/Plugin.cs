@@ -57,15 +57,9 @@ namespace EventAPI
             return resp;
         }
 
-        public string GetContentType()
-        {
-            return "application/json";
-        }
+        public string GetContentType() => "application/json";
 
-        public bool Visible()
-        {
-            return false;
-        }
+        public bool Visible() => false;
     }
 
     class Events : IPlugin
@@ -77,23 +71,11 @@ namespace EventAPI
         int flaggedMessages;
         List<string> flaggedMessagesText;
 
-        public String Name
-        {
-            get { return "Event API Plugin"; }
-        }
+        public String Name => "Event API Plugin";
 
-        public float Version
-        {
-            get { return 1.0f; }
-        }
+        public float Version => 1.0f;
 
-        public string Author
-        {
-            get
-            {
-                return "RaidMax";
-            }
-        }
+        public string Author => "RaidMax";
 
         public async Task OnLoadAsync(IManager manager)
         {

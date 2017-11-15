@@ -60,29 +60,11 @@ namespace Welcome_Plugin
             }
         }
 
-        public string Author
-        {
-            get
-            {
-                return "RaidMax";
-            }
-        }
+        public string Author => "RaidMax";
 
-        public float Version
-        {
-            get
-            {
-                return 1.0f;
-            }
-        }
+        public float Version => 1.0f;
 
-        public string Name
-        {
-            get
-            {
-                return "Welcome Plugin";
-            }
-        }
+        public string Name => "Welcome Plugin";
 
         public async Task OnLoadAsync(IManager manager)
         {

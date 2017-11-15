@@ -224,7 +224,8 @@ namespace IW4MAdmin
 
             if (Args.Length < (C.RequiredArgumentCount))
             {
-                await E.Origin.Tell($"Not enough arguments supplied! ^5({C.RequiredArgumentCount} ^7required)");
+                await E.Origin.Tell($"Not enough arguments supplied!");
+                await E.Origin.Tell(C.Syntax);
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 

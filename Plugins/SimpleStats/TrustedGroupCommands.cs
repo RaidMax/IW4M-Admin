@@ -12,7 +12,7 @@ namespace StatsPlugin
 {
     public class CEnableTrusted : Command
     {
-        public CEnableTrusted() : base("enabletrusted", "enable trusted player group for the server. syntax: !enabletrusted", "et", Player.Permission.Owner, 0, false) { }
+        public CEnableTrusted() : base("enabletrusted", "enable trusted player group for the server", "et", Player.Permission.Owner, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -28,7 +28,7 @@ namespace StatsPlugin
 
     public class CDisableTrusted : Command
     {
-        public CDisableTrusted() : base("disabletrusted", "disable trusted player group for the server. syntax: !disabletrusted", "dt", Player.Permission.Owner, 0, false) { }
+        public CDisableTrusted() : base("disabletrusted", "disable trusted player group for the server", "dt", Player.Permission.Owner, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {

@@ -519,10 +519,10 @@ namespace SharedLibrary
             return ClientPenalties;
         }
 
-        public List<Penalty> GetPenaltiesChronologically(int offset, int count)
+        public List<Penalty> GetPenaltiesChronologically(int offset, int count, Penalty.Type penaltyType)
         {
             List<Penalty> ClientPenalties = new List<Penalty>();
-            DataTable Result = GetDataTable($"SELECT * FROM BANS LIMIT {count} OFFSET (SELECT COUNT(*) FROM BANS)-{offset + 10}");
+            DataTable Result = GetDataTable($"SELECT * FROM BANS {(penaltyType != Penalty.Type.Any ? $"WHERE `TYPE`={(int)penaltyType}" : "")} LIMIT {count} OFFSET (SELECT COUNT(*) FROM BANS {(penaltyType != Penalty.Type.Any ? $"WHERE `TYPE`={(int)penaltyType}" : "")})-{offset + count}");
 
             foreach (DataRow Row in Result.Rows)
             {

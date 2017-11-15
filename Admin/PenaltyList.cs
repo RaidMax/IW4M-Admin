@@ -28,9 +28,9 @@ namespace IW4MAdmin
             return ApplicationManager.GetInstance().GetClientDatabase().GetClientPenalties(P);
         }
 
-        public List<Penalty> AsChronoList(int offset, int count)
+        public List<Penalty> AsChronoList(int offset, int count, Penalty.Type penaltyType  = Penalty.Type.Any)
         {
-            return ApplicationManager.GetInstance().GetClientDatabase().GetPenaltiesChronologically(offset, count);
+            return ApplicationManager.GetInstance().GetClientDatabase().GetPenaltiesChronologically(offset, count, penaltyType);
         }
     }
 }

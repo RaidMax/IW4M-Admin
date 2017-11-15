@@ -16,7 +16,7 @@ namespace Plugin
 
     public class CEnableFastRestart : Command
     {
-        public CEnableFastRestart() : base("frenable", "enable fast restarting at the end of a map. syntax: !fre", "fre", Player.Permission.SeniorAdmin, 0, false) { }
+        public CEnableFastRestart() : base("frenable", "enable fast restarting at the end of a map", "fre", Player.Permission.SeniorAdmin, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -27,7 +27,7 @@ namespace Plugin
 
     public class CDisableFastRestart : Command
     {
-        public CDisableFastRestart() : base("fredisable", "disable fast restarting at the end of a map. syntax: !frd", "frd", Player.Permission.SeniorAdmin, 0, false) { }
+        public CDisableFastRestart() : base("fredisable", "disable fast restarting at the end of a map", "frd", Player.Permission.SeniorAdmin, false) { }
 
         public override async Task ExecuteAsync(Event E)
         {

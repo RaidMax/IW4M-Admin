@@ -6,7 +6,6 @@ using SharedLibrary.Network;
 using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
-#if DEBUG
 namespace Votemap_Plugin
 {
     /// <summary>
@@ -15,7 +14,15 @@ namespace Votemap_Plugin
     /// </summary>
     public class VoteMap : Command
     {
-        public VoteMap() : base("vote", "vote for the next map. syntax !v <mapname>", "v", Player.Permission.User, 1, false) { }
+        public VoteMap() : base("vote", "vote for the next map", "v", Player.Permission.User, false, new CommandArgument[]
+            {
+                new CommandArgument()
+                {
+                    Name = "map",
+                    Required = true
+                }
+            })
+        { }
 
         /// <summary>
         /// Properties of Event E
@@ -56,7 +63,7 @@ namespace Votemap_Plugin
 
     public class VoteCancel : Command
     {
-        public VoteCancel() : base("votecancel", "cancel your vote for the next map. syntax !vc", "vc", Player.Permission.User, 0, false) { }
+        public VoteCancel() : base("votecancel", "cancel your vote for the next map", "vc", Player.Permission.User, false) { }
 
         public override async Task  ExecuteAsync(Event E)
         {
@@ -186,29 +193,11 @@ namespace Votemap_Plugin
         private static List<ServerVoting> serverVotingList;
         public static int minVotes = 3;
 
-        public string Author
-        {
-            get
-            {
-                return "RaidMax";
-            }
-        }
+        public string Author => "RaidMax";
 
-        public float Version
-        {
-            get
-            {
-                return 1.0f;
-            }
-        }
+        public float Version => 1.0f;
 
-        public string Name
-        {
-            get
-            {
-                return "Votemap Plugin";
-            }
-        }
+        public string Name => "Votemap Plugin";
 
         public async Task OnLoadAsync(IManager manager)
         {
@@ -227,7 +216,6 @@ namespace Votemap_Plugin
         /// <param name="S"></param>
         public async Task OnTickAsync(Server S)
         {
-            return;
             var serverVotes = GetServerVotes(S.GetPort());
 
             if (serverVotes != null)
@@ -258,7 +246,7 @@ namespace Votemap_Plugin
 
                 if (!serverVotes.voteInSession && serverVotes.votePassed && (DateTime.Now - serverVotes.voteTimeStart).TotalSeconds > 30)
                 {
-                    await S.ExecuteCommandAsync("map " + serverVotes.GetTopVotedMap().map.Name);
+                    await S.LoadMap(serverVotes.GetTopVotedMap().map.Name);
                     serverVotes.votePassed  = false;
                     return;
                 }
@@ -286,7 +274,6 @@ namespace Votemap_Plugin
 
         public async Task OnEventAsync(Event E, Server S)
         {
-            return;
             if (E.Type == Event.GType.Start)
             {
                 serverVotingList.Add(new ServerVoting(S.GetPort()));
@@ -313,4 +300,3 @@ namespace Votemap_Plugin
         }
     }
 }
-#endif

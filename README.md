@@ -37,49 +37,49 @@ _If you wish to customize your experience of IW4MAdmin, the following configurat
 
 ___
 ### Commands
-|Name          |Alias|Description                                             |Requires Target|Arguments      |Required Level|
-|--------------|-----|--------------------------------------------------------|---------------|---------------|--------------|
-|disabletrusted|dt|disable trusted player group for the server|False|0|Owner|
-|enabletrusted|et|enable trusted player group for the server|False|0|Owner|
-|quit|q|quit IW4MAdmin|False|0|Owner|
-|rcon|rcon|send rcon command to server|False|1|Owner|
-|setlevel|sl|set player to specified administration level|True|2|Owner|
-|ban|b|permanently ban a player from the server|True|2|SeniorAdmin|
-|find|f|find player in database|False|1|SeniorAdmin|
-|fredisable|frd|disable fast restarting at the end of a map|False|0|SeniorAdmin|
-|frenable|fre|enable fast restarting at the end of a map|False|0|SeniorAdmin|
-|unban|ub|unban player by database id|True|1|SeniorAdmin|
-|map|m|change to specified map|False|1|Administrator|
-|maprotate|mr|cycle to the next map in rotation|False|0|Administrator|
-|mask|hide|hide your online presence from online admin list|False|0|Administrator|
-|plugins|p|view all loaded plugins|False|0|Administrator|
-|alias|known|get past aliases and ips of a player|True|1|Moderator|
-|baninfo|bi|get information about a ban for a player|True|1|Moderator|
-|fastrestart|fr|fast restart current map|False|0|Moderator|
-|findall|fa|find a player by their aliase(s)|False|1|Moderator|
-|flag|fp|flag a suspicious player and announce to admins on join|True|2|Moderator|
-|list|l|list active clients|False|0|Moderator|
-|reports|reps|get most recent reports|False|0|Moderator|
-|say|s|broadcast message to all players|False|1|Moderator|
-|tempban|tb|temporarily ban a player for for specified time (defaults to 1 hour)|True|2|Moderator|
-|uptime|up|get current application running time|False|0|Moderator|
-|usage|us|get current application memory usage|False|0|Moderator|
-|kick|k|kick a player by name|True|2|Trusted|
-|warn|w|warn player for infringing rules|True|2|Trusted|
-|warnclear|wc|remove all warning for a player|True|1|Trusted|
-|admins|a|list currently connected admins|False|0|User|
-|getexternalip|ip|view your external IP address|False|0|User|
-|help|h|list all available commands|False|0|User|
-|owner|o|claim ownership of the server|False|0|User|
-|privatemessage|pm|send message to other player|True|2|User|
-|report|rep|report a player for suspicious behaivor|True|2|User|
-|resetstats|rs|reset your stats to factory-new|False|0|User|
-|rules|r|list server rules|False|0|User|
-|stats|xlrstats|view your stats|False|0|User|
-|topstats|ts|view the top 5 players on this server|False|0|User|
-|vote|v|vote for the next map|False|1|User|
-|votecancel|vc|cancel your vote for the next map|False|0|User|
-|whoami|who|give information about yourself|False|0|User|
+|Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
+|--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
+|disabletrusted|dt|disable trusted player group for the server|False|!dt |Owner|
+|enabletrusted|et|enable trusted player group for the server|False|!et |Owner|
+|prune|p|demote any admins that have not connected recently (defaults to 30 days)|False|!p \<optional inactive days\>|Owner|
+|quit|q|quit IW4MAdmin|False|!q |Owner|
+|rcon|rcon|send rcon command to server|False|!rcon \<command\>|Owner|
+|reload|rl|reload configuration files|False|!rl |Owner|
+|setlevel|sl|set player to specified administration level|True|!sl \<player\> \<level\>|Owner|
+|ban|b|permanently ban a player from the server|True|!b \<player\> \<reason\>|SeniorAdmin|
+|fredisable|frd|disable fast restarting at the end of a map|False|!frd |SeniorAdmin|
+|frenable|fre|enable fast restarting at the end of a map|False|!fre |SeniorAdmin|
+|unban|ub|unban player by database id|True|!ub \<databaseID\>|SeniorAdmin|
+|find|f|find player in database|False|!f \<player\>|Administrator|
+|findall|fa|find a player by their aliase(s)|False|!fa \<player\>|Administrator|
+|map|m|change to specified map|False|!m \<map\>|Administrator|
+|maprotate|mr|cycle to the next map in rotation|False|!mr |Administrator|
+|plugins|p|view all loaded plugins|False|!p |Administrator|
+|alias|known|get past aliases and ips of a player|True|!known \<player\>|Moderator|
+|baninfo|bi|get information about a ban for a player|True|!bi \<player\>|Moderator|
+|fastrestart|fr|fast restart current map|False|!fr |Moderator|
+|flag|fp|flag a suspicious player and announce to admins on join|True|!fp \<player\> \<reason\>|Moderator|
+|list|l|list active clients|False|!l |Moderator|
+|reports|reps|get or clear recent reports|False|!reps \<optional clear\>|Moderator|
+|say|s|broadcast message to all players|False|!s \<message\>|Moderator|
+|tempban|tb|temporarily ban a player for specified time (defaults to 1 hour)|True|!tb \<player\> \<duration (m\|h\|d\|w\|y)\> \<reason\>|Moderator|
+|uptime|up|get current application running time|False|!up |Moderator|
+|usage|us|get current application memory usage|False|!us |Moderator|
+|kick|k|kick a player by name|True|!k \<player\> \<reason\>|Trusted|
+|warn|w|warn player for infringing rules|True|!w \<player\> \<reason\>|Trusted|
+|warnclear|wc|remove all warning for a player|True|!wc \<player\>|Trusted|
+|admins|a|list currently connected admins|False|!a |User|
+|getexternalip|ip|view your external IP address|False|!ip |User|
+|help|h|list all available commands|False|!h \<optional command\>|User|
+|privatemessage|pm|send message to other player|True|!pm \<player\> \<message\>|User|
+|report|rep|report a player for suspicious behavior|True|!rep \<player\> \<reason\>|User|
+|resetstats|rs|reset your stats to factory-new|False|!rs |User|
+|rules|r|list server rules|False|!r |User|
+|stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
+|topstats|ts|view the top 5 players on this server|False|!ts |User|
+|vote|v|vote for the next map|False|!v \<map\>|User|
+|votecancel|vc|cancel your vote for the next map|False|!vc |User|
+|whoami|who|give information about yourself.|False|!who |User|
 
 #### Player Identification
 All players are identified 4 seperate ways   
@@ -159,13 +159,14 @@ ___
 **Commands added by this plugin** 
 
 
-|Name          |Alias|Description                                             |Requires Target|Arguments      |Required Level|
-|--------------|-----|--------------------------------------------------------|---------------|---------------|--------------|
-|disabletrusted|dt|disable trusted player group for the server|False|0|Owner|
-|enabletrusted|et|enable trusted player group for the server|False|0|Owner|
-|resetstats|rs|reset your stats to factory-new|False|0|User|
-|stats|xlrstats|view your stats|False|0|User|
-|topstats|ts|view the top 5 players on this server|False|0|User|
+|Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
+|--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
+|disabletrusted|dt|disable trusted player group for the server|False|!dt |Owner|
+|enabletrusted|et|enable trusted player group for the server|False|!et |Owner|
+|prune|p|demote any admins that have not connected recently (defaults to 30 days)|False|!p \<optional inactive days\>|Owner|
+|resetstats|rs|reset your stats to factory-new|False|!rs |User|
+|stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
+|topstats|ts|view the top 5 players on this server|False|!ts |User|
 
 - To qualify for top stats, a player must meet the following criteria
   * `Skill` > 10

@@ -151,7 +151,7 @@ namespace SharedLibrary.Commands
                     },
                     new CommandArgument()
                     {
-                        Name = "duration (m|d|w|y|)",
+                        Name = "duration (m|h|d|w|y)",
                         Required = true,
                     },
                     new CommandArgument()
@@ -193,8 +193,8 @@ namespace SharedLibrary.Commands
                 },
                 new CommandArgument()
                 {
-                Name = "reason",
-                Required = true
+                    Name = "reason",
+                    Required = true
                 }
             })
         { }
@@ -247,7 +247,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientID, E.Origin.NetworkID, E.Origin.DatabaseID, SharedLibrary.Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IP);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientID, E.Origin.NetworkID, E.Origin.DatabaseID, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IP);
             await E.Origin.Tell(You);
         }
     }
@@ -663,8 +663,9 @@ namespace SharedLibrary.Commands
 
     public class CReload : Command
     {
-        public CReload() : 
-            base("reload", "reload configuration files", "rl", Player.Permission.Owner, false) { }
+        public CReload() :
+            base("reload", "reload configuration files", "rl", Player.Permission.Owner, false)
+        { }
 
         public override async Task ExecuteAsync(Event E)
         {
@@ -755,14 +756,14 @@ namespace SharedLibrary.Commands
 
             if (E.Target.Level > E.Origin.Level)
             {
-                await E.Origin.Tell("You cannot report " + E.Target.Name);
+                await E.Origin.Tell($"You cannot report {E.Target.Name}");
                 return;
             }
 
             E.Data = E.Data.RemoveWords(1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
-            await E.Origin.Tell("Successfully reported " + E.Target.Name);
+            await E.Origin.Tell($"Successfully reported {E.Target.Name}");
             await E.Owner.ExecuteEvent(new Event(Event.GType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
@@ -831,8 +832,8 @@ namespace SharedLibrary.Commands
                 {
                     new CommandArgument()
                     {
-                    Name = "player",
-                    Required = true
+                        Name = "player",
+                        Required = true
                     }
                 })
         { }

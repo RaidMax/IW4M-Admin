@@ -25,7 +25,7 @@ div#content .serverTitle  { width: calc( 100% / 3); background-color: #007ACC; }
 div#content .serverPlayers { text-align: right; width: calc( 100% / 3); background-color: #007ACC; }
 div#content .serverMap { text-align: center; width: calc( 100% / 3); background-color: #007ACC; }
 div#content .serverPlayerList {float: right; margin: 0.5em; }
-div#content .serverChatList { float: left; margin: 0.5em }
+div#content .serverChatList { float: left; margin: 0.5em; max-width: 60%; overflow:hidden }
 div#content .playerName { font-size: 1.1vw; color: rgba(78, 140, 77, 0.64); width: 10em; text-align: right; }
 div#content .playerName:hover {  color: rgb(0, 122, 204) !important; }
 div#content .chatPlayerName { font-weight: bold; font-size: 1.1vw; color:#fff; padding-right: 0.5em; opacity: 0.5; }
@@ -60,7 +60,7 @@ div#content .hiddenWrapper { color: #007ACC;}
 
 div#content #consoleWrap { width: 60%; margin: 0 auto; }
 div#content #console { padding: 1em; height: 35vh; background-color: #181818; }
-div#content #consoleWrap .search { width: calc(80% - 10px); }
+div#content #consoleWrap .search { width: calc(80% - 10px); float: left; }
 div#consoleWrap .playerSearchWrap input[type="text"]:focus, select:focus { border-width: 0; outline: none; }
 div#consoleWrap .playerSearchWrap { margin: 0 !important; width: 100%; }
 div#consoleWrap .searchButton { width: calc(20% - 10px); }

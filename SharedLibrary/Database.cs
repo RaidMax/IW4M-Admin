@@ -564,7 +564,7 @@ namespace SharedLibrary
         {
             Dictionary<String, object> newPlayer = new Dictionary<String, object>
             {
-                { "Name", Utilities.StripIllegalCharacters(P.Name) },
+                { "Name",  P.Name },
                 { "npID", P.NetworkID },
                 { "Level", (int)P.Level },
                 { "LastOffense", "" },
@@ -596,12 +596,17 @@ namespace SharedLibrary
         }
 
 
+        public void PruneAdmins(int inactiveDays)
+        {
+            ExecuteNonQuery($"UPDATE CLIENTS SET Level={(int)Player.Permission.User} WHERE LastConnection < '{Utilities.DateTimeSQLite(DateTime.Now.AddDays(-inactiveDays))}'");
+        }
+
         //Add specified ban to database
         public void AddPenalty(Penalty B)
         {
             Dictionary<String, object> newBan = new Dictionary<String, object>
             {
-                { "Reason", Utilities.StripIllegalCharacters(B.Reason) },
+                { "Reason", B.Reason },
                 { "npID", B.OffenderID },
                 { "bannedByID", B.PenaltyOriginID },
                 { "IP", B.IP },
@@ -712,7 +717,7 @@ namespace SharedLibrary
             Dictionary<String, object> newPlayer = new Dictionary<String, object>
             {
                 { "Number", Alias.Number },
-                { "NAMES", Utilities.StripIllegalCharacters(String.Join(";", Alias.Names)) },
+                { "NAMES", String.Join(";", Alias.Names) },
                 { "IPS", String.Join(";", Alias.IPS) }
             };
             Insert("ALIASES", newPlayer);

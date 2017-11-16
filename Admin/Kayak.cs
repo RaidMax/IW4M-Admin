@@ -37,19 +37,19 @@ namespace IW4MAdmin
 
     class Request : IHttpRequestDelegate
     {
-        public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response, string IP)
+        public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response)
         {
             var logger = ApplicationManager.GetInstance().GetLogger();
-            logger.WriteInfo($"HTTP request {request.Path}");
-            logger.WriteInfo($"QueryString: {request.QueryString}");
-            logger.WriteInfo($"IP: {IP}");
+            logger.WriteDebug($"HTTP request {request.Path}");
+            logger.WriteDebug($"QueryString: {request.QueryString}");
+            logger.WriteDebug($"IP: {request.IPAddress}");
 
             NameValueCollection querySet = new NameValueCollection();
 
             if (request.QueryString != null)
-                querySet = System.Web.HttpUtility.ParseQueryString(SharedLibrary.Utilities.StripIllegalCharacters(request.QueryString));
+                querySet = System.Web.HttpUtility.ParseQueryString(request.QueryString);
 
-            querySet.Set("IP", IP);
+            querySet.Set("IP", request.IPAddress);
 
             try
             {

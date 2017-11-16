@@ -91,12 +91,19 @@ namespace SharedLibrary
         /// </summary>
         /// <param name="pName">Player name to search for</param>
         /// <returns>Matching player if found</returns>
-        public Player GetClientByName(String pName)
+        public List<Player> GetClientByName(String pName)
         {
             string[] QuoteSplit = pName.Split('"');
+            bool literal = false;
             if (QuoteSplit.Length > 1)
+            {
                 pName = QuoteSplit[1];
-            return Players.FirstOrDefault(p => p != null && p.Name.ToLower().Contains(pName.ToLower()));
+                literal = true;
+            }
+            if (literal)
+                return Players.Where(p => p != null && p.Name.ToLower().Equals(pName.ToLower())).ToList();
+
+            return Players.Where(p => p != null && p.Name.ToLower().Contains(pName.ToLower())).ToList();
         }
 
         /// <summary>

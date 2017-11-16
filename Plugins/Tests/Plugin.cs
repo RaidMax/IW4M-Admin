@@ -42,10 +42,11 @@ namespace IW4MAdmin.Plugins
                 #endregion
 
                 #region PLUGIN_INFO
+                Console.WriteLine("|Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|");
+                Console.WriteLine("|--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|");
                 foreach (var command in S.Manager.GetCommands().OrderByDescending(c => c.Permission).ThenBy(c => c.Name))
                 {
-                    //|Name|Alias|Description|Requires Target|Syntax|Required Level|
-                   Console.WriteLine($"|{command.Name}|{command.Alias}|{command.Description}|{command.RequiresTarget}|{command.Syntax.Substring(8)}|{command.Permission}|");
+                    Console.WriteLine($"|{command.Name}|{command.Alias}|{command.Description}|{command.RequiresTarget}|{command.Syntax.Substring(8).EscapeMarkdown()}|{command.Permission}|");
                 }
                 #endregion
             }
@@ -62,7 +63,7 @@ namespace IW4MAdmin.Plugins
             {
                 var rand = new Random();
                 int index = rand.Next(0, 17);
-                var p = new Player($"Test_{index}", $"_test{index}", index, (int)Player.Permission.User)
+                var p = new Player($"?!'\"\"'<>Test_{index}", $"_test{index}", index, (int)Player.Permission.User)
                 {
                     Ping = 1
                 };

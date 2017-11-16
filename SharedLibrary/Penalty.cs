@@ -7,7 +7,7 @@ namespace SharedLibrary
     {
         public Penalty(Type BType, String Reas, String TargID, String From, DateTime time, String ip, DateTime exp)
         {
-            Reason = Reas.CleanChars().StripColors();
+            Reason = Reas.StripColors();
             OffenderID = TargID;
             PenaltyOriginID = From;
             When = time;

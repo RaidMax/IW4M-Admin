@@ -29,10 +29,10 @@ namespace SharedLibrary
         {
             Type = Ty;
             Version = V;
-            Message = M;
+            Message = System.Web.HttpUtility.HtmlEncode(M);
             Title = T;
-            Origin = O;
-            Target = Ta;
+            Origin = System.Web.HttpUtility.HtmlEncode(O);
+            Target = System.Web.HttpUtility.HtmlEncode(Ta);
 
             ID = Math.Abs(DateTime.Now.GetHashCode());
         }
@@ -124,7 +124,7 @@ namespace SharedLibrary
                 {
                     Regex rgx = new Regex("[^a-zA-Z0-9 -! -_]");
                     string message = rgx.Replace(line[4], "");
-                    return new Event(GType.Say, Utilities.StripIllegalCharacters(message).StripColors(), SV.ParseClientFromString(line, 2), null, SV) { Message = Utilities.StripIllegalCharacters(message).StripColors() };
+                    return new Event(GType.Say, message.StripColors(), SV.ParseClientFromString(line, 2), null, SV) { Message = message };
                 }
 
                 if (removeTime.Contains("ScriptKill"))

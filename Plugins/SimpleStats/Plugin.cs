@@ -16,7 +16,7 @@ namespace StatsPlugin
                 new CommandArgument()
                 {
                     Name = "player",
-                    Required = true
+                    Required = false
                 }
             })
         { }
@@ -97,6 +97,39 @@ namespace StatsPlugin
             stats.KDR = 0.0;
             await Task.Run(() => { Stats.statLists.Find(x => x.Port == E.Owner.GetPort()).playerStats.UpdateStats(E.Origin, stats); });
             await E.Origin.Tell("Your stats have been reset");
+        }
+    }
+
+    public class CPruneAdmins : Command
+    {
+        public CPruneAdmins() : base("prune", "demote any admins that have not connected recently (defaults to 30 days)", "p", Player.Permission.Owner, false, new CommandArgument[]
+        {
+            new CommandArgument()
+            {
+                Name = "inactive days",
+                Required = false
+            }
+        })
+        { }
+
+         public override async Task ExecuteAsync(Event E)
+        {
+            int inactiveDays = 30;
+            
+            try
+            {
+                inactiveDays = Int32.Parse(E.Data);
+                if (inactiveDays < 1)
+                    throw new FormatException();
+            }
+
+            catch (FormatException)
+            {
+               await  E.Origin.Tell("Invalid number of inactive days");
+            }
+
+            E.Owner.Manager.GetClientDatabase().PruneAdmins(inactiveDays);
+
         }
     }
 
@@ -420,7 +453,7 @@ namespace StatsPlugin
             // calculate the players Score Per Minute for the current session
             double SessionSPM = curServer.Kills[P.ClientID] * 100 / Math.Max(1, newPlayTime);
             // calculate how much the KDR should way
-            // 0.81829 is a Eddie-Generated number that weights the KDR nicely
+            // 1.637 is a Eddie-Generated number that weights the KDR nicely
             double KDRWeight = Math.Round(Math.Pow(DisconnectingPlayerStats.KDR, 1.637 / Math.E), 3);
             double SPMWeightAgainstAverage;
 
@@ -428,7 +461,6 @@ namespace StatsPlugin
             SPMWeightAgainstAverage = (DisconnectingPlayerStats.scorePerMinute == 1) ? 1 : SessionSPM / DisconnectingPlayerStats.scorePerMinute;
 
             // calculate the weight of the new play time againmst lifetime playtime
-            // 
             double SPMAgainstPlayWeight = newPlayTime / Math.Min(600, DisconnectingPlayerStats.TotalPlayTime + newPlayTime);
             // calculate the new weight against average times the weight against play time
             double newSkillFactor = SPMWeightAgainstAverage * SPMAgainstPlayWeight * SessionSPM;
@@ -436,7 +468,7 @@ namespace StatsPlugin
             // if the weight is greater than 1, add, else subtract
             DisconnectingPlayerStats.scorePerMinute += (SPMWeightAgainstAverage >= 1) ? newSkillFactor : -newSkillFactor;
 
-            DisconnectingPlayerStats.Skill = DisconnectingPlayerStats.scorePerMinute * KDRWeight / 10;
+            DisconnectingPlayerStats.Skill = DisconnectingPlayerStats.scorePerMinute * KDRWeight * 10;
             DisconnectingPlayerStats.TotalPlayTime += newPlayTime;
 
             curServer.playerStats.UpdateStats(P, DisconnectingPlayerStats);

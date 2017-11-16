@@ -257,11 +257,33 @@ namespace IW4MAdmin
                         E.Target = Players[cNum];
                 }
 
+                List<Player> matchingPlayers;
+
                 if (E.Target == null) // Find active player including quotes (multiple words)
-                    E.Target = GetClientByName(E.Data.Trim());
+                {
+                    matchingPlayers = GetClientByName(E.Data.Trim());
+                    if (matchingPlayers.Count > 1)
+                    {
+                        await E.Origin.Tell("Multiple players match that name");
+                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players  found for {C.Name}");
+                    }
+                    else if (matchingPlayers.Count == 1)
+                        E.Target = matchingPlayers.First();
+                }
 
                 if (E.Target == null) // Find active player as single word
-                    E.Target = GetClientByName(Args[0]);
+                {
+                    matchingPlayers = GetClientByName(Args[0]);
+                    if (matchingPlayers.Count > 1)
+                    {
+                        await E.Origin.Tell("Multiple players match that name");
+                        foreach (var p in matchingPlayers)
+                            await E.Origin.Tell($"[^3{p.ClientID}^7] {p.Name}");
+                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players  found for {C.Name}");
+                    }
+                    else if (matchingPlayers.Count == 1)
+                        E.Target = matchingPlayers.First();
+                }
 
                 if (E.Target == null && C.RequiresTarget)
                 {
@@ -600,7 +622,7 @@ namespace IW4MAdmin
 
                 else // Not a command
                 {
-                    E.Data = E.Data.StripColors().CleanChars();
+                    E.Data = E.Data.StripColors();
                     // this should not be done for all messages.
                     //if (E.Data.Length > 50)
                     //   E.Data = E.Data.Substring(0, 50) + "...";

@@ -367,8 +367,8 @@ copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
 xcopy /Y /I /E "$(SolutionDir)Admin\Config\*" "$(SolutionDir)BUILD\Config"
 
-if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.5
-if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.5
+if $(ConfigurationName) == Release-Nightly powershell.exe -file "$(SolutionDir)DEPLOY\publish_nightly.ps1" 1.6
+if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DEPLOY\publish_stable.ps1" 1.6
 
 </PostBuildEvent>
   </PropertyGroup>

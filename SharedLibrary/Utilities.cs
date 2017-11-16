@@ -80,27 +80,6 @@ namespace SharedLibrary
             return Player.Permission.Banned;
         }
 
-        public static String StripIllegalCharacters(String str)
-        {
-            if (str != null)
-                return str.Replace("`", "").Replace("\\", "").Replace("\"", "").Replace("&quot;", "").Replace("&amp;", "&").Replace("\"", "''").Replace("'", "").Replace("?", "");
-
-            else
-                return String.Empty;
-        }
-
-        public static String CleanChars(this string S)
-        {
-            if (S == null)
-                return "";
-
-            StringBuilder Cleaned = new StringBuilder();
-
-            foreach (char c in S)
-                if (c < 127 && c > 31 && c != 37 && c != 34 && c != 92) Cleaned.Append(c);
-            return Cleaned.ToString();
-        }
-
         /// <summary>
         /// Remove all IW Engine color codes
         /// </summary>
@@ -313,6 +292,11 @@ namespace SharedLibrary
                 return "Forever";
 
             return "1 hour";
+        }
+
+        public static string EscapeMarkdown(this string markdownString)
+        {
+            return markdownString.Replace("<", "\\<").Replace(">", "\\>").Replace("|", "\\|");
         }
     }
 }

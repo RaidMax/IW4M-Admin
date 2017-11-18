@@ -114,6 +114,7 @@ namespace SharedLibrary.Commands
             {
                 await E.Owner.ExecuteEvent(new Event(Event.GType.Kick, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Kick(E.Target.lastOffense, E.Origin);
+                await E.Origin.Tell($"^5{E.Target} ^7has been kicked");
             }
             else
                 await E.Origin.Tell($"You do not have the required privileges to kick {E.Target.Name}");
@@ -174,7 +175,7 @@ namespace SharedLibrary.Commands
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Target.TempBan(Message, length, E.Origin);
-                await E.Origin.Tell($"Successfully temp banned ^5{E.Target.Name} ^7for ^5{length.TimeSpanText()}");
+                await E.Origin.Tell($"^5{E.Target} ^7has been temporarily banned for ^5{length.TimeSpanText()}");
             }
             else
                 await E.Origin.Tell("You cannot temp ban " + E.Target.Name);
@@ -212,7 +213,7 @@ namespace SharedLibrary.Commands
             {
                 await E.Owner.ExecuteEvent(new Event(Event.GType.Ban, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Ban(Message, E.Origin);
-                await E.Origin.Tell(String.Format("Sucessfully banned ^5{0} ^7({1})", E.Target.Name, E.Target.NetworkID));
+                await E.Origin.Tell($"^5{E.Target} ^7has been permanently banned");
             }
             else
                 await E.Origin.Tell("You cannot ban " + E.Target.Name);
@@ -235,7 +236,7 @@ namespace SharedLibrary.Commands
         public override async Task ExecuteAsync(Event E)
         {
             await E.Owner.Unban(E.Target);
-            await E.Origin.Tell($"Successfully unbanned {E.Target.Name}::{E.Target.NetworkID}");
+            await E.Origin.Tell($"Successfully unbanned {E.Target}");
         }
     }
 
@@ -568,9 +569,9 @@ namespace SharedLibrary.Commands
         {
             E.Data = E.Data.Trim();
 
-            if (E.Data.Length < 4)
+            if (E.Data.Length < 3)
             {
-                await E.Origin.Tell("You must enter at least 4 letters");
+                await E.Origin.Tell("You must enter at least 3 characters");
                 return;
             }
 
@@ -587,13 +588,15 @@ namespace SharedLibrary.Commands
                 if (P == null)
                     continue;
 
-                String lookingFor = String.Empty;
+                String lookingFor = null;
 
                 foreach (String S in P.Names)
                 {
-                    if (S.Contains(E.Data))
+                    if (S.ToLower().Contains(E.Data.ToLower()))
                         lookingFor = S;
                 }
+
+                lookingFor = lookingFor ?? P.Names.First();
 
                 Player Current = E.Owner.Manager.GetClientDatabase().GetPlayer(P.Number);
 
@@ -763,7 +766,7 @@ namespace SharedLibrary.Commands
             E.Data = E.Data.RemoveWords(1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
-            await E.Origin.Tell($"Successfully reported {E.Target.Name}");
+            await E.Origin.Tell($"Thank you for your report, and administrator has been notified");
             await E.Owner.ExecuteEvent(new Event(Event.GType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
@@ -840,12 +843,6 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Target == null)
-            {
-                await E.Origin.Tell("No bans for that player.");
-                return;
-            }
-
             var B = E.Owner.Manager.GetClientPenalties().FindPenalties(E.Target);
             var BannedPenalty = B.Find(b => b.BType > Penalty.Type.Kick && b.Expires > DateTime.Now);
 
@@ -880,7 +877,7 @@ namespace SharedLibrary.Commands
 
             if (E.Target.Alias == null)
             {
-                await E.Target.Tell("Could not find alias info for that player.");
+                await E.Target.Tell("Could not find alias info for that player");
                 return;
             }
 
@@ -962,4 +959,3 @@ namespace SharedLibrary.Commands
         }
     }
 }
-

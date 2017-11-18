@@ -65,13 +65,24 @@
         }).done(function (data) { $(".loader").fadeOut(); });
     }
 
+    function getRecentPlayers(offset) {
+        $("#playersTable").html("");
+        $(".loader").fadeIn();
+
+        $.getJSON("/getplayer?recent=1&offset=" + offset, function (result) {
+            $.each(result, function (i, player) {
+                printPlayer(player, i);
+            });
+        }).done(function (data) { $(".loader").fadeOut(); });
+    }
+
     $(document).ready(function () {
         if (parseGet('id') != "undefined")
             getPlayer('id', parseGet('id'));
         else if (parseGet('name') != "undefined")
             getPlayer('name', parseGet('name'));
         else {
-            getPlayer('recent', '1');
+            getRecentPlayers(0);
         }
     });
 
@@ -98,6 +109,11 @@
 <div id="playersTable">
 </div>
 <hr />
+
+<div id="paginationButtons" class="table">
+    <div id="previousPage" class="tableCell"><a href=# onclick="getRecentPlayers(getPrevPage())"><<</a></div>
+    <div id="nextPage" class="tableCell"><a href=# onclick="getRecentPlayers(getNextPage())">>></a></div>
+</div>
 
 <script>
     $('.searchButton').click(function () {

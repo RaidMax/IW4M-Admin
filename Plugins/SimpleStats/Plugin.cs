@@ -112,23 +112,28 @@ namespace StatsPlugin
         })
         { }
 
-         public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(Event E)
         {
             int inactiveDays = 30;
-            
+
             try
             {
-                inactiveDays = Int32.Parse(E.Data);
-                if (inactiveDays < 1)
-                    throw new FormatException();
+                if (E.Data.Length > 0)
+                {
+                    inactiveDays = Int32.Parse(E.Data);
+                    if (inactiveDays < 1)
+                        throw new FormatException();
+                }
             }
 
             catch (FormatException)
             {
-               await  E.Origin.Tell("Invalid number of inactive days");
+                await E.Origin.Tell("Invalid number of inactive days");
+                return;
             }
 
             E.Owner.Manager.GetClientDatabase().PruneAdmins(inactiveDays);
+            await E.Origin.Tell("Pruned inactive privileged users");
 
         }
     }

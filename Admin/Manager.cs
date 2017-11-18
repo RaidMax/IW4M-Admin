@@ -179,6 +179,7 @@ namespace IW4MAdmin
             Commands.Add(new CFindAllPlayers());
             Commands.Add(new CPlugins());
             Commands.Add(new CIP());
+            Commands.Add(new CMask());
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

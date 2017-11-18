@@ -53,6 +53,7 @@ namespace IW4MAdmin
 
             try
             {
+                request.Path = String.IsNullOrEmpty(request.Path) ? "/" : request.Path;
                 SharedLibrary.HttpResponse requestedPage = WebService.GetPage(request.Path, querySet, request.Headers);
 
                 bool binaryContent = requestedPage.BinaryContent != null;
@@ -87,7 +88,6 @@ namespace IW4MAdmin
                     ApplicationManager.GetInstance().Logger.WriteWarning("Request parameter data format was incorrect");
                     ApplicationManager.GetInstance().Logger.WriteDebug($"Request Path {request.Path}");
                     ApplicationManager.GetInstance().Logger.WriteDebug($"Request Query String {request.QueryString}");
-
                     response.OnResponse(new HttpResponseHead()
                     {
                         Status = "400 Bad Request",

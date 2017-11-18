@@ -54,6 +54,7 @@ ___
 |findall|fa|find a player by their aliase(s)|False|!fa \<player\>|Administrator|
 |map|m|change to specified map|False|!m \<map\>|Administrator|
 |maprotate|mr|cycle to the next map in rotation|False|!mr |Administrator|
+|mask|hide|hide your online presence from online admin list|False|!hide |Administrator|
 |plugins|p|view all loaded plugins|False|!p |Administrator|
 |alias|known|get past aliases and ips of a player|True|!known \<player\>|Moderator|
 |baninfo|bi|get information about a ban for a player|True|!bi \<player\>|Moderator|

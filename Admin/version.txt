@@ -6,6 +6,8 @@ CHANGELOG:
 -If multiple matches are found when finding a player, a list of matches is shown
 -"special" characters are allowed in names and messages
 -prune command demotes inactive admins (defaults to 30 days if no days are specified)
+-confirmation message sent after kick
+-paginated players page
 
 Version 1.5
 CHANGELOG:

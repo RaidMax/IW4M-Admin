@@ -776,7 +776,13 @@ namespace IW4MAdmin
 
             else if (querySet["recent"] != null)
             {
-                matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().GetRecentPlayers();
+                int offset = 0;
+                if (querySet["offset"] != null)
+                    offset = Int32.Parse(querySet["offset"]);
+                if (offset < 0)
+                    throw new FormatException("Invalid offset");
+
+                matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().GetRecentPlayers(15, offset);
                 recent = true;
             }
 

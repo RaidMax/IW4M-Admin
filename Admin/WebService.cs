@@ -808,7 +808,7 @@ namespace IW4MAdmin
 
                     };
 
-                    if (!recent && individual)
+                    if (!recent && individual && authed)
                     {
                         foreach (var a in ApplicationManager.GetInstance().GetAliases(pp))
                         {

@@ -56,11 +56,10 @@ namespace SharedLibrary
                     int Ping = -1;
                     Int32.TryParse(playerInfo[2], out Ping);
                     String cName = Utilities.StripColors(responseLine.Substring(46, 18)).Trim();
-                    String npID = responseLine.Substring(29, 17).Trim(); // DONT TOUCH PLZ
+                    string npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value;
                     int.TryParse(playerInfo[0], out cID);
-                    String cIP = responseLine.Substring(72, 20).Trim().Split(':')[0];
-                    if (cIP.Split(' ').Count() > 1)
-                        cIP = cIP.Split(' ')[1];
+                    var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
+                    string cIP = regex.Value.Split(':')[0];
                     Player P = new Player(cName, npID, cID, cIP) { Ping = Ping };
                     StatusPlayers.Add(P);
                 }

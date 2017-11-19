@@ -577,7 +577,7 @@ namespace SharedLibrary.Commands
 
             var db_aliases = E.Owner.Manager.GetAliasesDatabase().FindPlayerAliases(E.Data);
 
-            if (db_aliases == null)
+            if (db_aliases == null || db_aliases.Count() == 0)
             {
                 await E.Origin.Tell("No players found");
                 return;
@@ -620,9 +620,9 @@ namespace SharedLibrary.Commands
             if (E.Owner.Rules.Count < 1)
             {
                 if (E.Message.IsBroadcastCommand())
-                    await E.Owner.Broadcast("The server owner has not set any rules.");
+                    await E.Owner.Broadcast("The server owner has not set any rules");
                 else
-                    await E.Origin.Tell("The server owner has not set any rules.");
+                    await E.Origin.Tell("The server owner has not set any rules");
             }
 
             else
@@ -753,7 +753,7 @@ namespace SharedLibrary.Commands
 
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell("You cannot report yourself.");
+                await E.Origin.Tell("You cannot report yourself");
                 return;
             }
 
@@ -796,7 +796,7 @@ namespace SharedLibrary.Commands
 
             if (E.Owner.Reports.Count < 1)
             {
-                await E.Origin.Tell("No players reported yet.");
+                await E.Origin.Tell("No players reported yet");
                 return;
             }
 
@@ -848,7 +848,7 @@ namespace SharedLibrary.Commands
 
             if (BannedPenalty == null)
             {
-                await E.Origin.Tell("No active ban was found for that player.");
+                await E.Origin.Tell("No active ban was found for that player");
                 return;
             }
 

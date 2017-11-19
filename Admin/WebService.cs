@@ -758,8 +758,9 @@ namespace IW4MAdmin
             bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"] && x.Level > Player.Permission.Trusted).Count > 0
                 || querySet["IP"] == "127.0.0.1";
             bool recent = false;
+            bool individual = querySet["id"] != null;
 
-            if (querySet["id"] != null)
+            if (individual)
             {
                 matchedPlayers.Add(ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(Convert.ToInt32(querySet["id"])));
             }
@@ -801,17 +802,23 @@ namespace IW4MAdmin
                         playernpID = pp.NetworkID,
                         forumID = -1,
                         authed = authed,
-                        showV2Features = false
+                        showV2Features = false,
+                        playerAliases = new List<string>(),
+                        playerIPs = new List<string>()
+
                     };
 
-                    if (!recent)
+                    if (!recent && individual)
                     {
                         foreach (var a in ApplicationManager.GetInstance().GetAliases(pp))
                         {
-                            eachPlayer.playerAliases = a.Names;
-                            eachPlayer.playerIPs = a.IPS;
+                            eachPlayer.playerAliases.AddRange(a.Names);
+                            eachPlayer.playerIPs.AddRange(a.IPS);
                         }
                     }
+
+                    eachPlayer.playerAliases = eachPlayer.playerAliases.Distinct().ToList();
+                    eachPlayer.playerIPs = eachPlayer.playerIPs.Distinct().ToList();
 
                     eachPlayer.playerConnections = pp.Connections;
                     eachPlayer.lastSeen = Utilities.GetTimePassed(pp.LastConnection);

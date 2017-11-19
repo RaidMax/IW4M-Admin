@@ -665,7 +665,7 @@ namespace SharedLibrary
             {
                 CommandText = "SELECT * FROM ALIASES WHERE IPS LIKE @IP"
             };
-            cmd.Parameters.AddWithValue("@IP", IP);
+            cmd.Parameters.AddWithValue("@IP", $"%{IP}%");
 
             var Result = GetDataTable(cmd);
 

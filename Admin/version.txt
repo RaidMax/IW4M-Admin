@@ -8,6 +8,7 @@ CHANGELOG:
 -prune command demotes inactive admins (defaults to 30 days if no days are specified)
 -confirmation message sent after kick
 -paginated players page
+-fixed aliases
 
 Version 1.5
 CHANGELOG:

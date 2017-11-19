@@ -1,34 +1,29 @@
 <script>
-var curFrom = 0;
+    var curFrom = 0;
 
-function getNextPage()
-{
-  curFrom += 15;
-  return curFrom;
-}
+    function getNextPage() {
+        curFrom += 15;
+        return curFrom;
+    }
 
-function getPrevPage()
-{
-  if ((curFrom - 15) >= 0)
-  {
-    curFrom -= 15;
-    return (curFrom );
-  }
-  else
-  {
-    curFrom = 0;
-    return 0;
-  }
-}
+    function getPrevPage() {
+        if ((curFrom - 15) >= 0) {
+            curFrom -= 15;
+            return (curFrom);
+        }
+        else {
+            curFrom = 0;
+            return 0;
+        }
+    }
 
-function getPenalties(from)
-{
-    $("#penaltyList").html("");
-    $(".loader").fadeIn();
-    $.getJSON("/_penalties?from=" + from, function(result) {
-      $.each(result, function(i, penalty) {
-        $("#penaltyList").append(
-          "<div class=\"playerPenalty table alternate_" + i % 2 + "\"> \
+    function getPenalties(from) {
+        $("#penaltyList").html("");
+        $(".loader").fadeIn();
+        $.getJSON("/_penalties?from=" + from, function (result) {
+            $.each(result, function (i, penalty) {
+                $("#penaltyList").append(
+                  "<div class=\"playerPenalty table alternate_" + i % 2 + "\"> \
              <div class=\"penaltyName tableCell\"><a href=\"/players?id="+ penalty['playerID'] + "\">" + penalty['playerName'] + "</a></div> \
              <div class=\"penaltyType tableCell\">"+ getColorForLevel(penalty['penaltyType'], penalty['penaltyType']) + "</div> \
              <div class=\"penaltyReason tableCell\">"+ penalty['penaltyReason'] + "</div> \
@@ -36,28 +31,28 @@ function getPenalties(from)
              <div class=\"penaltyTime tableCell\">"+ penalty['penaltyTime'] + "</div> \
             <div class=\" penaltyRemaining tableCell\">" + penalty['Expires'] + "</div> \
           </div>"
-        )
-      });
+                )
+            });
 
-    }).done(function (data) {   $(".loader").fadeOut(); });
-}
-$( document ).ready(function() {
-    getPenalties(0);
-});
+        }).done(function (data) { $(".loader").fadeOut(); });
+    }
+    $(document).ready(function () {
+        getPenalties(0);
+    });
 </script>
 
 <div class="penaltyHeader table">
-  <div class="penaltyName tableCell">Name</div>
-  <div class="penaltyType tableCell">Type</div>
-  <div class="penaltyReason tableCell">Reason</div>
-  <div class="penaltyOrigin tableCell">Admin</div>
-  <div class="penaltyTime tableCell">Time</div>
-  <div class="penaltyRemaining tableCell">Remaining</div>
+    <div class="penaltyName tableCell">Name</div>
+    <div class="penaltyType tableCell">Type</div>
+    <div class="penaltyReason tableCell">Reason</div>
+    <div class="penaltyOrigin tableCell">Admin</div>
+    <div class="penaltyTime tableCell">Time</div>
+    <div class="penaltyRemaining tableCell">Remaining</div>
 </div>
 <div id="penaltyList">
 </div>
 <hr />
-  <div id="paginationButtons" class="table">
+<div id="paginationButtons" class="table">
     <div id="previousPage" class="tableCell"><a href=# onclick="getPenalties(getPrevPage())"><<</a></div>
     <div id="nextPage" class="tableCell"><a href=# onclick="getPenalties(getNextPage())">>></a></div>
-  </div>
+</div>

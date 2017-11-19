@@ -285,6 +285,7 @@ namespace IW4MAdmin
             GetAliases(allAliases, currentIdentityAliases);
             if (Origin.Alias != null)
                 allAliases.Add(Origin.Alias);
+            allAliases.Add(currentIdentityAliases);
             return allAliases;
         }
 

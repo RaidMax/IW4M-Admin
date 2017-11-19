@@ -1,4 +1,14 @@
+
 <script>
+    function escapeHtml(unsafe) {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
     var curFrom = 0;
 
     function getNextPage() {
@@ -9,18 +19,22 @@
     function getPrevPage() {
         if ((curFrom - 15) >= 0) {
             curFrom -= 15;
-            return (curFrom - 15);
+            return (curFrom);
         }
-        else
+        else {
+            curFrom = 0;
             return 0;
+        }
     }
 
     function formatHidden(data, authed) {
         var p = "<div class=\"hiddenWrapper\"><span>Expand</span><div class=\"hiddenElements\">";
 
         if (authed) {
+            if (data == undefined || data.length == 0)
+                p += "Not Loaded"
             $.each(data, function (i, dat) {
-                p += "<span>" + dat + "</span><br/>"
+                p += "<span>" +  escapeHtml(dat) + "</span><br/>"
             })
         }
 
@@ -36,7 +50,7 @@
         var p = "";
         p +=
           "<div class=\"playerInfo table alternate_" + i % 2 + "\"> \
-       <div class=\"tableCell\"><a href=\"/players?id=" + player['playerID'] + "\">" + player['playerName'] + "</a></div> \
+       <div class=\"tableCell\"><a href=\"/players?id=" + player['playerID'] + "\">" + escapeHtml(player['playerName']) + "</a></div> \
        <div class=\"tableCell\">" + formatHidden(player['playerAliases'], player.authed) + "</div> \
        <div class=\"tableCell\">" + formatHidden(player['playerIPs'], player.authed) + "</div> \
        <div class=\"tableCell\">" + getColorForLevel(player['playerLevel'], player['playerLevel']) + "</div> \
@@ -73,7 +87,8 @@
             $.each(result, function (i, player) {
                 printPlayer(player, i);
             });
-        }).done(function (data) { $(".loader").fadeOut(); });
+        }).done(function (data) { $(".loader").fadeOut(); })
+        .error(function (data) { $(".loader").fadeOut(); })
     }
 
     $(document).ready(function () {

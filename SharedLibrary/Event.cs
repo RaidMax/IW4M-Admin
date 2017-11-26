@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using SharedLibrary.Objects;
+
 namespace SharedLibrary
 {
     [Serializable]
@@ -93,7 +95,7 @@ namespace SharedLibrary
         public Event(GType t, string d, Player O, Player T, Server S)
         {
             Type = t;
-            Data = d;
+            Data = d.Trim();
             Origin = O;
             Target = T;
             Owner = S;
@@ -129,14 +131,14 @@ namespace SharedLibrary
 
                 if (removeTime.Contains("ScriptKill"))
                 {
-                    return new Event(GType.Script, String.Join(";", line), SV.Players.FirstOrDefault(p => p != null && p.NetworkID == line[1]), SV.Players.FirstOrDefault(p => p != null && p.NetworkID == line[2]), SV);
+                    return new Event(GType.Script, String.Join(";", line), SV.Players.FirstOrDefault(p => p != null && p.NetworkId == line[1]), SV.Players.FirstOrDefault(p => p != null && p.NetworkId == line[2]), SV);
                 }
 
                 if (removeTime.Contains("ExitLevel"))
-                    return new Event(GType.MapEnd, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
+                    return new Event(GType.MapEnd, line[0], null, null, SV);
 
                 if (removeTime.Contains("InitGame"))
-                    return new Event(GType.MapChange, line[0], new Player("WORLD", "WORLD", 0, 0), null, SV);
+                    return new Event(GType.MapChange, line[0], null, null, SV);
 
 
                 return null;

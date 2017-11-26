@@ -6,6 +6,7 @@ using SharedLibrary;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Network;
 using SharedLibrary.Helpers;
+using SharedLibrary.Objects;
 
 namespace Plugin
 {

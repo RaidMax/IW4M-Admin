@@ -5,7 +5,7 @@ using System.Data;
 
 namespace MessageBoard.Storage
 {
-    class Database : SharedLibrary.Database
+    class Database : SharedLibrary._Database
     {
         public Database(String FN, SharedLibrary.Interfaces.ILogger logger) : base(FN, logger) { }
 

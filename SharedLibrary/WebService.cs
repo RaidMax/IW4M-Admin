@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
@@ -27,7 +28,7 @@ namespace SharedLibrary
     {
         string GetPath();
         string GetName();
-        HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers);
+        Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers);
         bool Visible();
     }
 
@@ -89,7 +90,7 @@ namespace SharedLibrary
         abstract public string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers);
         
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             HttpResponse resp = new HttpResponse()
             {

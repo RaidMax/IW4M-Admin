@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using SharedLibrary;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Helpers;
+using SharedLibrary.Objects;
 
 namespace IW4MAdmin.Plugins
 {
@@ -63,17 +65,20 @@ namespace IW4MAdmin.Plugins
             {
                 var rand = new Random();
                 int index = rand.Next(0, 17);
-                var p = new Player($"?!'\"\"'<>Test_{index}", $"_test{index}", index, (int)Player.Permission.User)
+                var p = new Player()
                 {
-                    Ping = 1
+                    Name = $"Test{index}",
+                    NetworkId = $"_test{index}",
+                    ClientNumber = index,
+                    Level = Player.Permission.User,
+                    Ping = 1,
+                    IPAddress = "127.0.0.1"
                 };
-
-                p.SetIP("127.0.0.1");
 
                 if (S.Players.ElementAt(index) != null)
                     await S.RemovePlayer(index);
                 await S.AddPlayer(p);
-
+                /*
 
                 Interval = DateTime.Now;
                 if (S.ClientNum > 0)
@@ -83,7 +88,7 @@ namespace IW4MAdmin.Plugins
                     var victimPlayer = S.Players.Where(pl => pl != null).ToList()[rand.Next(0, S.ClientNum - 1)];
                     var attackerPlayer = S.Players.Where(pl => pl != null).ToList()[rand.Next(0, S.ClientNum - 1)];
 
-                    await S.ExecuteEvent(new Event(Event.GType.Say, $"test_{attackerPlayer.ClientID}", victimPlayer, attackerPlayer, S));
+                    await S.ExecuteEvent(new Event(Event.GType.Say, $"test_{attackerPlayer.ClientNumber}", victimPlayer, attackerPlayer, S));
 
                     string[] eventLine = null;
 
@@ -99,8 +104,8 @@ namespace IW4MAdmin.Plugins
                             eventLine = new string[]
                             {
                             "ScriptKill",
-                            attackerPlayer.NetworkID,
-                            victimPlayer.NetworkID,
+                            attackerPlayer.NetworkId,
+                            victimPlayer.NetworkId,
                             new Vector3(rand.Next(minimapInfo.MaxRight, minimapInfo.MaxLeft), rand.Next(minimapInfo.MaxBottom, minimapInfo.MaxTop), rand.Next(0, 100)).ToString(),
                             new Vector3(rand.Next(minimapInfo.MaxRight, minimapInfo.MaxLeft), rand.Next(minimapInfo.MaxBottom, minimapInfo.MaxTop), rand.Next(0, 100)).ToString(),
                             rand.Next(50, 105).ToString(),
@@ -115,12 +120,12 @@ namespace IW4MAdmin.Plugins
                             eventLine = new string[]
                            {
                             "K",
-                            victimPlayer.NetworkID,
-                            victimPlayer.ClientID.ToString(),
+                            victimPlayer.NetworkId,
+                            victimPlayer.ClientNumber.ToString(),
                             rand.Next(0, 1) == 0  ? "allies" : "axis",
                             victimPlayer.Name,
-                            attackerPlayer.NetworkID,
-                            attackerPlayer.ClientID.ToString(),
+                            attackerPlayer.NetworkId,
+                            attackerPlayer.ClientNumber.ToString(),
                             rand.Next(0, 1) == 0  ? "allies" : "axis",
                             attackerPlayer.Name.ToString(),
                             ((StatsPlugin.IW4Info.WeaponName)rand.Next(0, Enum.GetValues(typeof(StatsPlugin.IW4Info.WeaponName)).Length - 1)).ToString(), // Weapon
@@ -133,7 +138,7 @@ namespace IW4MAdmin.Plugins
                         var _event = Event.ParseEventString(eventLine, S);
                         await S.ExecuteEvent(_event);
                     }
-                }
+                }*/
             }
 
         }

@@ -9,6 +9,7 @@ using SharedLibrary.Network;
 using SharedLibrary.Commands;
 using System.Threading.Tasks;
 using SharedLibrary.Helpers;
+using SharedLibrary.Objects;
 
 namespace SharedLibrary
 {
@@ -107,13 +108,6 @@ namespace SharedLibrary
         }
 
         /// <summary>
-        /// Check ban list for every banned player and return ban if match is found 
-        /// </summary>
-        /// <param name="C">Player to check if banned</param>
-        /// <returns>Matching ban if found</returns>
-        abstract public Penalty IsBanned(Player C);
-
-        /// <summary>
         /// Process requested command correlating to an event
         /// </summary>
         /// <param name="E">Event parameter</param>
@@ -124,16 +118,6 @@ namespace SharedLibrary
         virtual public Task ProcessUpdatesAsync(CancellationToken cts)
         {
             return null;
-        }
-
-        /// <summary>
-        /// Legacy method for the alias command
-        /// </summary>
-        /// <param name="P"></param>
-        /// <returns></returns>
-        public IList<Aliases> GetAliases(Player P)
-        {
-            return Manager.GetAliases(P);
         }
 
         /// <summary>
@@ -170,14 +154,10 @@ namespace SharedLibrary
         /// <param name="Target">Player to send message to</param>
         public async Task Tell(String Message, Player Target)
         {
-#if DEBUG
-            //if (!Target.lastEvent.Remote)
-            //  return;
-#endif
             string tellCommand = (GameName == Game.IW4) ? "tellraw" : "tell";
 
-            if (Target.ClientID > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console && !Target.lastEvent.Remote)
-                await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientID} {Message}^7");
+            if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)
+                await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientNumber} {Message}^7");
 
             if (Target.Level == Player.Permission.Console)
             {
@@ -185,9 +165,13 @@ namespace SharedLibrary
                 Console.WriteLine(Utilities.StripColors(Message));
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
-
-            if (Target.lastEvent.Remote)
-                commandResult.Enqueue(Utilities.StripColors(Message));
+            if (commandResult.Count > 15)
+                commandResult.RemoveAt(0);
+            commandResult.Add(new CommandResult()
+            {
+                Message = Utilities.StripColors(Message),
+                Clientd = Target.ClientId
+            });
         }
 
         /// <summary>
@@ -353,14 +337,14 @@ namespace SharedLibrary
             return $"{IP}_{Port}";
         }
 
-        protected async  Task<bool> ScriptLoaded()
+        protected async Task<bool> ScriptLoaded()
         {
             try
             {
                 return (await this.GetDvarAsync<string>("sv_customcallbacks")).Value == "1";
             }
-            
-            catch(Exceptions.DvarException)
+
+            catch (Exceptions.DvarException)
             {
                 return false;
             }
@@ -408,6 +392,6 @@ namespace SharedLibrary
         protected DateTime LastPoll;
 
         //Remote
-        public Queue<string> commandResult = new Queue<string>();
+        public IList<CommandResult> commandResult = new List<CommandResult>();
     }
 }

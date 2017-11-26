@@ -6,6 +6,11 @@ using SharedLibrary;
 using System.Threading.Tasks;
 using System.IO;
 
+#if DEBUG
+using SharedLibrary.Database;
+using SharedLibrary.Objects;
+#endif
+
 namespace IW4MAdmin
 {
     class Program
@@ -38,7 +43,7 @@ namespace IW4MAdmin
                 Task.Run(() =>
                 {
                     String userInput;
-                    Player Origin = new Player("IW4MAdmin", "", -1, Player.Permission.Console, -1, "", 0, "");
+                    Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
 
                     do
                     {
@@ -50,8 +55,8 @@ namespace IW4MAdmin
                         if (ServerManager.Servers.Count == 0)
                             return;
 
+                        Origin.CurrentServer = ServerManager.Servers[0];
                         Event E = new Event(Event.GType.Say, userInput, Origin, null, ServerManager.Servers[0]);
-                        Origin.lastEvent = E;
                         ServerManager.Servers[0].ExecuteEvent(E);
                         Console.Write('>');
 
@@ -60,7 +65,7 @@ namespace IW4MAdmin
 
             }
 
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine($"Fatal Error during initialization: {e.Message}");
                 Console.WriteLine("Press any key to exit...");

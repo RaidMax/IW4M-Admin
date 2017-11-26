@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
+
+using SharedLibrary.Objects;
 using static SharedLibrary.Server;
 
 namespace SharedLibrary
@@ -60,7 +62,7 @@ namespace SharedLibrary
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
                     string cIP = regex.Value.Split(':')[0];
-                    Player P = new Player(cName, npID, cID, cIP) { Ping = Ping };
+                    Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping };
                     StatusPlayers.Add(P);
                 }
             }
@@ -224,7 +226,7 @@ namespace SharedLibrary
             }
             if (Elapsed.TotalDays <= 365)
             {
-                if (Elapsed.TotalDays  < 1.5)
+                if (Elapsed.TotalDays < 1.5)
                     return $"1 day{ago}";
                 return Math.Round(Elapsed.TotalDays, 0) + $" days{ago}";
             }
@@ -296,6 +298,27 @@ namespace SharedLibrary
         public static string EscapeMarkdown(this string markdownString)
         {
             return markdownString.Replace("<", "\\<").Replace(">", "\\>").Replace("|", "\\|");
+        }
+
+        public static Player AsPlayer(this Database.Models.EFClient client)
+        {
+            return client == null ? null : new Player()
+            {
+                Active = client.Active,
+                AliasLink =client.AliasLink,
+                AliasLinkId = client.AliasLinkId,
+                ClientId = client.ClientId,
+                ClientNumber = 0,
+                FirstConnection = client.FirstConnection,
+                Connections = client.Connections,
+                IPAddress = client.IPAddress,
+                NetworkId = client.NetworkId,
+                Name = client.Name,
+                Level = client.Level,
+                TotalConnectionTime = client.TotalConnectionTime,
+                Masked = client.Masked,
+                LastConnection = DateTime.UtcNow
+            };
         }
     }
 }

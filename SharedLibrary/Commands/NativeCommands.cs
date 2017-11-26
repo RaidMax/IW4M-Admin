@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Threading.Tasks;
+
 using SharedLibrary.Network;
 using SharedLibrary.Helpers;
-using System.Threading.Tasks;
+using SharedLibrary.Objects;
+
 
 namespace SharedLibrary.Commands
 {
@@ -28,11 +31,11 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.Manager.GetClientDatabase().GetOwner() == null)
+            if ((await (E.Owner.Manager.GetClientService() as Services.ClientService).GetOwners()).Count == 0)
             {
-                E.Origin.SetLevel(Player.Permission.Owner);
+                E.Origin.Level = Player.Permission.Owner;
                 await E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
-                E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
+                await E.Owner.Manager.GetClientService().Update(E.Origin);
             }
             else
                 await E.Origin.Tell("This server already has an owner!");
@@ -59,11 +62,10 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = E.Data.RemoveWords(1);
             if (E.Origin.Level <= E.Target.Level)
                 await E.Origin.Tell($"You do not have the required privileges to warn {E.Target.Name}");
             else
-                await E.Target.Warn(E.Target.lastOffense, E.Origin);
+                await E.Target.Warn(E.Data.RemoveWords(1), E.Origin);
         }
     }
 
@@ -82,7 +84,6 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = String.Empty;
             E.Target.Warnings = 0;
             String Message = String.Format("All warning cleared for {0}", E.Target.Name);
             await E.Owner.Broadcast(Message);
@@ -109,11 +110,10 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = E.Data.RemoveWords(1);
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Owner.ExecuteEvent(new Event(Event.GType.Kick, E.Data, E.Origin, E.Target, E.Owner));
-                await E.Target.Kick(E.Target.lastOffense, E.Origin);
+                await E.Target.Kick(E.Data.RemoveWords(1), E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7has been kicked");
             }
             else
@@ -165,8 +165,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = Utilities.RemoveWords(E.Data, 1);
-            String Message = E.Target.lastOffense;
+            String Message = Utilities.RemoveWords(E.Data, 1);
             var length = Message.ParseTimespan();
 
             if (length.TotalHours != 1)
@@ -202,17 +201,9 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.lastOffense = Utilities.RemoveWords(E.Data, 1);
-            E.Target.lastEvent = E; // needs to be fixed
-            String Message;
-            if (E.Owner.Website == null)
-                Message = "^1Player Banned: ^5" + E.Target.lastOffense;
-            else
-                Message = "^1Player Banned: ^5" + E.Target.lastOffense;
             if (E.Origin.Level > E.Target.Level)
             {
-                await E.Owner.ExecuteEvent(new Event(Event.GType.Ban, E.Data, E.Origin, E.Target, E.Owner));
-                await E.Target.Ban(Message, E.Origin);
+                await E.Target.Ban(E.Data, E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7has been permanently banned");
             }
             else
@@ -248,7 +239,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientID, E.Origin.NetworkID, E.Origin.DatabaseID, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IP);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientNumber, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddress);
             await E.Origin.Tell(You);
         }
     }
@@ -271,9 +262,9 @@ namespace SharedLibrary.Commands
                     continue;
 
                 if (P.Masked)
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User), P.ClientID, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
                 else
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level), P.ClientID, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
 
                 if (count == 2 || E.Owner.GetPlayersAsList().Count == 1)
                 {
@@ -424,16 +415,16 @@ namespace SharedLibrary.Commands
 
             if (newPerm > Player.Permission.Banned)
             {
-                var ActiveClient = E.Owner.Manager.GetActiveClients().FirstOrDefault(p => p.NetworkID == E.Target.NetworkID);
-                ActiveClient?.SetLevel(newPerm);
+                var ActiveClient = E.Owner.Manager.GetActiveClients().FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
+                ActiveClient.Level = newPerm;
 
                 if (ActiveClient != null)
                     await ActiveClient.Tell("Congratulations! You have been promoted to ^3" + newPerm);
 
                 await E.Origin.Tell($"{E.Target.Name} was successfully promoted!");
 
-                E.Target.SetLevel(newPerm);
-                E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Target);
+                E.Target.Level = newPerm;
+                await E.Owner.Manager.GetClientService().Update(E.Target);
             }
 
             else
@@ -536,9 +527,9 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            var db_players = E.Owner.Manager.GetClientDatabase().FindPlayers(E.Data.Trim());
+            var db_players = await E.Owner.Manager.GetClientService().Find(c => c.Name.Contains(E.Data));
 
-            if (db_players == null)
+            if (db_players.Count == 0)
             {
                 await E.Origin.Tell("No players found");
                 return;
@@ -546,7 +537,7 @@ namespace SharedLibrary.Commands
 
             foreach (Player P in db_players)
             {
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4}", P.Name, P.DatabaseID, Utilities.ConvertLevelToColor(P.Level), P.IP, P.GetLastConnection());
+                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4}", P.Name, P.ClientNumber, Utilities.ConvertLevelToColor(P.Level), P.IPAddress, P.GetLastConnection());
                 await E.Origin.Tell(mesg);
             }
         }
@@ -575,36 +566,17 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            var db_aliases = E.Owner.Manager.GetAliasesDatabase().FindPlayerAliases(E.Data);
+            var db_aliases = await E.Owner.Manager.GetAliasService().Find(a => a.Name.Contains(E.Data));
 
-            if (db_aliases == null || db_aliases.Count() == 0)
+            if (db_aliases.Count == 0)
             {
                 await E.Origin.Tell("No players found");
                 return;
             }
 
-            foreach (Aliases P in db_aliases)
+            foreach (var P in db_aliases)
             {
-                if (P == null)
-                    continue;
-
-                String lookingFor = null;
-
-                foreach (String S in P.Names)
-                {
-                    if (S.ToLower().Contains(E.Data.ToLower()))
-                        lookingFor = S;
-                }
-
-                lookingFor = lookingFor ?? P.Names.First();
-
-                Player Current = E.Owner.Manager.GetClientDatabase().GetPlayer(P.Number);
-
-                if (Current != null && Current.Name != lookingFor)
-                {
-                    String mesg = String.Format("^1{0} ^7now goes by ^5{1}^7 [^3{2}^7]", lookingFor, Current.Name, Current.DatabaseID);
-                    await E.Origin.Tell(mesg);
-                }
+                await E.Origin.Tell($"^4{P.Name} ^7now goes by ^5{P.Link.Children.OrderByDescending(a => a.DateAdded).First().Name}");
             }
         }
     }
@@ -707,21 +679,33 @@ namespace SharedLibrary.Commands
 
             if (E.Target.Level == Player.Permission.Flagged)
             {
-                E.Target.SetLevel(Player.Permission.User);
-                E.Owner.Manager.GetClientPenalties().RemovePenalty(new Penalty(Penalty.Type.Flag, "", E.Target.NetworkID, "", DateTime.Now, "", DateTime.Now));
+                E.Target.Level = Player.Permission.User;
+                //E.Owner.Manager.GetClientPenalties().RemovePenalty(new Penalty(Penalty.PenaltyType.Flag, "", E.Target.NetworkId, "", DateTime.Now, "", DateTime.Now));
                 await E.Origin.Tell("You have ^5unflagged ^7" + E.Target.Name);
             }
 
             else
             {
                 E.Data = Utilities.RemoveWords(E.Data, 1);
-                E.Target.SetLevel(Player.Permission.Flagged);
-                E.Owner.Manager.GetClientPenalties().AddPenalty(new Penalty(Penalty.Type.Flag, E.Data, E.Target.NetworkID, E.Origin.NetworkID, DateTime.Now, E.Target.IP, DateTime.Now));
+                E.Target.Level = Player.Permission.Flagged;
+
+                Penalty newPenalty = new Penalty()
+                {
+                    Type = Penalty.PenaltyType.Flag,
+                    Expires = DateTime.UtcNow,
+                    Offender = E.Target,
+                    Offense = E.Data,
+                    Punisher = E.Origin,
+                    Active = true,
+                    When = DateTime.UtcNow
+                };
+
+                await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
                 await E.Owner.ExecuteEvent(new Event(Event.GType.Flag, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
             }
 
-            E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Target);
+            await E.Owner.Manager.GetClientService().Update(E.Target);
         }
     }
 
@@ -745,7 +729,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.NetworkID == E.Target.NetworkID)) != null)
+            if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.NetworkId == E.Target.NetworkId)) != null)
             {
                 await E.Origin.Tell("You have already reported this player");
                 return;
@@ -824,7 +808,7 @@ namespace SharedLibrary.Commands
                 await E.Origin.Tell("You are now masked");
             }
 
-            E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
+            await E.Owner.Manager.GetClientService().Update(E.Origin);
         }
     }
 
@@ -843,18 +827,17 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            var B = E.Owner.Manager.GetClientPenalties().FindPenalties(E.Target);
-            var BannedPenalty = B.Find(b => b.BType > Penalty.Type.Kick && b.Expires > DateTime.Now);
+            var B = await E.Owner.Manager.GetPenaltyService().GetClientPenaltiesAsync(E.Target.ClientId);
 
-            if (BannedPenalty == null)
+            var penalty = B.FirstOrDefault(b => b.Type > Penalty.PenaltyType.Kick && b.Expires > DateTime.UtcNow);
+
+            if (penalty == null)
             {
                 await E.Origin.Tell("No active ban was found for that player");
                 return;
             }
 
-            Player Banner = E.Owner.Manager.GetClientDatabase().GetPlayer(BannedPenalty.PenaltyOriginID, -1);
-
-            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2} {3}", E.Target.Name, Banner?.Name ?? "IW4MAdmin", BannedPenalty.Reason, BannedPenalty.BType == Penalty.Type.TempBan ? $"({(BannedPenalty.Expires - DateTime.Now).TimeSpanText()} remaining)" : ""));
+            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2} {3}", E.Target.Name, penalty.Punisher.Name, penalty.Offense, penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires - DateTime.Now).TimeSpanText()} remaining)" : ""));
         }
     }
 
@@ -873,37 +856,19 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            E.Target.Alias = E.Owner.Manager.GetAliasesDatabase().GetPlayerAliases(E.Target.DatabaseID);
-
-            if (E.Target.Alias == null)
-            {
-                await E.Target.Tell("Could not find alias info for that player");
-                return;
-            }
-
-            await E.Target.Tell("[^3" + E.Target.Name + "^7]");
             StringBuilder message = new StringBuilder();
+            var names = new List<string>(E.Target.AliasLink.Children.Select(a => a.Name));
+            var IPs = new List<string>(E.Target.AliasLink.Children.Select(a => a.IP));
 
-            var playerAliases = E.Owner.GetAliases(E.Target);
+            await E.Target.Tell($"[^3{E.Target}^7]");
 
             message.Append("Aliases: ");
-
-            var names = new List<string>();
-            var ips = new List<string>();
-
-            foreach (var alias in playerAliases)
-            {
-                names.AddRange(alias.Names);
-                ips.AddRange(alias.IPS);
-            }
-            message.Append(String.Join(" | ", names.Distinct()));
-
+            message.Append(String.Join(" | ", names));
             await E.Origin.Tell(message.ToString());
 
             message.Clear();
             message.Append("IPs: ");
-            message.Append(String.Join(" | ", ips.Distinct()));
-
+            message.Append(String.Join(" | ", IPs));
             await E.Origin.Tell(message.ToString());
         }
     }
@@ -955,7 +920,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Origin.Tell($"Your external IP is ^5{E.Origin.IP}");
+            await E.Origin.Tell($"Your external IP is ^5{E.Origin.IPAddress}");
         }
     }
 }

@@ -67,7 +67,7 @@ namespace StatsPlugin.Chat
         public HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
         {
             int clientID = Convert.ToInt32(querySet["clientid"]);
-            var client = Stats.ManagerInstance.GetClientDatabase().GetPlayer(clientID);
+            var name = Stats.ManagerInstance.GetDatabase().GetClient(clientID).Name;
 
             HttpResponse resp = new HttpResponse()
             {
@@ -78,7 +78,7 @@ namespace StatsPlugin.Chat
                     ServerID = c.ServerID,
                     Message = c.Message,
                     TimeSent = c.TimeSent,
-                    ClientName = client.Name,
+                    ClientName = name,
                 }),
                 additionalHeaders = new Dictionary<string, string>()
             };

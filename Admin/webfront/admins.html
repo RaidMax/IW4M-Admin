@@ -1,6 +1,6 @@
 <script>
     function printPlayer(player, i) {
-        var playerText = '<div class="admin-name"><a href="/players?id=' + player.DatabaseID + '">' + player.Name + "</a></div>";
+        var playerText = '<div class="admin-name"><a href="/players?id=' + player.ClientId + '">' + player.Name + "</a></div>";
         switch (player.Level) {
             case 6:
                 $('#owner-privilege .clients').append(playerText);

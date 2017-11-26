@@ -7,6 +7,8 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
+using SharedLibrary.Objects;
+
 namespace StatsPlugin
 {
     public class CViewStats : Command
@@ -74,7 +76,7 @@ namespace StatsPlugin
             await E.Origin.Tell("^5--Top Players--");
             foreach (KeyValuePair<String, PlayerStats> pStat in pStats)
             {
-                Player P = E.Owner.Manager.GetClientDatabase().GetPlayer(pStat.Key, -1);
+                Player P = E.Owner.Manager.GetDatabase().GetClient(pStat.Key) as Player;
                 if (P == null)
                     continue;
                 await E.Origin.Tell(String.Format("^3{0}^7 - ^5{1} ^7KDR | ^5{2} ^7SKILL", P.Name, pStat.Value.KDR, pStat.Value.Skill));
@@ -132,8 +134,8 @@ namespace StatsPlugin
                 return;
             }
 
-            E.Owner.Manager.GetClientDatabase().PruneAdmins(inactiveDays);
-            await E.Origin.Tell("Pruned inactive privileged users");
+            var inactiveAdmins = await E.Owner.Manager.GetDatabase().PruneInactivePrivilegedClients(inactiveDays);
+            await E.Origin.Tell($"Pruned inactive {inactiveAdmins.Count} privileged users");
 
         }
     }
@@ -289,7 +291,7 @@ namespace StatsPlugin
 
                 if (E.Type == Event.GType.Connect)
                 {
-                    ResetCounters(E.Origin.ClientID, S.GetPort());
+                    ResetCounters(E.Origin.ClientNumber, S.GetPort());
 
                     var config = new ConfigurationManager(E.Owner);
 
@@ -300,8 +302,8 @@ namespace StatsPlugin
                     //todo: move this out of here!!
                     if (checkForTrusted.TotalPlayTime >= 4320 && E.Origin.Level < Player.Permission.Trusted && E.Origin.Level != Player.Permission.Flagged)
                     {
-                        E.Origin.SetLevel(Player.Permission.Trusted);
-                        E.Owner.Manager.GetClientDatabase().UpdatePlayer(E.Origin);
+                        E.Origin.Level = Player.Permission.Trusted;
+                        await E.Owner.Manager.GetDatabase().UpdateClient(E.Origin);
                         await E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands.");
                         await E.Origin.Tell("You earned this by playing for ^53 ^7full days!");
                     }
@@ -316,10 +318,10 @@ namespace StatsPlugin
                             continue;
 
                         CalculateAndSaveSkill(P, statLists.Find(x => x.Port == S.GetPort()));
-                        ResetCounters(P.ClientID, S.GetPort());
+                        ResetCounters(P.ClientNumber, S.GetPort());
 
                         E.Owner.Logger.WriteInfo($"Updated skill for {P}");
-                        //E.Owner.Log.Write(String.Format("\r\nJoin: {0}\r\nInactive Minutes: {1}\r\nnewPlayTime: {2}\r\nnewSPM: {3}\r\nkdrWeight: {4}\r\nMultiplier: {5}\r\nscoreWeight: {6}\r\nnewSkillFactor: {7}\r\nprojectedNewSkill: {8}\r\nKills: {9}\r\nDeaths: {10}", connectionTime[P.clientID].ToShortTimeString(), inactiveMinutes[P.clientID], newPlayTime, newSPM, kdrWeight, Multiplier, scoreWeight, newSkillFactor, disconnectStats.Skill, disconnectStats.Kills, disconnectStats.Deaths));
+                        //E.Owner.Log.Write(String.Format("\r\nJoin: {0}\r\nInactive Minutes: {1}\r\nnewPlayTime: {2}\r\nnewSPM: {3}\r\nkdrWeight: {4}\r\nMultiplier: {5}\r\nscoreWeight: {6}\r\nnewSkillFactor: {7}\r\nprojectedNewSkill: {8}\r\nKills: {9}\r\nDeaths: {10}", connectionTime[P.ClientNumber].ToShortTimeString(), inactiveMinutes[P.ClientNumber], newPlayTime, newSPM, kdrWeight, Multiplier, scoreWeight, newSkillFactor, disconnectStats.Skill, disconnectStats.Kills, disconnectStats.Deaths));
                     }
                 }
 
@@ -332,7 +334,7 @@ namespace StatsPlugin
                 if (E.Type == Event.GType.Disconnect)
                 {
                     CalculateAndSaveSkill(E.Origin, statLists.Find(x => x.Port == S.GetPort()));
-                    ResetCounters(E.Origin.ClientID, S.GetPort());
+                    ResetCounters(E.Origin.ClientNumber, S.GetPort());
                     E.Owner.Logger.WriteInfo($"Updated skill for disconnecting client {E.Origin}");
                 }
 
@@ -345,7 +347,7 @@ namespace StatsPlugin
 
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
                     {
-                        var killEvent = new KillInfo(E.Origin.DatabaseID, E.Target.DatabaseID, S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4])
+                        var killEvent = new KillInfo(E.Origin.ClientNumber, E.Target.ClientNumber, S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4])
                         {
                             KillerPlayer = E.Origin.Name,
                             VictimPlayer = E.Target.Name,
@@ -366,11 +368,11 @@ namespace StatsPlugin
                     if (killerStats == null)
                         killerStats = new PlayerStats(0, 0, 0, 0, 0, 0);
 
-                    curServer.lastKill[E.Origin.ClientID] = DateTime.Now;
-                    curServer.Kills[E.Origin.ClientID]++;
+                    curServer.lastKill[E.Origin.ClientNumber] = DateTime.Now;
+                    curServer.Kills[E.Origin.ClientNumber]++;
 
-                    if ((DateTime.Now - curServer.lastKill[E.Origin.ClientID]).TotalSeconds > 120)
-                        curServer.inactiveMinutes[E.Origin.ClientID] += 2;
+                    if ((DateTime.Now - curServer.lastKill[E.Origin.ClientNumber]).TotalSeconds > 120)
+                        curServer.inactiveMinutes[E.Origin.ClientNumber] += 2;
 
                     killerStats.Kills++;
 
@@ -378,10 +380,10 @@ namespace StatsPlugin
 
                     curServer.playerStats.UpdateStats(Killer, killerStats);
 
-                    curServer.killStreaks[Killer.ClientID] += 1;
-                    curServer.deathStreaks[Killer.ClientID] = 0;
+                    curServer.killStreaks[Killer.ClientNumber] += 1;
+                    curServer.deathStreaks[Killer.ClientNumber] = 0;
 
-                    await Killer.Tell(MessageOnStreak(curServer.killStreaks[Killer.ClientID], curServer.deathStreaks[Killer.ClientID]));
+                    await Killer.Tell(MessageOnStreak(curServer.killStreaks[Killer.ClientNumber], curServer.deathStreaks[Killer.ClientNumber]));
                 }
 
                 if (E.Type == Event.GType.Death)
@@ -401,15 +403,15 @@ namespace StatsPlugin
 
                     curServer.playerStats.UpdateStats(Victim, victimStats);
 
-                    curServer.deathStreaks[Victim.ClientID] += 1;
-                    curServer.killStreaks[Victim.ClientID] = 0;
+                    curServer.deathStreaks[Victim.ClientNumber] += 1;
+                    curServer.killStreaks[Victim.ClientNumber] = 0;
 
-                    await Victim.Tell(MessageOnStreak(curServer.killStreaks[Victim.ClientID], curServer.deathStreaks[Victim.ClientID]));
+                    await Victim.Tell(MessageOnStreak(curServer.killStreaks[Victim.ClientNumber], curServer.deathStreaks[Victim.ClientNumber]));
                 }
 
                 if (E.Type == Event.GType.Say)
                 {
-                    ChatDB.AddChatHistory(E.Origin.DatabaseID, E.Owner.GetPort(), E.Data);
+                    ChatDB.AddChatHistory(E.Origin.ClientNumber, E.Owner.GetPort(), E.Data);
                 }
             }
 
@@ -444,19 +446,19 @@ namespace StatsPlugin
 
             PlayerStats DisconnectingPlayerStats = curServer.playerStats.GetStats(P);
 
-            if (DisconnectingPlayerStats == null || curServer.Kills[P.ClientID] == 0)
+            if (DisconnectingPlayerStats == null || curServer.Kills[P.ClientNumber] == 0)
                 return;
 
-            else if (curServer.lastKill[P.ClientID] > curServer.connectionTime[P.ClientID])
-                curServer.inactiveMinutes[P.ClientID] += (int)(DateTime.Now - curServer.lastKill[P.ClientID]).TotalMinutes;
+            else if (curServer.lastKill[P.ClientNumber] > curServer.connectionTime[P.ClientNumber])
+                curServer.inactiveMinutes[P.ClientNumber] += (int)(DateTime.Now - curServer.lastKill[P.ClientNumber]).TotalMinutes;
 
-            int newPlayTime = (int)(DateTime.Now - curServer.connectionTime[P.ClientID]).TotalMinutes - curServer.inactiveMinutes[P.ClientID];
+            int newPlayTime = (int)(DateTime.Now - curServer.connectionTime[P.ClientNumber]).TotalMinutes - curServer.inactiveMinutes[P.ClientNumber];
 
             if (newPlayTime < 2)
                 return;
 
             // calculate the players Score Per Minute for the current session
-            double SessionSPM = curServer.Kills[P.ClientID] * 100 / Math.Max(1, newPlayTime);
+            double SessionSPM = curServer.Kills[P.ClientNumber] * 100 / Math.Max(1, newPlayTime);
             // calculate how much the KDR should way
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
             double KDRWeight = Math.Round(Math.Pow(DisconnectingPlayerStats.KDR, 1.637 / Math.E), 3);
@@ -520,7 +522,7 @@ namespace StatsPlugin
         }
     }
 
-    public class StatsDB : Database
+    public class StatsDB : _Database
     {
         public StatsDB(String FN, SharedLibrary.Interfaces.ILogger logger) : base(FN, logger) { }
 
@@ -624,7 +626,7 @@ namespace StatsPlugin
         {
             Dictionary<String, object> newPlayer = new Dictionary<String, object>
             {
-                { "npID", P.NetworkID },
+                { "npID", P.NetworkId },
                 { "KILLS", 0 },
                 { "DEATHS", 0 },
                 { "KDR", 0.0 },
@@ -637,7 +639,7 @@ namespace StatsPlugin
 
         public PlayerStats GetStats(Player P)
         {
-            DataTable Result = GetDataTable("STATS", new KeyValuePair<string, object>("npID", P.NetworkID));
+            DataTable Result = GetDataTable("STATS", new KeyValuePair<string, object>("npID", P.NetworkId));
 
             if (Result != null && Result.Rows.Count > 0)
             {
@@ -682,7 +684,7 @@ namespace StatsPlugin
                 { "SPM", Math.Round(S.scorePerMinute, 2) },
                 { "PLAYTIME", S.TotalPlayTime }
             };
-            Update("STATS", updatedPlayer, new KeyValuePair<string, object>("npID", P.NetworkID));
+            Update("STATS", updatedPlayer, new KeyValuePair<string, object>("npID", P.NetworkId));
         }
 
         public List<KeyValuePair<String, PlayerStats>> GetTopStats()

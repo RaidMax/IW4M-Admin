@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+
 using SharedLibrary;
 using SharedLibrary.Interfaces;
-using System.Threading.Tasks;
+using SharedLibrary.Objects;
 
 namespace EventAPI
 {
@@ -25,7 +27,7 @@ namespace EventAPI
             return "/api/events";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             bool shouldQuery = querySet.Get("status") != null;
             EventResponse requestedEvent = new EventResponse();

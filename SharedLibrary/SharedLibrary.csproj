@@ -66,13 +66,24 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServerCompact, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.SqlServerCompact.6.2.0\lib\net45\EntityFramework.SqlServerCompact.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite, Version=1.0.105.1, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Data.SQLite.Core.1.0.105.1\lib\net45\System.Data.SQLite.dll</HintPath>
+    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.SqlServer.Compact.4.0.8876.1\lib\net40\System.Data.SqlServerCe.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Web" />
@@ -83,6 +94,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database\Initializer.cs" />
+    <Compile Include="Database\IW4MAdminDatabaseContext.cs" />
+    <Compile Include="Database\Models\EFAlias.cs" />
+    <Compile Include="Database\Models\EFAliasLink.cs" />
+    <Compile Include="Database\Models\EFClient.cs" />
+    <Compile Include="Database\Models\EFPenalty.cs" />
+    <Compile Include="Database\Models\SharedEntity.cs" />
+    <Compile Include="Exceptions\DatabaseException.cs" />
     <Compile Include="Helpers\AsyncStatus.cs" />
     <Compile Include="Commands\NativeCommands.cs" />
     <Compile Include="Exceptions\CommandException.cs" />
@@ -90,29 +109,34 @@
     <Compile Include="Exceptions\NetworkException.cs" />
     <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\ServerException.cs" />
+    <Compile Include="Helpers\CommandResult.cs" />
     <Compile Include="Helpers\ConfigurationManager.cs" />
     <Compile Include="Helpers\ParseEnum.cs" />
     <Compile Include="Helpers\Vector3.cs" />
+    <Compile Include="Interfaces\IEntityService.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IManager.cs" />
-    <Compile Include="Interfaces\IPenaltyList.cs" />
     <Compile Include="Interfaces\ISerializable.cs" />
     <Compile Include="Helpers\MessageToken.cs" />
-    <Compile Include="Penalty.cs" />
+    <Compile Include="Objects\Alias.cs" />
+    <Compile Include="Objects\Penalty.cs" />
     <Compile Include="Command.cs" />
-    <Compile Include="Database.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="File.cs" />
     <Compile Include="Dvar.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="Helpers\PlayerHistory.cs" />
-    <Compile Include="Player.cs" />
+    <Compile Include="Objects\Player.cs" />
     <Compile Include="Interfaces\IPlugin.cs" />
+    <Compile Include="Objects\Report.cs" />
     <Compile Include="PluginImporter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RCON.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="ServerConfiguration.cs" />
+    <Compile Include="Services\AliasService.cs" />
+    <Compile Include="Services\ClientService.cs" />
+    <Compile Include="Services\PenaltyService.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WebService.cs" />
   </ItemGroup>
@@ -134,15 +158,12 @@ copy /Y "$(TargetDir)System.Data.SQLite.dll" "$(SolutionDir)Admin\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\lib"
 copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)BUILD\lib"
-copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)Admin\lib"</PostBuildEvent>
+copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)Admin\lib"
+    if not exist "$(TargetDir)x86" md "$(TargetDir)x86"
+    xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\x86\*.*" "$(TargetDir)x86"
+    if not exist "$(TargetDir)amd64" md "$(TargetDir)amd64"
+    xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\amd64\*.*" "$(TargetDir)amd64"</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.105.1\build\net45\System.Data.SQLite.Core.targets'))" />
-  </Target>
   <PropertyGroup>
     <PreBuildEvent>if exist  "$(SolutionDir)BUILD\Plugins" rmdir /Q /S "$(SolutionDir)BUILD\Plugins"
 mkdir  "$(SolutionDir)BUILD\Plugins"

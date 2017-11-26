@@ -144,7 +144,6 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Manager.cs" />
-    <Compile Include="PenaltyList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -180,12 +179,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Lib\SharedLibrary.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Lib\SQLite.Interop.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Lib\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="version.txt">
@@ -245,7 +238,9 @@
     <Content Include="Config\web.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="IW4MAdmin.exe.config" />
+    <None Include="IW4MAdmin.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">
@@ -363,6 +358,7 @@ copy /Y "$(SolutionDir)_customcallbacks.gsc" "$(SolutionDir)BUILD\userraw\script
 copy /Y "$(TargetDir)$(TargetName).exe" "$(SolutionDir)BUILD"
 copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
 copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
+xcopy /Y /I /E "$(SolutionDir)SharedLibrary\$(OutDir)*"  "$(TargetDir)Lib"
 
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
 xcopy /Y /I /E "$(SolutionDir)Admin\Config\*" "$(SolutionDir)BUILD\Config"

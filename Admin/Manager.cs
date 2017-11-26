@@ -10,6 +10,10 @@ using SharedLibrary.Interfaces;
 using SharedLibrary.Commands;
 using SharedLibrary.Helpers;
 using SharedLibrary.Exceptions;
+using SharedLibrary.Objects;
+using SharedLibrary.Database;
+using SharedLibrary.Database.Models;
+using SharedLibrary.Services;
 
 namespace IW4MAdmin
 {
@@ -22,14 +26,13 @@ namespace IW4MAdmin
 
         static ApplicationManager Instance;
         List<AsyncStatus> TaskStatuses;
-        Database ClientDatabase;
-        Database AliasesDatabase;
-        IPenaltyList ClientPenalties;
         List<Command> Commands;
         List<MessageToken> MessageTokens;
         Kayak.IScheduler webServiceTask;
         Thread WebThread;
-        List<Player> PrivilegedClients;
+        ClientService ClientSvc;
+        AliasService AliasSvc;
+        PenaltyService PenaltySvc;
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 15000;
 #else
@@ -43,10 +46,9 @@ namespace IW4MAdmin
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
             MessageTokens = new List<MessageToken>();
-
-            ClientDatabase = new ClientsDB("Database/clients.rm", Logger);
-            AliasesDatabase = new AliasesDB("Database/aliases.rm", Logger);
-            ClientPenalties = new PenaltyList();
+            ClientSvc = new ClientService();
+            AliasSvc = new AliasService();
+            PenaltySvc = new PenaltyService();
         }
 
         public IList<Server> GetServers()
@@ -145,7 +147,7 @@ namespace IW4MAdmin
             #endregion
 
             #region COMMANDS
-            if ((ClientDatabase as ClientsDB).GetOwner() == null)
+            if (ClientSvc.GetOwners().Result.Count == 0)
                 Commands.Add(new COwner());
 
             Commands.Add(new CQuit());
@@ -185,11 +187,6 @@ namespace IW4MAdmin
                 Commands.Add(C);
             #endregion
 
-            #region ADMINS
-            PrivilegedClients = GetClientDatabase().GetAdmins();
-            #endregion
-
-
             Running = true;
         }
 
@@ -225,21 +222,6 @@ namespace IW4MAdmin
             Running = false;
         }
 
-        public ClientsDB GetClientDatabase()
-        {
-            return ClientDatabase as ClientsDB;
-        }
-
-        public AliasesDB GetAliasesDatabase()
-        {
-            return AliasesDatabase as AliasesDB;
-        }
-
-        public IPenaltyList GetClientPenalties()
-        {
-            return ClientPenalties;
-        }
-
         public ILogger GetLogger()
         {
             return Logger;
@@ -260,54 +242,8 @@ namespace IW4MAdmin
             return ActiveClients;
         }
 
-        public IList<Player> GetAliasClients(Player Origin)
-        {
-            List<int> databaseIDs = new List<int>();
-
-            foreach (Aliases A in GetAliases(Origin))
-                databaseIDs.Add(A.Number);
-
-            return GetClientDatabase().GetPlayers(databaseIDs);
-        }
-
-        public IList<Aliases> GetAliases(Player Origin)
-        {
-            List<Aliases> allAliases = new List<Aliases>();
-
-            if (Origin == null)
-                return allAliases;
-
-            Aliases currentIdentityAliases = GetAliasesDatabase().GetPlayerAliases(Origin.DatabaseID);
-
-            if (currentIdentityAliases == null)
-                return allAliases;
-
-            GetAliases(allAliases, currentIdentityAliases);
-            if (Origin.Alias != null)
-                allAliases.Add(Origin.Alias);
-            allAliases.Add(currentIdentityAliases);
-            return allAliases;
-        }
-
-        public IList<Player> GetPrivilegedClients()
-        {
-            return PrivilegedClients;
-        }
-
-        private void GetAliases(List<Aliases> returnAliases, Aliases currentAlias)
-        {
-            foreach (String IP in currentAlias.IPS)
-            {
-                List<Aliases> Matching = GetAliasesDatabase().GetPlayerAliases(IP);
-                foreach (Aliases I in Matching)
-                {
-                    if (!returnAliases.Contains(I) && returnAliases.Find(x => x.Number == I.Number) == null)
-                    {
-                        returnAliases.Add(I);
-                        GetAliases(returnAliases, I);
-                    }
-                }
-            }
-        }
+        public ClientService GetClientService() => ClientSvc;
+        public AliasService GetAliasService() => AliasSvc;
+        public PenaltyService GetPenaltyService() => PenaltySvc;
     }
 }

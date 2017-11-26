@@ -9,6 +9,12 @@ using System.Net;
 using System.Text;
 using System.Threading;
 
+using SharedLibrary.Objects;
+using System.Threading.Tasks;
+using SharedLibrary.Services;
+using System.Linq.Expressions;
+using SharedLibrary.Database.Models;
+
 namespace IW4MAdmin
 {
     public class WebService
@@ -81,7 +87,7 @@ namespace IW4MAdmin
             IPage requestedPage = SharedLibrary.WebService.PageList.Find(x => x.GetPath().ToLower() == path.ToLower());
 
             if (requestedPage != null)
-                return requestedPage.GetPage(queryset, headers);
+                return Task.Run(async () => await requestedPage.GetPage(queryset, headers)).Result;
             else
             {
                 if (File.Exists(path.Replace("/", "\\").Substring(1)))
@@ -127,7 +133,7 @@ namespace IW4MAdmin
                 }
 
                 requestedPage = new Error404();
-                return requestedPage.GetPage(queryset, headers);
+                return Task.Run(async () => await requestedPage.GetPage(queryset, headers)).Result;
             }
         }
     }
@@ -144,7 +150,7 @@ namespace IW4MAdmin
             return "";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             HttpResponse resp = new HttpResponse()
             {
@@ -203,7 +209,7 @@ namespace IW4MAdmin
             return "/_servers";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             var info = new List<ServerInfo>();
             foreach (Server S in ApplicationManager.GetInstance().Servers)
@@ -221,8 +227,8 @@ namespace IW4MAdmin
                     PlayerHistory = S.PlayerHistory.ToArray()
                 };
 
-                bool authed = ApplicationManager.GetInstance().GetPrivilegedClients()
-                    .Where(x => x.IP == querySet["IP"])
+                bool authed = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients())
+                    .Where(x => x.IPAddress == querySet["IP"])
                     .Where(x => x.Level > Player.Permission.Trusted).Count() > 0
                     || querySet["IP"] == "127.0.0.1";
 
@@ -230,7 +236,7 @@ namespace IW4MAdmin
                 {
                     PlayerInfo pInfo = new PlayerInfo()
                     {
-                        playerID = P.DatabaseID,
+                        playerID = P.ClientNumber,
                         playerName = P.Name,
                         playerLevel = authed ? P.Level.ToString() : Player.Permission.User.ToString()
                     };
@@ -249,7 +255,7 @@ namespace IW4MAdmin
             return resp;
         }
 
-        public string GetContentType()                                                                                                                                  
+        public string GetContentType()
         {
             return "application/json";
         }
@@ -273,7 +279,7 @@ namespace IW4MAdmin
             return "/_playerhistory";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
 
             var history = new SharedLibrary.Helpers.PlayerHistory[0];
@@ -320,7 +326,7 @@ namespace IW4MAdmin
             return "/_info";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             ApplicationInfo info = new ApplicationInfo()
             {
@@ -360,12 +366,9 @@ namespace IW4MAdmin
             return "/_console";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            CommandInfo cmd = new CommandInfo()
-            {
-                Result = new List<string>()
-            };
+            var cmd = new List<SharedLibrary.Helpers.CommandResult>();
 
             if (querySet["command"] != null)
             {
@@ -376,32 +379,37 @@ namespace IW4MAdmin
 
                     if (S != null)
                     {
-                        Player admin = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(querySet["IP"]);
+                        // fixme
+                        Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"];
+                        Player admin = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).First()?.AsPlayer();
 
                         if (admin == null)
-                            admin = new Player("RestUser", "-1", -1, (int)Player.Permission.User);
+                            admin = new Player() { Name = "RestUser", Level = Player.Permission.User };
 
                         Event remoteEvent = new Event(Event.GType.Say, querySet["command"], admin, null, S)
                         {
                             Remote = true
                         };
-                        admin.lastEvent = remoteEvent;
+                        admin.CurrentServer = S;
+                        await S.ExecuteEvent(remoteEvent);
 
-                        S.ExecuteEvent(remoteEvent);
+                        var results = S.commandResult.Where(c => c.Clientd == admin.ClientId).ToList();
+                        cmd.AddRange(results);
 
-                        while (S.commandResult.Count > 0)
-                            cmd.Result.Add(S.commandResult.Dequeue());
+                        for (int i = 0; i < results.Count(); i++)
+                            S.commandResult.Remove(results[i]);
+
                     }
                     else
-                        cmd.Result.Add("Invalid server selected.");
+                        cmd.Add(new SharedLibrary.Helpers.CommandResult() { Clientd = 0, Message = "Invalid server selected" });
                 }
                 else
-                    cmd.Result.Add("Invalid server selected.");
+                    cmd.Add(new SharedLibrary.Helpers.CommandResult() { Clientd = 0, Message = "No server selected" });
             }
 
             else
             {
-                cmd.Result.Add("No command entered.");
+                cmd.Add(new SharedLibrary.Helpers.CommandResult() { Clientd = 0, Message = "No command entered"  });
             }
 
             HttpResponse resp = new HttpResponse()
@@ -437,51 +445,28 @@ namespace IW4MAdmin
             return "/_penalties";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             int from = 0;
             if (querySet["from"] != null)
                 from = Int32.Parse(querySet["from"]);
-            List<Penalty> selectedPenalties;
-
-            try
-            {
-                selectedPenalties = ((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList).AsChronoList(Convert.ToInt32(querySet["from"]), 15).OrderByDescending(b => b.When).ToList();
-            }
-
-            catch (Exception)
-            {
-                selectedPenalties = new List<Penalty>();
-            }
 
             List<PenaltyInfo> info = new List<PenaltyInfo>();
 
-            foreach (var p in selectedPenalties)
+            foreach (var penalty in await ApplicationManager.GetInstance().GetPenaltyService().GetRecentPenalties(15, from))
             {
-                Player admin = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.PenaltyOriginID, 0) ??
-                    new Player("IW4MAdmin", "-1", -1, (int)Player.Permission.Banned);
-
-                Player penalized = ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(p.OffenderID, 0);
-                if (admin == null && penalized == null)
-                    continue;
 
                 PenaltyInfo pInfo = new PenaltyInfo()
                 {
-                    adminName = admin.Name,
-                    adminLevel = admin.Level.ToString(),
-                    penaltyReason = p.Reason,
-                    penaltyTime = Utilities.GetTimePassed(p.When),
-                    penaltyType = p.BType.ToString(),
-                    playerName = penalized.Name,
-                    playerID = penalized.DatabaseID,
-                    Expires = p.Expires > DateTime.Now ? (p.Expires - DateTime.Now).TimeSpanText() : ""
+                    adminName = penalty.Punisher.Name,
+                    adminLevel = penalty.Punisher.Level.ToString(),
+                    penaltyReason = penalty.Offense,
+                    penaltyTime = Utilities.GetTimePassed(penalty.When),
+                    penaltyType = penalty.Type.ToString(),
+                    playerName = penalty.Offender.Name,
+                    playerID = penalty.Offender.ClientId,
+                    Expires = penalty.Expires > DateTime.Now ? (penalty.Expires - DateTime.Now).TimeSpanText() : ""
                 };
-
-                if (admin.NetworkID == penalized.NetworkID)
-                {
-                    pInfo.adminName = "IW4MAdmin";
-                    pInfo.adminLevel = Player.Permission.Console.ToString();
-                }
                 info.Add(pInfo);
             }
 
@@ -626,9 +611,11 @@ namespace IW4MAdmin
             return "/GetAdmins";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            var Admins = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().OrderByDescending(a => a.Level);
+            var Admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService)
+                .GetPrivilegedClients())
+                .OrderByDescending(a => a.Level).ToList();
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
@@ -661,17 +648,17 @@ namespace IW4MAdmin
             return "/pubbans";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             HttpResponse resp = new HttpResponse()
             {
-                contentType = GetContentType(),
-                content = Newtonsoft.Json.JsonConvert
-                    .SerializeObject(((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList)
-                    .AsChronoList(Convert.ToInt32(querySet["from"]), 50, Penalty.Type.Ban), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] {
-                        new Newtonsoft.Json.Converters.StringEnumConverter()
-                    }),
-                additionalHeaders = new Dictionary<string, string>()
+                /*  contentType = GetContentType(),
+                  content = Newtonsoft.Json.JsonConvert
+                      .SerializeObject(((ApplicationManager.GetInstance().GetClientPenalties()) as PenaltyList)
+                      .AsChronoList(Convert.ToInt32(querySet["from"]), 50, Penalty.Type.Ban), Newtonsoft.Json.Formatting.Indented, new Newtonsoft.Json.JsonConverter[] {
+                          new Newtonsoft.Json.Converters.StringEnumConverter()
+                      }),
+                  additionalHeaders = new Dictionary<string, string>()*/
             };
             return resp;
         }
@@ -699,9 +686,9 @@ namespace IW4MAdmin
             return "/pages";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-  
+
             var pages = SharedLibrary.WebService.PageList.Select(p => new
             {
                 pagePath = p.GetPath(),
@@ -746,33 +733,34 @@ namespace IW4MAdmin
             return "GetPlayer";
         }
 
-        public HttpResponse GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             List<PlayerInfo> pInfo = new List<PlayerInfo>();
-            List<Player> matchedPlayers = new List<Player>();
+            IList<SharedLibrary.Database.Models.EFClient> matchedPlayers = new List<SharedLibrary.Database.Models.EFClient>();
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
                 additionalHeaders = new Dictionary<string, string>()
             };
-            bool authed = ApplicationManager.GetInstance().GetClientDatabase().GetAdmins().FindAll(x => x.IP == querySet["IP"] && x.Level > Player.Permission.Trusted).Count > 0
+            Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"] && c.Level > Player.Permission.Trusted;
+            bool authed = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).Count > 0
                 || querySet["IP"] == "127.0.0.1";
             bool recent = false;
             bool individual = querySet["id"] != null;
 
             if (individual)
             {
-                matchedPlayers.Add(ApplicationManager.GetInstance().GetClientDatabase().GetPlayer(Convert.ToInt32(querySet["id"])));
+                matchedPlayers.Add(await ApplicationManager.GetInstance().GetClientService().Get(Convert.ToInt32(querySet["id"])));
             }
 
             else if (querySet["npID"] != null)
             {
-                matchedPlayers.Add(ApplicationManager.GetInstance().GetClientDatabase().GetPlayers(new List<string> { querySet["npID"] }).First());
+                matchedPlayers.Add(await ApplicationManager.GetInstance().GetClientService().GetUnique(querySet["npID"]));
             }
 
             else if (querySet["name"] != null)
             {
-                matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().FindPlayers(querySet["name"]);
+                matchedPlayers = await ApplicationManager.GetInstance().GetClientService().Find(c => c.Name.Contains(querySet["name"]));
             }
 
             else if (querySet["recent"] != null)
@@ -783,7 +771,7 @@ namespace IW4MAdmin
                 if (offset < 0)
                     throw new FormatException("Invalid offset");
 
-                matchedPlayers = ApplicationManager.GetInstance().GetClientDatabase().GetRecentPlayers(15, offset);
+                matchedPlayers = await ApplicationManager.GetInstance().GetClientService().GetRecentClients(offset, 15);
                 recent = true;
             }
 
@@ -795,26 +783,23 @@ namespace IW4MAdmin
 
                     PlayerInfo eachPlayer = new PlayerInfo()
                     {
-                        playerID = pp.DatabaseID,
-                        playerIP = pp.IP,
+                        playerIP = pp.IPAddress,
+                        playerID = pp.ClientId,
                         playerLevel = pp.Level.ToString(),
                         playerName = pp.Name,
-                        playernpID = pp.NetworkID,
+                        playernpID = pp.NetworkId,
                         forumID = -1,
                         authed = authed,
                         showV2Features = false,
                         playerAliases = new List<string>(),
                         playerIPs = new List<string>()
-
                     };
 
                     if (!recent && individual && authed)
                     {
-                        foreach (var a in ApplicationManager.GetInstance().GetAliases(pp))
-                        {
-                            eachPlayer.playerAliases.AddRange(a.Names);
-                            eachPlayer.playerIPs.AddRange(a.IPS);
-                        }
+
+                        eachPlayer.playerAliases = pp.AliasLink.Children.OrderBy(a => a.Name).Select(a => a.Name).ToList();
+                        eachPlayer.playerIPs = pp.AliasLink.Children.Select(a => a.IP).ToList();
                     }
 
                     eachPlayer.playerAliases = eachPlayer.playerAliases.Distinct().ToList();

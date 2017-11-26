@@ -5,14 +5,12 @@ using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
 using SharedLibrary.Network;
+using SharedLibrary.Objects;
 
 namespace Welcome_Plugin
 {
     public class Plugin : IPlugin
     {
-        Dictionary<int, float> PlayerPings;
-        int PingAverageCount;
-
         String TimesConnected(Player P)
         {
             int connection = P.Connections;
@@ -68,37 +66,14 @@ namespace Welcome_Plugin
 
         public async Task OnLoadAsync(IManager manager)
         {
-            PlayerPings = new Dictionary<int, float>();
-            PingAverageCount = 1;
         }
 
         public async Task OnUnloadAsync()
         {
-            PlayerPings.Clear();
-            PlayerPings = null;
         }
 
         public async Task OnTickAsync(Server S)
         {
-            return;
-
-            // TODO: check if this works
-
-            int MaxPing = (await S.GetDvarAsync<int>("sv_maxping")).Value;
-
-            if (MaxPing == 0)
-                return;
-
-            foreach (int PlayerID in PlayerPings.Keys)
-            {
-                var Player = S.Players.Find(p => p.DatabaseID == PlayerID);
-                PlayerPings[PlayerID] = PlayerPings[PlayerID] + (Player.Ping - PlayerPings[PlayerID]) / PingAverageCount;
-                if (PlayerPings[PlayerID] > MaxPing)
-                    await Player.Kick($"Your average ping of ^5{PlayerPings[PlayerID]} ^7is too high for this server", null);
-            }
-
-            if (PingAverageCount > 100)
-                PingAverageCount = 1;
         }
 
         public async Task OnEventAsync(Event E, Server S)
@@ -120,7 +95,7 @@ namespace Welcome_Plugin
                     try
                     {
                         CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
-                        await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IP)}");
+                        await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IPAddress)}");
                     }
 
                     catch (Exception)
@@ -129,13 +104,10 @@ namespace Welcome_Plugin
                     }
 
                 }
-
-                //PlayerPings.Add(E.Origin.DatabaseID, 1.0f);
             }
 
             if (E.Type == Event.GType.Disconnect)
             {
-                //PlayerPings.Remove(E.Origin.DatabaseID);
             }
         }
     }

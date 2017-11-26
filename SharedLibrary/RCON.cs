@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Net.Sockets;
 
+using SharedLibrary.Objects;
+
 namespace SharedLibrary.Network
 {
     public static class RCON

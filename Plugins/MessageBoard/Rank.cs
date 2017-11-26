@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using SharedLibrary.Objects;
+
 namespace MessageBoard
 {
     public class Rank : Identifiable
     {
         public string name;
-        public SharedLibrary.Player.Permission equivalentRank;
+        public Player.Permission equivalentRank;
         public int id;
 
         /// <summary>
@@ -17,14 +19,14 @@ namespace MessageBoard
         /// <param name="name"></param>
         /// <param name="equivalentRank"></param>
         /// <param name="permissions"></param>
-        public Rank(string name, SharedLibrary.Player.Permission equivalentRank)
+        public Rank(string name, Player.Permission equivalentRank)
         {
             this.name = name;
             this.equivalentRank = equivalentRank;
             id = 0;
         }
 
-        public Rank(int id, string name, SharedLibrary.Player.Permission equivalentRank)
+        public Rank(int id, string name, Player.Permission equivalentRank)
         {
             this.name = name;
             this.equivalentRank = equivalentRank;

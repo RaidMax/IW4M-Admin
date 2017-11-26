@@ -10,7 +10,7 @@ using System.Data;
 
 namespace StatsPlugin
 {
-    public class ChatDatabase : Database
+    public class ChatDatabase : _Database
     {
         private string[] CommonWords = new string[] { "for",
 "with",

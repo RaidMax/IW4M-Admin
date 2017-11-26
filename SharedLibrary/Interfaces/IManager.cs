@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using SharedLibrary.Objects;
+using SharedLibrary.Database.Models;
+using SharedLibrary.Services;
 
 namespace SharedLibrary.Interfaces
 {
@@ -10,13 +13,10 @@ namespace SharedLibrary.Interfaces
         ILogger GetLogger();
         IList<Server> GetServers();
         IList<Command> GetCommands();
-        IPenaltyList GetClientPenalties();
-        ClientsDB GetClientDatabase();
-        AliasesDB GetAliasesDatabase();
         IList<Helpers.MessageToken> GetMessageTokens();
         IList<Player> GetActiveClients();
-        IList<Player> GetAliasClients(Player player);
-        IList<Aliases> GetAliases(Player player);
-        IList<Player> GetPrivilegedClients();
+       ClientService GetClientService();
+        AliasService GetAliasService();
+        PenaltyService GetPenaltyService();
     }
 }

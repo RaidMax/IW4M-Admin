@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using SharedLibrary;
 using SharedLibrary.Network;
 using SharedLibrary.Interfaces;
-using System.Threading.Tasks;
+using SharedLibrary.Objects;
 
 namespace Votemap_Plugin
 {
@@ -39,7 +40,7 @@ namespace Votemap_Plugin
             // we only want to allow a vote during a vote session
             if (voting.voteInSession)
             {
-                if (voting.ClientHasVoted(E.Origin.NetworkID))
+                if (voting.ClientHasVoted(E.Origin.NetworkId))
                     await E.Origin.Tell("You have already voted. Use ^5!vc ^7to ^5cancel ^7your vote");
                 else
                 {
@@ -50,7 +51,7 @@ namespace Votemap_Plugin
                        await  E.Origin.Tell("^1" + E.Data + " is not a recognized map");
                     else
                     {
-                        voting.CastClientVote(E.Origin.NetworkID, votedMap);
+                        voting.CastClientVote(E.Origin.NetworkId, votedMap);
                         await E.Origin.Tell("You voted for ^5" + votedMap.Alias);
                     }
                 }
@@ -71,9 +72,9 @@ namespace Votemap_Plugin
 
             if (voting.voteInSession)
             {
-                if (voting.ClientHasVoted(E.Origin.NetworkID))
+                if (voting.ClientHasVoted(E.Origin.NetworkId))
                 {
-                    voting.CancelClientVote(E.Origin.NetworkID);
+                    voting.CancelClientVote(E.Origin.NetworkId);
                     await E.Origin.Tell("Vote cancelled");
                 }
                     

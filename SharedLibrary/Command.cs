@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 
+using SharedLibrary.Objects;
+
 namespace SharedLibrary
 {
     public class CommandArgument

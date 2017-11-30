@@ -7,22 +7,32 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Database
 {
-    public class Initializer : DropCreateDatabaseIfModelChanges<IW4MAdminDatabaseContext>
+    public class Initializer : DropCreateDatabaseIfModelChanges<DatabaseContext>
     {
-        protected override void Seed(IW4MAdminDatabaseContext context)
+        protected override void Seed(DatabaseContext context)
         {
+            var aliasLink = new Models.EFAliasLink();
+
+            var currentAlias = new Models.EFAlias()
+            {
+                Active = true,
+                DateAdded = DateTime.UtcNow,
+                IPAddress = "0.0.0.0",
+                Name = "IW4MAdmin",
+                Link = aliasLink
+            };
+
             context.Clients.Add(new Models.EFClient()
             {
                 Active = false,
                 Connections = 0,
-                AliasLink = new Models.EFAliasLink(),
                 FirstConnection = DateTime.UtcNow,
-                IPAddress = "127.0.0.1",
                 LastConnection = DateTime.UtcNow,
                 Level = Objects.Player.Permission.Console,
-                Name = "IW4MAdmin",
                 Masked = true,
                 NetworkId = "0000000000000000",
+                AliasLink = aliasLink,
+                CurrentAlias = currentAlias
             });
 
             base.Seed(context);

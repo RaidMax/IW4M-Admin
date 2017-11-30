@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace SharedLibrary.Database.Models
 {
@@ -8,10 +10,12 @@ namespace SharedLibrary.Database.Models
         [Key]
         public int AliasLinkId { get; set; }
         public virtual ICollection<EFAlias> Children { get; set; }
+        public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
 
         public EFAliasLink()
         {
             Children = new List<EFAlias>();
+            ReceivedPenalties = new List<EFPenalty>();
         }
     }
 }

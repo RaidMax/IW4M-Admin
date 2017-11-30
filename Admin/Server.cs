@@ -38,7 +38,7 @@ namespace IW4MAdmin
             try
             {
                 Player player = null;
-                var client = (await Manager.GetClientService().GetUnique(polledPlayer.NetworkId));
+                var client = await Manager.GetClientService().GetUnique(polledPlayer.NetworkId);
 
                 // first time client is connecting to server
                 if (client == null)
@@ -52,27 +52,20 @@ namespace IW4MAdmin
                 {
                     client.Connections += 1;
                     bool aliasExists = client.AliasLink.Children
-                        .FirstOrDefault(a => a.Name == polledPlayer.Name && a.IP == polledPlayer.IPAddress) != null;
+                        .FirstOrDefault(a => a.Name == polledPlayer.Name && a.IPAddress == polledPlayer.IPAddress) != null;
 
                     if (!aliasExists)
                     {
                         Logger.WriteDebug($"Client {polledPlayer} has connected previously under a different alias");
-                        await Manager.GetAliasService().Create(new SharedLibrary.Database.Models.EFAlias()
+                        client.CurrentAlias = new SharedLibrary.Database.Models.EFAlias()
                         {
-                            Active = true,
-                            IP = polledPlayer.IPAddress,
+                            IPAddress = polledPlayer.IPAddress,
                             Name = polledPlayer.Name,
-                            DateAdded = DateTime.UtcNow,
-                            Link = client.AliasLink,
-                        });
+                        };
+                        await Manager.GetClientService().Update(client);
                     }
-
-                    client.Name = polledPlayer.Name;
-                    client.IPAddress = polledPlayer.IPAddress;
                     player = client.AsPlayer();
                 }
-
-
 
                 /*var Admins = Manager.GetDatabase().GetPrivilegedClients();
                 if (Admins.Where(x => x.Name == polledPlayer.Name).Count() > 0)
@@ -81,6 +74,10 @@ namespace IW4MAdmin
                         await this.ExecuteCommandAsync("clientkick " + polledPlayer.ClientNumber + " \"Please do not impersonate an admin^7\"");
                 }*/
                 player.CurrentServer = this;
+#if DEBUG
+                player.ClientNumber = polledPlayer.ClientNumber;
+                Players[player.ClientNumber] = player;
+#endif
 
                 var ban = (await Manager.GetPenaltyService().Find(p => p.LinkId == player.AliasLink.AliasLinkId
                 && p.Expires > DateTime.UtcNow)).FirstOrDefault();
@@ -92,12 +89,12 @@ namespace IW4MAdmin
                     autoKickClient.CurrentServer = this;
 
                     if (ban.Type == Penalty.PenaltyType.TempBan)
-                        await this.ExecuteCommandAsync($"clientkick {player.ClientNumber} \"You are temporarily banned. ({(ban.Expires - DateTime.Now).TimeSpanText()} left)\"");
+                        await this.ExecuteCommandAsync($"clientkick {player.ClientNumber} \"You are temporarily banned. ({(ban.Expires - DateTime.UtcNow).TimeSpanText()} left)\"");
                     else
-                        await player.Kick($"previously banned for {ban.Offense}", autoKickClient);
+                        await player.Kick($"Previously banned for {ban.Offense}", autoKickClient);
 
                     if (player.Level != Player.Permission.Banned && ban.Type == Penalty.PenaltyType.Ban)
-                        await player.Ban($"previously banned for {ban.Offense}", autoKickClient);
+                        await player.Ban($"Previously banned for {ban.Offense}", autoKickClient);
                     return true;
                 }
 
@@ -106,8 +103,7 @@ namespace IW4MAdmin
                 // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
                 Players[player.ClientNumber] = player;
-                await Manager.GetClientService().Update(player);
-                Logger.WriteInfo($"Client {player} connecting..."); // they're clean          
+                Logger.WriteInfo($"Client {player} connecting..."); 
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
@@ -128,7 +124,7 @@ namespace IW4MAdmin
         //Remove player by CLIENT NUMBER
         override public async Task RemovePlayer(int cNum)
         {
-            if (cNum >= 0)
+            if (cNum >= 0 && Players[cNum] != null)
             {
                 Player Leaving = Players[cNum];
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
@@ -217,6 +213,7 @@ namespace IW4MAdmin
                         E.Target = found.AsPlayer();
                         E.Target.CurrentServer = this as IW4MServer;
                         E.Owner = this as IW4MServer;
+                        E.Data = String.Join(" ", Args.Skip(1));
                     }
                 }
 
@@ -242,7 +239,7 @@ namespace IW4MAdmin
                     else if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
-                        E.Data = Regex.Replace(E.Data, $"\"{E.Target.Name}\"",  "", RegexOptions.IgnoreCase).Trim();
+                        E.Data = Regex.Replace(E.Data, $"\"{E.Target.Name}\"", "", RegexOptions.IgnoreCase).Trim();
                     }
                 }
 
@@ -642,53 +639,114 @@ namespace IW4MAdmin
 
         public override async Task Warn(String Reason, Player Target, Player Origin)
         {
-            if (Target.Warnings >= 4)
-                await Target.Kick("Too many warnings!", (await Manager.GetClientService().Get(1)).AsPlayer());
+            // ensure player gets warned if command not performed on them in game
+            if (Target.ClientNumber < 0)
+            {
+                Player ingameClient = null;
+
+                ingameClient = Manager.GetServers()
+                    .Select(s => s.GetPlayersAsList())
+                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
+                    ?.First(c => c.ClientId == Target.ClientId);
+
+                if (ingameClient != null)
+                {
+                    await Warn(Reason, ingameClient, Origin);
+                    return;
+                }
+            }
+
             else
             {
-                Penalty newPenalty = new Penalty()
-                {
-                    Type = Penalty.PenaltyType.Warning,
-                    Expires = DateTime.UtcNow,
-                    Offender = Target,
-                    Offense = Reason,
-                    Punisher = Origin,
-                    Active = true,
-                    When = DateTime.UtcNow,
-                    Link = Target.AliasLink
-                };
+                if (Target.Warnings >= 4)
+                    await Target.Kick("Too many warnings!", (await Manager.GetClientService().Get(1)).AsPlayer());
 
-                await Manager.GetPenaltyService().Create(newPenalty);
                 Target.Warnings++;
-
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Reason);
-                await Broadcast(Message);
+                await Target.CurrentServer.Broadcast(Message);
             }
+
+            Penalty newPenalty = new Penalty()
+            {
+                Type = Penalty.PenaltyType.Warning,
+                Expires = DateTime.UtcNow,
+                Offender = Target,
+                Offense = Reason,
+                Punisher = Origin,
+                Active = true,
+                When = DateTime.UtcNow,
+                Link = Target.AliasLink
+            };
+
+            await Manager.GetPenaltyService().Create(newPenalty);
         }
 
         public override async Task Kick(String Reason, Player Target, Player Origin)
         {
-            if (Target.ClientNumber > -1)
+            // ensure player gets kicked if command not performed on them in game
+            if (Target.ClientNumber < 0)
             {
-                String Message = "^1Player Kicked: ^5" + Reason;
-                await Manager.GetPenaltyService().Create(new Penalty()
+                Player ingameClient = null;
+
+                ingameClient = Manager.GetServers()
+                    .Select(s => s.GetPlayersAsList())
+                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
+                    ?.First(c => c.ClientId == Target.ClientId);
+
+                if (ingameClient != null)
                 {
-                    Type = Penalty.PenaltyType.Kick,
-                    Expires = DateTime.UtcNow,
-                    Offender = Target,
-                    Offense = Reason,
-                    Punisher = Origin,
-                    Active = true,
-                    When = DateTime.UtcNow,
-                    Link = Target.AliasLink
-                });
-                await this.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"{Message}^7\"");
+                    await Kick(Reason, ingameClient, Origin);
+                    return;
+                }
             }
+            else
+                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Kicked: ^5{Reason}^7\"");
+
+#if DEBUG
+            await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
+#endif
+
+            var newPenalty = new Penalty()
+            {
+                Type = Penalty.PenaltyType.Kick,
+                Expires = DateTime.UtcNow,
+                Offender = Target,
+                Offense = Reason,
+                Punisher = Origin,
+                Active = true,
+                When = DateTime.UtcNow,
+                Link = Target.AliasLink
+            };
+
+            await Manager.GetPenaltyService().Create(newPenalty);
         }
 
         public override async Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin)
         {
-            await this.ExecuteCommandAsync($"clientkick {Target.ClientNumber } \"^1Player Temporarily Banned: ^5{ Reason }\"");
+            // ensure player gets banned if command not performed on them in game
+            if (Target.ClientNumber < 0)
+            {
+                Player ingameClient = null;
+
+                ingameClient = Manager.GetServers()
+                    .Select(s => s.GetPlayersAsList())
+                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
+                    ?.First(c => c.ClientId == Target.ClientId);
+
+                if (ingameClient != null)
+                {
+                    await TempBan(Reason, length, ingameClient, Origin);
+                    return;
+                }
+            }
+
+            else
+                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber } \"^1Player Temporarily Banned: ^5{ Reason }\"");
+
+#if DEBUG
+            await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
+#endif
+
             Penalty newPenalty = new Penalty()
             {
                 Type = Penalty.PenaltyType.TempBan,
@@ -706,6 +764,33 @@ namespace IW4MAdmin
 
         override public async Task Ban(String Message, Player Target, Player Origin)
         {
+            // ensure player gets banned if command not performed on them in game
+            if (Target.ClientNumber < 0)
+            {
+                Player ingameClient = null;
+
+                ingameClient = Manager.GetServers()
+                    .Select(s => s.GetPlayersAsList())
+                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
+                    ?.First(c => c.ClientId == Target.ClientId);
+
+                if (ingameClient != null)
+                {
+                    await Ban(Message, ingameClient, Origin);
+                    return;
+                }
+            }
+
+            else
+            {
+                // this is set only because they're still in the server.
+                Target.Level = Player.Permission.Banned;
+                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Banned: ^5{Message} ^7(appeal at {Website}) ^7\"");
+#if DEBUG
+                await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
+#endif
+            }
+
             Penalty newPenalty = new Penalty()
             {
                 Type = Penalty.PenaltyType.Ban,
@@ -717,39 +802,8 @@ namespace IW4MAdmin
                 When = DateTime.UtcNow,
                 Link = Target.AliasLink
             };
+
             await Manager.GetPenaltyService().Create(newPenalty);
-            Target.Level = Player.Permission.Banned;
-            await Manager.GetClientService().Update(Target);
-
-            lock (Reports) // threading seems to do something weird here
-            {
-                List<Report> toRemove = new List<Report>();
-                foreach (Report R in Reports)
-                {
-                    if (R.Target.NetworkId == Target.NetworkId)
-                        toRemove.Add(R);
-                }
-
-                foreach (Report R in toRemove)
-                {
-                    Reports.Remove(R);
-                    Logger.WriteInfo("Removing report for banned GUID - " + R.Origin.NetworkId);
-                }
-            }
-
-            // banned from all servers if active
-            foreach (var server in Manager.GetServers())
-            {
-                if (server.GetPlayersAsList().Count > 0)
-                {
-                    var activeClient = server.GetPlayersAsList().SingleOrDefault(x => x.NetworkId == Target.NetworkId);
-                    if (activeClient != null)
-                    {
-                        await server.ExecuteCommandAsync($"clientkick {activeClient.ClientNumber}  \"Player Banned: ^5{Message} ^7(appeal at {Website}) ^7\"");
-                        break;
-                    }
-                }
-            }
         }
 
         override public async Task Unban(Player Target)

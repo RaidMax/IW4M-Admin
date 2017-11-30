@@ -16,15 +16,9 @@ namespace SharedLibrary.Database.Models
         public string NetworkId { get; set; }
 
         [Required]
-        public string Name { get; set; }
-        [Required]
-        public Objects.Player.Permission Level { get; set; }
-        [Required]
         public int Connections { get; set; }
         [Required]
         public int TotalConnectionTime { get; set; }
-        [Required]
-        public string IPAddress { get; set; }
         [Required]
         public DateTime FirstConnection { get; set; }
         [Required]
@@ -34,6 +28,27 @@ namespace SharedLibrary.Database.Models
         public int AliasLinkId { get; set; }
         [ForeignKey("AliasLinkId")]
         public virtual EFAliasLink AliasLink { get; set; }
+        [Required]
+        public Objects.Player.Permission Level { get; set; }
+
+        [Required]
+        public int CurrentAliasId { get; set; }
+        [ForeignKey("CurrentAliasId")]
+        public virtual EFAlias CurrentAlias { get; set; }
+
+        [NotMapped]
+        public virtual string Name
+        {
+            get { return CurrentAlias.Name; }
+            set { }
+        }
+        [NotMapped]
+        public virtual string IPAddress
+        {
+            get { return CurrentAlias.IPAddress; }
+            set { }
+        }
+
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }
 

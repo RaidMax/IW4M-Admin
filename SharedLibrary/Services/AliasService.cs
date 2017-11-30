@@ -16,12 +16,22 @@ namespace SharedLibrary.Services
     {
         public async Task<EFAlias> Create(EFAlias entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            throw new Exception();
+            using (var context = new DatabaseContext())
             {
-                entity.Link = await context.AliasLinks.FirstAsync(a => a.AliasLinkId == entity.Link.AliasLinkId);
-                var addedEntity = context.Aliases.Add(entity);
+                var alias = new EFAlias()
+                {
+                    Active = true,
+                    DateAdded = DateTime.UtcNow,
+                    IPAddress = entity.IPAddress,
+                    Name = entity.Name
+                };
+
+                entity.Link = await context.AliasLinks
+                    .FirstAsync(a => a.AliasLinkId == entity.Link.AliasLinkId);
+                context.Aliases.Add(entity);
                 await context.SaveChangesAsync();
-                return addedEntity;
+                return entity;
             }
         }
 
@@ -32,11 +42,11 @@ namespace SharedLibrary.Services
 
         public async Task<EFAlias> Delete(EFAlias entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
-                entity = context.Aliases.Single(e => e.AliasId == entity.AliasId);
-                entity.Active = false;
-                context.Entry(entity).State = EntityState.Modified;
+                var alias = context.Aliases
+                    .Single(e => e.AliasId == entity.AliasId);
+                alias.Active = false;
                 await context.SaveChangesAsync();
                 return entity;
             }
@@ -44,14 +54,18 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFAlias>> Find(Func<EFAlias, bool> expression)
         {
-            using (var context = new IW4MAdminDatabaseContext())
-                return await Task.Run(() => context.Aliases.Where(expression).ToList());
+            using (var context = new DatabaseContext())
+                return await Task.Run(() => context.Aliases
+                .AsNoTracking()
+                .Include(a => a.Link.Children)
+                .Where(expression).ToList());
         }
 
         public async Task<EFAlias> Get(int entityID)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
                 return await context.Aliases
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(e => e.AliasId == entityID);
         }
 
@@ -62,7 +76,8 @@ namespace SharedLibrary.Services
 
         public async Task<EFAlias> Update(EFAlias entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            throw new Exception();
+            using (var context = new DatabaseContext())
             {
                 entity = context.Aliases.Attach(entity);
                 context.Entry(entity).State = EntityState.Modified;
@@ -73,7 +88,7 @@ namespace SharedLibrary.Services
 
         public async Task<EFAliasLink> CreateLink(EFAliasLink link)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
                 context.AliasLinks.Add(link);
                 await context.SaveChangesAsync();

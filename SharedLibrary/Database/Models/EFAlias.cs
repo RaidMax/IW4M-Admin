@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SharedLibrary.Database.Models
 {
@@ -16,10 +12,12 @@ namespace SharedLibrary.Database.Models
         public int LinkId { get; set; }
         [ForeignKey("LinkId")]
         public virtual EFAliasLink Link { get; set; }
-        [Required]
+       // [Index("IX_IPandName", 0, IsUnique = true)]
+        //[MaxLength(24)]
         public string Name { get; set; }
-        [Required]
-        public string IP { get; set; }
+       //  [Index("IX_IPandName", 1, IsUnique = true)]
+       // [MaxLength(24)]
+        public string IPAddress { get; set; }
         [Required]
         public DateTime DateAdded { get; set; }
     }

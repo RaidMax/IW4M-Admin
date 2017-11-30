@@ -90,7 +90,7 @@ namespace SharedLibrary
         {
             if (str == null)
                 return "";
-            return Regex.Replace(str, @"\^([0-9]|\:)", "");
+            return Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "");
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace SharedLibrary
 
         public static String GetTimePassed(DateTime start, bool includeAgo)
         {
-            TimeSpan Elapsed = DateTime.Now - start;
+            TimeSpan Elapsed = DateTime.UtcNow - start;
             string ago = includeAgo ? " ago" : "";
 
             if (Elapsed.TotalSeconds < 30 && includeAgo)
@@ -305,19 +305,20 @@ namespace SharedLibrary
             return client == null ? null : new Player()
             {
                 Active = client.Active,
-                AliasLink =client.AliasLink,
+                AliasLink = client.AliasLink,
                 AliasLinkId = client.AliasLinkId,
                 ClientId = client.ClientId,
                 ClientNumber = 0,
                 FirstConnection = client.FirstConnection,
                 Connections = client.Connections,
-                IPAddress = client.IPAddress,
                 NetworkId = client.NetworkId,
-                Name = client.Name,
-                Level = client.Level,
                 TotalConnectionTime = client.TotalConnectionTime,
                 Masked = client.Masked,
-                LastConnection = DateTime.UtcNow
+                Name = client.CurrentAlias.Name,
+                IPAddress = client.CurrentAlias.IPAddress,
+                Level = client.Level,
+                LastConnection = DateTime.UtcNow,
+                CurrentAlias = client.CurrentAlias
             };
         }
     }

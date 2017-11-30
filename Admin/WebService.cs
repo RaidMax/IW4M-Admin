@@ -227,16 +227,17 @@ namespace IW4MAdmin
                     PlayerHistory = S.PlayerHistory.ToArray()
                 };
 
-                bool authed = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients())
+                bool authed = querySet["IP"] == "127.0.0.1"
+                    || (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients())
                     .Where(x => x.IPAddress == querySet["IP"])
-                    .Where(x => x.Level > Player.Permission.Trusted).Count() > 0
-                    || querySet["IP"] == "127.0.0.1";
+                    .Where(x => x.Level > Player.Permission.Trusted).Count() > 0;
+
 
                 foreach (Player P in S.GetPlayersAsList())
                 {
                     PlayerInfo pInfo = new PlayerInfo()
                     {
-                        playerID = P.ClientNumber,
+                        playerID = P.ClientId,
                         playerName = P.Name,
                         playerLevel = authed ? P.Level.ToString() : Player.Permission.User.ToString()
                     };
@@ -381,10 +382,10 @@ namespace IW4MAdmin
                     {
                         // fixme
                         Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"];
-                        Player admin = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).First()?.AsPlayer();
+                        Player admin = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).FirstOrDefault()?.AsPlayer();
 
                         if (admin == null)
-                            admin = new Player() { Name = "RestUser", Level = Player.Permission.User };
+                            admin = new Player() { Name = "RestUser"};
 
                         Event remoteEvent = new Event(Event.GType.Say, querySet["command"], admin, null, S)
                         {
@@ -465,7 +466,7 @@ namespace IW4MAdmin
                     penaltyType = penalty.Type.ToString(),
                     playerName = penalty.Offender.Name,
                     playerID = penalty.Offender.ClientId,
-                    Expires = penalty.Expires > DateTime.Now ? (penalty.Expires - DateTime.Now).TimeSpanText() : ""
+                    Expires = penalty.Expires > DateTime.UtcNow ? (penalty.Expires - DateTime.UtcNow).TimeSpanText() : ""
                 };
                 info.Add(pInfo);
             }
@@ -613,13 +614,19 @@ namespace IW4MAdmin
 
         public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
-            var Admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService)
+            var Admins = (await ApplicationManager.GetInstance().GetClientService()
                 .GetPrivilegedClients())
-                .OrderByDescending(a => a.Level).ToList();
+                .OrderByDescending(a => a.Level);
+
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
-                content = Newtonsoft.Json.JsonConvert.SerializeObject(Admins, Newtonsoft.Json.Formatting.Indented),
+                content = Admins.Select(a => new
+                {
+                    ClientId = a.ClientId,
+                    Level = a.Level,
+                    Name = a.Name
+                }),
                 additionalHeaders = new Dictionary<string, string>()
             };
             return resp;
@@ -795,15 +802,23 @@ namespace IW4MAdmin
                         playerIPs = new List<string>()
                     };
 
-                    if (!recent && individual && authed)
+                    if (!recent)
                     {
+                        eachPlayer.playerAliases = pp.AliasLink.Children
+                            .OrderBy(a => a.Name)
+                            .Select(a => a.Name)
+                            .Distinct()
+                            .ToList();
 
-                        eachPlayer.playerAliases = pp.AliasLink.Children.OrderBy(a => a.Name).Select(a => a.Name).ToList();
-                        eachPlayer.playerIPs = pp.AliasLink.Children.Select(a => a.IP).ToList();
+                        if (authed)
+                            eachPlayer.playerIPs = pp.AliasLink.Children
+                                .Select(a => a.IPAddress)
+                                .Distinct()
+                                .ToList();
                     }
 
-                    eachPlayer.playerAliases = eachPlayer.playerAliases.Distinct().ToList();
-                    eachPlayer.playerIPs = eachPlayer.playerIPs.Distinct().ToList();
+                    //eachPlayer.playerAliases = eachPlayer.playerAliases.Distinct().ToList();
+                   // eachPlayer.playerIPs = eachPlayer.playerIPs.Distinct().ToList();
 
                     eachPlayer.playerConnections = pp.Connections;
                     eachPlayer.lastSeen = Utilities.GetTimePassed(pp.LastConnection);

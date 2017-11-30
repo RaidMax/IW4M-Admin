@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace SharedLibrary.Objects
-{ 
+{
     public class Player : Database.Models.EFClient
     {
         public enum Permission
@@ -25,8 +25,9 @@ namespace SharedLibrary.Objects
         public Player()
         {
             ConnectionTime = DateTime.UtcNow;
+            ClientNumber = -1;
         }
-        
+
         public override string ToString()
         {
             return $"{Name}::{NetworkId}";
@@ -63,7 +64,7 @@ namespace SharedLibrary.Objects
         }
 
         [NotMapped]
-        public int ClientNumber { get; set;  }
+        public int ClientNumber { get; set; }
         [NotMapped]
         public int Ping { get; set; }
         [NotMapped]
@@ -72,5 +73,18 @@ namespace SharedLibrary.Objects
         public DateTime ConnectionTime { get; set; }
         [NotMapped]
         public Server CurrentServer { get; set; }
+
+        private string _ipaddress;
+        public override string IPAddress
+        {
+            get { return _ipaddress; }
+            set { _ipaddress = value; }
+        }
+        private string _name;
+        public override string Name
+        {
+            get { return _name; }
+            set { _name = value;  }
+        }
     }
 }

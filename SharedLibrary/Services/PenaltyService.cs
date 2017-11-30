@@ -15,13 +15,29 @@ namespace SharedLibrary.Services
     {
         public async Task<EFPenalty> Create(EFPenalty entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
                 entity.Offender = context.Clients.First(e => e.ClientId == entity.Offender.ClientId);
                 entity.Punisher = context.Clients.First(e => e.ClientId == entity.Punisher.ClientId);
                 entity.Link = context.AliasLinks.First(l => l.AliasLinkId == entity.Link.AliasLinkId);
-                if (entity.Expires == DateTime.MinValue)
+
+                // make bans propogate to all aliases
+                if (entity.Type == Objects.Penalty.PenaltyType.Ban)
+                {
                     entity.Expires = DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString());
+                    await context.Clients
+                        .Where(c => c.AliasLinkId == entity.Link.AliasLinkId)
+                        .ForEachAsync(c => c.Level = Objects.Player.Permission.Banned);
+                }
+
+                // make flags propogate to all aliases
+                else if (entity.Type == Objects.Penalty.PenaltyType.Flag)
+                {
+                    await context.Clients
+                      .Where(c => c.AliasLinkId == entity.Link.AliasLinkId)
+                      .ForEachAsync(c => c.Level = Objects.Player.Permission.Flagged);
+                }
+
                 context.Penalties.Add(entity);
                 await context.SaveChangesAsync();
                 return entity;
@@ -40,7 +56,7 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFPenalty>> Find(Func<EFPenalty, bool> expression)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
                 return await Task.Run(() => context.Penalties
                 .Include(p => p.Offender)
@@ -68,11 +84,12 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFPenalty>> GetRecentPenalties(int count, int offset)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
                 return await context.Penalties
-                   .Include(p => p.Offender)
-                   .Include(p => p.Punisher)
-                  .Where(p => p.Active)
+                    .AsNoTracking()
+                   .Include(p => p.Offender.CurrentAlias)
+                   .Include(p => p.Punisher.CurrentAlias)
+                   .Where(p => p.Active)
                    .OrderByDescending(p => p.When)
                    .Skip(offset)
                    .Take(count)
@@ -81,18 +98,19 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFPenalty>> GetClientPenaltiesAsync(int clientId)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
                 return await context.Penalties
-                .Where(p => p.OffenderId == clientId)
-               .Where(p => p.Active)
-               .Include(p => p.Offender)
-              .Include(p => p.Punisher)
-              .ToListAsync();
+                    .AsNoTracking()
+                    .Where(p => p.OffenderId == clientId)
+                    .Where(p => p.Active)
+                    .Include(p => p.Offender.CurrentAlias)
+                    .Include(p => p.Punisher.CurrentAlias)
+                    .ToListAsync();
         }
 
         public async Task RemoveActivePenalties(int aliasLinkId)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
                 var now = DateTime.UtcNow;
                 var penalties = await context.Penalties
@@ -104,10 +122,11 @@ namespace SharedLibrary.Services
                 penalties.ForEach(async p =>
                 {
                     p.Active = false;
-                    var clients = await context.Clients.Where(cl => cl.AliasLinkId == p.LinkId).ToListAsync();
-                    foreach (var c in clients)
-                        if (c.Level == Objects.Player.Permission.Banned)
-                            c.Level = Objects.Player.Permission.User;
+                    // reset the player levels
+                    if (p.Type == Objects.Penalty.PenaltyType.Ban)
+                        await context.Clients
+                            .Where(c => c.AliasLinkId == p.LinkId)
+                            .ForEachAsync(c => c.Level = Objects.Player.Permission.User);
                 });
 
                 await context.SaveChangesAsync();

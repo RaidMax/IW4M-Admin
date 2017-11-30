@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 using SharedLibrary;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Helpers;
 using SharedLibrary.Objects;
+using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Plugins
 {
@@ -57,22 +59,140 @@ namespace IW4MAdmin.Plugins
         public async Task OnLoadAsync(IManager manager)
         {
             Interval = DateTime.Now;
+            #region CLIENTS
+            if (File.Exists("import_clients.csv"))
+            {
+                var clients = new List<Player>();
+                manager.GetLogger().WriteInfo("Beginning import of existing clients");
+
+                var lines = File.ReadAllLines("import_clients.csv").Skip(1);
+                foreach (string line in lines)
+                {
+                    string[] fields = Regex.Replace(line, "\".*\"", "").Split(',');
+                    fields.All(f =>
+                    {
+                        f = f.StripColors().Trim();
+                        return true;
+                    });
+
+                    if (fields.Length != 11)
+                    {
+                        manager.GetLogger().WriteError("Invalid client import file... aborting import");
+                        return;
+                    }
+
+                    if (fields[1].Contains("0110") || fields[0] == string.Empty || fields[1] == string.Empty || fields[6] == string.Empty)
+                        continue;
+
+                    if (!Regex.Match(fields[6], @"^\d+\.\d+\.\d+.\d+$").Success)
+                        continue;
+
+                    var client = new Player()
+                    {
+                        Name = fields[0],
+                        NetworkId = fields[1],
+                        IPAddress = fields[6],
+                        Level = (Player.Permission)Convert.ToInt32(fields[3]),
+                        Connections = Convert.ToInt32(fields[5]),
+                        LastConnection = DateTime.Parse(fields[7]),
+                    };
+
+                    clients.Add(client);
+                }
+
+                clients = clients
+                    .GroupBy(c => c.NetworkId, (key, c) => c.FirstOrDefault())
+                    .ToList();
+
+                clients = clients
+                    .GroupBy(c => new { c.Name, c.IPAddress })
+                    .Select(c => c.FirstOrDefault())
+                    .ToList();
+
+                manager.GetLogger().WriteInfo($"Read {clients.Count} clients for import");
+
+                try
+                {
+                    SharedLibrary.Database.Importer.ImportClients(clients);
+                }
+
+                catch(Exception e)
+                {
+                    manager.GetLogger().WriteError("Saving imported clients failed");
+                }
+            }
+            #endregion
+            #region PENALTIES
+            if (File.Exists("import_penalties.csv"))
+            {
+                int importedPenalties = 0;
+                var penalties = new List<Penalty>();
+                manager.GetLogger().WriteInfo("Beginning import of existing penalties");
+                foreach (string line in File.ReadAllLines("import_penalties.csv").Skip(1))
+                {
+                    string comma = Regex.Match(line, "\".*,.*\"").Value.Replace(",", "");
+                    string[] fields = Regex.Replace(line, "\".*,.*\"", comma).Split(',');
+
+                    fields.All(f =>
+                    {
+                        f = f.StripColors().Trim();
+                        return true;
+                    });
+
+                    if (fields.Length != 7)
+                    {
+                        manager.GetLogger().WriteError("Invalid penalty import file... aborting import");
+                        return;
+                    }
+
+                    if (fields[2].Contains("0110") || fields[2].Contains("0000000") || fields.Any(p => p == string.Empty))
+                        continue;
+                    try
+                    {
+                        
+                        var expires = DateTime.Parse(fields[6]);
+                        var when = DateTime.Parse(fields[5]);
+
+                        var penalty = new Penalty()
+                        {
+                            Type = (Penalty.PenaltyType)Int32.Parse(fields[0]),
+                            Expires = expires == DateTime.MinValue ? when : expires, 
+                            Punisher = new SharedLibrary.Database.Models.EFClient() {  NetworkId = fields[3]},
+                            Offender = new SharedLibrary.Database.Models.EFClient() {  NetworkId = fields[2]},
+                            Offense = fields[1],
+                            Active = true,
+                            When = when,
+                        };
+
+
+                        penalties.Add(penalty);
+                    }
+
+                    catch (Exception e)
+                    {
+                        manager.GetLogger().WriteWarning($"Could not import client with line {line}");
+                    }
+                }
+                SharedLibrary.Database.Importer.ImportPenalties(penalties);
+                manager.GetLogger().WriteInfo($"Imported {penalties.Count} clients");
+            }
+            #endregion
         }
 
         public async Task OnTickAsync(Server S)
         {
+            return;
             if ((DateTime.Now - Interval).TotalSeconds > 5)
             {
                 var rand = new Random();
                 int index = rand.Next(0, 17);
                 var p = new Player()
                 {
-                    Name = $"Test{index}",
-                    NetworkId = $"_test{index}",
+                    Name = $"Test_{index}",
+                    NetworkId = $"_test_{index}",
                     ClientNumber = index,
-                    Level = Player.Permission.User,
                     Ping = 1,
-                    IPAddress = "127.0.0.1"
+                    IPAddress = $"127.0.0.{index}"
                 };
 
                 if (S.Players.ElementAt(index) != null)

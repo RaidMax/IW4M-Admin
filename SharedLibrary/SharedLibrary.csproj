@@ -94,8 +94,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database\Importer.cs" />
     <Compile Include="Database\Initializer.cs" />
-    <Compile Include="Database\IW4MAdminDatabaseContext.cs" />
+    <Compile Include="Database\DatabaseContext.cs" />
     <Compile Include="Database\Models\EFAlias.cs" />
     <Compile Include="Database\Models\EFAliasLink.cs" />
     <Compile Include="Database\Models\EFClient.cs" />

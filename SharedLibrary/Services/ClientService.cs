@@ -11,45 +11,60 @@ using System.Linq.Expressions;
 
 namespace SharedLibrary.Services
 {
+
     public class ClientService : Interfaces.IEntityService<EFClient>
     {
-        private Dictionary<int, IW4MAdminDatabaseContext> _context;
-
-        public ClientService()
-        {
-            _context = new Dictionary<int, IW4MAdminDatabaseContext>();
-        }
         public async Task<EFClient> Create(EFClient entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
-
+                bool hasExistingAlias = false;
                 // get all aliases by IP
-                var alias = await context.Aliases.FirstOrDefaultAsync(a => a.IP == entity.IPAddress);
-                EFAliasLink link = alias?.Link;
+                var aliases = await context.Aliases
+                    .Include(a => a.Link)
+                    .Where(a => a.IPAddress == entity.IPAddress)
+                    .ToListAsync();
+
+                // see if they have a matching IP + Name but new NetworkId
+                var existingAlias = aliases.SingleOrDefault(a => a.Name == entity.Name);
+                // if existing alias matches link them
+                EFAliasLink aliasLink = existingAlias?.Link;
+                // if no exact matches find the first IP that matches
+                aliasLink = aliasLink ?? aliases.FirstOrDefault()?.Link;
+                // if no exact or IP matches, create new link
+                aliasLink = aliasLink ?? new EFAliasLink()
+                {
+                    Active = true,
+                };
+
+                // this has to be set here because we can't evalute it properly later
+                hasExistingAlias = existingAlias != null;
+
+                // if no existing alias create new alias
+                existingAlias = existingAlias ?? new EFAlias()
+                {
+                    Active = true,
+                    DateAdded = DateTime.UtcNow,
+                    IPAddress = entity.IPAddress,
+                    Link = aliasLink,
+                    Name = entity.Name,
+                };
 
                 var client = new EFClient()
                 {
                     Active = true,
-                    Name = entity.Name,
+                    // set the level to the level of the existing client if they have the same IP + Name but new NetworkId
+                    Level = hasExistingAlias ?
+                        context.Clients.First(c => c.CurrentAliasId == existingAlias.AliasId).Level :
+                        Objects.Player.Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,
-                    IPAddress = entity.IPAddress,
                     LastConnection = DateTime.UtcNow,
-                    Level = Objects.Player.Permission.User,
                     Masked = false,
                     NetworkId = entity.NetworkId,
-                    AliasLink = link ?? new EFAliasLink() { Active = true }
+                    AliasLink = aliasLink,
+                    CurrentAlias = existingAlias
                 };
-
-                client.AliasLink.Children.Add(new EFAlias()
-                {
-                    Active = true,
-                    DateAdded = DateTime.UtcNow,
-                    IP = entity.IPAddress,
-                    Link = client.AliasLink,
-                    Name = entity.Name
-                });
 
                 context.Clients.Add(client);
                 await context.SaveChangesAsync();
@@ -60,11 +75,11 @@ namespace SharedLibrary.Services
 
         public async Task<EFClient> Delete(EFClient entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
-                entity = context.Clients.Single(e => e.ClientId == entity.ClientId);
+                var client = context.Clients
+                    .Single(e => e.ClientId == entity.ClientId);
                 entity.Active = false;
-                entity.Level = Objects.Player.Permission.User;
                 context.Entry(entity).State = EntityState.Modified;
                 await context.SaveChangesAsync();
                 return entity;
@@ -73,25 +88,31 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFClient>> Find(Func<EFClient, bool> e)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
                 return await Task.Run(() => context.Clients
+                      .AsNoTracking()
+                     .Include(c => c.CurrentAlias)
                      .Include(c => c.AliasLink.Children)
                      .Where(e).ToList());
         }
 
         public async Task<EFClient> Get(int entityID)
         {
-            using (var context = new IW4MAdminDatabaseContext())
-                return await new IW4MAdminDatabaseContext().Clients
+            using (var context = new DatabaseContext())
+                return await new DatabaseContext().Clients
+                    .AsNoTracking()
+                    .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children)
                     .SingleOrDefaultAsync(e => e.ClientId == entityID);
         }
 
         public async Task<EFClient> GetUnique(string entityAttribute)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
                 return await context.Clients
+                    .AsNoTracking()
+                    .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children)
                     .SingleOrDefaultAsync(c => c.NetworkId == entityAttribute);
             }
@@ -99,42 +120,97 @@ namespace SharedLibrary.Services
 
         public async Task<EFClient> Update(EFClient entity)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
-                entity = context.Clients.Attach(entity);
-                context.Entry(entity).State = EntityState.Modified;
+                // grab the context version of the entity
+                var client = context.Clients
+                    .Include(c => c.AliasLink)
+                    .Include(c=> c.CurrentAlias)
+                    .Single(e => e.ClientId == entity.ClientId);
+
+                // if their level has been changed
+                if (entity.Level != client.Level)
+                {
+                    // get all clients that use the same aliasId
+                    var matchingClients = await context.Clients
+                        .Where(c => c.CurrentAliasId == client.CurrentAliasId)
+                        .ToListAsync();
+
+                    // update all related clients level
+                    matchingClients.ForEach(c => c.Level = (client.Level == Objects.Player.Permission.Banned) ?
+                        client.Level : entity.Level);
+                }
+
+                // their alias has been updated and not yet saved
+                if (entity.CurrentAlias.AliasId == 0)
+                {
+                    client.CurrentAlias = new EFAlias()
+                    {
+                        Active = true,
+                        DateAdded = DateTime.UtcNow,
+                        IPAddress = entity.CurrentAlias.IPAddress,
+                        Name = entity.CurrentAlias.Name,
+                        Link = client.AliasLink
+                    };
+                }
+
+                // set remaining non-navigation properties that may have been updated
+                client.Level = entity.Level;
+                client.LastConnection = entity.LastConnection;
+                client.Connections = entity.Connections;
+                client.FirstConnection = entity.FirstConnection;
+                client.Masked = entity.Masked;
+                client.TotalConnectionTime = entity.TotalConnectionTime;
+
+                // update in database
                 await context.SaveChangesAsync();
-                return entity;
+
+                // this is set so future updates don't trigger a new alias add
+                if (entity.CurrentAlias.AliasId == 0)
+                   entity.CurrentAlias.AliasId = client.CurrentAlias.AliasId;
+                return client;
             }
         }
 
-        #region ServiceSpecific
+#region ServiceSpecific
         public async Task<IList<EFClient>> GetOwners()
         {
-            using (var context = new IW4MAdminDatabaseContext())
-                return await context.Clients.Where(c => c.Level == Objects.Player.Permission.Owner).ToListAsync();
+            using (var context = new DatabaseContext())
+                return await context.Clients
+                    .Where(c => c.Level == Objects.Player.Permission.Owner)
+                    .ToListAsync();
         }
 
         public async Task<IList<EFClient>> GetPrivilegedClients()
         {
-            using (var context = new IW4MAdminDatabaseContext())
-                return await new IW4MAdminDatabaseContext().Clients
-                .Where(c => c.Level >= Objects.Player.Permission.Trusted)
-                .ToListAsync();
+            using (var context = new DatabaseContext())
+                return await new DatabaseContext().Clients
+                    .AsNoTracking()
+                    .Include(c => c.CurrentAlias)
+                    .Where(c => c.Level >= Objects.Player.Permission.Trusted)
+                    .ToListAsync();
         }
 
 
         public async Task<IList<EFClient>> GetRecentClients(int offset, int count)
         {
-            using (var context = new IW4MAdminDatabaseContext())
-                return await context.Clients.OrderByDescending(p => p.ClientId).Skip(offset).Take(count).ToListAsync();
+            using (var context = new DatabaseContext())
+                return await context.Clients
+                    .AsNoTracking()
+                    .Include(c => c.CurrentAlias)
+                    .Include(p => p.AliasLink)
+                    .OrderByDescending(p => p.ClientId)
+                    .Skip(offset)
+                    .Take(count)
+                    .ToListAsync();
         }
 
         public async Task<IList<EFClient>> PruneInactivePrivilegedClients(int inactiveDays)
         {
-            using (var context = new IW4MAdminDatabaseContext())
+            using (var context = new DatabaseContext())
             {
                 var inactive = await context.Clients.Where(c => c.Level > Objects.Player.Permission.Flagged)
+                    .AsNoTracking()
                     .Where(c => (DateTime.UtcNow - c.LastConnection).TotalDays >= inactiveDays)
                     .ToListAsync();
                 inactive.ForEach(c => c.Level = Objects.Player.Permission.User);
@@ -145,14 +221,15 @@ namespace SharedLibrary.Services
 
         public async Task<int> GetTotalClientsAsync()
         {
-            using (var context = new IW4MAdminDatabaseContext())
-                return await context.Clients.CountAsync();
+            using (var context = new DatabaseContext())
+                return await context.Clients
+                    .CountAsync();
         }
 
         public Task<EFClient> CreateProxy()
         {
             throw new NotImplementedException();
         }
-        #endregion
+#endregion
     }
 }

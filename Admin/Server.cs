@@ -17,8 +17,18 @@ namespace IW4MAdmin
     {
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
+        public override int GetHashCode()
+        {
+            return IP.GetHashCode() + Port;
+        }
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
+            if (polledPlayer.Ping == 999 || polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)
+            {
+                //Logger.WriteDebug($"Skipping client not in connected state {P}");
+                return true;
+            }
+
             if (Players[polledPlayer.ClientNumber] != null &&
                 Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId)
             {
@@ -79,8 +89,8 @@ namespace IW4MAdmin
                 Players[player.ClientNumber] = player;
 #endif
 
-                var ban = (await Manager.GetPenaltyService().Find(p => p.LinkId == player.AliasLink.AliasLinkId
-                && p.Expires > DateTime.UtcNow)).FirstOrDefault();
+                var ban = Manager.GetPenaltyService().Find(p => p.LinkId == player.AliasLink.AliasLinkId
+                && p.Expires > DateTime.UtcNow).Result.FirstOrDefault();
 
                 if (ban != null)
                 {
@@ -103,7 +113,7 @@ namespace IW4MAdmin
                 // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
                 Players[player.ClientNumber] = player;
-                Logger.WriteInfo($"Client {player} connecting..."); 
+                Logger.WriteInfo($"Client {player} connecting...");
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
@@ -234,7 +244,7 @@ namespace IW4MAdmin
                     if (matchingPlayers.Count > 1)
                     {
                         await E.Origin.Tell("Multiple players match that name");
-                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players  found for {C.Name}");
+                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
                     {
@@ -251,7 +261,7 @@ namespace IW4MAdmin
                         await E.Origin.Tell("Multiple players match that name");
                         foreach (var p in matchingPlayers)
                             await E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
-                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players  found for {C.Name}");
+                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
                     {
@@ -278,11 +288,13 @@ namespace IW4MAdmin
 
             foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
             {
+#if !DEBUG
                 try
+#endif
                 {
                     await P.OnEventAsync(E, this);
                 }
-
+#if !DEBUG
                 catch (Exception Except)
                 {
                     Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
@@ -290,13 +302,14 @@ namespace IW4MAdmin
                     Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                     continue;
                 }
+#endif
             }
         }
 
         async Task<int> PollPlayersAsync()
         {
 #if DEBUG
-            return Players.Where(p => p != null).Count();
+            // return Players.Where(p => p != null).Count();
 #endif
             var CurrentPlayers = await this.GetStatusAsync();
 
@@ -307,15 +320,9 @@ namespace IW4MAdmin
             }
 
             //polledPlayer.ClientNumber < 0 || polledPlayer.ClientNumber > (Players.Count - 1) || polledPlayer.Ping < 1 || polledPlayer.Ping == 999
-            foreach (var P in CurrentPlayers)
+            for (int i = 0; i < CurrentPlayers.Count; i++)
             {
-                if (P.Ping == 999 || P.ClientNumber > MaxClients - 1 || P.ClientNumber < 0)
-                {
-                    Logger.WriteDebug($"Skipping client not in connected state {P}");
-                    continue;
-                }
-
-                await AddPlayer(P);
+                await AddPlayer(CurrentPlayers[i]);
             }
 
             return CurrentPlayers.Count;
@@ -329,19 +336,18 @@ namespace IW4MAdmin
         DateTime lastCount = DateTime.Now;
         DateTime tickTime = DateTime.Now;
 
-        override public async Task ProcessUpdatesAsync(CancellationToken cts)
+        override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
 #if DEBUG == false
             try
 #endif
             {
-
                 if ((DateTime.Now - LastPoll).TotalMinutes < 2 && ConnectionErrors >= 1)
-                    return;
+                    return true;
 
                 try
                 {
-                    await PollPlayersAsync();
+                    int polledPlayerCount = await PollPlayersAsync();
 
                     if (ConnectionErrors > 0)
                     {
@@ -361,7 +367,7 @@ namespace IW4MAdmin
                         Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
                         Throttled = true;
                     }
-                    return;
+                    return true;
                 }
 
                 LastMessage = DateTime.Now - start;
@@ -390,7 +396,7 @@ namespace IW4MAdmin
                 }
 
                 if (LogFile == null)
-                    return;
+                    return true;
 
                 if (l_size != LogFile.Length())
                 {
@@ -434,11 +440,13 @@ namespace IW4MAdmin
                 }
                 oldLines = lines;
                 l_size = LogFile.Length();
+                return true;
             }
 #if DEBUG == false
             catch (SharedLibrary.Exceptions.NetworkException)
             {
                 Logger.WriteError($"Could not communicate with {IP}:{Port}");
+                return false;
             }
 
             catch (Exception E)
@@ -446,6 +454,7 @@ namespace IW4MAdmin
                 Logger.WriteError($"Encountered error on {IP}:{Port}");
                 Logger.WriteDebug("Error Message: " + E.Message);
                 Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                return false;
             }
 #endif
         }

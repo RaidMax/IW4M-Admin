@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SharedLibrary.Database.Models;
 using System.Data.SqlServerCe;
 using System.Data.Entity.ModelConfiguration.Conventions;
+using System.Reflection;
 
 namespace SharedLibrary.Database
 {
@@ -31,7 +32,6 @@ namespace SharedLibrary.Database
                 .HasForeignKey(c => c.OffenderId)
                 .WillCascadeOnDelete(false);
 
-
             modelBuilder.Entity<EFPenalty>()
                 .HasRequired(p => p.Punisher)
                 .WithMany(c => c.AdministeredPenalties)
@@ -44,18 +44,35 @@ namespace SharedLibrary.Database
                 .HasForeignKey(a => a.LinkId)
                 .WillCascadeOnDelete(true);
 
-            /*  modelBuilder.Entity<EFAlias>()
-                  .HasIndex(a => new { a.IP, a.Name })
-                  .IsUnique();
-
-            modelBuilder.Entity<EFAlias>()
-                .HasIndex(p => new { p.Name, p.IPAddress }).IsUnique();*/
-
-
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
 
             // todo: custom load DBSets from plugins
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
+            foreach (string dllPath in System.IO.Directory.GetFiles($"{Environment.CurrentDirectory}{System.IO.Path.DirectorySeparatorChar}Plugins"))
+            {
+                Assembly library;
+                try
+                {
+                    library = Assembly.LoadFile(dllPath);
+                }
+
+                // not a valid assembly, ie plugin files
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                foreach(var type in library.ExportedTypes)
+                {
+                    if (type.IsClass && type.IsSubclassOf(typeof(SharedEntity)))
+                    {
+                        var method = modelBuilder.GetType().GetMethod("Entity");
+                        method = method.MakeGenericMethod(new Type[] { type });
+                        method.Invoke(modelBuilder, null);
+                    }
+                }
+            }
+
             base.OnModelCreating(modelBuilder);
         }
     }

@@ -54,11 +54,15 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFAlias>> Find(Func<EFAlias, bool> expression)
         {
-            using (var context = new DatabaseContext())
-                return await Task.Run(() => context.Aliases
-                .AsNoTracking()
-                .Include(a => a.Link.Children)
-                .Where(expression).ToList());
+            return await Task.Run(() =>
+           {
+               using (var context = new DatabaseContext())
+                   return context.Aliases
+                   .AsNoTracking()
+                   .Include(a => a.Link.Children)
+                   .Where(expression)
+                   .ToList();
+           });
         }
 
         public async Task<EFAlias> Get(int entityID)

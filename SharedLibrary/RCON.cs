@@ -22,8 +22,13 @@ namespace SharedLibrary.Network
             COMMAND,
         }
 
-        static string[] SendQuery(QueryType Type, Server QueryServer,  string Parameters = "")
+        private static DateTime LastQuery;
+
+        static string[] SendQuery(QueryType Type, Server QueryServer, string Parameters = "")
         {
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 30)
+                Task.Delay(30).Wait();
+            LastQuery = DateTime.Now;
             var ServerOOBConnection = new UdpClient();
             ServerOOBConnection.Client.SendTimeout = 5000;
             ServerOOBConnection.Client.ReceiveTimeout = 5000;
@@ -91,7 +96,7 @@ namespace SharedLibrary.Network
                 }
 
                 Thread.Sleep(1000);
-                    goto retry;
+                goto retry;
             }
         }
 
@@ -134,7 +139,11 @@ namespace SharedLibrary.Network
 
         public static async Task<List<Player>> GetStatusAsync(this Server server)
         {
+#if DEBUG
+            string[] response = await Task.Run(() => System.IO.File.ReadAllLines("players.txt"));
+#else
             string[] response = await Task.FromResult(SendQuery(QueryType.DVAR, server, "status"));
+#endif
             return Utilities.PlayersFromStatus(response);
         }
 

@@ -63,7 +63,7 @@ namespace IW4MAdmin.Plugins
             if (File.Exists("import_clients.csv"))
             {
                 var clients = new List<Player>();
-                manager.GetLogger().WriteInfo("Beginning import of existing clients");
+                manager.GetLogger().WriteVerbose("Beginning import of existing clients");
 
                 var lines = File.ReadAllLines("import_clients.csv").Skip(1);
                 foreach (string line in lines)
@@ -109,7 +109,7 @@ namespace IW4MAdmin.Plugins
                     .Select(c => c.FirstOrDefault())
                     .ToList();
 
-                manager.GetLogger().WriteInfo($"Read {clients.Count} clients for import");
+                manager.GetLogger().WriteVerbose($"Read {clients.Count} clients for import");
 
                 try
                 {
@@ -125,9 +125,8 @@ namespace IW4MAdmin.Plugins
             #region PENALTIES
             if (File.Exists("import_penalties.csv"))
             {
-                int importedPenalties = 0;
                 var penalties = new List<Penalty>();
-                manager.GetLogger().WriteInfo("Beginning import of existing penalties");
+                manager.GetLogger().WriteVerbose("Beginning import of existing penalties");
                 foreach (string line in File.ReadAllLines("import_penalties.csv").Skip(1))
                 {
                     string comma = Regex.Match(line, "\".*,.*\"").Value.Replace(",", "");
@@ -170,19 +169,19 @@ namespace IW4MAdmin.Plugins
 
                     catch (Exception e)
                     {
-                        manager.GetLogger().WriteWarning($"Could not import client with line {line}");
+                        manager.GetLogger().WriteVerbose($"Could not import penalty with line {line}");
                     }
                 }
                 SharedLibrary.Database.Importer.ImportPenalties(penalties);
-                manager.GetLogger().WriteInfo($"Imported {penalties.Count} clients");
+                manager.GetLogger().WriteVerbose($"Imported {penalties.Count} penalties");
             }
             #endregion
         }
 
         public async Task OnTickAsync(Server S)
         {
-            return;
-            if ((DateTime.Now - Interval).TotalSeconds > 5)
+
+            if ((DateTime.Now - Interval).TotalSeconds > 1)
             {
                 var rand = new Random();
                 int index = rand.Next(0, 17);
@@ -197,8 +196,8 @@ namespace IW4MAdmin.Plugins
 
                 if (S.Players.ElementAt(index) != null)
                     await S.RemovePlayer(index);
-                await S.AddPlayer(p);
-                /*
+               // await S.AddPlayer(p);
+                
 
                 Interval = DateTime.Now;
                 if (S.ClientNum > 0)
@@ -258,7 +257,7 @@ namespace IW4MAdmin.Plugins
                         var _event = Event.ParseEventString(eventLine, S);
                         await S.ExecuteEvent(_event);
                     }
-                }*/
+                }
             }
 
         }

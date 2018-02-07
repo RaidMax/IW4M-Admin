@@ -236,7 +236,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientNumber, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddress);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddress);
             await E.Origin.Tell(You);
         }
     }
@@ -351,7 +351,7 @@ namespace SharedLibrary.Commands
                 await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5{E.Origin.Name}^7]");
             else
                 await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5Masked Admin^7]");
-            await Task.Delay(3000);
+            Task.Delay(3000).Wait();
             await E.Owner.ExecuteCommandAsync("fast_restart");
         }
     }
@@ -368,7 +368,7 @@ namespace SharedLibrary.Commands
                 await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5{E.Origin.Name}^7]");
             else
                 await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5Masked Admin^7]");
-            await Task.Delay(5000);
+            Task.Delay(5000).Wait();
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }
     }
@@ -497,14 +497,14 @@ namespace SharedLibrary.Commands
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
                     await E.Owner.Broadcast("Changing to map ^2" + m.Alias);
-                    await Task.Delay(5000);
+                    Task.Delay(5000).Wait();
                     await E.Owner.LoadMap(m.Name);
                     return;
                 }
             }
 
             await E.Owner.Broadcast("Attempting to change to unknown map ^1" + newMap);
-            await Task.Delay(5000);
+            Task.Delay(5000).Wait();
             await E.Owner.LoadMap(newMap);
         }
     }

@@ -197,11 +197,11 @@ namespace IW4MAdmin
                 for (int i = 0; i < TaskStatuses.Count; i++)
                 {
                     var Status = TaskStatuses[i];
-                    if (Status.RequestedTask == null || Status.RequestedTask.IsCompleted)
+                    if (Status.RequestedTask == null || Status.RequestedTask.Status == TaskStatus.RanToCompletion)
                     {
-                        Status.Update(new Task(() => (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken())));
+                        Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
                         if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
-                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server).GetIP()}::{(Status.Dependant as Server).GetPort()} [{Status.RunAverage}ms]");
+                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
                     }
                 }
 

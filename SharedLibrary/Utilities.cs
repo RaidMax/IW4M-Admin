@@ -318,7 +318,8 @@ namespace SharedLibrary
                 IPAddress = client.CurrentAlias.IPAddress,
                 Level = client.Level,
                 LastConnection = DateTime.UtcNow,
-                CurrentAlias = client.CurrentAlias
+                CurrentAlias = client.CurrentAlias,
+                CurrentAliasId = client.CurrentAlias.AliasId
             };
         }
     }

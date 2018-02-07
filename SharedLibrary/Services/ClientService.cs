@@ -88,12 +88,15 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFClient>> Find(Func<EFClient, bool> e)
         {
-            using (var context = new DatabaseContext())
-                return await Task.Run(() => context.Clients
-                      .AsNoTracking()
-                     .Include(c => c.CurrentAlias)
-                     .Include(c => c.AliasLink.Children)
-                     .Where(e).ToList());
+            return await Task.Run(() =>
+            {
+                using (var context = new DatabaseContext())
+                    return context.Clients
+                          .AsNoTracking()
+                         .Include(c => c.CurrentAlias)
+                         .Include(c => c.AliasLink.Children)
+                         .Where(e).ToList();
+            });
         }
 
         public async Task<EFClient> Get(int entityID)
@@ -125,7 +128,7 @@ namespace SharedLibrary.Services
                 // grab the context version of the entity
                 var client = context.Clients
                     .Include(c => c.AliasLink)
-                    .Include(c=> c.CurrentAlias)
+                    .Include(c => c.CurrentAlias)
                     .Single(e => e.ClientId == entity.ClientId);
 
                 // if their level has been changed
@@ -167,12 +170,12 @@ namespace SharedLibrary.Services
 
                 // this is set so future updates don't trigger a new alias add
                 if (entity.CurrentAlias.AliasId == 0)
-                   entity.CurrentAlias.AliasId = client.CurrentAlias.AliasId;
+                    entity.CurrentAlias.AliasId = client.CurrentAlias.AliasId;
                 return client;
             }
         }
 
-#region ServiceSpecific
+        #region ServiceSpecific
         public async Task<IList<EFClient>> GetOwners()
         {
             using (var context = new DatabaseContext())
@@ -230,6 +233,6 @@ namespace SharedLibrary.Services
         {
             throw new NotImplementedException();
         }
-#endregion
+        #endregion
     }
 }

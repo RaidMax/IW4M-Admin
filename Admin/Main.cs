@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 using SharedLibrary;
 using System.Threading.Tasks;
 using System.IO;
+using SharedLibrary.Objects;
 
 #if DEBUG
 using SharedLibrary.Database;
-using SharedLibrary.Objects;
 #endif
 
 namespace IW4MAdmin
@@ -73,7 +73,15 @@ namespace IW4MAdmin
                 return;
             }
 
-            ServerManager.Start();
+            try
+            {
+                ServerManager.Start();
+            }
+
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
         static ConsoleEventDelegate handler;

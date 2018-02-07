@@ -56,15 +56,16 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFPenalty>> Find(Func<EFPenalty, bool> expression)
         {
-            using (var context = new DatabaseContext())
+            return await Task.Run(() =>
             {
-                return await Task.Run(() => context.Penalties
-                .Include(p => p.Offender)
-                .Include(p => p.Punisher)
-                .Where(expression)
-                .Where(p => p.Active)
-                .ToList());
-            }
+                using (var context = new DatabaseContext())
+                    return context.Penalties
+                    .Include(p => p.Offender)
+                    .Include(p => p.Punisher)
+                    .Where(expression)
+                    .Where(p => p.Active)
+                    .ToList();
+            });
         }
 
         public Task<EFPenalty> Get(int entityID)

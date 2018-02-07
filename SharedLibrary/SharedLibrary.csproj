@@ -137,6 +137,8 @@
     <Compile Include="ServerConfiguration.cs" />
     <Compile Include="Services\AliasService.cs" />
     <Compile Include="Services\ClientService.cs" />
+    <Compile Include="Services\GenericRepository.cs" />
+    <Compile Include="Services\GenericService.cs" />
     <Compile Include="Services\PenaltyService.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WebService.cs" />
@@ -152,10 +154,6 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>move "$(TargetDir)Newtonsoft.Json.dll" "$(TargetDir)lib\Newtonsoft.Json.dll"
-copy /Y "$(TargetDir)SQLite.Interop.dll" "$(SolutionDir)BUILD\lib"
-copy /Y "$(TargetDir)System.Data.SQLite.dll" "$(SolutionDir)BUILD\lib"
-copy /Y "$(TargetDir)SQLite.Interop.dll" "$(SolutionDir)Admin\lib"
-copy /Y "$(TargetDir)System.Data.SQLite.dll" "$(SolutionDir)Admin\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\lib"
 copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)BUILD\lib"

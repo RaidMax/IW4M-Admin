@@ -115,7 +115,7 @@ namespace SharedLibrary
         /// <returns></returns>
         abstract public Task<Command> ValidateCommand(Event E);
 
-        virtual public Task ProcessUpdatesAsync(CancellationToken cts)
+        virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
             return null;
         }

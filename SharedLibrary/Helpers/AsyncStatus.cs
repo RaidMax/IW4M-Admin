@@ -37,9 +37,10 @@ namespace SharedLibrary.Helpers
             return (DateTime.Now - StartTime).TotalMilliseconds;
         }
 
-        public void Update(Task T)
+        public void Update(Task<bool> T)
         {
             RequestedTask = T;
+            Console.WriteLine($"Starting Task {T.Id} ");
             RequestedTask.Start();
 
             if (TimesRun > 25)

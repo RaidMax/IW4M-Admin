@@ -34,7 +34,7 @@ namespace IW4MAdmin
         AliasService AliasSvc;
         PenaltyService PenaltySvc;
 #if FTP_LOG
-        const int UPDATE_FREQUENCY = 15000;
+        const int UPDATE_FREQUENCY = 700;
 #else
         const int UPDATE_FREQUENCY = 300;
 #endif

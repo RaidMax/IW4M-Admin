@@ -19,7 +19,7 @@ namespace IW4MAdmin
 
         public override int GetHashCode()
         {
-            return IP.GetHashCode() + Port;
+            return Math.Abs(IP.GetHashCode() + Port);
         }
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
@@ -405,11 +405,7 @@ namespace IW4MAdmin
                     if (lines != oldLines)
                     {
                         l_size = LogFile.Length();
-                        int end;
-                        if (lines.Length == oldLines.Length)
-                            end = lines.Length - 1;
-                        else
-                            end = Math.Abs((lines.Length - oldLines.Length)) - 1;
+                        int end = (lines.Length == oldLines.Length) ? lines.Length - 1 : Math.Abs((lines.Length - oldLines.Length)) - 1;
 
                         for (int count = 0; count < lines.Length; count++)
                         {
@@ -434,7 +430,6 @@ namespace IW4MAdmin
                                     await ExecuteEvent(event_);
                                 }
                             }
-
                         }
                     }
                 }
@@ -537,8 +532,13 @@ namespace IW4MAdmin
 #endif
             }
             else
+            {
+#if !DEBUG
                 LogFile = new IFile(logPath);
-
+#else
+            }
+            LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+#endif
             Logger.WriteInfo("Log file is " + logPath);
             await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
 #if !DEBUG

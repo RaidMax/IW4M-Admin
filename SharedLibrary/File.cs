@@ -3,19 +3,53 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 
 namespace SharedLibrary
 {
+    public class RemoteFile : IFile
+    {
+        string Location;
+        string[] FileCache;
+
+        public RemoteFile(string location) : base(string.Empty)
+        {
+            Location = location;
+        }
+
+        private void Retrieve()
+        {
+            using (var cl = new HttpClient())
+                FileCache = cl.GetStringAsync(Location).Result.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        public override string[] Tail(int lineCount)
+        {
+            Retrieve();
+            return FileCache;
+        }
+
+        public override long Length()
+        {
+            Retrieve();
+            return FileCache[0].Length;
+        }
+
+    }
+
     public class IFile
     {
         public IFile(String fileName)
         {
-            Name = fileName;
-            Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-            sze = Handle.BaseStream.Length;
+            if (fileName != string.Empty)
+            {
+                Name = fileName;
+                Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                sze = Handle.BaseStream.Length;
+            }
         }
 
-        public long Length()
+        public virtual long Length()
         {
             sze = Handle.BaseStream.Length;
             return sze;
@@ -36,7 +70,7 @@ namespace SharedLibrary
             return Handle?.ReadToEnd();
         }
 
-        public String[] Tail(int lineCount)
+        public virtual String[] Tail(int lineCount)
         {
             var buffer = new List<string>(lineCount);
             string line;

@@ -28,11 +28,22 @@ namespace StatsPlugin.Models
         [NotMapped]
         public double KDR
         {
-            get => Deaths == 0 ? 0.0 : Math.Round((float)Kills / (float)Deaths, 2);
+            get => Deaths == 0 ? Kills : Math.Round((float)Kills / (float)Deaths, 2);
         }
         [Required]
         public double SPM { get; set; }
         [Required]
         public double Skill { get; set; }
+        
+        [NotMapped]
+        public int SessionKills { get; set; }
+        [NotMapped]
+        public int SessionDeaths { get; set; }
+        [NotMapped]
+        public int KillStreak { get; set; }
+        [NotMapped]
+        public int DeathStreak { get; set; }
+        [NotMapped]
+        public DateTime LastStatCalculation { get; set; }
     }
 }

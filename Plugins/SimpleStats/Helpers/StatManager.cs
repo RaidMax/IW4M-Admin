@@ -102,10 +102,15 @@ namespace StatsPlugin.Helpers
                 clientStats = ClientStatSvc.Insert(clientStats);
             }
 
-            else
-
             lock (playerStats)
+            {
+                if (playerStats.ContainsKey(pl.ClientNumber))
+                {
+                    Log.WriteWarning($"Duplicate clientnumber in stats {pl.ClientId} vs {playerStats[pl.ClientNumber].ClientId}");
+                    playerStats.Remove(pl.ClientNumber);
+                }
                 playerStats.Add(pl.ClientNumber, clientStats);
+            }
             return clientStats;
         }
 
@@ -113,29 +118,32 @@ namespace StatsPlugin.Helpers
         {
             int serverId = pl.CurrentServer.GetHashCode();
             var playerStats = Servers[serverId].PlayerStats;
-
             // get individual client's stats
             var clientStats = playerStats[pl.ClientNumber];
             // remove the client from the stats dictionary as they're leaving
             lock (playerStats)
                 playerStats.Remove(pl.ClientNumber);
-
+            // allow accessing certain properties
+            //clientStats.Client = pl;
+            // update skill
+            //  clientStats = UpdateStats(clientStats);
+            // reset for EF cache
+            //clientStats.SessionDeaths = 0;
+            //  clientStats.SessionKills = 0;
+            // prevent mismatched primary key
+            //clientStats.Client = null;
             // update in database
-            await ClientStatSvc.SaveChangesAsync();
+            //await ClientStatSvc.SaveChangesAsync();
         }
 
         /// <summary>
         /// Process stats for kill event
         /// </summary>
         /// <returns></returns>
-        public async Task AddKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type, 
+        public async Task AddScriptKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin)
         {
-            var attackerStats = Servers[serverId].PlayerStats[attacker.ClientNumber];
-            attackerStats.Kills += 1;
-
-            var victimStats = Servers[serverId].PlayerStats[victim.ClientNumber];
-            victimStats.Deaths += 1;
+            AddStandardKill(attacker, victim);
 
             var kill = new EFClientKill()
             {
@@ -156,10 +164,88 @@ namespace StatsPlugin.Helpers
             await KillSvc.SaveChangesAsync();
         }
 
-        private EFClientStatistics UpdateStats(EFClientStatistics cs)
+        public void AddStandardKill(Player attacker, Player victim)
         {
-            // todo: everything
-            return cs;
+            var attackerStats = Servers[attacker.CurrentServer.GetHashCode()].PlayerStats[attacker.ClientNumber];
+            // set to access total time
+            attackerStats.Client = attacker;
+            var victimStats = Servers[victim.CurrentServer.GetHashCode()].PlayerStats[victim.ClientNumber];
+
+            CalculateKill(attackerStats, victimStats);
+        }
+
+        /// <summary>
+        /// Performs the incrementation of kills and deaths for client statistics
+        /// </summary>
+        /// <param name="attackerStats">Stats of the attacker</param>
+        /// <param name="victimStats">Stats of the victim</param>
+        public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats)
+        {
+            attackerStats.Kills += 1;
+            attackerStats.SessionKills += 1;
+            attackerStats.KillStreak += 1;
+            attackerStats.DeathStreak = 0;
+
+            victimStats.Deaths += 1;
+            victimStats.SessionDeaths += 1;
+            victimStats.DeathStreak += 1;
+            victimStats.KillStreak = 0;
+
+            // process the attacker's stats after the kills
+            UpdateStats(attackerStats);
+            attackerStats.Client = null;
+
+            // immediately write changes in debug
+#if DEBUG
+            ClientStatSvc.SaveChanges();
+#endif
+        }
+
+        /// <summary>
+        /// Update the client stats (skill etc)
+        /// </summary>
+        /// <param name="clientStats">Client statistics</param>
+        /// <returns></returns>
+        private EFClientStatistics UpdateStats(EFClientStatistics clientStats)
+        {
+            // if it's their first kill we need to set the last kill as the time they joined 
+            clientStats.LastStatCalculation = (clientStats.LastStatCalculation == DateTime.MinValue) ? DateTime.UtcNow : clientStats.LastStatCalculation;
+            double timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
+
+            // each 'session' is one minute
+            if (timeSinceLastCalc >= 1)
+            {
+                Log.WriteDebug($"Updated stats for {clientStats.ClientId} ({clientStats.SessionKills})");
+                // calculate the players Score Per Minute for the current session
+                // todo: score should be based on gamemode
+                double killSPM = clientStats.SessionKills * 100.0;
+
+                // calculate how much the KDR should weigh
+                // 1.637 is a Eddie-Generated number that weights the KDR nicely
+                double KDRWeight = Math.Round(Math.Pow(clientStats.KDR, 1.637 / Math.E), 3);
+
+                // if no SPM, weight is 1 else the weight ishe current session's spm / lifetime average score per minute
+                double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
+
+                // calculate the weight of the new play time against last 10 hours of gameplay
+                int totalConnectionTime = (clientStats.Client.TotalConnectionTime == 0) ? 
+                    (int)(DateTime.UtcNow - clientStats.Client.FirstConnection).TotalSeconds : 
+                    clientStats.Client.TotalConnectionTime + (int)(DateTime.UtcNow - clientStats.Client.LastConnection).TotalSeconds;
+
+                double SPMAgainstPlayWeight =  timeSinceLastCalc / Math.Min(600, (totalConnectionTime / 60.0));
+
+                // calculate the new weight against average times the weight against play time
+                clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
+                clientStats.SPM = Math.Round(clientStats.SPM, 3);
+                clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight) / 10.0, 3);
+
+                clientStats.SessionKills = 0;
+                clientStats.SessionDeaths = 0;
+
+                clientStats.LastStatCalculation = DateTime.UtcNow;
+            }
+
+            return clientStats;
         }
     }
 }

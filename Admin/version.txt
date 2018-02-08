@@ -1,4 +1,8 @@
-﻿Version 1.6:
+﻿Version 1.7:
+CHANGELOG:
+-EntityFramework is now the main database system
+
+Version 1.6:
 CHANGELOG:
 -got rid of pesky "error on character" message
 -optimizations to commands

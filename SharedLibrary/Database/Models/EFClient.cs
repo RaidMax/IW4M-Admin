@@ -18,6 +18,7 @@ namespace SharedLibrary.Database.Models
         [Required]
         public int Connections { get; set; }
         [Required]
+        // in seconds 
         public int TotalConnectionTime { get; set; }
         [Required]
         public DateTime FirstConnection { get; set; }

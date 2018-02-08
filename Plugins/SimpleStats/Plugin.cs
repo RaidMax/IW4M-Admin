@@ -62,7 +62,7 @@ namespace StatsPlugin
                 case Event.GType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
-                        await Manager.AddKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);              
+                        await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);              
                     break;
                 case Event.GType.Death:
                     break;

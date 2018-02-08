@@ -40,7 +40,7 @@ namespace SharedLibrary.Helpers
         public void Update(Task<bool> T)
         {
             RequestedTask = T;
-            Console.WriteLine($"Starting Task {T.Id} ");
+           // Console.WriteLine($"Starting Task {T.Id} ");
             RequestedTask.Start();
 
             if (TimesRun > 25)

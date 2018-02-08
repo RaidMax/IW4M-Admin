@@ -140,11 +140,13 @@ namespace SharedLibrary
         /// <param name="Message">Message to be sent to all players</param>
         public async Task Broadcast(String Message)
         {
-#if DEBUG
-            //return;
-#endif
+
             string sayCommand = (GameName == Game.IW4) ? "sayraw" : "say";
+#if !DEBUG
             await this.ExecuteCommandAsync($"{sayCommand} {Message}");
+#else
+            Logger.WriteVerbose(Message.StripColors());
+#endif
         }
 
         /// <summary>
@@ -156,8 +158,12 @@ namespace SharedLibrary
         {
             string tellCommand = (GameName == Game.IW4) ? "tellraw" : "tell";
 
+#if !DEBUG
             if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)
                 await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientNumber} {Message}^7");
+#else
+            Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
+#endif
 
             if (Target.Level == Player.Permission.Console)
             {

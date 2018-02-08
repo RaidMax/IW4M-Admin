@@ -26,12 +26,12 @@ namespace SharedLibrary.Network
 
         static string[] SendQuery(QueryType Type, Server QueryServer, string Parameters = "")
         {
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 30)
-                Task.Delay(30).Wait();
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 100)
+                Task.Delay(100).Wait();
             LastQuery = DateTime.Now;
             var ServerOOBConnection = new UdpClient();
-            ServerOOBConnection.Client.SendTimeout = 5000;
-            ServerOOBConnection.Client.ReceiveTimeout = 5000;
+            ServerOOBConnection.Client.SendTimeout = 1000;
+            ServerOOBConnection.Client.ReceiveTimeout = 1000;
             var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.GetIP()), QueryServer.GetPort());
 
             string QueryString = String.Empty;
@@ -139,7 +139,7 @@ namespace SharedLibrary.Network
 
         public static async Task<List<Player>> GetStatusAsync(this Server server)
         {
-#if DEBUG
+#if DEBUG && DEBUG_PLAYERS
             string[] response = await Task.Run(() => System.IO.File.ReadAllLines("players.txt"));
 #else
             string[] response = await Task.FromResult(SendQuery(QueryType.DVAR, server, "status"));

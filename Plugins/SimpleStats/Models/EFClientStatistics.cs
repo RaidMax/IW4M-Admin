@@ -45,5 +45,9 @@ namespace StatsPlugin.Models
         public int DeathStreak { get; set; }
         [NotMapped]
         public DateTime LastStatCalculation { get; set; }
+        [NotMapped]
+        public int LastScore { get; set; }
+        [NotMapped]
+        public DateTime LastActive { get; set; }
     }
 }

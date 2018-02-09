@@ -26,8 +26,8 @@ namespace SharedLibrary.Network
 
         static string[] SendQuery(QueryType Type, Server QueryServer, string Parameters = "")
         {
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 100)
-                Task.Delay(100).Wait();
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 300)
+                Task.Delay(300).Wait();
             LastQuery = DateTime.Now;
             var ServerOOBConnection = new UdpClient();
             ServerOOBConnection.Client.SendTimeout = 1000;

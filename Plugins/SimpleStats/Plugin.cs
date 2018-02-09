@@ -5,8 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 using SharedLibrary;
+using SharedLibrary.Helpers;
 using SharedLibrary.Interfaces;
+using SharedLibrary.Services;
 using StatsPlugin.Helpers;
+using StatsPlugin.Models;
 
 namespace StatsPlugin
 {
@@ -40,6 +43,7 @@ namespace StatsPlugin
                 case Event.GType.MapChange:
                     break;
                 case Event.GType.MapEnd:
+                    await Manager.Sync();
                     break;
                 case Event.GType.Broadcast:
                     break;
@@ -71,6 +75,27 @@ namespace StatsPlugin
 
         public Task OnLoadAsync(IManager manager)
         {
+            /*
+             * 
+            ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
+            ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
+*/
+            string totalKills()
+            {
+                var serverStats = new GenericRepository<EFServerStatistics>();
+                return serverStats.GetQuery(s => s.Active)
+                    .Sum(c => c.TotalKills).ToString();
+            }
+
+            string totalPlayTime()
+            {
+                var serverStats = new GenericRepository<EFServerStatistics>();
+                return serverStats.GetQuery(s => s.Active)
+                    .Sum(c => c.TotalPlayTime).ToString();
+            }
+
+            manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
+            manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
             return Task.FromResult(
                 Manager = new StatManager(manager)
             );

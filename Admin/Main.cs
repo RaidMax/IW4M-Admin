@@ -1,5 +1,4 @@
 ﻿
-#define USINGMEMORY
 using System;
 using System.Runtime.InteropServices;
 using SharedLibrary;

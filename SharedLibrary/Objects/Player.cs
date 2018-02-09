@@ -73,6 +73,8 @@ namespace SharedLibrary.Objects
         public DateTime ConnectionTime { get; set; }
         [NotMapped]
         public Server CurrentServer { get; set; }
+        [NotMapped]
+        public int Score { get; set; }
 
         private string _ipaddress;
         public override string IPAddress

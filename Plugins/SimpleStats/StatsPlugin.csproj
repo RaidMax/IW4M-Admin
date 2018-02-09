@@ -72,11 +72,13 @@
     <None Include="Chat\ChatHistoryPage.cs" />
     <Compile Include="Helpers\ServerStats.cs" />
     <Compile Include="Helpers\StatManager.cs" />
+    <Compile Include="Helpers\StreakMessage.cs" />
     <Compile Include="IW4Info.cs" />
     <Compile Include="MinimapConfig.cs" />
     <Compile Include="Models\EFClientKill.cs" />
     <Compile Include="Models\EFServer.cs" />
     <Compile Include="Models\EFClientStatistics.cs" />
+    <Compile Include="Models\EFServerStatistics.cs" />
     <Compile Include="Plugin.cs" />
     <None Include="_Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

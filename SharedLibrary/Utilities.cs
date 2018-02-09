@@ -62,7 +62,9 @@ namespace SharedLibrary
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
                     string cIP = regex.Value.Split(':')[0];
-                    Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping };
+                    regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
+                    int score = Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                    Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping, Score = score};
                     StatusPlayers.Add(P);
                 }
             }

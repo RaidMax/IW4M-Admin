@@ -199,6 +199,12 @@ namespace IW4MAdmin
                     var Status = TaskStatuses[i];
                     if (Status.RequestedTask == null || Status.RequestedTask.Status == TaskStatus.RanToCompletion)
                     {
+                        if (Status.ElapsedMillisecondsTime() > 60000)
+                        {
+                            Logger.WriteWarning($"Task took longer than 60 seconds to complete, killing");
+                            //Status.RequestedTask.
+                        }
+
                         Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
                         if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
                             Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");

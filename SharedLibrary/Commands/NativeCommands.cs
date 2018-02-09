@@ -744,7 +744,7 @@ namespace SharedLibrary.Commands
             E.Data = E.Data.RemoveWords(1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
-            await E.Origin.Tell($"Thank you for your report, and administrator has been notified");
+            await E.Origin.Tell($"Thank you for your report, an administrator has been notified");
             await E.Owner.ExecuteEvent(new Event(Event.GType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }

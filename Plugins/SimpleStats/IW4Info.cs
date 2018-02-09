@@ -1333,7 +1333,8 @@ namespace StatsPlugin
             ak74u_silencer_thermal_mp,
             ak74u_silencer_xmags_mp,
             ak74u_thermal_xmags_mp,
-            m40a3_mp = 1194,
+            m16_reflex_silencer_mp,
+            m40a3_mp,
             peacekeeper_mp,
             dragunov_mp,
             cobra_player_minigun_mp

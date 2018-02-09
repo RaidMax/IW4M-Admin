@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using SharedLibrary;
 using SharedLibrary.Helpers;
@@ -19,7 +18,8 @@ namespace StatsPlugin.Helpers
         private IManager Manager;
         private GenericRepository<EFClientStatistics> ClientStatSvc;
         private GenericRepository<EFServer> ServerSvc;
-        private GenericRepository<EFClientKill> KillSvc;
+        private GenericRepository<EFClientKill> KillStatsSvc;
+        private GenericRepository<EFServerStatistics> ServerStatsSvc;
 
         public StatManager(IManager mgr)
         {
@@ -28,13 +28,13 @@ namespace StatsPlugin.Helpers
             Manager = mgr;
             ClientStatSvc = new GenericRepository<EFClientStatistics>();
             ServerSvc = new GenericRepository<EFServer>();
-            KillSvc = new GenericRepository<EFClientKill>();
+            KillStatsSvc = new GenericRepository<EFClientKill>();
+            ServerStatsSvc = new GenericRepository<EFServerStatistics>();
         }
 
         ~StatManager()
         {
             Servers.Clear();
-            Log.WriteInfo("Cleared StatManager servers");
             Log = null;
             Servers = null;
         }
@@ -48,6 +48,7 @@ namespace StatsPlugin.Helpers
             try
             {
                 int serverId = sv.GetHashCode();
+
                 // get the server from the database if it exists, otherwise create and insert a new one
                 var server = ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
                 if (server == null)
@@ -64,7 +65,13 @@ namespace StatsPlugin.Helpers
 
                 // this doesn't need to be async as it's during initialization
                 ServerSvc.SaveChanges();
-                Servers.Add(sv.GetHashCode(), new ServerStats(server));
+                InitializeServerStats(sv);
+                ServerStatsSvc.SaveChanges();
+
+                var serverStats = ServerStatsSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
+                // check to see if the stats have ever been initialized
+
+                Servers.Add(serverId, new ServerStats(server, serverStats));
             }
 
             catch (Exception e)
@@ -102,6 +109,10 @@ namespace StatsPlugin.Helpers
                 clientStats = ClientStatSvc.Insert(clientStats);
             }
 
+            // set these on connecting
+            clientStats.LastActive = DateTime.UtcNow;
+            clientStats.LastStatCalculation = DateTime.UtcNow;
+
             lock (playerStats)
             {
                 if (playerStats.ContainsKey(pl.ClientNumber))
@@ -123,17 +134,9 @@ namespace StatsPlugin.Helpers
             // remove the client from the stats dictionary as they're leaving
             lock (playerStats)
                 playerStats.Remove(pl.ClientNumber);
-            // allow accessing certain properties
-            //clientStats.Client = pl;
-            // update skill
-            //  clientStats = UpdateStats(clientStats);
-            // reset for EF cache
-            //clientStats.SessionDeaths = 0;
-            //  clientStats.SessionKills = 0;
-            // prevent mismatched primary key
-            //clientStats.Client = null;
-            // update in database
-            //await ClientStatSvc.SaveChangesAsync();
+
+            var serverStats = ServerStatsSvc.Find(sv => sv.ServerId == serverId).FirstOrDefault();
+            serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
         }
 
         /// <summary>
@@ -160,18 +163,29 @@ namespace StatsPlugin.Helpers
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName))
             };
 
-            KillSvc.Insert(kill);
-            await KillSvc.SaveChangesAsync();
+            KillStatsSvc.Insert(kill);
+            await KillStatsSvc.SaveChangesAsync();
         }
 
         public void AddStandardKill(Player attacker, Player victim)
         {
-            var attackerStats = Servers[attacker.CurrentServer.GetHashCode()].PlayerStats[attacker.ClientNumber];
-            // set to access total time
+            int serverId = attacker.CurrentServer.GetHashCode();
+            var attackerStats = Servers[serverId].PlayerStats[attacker.ClientNumber];
+            // set to access total time played
             attackerStats.Client = attacker;
-            var victimStats = Servers[victim.CurrentServer.GetHashCode()].PlayerStats[victim.ClientNumber];
+            var victimStats = Servers[serverId].PlayerStats[victim.ClientNumber];
 
+            // update the total stats
+            Servers[serverId].ServerStatistics.TotalKills += 1;
+
+            // calculate for the clients
             CalculateKill(attackerStats, victimStats);
+
+            // immediately write changes in debug
+#if DEBUG
+            ClientStatSvc.SaveChanges();
+            ServerStatsSvc.SaveChanges();
+#endif
         }
 
         /// <summary>
@@ -195,10 +209,9 @@ namespace StatsPlugin.Helpers
             UpdateStats(attackerStats);
             attackerStats.Client = null;
 
-            // immediately write changes in debug
-#if DEBUG
-            ClientStatSvc.SaveChanges();
-#endif
+            // update after calculation
+            attackerStats.LastActive = DateTime.UtcNow;
+            victimStats.LastActive = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -208,44 +221,83 @@ namespace StatsPlugin.Helpers
         /// <returns></returns>
         private EFClientStatistics UpdateStats(EFClientStatistics clientStats)
         {
-            // if it's their first kill we need to set the last kill as the time they joined 
-            clientStats.LastStatCalculation = (clientStats.LastStatCalculation == DateTime.MinValue) ? DateTime.UtcNow : clientStats.LastStatCalculation;
             double timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
+            double timeSinceLastActive = (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0;
 
-            // each 'session' is one minute
-            if (timeSinceLastCalc >= 1)
-            {
-                Log.WriteDebug($"Updated stats for {clientStats.ClientId} ({clientStats.SessionKills})");
-                // calculate the players Score Per Minute for the current session
-                // todo: score should be based on gamemode
-                double killSPM = clientStats.SessionKills * 100.0;
+            // prevent NaN or inactive time lowering SPM
+            if (timeSinceLastCalc == 0 || timeSinceLastActive > 3)
+                return clientStats;
 
-                // calculate how much the KDR should weigh
-                // 1.637 is a Eddie-Generated number that weights the KDR nicely
-                double KDRWeight = Math.Round(Math.Pow(clientStats.KDR, 1.637 / Math.E), 3);
+            // calculate the players Score Per Minute for the current session
+            int currentScore = Manager.GetActiveClients()
+                .First(c => c.ClientId == clientStats.ClientId)
+                .Score;
+            double killSPM = currentScore / (timeSinceLastCalc * 60.0);
 
-                // if no SPM, weight is 1 else the weight ishe current session's spm / lifetime average score per minute
-                double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
+            // calculate how much the KDR should weigh
+            // 1.637 is a Eddie-Generated number that weights the KDR nicely
+            double KDRWeight = Math.Round(Math.Pow(clientStats.KDR, 1.637 / Math.E), 3);
 
-                // calculate the weight of the new play time against last 10 hours of gameplay
-                int totalConnectionTime = (clientStats.Client.TotalConnectionTime == 0) ? 
-                    (int)(DateTime.UtcNow - clientStats.Client.FirstConnection).TotalSeconds : 
-                    clientStats.Client.TotalConnectionTime + (int)(DateTime.UtcNow - clientStats.Client.LastConnection).TotalSeconds;
+            // if no SPM, weight is 1 else the weight ishe current session's spm / lifetime average score per minute
+            double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
 
-                double SPMAgainstPlayWeight =  timeSinceLastCalc / Math.Min(600, (totalConnectionTime / 60.0));
+            // calculate the weight of the new play time against last 10 hours of gameplay
+            int totalConnectionTime = (clientStats.Client.TotalConnectionTime == 0) ?
+                (int)(DateTime.UtcNow - clientStats.Client.FirstConnection).TotalSeconds :
+                clientStats.Client.TotalConnectionTime + (int)(DateTime.UtcNow - clientStats.Client.LastConnection).TotalSeconds;
 
-                // calculate the new weight against average times the weight against play time
-                clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
-                clientStats.SPM = Math.Round(clientStats.SPM, 3);
-                clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight) / 10.0, 3);
+            double SPMAgainstPlayWeight = timeSinceLastCalc / Math.Min(600, (totalConnectionTime / 60.0));
 
-                clientStats.SessionKills = 0;
-                clientStats.SessionDeaths = 0;
+            // calculate the new weight against average times the weight against play time
+            clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
+            clientStats.SPM = Math.Round(clientStats.SPM, 3);
+            clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
 
-                clientStats.LastStatCalculation = DateTime.UtcNow;
-            }
+            clientStats.LastStatCalculation = DateTime.UtcNow;
+            clientStats.LastScore = currentScore;
 
             return clientStats;
+        }
+
+        public void InitializeServerStats(Server sv)
+        {
+            int serverId = sv.GetHashCode();
+            var serverStats = ServerStatsSvc.Find(s => s.ServerId == serverId).FirstOrDefault();
+            if (serverStats == null)
+            {
+                Log.WriteDebug($"Initializing server stats for {sv}");
+                // server stats have never been generated before
+                serverStats = new EFServerStatistics()
+                {
+                    Active = true,
+                    ServerId = serverId,
+                    TotalKills = 0,
+                    TotalPlayTime = 0,
+                };
+
+                var ieClientStats = ClientStatSvc.Find(cs => cs.ServerId == serverId);
+
+                // set these incase they've we've imported settings 
+                serverStats.TotalKills = ieClientStats.Sum(cs => cs.Kills);
+                serverStats.TotalPlayTime = Manager.GetClientService().GetTotalPlayTime().Result;
+
+                ServerStatsSvc.Insert(serverStats);
+            }
+        }
+
+        public async Task Sync()
+        {
+            Log.WriteDebug("Syncing server stats");
+            await ServerStatsSvc.SaveChangesAsync();
+
+            Log.WriteDebug("Syncing client stats");
+            await ClientStatSvc.SaveChangesAsync();
+
+            Log.WriteDebug("Syncing kill stats");
+            await KillStatsSvc.SaveChangesAsync();
+
+            Log.WriteDebug("Syncing servers");
+            await ServerSvc.SaveChangesAsync();
         }
     }
 }

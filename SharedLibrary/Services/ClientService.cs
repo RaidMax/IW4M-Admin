@@ -233,6 +233,12 @@ namespace SharedLibrary.Services
         {
             throw new NotImplementedException();
         }
+
+        public async Task<int> GetTotalPlayTime()
+        {
+            using (var context = new DatabaseContext())
+                return await context.Clients.SumAsync(c => c.TotalConnectionTime);
+        }
         #endregion
     }
 }

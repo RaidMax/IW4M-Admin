@@ -34,6 +34,7 @@ namespace IW4MAdmin
             {
                 // update their ping
                 Players[polledPlayer.ClientNumber].Ping = polledPlayer.Ping;
+                Players[polledPlayer.ClientNumber].Score = polledPlayer.Score;
                 return true;
             }
 
@@ -112,6 +113,7 @@ namespace IW4MAdmin
                 //  NewPlayer.Level = Player.Permission.Flagged;
                 // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
+                player.Score = polledPlayer.Score;
                 Players[player.ClientNumber] = player;
                 Logger.WriteInfo($"Client {player} connecting...");
 
@@ -210,7 +212,15 @@ namespace IW4MAdmin
             if (C.RequiresTarget || Args.Length > 0)
             {
                 int cNum = -1;
-                int.TryParse(Args[0], out cNum);
+                try
+                {
+                    cNum = Convert.ToInt32(Args[0]);
+                }
+
+                catch(FormatException)
+                {
+
+                }
 
                 if (Args[0][0] == '@') // user specifying target by database ID
                 {
@@ -227,7 +237,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                else if (Args[0].Length < 3 && cNum > -1 && cNum < 18) // user specifying target by client num
+                else if (Args[0].Length < 3 && cNum > -1 && cNum < MaxClients) // user specifying target by client num
                 {
                     if (Players[cNum] != null)
                     {
@@ -250,6 +260,13 @@ namespace IW4MAdmin
                     {
                         E.Target = matchingPlayers.First();
                         E.Data = Regex.Replace(E.Data, $"\"{E.Target.Name}\"", "", RegexOptions.IgnoreCase).Trim();
+
+                        if (E.Data.ToLower().Trim() == E.Target.Name.ToLower().Trim())
+                        {
+                            await E.Origin.Tell($"Not enough arguments supplied!");
+                            await E.Origin.Tell(C.Syntax);
+                            throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                        }
                     }
                 }
 
@@ -267,6 +284,13 @@ namespace IW4MAdmin
                     {
                         E.Target = matchingPlayers.First();
                         E.Data = Regex.Replace(E.Data, $"{E.Target.Name}", "", RegexOptions.IgnoreCase).Trim();
+
+                        if (E.Data.Trim() == E.Target.Name.ToLower().Trim())
+                        {
+                            await E.Origin.Tell($"Not enough arguments supplied!");
+                            await E.Origin.Tell(C.Syntax);
+                            throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                        }
                     }
                 }
 

@@ -15,11 +15,13 @@ namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
+        private CancellationToken cts;
+
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
         public override int GetHashCode()
         {
-            return Math.Abs(IP.GetHashCode() + Port);
+            return Math.Abs($"{IP}:{Port.ToString()}".GetHashCode());
         }
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
@@ -32,7 +34,7 @@ namespace IW4MAdmin
             if (Players[polledPlayer.ClientNumber] != null &&
                 Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId)
             {
-                // update their ping
+                // update their ping & score 
                 Players[polledPlayer.ClientNumber].Ping = polledPlayer.Ping;
                 Players[polledPlayer.ClientNumber].Score = polledPlayer.Score;
                 return true;
@@ -116,6 +118,17 @@ namespace IW4MAdmin
                 player.Score = polledPlayer.Score;
                 Players[player.ClientNumber] = player;
                 Logger.WriteInfo($"Client {player} connecting...");
+
+                // give trusted rank
+                if (Config.AllowTrustedRank &&
+                    player.TotalConnectionTime / 60.0 >= 2880 &&
+                    player.Level < Player.Permission.Trusted &&
+                    player.Level != Player.Permission.Flagged)
+                {
+                    player.Level = Player.Permission.Trusted;
+                    await player.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands.");
+                    await player.Tell("You earned this by playing for ^53 ^7full days!");
+                }
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
@@ -261,7 +274,9 @@ namespace IW4MAdmin
                         E.Target = matchingPlayers.First();
                         E.Data = Regex.Replace(E.Data, $"\"{E.Target.Name}\"", "", RegexOptions.IgnoreCase).Trim();
 
-                        if (E.Data.ToLower().Trim() == E.Target.Name.ToLower().Trim())
+                        if ((E.Data.ToLower().Trim() == E.Target.Name.ToLower().Trim() ||
+                            E.Data == String.Empty) &&
+                            C.RequiresTarget)
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
@@ -284,8 +299,11 @@ namespace IW4MAdmin
                     {
                         E.Target = matchingPlayers.First();
                         E.Data = Regex.Replace(E.Data, $"{E.Target.Name}", "", RegexOptions.IgnoreCase).Trim();
+                        E.Data = Regex.Replace(E.Data, $"{Args[0]}", "", RegexOptions.IgnoreCase).Trim();
 
-                        if (E.Data.Trim() == E.Target.Name.ToLower().Trim())
+                        if ((E.Data.Trim() == E.Target.Name.ToLower().Trim() ||
+                            E.Data == String.Empty) &&
+                            C.RequiresTarget)
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
@@ -316,6 +334,9 @@ namespace IW4MAdmin
                 try
 #endif
                 {
+                    if (cts.IsCancellationRequested)
+                        break;
+
                     await P.OnEventAsync(E, this);
                 }
 #if !DEBUG
@@ -362,6 +383,7 @@ namespace IW4MAdmin
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
+            this.cts = cts;
 #if DEBUG == false
             try
 #endif
@@ -400,7 +422,12 @@ namespace IW4MAdmin
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
                     foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+                    {
+                        if (cts.IsCancellationRequested)
+                            break;
+
                         await Plugin.OnTickAsync(this);
+                    }
                     tickTime = DateTime.Now;
                 }
 
@@ -459,6 +486,11 @@ namespace IW4MAdmin
                 }
                 oldLines = lines;
                 l_size = LogFile.Length();
+                if (!((ApplicationManager)Manager).Running)
+                {
+                    foreach (var plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+                       await plugin.OnUnloadAsync();
+                }
                 return true;
             }
 #if DEBUG == false

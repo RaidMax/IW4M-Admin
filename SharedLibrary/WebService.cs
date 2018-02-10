@@ -87,8 +87,8 @@ namespace SharedLibrary
         {
             return new Dictionary<string, string>();
         }
+
         abstract public string GetContent(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers);
-        
 
         public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {

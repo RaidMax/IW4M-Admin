@@ -14,22 +14,16 @@ namespace StatsPlugin.Helpers
     public class StatManager
     {
         private Dictionary<int, ServerStats> Servers;
+        private Dictionary<int, ThreadSafeStatsService> ContextThreads;
         private ILogger Log;
         private IManager Manager;
-        private GenericRepository<EFClientStatistics> ClientStatSvc;
-        private GenericRepository<EFServer> ServerSvc;
-        private GenericRepository<EFClientKill> KillStatsSvc;
-        private GenericRepository<EFServerStatistics> ServerStatsSvc;
 
         public StatManager(IManager mgr)
         {
             Servers = new Dictionary<int, ServerStats>();
+            ContextThreads = new Dictionary<int, ThreadSafeStatsService>();
             Log = mgr.GetLogger();
             Manager = mgr;
-            ClientStatSvc = new GenericRepository<EFClientStatistics>();
-            ServerSvc = new GenericRepository<EFServer>();
-            KillStatsSvc = new GenericRepository<EFClientKill>();
-            ServerStatsSvc = new GenericRepository<EFServerStatistics>();
         }
 
         ~StatManager()
@@ -48,9 +42,11 @@ namespace StatsPlugin.Helpers
             try
             {
                 int serverId = sv.GetHashCode();
+                var statsSvc = new ThreadSafeStatsService();
+                ContextThreads.Add(serverId, statsSvc);
 
                 // get the server from the database if it exists, otherwise create and insert a new one
-                var server = ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
+                var server = statsSvc.ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
                 if (server == null)
                 {
                     server = new EFServer()
@@ -60,17 +56,16 @@ namespace StatsPlugin.Helpers
                         ServerId = serverId
                     };
 
-                    ServerSvc.Insert(server);
+                    statsSvc.ServerSvc.Insert(server);
                 }
 
                 // this doesn't need to be async as it's during initialization
-                ServerSvc.SaveChanges();
-                InitializeServerStats(sv);
-                ServerStatsSvc.SaveChanges();
-
-                var serverStats = ServerStatsSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
+                statsSvc.ServerSvc.SaveChanges();
                 // check to see if the stats have ever been initialized
+                InitializeServerStats(sv);
+                statsSvc.ServerStatsSvc.SaveChanges();
 
+                var serverStats = statsSvc.ServerStatsSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
                 Servers.Add(serverId, new ServerStats(server, serverStats));
             }
 
@@ -89,10 +84,11 @@ namespace StatsPlugin.Helpers
         {
             int serverId = pl.CurrentServer.GetHashCode();
             var playerStats = Servers[serverId].PlayerStats;
+            var statsSvc = ContextThreads[serverId];
 
             // get the client's stats from the database if it exists, otherwise create and attach a new one
             // if this fails we want to throw an exception
-            var clientStats = ClientStatSvc.Find(c => c.ClientId == pl.ClientId && c.ServerId == serverId).FirstOrDefault();
+            var clientStats = statsSvc.ClientStatSvc.Find(c => c.ClientId == pl.ClientId && c.ServerId == serverId).FirstOrDefault();
             if (clientStats == null)
             {
                 clientStats = new EFClientStatistics()
@@ -106,7 +102,7 @@ namespace StatsPlugin.Helpers
                     SPM = 0.0,
                 };
 
-                clientStats = ClientStatSvc.Insert(clientStats);
+                clientStats = statsSvc.ClientStatSvc.Insert(clientStats);
             }
 
             // set these on connecting
@@ -125,17 +121,32 @@ namespace StatsPlugin.Helpers
             return clientStats;
         }
 
+        /// <summary>
+        /// Perform stat updates for disconnecting client
+        /// </summary>
+        /// <param name="pl">Disconnecting client</param>
+        /// <returns></returns>
         public async Task RemovePlayer(Player pl)
         {
             int serverId = pl.CurrentServer.GetHashCode();
             var playerStats = Servers[serverId].PlayerStats;
+            var serverStats = Servers[serverId].ServerStatistics;
+            var statsSvc = ContextThreads[serverId];
+
             // get individual client's stats
             var clientStats = playerStats[pl.ClientNumber];
             // remove the client from the stats dictionary as they're leaving
             lock (playerStats)
                 playerStats.Remove(pl.ClientNumber);
 
-            var serverStats = ServerStatsSvc.Find(sv => sv.ServerId == serverId).FirstOrDefault();
+            // sync their stats before they leave
+            clientStats.Client = pl;
+            UpdateStats(clientStats);
+            clientStats.Client = null;
+
+            // todo: should this be saved every disconnect?
+            await statsSvc.ClientStatSvc.SaveChangesAsync();
+            // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
         }
 
@@ -147,6 +158,8 @@ namespace StatsPlugin.Helpers
             string damage, string weapon, string killOrigin, string deathOrigin)
         {
             AddStandardKill(attacker, victim);
+
+            var statsSvc = ContextThreads[serverId];
 
             var kill = new EFClientKill()
             {
@@ -163,8 +176,8 @@ namespace StatsPlugin.Helpers
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName))
             };
 
-            KillStatsSvc.Insert(kill);
-            await KillStatsSvc.SaveChangesAsync();
+            statsSvc.KillStatsSvc.Insert(kill);
+            await statsSvc.KillStatsSvc.SaveChangesAsync();
         }
 
         public void AddStandardKill(Player attacker, Player victim)
@@ -183,8 +196,9 @@ namespace StatsPlugin.Helpers
 
             // immediately write changes in debug
 #if DEBUG
-            ClientStatSvc.SaveChanges();
-            ServerStatsSvc.SaveChanges();
+            var statsSvc = ContextThreads[serverId];
+            statsSvc.ClientStatSvc.SaveChanges();
+            statsSvc.ServerStatsSvc.SaveChanges();
 #endif
         }
 
@@ -262,7 +276,9 @@ namespace StatsPlugin.Helpers
         public void InitializeServerStats(Server sv)
         {
             int serverId = sv.GetHashCode();
-            var serverStats = ServerStatsSvc.Find(s => s.ServerId == serverId).FirstOrDefault();
+            var statsSvc = ContextThreads[serverId];
+
+            var serverStats = statsSvc.ServerStatsSvc.Find(s => s.ServerId == serverId).FirstOrDefault();
             if (serverStats == null)
             {
                 Log.WriteDebug($"Initializing server stats for {sv}");
@@ -275,29 +291,46 @@ namespace StatsPlugin.Helpers
                     TotalPlayTime = 0,
                 };
 
-                var ieClientStats = ClientStatSvc.Find(cs => cs.ServerId == serverId);
+                var ieClientStats = statsSvc.ClientStatSvc.Find(cs => cs.ServerId == serverId);
 
                 // set these incase they've we've imported settings 
                 serverStats.TotalKills = ieClientStats.Sum(cs => cs.Kills);
                 serverStats.TotalPlayTime = Manager.GetClientService().GetTotalPlayTime().Result;
 
-                ServerStatsSvc.Insert(serverStats);
+                statsSvc.ServerStatsSvc.Insert(serverStats);
             }
         }
 
-        public async Task Sync()
+        public async Task AddMessageAsync(int clientId, int serverId, string message)
         {
+            var messageSvc = ContextThreads[serverId].MessageSvc;
+            messageSvc.Insert(new EFClientMessage()
+            {
+                Active = true,
+                ClientId = clientId,
+                Message = message,
+                ServerId = serverId,
+                TimeSent = DateTime.UtcNow
+            });
+            await messageSvc.SaveChangesAsync();
+        }
+
+        public async Task Sync(Server sv)
+        {
+            int serverId = sv.GetHashCode();
+            var statsSvc = ContextThreads[serverId];
+
             Log.WriteDebug("Syncing server stats");
-            await ServerStatsSvc.SaveChangesAsync();
+            await statsSvc.ServerStatsSvc.SaveChangesAsync();
 
             Log.WriteDebug("Syncing client stats");
-            await ClientStatSvc.SaveChangesAsync();
+            await statsSvc.ClientStatSvc.SaveChangesAsync();
 
             Log.WriteDebug("Syncing kill stats");
-            await KillStatsSvc.SaveChangesAsync();
+            await statsSvc.KillStatsSvc.SaveChangesAsync();
 
             Log.WriteDebug("Syncing servers");
-            await ServerSvc.SaveChangesAsync();
+            await statsSvc.ServerSvc.SaveChangesAsync();
         }
     }
 }

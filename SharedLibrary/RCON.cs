@@ -26,77 +26,78 @@ namespace SharedLibrary.Network
 
         static string[] SendQuery(QueryType Type, Server QueryServer, string Parameters = "")
         {
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 300)
-                Task.Delay(300).Wait();
-            LastQuery = DateTime.Now;
-            var ServerOOBConnection = new UdpClient();
-            ServerOOBConnection.Client.SendTimeout = 1000;
-            ServerOOBConnection.Client.ReceiveTimeout = 1000;
-            var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.GetIP()), QueryServer.GetPort());
-
-            string QueryString = String.Empty;
-
-            switch (Type)
+            using (var ServerOOBConnection = new UdpClient())
             {
-                case QueryType.DVAR:
-                case QueryType.COMMAND:
-                    QueryString = $"ÿÿÿÿrcon {QueryServer.Password} {Parameters}";
-                    break;
-                case QueryType.GET_STATUS:
-                    QueryString = "ÿÿÿÿ getstatus";
-                    break;
-            }
+                // prevent flooding
+                if ((DateTime.Now - LastQuery).TotalMilliseconds < 300)
+                    Task.Delay(300).Wait();
+                LastQuery = DateTime.Now;
 
-            byte[] Payload = GetRequestBytes(QueryString);
+                ServerOOBConnection.Client.SendTimeout = 1000;
+                ServerOOBConnection.Client.ReceiveTimeout = 1000;
+                var Endpoint = new IPEndPoint(IPAddress.Parse(QueryServer.GetIP()), QueryServer.GetPort());
 
-            int attempts = 0;
-            retry:
+                string QueryString = String.Empty;
 
-            try
-            {
-                ServerOOBConnection.Connect(Endpoint);
-                ServerOOBConnection.Send(Payload, Payload.Length);
-
-                byte[] ReceiveBuffer = new byte[8192];
-                StringBuilder QueryResponseString = new StringBuilder();
-
-                do
+                switch (Type)
                 {
-                    ReceiveBuffer = ServerOOBConnection.Receive(ref Endpoint);
-                    QueryResponseString.Append(Encoding.ASCII.GetString(ReceiveBuffer).TrimEnd('\0'));
-                } while (ServerOOBConnection.Available > 0 && ServerOOBConnection.Client.Connected);
-
-                ServerOOBConnection.Close();
-
-                if (QueryResponseString.ToString().Contains("Invalid password"))
-                    throw new Exceptions.NetworkException("RCON password is invalid");
-                if (QueryResponseString.ToString().Contains("rcon_password"))
-                    throw new Exceptions.NetworkException("RCON password has not been set");
-
-                int num = int.Parse("0a", System.Globalization.NumberStyles.AllowHexSpecifier);
-                string[] SplitResponse = QueryResponseString.ToString().Split(new char[] { (char)num }, StringSplitOptions.RemoveEmptyEntries);
-                return SplitResponse;
-            }
-
-            catch (Exceptions.NetworkException e)
-            {
-                throw e;
-            }
-
-            catch (Exception e)
-            {
-                attempts++;
-                if (attempts > 2)
-                {
-                    var ne = new Exceptions.NetworkException("Could not communicate with the server");
-                    ne.Data["internal_exception"] = e.Message;
-                    ne.Data["server_address"] = ServerOOBConnection.Client.RemoteEndPoint.ToString();
-                    ServerOOBConnection.Close();
-                    throw ne;
+                    case QueryType.DVAR:
+                    case QueryType.COMMAND:
+                        QueryString = $"ÿÿÿÿrcon {QueryServer.Password} {Parameters}";
+                        break;
+                    case QueryType.GET_STATUS:
+                        QueryString = "ÿÿÿÿ getstatus";
+                        break;
                 }
 
-                Thread.Sleep(1000);
-                goto retry;
+                byte[] Payload = GetRequestBytes(QueryString);
+
+                int attempts = 0;
+                retry:
+
+                try
+                {
+                    ServerOOBConnection.Connect(Endpoint);
+                    ServerOOBConnection.Send(Payload, Payload.Length);
+
+                    byte[] ReceiveBuffer = new byte[8192];
+                    StringBuilder QueryResponseString = new StringBuilder();
+
+                    do
+                    {
+                        ReceiveBuffer = ServerOOBConnection.Receive(ref Endpoint);
+                        QueryResponseString.Append(Encoding.ASCII.GetString(ReceiveBuffer).TrimEnd('\0'));
+                    } while (ServerOOBConnection.Available > 0 && ServerOOBConnection.Client.Connected);
+
+                    if (QueryResponseString.ToString().Contains("Invalid password"))
+                        throw new Exceptions.NetworkException("RCON password is invalid");
+                    if (QueryResponseString.ToString().Contains("rcon_password"))
+                        throw new Exceptions.NetworkException("RCON password has not been set");
+
+                    int num = int.Parse("0a", System.Globalization.NumberStyles.AllowHexSpecifier);
+                    string[] SplitResponse = QueryResponseString.ToString().Split(new char[] { (char)num }, StringSplitOptions.RemoveEmptyEntries);
+                    return SplitResponse;
+                }
+
+                catch (Exceptions.NetworkException e)
+                {
+                    throw e;
+                }
+
+                catch (Exception e)
+                {
+                    attempts++;
+                    if (attempts > 2)
+                    {
+                        var ne = new Exceptions.NetworkException("Could not communicate with the server");
+                        ne.Data["internal_exception"] = e.Message;
+                        ne.Data["server_address"] = ServerOOBConnection.Client.RemoteEndPoint.ToString();
+                        throw ne;
+                    }
+
+                    Thread.Sleep(1000);
+                    goto retry;
+                }
             }
         }
 

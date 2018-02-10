@@ -67,23 +67,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Chat\ChatDatabase.cs" />
-    <None Include="Chat\ChatHistory.cs" />
-    <None Include="Chat\ChatHistoryPage.cs" />
+    <Compile Include="Commands\ResetStats.cs" />
+    <Compile Include="Commands\TopStats.cs" />
+    <Compile Include="Commands\ViewStats.cs" />
     <Compile Include="Helpers\ServerStats.cs" />
     <Compile Include="Helpers\StatManager.cs" />
     <Compile Include="Helpers\StreakMessage.cs" />
+    <Compile Include="Helpers\ThreadSafeStatsService.cs" />
     <Compile Include="IW4Info.cs" />
     <Compile Include="MinimapConfig.cs" />
     <Compile Include="Models\EFClientKill.cs" />
+    <Compile Include="Models\EFClientMessage.cs" />
     <Compile Include="Models\EFServer.cs" />
     <Compile Include="Models\EFClientStatistics.cs" />
     <Compile Include="Models\EFServerStatistics.cs" />
+    <Compile Include="Pages\ClientMessages.cs" />
+    <Compile Include="Pages\ClientMessageJson.cs" />
+    <Compile Include="Pages\LiveStats.cs" />
+    <Compile Include="Pages\LiveStatsJson.cs" />
+    <Compile Include="Pages\WordCloudJson.cs" />
     <Compile Include="Plugin.cs" />
     <None Include="_Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <None Include="StatsPage.cs" />
-    <None Include="TrustedGroupCommands.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SharedLibrary\SharedLibrary.csproj">

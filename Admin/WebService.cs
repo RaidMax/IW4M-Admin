@@ -19,12 +19,14 @@ namespace IW4MAdmin
 {
     public class WebService
     {
-        public static IServer webService;
+        public IServer WebServer { get; private set; }
+        public IScheduler WebScheduler { get; private set; }
+        public Thread SchedulerThread { get; private set; }
 
-        public static IScheduler GetScheduler()
+        public void StartScheduler()
         {
-            var webScheduler = Kayak.KayakScheduler.Factory.Create(new Scheduler());
-            webService = KayakServer.Factory.CreateHttp(new Request(), webScheduler);
+            WebScheduler = KayakScheduler.Factory.Create(new Scheduler());
+            WebServer = KayakServer.Factory.CreateHttp(new Request(), WebScheduler);
 
             SharedLibrary.WebService.PageList.Add(new Pages());
             SharedLibrary.WebService.PageList.Add(new Homepage());
@@ -40,13 +42,14 @@ namespace IW4MAdmin
             SharedLibrary.WebService.PageList.Add(new AdminsJSON());
             SharedLibrary.WebService.PageList.Add(new Admins());
 
-            Thread scheduleThread = new Thread(() => { ScheduleThreadStart(webScheduler, webService); })
+            SchedulerThread = new Thread(() => {
+                ScheduleThreadStart(WebScheduler, WebServer);
+            })
             {
                 Name = "Web Service Thread"
             };
-            scheduleThread.Start();
 
-            return webScheduler;
+            SchedulerThread.Start();
         }
 
         private static void ScheduleThreadStart(IScheduler S, IServer ss)

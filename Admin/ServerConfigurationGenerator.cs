@@ -16,6 +16,7 @@ namespace IW4MAdmin
             int Port = 0;
             string Password;
             bool AllowMultipleOwners;
+            bool AllowTrustedRank;
 
             while (IP == String.Empty)
             {
@@ -53,7 +54,18 @@ namespace IW4MAdmin
             Console.Write("Allow multiple owners? [y/n]: ");
             AllowMultipleOwners = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
 
-            var config = new ServerConfiguration() { IP = IP, Password = Password, Port = Port, AllowMultipleOwners = AllowMultipleOwners };
+            Console.Write("Allow trusted rank? [y/n]: ");
+            AllowTrustedRank = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+
+            var config = new ServerConfiguration()
+            {
+                IP = IP,
+                Password = Password,
+                Port = Port,
+                AllowMultipleOwners = AllowMultipleOwners,
+                AllowTrustedRank = AllowTrustedRank
+            };
+
             config.Write();
 
             Console.Write("Configuration saved, add another? [y/n]:");

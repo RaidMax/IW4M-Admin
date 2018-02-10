@@ -1,45 +1,25 @@
-﻿using System;
+﻿using SharedLibrary;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using SharedLibrary;
-
-namespace StatsPlugin
+namespace StatsPlugin.Pages
 {
-    public class StatsPage : HTMLPage
-    {
-        public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
-        {
-            StringBuilder S = new StringBuilder();
-            S.Append(LoadHeader());
-
-            IFile stats = new IFile("webfront\\stats.html");
-            S.Append(stats.GetText());
-            stats.Close();
-
-            S.Append(LoadFooter());
-
-            return S.ToString();
-        }
-
-        public override string GetName() => "Stats";
-        public override string GetPath() => "/stats";
-    }
-
-    class KillStatsJSON : IPage
+    class LiveStatsJson : IPage
     {
         public string GetName() => "Kill Stats JSON";
         public string GetPath() => "/_killstats";
         public string GetContentType() => "application/json";
         public bool Visible() => false;
 
-        public HttpResponse GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
         {
-
-            int selectCount = Stats.MAX_KILLEVENTS;
+            // todo: redo this
+            return await Task.FromResult(new HttpResponse());
+            /*int selectCount = Stats.MAX_KILLEVENTS;
 
             if (querySet.Get("count") != null)
                 selectCount = Int32.Parse(querySet.Get("count"));
@@ -62,7 +42,7 @@ namespace StatsPlugin
                 },
                 additionalHeaders = new Dictionary<string, string>()
             };
-            return resp;
+            return resp;*/
         }
     }
 }

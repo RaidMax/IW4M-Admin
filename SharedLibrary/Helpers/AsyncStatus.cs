@@ -9,17 +9,17 @@ namespace SharedLibrary.Helpers
 {
     public sealed class AsyncStatus
     {
-        CancellationToken Token;
         DateTime StartTime;
         int TimesRun;
         int UpdateFrequency;
         public double RunAverage { get; private set; }
         public object Dependant { get; private set; }
         public Task RequestedTask { get; private set; }
+        public CancellationTokenSource TokenSrc { get; private set; }
 
         public AsyncStatus(object dependant, int frequency)
         {
-            Token = new CancellationToken();
+            TokenSrc = new CancellationTokenSource();
             StartTime = DateTime.Now;
             Dependant = dependant;
             UpdateFrequency = frequency;
@@ -29,7 +29,7 @@ namespace SharedLibrary.Helpers
 
         public CancellationToken GetToken()
         {
-            return Token;
+            return TokenSrc.Token;
         }
 
         public double ElapsedMillisecondsTime()
@@ -39,6 +39,10 @@ namespace SharedLibrary.Helpers
 
         public void Update(Task<bool> T)
         {
+            // reset the token source
+            TokenSrc.Dispose();
+            TokenSrc = new CancellationTokenSource();
+
             RequestedTask = T;
            // Console.WriteLine($"Starting Task {T.Id} ");
             RequestedTask.Start();

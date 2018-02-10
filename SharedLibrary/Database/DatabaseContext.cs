@@ -21,7 +21,7 @@ namespace SharedLibrary.Database
         public DatabaseContext() : base("DefaultConnection")
         {
             System.Data.Entity.Database.SetInitializer(new Initializer());
-            Configuration.LazyLoadingEnabled = false;
+            Configuration.LazyLoadingEnabled = true;
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)

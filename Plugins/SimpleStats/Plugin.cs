@@ -10,6 +10,7 @@ using SharedLibrary.Interfaces;
 using SharedLibrary.Services;
 using StatsPlugin.Helpers;
 using StatsPlugin.Models;
+using StatsPlugin.Pages;
 
 namespace StatsPlugin
 {
@@ -22,6 +23,7 @@ namespace StatsPlugin
         public string Author => "RaidMax";
 
         private StatManager Manager;
+        private IManager ServerManager;
 
         public async Task OnEventAsync(Event E, Server S)
         {
@@ -39,11 +41,13 @@ namespace StatsPlugin
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case Event.GType.Say:
+                    if (E.Data != string.Empty)
+                        await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case Event.GType.MapChange:
                     break;
                 case Event.GType.MapEnd:
-                    await Manager.Sync();
+                    await Manager.Sync(S);
                     break;
                 case Event.GType.Broadcast:
                     break;
@@ -66,7 +70,7 @@ namespace StatsPlugin
                 case Event.GType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
-                        await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);              
+                        await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);
                     break;
                 case Event.GType.Death:
                     break;
@@ -75,15 +79,11 @@ namespace StatsPlugin
 
         public Task OnLoadAsync(IManager manager)
         {
-            /*
-             * 
-            ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALKILLS", GetTotalKills));
-            ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
-*/
+            // todo: is this fast?
             string totalKills()
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();
-                return serverStats.GetQuery(s => s.Active)
+                return serverStats.Find(s => s.Active)
                     .Sum(c => c.TotalKills).ToString();
             }
 
@@ -96,6 +96,13 @@ namespace StatsPlugin
 
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
             manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
+
+            WebService.PageList.Add(new ClientMessageJson());
+            WebService.PageList.Add(new ClientMessages());
+            WebService.PageList.Add(new LiveStats());
+
+            ServerManager = manager;
+
             return Task.FromResult(
                 Manager = new StatManager(manager)
             );
@@ -103,14 +110,13 @@ namespace StatsPlugin
 
         public async Task OnTickAsync(Server S)
         {
-            
+
         }
 
-        public Task OnUnloadAsync()
+        public async Task OnUnloadAsync()
         {
-            return Task.FromResult(
-                Manager = null
-            );
+            foreach (var sv in ServerManager.GetServers())
+                await Manager.Sync(sv);
         }
     }
 }

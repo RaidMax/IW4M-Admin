@@ -41,10 +41,16 @@ namespace SharedLibrary.Services
             }
         }
 
+        public virtual async Task<IList<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderExpression = null)
+        {
+            return await this.GetQuery(predicate, orderExpression).ToListAsync();
+        }
+
         public virtual IEnumerable<TEntity> Find(Expression<Func<TEntity, bool>> predicate, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderExpression = null)
         {
             return this.GetQuery(predicate, orderExpression).AsEnumerable();
         }
+
 
         public virtual IQueryable<TEntity> GetQuery(Expression<Func<TEntity, bool>> predicate = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderExpression = null)
         {
@@ -131,16 +137,10 @@ namespace SharedLibrary.Services
             this.Context.SaveChanges();
         }
 
-        public virtual async Task SaveChangesAsync()
+        public virtual Task SaveChangesAsync()
         {
-            try
-            {
-                await this.Context.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            return this.Context.SaveChangesAsync();
         }
+
     }
 }

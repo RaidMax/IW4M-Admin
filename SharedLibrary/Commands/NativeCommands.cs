@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using SharedLibrary.Network;
 using SharedLibrary.Helpers;
 using SharedLibrary.Objects;
-
+using SharedLibrary.Database;
+using System.Data.Entity;
+using SharedLibrary.Database.Models;
 
 namespace SharedLibrary.Commands
 {
@@ -917,4 +919,56 @@ namespace SharedLibrary.Commands
             await E.Origin.Tell($"Your external IP is ^5{E.Origin.IPAddress}");
         }
     }
+
+    public class CPruneAdmins : Command
+    {
+        public CPruneAdmins() : base("prune", "demote any admins that have not connected recently (defaults to 30 days)", "p", Player.Permission.Owner, false, new CommandArgument[]
+        {
+            new CommandArgument()
+            {
+                Name = "inactive days",
+                Required = false
+            }
+        })
+        { }
+  
+        public override async Task ExecuteAsync(Event E)
+        {
+            int inactiveDays = 30;
+
+            try
+            {
+                if (E.Data.Length > 0)
+                {
+                    inactiveDays = Int32.Parse(E.Data);
+                    if (inactiveDays < 1)
+                        throw new FormatException();
+                }
+            }
+
+            catch (FormatException)
+            {
+                await E.Origin.Tell("Invalid number of inactive days");
+                return;
+            }
+
+            List<EFClient> inactiveUsers = null;
+
+            // update user roles
+            using (var context = new DatabaseContext())
+            {
+                var lastActive = DateTime.UtcNow.AddDays(-inactiveDays);
+                inactiveUsers = await context.Clients
+                    .Where(c => c.Level > Player.Permission.Flagged && c.Level <= Player.Permission.Moderator)
+                    .Where(c => c.LastConnection < lastActive)
+                    .ToListAsync();
+                inactiveUsers.ForEach(c => c.Level = Player.Permission.User);
+                await context.SaveChangesAsync();
+            }
+                await E.Origin.Tell($"Pruned inactive {inactiveUsers.Count} privileged users");
+
+        }
+    }
 }
+
+

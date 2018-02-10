@@ -28,7 +28,7 @@ namespace IW4MAdmin
         List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
         List<MessageToken> MessageTokens;
-        Kayak.IScheduler webServiceTask;
+        WebService WebSvc;
         Thread WebThread;
         ClientService ClientSvc;
         AliasService AliasSvc;
@@ -70,14 +70,8 @@ namespace IW4MAdmin
         {
             #region WEBSERVICE
             SharedLibrary.WebService.Init();
-            webServiceTask = WebService.GetScheduler();
-
-            WebThread = new Thread(webServiceTask.Start)
-            {
-                Name = "Web Thread"
-            };
-
-            WebThread.Start();
+            WebSvc = new WebService();
+            WebSvc.StartScheduler();
             #endregion
 
             #region PLUGINS
@@ -182,6 +176,7 @@ namespace IW4MAdmin
             Commands.Add(new CPlugins());
             Commands.Add(new CIP());
             Commands.Add(new CMask());
+            Commands.Add(new CPruneAdmins());
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
@@ -192,19 +187,22 @@ namespace IW4MAdmin
 
         public void Start()
         {
-            while (Running)
+            while (Running || TaskStatuses.Count > 0)
             {
                 for (int i = 0; i < TaskStatuses.Count; i++)
                 {
                     var Status = TaskStatuses[i];
+
+                    // remove the task when we want to quit and last run has finished
+                    if (!Running)
+                    {
+                        TaskStatuses.RemoveAt(i);
+                        continue;
+                    }
+
+                    // task is read to be rerun
                     if (Status.RequestedTask == null || Status.RequestedTask.Status == TaskStatus.RanToCompletion)
                     {
-                        if (Status.ElapsedMillisecondsTime() > 60000)
-                        {
-                            Logger.WriteWarning($"Task took longer than 60 seconds to complete, killing");
-                            //Status.RequestedTask.
-                        }
-
                         Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
                         if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
                             Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
@@ -218,13 +216,16 @@ namespace IW4MAdmin
                 S.Broadcast("^1IW4MAdmin going offline!");
 #endif
             _servers.Clear();
-            WebThread.Abort();
-            webServiceTask.Stop();
+            WebSvc.WebScheduler.Stop();
+            WebSvc.SchedulerThread.Join();
         }
 
 
         public void Stop()
         {
+            // tell threads it's time to stop
+            foreach (var status in TaskStatuses)
+                status.TokenSrc.Cancel();
             Running = false;
         }
 

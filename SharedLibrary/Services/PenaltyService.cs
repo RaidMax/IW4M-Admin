@@ -73,7 +73,7 @@ namespace SharedLibrary.Services
             throw new NotImplementedException();
         }
 
-        public Task<EFPenalty> GetUnique(string entityProperty)
+        public Task<EFPenalty> GetUnique(long entityProperty)
         {
             throw new NotImplementedException();
         }

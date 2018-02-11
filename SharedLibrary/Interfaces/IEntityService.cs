@@ -14,7 +14,7 @@ namespace SharedLibrary.Interfaces
         Task<T> Delete(T entity);
         Task<T> Update(T entity);
         Task<T> Get(int entityID);
-        Task<T> GetUnique(string entityProperty);
+        Task<T> GetUnique(long entityProperty);
         Task<IList<T>> Find(Func<T, bool> expression);
     }
 }

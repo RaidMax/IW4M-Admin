@@ -854,7 +854,7 @@ namespace SharedLibrary.Commands
         {
             StringBuilder message = new StringBuilder();
             var names = new List<string>(E.Target.AliasLink.Children.Select(a => a.Name));
-            var IPs = new List<string>(E.Target.AliasLink.Children.Select(a => a.IPAddress).Distinct());
+            var IPs = new List<string>(E.Target.AliasLink.Children.Select(a => a.IPAddress.ConvertIPtoString()).Distinct());
 
             await E.Target.Tell($"[^3{E.Target}^7]");
 

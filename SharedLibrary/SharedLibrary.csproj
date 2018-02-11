@@ -139,7 +139,6 @@
     <Compile Include="Services\AliasService.cs" />
     <Compile Include="Services\ClientService.cs" />
     <Compile Include="Services\GenericRepository.cs" />
-    <Compile Include="Services\GenericService.cs" />
     <Compile Include="Services\PenaltyService.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WebService.cs" />

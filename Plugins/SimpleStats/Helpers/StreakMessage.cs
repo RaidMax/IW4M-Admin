@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SharedLibrary;
+using SharedLibrary.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,30 +10,55 @@ namespace StatsPlugin.Helpers
 {
     public class StreakMessage
     {
-        public static string MessageOnStreak(int killStreak, int deathStreak)
+        private ConfigurationManager config;
+
+        public StreakMessage(Server sv)
         {
-            String Message = "";
-            switch (killStreak)
+            config = new ConfigurationManager(sv);
+
+            // initialize default messages
+            if (config.GetProperty<Dictionary<int, string>>("KillstreakMessages") == null)
             {
-                case 5:
-                    Message = "Great job! You're on a ^55 killstreak!";
-                    break;
-                case 10:
-                    Message = "Amazing! ^510 kills ^7without dying!";
-                    break;
+                var killstreakMessages = new Dictionary<int, string>()
+                {
+                    { -1,  "Try not to kill  yourself anymore" },
+                    { 5,  "Great job! You're on a ^55 killstreak!" },
+                    { 10,  "Amazing! ^510 kills ^7without dying!" },
+                    { 25, "You better call in that nuke, ^525 killstreak!" }
+                };
+                config.AddProperty(new KeyValuePair<string, object>("KillstreakMessages", killstreakMessages));
             }
 
-            switch (deathStreak)
+            if (config.GetProperty<Dictionary<int, string>>("DeathstreakMessages") == null)
             {
-                case 5:
-                    Message = "Pick it up soldier, you've died ^55 times ^7in a row...";
-                    break;
-                case 10:
-                    Message = "Seriously? ^510 deaths ^7without getting a kill?";
-                    break;
+                var deathstreakMessages = new Dictionary<int, string>()
+                {
+                    { 5,  "Pick it up soldier, you've died ^55 times ^7in a row..." },
+                    { 10,  "Seriously? ^510 deaths ^7without getting a kill?" },
+                };
+                config.AddProperty(new KeyValuePair<string, object>("DeathstreakMessages", deathstreakMessages));
             }
+        }
 
-            return Message;
+        /// <summary>
+        /// Get a message from the configuration encouraging or discouraging clients
+        /// </summary>
+        /// <param name="killStreak">how many kills the client has without dying</param>
+        /// <param name="deathStreak">how many deaths the client has without getting a kill</param>
+        /// <returns>message to send to the client</returns>
+        public string MessageOnStreak(int killStreak, int deathStreak)
+        {
+            var killstreakMessage = config.GetProperty<Dictionary<int, string>>("KillstreakMessages");
+            var deathstreakMessage = config.GetProperty<Dictionary<int, string>>("DeathstreakMessages");
+
+            string message = "";
+
+            if (killstreakMessage.ContainsKey(killStreak))
+                message =killstreakMessage[killStreak];
+            else if (deathstreakMessage.ContainsKey(deathStreak))
+                message = deathstreakMessage[deathStreak];
+
+            return message;
         }
     }
 }

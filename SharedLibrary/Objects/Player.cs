@@ -76,8 +76,8 @@ namespace SharedLibrary.Objects
         [NotMapped]
         public int Score { get; set; }
 
-        private string _ipaddress;
-        public override string IPAddress
+        private int _ipaddress;
+        public override int IPAddress
         {
             get { return _ipaddress; }
             set { _ipaddress = value; }
@@ -87,6 +87,16 @@ namespace SharedLibrary.Objects
         {
             get { return _name; }
             set { _name = value;  }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return ((Player)obj).NetworkId == NetworkId;
+        }
+
+        public override int GetHashCode()
+        {
+            return NetworkId.GetHashCode();
         }
     }
 }

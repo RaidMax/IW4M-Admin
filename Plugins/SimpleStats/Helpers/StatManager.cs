@@ -15,13 +15,16 @@ namespace StatsPlugin.Helpers
     {
         private Dictionary<int, ServerStats> Servers;
         private Dictionary<int, ThreadSafeStatsService> ContextThreads;
+        private Dictionary<int, StreakMessage> StreakMessages;
         private ILogger Log;
         private IManager Manager;
+
 
         public StatManager(IManager mgr)
         {
             Servers = new Dictionary<int, ServerStats>();
             ContextThreads = new Dictionary<int, ThreadSafeStatsService>();
+            StreakMessages= new Dictionary<int, StreakMessage>();
             Log = mgr.GetLogger();
             Manager = mgr;
         }
@@ -44,6 +47,7 @@ namespace StatsPlugin.Helpers
                 int serverId = sv.GetHashCode();
                 var statsSvc = new ThreadSafeStatsService();
                 ContextThreads.Add(serverId, statsSvc);
+                StreakMessages.Add(serverId, new StreakMessage(sv));
 
                 // get the server from the database if it exists, otherwise create and insert a new one
                 var server = statsSvc.ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
@@ -157,7 +161,7 @@ namespace StatsPlugin.Helpers
         public async Task AddScriptKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin)
         {
-            AddStandardKill(attacker, victim);
+            await AddStandardKill(attacker, victim);
 
             var statsSvc = ContextThreads[serverId];
 
@@ -180,12 +184,19 @@ namespace StatsPlugin.Helpers
             await statsSvc.KillStatsSvc.SaveChangesAsync();
         }
 
-        public void AddStandardKill(Player attacker, Player victim)
+        public async Task AddStandardKill(Player attacker, Player victim)
         {
             int serverId = attacker.CurrentServer.GetHashCode();
             var attackerStats = Servers[serverId].PlayerStats[attacker.ClientNumber];
             // set to access total time played
             attackerStats.Client = attacker;
+
+            if (victim == null)
+            {
+                Log.WriteError($"Stats: Victim is null");
+                return;
+            }
+
             var victimStats = Servers[serverId].PlayerStats[victim.ClientNumber];
 
             // update the total stats
@@ -193,6 +204,15 @@ namespace StatsPlugin.Helpers
 
             // calculate for the clients
             CalculateKill(attackerStats, victimStats);
+
+            // show encouragement/discouragement
+            var streakMessageGen = StreakMessages[serverId];
+            string streakMessage =  (attackerStats.ClientId != victimStats.ClientId) ?
+                streakMessageGen.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak) :
+                streakMessageGen.MessageOnStreak(-1, -1);
+
+            if (streakMessage != string.Empty)
+                await attacker.Tell(streakMessage);
 
             // immediately write changes in debug
 #if DEBUG
@@ -209,10 +229,16 @@ namespace StatsPlugin.Helpers
         /// <param name="victimStats">Stats of the victim</param>
         public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats)
         {
-            attackerStats.Kills += 1;
-            attackerStats.SessionKills += 1;
-            attackerStats.KillStreak += 1;
-            attackerStats.DeathStreak = 0;
+            bool suicide = attackerStats.ClientId == victimStats.ClientId;
+
+            // only update their kills if they didn't kill themselves
+            if (!suicide)
+            {
+                attackerStats.Kills += 1;
+                attackerStats.SessionKills += 1;
+                attackerStats.KillStreak += 1;
+                attackerStats.DeathStreak = 0;
+            }
 
             victimStats.Deaths += 1;
             victimStats.SessionDeaths += 1;
@@ -224,6 +250,8 @@ namespace StatsPlugin.Helpers
             attackerStats.Client = null;
 
             // update after calculation
+            attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
+            victimStats.TimePlayed += (int)(DateTime.UtcNow - victimStats.LastActive).TotalSeconds;
             attackerStats.LastActive = DateTime.UtcNow;
             victimStats.LastActive = DateTime.UtcNow;
         }

@@ -66,7 +66,7 @@ namespace StatsPlugin
             ManagerInstance.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", GetTotalPlaytime));
 
             ClientStatsSvc = new SharedLibrary.Services.GenericService<Models.EFClientStatistics>();
-            ServerSvc = new SharedLibrary.Services.GenericService<Models.EFServer>()
+            ServerSvc = new SharedLibrary.Services.GenericService<Models.EFServer>();
 
             ChatDB = new ChatDatabase("Database/ChatHistory.rm", ManagerInstance.GetLogger());
 

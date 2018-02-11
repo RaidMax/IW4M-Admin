@@ -71,6 +71,8 @@ namespace StatsPlugin
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
                         await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);
+                    else
+                        await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case Event.GType.Death:
                     break;
@@ -84,14 +86,14 @@ namespace StatsPlugin
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();
                 return serverStats.Find(s => s.Active)
-                    .Sum(c => c.TotalKills).ToString();
+                    .Sum(c => c.TotalKills).ToString("#,##0");
             }
 
             string totalPlayTime()
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();
-                return serverStats.GetQuery(s => s.Active)
-                    .Sum(c => c.TotalPlayTime).ToString();
+                return Math.Ceiling((serverStats.GetQuery(s => s.Active)
+                    .Sum(c => c.TotalPlayTime) / 3600.0)).ToString("#,##0");
             }
 
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));

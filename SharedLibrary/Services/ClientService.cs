@@ -102,14 +102,18 @@ namespace SharedLibrary.Services
         public async Task<EFClient> Get(int entityID)
         {
             using (var context = new DatabaseContext())
+            {
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
                 return await new DatabaseContext().Clients
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children)
                     .SingleOrDefaultAsync(e => e.ClientId == entityID);
+            }
         }
 
-        public async Task<EFClient> GetUnique(string entityAttribute)
+        public async Task<EFClient> GetUnique(long entityAttribute)
         {
             using (var context = new DatabaseContext())
             {
@@ -117,7 +121,7 @@ namespace SharedLibrary.Services
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children)
-                    .SingleOrDefaultAsync(c => c.NetworkId == entityAttribute);
+                    .SingleOrDefaultAsync(c => c.NetworkId == (long)entityAttribute);
             }
         }
 

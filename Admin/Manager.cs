@@ -207,6 +207,12 @@ namespace IW4MAdmin
                         if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
                             Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
                     }
+
+                    if (Status.RequestedTask.Status == TaskStatus.Faulted)
+                    {
+                        Logger.WriteWarning($"Update task for  {(Status.Dependant as Server)} faulted, restarting");
+                        Status.Abort();
+                    }
                 }
 
                 Thread.Sleep(UPDATE_FREQUENCY);

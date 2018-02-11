@@ -58,10 +58,10 @@ namespace SharedLibrary
                     int Ping = -1;
                     Int32.TryParse(playerInfo[2], out Ping);
                     String cName = Utilities.StripColors(responseLine.Substring(46, 18)).Trim();
-                    string npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value;
+                    long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong();
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
-                    string cIP = regex.Value.Split(':')[0];
+                    int cIP = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
                     int score = Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]);
                     Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping, Score = score};
@@ -195,6 +195,21 @@ namespace SharedLibrary
                 default:
                     return input;
             }
+        }
+
+        public static long ConvertLong(this string str)
+        {
+            return Int64.Parse(str, System.Globalization.NumberStyles.HexNumber);
+        }
+
+        public static int ConvertToIP(this string str)
+        {
+            return BitConverter.ToInt32(System.Net.IPAddress.Parse(str).GetAddressBytes(), 0);
+        }
+
+        public static string ConvertIPtoString(this int ip)
+        {
+            return new System.Net.IPAddress(BitConverter.GetBytes(ip)).ToString();
         }
 
         public static String DateTimeSQLite(DateTime datetime)

@@ -13,8 +13,7 @@ namespace SharedLibrary.Database.Models
         [Key]
         public int ClientId { get; set; }
         [Index(IsUnique = true)]
-        public string NetworkId { get; set; }
-
+        public long NetworkId { get; set; }
         [Required]
         public int Connections { get; set; }
         [Required]
@@ -44,11 +43,14 @@ namespace SharedLibrary.Database.Models
             set { }
         }
         [NotMapped]
-        public virtual string IPAddress
+        public virtual int IPAddress
         {
             get { return CurrentAlias.IPAddress; }
             set { }
         }
+
+        [NotMapped]
+        public string IPAddressString => new System.Net.IPAddress(BitConverter.GetBytes(IPAddress)).ToString();
 
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }

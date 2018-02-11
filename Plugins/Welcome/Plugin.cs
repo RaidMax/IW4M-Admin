@@ -95,7 +95,7 @@ namespace Welcome_Plugin
                     try
                     {
                         CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
-                        await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IPAddress)}");
+                        await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IPAddressString)}");
                     }
 
                     catch (Exception)

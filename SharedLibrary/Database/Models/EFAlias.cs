@@ -14,10 +14,12 @@ namespace SharedLibrary.Database.Models
         public virtual EFAliasLink Link { get; set; }
        // [Index("IX_IPandName", 0, IsUnique = true)]
         //[MaxLength(24)]
+        [Required]
         public string Name { get; set; }
        //  [Index("IX_IPandName", 1, IsUnique = true)]
        // [MaxLength(24)]
-        public string IPAddress { get; set; }
+       [Required]
+        public int IPAddress { get; set; }
         [Required]
         public DateTime DateAdded { get; set; }
     }

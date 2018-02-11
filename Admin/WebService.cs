@@ -232,7 +232,7 @@ namespace IW4MAdmin
 
                 bool authed = querySet["IP"] == "127.0.0.1"
                     || (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients())
-                    .Where(x => x.IPAddress == querySet["IP"])
+                    .Where(x => x.IPAddress == querySet["IP"].ConvertToIP())
                     .Where(x => x.Level > Player.Permission.Trusted).Count() > 0;
 
 
@@ -384,7 +384,7 @@ namespace IW4MAdmin
                     if (S != null)
                     {
                         // fixme
-                        Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"];
+                        Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"].ConvertToIP();
                         Player admin = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).FirstOrDefault()?.AsPlayer();
 
                         if (admin == null)
@@ -752,7 +752,7 @@ namespace IW4MAdmin
                 contentType = GetContentType(),
                 additionalHeaders = new Dictionary<string, string>()
             };
-            Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"] && c.Level > Player.Permission.Trusted;
+            Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"].ConvertToIP() && c.Level > Player.Permission.Trusted;
             bool authed = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).Count > 0
                 || querySet["IP"] == "127.0.0.1";
             bool recent = false;
@@ -765,7 +765,7 @@ namespace IW4MAdmin
 
             else if (querySet["npID"] != null)
             {
-                matchedPlayers.Add(await ApplicationManager.GetInstance().GetClientService().GetUnique(querySet["npID"]));
+                matchedPlayers.Add(await ApplicationManager.GetInstance().GetClientService().GetUnique(querySet["npID"].ConvertLong()));
             }
 
             else if (querySet["name"] != null)
@@ -793,11 +793,11 @@ namespace IW4MAdmin
 
                     PlayerInfo eachPlayer = new PlayerInfo()
                     {
-                        playerIP = pp.IPAddress,
+                        playerIP = pp.IPAddressString,
                         playerID = pp.ClientId,
                         playerLevel = pp.Level.ToString(),
                         playerName = pp.Name,
-                        playernpID = pp.NetworkId,
+                        playernpID = pp.NetworkId.ToString(),
                         forumID = -1,
                         authed = authed,
                         showV2Features = false,
@@ -815,7 +815,7 @@ namespace IW4MAdmin
 
                         if (authed)
                             eachPlayer.playerIPs = pp.AliasLink.Children
-                                .Select(a => a.IPAddress)
+                                .Select(a => a.IPAddress.ConvertIPtoString())
                                 .Distinct()
                                 .ToList();
                     }

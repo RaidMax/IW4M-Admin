@@ -73,7 +73,7 @@ namespace SharedLibrary.Services
                     .SingleOrDefaultAsync(e => e.AliasId == entityID);
         }
 
-        public Task<EFAlias> GetUnique(string entityProperty)
+        public Task<EFAlias> GetUnique(long entityProperty)
         {
             throw new NotImplementedException();
         }

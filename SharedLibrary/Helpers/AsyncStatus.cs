@@ -53,5 +53,10 @@ namespace SharedLibrary.Helpers
             RunAverage = RunAverage + ((DateTime.Now - StartTime).TotalMilliseconds - RunAverage - UpdateFrequency) / TimesRun;
             StartTime = DateTime.Now;
         }
+
+        public void Abort()
+        {
+            RequestedTask = null;
+        }
     }
 }

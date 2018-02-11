@@ -39,7 +39,7 @@ namespace SharedLibrary
             Reports = new List<Report>();
             PlayerHistory = new Queue<Helpers.PlayerHistory>();
             ChatHistory = new List<Chat>();
-            Configuration = new ConfigurationManager(this.GetType());
+            //Configuration = new ConfigurationManager(this.GetType());
             NextMessage = 0;
             InitializeTokens();
             InitializeAutoMessages();

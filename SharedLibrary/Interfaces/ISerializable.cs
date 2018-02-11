@@ -45,7 +45,7 @@ namespace SharedLibrary.Interfaces
         {
             try
             {
-                string configText = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+                string configText = Newtonsoft.Json.JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(filename, configText);
             }
 

@@ -380,6 +380,7 @@ namespace IW4MAdmin
         DateTime playerCountStart = DateTime.Now;
         DateTime lastCount = DateTime.Now;
         DateTime tickTime = DateTime.Now;
+        bool firstRun = true;
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
@@ -388,6 +389,13 @@ namespace IW4MAdmin
             try
 #endif
             {
+                // first start
+                if (firstRun)
+                {
+                    await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
+                    firstRun = false;
+                }
+
                 if ((DateTime.Now - LastPoll).TotalMinutes < 2 && ConnectionErrors >= 1)
                     return true;
 
@@ -596,7 +604,6 @@ namespace IW4MAdmin
             LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #endif
             Logger.WriteInfo("Log file is " + logPath);
-            await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
 #if !DEBUG
             Broadcast("IW4M Admin is now ^2ONLINE");
 #endif
@@ -617,13 +624,13 @@ namespace IW4MAdmin
 
             else if (E.Type == Event.GType.Script)
             {
-                if (E.Origin == E.Target)// suicide/falling
+               /* if (E.Origin == E.Target)// suicide/falling
                     await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Target, this));
                 else
-                {
+                {*/
                     await ExecuteEvent(new Event(Event.GType.Kill, E.Data, E.Origin, E.Target, this));
-                    await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Origin, this));
-                }
+                    //await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Origin, this));
+               // }
             }
 
             if (E.Type == Event.GType.Say && E.Data.Length >= 2)
@@ -806,7 +813,7 @@ namespace IW4MAdmin
             }
 
             else
-                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber } \"^1Player Temporarily Banned: ^5{ Reason }\"");
+                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber } \"^7Player Temporarily Banned: ^5{ Reason }\"");
 
 #if DEBUG
             await Target.CurrentServer.RemovePlayer(Target.ClientNumber);

@@ -17,7 +17,7 @@ namespace SharedLibrary.Database
             {
                 Active = true,
                 DateAdded = DateTime.UtcNow,
-                IPAddress = "0.0.0.0",
+                IPAddress = 0,
                 Name = "IW4MAdmin",
                 Link = aliasLink
             };
@@ -30,7 +30,7 @@ namespace SharedLibrary.Database
                 LastConnection = DateTime.UtcNow,
                 Level = Objects.Player.Permission.Console,
                 Masked = true,
-                NetworkId = "0000000000000000",
+                NetworkId = 0,
                 AliasLink = aliasLink,
                 CurrentAlias = currentAlias
             });

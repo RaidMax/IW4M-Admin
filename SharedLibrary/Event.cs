@@ -131,7 +131,7 @@ namespace SharedLibrary
 
                 if (removeTime.Contains("ScriptKill"))
                 {
-                    return new Event(GType.Script, String.Join(";", line), SV.Players.FirstOrDefault(p => p != null && p.NetworkId == line[1]), SV.Players.FirstOrDefault(p => p != null && p.NetworkId == line[2]), SV);
+                    return new Event(GType.Script, String.Join(";", line), SV.Players.FirstOrDefault(p => p != null && p.NetworkId == line[1].ConvertLong()), SV.Players.FirstOrDefault(p => p != null && p.NetworkId == line[2].ConvertLong()), SV);
                 }
 
                 if (removeTime.Contains("ExitLevel"))

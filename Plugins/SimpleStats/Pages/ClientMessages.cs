@@ -10,6 +10,8 @@ namespace StatsPlugin.Pages
 {
     public class ClientMessages : HTMLPage
     {
+        public ClientMessages() : base(false) { }
+
         public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
         {
             StringBuilder S = new StringBuilder();

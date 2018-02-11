@@ -19,6 +19,8 @@ namespace SharedLibrary.Database
             {
                 context = new DatabaseContext();
                 context.Configuration.AutoDetectChangesEnabled = false;
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
 
                 int count = 0;
                 foreach (var entityToInsert in clients)
@@ -96,6 +98,8 @@ namespace SharedLibrary.Database
             {
                 context = new DatabaseContext();
                 context.Configuration.AutoDetectChangesEnabled = false;
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
 
                 int count = 0;
                 foreach (var entityToInsert in penalties)
@@ -161,5 +165,59 @@ namespace SharedLibrary.Database
 
             return context;
         }
+
+        public static void ImportSQLite<T>(IList<T> SQLiteData) where T : class
+        {
+            DatabaseContext context = null;
+
+            try
+            {
+                context = new DatabaseContext();
+                context.Configuration.AutoDetectChangesEnabled = false;
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
+
+                int count = 0;
+                foreach (var entityToInsert in SQLiteData)
+                {
+                    ++count;
+                    context = AddSQLite(context, entityToInsert, count, 100, true);
+                }
+
+                context.SaveChanges();
+            }
+            finally
+            {
+                if (context != null)
+                    context.Dispose();
+            }
+        }
+
+        private static DatabaseContext AddSQLite<T>(DatabaseContext context, T entity, int count, int commitCount, bool recreateContext) where T : class
+        {
+            context.Set<T>().Add(entity);
+
+            if (count % commitCount == 0)
+            {
+                try
+                {
+                    context.SaveChanges();
+                }
+
+                catch (Exception e)
+                {
+                    var a = 1;
+                }
+
+                if (recreateContext)
+                {
+                    context.Dispose();
+                    context = new DatabaseContext();
+                    context.Configuration.AutoDetectChangesEnabled = false;
+                }
+            }
+            return context;
+        }
     }
 }
+

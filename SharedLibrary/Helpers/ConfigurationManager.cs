@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.CSharp.RuntimeBinder;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -52,6 +53,11 @@ namespace SharedLibrary.Helpers
             try
             {
                 return ConfigSet[prop].ToObject<T>();
+            }
+
+            catch (RuntimeBinderException)
+            {
+                return ConfigSet[prop];
             }
 
             catch (Exception)

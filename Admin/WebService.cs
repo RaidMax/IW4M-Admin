@@ -97,7 +97,6 @@ namespace IW4MAdmin
                 {
                     var f = File.ReadAllBytes(path.Replace("/", "\\").Substring(1));
 
-
                     if (path.Contains(".css"))
                     {
                         HttpResponse css = new HttpResponse()
@@ -383,9 +382,11 @@ namespace IW4MAdmin
 
                     if (S != null)
                     {
-                        // fixme
-                        Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"].ConvertToIP();
-                        Player admin = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).FirstOrDefault()?.AsPlayer();
+                        int ip = querySet["ip"].ConvertToIP();
+                        var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
+                        Player admin = admins.FirstOrDefault(a => a.IPAddress == ip)?.AsPlayer();
+                        if (ip == 16777343)
+                            admin = admins.First(a => a.IPAddress == 0).AsPlayer();
 
                         if (admin == null)
                             admin = new Player() { Name = "RestUser"};
@@ -626,9 +627,10 @@ namespace IW4MAdmin
                 contentType = GetContentType(),
                 content = Admins.Select(a => new
                 {
-                    ClientId = a.ClientId,
-                    Level = a.Level,
-                    Name = a.Name
+                     a.ClientId,
+                     a.Level,
+                     a.Name,
+                     playerID = a.ClientId
                 }),
                 additionalHeaders = new Dictionary<string, string>()
             };
@@ -746,15 +748,16 @@ namespace IW4MAdmin
         public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
         {
             List<PlayerInfo> pInfo = new List<PlayerInfo>();
-            IList<SharedLibrary.Database.Models.EFClient> matchedPlayers = new List<SharedLibrary.Database.Models.EFClient>();
+            IList<EFClient> matchedPlayers = new List<EFClient>();
             HttpResponse resp = new HttpResponse()
             {
                 contentType = GetContentType(),
                 additionalHeaders = new Dictionary<string, string>()
             };
-            Func<EFClient, bool> predicate = c => c.IPAddress == querySet["IP"].ConvertToIP() && c.Level > Player.Permission.Trusted;
-            bool authed = (await ApplicationManager.GetInstance().GetClientService().Find(predicate)).Count > 0
-                || querySet["IP"] == "127.0.0.1";
+
+            int ip = querySet["IP"].ConvertToIP();
+            var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
+            bool authed = admins.FirstOrDefault(c => c.IPAddress == ip) != null || ip == 16777343;
             bool recent = false;
             bool individual = querySet["id"] != null;
 
@@ -770,7 +773,7 @@ namespace IW4MAdmin
 
             else if (querySet["name"] != null)
             {
-                matchedPlayers = await ApplicationManager.GetInstance().GetClientService().Find(c => c.Name.Contains(querySet["name"]));
+                matchedPlayers = (await ApplicationManager.GetInstance().GetClientService().GetClientByName(querySet["name"]));
             }
 
             else if (querySet["recent"] != null)
@@ -866,15 +869,6 @@ namespace IW4MAdmin
     }
 
     [Serializable]
-    struct PageInfo
-    {
-        public string pageName;
-        public string pagePath;
-        public string pageType;
-        public bool visible;
-    }
-
-    [Serializable]
     struct PlayerInfo
     {
         public string playerName;
@@ -902,18 +896,5 @@ namespace IW4MAdmin
         public string penaltyReason;
         public string penaltyTime;
         public string Expires;
-    }
-
-    [Serializable]
-    struct CommandInfo
-    {
-        public List<string> Result;
-    }
-
-    [Serializable]
-    class PrivilegedUsers
-    {
-        public Player.Permission Permission { get; set; }
-        public List<Player> Players { get; set; }
     }
 }

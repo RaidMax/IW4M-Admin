@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using SharedLibrary.Network;
 using SharedLibrary.Objects;
+using SharedLibrary.Helpers;
 
 namespace Welcome_Plugin
 {
@@ -46,13 +47,12 @@ namespace Welcome_Plugin
                     return "fourth";
                 case 5:
                     return "fifth";
-                case 100:
+            /*  case 100:
                     return "One-Hundreth (amazing!)";
                 case 500:
                     return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
                 case 1000:
-                    return "you deserve a medal. it's your ^11000th^7";
-
+                    return "you deserve a medal. it's your ^11000th^7";*/
                 default:
                     return connection.ToString() + Prefix;
             }
@@ -64,8 +64,11 @@ namespace Welcome_Plugin
 
         public string Name => "Welcome Plugin";
 
+        private Dictionary<int, ConfigurationManager> Configs;
+
         public async Task OnLoadAsync(IManager manager)
         {
+            await Task.FromResult(Configs = new Dictionary<int, ConfigurationManager>());
         }
 
         public async Task OnUnloadAsync()
@@ -81,34 +84,59 @@ namespace Welcome_Plugin
             if (E.Type == Event.GType.Connect)
             {
                 Player newPlayer = E.Origin;
-
+                var cfg = Configs[S.GetHashCode()];
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
-                    await E.Owner.Broadcast(Utilities.ConvertLevelToColor(newPlayer.Level) + " ^5" + newPlayer.Name + " ^7has joined the server.");
+                    await E.Owner.Broadcast(ProcessAnnouncement(cfg.GetProperty<string>("PrivilegedAnnouncementMessage"), newPlayer));
 
-                await newPlayer.Tell($"Welcome ^5{newPlayer.Name}^7, this is your ^5{TimesConnected(newPlayer)} ^7time connecting!");
+                await newPlayer.Tell(ProcessAnnouncement(cfg.GetProperty<string>("UserWelcomeMessage"), newPlayer));
 
                 if (newPlayer.Level == Player.Permission.Flagged)
                     await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name}^7 has joined!");
-
                 else
+                    await E.Owner.Broadcast(ProcessAnnouncement(cfg.GetProperty<string>("UserAnnouncementMessage"), newPlayer));
+            }
+
+            if (E.Type == Event.GType.Start)
+            {
+                var cfg = new ConfigurationManager(S);
+                Configs.Add(S.GetHashCode(), cfg);
+                if (cfg.GetProperty<string>("UserWelcomeMessage") == null)
                 {
-                    try
-                    {
-                        CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
-                        await E.Owner.Broadcast($"^5{newPlayer.Name} ^7hails from ^5{CLT.lookupCountryName(newPlayer.IPAddressString)}");
-                    }
+                    string welcomeMsg = "Welcome ^5{{ClientName}}^7, this is your ^5{{TimesConnected}} ^7time connecting!";
+                    cfg.AddProperty(new KeyValuePair<string, dynamic>("UserWelcomeMessage", welcomeMsg));
+                }
 
-                    catch (Exception)
-                    {
-                        E.Owner.Manager.GetLogger().WriteError("Could not open file Plugins/GeoIP.dat for Welcome Plugin");
-                    }
+                if (cfg.GetProperty<string>("PrivilegedAnnouncementMessage") == null)
+                {
+                    string annoucementMsg = "{{ClientLevel}} {{ClientName}} has joined the server";
+                    cfg.AddProperty(new KeyValuePair<string, dynamic>("PrivilegedAnnouncementMessage", annoucementMsg));
+                }
 
+                if (cfg.GetProperty<string>("UserAnnouncementMessage") == null)
+                {
+                    string annoucementMsg = "^5{{ClientName}}^7hails from ^5{{ClientLocation}}";
+                    cfg.AddProperty(new KeyValuePair<string, dynamic>("UserAnnouncementMessage", annoucementMsg));
                 }
             }
+        }
 
-            if (E.Type == Event.GType.Disconnect)
+        private string ProcessAnnouncement(string msg, Player joining)
+        {
+            msg = msg.Replace("{{ClientName}}", joining.Name);
+            msg = msg.Replace("{{ClientLevel}}", Utilities.ConvertLevelToColor(joining.Level));
+            try
             {
+                CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
+                msg = msg.Replace("{{ClientLocation}}", CLT.lookupCountryName(joining.IPAddressString));
             }
+
+            catch (Exception)
+            {
+                joining.CurrentServer.Manager.GetLogger().WriteError("Could not open file Plugins/GeoIP.dat for Welcome Plugin");
+            }
+            msg = msg.Replace("{{TimesConnected}}", TimesConnected(joining));
+
+            return msg;
         }
     }
 }

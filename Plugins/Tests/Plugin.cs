@@ -12,6 +12,7 @@ using SharedLibrary.Helpers;
 using SharedLibrary.Objects;
 using System.Text.RegularExpressions;
 using StatsPlugin.Models;
+using SharedLibrary.Services;
 
 namespace IW4MAdmin.Plugins
 {
@@ -59,10 +60,35 @@ namespace IW4MAdmin.Plugins
 
         public async Task OnLoadAsync(IManager manager)
         {
+#if DO_IMPORT
+            var svc = new GenericRepository<EFServer>();
+            svc.Insert(new EFServer()
+            {
+                Active = true,
+                Port = 28960,
+                ServerId = Math.Abs("127.0.0.1:28960".GetHashCode()),
+            });
+
+            svc.Insert(new EFServer()
+            {
+                Active = true,
+                Port = 28965,
+                ServerId = Math.Abs("127.0.0.1:28965".GetHashCode()),
+            });
+
+            svc.Insert(new EFServer()
+            {
+                Active = true,
+                Port = 28970,
+                ServerId = Math.Abs("127.0.0.1:28970".GetHashCode()),
+            });
+
+            svc.SaveChanges();
+#endif
             Interval = DateTime.Now;
             var clients = new List<Player>();
             var oldClients = new Dictionary<int, Player>();
-            #region CLIENTS
+#region CLIENTS
             if (File.Exists("import_clients.csv"))
             {
                 manager.GetLogger().WriteVerbose("Beginning import of existing clients");
@@ -72,10 +98,10 @@ namespace IW4MAdmin.Plugins
                 {
                     string[] fields = Regex.Replace(line, "\".*\"", "").Split(',');
                     fields.All(f =>
-                    {
-                        f = f.StripColors().Trim();
-                        return true;
-                    });
+                                {
+                                    f = f.StripColors().Trim();
+                                    return true;
+                                });
 
                     if (fields.Length != 11)
                     {
@@ -104,13 +130,13 @@ namespace IW4MAdmin.Plugins
                     clients.Add(client);
                     oldClients.Add(client.ClientId, client);
                 }
-//#if DO_IMPORT
+                //#if DO_IMPORT
                 clients = clients.Distinct().ToList();
 
                 clients = clients
                     .GroupBy(c => new { c.Name, c.IPAddress })
-                    .Select(c => c.FirstOrDefault())
-                    .ToList();
+                                    .Select(c => c.FirstOrDefault())
+                                    .ToList();
 
                 //newClients = clients.ToList();
                 //newClients.ForEach(c => c.ClientId = 0);
@@ -126,10 +152,10 @@ namespace IW4MAdmin.Plugins
                 {
                     manager.GetLogger().WriteError("Saving imported clients failed");
                 }
-//#endif
+                //#endif
             }
-            #endregion
-            #region PENALTIES
+#endregion
+#region PENALTIES
             if (File.Exists("import_penalties.csv"))
             {
                 var penalties = new List<Penalty>();
@@ -140,10 +166,10 @@ namespace IW4MAdmin.Plugins
                     string[] fields = Regex.Replace(line, "\".*,.*\"", comma).Split(',');
 
                     fields.All(f =>
-                    {
-                        f = f.StripColors().Trim();
-                        return true;
-                    });
+                                        {
+                                            f = f.StripColors().Trim();
+                                            return true;
+                                        });
 
                     if (fields.Length != 7)
                     {
@@ -151,7 +177,7 @@ namespace IW4MAdmin.Plugins
                         return;
                     }
 
-                    if (fields[2].Contains("0110") || fields[2].Contains("0000000"))
+                    if (fields[2].Substring(0, 5) == "01100" || fields[2].Contains("0000000"))
                         continue;
                     try
                     {
@@ -159,13 +185,17 @@ namespace IW4MAdmin.Plugins
                         var expires = DateTime.Parse(fields[6]);
                         var when = DateTime.Parse(fields[5]);
 
+                        var penaltyType = (Penalty.PenaltyType)Int32.Parse(fields[0]);
+                        if (penaltyType == Penalty.PenaltyType.Ban)
+                            expires = DateTime.MaxValue;
+
                         var penalty = new Penalty()
                         {
-                            Type = (Penalty.PenaltyType)Int32.Parse(fields[0]),
+                            Type = penaltyType,
                             Expires = expires == DateTime.MinValue ? when : expires,
                             Punisher = new SharedLibrary.Database.Models.EFClient() { NetworkId = fields[3].ConvertLong() },
                             Offender = new SharedLibrary.Database.Models.EFClient() { NetworkId = fields[2].ConvertLong() },
-                            Offense = fields[1],
+                            Offense = fields[1].Replace("\"", "").Trim(),
                             Active = true,
                             When = when,
                         };
@@ -184,8 +214,8 @@ namespace IW4MAdmin.Plugins
                 manager.GetLogger().WriteVerbose($"Imported {penalties.Count} penalties");
                 //#endif
             }
-            #endregion
-            #region CHATHISTORY
+#endregion
+#region CHATHISTORY
             // load the entire database lol
             var cls = manager.GetClientService().Find(c => c.Active).Result;
 
@@ -199,10 +229,10 @@ namespace IW4MAdmin.Plugins
                     string[] fields = Regex.Replace(line, "\".*,.*\"", comma).Split(',');
 
                     fields.All(f =>
-                    {
-                        f = f.StripColors().Trim();
-                        return true;
-                    });
+                                        {
+                                            f = f.StripColors().Trim();
+                                            return true;
+                                        });
 
                     if (fields.Length != 4)
                     {
@@ -239,8 +269,8 @@ namespace IW4MAdmin.Plugins
                 manager.GetLogger().WriteVerbose($"Read {chatHistory.Count} messages for import");
                 SharedLibrary.Database.Importer.ImportSQLite(chatHistory);
             }
-            #endregion
-            #region STATS
+#endregion
+#region STATS
             if (File.Exists("import_stats.csv"))
             {
                 var stats = new List<EFClientStatistics>();
@@ -260,8 +290,8 @@ namespace IW4MAdmin.Plugins
                     try
                     {
                         if (fields[0].Substring(0, 5) == "01100")
-                        continue;
-                   
+                            continue;
+
                         long id = fields[0].ConvertLong();
                         var client = cls.First(c => c.NetworkId == id);
 
@@ -300,7 +330,7 @@ namespace IW4MAdmin.Plugins
                     manager.GetLogger().WriteError("Saving imported stats failed");
                 }
             }
-            #endregion
+#endregion
         }
 
         public async Task OnTickAsync(Server S)

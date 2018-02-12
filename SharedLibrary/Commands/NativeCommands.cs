@@ -10,6 +10,7 @@ using SharedLibrary.Objects;
 using SharedLibrary.Database;
 using System.Data.Entity;
 using SharedLibrary.Database.Models;
+using SharedLibrary.Services;
 
 namespace SharedLibrary.Commands
 {
@@ -526,7 +527,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            var db_players = await E.Owner.Manager.GetClientService().Find(c => c.Name.Contains(E.Data));
+            var db_players = await (E.Owner.Manager.GetClientService() as ClientService).GetClientByName(E.Data);
 
             if (db_players.Count == 0)
             {
@@ -534,48 +535,14 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            foreach (Player P in db_players)
+            foreach (var P in db_players)
             {
-                String mesg = String.Format("[^3{0}^7] [^3@{1}^7] - [{2}^7] - {3} | last seen {4}", P.Name, P.ClientNumber, Utilities.ConvertLevelToColor(P.Level), P.IPAddress, P.GetLastConnection());
-                await E.Origin.Tell(mesg);
+                // they're not going by another alias
+                string msg = P.Name.ToLower().Contains(E.Data.ToLower()) ?
+                    $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
+                    $"({P.AliasLink.Children.First(a => a.Name.ToLower().Contains(E.Data.ToLower())).Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
+                await E.Origin.Tell(msg);
             }
-        }
-    }
-
-    public class CFindAllPlayers : Command
-    {
-        public CFindAllPlayers() :
-            base("findall", "find a player by their aliase(s)", "fa", Player.Permission.Administrator, false, new CommandArgument[]
-                {
-                     new CommandArgument()
-                     {
-                         Name = "player",
-                         Required = true,
-                     }
-                })
-        { }
-
-        public override async Task ExecuteAsync(Event E)
-        {
-            E.Data = E.Data.Trim();
-
-            if (E.Data.Length < 3)
-            {
-                await E.Origin.Tell("You must enter at least 3 characters");
-                return;
-            }
-
-            var db_aliases = await E.Owner.Manager.GetAliasService()
-                .Find(a => a.Name.ToLower().Contains(E.Data.ToLower()));
-
-            if (db_aliases.Count == 0)
-            {
-                await E.Origin.Tell("No players found");
-                return;
-            }
-
-            foreach (var P in db_aliases)
-                await E.Origin.Tell($"^4{P.Name} ^7now goes by ^5{P.Link.Children.OrderByDescending(a => a.DateAdded).First().Name}");
         }
     }
 
@@ -668,9 +635,10 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
+            // todo: move unflag to seperate command
             if (E.Target.Level >= E.Origin.Level)
             {
-                await E.Origin.Tell("You cannot flag " + E.Target.Name);
+                await E.Origin.Tell($"You cannot flag {E.Target.Name}");
                 return;
             }
 
@@ -678,7 +646,7 @@ namespace SharedLibrary.Commands
             {
                 E.Target.Level = Player.Permission.User;
                 await E.Owner.Manager.GetClientService().Update(E.Target);
-                await E.Origin.Tell("You have ^5unflagged ^7" + E.Target.Name);
+                await E.Origin.Tell($"You have ^5unflagged ^7{E.Target.Name}");
             }
 
             else

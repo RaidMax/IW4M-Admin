@@ -8,6 +8,7 @@ using System.Data.Entity;
 using SharedLibrary.Database;
 using SharedLibrary.Database.Models;
 using System.Linq.Expressions;
+using SharedLibrary.Objects;
 
 namespace SharedLibrary.Services
 {
@@ -91,11 +92,16 @@ namespace SharedLibrary.Services
             return await Task.Run(() =>
             {
                 using (var context = new DatabaseContext())
+                {
+                    context.Configuration.AutoDetectChangesEnabled = false;
+                    context.Configuration.LazyLoadingEnabled = false;
+                    context.Configuration.ProxyCreationEnabled = false;
                     return context.Clients
                           .AsNoTracking()
                          .Include(c => c.CurrentAlias)
                          .Include(c => c.AliasLink.Children)
                          .Where(e).ToList();
+                }
             });
         }
 
@@ -104,7 +110,7 @@ namespace SharedLibrary.Services
             using (var context = new DatabaseContext())
             {
                 context.Configuration.LazyLoadingEnabled = false;
-                context.Configuration.ProxyCreationEnabled = false;
+                //context.Configuration.ProxyCreationEnabled = false;
                 return await new DatabaseContext().Clients
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
@@ -191,13 +197,43 @@ namespace SharedLibrary.Services
         public async Task<IList<EFClient>> GetPrivilegedClients()
         {
             using (var context = new DatabaseContext())
+            {
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
+                context.Configuration.AutoDetectChangesEnabled = false;
+
                 return await new DatabaseContext().Clients
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
-                    .Where(c => c.Level >= Objects.Player.Permission.Trusted)
+                    .Where(c => c.Level >= Player.Permission.Trusted)
                     .ToListAsync();
+            }
         }
 
+        public async Task<IList<EFClient>> GetClientByName(string name)
+        {
+            using (var context = new DatabaseContext())
+            {
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
+                context.Configuration.AutoDetectChangesEnabled = false;
+
+                var iqClients = (from alias in context.Aliases
+                                    .AsNoTracking()
+                                where alias.Name
+                                    .Contains(name)
+                                join link in context.AliasLinks
+                                on alias.LinkId equals link.AliasLinkId
+                                join client in context.Clients
+                                    .AsNoTracking()
+                                on alias.LinkId equals client.AliasLinkId
+                                select client)
+                                    .Include(c => c.CurrentAlias)
+                                    .Include(c => c.AliasLink.Children);
+
+                return await iqClients.ToListAsync();
+            }
+        }
 
         public async Task<IList<EFClient>> GetRecentClients(int offset, int count)
         {

@@ -318,6 +318,7 @@ namespace IW4MAdmin
                     throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
                 }
             }
+            E.Data = E.Data.Trim();
             return C;
         }
 

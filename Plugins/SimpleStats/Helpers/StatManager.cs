@@ -331,6 +331,10 @@ namespace StatsPlugin.Helpers
 
         public async Task AddMessageAsync(int clientId, int serverId, string message)
         {
+            // the web users can have no account
+            if (clientId < 1)
+                return;
+
             var messageSvc = ContextThreads[serverId].MessageSvc;
             messageSvc.Insert(new EFClientMessage()
             {

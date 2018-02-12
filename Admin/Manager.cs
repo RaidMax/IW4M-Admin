@@ -172,7 +172,6 @@ namespace IW4MAdmin
             Commands.Add(new CListBanInfo());
             Commands.Add(new CListAlias());
             Commands.Add(new CExecuteRCON());
-            Commands.Add(new CFindAllPlayers());
             Commands.Add(new CPlugins());
             Commands.Add(new CIP());
             Commands.Add(new CMask());

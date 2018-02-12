@@ -52,7 +52,7 @@ namespace SharedLibrary.Database
                         NetworkId = entityToInsert.NetworkId
                     };
 
-                    context = AddClient(context, client, count, 100, true);
+                    context = AddClient(context, client, count, 1000, true);
                 }
 
                 context.SaveChanges();
@@ -84,6 +84,8 @@ namespace SharedLibrary.Database
                     context.Dispose();
                     context = new DatabaseContext();
                     context.Configuration.AutoDetectChangesEnabled = false;
+                    context.Configuration.LazyLoadingEnabled = false;
+                    context.Configuration.ProxyCreationEnabled = false;
                 }
             }
 
@@ -119,7 +121,7 @@ namespace SharedLibrary.Database
                     var penalty = new EFPenalty()
                     {
                         Active = true,
-                        Expires = entityToInsert.Expires.Year == 9999 ? DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MinValue.ToString()) : entityToInsert.Expires,
+                        Expires = entityToInsert.Expires.Year == 9999 ? DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString()) : entityToInsert.Expires,
                         Offender = offender,
                         Punisher = punisher,
                         Offense = entityToInsert.Offense,
@@ -128,7 +130,7 @@ namespace SharedLibrary.Database
                         Link = offender.AliasLink
                     };
 
-                    context = AddPenalty(context, penalty, count, 100, true);
+                    context = AddPenalty(context, penalty, count, 1000, true);
                 }
 
                 context.SaveChanges();
@@ -160,6 +162,8 @@ namespace SharedLibrary.Database
                     context.Dispose();
                     context = new DatabaseContext();
                     context.Configuration.AutoDetectChangesEnabled = false;
+                    context.Configuration.LazyLoadingEnabled = false;
+                    context.Configuration.ProxyCreationEnabled = false;
                 }
             }
 
@@ -181,7 +185,7 @@ namespace SharedLibrary.Database
                 foreach (var entityToInsert in SQLiteData)
                 {
                     ++count;
-                    context = AddSQLite(context, entityToInsert, count, 100, true);
+                    context = AddSQLite(context, entityToInsert, count, 1000, true);
                 }
 
                 context.SaveChanges();
@@ -214,6 +218,8 @@ namespace SharedLibrary.Database
                     context.Dispose();
                     context = new DatabaseContext();
                     context.Configuration.AutoDetectChangesEnabled = false;
+                    context.Configuration.LazyLoadingEnabled = false;
+                    context.Configuration.ProxyCreationEnabled = false;
                 }
             }
             return context;

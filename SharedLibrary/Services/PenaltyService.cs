@@ -8,6 +8,7 @@ using System.Data.Entity;
 using SharedLibrary.Database;
 using SharedLibrary.Database.Models;
 using System.Linq.Expressions;
+using SharedLibrary.Dtos;
 
 namespace SharedLibrary.Services
 {
@@ -56,6 +57,8 @@ namespace SharedLibrary.Services
 
         public async Task<IList<EFPenalty>> Find(Func<EFPenalty, bool> expression)
         {
+            return await Task.FromResult(new List<EFPenalty>());
+            // fixme: this is so slow!
             return await Task.Run(() =>
             {
                 using (var context = new DatabaseContext())
@@ -107,6 +110,86 @@ namespace SharedLibrary.Services
                     .Include(p => p.Offender.CurrentAlias)
                     .Include(p => p.Punisher.CurrentAlias)
                     .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get a read-only copy of client penalties
+        /// </summary>
+        /// <param name="clientI"></param>
+        /// <param name="victim">Retreive penalties for clients receiving penalties, other wise given</param>
+        /// <returns></returns>
+        public async Task<List<ProfileMeta>> ReadGetClientPenaltiesAsync(int clientId, bool victim = true)
+        {
+            using (var context = new DatabaseContext())
+            {
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
+                context.Configuration.AutoDetectChangesEnabled = false;
+
+                if (victim)
+                {
+                    var iqPenalties = from penalty in context.Penalties.AsNoTracking()
+                                      where penalty.OffenderId == clientId
+                                      join victimClient in context.Clients.AsNoTracking()
+                                      on penalty.OffenderId equals victimClient.ClientId
+                                      join victimAlias in context.Aliases
+                                      on victimClient.CurrentAliasId equals victimAlias.AliasId
+                                      join punisherClient in context.Clients
+                                      on penalty.PunisherId equals punisherClient.ClientId
+                                      join punisherAlias in context.Aliases
+                                      on punisherClient.CurrentAliasId equals punisherAlias.AliasId
+                                      //orderby penalty.When descending
+                                      select new ProfileMeta()
+                                      {
+                                          Key = "Event.Penalty",
+                                          Value = new ProfilePenalty
+                                          {
+                                              OffenderName = victimAlias.Name,
+                                              OffenderId = victimClient.ClientId,
+                                              PunisherName = punisherAlias.Name,
+                                              PunisherId = penalty.PunisherId,
+                                              Offense = penalty.Offense,
+                                              Type = penalty.Type.ToString()
+                                          },
+                                          When = penalty.When
+                                      };
+                    // fixme: is this good and fast?
+                    return await iqPenalties.ToListAsync();
+                }
+
+                else
+                {
+                    var iqPenalties = from penalty in context.Penalties.AsNoTracking()
+                                      where penalty.PunisherId == clientId
+                                      join victimClient in context.Clients.AsNoTracking()
+                                      on penalty.OffenderId equals victimClient.ClientId
+                                      join victimAlias in context.Aliases
+                                      on victimClient.CurrentAliasId equals victimAlias.AliasId
+                                      join punisherClient in context.Clients
+                                      on penalty.PunisherId equals punisherClient.ClientId
+                                      join punisherAlias in context.Aliases
+                                      on punisherClient.CurrentAliasId equals punisherAlias.AliasId
+                                      //orderby penalty.When descending
+                                      select new ProfileMeta()
+                                      {
+                                          Key = "Event.Penalty",
+                                          Value = new ProfilePenalty
+                                          {
+                                              OffenderName = victimAlias.Name,
+                                              OffenderId = victimClient.ClientId,
+                                              PunisherName = punisherAlias.Name,
+                                              PunisherId = penalty.PunisherId,
+                                              Offense = penalty.Offense,
+                                              Type = penalty.Type.ToString()
+                                          },
+                                          When = penalty.When
+                                      };
+                    // fixme: is this good and fast?
+                    return await iqPenalties.ToListAsync();
+                }
+
+
+            }
         }
 
         public async Task RemoveActivePenalties(int aliasLinkId)

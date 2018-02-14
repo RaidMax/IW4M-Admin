@@ -75,6 +75,8 @@ namespace SharedLibrary.Objects
         public Server CurrentServer { get; set; }
         [NotMapped]
         public int Score { get; set; }
+        [NotMapped]
+        public IList<Dtos.ProfileMeta> Meta { get; set; }
 
         private int _ipaddress;
         public override int IPAddress

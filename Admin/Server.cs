@@ -23,6 +23,7 @@ namespace IW4MAdmin
         {
             return Math.Abs($"{IP}:{Port.ToString()}".GetHashCode());
         }
+
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
             if (polledPlayer.Ping == 999 || polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)

@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using SharedLibrary.Services;
 using System.Linq.Expressions;
 using SharedLibrary.Database.Models;
+using System.Collections.Specialized;
+using SharedLibrary.Dtos;
 
 namespace IW4MAdmin
 {
@@ -41,8 +43,10 @@ namespace IW4MAdmin
             SharedLibrary.WebService.PageList.Add(new PubbansJSON());
             SharedLibrary.WebService.PageList.Add(new AdminsJSON());
             SharedLibrary.WebService.PageList.Add(new Admins());
+            SharedLibrary.WebService.PageList.Add(new Profile());
 
-            SchedulerThread = new Thread(() => {
+            SchedulerThread = new Thread(() =>
+            {
                 ScheduleThreadStart(WebScheduler, WebServer);
             })
             {
@@ -389,7 +393,7 @@ namespace IW4MAdmin
                             admin = admins.First(a => a.IPAddress == 0).AsPlayer();
 
                         if (admin == null)
-                            admin = new Player() { Name = "RestUser"};
+                            admin = new Player() { Name = "RestUser" };
 
                         Event remoteEvent = new Event(Event.GType.Say, querySet["command"], admin, null, S)
                         {
@@ -414,7 +418,7 @@ namespace IW4MAdmin
 
             else
             {
-                cmd.Add(new SharedLibrary.Helpers.CommandResult() { Clientd = 0, Message = "No command entered"  });
+                cmd.Add(new SharedLibrary.Helpers.CommandResult() { Clientd = 0, Message = "No command entered" });
             }
 
             HttpResponse resp = new HttpResponse()
@@ -627,10 +631,10 @@ namespace IW4MAdmin
                 contentType = GetContentType(),
                 content = Admins.Select(a => new
                 {
-                     a.ClientId,
-                     a.Level,
-                     a.Name,
-                     playerID = a.ClientId
+                    a.ClientId,
+                    a.Level,
+                    a.Name,
+                    playerID = a.ClientId
                 }),
                 additionalHeaders = new Dictionary<string, string>()
             };
@@ -698,9 +702,8 @@ namespace IW4MAdmin
             return "/pages";
         }
 
-        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
         {
-
             var pages = SharedLibrary.WebService.PageList.Select(p => new
             {
                 pagePath = p.GetPath(),
@@ -745,7 +748,7 @@ namespace IW4MAdmin
             return "GetPlayer";
         }
 
-        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
         {
             List<PlayerInfo> pInfo = new List<PlayerInfo>();
             IList<EFClient> matchedPlayers = new List<EFClient>();
@@ -788,11 +791,21 @@ namespace IW4MAdmin
                 recent = true;
             }
 
+            bool isProfile = querySet["profile"] != null;
+
             if (matchedPlayers != null && matchedPlayers.Count > 0)
             {
                 foreach (var pp in matchedPlayers)
                 {
                     if (pp == null) continue;
+
+                    List<ProfileMeta> meta = new List<ProfileMeta>();
+                    if (isProfile)
+                    {
+                        meta.AddRange(await ApplicationManager.GetInstance().GetPenaltyService().ReadGetClientPenaltiesAsync(pp.ClientId));
+                        meta.AddRange(await ApplicationManager.GetInstance().GetPenaltyService().ReadGetClientPenaltiesAsync(pp.ClientId, false));
+                        meta.AddRange(await MetaService.GetMeta(pp.ClientId));
+                    }
 
                     PlayerInfo eachPlayer = new PlayerInfo()
                     {
@@ -801,16 +814,19 @@ namespace IW4MAdmin
                         playerLevel = pp.Level.ToString(),
                         playerName = pp.Name,
                         playernpID = pp.NetworkId.ToString(),
-                        forumID = -1,
                         authed = authed,
-                        showV2Features = false,
                         playerAliases = new List<string>(),
-                        playerIPs = new List<string>()
+                        playerIPs = new List<string>(),
+                        Meta = meta.OrderByDescending(m => m.When).ToList(),
+                        FirstSeen = Utilities.GetTimePassed(pp.FirstConnection, false),
+                        TimePlayed = Math.Round(pp.TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
+                        LastSeen = Utilities.GetTimePassed(pp.LastConnection, false)
                     };
 
                     if (!recent)
                     {
                         eachPlayer.playerAliases = pp.AliasLink.Children
+                            .Where(a => a.Name != eachPlayer.playerName)
                             .OrderBy(a => a.Name)
                             .Select(a => a.Name)
                             .Distinct()
@@ -824,15 +840,14 @@ namespace IW4MAdmin
                     }
 
                     //eachPlayer.playerAliases = eachPlayer.playerAliases.Distinct().ToList();
-                   // eachPlayer.playerIPs = eachPlayer.playerIPs.Distinct().ToList();
+                    // eachPlayer.playerIPs = eachPlayer.playerIPs.Distinct().ToList();
 
                     eachPlayer.playerConnections = pp.Connections;
-                    eachPlayer.lastSeen = Utilities.GetTimePassed(pp.LastConnection);
                     pInfo.Add(eachPlayer);
 
                 }
 
-                resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(pInfo);
+                resp.content = pInfo;
                 return resp;
             }
 
@@ -844,6 +859,21 @@ namespace IW4MAdmin
         {
             return false;
         }
+    }
+
+    class Profile : HTMLPage
+    {
+        public override string GetPath() => "/profile";
+        public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
+        {
+            IFile admins = new IFile("webfront\\profile.html");
+            string content = admins.GetText();
+            admins.Close();
+
+            return content;
+        }
+
+        public override string GetName() => "Client Profile";
     }
 
     [Serializable]
@@ -876,13 +906,14 @@ namespace IW4MAdmin
         public string playerLevel;
         public string playerIP;
         public string playernpID;
-        public Int64 forumID;
         public List<string> playerAliases;
         public List<string> playerIPs;
         public int playerConnections;
-        public string lastSeen;
-        public bool showV2Features;
+        public string LastSeen;
+        public string FirstSeen;
+        public string TimePlayed;
         public bool authed;
+        public List<ProfileMeta> Meta;
     }
 
     [Serializable]

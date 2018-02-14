@@ -103,6 +103,8 @@
     <Compile Include="Database\Models\EFClient.cs" />
     <Compile Include="Database\Models\EFPenalty.cs" />
     <Compile Include="Database\Models\SharedEntity.cs" />
+    <Compile Include="Dtos\ProfileMeta.cs" />
+    <Compile Include="Dtos\ProfilePenalty.cs" />
     <Compile Include="Exceptions\DatabaseException.cs" />
     <Compile Include="Helpers\AsyncStatus.cs" />
     <Compile Include="Commands\NativeCommands.cs" />
@@ -139,6 +141,7 @@
     <Compile Include="Services\AliasService.cs" />
     <Compile Include="Services\ClientService.cs" />
     <Compile Include="Services\GenericRepository.cs" />
+    <Compile Include="Services\MetaService.cs" />
     <Compile Include="Services\PenaltyService.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WebService.cs" />

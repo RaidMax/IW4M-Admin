@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using SharedLibrary;
+using SharedLibrary.Dtos;
 using SharedLibrary.Helpers;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Services;
@@ -81,7 +82,65 @@ namespace StatsPlugin
 
         public Task OnLoadAsync(IManager manager)
         {
-            // todo: is this fast?
+            // meta data info
+            async Task<List<ProfileMeta>> getStats(int clientId)
+            {
+                var statsSvc = new GenericRepository<EFClientStatistics>();
+                var clientStats = await statsSvc.FindAsync(c => c.ClientId == clientId);
+
+                int kills = clientStats.Sum(c => c.Kills);
+                int deaths = clientStats.Sum(c => c.Deaths);
+                double kdr = Math.Round(clientStats.Sum(c => c.KDR) / clientStats.Count, 2);
+                double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
+
+                return new List<ProfileMeta>()
+                {
+                         new ProfileMeta()
+                         {
+                                Key = "Kills",
+                                Value = kills
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Deaths",
+                             Value = deaths
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "KDR",
+                             Value = kdr
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Skill",
+                             Value = skill
+                         }
+                };
+            }
+
+            async Task<List<ProfileMeta>> getMessages(int clientId)
+            {
+                var messageSvc = new GenericRepository<EFClientMessage>();
+                var messages = await messageSvc.FindAsync(m => m.ClientId == clientId);
+                var messageMeta = messages.Select(m => new ProfileMeta()
+                {
+                    Key = "EventMessage",
+                    Value = m.Message,
+                    When = m.TimeSent
+                }).ToList();
+                messageMeta.Add(new ProfileMeta()
+                {
+                    Key = "Messages",
+                    Value = messages.Count
+                });
+
+                return messageMeta;
+            }
+
+            MetaService.AddMeta(getStats);
+            MetaService.AddMeta(getMessages);
+
+            // todo: is this fast? make async?
             string totalKills()
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();

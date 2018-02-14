@@ -58,7 +58,11 @@ namespace IW4MAdmin
 
                 bool binaryContent = requestedPage.BinaryContent != null;
                 if (requestedPage.content != null && requestedPage.content.GetType() != typeof(string))
+#if !DEBUG
                     requestedPage.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedPage.content);
+#else
+                    requestedPage.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedPage.content, Newtonsoft.Json.Formatting.Indented);
+#endif
 
                 string maxAge = requestedPage.contentType == "application/json" ? "0" : "31536000";
                 var headers = new HttpResponseHead()

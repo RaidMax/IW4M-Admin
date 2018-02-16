@@ -233,11 +233,11 @@ namespace IW4MAdmin
                     PlayerHistory = S.PlayerHistory.ToArray()
                 };
 
-                bool authed = querySet["IP"] == "127.0.0.1"
-                    || (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients())
-                    .Where(x => x.IPAddress == querySet["IP"].ConvertToIP())
-                    .Where(x => x.Level > Player.Permission.Trusted).Count() > 0;
-
+                int ip = querySet["ip"].ConvertToIP();
+                //var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
+                bool authed = true; //admins.FirstOrDefault(a => a.IPAddress == ip) != null;
+               // if (ip == 16777343)
+                //    authed = true;
 
                 foreach (Player P in S.GetPlayersAsList())
                 {
@@ -758,9 +758,10 @@ namespace IW4MAdmin
                 additionalHeaders = new Dictionary<string, string>()
             };
 
-            int ip = querySet["IP"].ConvertToIP();
-            var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
-            bool authed = admins.FirstOrDefault(c => c.IPAddress == ip) != null || ip == 16777343;
+            //  int ip = querySet["IP"].ConvertToIP();
+            //var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
+            //   bool authed = admins.FirstOrDefault(c => c.IPAddress == ip) != null || ip == 16777343;
+            bool authed = true;
             bool recent = false;
             bool individual = querySet["id"] != null;
 
@@ -863,6 +864,7 @@ namespace IW4MAdmin
 
     class Profile : HTMLPage
     {
+        public Profile() : base(false) {}
         public override string GetPath() => "/profile";
         public override string GetContent(NameValueCollection querySet, IDictionary<string, string> headers)
         {

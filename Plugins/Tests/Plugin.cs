@@ -13,6 +13,8 @@ using SharedLibrary.Objects;
 using System.Text.RegularExpressions;
 using StatsPlugin.Models;
 using SharedLibrary.Services;
+using SharedLibrary.Database.Models;
+using SharedLibrary.Database;
 
 namespace IW4MAdmin.Plugins
 {
@@ -28,6 +30,7 @@ namespace IW4MAdmin.Plugins
 
         public async Task OnEventAsync(Event E, Server S)
         {
+            return;
             if (E.Type == Event.GType.Start)
             {
                 #region PLAYER_HISTORY
@@ -60,7 +63,7 @@ namespace IW4MAdmin.Plugins
 
         public async Task OnLoadAsync(IManager manager)
         {
-#if DO_IMPORT
+          //  #if DO_IMPORT
             var svc = new GenericRepository<EFServer>();
             svc.Insert(new EFServer()
             {
@@ -84,11 +87,11 @@ namespace IW4MAdmin.Plugins
             });
 
             svc.SaveChanges();
-#endif
+     //       #endif
             Interval = DateTime.Now;
             var clients = new List<Player>();
             var oldClients = new Dictionary<int, Player>();
-#region CLIENTS
+            #region CLIENTS
             if (File.Exists("import_clients.csv"))
             {
                 manager.GetLogger().WriteVerbose("Beginning import of existing clients");
@@ -117,10 +120,8 @@ namespace IW4MAdmin.Plugins
 
                     var client = new Player()
                     {
-                        // for link
-                        ClientId = Convert.ToInt32(fields[2]),
                         Name = fields[0],
-                        NetworkId = fields[1].Trim().ConvertLong(),
+                        NetworkId = fields[1].ConvertLong(),
                         IPAddress = fields[6].ConvertToIP(),
                         Level = (Player.Permission)Convert.ToInt32(fields[3]),
                         Connections = Convert.ToInt32(fields[5]),
@@ -128,15 +129,15 @@ namespace IW4MAdmin.Plugins
                     };
 
                     clients.Add(client);
-                    oldClients.Add(client.ClientId, client);
+                    oldClients.Add(Convert.ToInt32(fields[2]), client);
                 }
-                //#if DO_IMPORT
                 clients = clients.Distinct().ToList();
+                             //   #if DO_IMPORT
 
-                clients = clients
+                /*clients = clients
                     .GroupBy(c => new { c.Name, c.IPAddress })
                                     .Select(c => c.FirstOrDefault())
-                                    .ToList();
+                                    .ToList();*/
 
                 //newClients = clients.ToList();
                 //newClients.ForEach(c => c.ClientId = 0);
@@ -152,7 +153,73 @@ namespace IW4MAdmin.Plugins
                 {
                     manager.GetLogger().WriteError("Saving imported clients failed");
                 }
-                //#endif
+              //  #endif
+            }
+#endregion
+            // load the entire database lol
+            var ctx = new DatabaseContext();
+            ctx.Configuration.ProxyCreationEnabled = false;
+            var cls = ctx.Clients.Include("AliasLink.Children").ToList(); //manager.GetClientService().Find(c => c.Active).Result;
+            ctx.Dispose();
+
+#region ALIASES
+            if (File.Exists("import_aliases.csv"))
+            {
+                manager.GetLogger().WriteVerbose("Beginning import of existing aliases");
+
+                var aliases = new List<EFAlias>();
+
+                var lines = File.ReadAllLines("import_aliases.csv").Skip(1);
+                foreach (string line in lines)
+                {
+                    string[] fields = Regex.Replace(line, "\".*\"", "").Split(',');
+                    fields.All(f =>
+                    {
+                        f = f.StripColors().Trim();
+                        return true;
+                    });
+
+                    if (fields.Length != 3)
+                    {
+                        manager.GetLogger().WriteError("Invalid alias import file... aborting import");
+                        return;
+                    }
+                    try
+                    {
+                        int number = Int32.Parse(fields[0]);
+                        var names = fields[1].Split(';').Where(n => n != String.Empty && n.Length > 2);
+
+                        var oldClient = oldClients[number];
+                        var newClient = cls.FirstOrDefault(c => c.NetworkId == oldClient.NetworkId);
+
+                        foreach (string name in names)
+                        {
+                            // this is slow :D
+                            if (newClient.AliasLink.Children.FirstOrDefault(n => n.Name == name) != null) continue;
+                            var alias = new EFAlias()
+                            {
+                                Active = true,
+                                DateAdded = DateTime.UtcNow,
+                                Name = name,
+                                LinkId = newClient.AliasLinkId,
+                                IPAddress = newClient.IPAddress
+                            };
+
+                            aliases.Add(alias);
+                        }
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        continue;
+                    }
+
+                    catch (Exception)
+                    {
+                        manager.GetLogger().WriteVerbose($"Could not import alias with line {line}");
+                    }
+                }
+
+                SharedLibrary.Database.Importer.ImportSQLite(aliases);
             }
 #endregion
 #region PENALTIES
@@ -216,8 +283,6 @@ namespace IW4MAdmin.Plugins
             }
 #endregion
 #region CHATHISTORY
-            // load the entire database lol
-            var cls = manager.GetClientService().Find(c => c.Active).Result;
 
             if (File.Exists("import_chathistory.csv"))
             {
@@ -271,63 +336,78 @@ namespace IW4MAdmin.Plugins
             }
 #endregion
 #region STATS
-            if (File.Exists("import_stats.csv"))
+            foreach (string file in Directory.GetFiles(Environment.CurrentDirectory))
             {
-                var stats = new List<EFClientStatistics>();
-                manager.GetLogger().WriteVerbose("Beginning import of existing client stats");
-
-                var lines = File.ReadAllLines("import_stats.csv").Skip(1);
-                foreach (string line in lines)
+                if (Regex.Match(file, @"import_stats_[0-9]+.csv").Success)
                 {
-                    string[] fields = line.Split(',');
+                    int port = Int32.Parse(Regex.Match(file, "[0-9]{5}").Value);
+                    var stats = new List<EFClientStatistics>();
+                    manager.GetLogger().WriteVerbose("Beginning import of existing client stats");
 
-                    if (fields.Length != 9)
+                    var lines = File.ReadAllLines(file).Skip(1);
+                    foreach (string line in lines)
                     {
-                        manager.GetLogger().WriteError("Invalid client import file... aborting import");
-                        return;
+                        string[] fields = line.Split(',');
+
+                        if (fields.Length != 9)
+                        {
+                            manager.GetLogger().WriteError("Invalid client import file... aborting import");
+                            return;
+                        }
+
+                        try
+                        {
+                            if (fields[0].Substring(0, 5) == "01100")
+                                continue;
+
+                            long id = fields[0].ConvertLong();
+                            var client = cls.Single(c => c.NetworkId == id);
+
+                            var time = Convert.ToInt32(fields[8]);
+                            double spm = time < 60 ? 0 : Math.Round(Convert.ToInt32(fields[1]) * 100.0 / time, 3);
+                            if (spm > 1000)
+                                spm = 0;
+
+                            var st = new EFClientStatistics()
+                            {
+                                Active = true,
+                                ClientId = client.ClientId,
+                                ServerId = Math.Abs($"127.0.0.1:{port}".GetHashCode()),
+                                Kills = Convert.ToInt32(fields[1]),
+                                Deaths = Convert.ToInt32(fields[2]),
+                                SPM = spm,
+                                Skill = 0,
+                                TimePlayed = time * 60
+                            };
+                           // client.TotalConnectionTime += time;
+                            stats.Add(st);
+                            stats = stats.AsEnumerable()
+                                .GroupBy(c => new { c.ClientId })
+                                .Select(c => c.FirstOrDefault()).ToList();
+
+                            var cl = await manager.GetClientService().Get(st.ClientId);
+                            cl.TotalConnectionTime += time * 60;
+                            await manager.GetClientService().Update(cl);
+                        }
+                        catch (Exception e)
+                        {
+                            continue;
+                        }
+
                     }
+
+
+                    manager.GetLogger().WriteVerbose($"Read {stats.Count} clients stats for import");
 
                     try
                     {
-                        if (fields[0].Substring(0, 5) == "01100")
-                            continue;
-
-                        long id = fields[0].ConvertLong();
-                        var client = cls.First(c => c.NetworkId == id);
-
-                        var time = Convert.ToInt32(fields[8]);
-                        double spm = time < 60 ? 0 : Math.Round(Convert.ToInt32(fields[1]) * 100.0 / time, 3);
-                        if (spm > 1000)
-                            spm = 0;
-
-                        var st = new EFClientStatistics()
-                        {
-                            Active = true,
-                            ClientId = client.ClientId,
-                            ServerId = Math.Abs("127.0.0.1:28965".GetHashCode()),
-                            Kills = Convert.ToInt32(fields[1]),
-                            Deaths = Convert.ToInt32(fields[2]),
-                            SPM = spm,
-                            Skill = 0
-                        };
-                        stats.Add(st);
+                        SharedLibrary.Database.Importer.ImportSQLite(stats);
                     }
+
                     catch (Exception e)
                     {
-                        continue;
+                        manager.GetLogger().WriteError("Saving imported stats failed");
                     }
-                }
-
-                manager.GetLogger().WriteVerbose($"Read {stats.Count} clients stats for import");
-
-                try
-                {
-                    SharedLibrary.Database.Importer.ImportSQLite<EFClientStatistics>(stats);
-                }
-
-                catch (Exception e)
-                {
-                    manager.GetLogger().WriteError("Saving imported stats failed");
                 }
             }
 #endregion

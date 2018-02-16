@@ -192,6 +192,20 @@ namespace SharedLibrary.Services
             }
         }
 
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int aliasId)
+        {
+            using (var context = new DatabaseContext())
+            {
+                var iqPenalties = from link in context.AliasLinks
+                                  where link.AliasLinkId == aliasId
+                                  join penalty in context.Penalties
+                                  on link.AliasLinkId equals penalty.LinkId
+                                  where penalty.Active
+                                  select penalty;
+                return await iqPenalties.ToListAsync();
+            }
+        }
+
         public async Task RemoveActivePenalties(int aliasLinkId)
         {
             using (var context = new DatabaseContext())

@@ -17,7 +17,8 @@ namespace StatsPlugin.Commands
         public override async Task ExecuteAsync(Event E)
         {
             var statsSvc = new GenericRepository<EFClientStatistics>();
-            var iqStats = statsSvc.GetQuery(cs => cs.Active);
+            int serverId = E.Origin.GetHashCode();
+            var iqStats = statsSvc.GetQuery(cs => cs.ServerId == serverId);
 
             var topStats = iqStats.Where(cs => cs.Skill > 100)
                 .OrderByDescending(cs => cs.Skill)

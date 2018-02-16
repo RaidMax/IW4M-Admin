@@ -350,12 +350,12 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (!E.Origin.Masked)
-                await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5{E.Origin.Name}^7]");
-            else
-                await E.Owner.Broadcast($"Fast restarting in ^53 ^7seconds [^5Masked Admin^7]");
-            Task.Delay(3000).Wait();
             await E.Owner.ExecuteCommandAsync("fast_restart");
+
+            if (!E.Origin.Masked)
+                await E.Owner.Broadcast($"^5{E.Origin.Name} ^7fast restarted the server");
+            else
+                await E.Owner.Broadcast($"The server has been fast restarted");
         }
     }
 
@@ -527,7 +527,10 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            var db_players = await (E.Owner.Manager.GetClientService() as ClientService).GetClientByName(E.Data);
+            var db_players = (await (E.Owner.Manager.GetClientService() as ClientService)
+                .GetClientByName(E.Data))
+                .OrderByDescending(p => p.LastConnection)
+                .ToList();
 
             if (db_players.Count == 0)
             {
@@ -567,9 +570,9 @@ namespace SharedLibrary.Commands
                 foreach (String r in E.Owner.Rules)
                 {
                     if (E.Message.IsBroadcastCommand())
-                        await E.Owner.Broadcast("- " + r);
+                        await E.Owner.Broadcast($"- {r}");
                     else
-                        await E.Origin.Tell("- " + r);
+                        await E.Origin.Tell($"- {r}");
                 }
             }
         }
@@ -595,8 +598,8 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Target.Tell("^1" + E.Origin.Name + " ^3[PM]^7 - " + E.Data);
-            await E.Origin.Tell(String.Format("To ^3{0} ^7-> {1}", E.Target.Name, E.Data));
+            await E.Target.Tell($"^1{E.Origin.Name} ^3[PM]^7 - {E.Data}");
+            await E.Origin.Tell($"To ^3{E.Target.Name} ^7-> {E.Data}");
         }
     }
 
@@ -667,7 +670,7 @@ namespace SharedLibrary.Commands
 
                 await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
                 await E.Owner.ExecuteEvent(new Event(Event.GType.Flag, E.Data, E.Origin, E.Target, E.Owner));
-                await E.Origin.Tell("You have ^5flagged ^7" + E.Target.Name);
+                await E.Origin.Tell($"You have flagged ^5{E.Target.Name}");
             }
 
         }
@@ -693,6 +696,12 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
+            if (E.Data.ToLower().Contains("camp"))
+            {
+                await E.Origin.Tell("You cannot report a player for camping");
+                return;
+            }
+
             if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.NetworkId == E.Target.NetworkId)) != null)
             {
                 await E.Origin.Tell("You have already reported this player");

@@ -81,60 +81,38 @@ namespace IW4MAdmin
                     player = client.AsPlayer();
                 }
 
-                /*var Admins = Manager.GetDatabase().GetPrivilegedClients();
-                if (Admins.Where(x => x.Name == polledPlayer.Name).Count() > 0)
-                {
-                    if ((Admins.First(x => x.Name == polledPlayer.Name).NetworkId != polledPlayer.NetworkId) && NewPlayer.Level < Player.Permission.Moderator)
-                        await this.ExecuteCommandAsync("clientkick " + polledPlayer.ClientNumber + " \"Please do not impersonate an admin^7\"");
-                }*/
-                player.CurrentServer = this;
 #if DEBUG
                 player.ClientNumber = polledPlayer.ClientNumber;
                 Players[player.ClientNumber] = player;
 #endif
 
-                var ban = Manager.GetPenaltyService().Find(p => p.LinkId == player.AliasLink.AliasLinkId
-                && p.Expires > DateTime.UtcNow).Result.FirstOrDefault();
+                var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId);
+                var currentBan = activePenalties.FirstOrDefault(b => b.Expires > DateTime.UtcNow);
 
-                if (ban != null)
+                if (currentBan != null)
                 {
                     Logger.WriteInfo($"Banned client {player} trying to connect...");
                     var autoKickClient = (await Manager.GetClientService().Get(1)).AsPlayer();
                     autoKickClient.CurrentServer = this;
 
-                    if (ban.Type == Penalty.PenaltyType.TempBan)
-                        await this.ExecuteCommandAsync($"clientkick {player.ClientNumber} \"You are temporarily banned. ({(ban.Expires - DateTime.UtcNow).TimeSpanText()} left)\"");
+                    if (currentBan.Type == Penalty.PenaltyType.TempBan)
+                        await this.ExecuteCommandAsync($"clientkick {player.ClientNumber} \"You are temporarily banned. ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} left)\"");
                     else
-                        await player.Kick($"Previously banned for {ban.Offense}", autoKickClient);
+                        await player.Kick($"Previously banned for {currentBan.Offense}", autoKickClient);
 
-                    if (player.Level != Player.Permission.Banned && ban.Type == Penalty.PenaltyType.Ban)
-                        await player.Ban($"Previously banned for {ban.Offense}", autoKickClient);
+                    if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
+                        await player.Ban($"Previously banned for {currentBan.Offense}", autoKickClient);
                     return true;
                 }
 
-                //   if (aP.Level == Player.Permission.Flagged)
-                //  NewPlayer.Level = Player.Permission.Flagged;
                 // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
                 player.Score = polledPlayer.Score;
+                player.CurrentServer = this;
                 Players[player.ClientNumber] = player;
                 Logger.WriteInfo($"Client {player} connecting...");
 
-                // give trusted rank
-                if (Config.AllowTrustedRank &&
-                    player.TotalConnectionTime / 60.0 >= 2880 &&
-                    player.Level < Player.Permission.Trusted &&
-                    player.Level != Player.Permission.Flagged)
-                {
-                    player.Level = Player.Permission.Trusted;
-                    await player.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands.");
-                    await player.Tell("You earned this by playing for ^53 ^7full days!");
-                }
-
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
-
-                // if (NewPlayer.Level > Player.Permission.Moderator)
-                //   await NewPlayer.Tell("There are ^5" + Reports.Count + " ^7recent reports!");
 
                 return true;
             }
@@ -231,7 +209,7 @@ namespace IW4MAdmin
                     cNum = Convert.ToInt32(Args[0]);
                 }
 
-                catch(FormatException)
+                catch (FormatException)
                 {
 
                 }
@@ -332,16 +310,16 @@ namespace IW4MAdmin
 
             foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
             {
-#if !DEBUG
+                //#if !DEBUG
                 try
-#endif
+                //#endif
                 {
                     if (cts.IsCancellationRequested)
                         break;
 
                     await P.OnEventAsync(E, this);
                 }
-#if !DEBUG
+                //#if !DEBUG
                 catch (Exception Except)
                 {
                     Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
@@ -349,7 +327,7 @@ namespace IW4MAdmin
                     Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                     continue;
                 }
-#endif
+                //#endif
             }
         }
 
@@ -499,7 +477,10 @@ namespace IW4MAdmin
                 if (!((ApplicationManager)Manager).Running)
                 {
                     foreach (var plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
-                       await plugin.OnUnloadAsync();
+                        await plugin.OnUnloadAsync();
+
+                    for (int i = 0; i < Players.Count; i++)
+                        await RemovePlayer(i);
                 }
                 return true;
             }
@@ -605,9 +586,10 @@ namespace IW4MAdmin
             }
             LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #endif
-            Logger.WriteInfo("Log file is " + logPath);
+                Logger.WriteInfo("Log file is " + logPath);
 #if !DEBUG
-            Broadcast("IW4M Admin is now ^2ONLINE");
+                Broadcast("IW4M Admin is now ^2ONLINE");
+            }
 #endif
         }
 
@@ -617,6 +599,21 @@ namespace IW4MAdmin
             if (E.Type == Event.GType.Connect)
             {
                 ChatHistory.Add(new Chat(E.Origin.Name, "<i>CONNECTED</i>", DateTime.Now));
+
+                if (E.Origin.Level > Player.Permission.Moderator)
+                    await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
+
+                // give trusted rank
+                if (Config.AllowTrustedRank &&
+                    E.Origin.TotalConnectionTime / 60.0 >= 2880 &&
+                    E.Origin.Level < Player.Permission.Trusted &&
+                    E.Origin.Level != Player.Permission.Flagged)
+                {
+                    E.Origin.Level = Player.Permission.Trusted;
+                    await E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands");
+                    await E.Origin.Tell("You earned this by playing for ^53 ^7full days");
+                    await Manager.GetClientService().Update(E.Origin);
+                }
             }
 
             else if (E.Type == Event.GType.Disconnect)
@@ -626,13 +623,13 @@ namespace IW4MAdmin
 
             else if (E.Type == Event.GType.Script)
             {
-               /* if (E.Origin == E.Target)// suicide/falling
-                    await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Target, this));
-                else
-                {*/
-                    await ExecuteEvent(new Event(Event.GType.Kill, E.Data, E.Origin, E.Target, this));
-                    //await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Origin, this));
-               // }
+                /* if (E.Origin == E.Target)// suicide/falling
+                     await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Target, this));
+                 else
+                 {*/
+                await ExecuteEvent(new Event(Event.GType.Kill, E.Data, E.Origin, E.Target, this));
+                //await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Origin, this));
+                // }
             }
 
             if (E.Type == Event.GType.Say && E.Data.Length >= 2)

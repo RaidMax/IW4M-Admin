@@ -45,7 +45,7 @@
         }
 
         #content,
-        .container-fluid, #profile_aliases {
+        .container-fluid, #profile_aliases, body {
             background-color: rgb(34, 34, 34);
         }
 
@@ -170,6 +170,7 @@
         #profile_aliases {
             position: relative;
             display: none;
+            top: 0.2em;
         }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -238,7 +239,7 @@
         $(document).ready(function () {
             $("#profile_aliases_btn").click(function (e) {
                 if ($("#profile_aliases").text() != '') {
-                    $("#profile_aliases").slideToggle(50);
+                    $("#profile_aliases").slideToggle(150);
                 }
             });
 
@@ -262,6 +263,7 @@
                 $('#profile_first_seen > .text-highlight').text(playerInfo.FirstSeen);
                 $('#profile_last_seen > .text-highlight').text(playerInfo.LastSeen);
 
+                $("#profile_events").text("");
                 $.each(playerInfo.Meta, function (index, meta) {
                     if (!meta.Key.includes("Event")) {
                         let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-highlight">${meta.Value}</span><span class="profile-meta-title"> ${meta.Key}</span></div>`;
@@ -294,7 +296,7 @@
                 <div id="profile_info" class="text-center text-sm-left pr-4 pl-4">
                     <div id="profile_name">
                         <span class="client-name"><span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span></span>
-                        <div id="profile_aliases" class="pr-4 pb-2 pt-2 text-muted"></div>
+                        <div id="profile_aliases" class="pr-4 pb-2 mb-2 text-muted"></div>
                     </div>
                     <div id="profile_level" class="text-muted">
                         <span>_</span>
@@ -314,6 +316,7 @@
             </div>
             <div class="row d-md-flex pt-4">
                 <div id="profile_events" class="text-muted text-left ml-sm-0">
+                    No recent events
                 </div>
             </div>
         </div>

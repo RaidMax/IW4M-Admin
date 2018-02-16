@@ -41,16 +41,17 @@ namespace StatsPlugin.Commands
             }
 
             var clientStats = new GenericRepository<EFClientStatistics>();
+            int serverId = E.Owner.GetHashCode();
 
             if (E.Target != null)
             {
-                pStats = clientStats.Find(c => c.ClientId == E.Target.ClientId).First();
+                pStats = clientStats.Find(c => c.ServerId ==serverId && c.ClientId == E.Target.ClientId).First();
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 
             else
             {
-                pStats = pStats = clientStats.Find(c => c.ClientId == E.Origin.ClientId).First();
+                pStats = pStats = clientStats.Find(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId).First();
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 

@@ -24,7 +24,7 @@ namespace StatsPlugin.Helpers
                     { -1,  "Try not to kill yourself anymore" },
                     { 5,  "Great job! You're on a ^55 killstreak!" },
                     { 10,  "Amazing! ^510 kills ^7without dying!" },
-                    { 25, "You better call in that nuke, ^525 killstreak!" }
+                    { 25, "You better call in that nuke, ^525 killstreak^7!" }
                 };
                 config.AddProperty(new KeyValuePair<string, object>("KillstreakMessages", killstreakMessages));
             }

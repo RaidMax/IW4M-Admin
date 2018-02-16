@@ -173,7 +173,7 @@ function formatPlayers(players)
   var p = "";
   for (i = 0; i < players.length; i++)
   {
-    p += "<div class='playerName tableCell'><a href=\"/players?id=" + players[1*i]['playerID'] + "\">" + getColorForLevel(players[1*i]['playerLevel'], $("<div/>").html(players[1*i]['playerName']).text()) + "</a></div>";
+    p += "<div class='playerName tableCell'><a href=\"/profile?id=" + players[1*i]['playerID'] + "\">" + getColorForLevel(players[1*i]['playerLevel'], $("<div/>").html(players[1*i]['playerName']).text()) + "</a></div>";
     if (i % 2 == 1 && i != 0 )
       p += "<div style='display: table-row'></div>";
   }

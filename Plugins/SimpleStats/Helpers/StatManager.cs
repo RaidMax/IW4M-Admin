@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,18 +14,17 @@ namespace StatsPlugin.Helpers
 {
     public class StatManager
     {
-        private Dictionary<int, ServerStats> Servers;
-        private Dictionary<int, ThreadSafeStatsService> ContextThreads;
-        private Dictionary<int, StreakMessage> StreakMessages;
+        private ConcurrentDictionary<int, ServerStats> Servers;
+        private ConcurrentDictionary<int, ThreadSafeStatsService> ContextThreads;
+        private ConcurrentDictionary<int, StreakMessage> StreakMessages;
         private ILogger Log;
         private IManager Manager;
 
-
         public StatManager(IManager mgr)
         {
-            Servers = new Dictionary<int, ServerStats>();
-            ContextThreads = new Dictionary<int, ThreadSafeStatsService>();
-            StreakMessages= new Dictionary<int, StreakMessage>();
+            Servers = new ConcurrentDictionary<int, ServerStats>();
+            ContextThreads = new ConcurrentDictionary<int, ThreadSafeStatsService>();
+            StreakMessages = new ConcurrentDictionary<int, StreakMessage>();
             Log = mgr.GetLogger();
             Manager = mgr;
         }
@@ -46,8 +46,8 @@ namespace StatsPlugin.Helpers
             {
                 int serverId = sv.GetHashCode();
                 var statsSvc = new ThreadSafeStatsService();
-                ContextThreads.Add(serverId, statsSvc);
-                StreakMessages.Add(serverId, new StreakMessage(sv));
+                ContextThreads.TryAdd(serverId, statsSvc);
+                StreakMessages.TryAdd(serverId, new StreakMessage(sv));
 
                 // get the server from the database if it exists, otherwise create and insert a new one
                 var server = statsSvc.ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
@@ -70,7 +70,7 @@ namespace StatsPlugin.Helpers
                 statsSvc.ServerStatsSvc.SaveChanges();
 
                 var serverStats = statsSvc.ServerStatsSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
-                Servers.Add(serverId, new ServerStats(server, serverStats));
+                Servers.TryAdd(serverId, new ServerStats(server, serverStats));
             }
 
             catch (Exception e)
@@ -93,6 +93,7 @@ namespace StatsPlugin.Helpers
             // get the client's stats from the database if it exists, otherwise create and attach a new one
             // if this fails we want to throw an exception
             var clientStats = statsSvc.ClientStatSvc.Find(c => c.ClientId == pl.ClientId && c.ServerId == serverId).FirstOrDefault();
+
             if (clientStats == null)
             {
                 clientStats = new EFClientStatistics()
@@ -144,14 +145,13 @@ namespace StatsPlugin.Helpers
                 playerStats.Remove(pl.ClientNumber);
 
             // sync their stats before they leave
-            clientStats.Client = pl;
             UpdateStats(clientStats);
-            clientStats.Client = null;
 
             // todo: should this be saved every disconnect?
             await statsSvc.ClientStatSvc.SaveChangesAsync();
             // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
+            await statsSvc.ServerStatsSvc.SaveChangesAsync();
         }
 
         /// <summary>
@@ -163,8 +163,8 @@ namespace StatsPlugin.Helpers
         {
             await AddStandardKill(attacker, victim);
 
+            return;
             var statsSvc = ContextThreads[serverId];
-
             var kill = new EFClientKill()
             {
                 Active = true,
@@ -188,8 +188,6 @@ namespace StatsPlugin.Helpers
         {
             int serverId = attacker.CurrentServer.GetHashCode();
             var attackerStats = Servers[serverId].PlayerStats[attacker.ClientNumber];
-            // set to access total time played
-            attackerStats.Client = attacker;
 
             if (victim == null)
             {
@@ -207,7 +205,7 @@ namespace StatsPlugin.Helpers
 
             // show encouragement/discouragement
             var streakMessageGen = StreakMessages[serverId];
-            string streakMessage =  (attackerStats.ClientId != victimStats.ClientId) ?
+            string streakMessage = (attackerStats.ClientId != victimStats.ClientId) ?
                 streakMessageGen.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak) :
                 streakMessageGen.MessageOnStreak(-1, -1);
 
@@ -215,11 +213,11 @@ namespace StatsPlugin.Helpers
                 await attacker.Tell(streakMessage);
 
             // immediately write changes in debug
-#if DEBUG
+            //#if DEBUG
             var statsSvc = ContextThreads[serverId];
             statsSvc.ClientStatSvc.SaveChanges();
-            statsSvc.ServerStatsSvc.SaveChanges();
-#endif
+            //statsSvc.ServerStatsSvc.SaveChanges();
+            //#endif
         }
 
         /// <summary>
@@ -247,7 +245,6 @@ namespace StatsPlugin.Helpers
 
             // process the attacker's stats after the kills
             UpdateStats(attackerStats);
-            attackerStats.Client = null;
 
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
@@ -284,11 +281,11 @@ namespace StatsPlugin.Helpers
             double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
 
             // calculate the weight of the new play time against last 10 hours of gameplay
-            int totalConnectionTime = (clientStats.Client.TotalConnectionTime == 0) ?
-                (int)(DateTime.UtcNow - clientStats.Client.FirstConnection).TotalSeconds :
-                clientStats.Client.TotalConnectionTime + (int)(DateTime.UtcNow - clientStats.Client.LastConnection).TotalSeconds;
+            int totalPlayTime = (clientStats.TimePlayed == 0) ?
+                (int)(DateTime.UtcNow - clientStats.LastActive).TotalSeconds :
+                clientStats.TimePlayed + (int)(DateTime.UtcNow - clientStats.LastActive).TotalSeconds;
 
-            double SPMAgainstPlayWeight = timeSinceLastCalc / Math.Min(600, (totalConnectionTime / 60.0));
+            double SPMAgainstPlayWeight = timeSinceLastCalc / Math.Min(600, (totalPlayTime / 60.0));
 
             // calculate the new weight against average times the weight against play time
             clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));

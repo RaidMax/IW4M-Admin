@@ -29,8 +29,8 @@ namespace SharedLibrary.Network
             using (var ServerOOBConnection = new UdpClient())
             {
                 // prevent flooding
-                if ((DateTime.Now - LastQuery).TotalMilliseconds < 300)
-                    Task.Delay(300).Wait();
+                if ((DateTime.Now - LastQuery).TotalMilliseconds < 100)
+                    Task.Delay(100).Wait();
                 LastQuery = DateTime.Now;
 
                 ServerOOBConnection.Client.SendTimeout = 1000;

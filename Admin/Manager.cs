@@ -192,19 +192,22 @@ namespace IW4MAdmin
                 {
                     var Status = TaskStatuses[i];
 
-                    // remove the task when we want to quit and last run has finished
-                    if (!Running)
-                    {
-                        TaskStatuses.RemoveAt(i);
-                        continue;
-                    }
-
                     // task is read to be rerun
                     if (Status.RequestedTask == null || Status.RequestedTask.Status == TaskStatus.RanToCompletion)
                     {
-                        Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
-                        if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
-                            Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
+                        // remove the task when we want to quit and last run has finished
+                        if (!Running)
+                        {
+                            TaskStatuses.RemoveAt(i);
+                            continue;
+                        }
+                        // normal operation
+                        else
+                        {
+                            Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
+                            if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
+                                Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
+                        }
                     }
 
                     if (Status.RequestedTask.Status == TaskStatus.Faulted)
@@ -229,8 +232,8 @@ namespace IW4MAdmin
         public void Stop()
         {
             // tell threads it's time to stop
-            foreach (var status in TaskStatuses)
-                status.TokenSrc.Cancel();
+           // foreach (var status in TaskStatuses)
+            //    status.TokenSrc.Cancel();
             Running = false;
         }
 

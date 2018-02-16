@@ -39,10 +39,12 @@ namespace IW4MAdmin
     {
         public void OnRequest(HttpRequestHead request, IDataProducer requestBody, IHttpResponseDelegate response)
         {
+#if DEBUG
             var logger = ApplicationManager.GetInstance().GetLogger();
             logger.WriteDebug($"HTTP request {request.Path}");
             logger.WriteDebug($"QueryString: {request.QueryString}");
             logger.WriteDebug($"IP: {request.IPAddress}");
+#endif
 
             NameValueCollection querySet = new NameValueCollection();
 

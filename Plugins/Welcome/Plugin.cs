@@ -91,7 +91,7 @@ namespace Welcome_Plugin
                 await newPlayer.Tell(ProcessAnnouncement(cfg.GetProperty<string>("UserWelcomeMessage"), newPlayer));
 
                 if (newPlayer.Level == Player.Permission.Flagged)
-                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name}^7 has joined!");
+                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7has joined!");
                 else
                     await E.Owner.Broadcast(ProcessAnnouncement(cfg.GetProperty<string>("UserAnnouncementMessage"), newPlayer));
             }
@@ -114,7 +114,7 @@ namespace Welcome_Plugin
 
                 if (cfg.GetProperty<string>("UserAnnouncementMessage") == null)
                 {
-                    string annoucementMsg = "^5{{ClientName}}^7hails from ^5{{ClientLocation}}";
+                    string annoucementMsg = "^5{{ClientName}} ^7hails from ^5{{ClientLocation}}";
                     cfg.AddProperty(new KeyValuePair<string, dynamic>("UserAnnouncementMessage", annoucementMsg));
                 }
             }

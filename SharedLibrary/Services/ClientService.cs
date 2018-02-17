@@ -27,7 +27,7 @@ namespace SharedLibrary.Services
                     .ToListAsync();
 
                 // see if they have a matching IP + Name but new NetworkId
-                var existingAlias = aliases.SingleOrDefault(a => a.Name == entity.Name);
+                var existingAlias = aliases.FirstOrDefault(a => a.Name == entity.Name);
                 // if existing alias matches link them
                 EFAliasLink aliasLink = existingAlias?.Link;
                 // if no exact matches find the first IP that matches

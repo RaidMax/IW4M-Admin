@@ -226,7 +226,7 @@ namespace SharedLibrary
         /// <param name="npID">npID of the player</param>
         /// <param name="Target">I don't remember what this is for</param>
         /// <returns></returns>
-        abstract public Task Unban(Player Target);
+        abstract public Task Unban(string reason, Player Target, Player Origin);
 
         /// <summary>
         /// Change the current searver map

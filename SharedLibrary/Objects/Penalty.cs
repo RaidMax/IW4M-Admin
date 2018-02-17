@@ -13,6 +13,7 @@ namespace SharedLibrary.Objects
             Kick,
             TempBan,
             Ban,
+            Unban,
             Any,
         }
         

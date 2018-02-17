@@ -856,7 +856,7 @@ namespace IW4MAdmin
             Penalty newPenalty = new Penalty()
             {
                 Type = Penalty.PenaltyType.Ban,
-                Expires = DateTime.MinValue,
+                Expires = DateTime.MaxValue,
                 Offender = Target,
                 Offense = Message,
                 Punisher = Origin,
@@ -868,8 +868,21 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        override public async Task Unban(Player Target)
+        override public async Task Unban(string reason, Player Target, Player Origin)
         {
+            var unbanPenalty = new Penalty()
+            {
+                Type = Penalty.PenaltyType.Unban,
+                Expires = DateTime.UtcNow,
+                Offender = Target,
+                Offense = reason,
+                Punisher = Origin,
+                When = DateTime.UtcNow,
+                Active = true,
+                Link = Target.AliasLink
+            };
+
+            await Manager.GetPenaltyService().Create(unbanPenalty);
             await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId);
         }
 

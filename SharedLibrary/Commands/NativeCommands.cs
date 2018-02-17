@@ -220,14 +220,27 @@ namespace SharedLibrary.Commands
                     {
                         Name = "databaseID",
                         Required = true,
+                    },
+                    new CommandArgument()
+                    {
+                        Name = "reason",
+                        Required  = true
                     }
                 })
         { }
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Owner.Unban(E.Target);
-            await E.Origin.Tell($"Successfully unbanned {E.Target}");
+            var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId);
+            if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban).FirstOrDefault() != null)
+            {
+                await E.Owner.Unban(E.Data, E.Target, E.Origin);
+                await E.Origin.Tell($"Successfully unbanned {E.Target}");
+            }
+            else
+            {
+                await E.Origin.Tell($"{E.Target} is not banned");
+            }
         }
     }
 

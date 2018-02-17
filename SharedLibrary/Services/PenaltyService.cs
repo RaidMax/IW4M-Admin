@@ -18,14 +18,16 @@ namespace SharedLibrary.Services
         {
             using (var context = new DatabaseContext())
             {
-                entity.Offender = context.Clients.First(e => e.ClientId == entity.Offender.ClientId);
-                entity.Punisher = context.Clients.First(e => e.ClientId == entity.Punisher.ClientId);
-                entity.Link = context.AliasLinks.First(l => l.AliasLinkId == entity.Link.AliasLinkId);
+                entity.Offender = context.Clients.Single(e => e.ClientId == entity.Offender.ClientId);
+                entity.Punisher = context.Clients.Single(e => e.ClientId == entity.Punisher.ClientId);
+                entity.Link = context.AliasLinks.Single(l => l.AliasLinkId == entity.Link.AliasLinkId);
+
+                if (entity.Expires == DateTime.MaxValue)
+                    entity.Expires = DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString());
 
                 // make bans propogate to all aliases
                 if (entity.Type == Objects.Penalty.PenaltyType.Ban)
                 {
-                    entity.Expires = DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString());
                     await context.Clients
                         .Where(c => c.AliasLinkId == entity.Link.AliasLinkId)
                         .ForEachAsync(c => c.Level = Objects.Player.Permission.Banned);

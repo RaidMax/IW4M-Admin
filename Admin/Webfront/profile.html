@@ -132,7 +132,8 @@
             font-size: 1.5em;
         }
 
-        .penalties-color-kick {
+        .penalties-color-kick,
+        .penalties-color-unban {
             color: rgba(116, 147, 99, 1);
         }
 
@@ -207,6 +208,8 @@
                     return "Kicked";
                 case "TempBan":
                     return "Temp Banned";
+                case "Unban":
+                    return "Unbanned";
             }
         }
 

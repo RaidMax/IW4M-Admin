@@ -87,7 +87,6 @@
     <Compile Include="Pages\LiveStatsJson.cs" />
     <Compile Include="Pages\WordCloudJson.cs" />
     <Compile Include="Plugin.cs" />
-    <None Include="_Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -194,6 +194,25 @@ namespace SharedLibrary.Services
                     .ToListAsync();
         }
 
+        public async Task<bool> IsAuthenticated(int clientIP)
+        {
+            using (var context = new DatabaseContext())
+            {
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
+                context.Configuration.AutoDetectChangesEnabled = false;
+
+                var iqMatching = from alias in context.Aliases
+                                 where alias.IPAddress == clientIP
+                                 join client in context.Clients
+                                 on alias.LinkId equals client.AliasLinkId
+                                 where client.Level > Player.Permission.Trusted
+                                 select client;
+
+                return (await iqMatching.CountAsync()) > 0;
+            }
+        }
+
         public async Task<IList<EFClient>> GetPrivilegedClients()
         {
             using (var context = new DatabaseContext())
@@ -228,6 +247,7 @@ namespace SharedLibrary.Services
                                     .AsNoTracking()
                                 on alias.LinkId equals client.AliasLinkId
                                 select client)
+                                    .Distinct()
                                     .Include(c => c.CurrentAlias)
                                     .Include(c => c.AliasLink.Children);
 

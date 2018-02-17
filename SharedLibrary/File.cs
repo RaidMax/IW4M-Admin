@@ -10,7 +10,7 @@ namespace SharedLibrary
     public class RemoteFile : IFile
     {
         string Location;
-        string[] FileCache;
+        string[] FileCache = new string[0];
 
         public RemoteFile(string location) : base(string.Empty)
         {
@@ -25,7 +25,7 @@ namespace SharedLibrary
 
         public override string[] Tail(int lineCount)
         {
-            Retrieve();
+           // Retrieve();
             return FileCache;
         }
 

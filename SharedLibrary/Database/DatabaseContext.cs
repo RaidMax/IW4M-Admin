@@ -46,7 +46,6 @@ namespace SharedLibrary.Database
 
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
 
-            // todo: custom load DBSets from plugins
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
             foreach (string dllPath in System.IO.Directory.GetFiles($"{Environment.CurrentDirectory}{System.IO.Path.DirectorySeparatorChar}Plugins"))
             {

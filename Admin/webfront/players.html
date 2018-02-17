@@ -2,11 +2,11 @@
 <script>
     function escapeHtml(unsafe) {
         return unsafe
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     var curFrom = 0;
@@ -27,45 +27,18 @@
         }
     }
 
-    function formatHidden(data, authed) {
-        var p = "<div class=\"hiddenWrapper\"><span>Expand</span><div class=\"hiddenElements\">";
-
-        if (authed) {
-            if (data == undefined || data.length == 0)
-                p += "Not Loaded"
-            $.each(data, function (i, dat) {
-                p += "<span>" +  escapeHtml(dat) + "</span><br/>"
-            })
-        }
-
-        else
-            p += "Hidden";
-
-        p += "</div></div>"
-
-        return p;
-    }
-
     function printPlayer(player, i) {
         var p = "";
         p +=
-          "<div class=\"playerInfo table alternate_" + i % 2 + "\"> \
+            "<div class=\"playerInfo table alternate_" + i % 2 + "\"> \
        <div class=\"tableCell\"><a href=\"/profile?id=" + player['playerID'] + "\">" + escapeHtml(player['playerName']) + "</a></div> \
-       <div class=\"tableCell\">" + formatHidden(player['playerAliases'], player.authed) + "</div> \
-       <div class=\"tableCell\">" + formatHidden(player['playerIPs'], player.authed) + "</div> \
-       <div class=\"tableCell\">" + getColorForLevel(player['playerLevel'], player['playerLevel']) + "</div> \
-       <div class=\"tableCell\">" + player['playerConnections'] + "</div>";
-
+       <div class=\"tableCell\">" + getColorForLevel(player['playerLevel'], player['playerLevel']) + "</div>";
 
         p +=
-            "<div class=\"tableCell\" style='width: 2em;'><a href=\"/chat?clientid=" + player.playerID + "\"><i class=\"fa fa-comments\" aria-hidden=\"true\"></i></a></div>"
-
-        p +=
-            "<div class=\"tableCell alignRight\">" + checkJustNow(player['LastSeen']) + "</div> \
+            "<div class=\"tableCell alignRight\">" + checkJustNow(player['LastSeen']) + " ago</div> \
     </div>";
 
         $("#playersTable").append(p);
-
     }
 
     function getPlayer(ident, identValue) {
@@ -76,7 +49,11 @@
             $.each(result, function (i, player) {
                 printPlayer(player, i);
             });
-        }).done(function (data) { $(".loader").fadeOut(); });
+        }).done(function (data) {
+            $(".loader").fadeOut();
+        }).fail(function () {
+            $(".loader").fadeOut();
+        });
     }
 
     function getRecentPlayers(offset) {
@@ -88,7 +65,7 @@
                 printPlayer(player, i);
             });
         }).done(function (data) { $(".loader").fadeOut(); })
-        .error(function (data) { $(".loader").fadeOut(); })
+            .error(function (data) { $(".loader").fadeOut(); })
     }
 
     $(document).ready(function () {
@@ -114,11 +91,7 @@
 
 <div class="contentHeader table">
     <div class="contentColumn tableCell">Name</div>
-    <div class="contentColumn tableCell">Aliases</div>
-    <div class="contentColumn tableCell">IP</div>
     <div class="contentColumn tableCell">Level</div>
-    <div class="contentColumn tableCell">Connections</div>
-    <div class="contentColumn tableCell" style="width: 1em;">Chat</div>
     <div class="contentColumn tableCell alignRight">Last Seen</div>
 </div>
 <div id="playersTable">

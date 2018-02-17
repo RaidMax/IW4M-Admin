@@ -14,7 +14,7 @@ Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vD
 {
 	victim = self;
 	_attacker = attacker;
-	if (!isDefined(attacker) || !isPlayer(attacker))
+	if (!isDefined(attacker))
 		_attacker = victim;
 		
 	logPrint("ScriptKill;" + _attacker.guid + ";" + victim.guid + ";" + _attacker.origin + ";" + victim.origin + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + "\n");

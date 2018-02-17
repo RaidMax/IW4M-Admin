@@ -157,6 +157,9 @@
         }
 
         #profile_aliases_btn {
+            position: absolute;
+            top: auto;
+            margin-top: 0.7em;
             font-size: 0.5em;
             color: rgb(0, 122, 204);
             cursor: pointer;
@@ -171,6 +174,8 @@
             position: relative;
             display: none;
             top: 0.2em;
+            font-size: 0.5em;
+            line-height: 1.2em;
         }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -296,7 +301,7 @@
                 <div id="profile_info" class="text-center text-sm-left pr-4 pl-4">
                     <div id="profile_name">
                         <span class="client-name"><span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span></span>
-                        <div id="profile_aliases" class="pr-4 pb-2 mb-2 text-muted"></div>
+                        <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted"></div>
                     </div>
                     <div id="profile_level" class="text-muted">
                         <span>_</span>

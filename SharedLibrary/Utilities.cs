@@ -199,12 +199,29 @@ namespace SharedLibrary
 
         public static long ConvertLong(this string str)
         {
-            return Int64.Parse(str, System.Globalization.NumberStyles.HexNumber);
+            try
+            {
+                return Int64.Parse(str, System.Globalization.NumberStyles.HexNumber);
+            }
+
+
+            catch (FormatException)
+            {
+                return -1;
+            }
         }
 
         public static int ConvertToIP(this string str)
         {
-            return BitConverter.ToInt32(System.Net.IPAddress.Parse(str).GetAddressBytes(), 0);
+            try
+            {
+                return BitConverter.ToInt32(System.Net.IPAddress.Parse(str).GetAddressBytes(), 0);
+            }
+
+            catch (FormatException)
+            {
+                return 0;
+            }
         }
 
         public static string ConvertIPtoString(this int ip)

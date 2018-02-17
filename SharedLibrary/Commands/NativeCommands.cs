@@ -942,7 +942,7 @@ namespace SharedLibrary.Commands
                 inactiveUsers.ForEach(c => c.Level = Player.Permission.User);
                 await context.SaveChangesAsync();
             }
-                await E.Origin.Tell($"Pruned inactive {inactiveUsers.Count} privileged users");
+                await E.Origin.Tell($"Pruned {inactiveUsers.Count} inactive privileged users");
 
         }
     }

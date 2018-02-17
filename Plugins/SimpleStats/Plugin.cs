@@ -90,7 +90,7 @@ namespace StatsPlugin
 
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
-                double kdr = Math.Round(clientStats.Sum(c => c.KDR) / clientStats.Count, 2);
+                double kdr = Math.Round(kills / (double)deaths, 2);
                 double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
 
                 return new List<ProfileMeta>()

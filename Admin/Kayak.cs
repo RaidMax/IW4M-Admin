@@ -66,7 +66,7 @@ namespace IW4MAdmin
                     requestedPage.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedPage.content, Newtonsoft.Json.Formatting.Indented);
 #endif
 
-                string maxAge = requestedPage.contentType == "application/json" ? "0" : "31536000";
+                string maxAge = requestedPage.contentType == "application/json" ? "0" : "21600";
                 var headers = new HttpResponseHead()
                 {
                     Status = "200 OK",

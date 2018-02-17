@@ -132,6 +132,7 @@ namespace IW4MAdmin
             {
                 Player Leaving = Players[cNum];
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
+                Leaving.LastConnection = DateTime.UtcNow;
                 await Manager.GetClientService().Update(Leaving);
 
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
@@ -333,9 +334,6 @@ namespace IW4MAdmin
 
         async Task<int> PollPlayersAsync()
         {
-#if DEBUG
-            // return Players.Where(p => p != null).Count();
-#endif
             var CurrentPlayers = await this.GetStatusAsync();
 
             for (int i = 0; i < Players.Count; i++)
@@ -344,7 +342,6 @@ namespace IW4MAdmin
                     await RemovePlayer(i);
             }
 
-            //polledPlayer.ClientNumber < 0 || polledPlayer.ClientNumber > (Players.Count - 1) || polledPlayer.Ping < 1 || polledPlayer.Ping == 999
             for (int i = 0; i < CurrentPlayers.Count; i++)
             {
                 await AddPlayer(CurrentPlayers[i]);
@@ -586,7 +583,7 @@ namespace IW4MAdmin
             }
             LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #endif
-                Logger.WriteInfo("Log file is " + logPath);
+            Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
                 Broadcast("IW4M Admin is now ^2ONLINE");
             }
@@ -623,13 +620,7 @@ namespace IW4MAdmin
 
             else if (E.Type == Event.GType.Script)
             {
-                /* if (E.Origin == E.Target)// suicide/falling
-                     await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Target, this));
-                 else
-                 {*/
                 await ExecuteEvent(new Event(Event.GType.Kill, E.Data, E.Origin, E.Target, this));
-                //await ExecuteEvent(new Event(Event.GType.Death, E.Data, E.Target, E.Origin, this));
-                // }
             }
 
             if (E.Type == Event.GType.Say && E.Data.Length >= 2)

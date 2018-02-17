@@ -215,7 +215,7 @@ namespace IW4MAdmin
             return "/_servers";
         }
 
-        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
+        public async Task<HttpResponse> GetPage(NameValueCollection querySet, IDictionary<string, string> headers)
         {
             var info = new List<ServerInfo>();
             foreach (Server S in ApplicationManager.GetInstance().Servers)
@@ -234,8 +234,8 @@ namespace IW4MAdmin
                 };
 
                 int ip = querySet["ip"].ConvertToIP();
-                //var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
-                bool authed = true; //admins.FirstOrDefault(a => a.IPAddress == ip) != null;
+                //  var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
+                bool authed = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).IsAuthenticated(ip));//admins.FirstOrDefault(a => a.IPAddress == ip) != null;
                // if (ip == 16777343)
                 //    authed = true;
 
@@ -759,7 +759,7 @@ namespace IW4MAdmin
             };
 
             //  int ip = querySet["IP"].ConvertToIP();
-            //var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
+            var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
             //   bool authed = admins.FirstOrDefault(c => c.IPAddress == ip) != null || ip == 16777343;
             bool authed = true;
             bool recent = false;
@@ -839,9 +839,6 @@ namespace IW4MAdmin
                                 .Distinct()
                                 .ToList();
                     }
-
-                    //eachPlayer.playerAliases = eachPlayer.playerAliases.Distinct().ToList();
-                    // eachPlayer.playerIPs = eachPlayer.playerIPs.Distinct().ToList();
 
                     eachPlayer.playerConnections = pp.Connections;
                     pInfo.Add(eachPlayer);

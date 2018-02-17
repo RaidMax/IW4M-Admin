@@ -231,9 +231,6 @@ namespace IW4MAdmin
 
         public void Stop()
         {
-            // tell threads it's time to stop
-           // foreach (var status in TaskStatuses)
-            //    status.TokenSrc.Cancel();
             Running = false;
         }
 

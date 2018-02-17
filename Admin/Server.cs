@@ -81,10 +81,11 @@ namespace IW4MAdmin
                     player = client.AsPlayer();
                 }
 
-#if DEBUG
+                // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
+                player.Score = polledPlayer.Score;
+                player.CurrentServer = this;
                 Players[player.ClientNumber] = player;
-#endif
 
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId);
                 var currentBan = activePenalties.FirstOrDefault(b => b.Expires > DateTime.UtcNow);
@@ -105,11 +106,6 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                // Do the player specific stuff
-                player.ClientNumber = polledPlayer.ClientNumber;
-                player.Score = polledPlayer.Score;
-                player.CurrentServer = this;
-                Players[player.ClientNumber] = player;
                 Logger.WriteInfo($"Client {player} connecting...");
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
@@ -704,12 +700,8 @@ namespace IW4MAdmin
             // ensure player gets warned if command not performed on them in game
             if (Target.ClientNumber < 0)
             {
-                Player ingameClient = null;
-
-                ingameClient = Manager.GetServers()
-                    .Select(s => s.GetPlayersAsList())
-                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
-                    ?.First(c => c.ClientId == Target.ClientId);
+                var ingameClient = Manager.GetActiveClients()
+                    .FirstOrDefault(c => c.ClientId == Target.ClientId);
 
                 if (ingameClient != null)
                 {
@@ -748,12 +740,8 @@ namespace IW4MAdmin
             // ensure player gets kicked if command not performed on them in game
             if (Target.ClientNumber < 0)
             {
-                Player ingameClient = null;
-
-                ingameClient = Manager.GetServers()
-                    .Select(s => s.GetPlayersAsList())
-                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
-                    ?.First(c => c.ClientId == Target.ClientId);
+                var ingameClient = Manager.GetActiveClients()
+                     .FirstOrDefault(c => c.ClientId == Target.ClientId);
 
                 if (ingameClient != null)
                 {
@@ -788,12 +776,8 @@ namespace IW4MAdmin
             // ensure player gets banned if command not performed on them in game
             if (Target.ClientNumber < 0)
             {
-                Player ingameClient = null;
-
-                ingameClient = Manager.GetServers()
-                    .Select(s => s.GetPlayersAsList())
-                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
-                    ?.First(c => c.ClientId == Target.ClientId);
+               var ingameClient = Manager.GetActiveClients()
+                    .FirstOrDefault(c => c.ClientId == Target.ClientId);
 
                 if (ingameClient != null)
                 {

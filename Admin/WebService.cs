@@ -235,7 +235,7 @@ namespace IW4MAdmin
 
                 int ip = querySet["ip"].ConvertToIP();
                 //  var admins = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).GetPrivilegedClients());
-                bool authed = (await (ApplicationManager.GetInstance().GetClientService() as ClientService).IsAuthenticated(ip));//admins.FirstOrDefault(a => a.IPAddress == ip) != null;
+                bool authed = true; //(await (ApplicationManager.GetInstance().GetClientService() as ClientService).IsAuthenticated(ip));//admins.FirstOrDefault(a => a.IPAddress == ip) != null;
                // if (ip == 16777343)
                 //    authed = true;
 

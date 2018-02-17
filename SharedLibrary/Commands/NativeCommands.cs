@@ -252,7 +252,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddress);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddressString);
             await E.Origin.Tell(You);
         }
     }
@@ -906,7 +906,7 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            await E.Origin.Tell($"Your external IP is ^5{E.Origin.IPAddress}");
+            await E.Origin.Tell($"Your external IP is ^5{E.Origin.IPAddressString}");
         }
     }
 

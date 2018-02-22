@@ -55,8 +55,9 @@ namespace SharedLibrary.Services
                 {
                     Active = true,
                     // set the level to the level of the existing client if they have the same IP + Name but new NetworkId
+                    // fixme: issues?
                     Level = hasExistingAlias ?
-                        context.Clients.First(c => c.CurrentAliasId == existingAlias.AliasId).Level :
+                        context.Clients.First(c => c.AliasLinkId== existingAlias.LinkId).Level :
                         Player.Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,

@@ -254,7 +254,7 @@ namespace SharedLibrary
         {
             Maps = new List<Map>();
 
-            IFile mapfile = new IFile("config/maps.cfg");
+            IFile mapfile = new IFile($"{Utilities.OperatingDirectory}config/maps.cfg");
             String[] _maps = mapfile.ReadAllLines();
             mapfile.Close();
             if (_maps.Length > 2) // readAll returns minimum one empty string
@@ -281,7 +281,7 @@ namespace SharedLibrary
         {
             BroadcastMessages = new List<String>();
 
-            IFile messageCFG = new IFile("config/messages.cfg");
+            IFile messageCFG = new IFile($"{Utilities.OperatingDirectory}config/messages.cfg");
             String[] lines = messageCFG.ReadAllLines();
             messageCFG.Close();
 
@@ -319,7 +319,7 @@ namespace SharedLibrary
         {
             Rules = new List<String>();
 
-            IFile ruleFile = new IFile("config/rules.cfg");
+            IFile ruleFile = new IFile($"{Utilities.OperatingDirectory}config/rules.cfg");
             String[] _rules = ruleFile.ReadAllLines();
             ruleFile.Close();
             if (_rules.Length > 2) // readAll returns minimum one empty string

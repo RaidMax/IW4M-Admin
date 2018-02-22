@@ -591,7 +591,7 @@ namespace IW4MAdmin
         {
             if (E.Type == Event.GType.Connect)
             {
-                ChatHistory.Add(new Chat(E.Origin.Name, "<i>CONNECTED</i>", DateTime.Now));
+                ChatHistory.Add(new Chat(E.Origin.Name, "CONNECTED", DateTime.Now));
 
                 if (E.Origin.Level > Player.Permission.Moderator)
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
@@ -611,7 +611,7 @@ namespace IW4MAdmin
 
             else if (E.Type == Event.GType.Disconnect)
             {
-                ChatHistory.Add(new Chat(E.Origin.Name, "<i>DISCONNECTED</i>", DateTime.Now));
+                ChatHistory.Add(new Chat(E.Origin.Name, "DISCONNECTED", DateTime.Now));
             }
 
             else if (E.Type == Event.GType.Script)
@@ -749,8 +749,10 @@ namespace IW4MAdmin
                     return;
                 }
             }
+#if !DEBUG
             else
                 await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Kicked: ^5{Reason}^7\"");
+#endif
 
 #if DEBUG
             await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
@@ -776,8 +778,8 @@ namespace IW4MAdmin
             // ensure player gets banned if command not performed on them in game
             if (Target.ClientNumber < 0)
             {
-               var ingameClient = Manager.GetActiveClients()
-                    .FirstOrDefault(c => c.ClientId == Target.ClientId);
+                var ingameClient = Manager.GetActiveClients()
+                     .FirstOrDefault(c => c.ClientId == Target.ClientId);
 
                 if (ingameClient != null)
                 {

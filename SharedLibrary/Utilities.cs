@@ -7,11 +7,15 @@ using System.Collections.Generic;
 
 using SharedLibrary.Objects;
 using static SharedLibrary.Server;
+using System.Reflection;
+using System.IO;
 
 namespace SharedLibrary
 {
     public static class Utilities
     {
+        public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+
         //Get string with specified number of spaces -- really only for visual output
         public static String GetSpaces(int Num)
         {

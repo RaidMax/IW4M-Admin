@@ -11,7 +11,6 @@ using SharedLibrary.Interfaces;
 using SharedLibrary.Services;
 using StatsPlugin.Helpers;
 using StatsPlugin.Models;
-using StatsPlugin.Pages;
 
 namespace StatsPlugin
 {
@@ -42,7 +41,7 @@ namespace StatsPlugin
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case Event.GType.Say:
-                    if (E.Data != string.Empty)
+                    if (E.Data != string.Empty && E.Data.Trim().Length > 0)
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case Event.GType.MapChange:
@@ -158,9 +157,9 @@ namespace StatsPlugin
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
             manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
 
-            WebService.PageList.Add(new ClientMessageJson());
-            WebService.PageList.Add(new ClientMessages());
-            WebService.PageList.Add(new LiveStats());
+           // WebService.PageList.Add(new ClientMessageJson());
+            //WebService.PageList.Add(new ClientMessages());
+            //WebService.PageList.Add(new LiveStats());
 
             ServerManager = manager;
 

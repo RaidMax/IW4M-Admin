@@ -1,0 +1,39 @@
+﻿@model SharedLibrary.Dtos.ServerInfo
+
+@{
+    Layout = null;
+    int half = (int)Math.Ceiling(Model.ClientCount / 2.0);
+}
+<div class="col-12 col-md-8 d-none d-md-block">
+    @{
+        for (int i = 0; i < half && i < Model.ChatHistory.Count; i++)
+        {
+            string message = "&ndash; " + @Model.ChatHistory[i].Message;
+            if (Model.ChatHistory[i].Message == "CONNECTED")
+                message = "<span class='oi oi-account-login text-success'></span>";
+            else if (Model.ChatHistory[i].Message == "DISCONNECTED")
+                message = "<span class='oi oi-account-logout text-danger'></span>";
+            <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId }, new { @class = "text-muted" })  @Html.Raw(@message)</span><br/>
+        }
+    }
+</div>
+<div class="col-md-4">
+    <div class="row">
+        <div class="col-6 text-left text-md-right">
+            @{
+                for (int i = 0; i < half; i++)
+                {
+                    <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId })</span><br />
+                }
+            }
+        </div>
+        <div class="col-6 text-right">
+            @{
+                for (int i = half; i < Model.ClientCount; i++)
+                {
+                    <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId })</span><br />
+                }
+            }
+        </div>
+    </div>
+</div>

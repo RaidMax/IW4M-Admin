@@ -5,20 +5,26 @@ using SharedLibrary;
 using System.Threading.Tasks;
 using System.IO;
 using SharedLibrary.Objects;
+using System.Reflection;
 
 #if DEBUG
 using SharedLibrary.Database;
 #endif
 
+
 namespace IW4MAdmin
 {
-    class Program
+    public class Program
     {
+        [DllImport("kernel32.dll")]
+        public static extern bool AllocConsole();
         static public double Version { get; private set; }
-        static private ApplicationManager ServerManager;
+        static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
+        public static string OperatingDirectory =  Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
             System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
 
             Version = 1.6;
@@ -39,8 +45,11 @@ namespace IW4MAdmin
                 ServerManager = ApplicationManager.GetInstance();
                 ServerManager.Init();
 
+
                 Task.Run(() =>
                 {
+                    ServerManager.Start();
+                    /*
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
 
@@ -59,7 +68,7 @@ namespace IW4MAdmin
                         ServerManager.Servers[0].ExecuteEvent(E);
                         Console.Write('>');
 
-                    } while (ServerManager.Running);
+                    } while (ServerManager.Running);*/
                 });
 
             }
@@ -74,7 +83,7 @@ namespace IW4MAdmin
 
             try
             {
-                ServerManager.Start();
+       
             }
 
             catch (Exception e)
@@ -105,26 +114,27 @@ namespace IW4MAdmin
 
         static void CheckDirectories()
         {
-            if (!Directory.Exists("Lib"))
+            string curDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+            if (!Directory.Exists($"{curDirectory}Lib"))
                 throw new Exception("Lib folder does not exist");
 
-            if (!Directory.Exists("Config"))
+            if (!Directory.Exists($"{curDirectory}Config"))
             {
                 Console.WriteLine("Warning: Config folder does not exist");
-                Directory.CreateDirectory("Config");
+                Directory.CreateDirectory($"{curDirectory}Config");
             }
 
-            if (!Directory.Exists("Config/Servers"))
-                Directory.CreateDirectory("Config/Servers");
+            if (!Directory.Exists($"{curDirectory}Config/Servers"))
+                Directory.CreateDirectory($"{curDirectory}Config/Servers");
 
-            if (!Directory.Exists("Logs"))
-                Directory.CreateDirectory("Logs");
+            if (!Directory.Exists($"{curDirectory}Logs"))
+                Directory.CreateDirectory($"{curDirectory}Logs");
 
-            if (!Directory.Exists("Database"))
-                Directory.CreateDirectory("Database");
+            if (!Directory.Exists($"{curDirectory}Database"))
+                Directory.CreateDirectory($"{curDirectory}Database");
 
-            if (!Directory.Exists("Plugins"))
-                Directory.CreateDirectory("Plugins");
+            if (!Directory.Exists($"{curDirectory}Plugins"))
+                Directory.CreateDirectory($"{curDirectory}Plugins");
         }
     }
 }

@@ -1,0 +1,77 @@
+﻿@{
+    Layout = null;
+}
+
+@model SharedLibrary.Dtos.PenaltyInfo
+
+<tr class="d-table-row d-md-none bg-dark">
+    <th scope="row" class="bg-primary">Name</th>
+    <td>
+        @Html.ActionLink(Model.OffenderName, "ProfileAsync", "Client", new { id = Model.OffenderId }, new { @class = "link-inverse" })
+    </td>
+</tr>
+
+<tr class="d-table-row d-md-none bg-dark">
+    <th scope="row" class="bg-primary">Type</th>
+    <td class="penalties-color-@Model.Type.ToLower()">
+        @Model.Type
+    </td>
+</tr>
+
+<tr class="d-table-row d-md-none bg-dark">
+    <th scope="row" class="bg-primary">Offense</th>
+    <td class="text-light">
+        @Model.Offense
+    </td>
+</tr>
+
+<tr class="d-table-row d-md-none bg-dark">
+    <th scope="row" class="bg-primary">Admin</th>
+    <td>
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "link-inverse" })
+    </td>
+</tr>
+
+<tr class="d-table-row d-md-none bg-dark">
+    <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">Time/Left</th>
+    <td class="text-light mb-2  border-bottom">
+        @{
+            if (Model.TimeRemaining == string.Empty)
+            {
+                <span>@Model.TimePunished ago</span>
+            }
+            else
+            {
+                <span> @Model.TimeRemaining left</span>
+            }
+        }
+    </td>
+</tr>
+
+
+<tr class="d-none d-md-table-row">
+    <td>
+        @Html.ActionLink(Model.OffenderName, "ProfileAsync", "Client", new { id = Model.OffenderId }, new { @class = "link-inverse" })
+    </td>
+    <td class="penalties-color-@Model.Type.ToLower()">
+        @Model.Type
+    </td>
+    <td class="text-light">
+        @Model.Offense
+    </td>
+    <td>
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "link-inverse" })
+    </td>
+    <td class="text-right text-light">
+        @{
+            if (Model.TimeRemaining == string.Empty)
+            {
+                <span>@Model.TimePunished ago</span>
+            }
+            else
+            {
+                <span> @Model.TimeRemaining left</span>
+            }
+        }
+    </td>
+</tr>

@@ -14,7 +14,7 @@ namespace SharedLibrary.Helpers
         {
             try
             {
-                ConfigSet = Interfaces.Serialize<ConcurrentDictionary<string, dynamic>>.Read($"config/plugins_{S.ToString()}.cfg");
+                ConfigSet = Interfaces.Serialize<ConcurrentDictionary<string, dynamic>>.Read($"{Utilities.OperatingDirectory}config/plugins_{S.ToString()}.cfg");
             }
 
             catch (Exception)
@@ -29,7 +29,7 @@ namespace SharedLibrary.Helpers
 
         private void SaveChanges()
         {
-            Interfaces.Serialize<ConcurrentDictionary<string, dynamic>>.Write($"config/plugins_{ServerInstance.ToString()}.cfg", ConfigSet);
+            Interfaces.Serialize<ConcurrentDictionary<string, dynamic>>.Write($"{Utilities.OperatingDirectory}config/plugins_{ServerInstance.ToString()}.cfg", ConfigSet);
         }
 
         public void AddProperty(KeyValuePair<string, dynamic> prop)

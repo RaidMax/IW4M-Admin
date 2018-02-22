@@ -8,9 +8,12 @@ using SharedLibrary.Database.Models;
 using System.Data.SqlServerCe;
 using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Reflection;
+using System.Data.Entity.Infrastructure;
+using System.Data.Entity.SqlServerCompact;
 
 namespace SharedLibrary.Database
 {
+
     public class DatabaseContext : DbContext
     {
         public DbSet<EFClient> Clients { get; set; }
@@ -47,7 +50,7 @@ namespace SharedLibrary.Database
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
 
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
-            foreach (string dllPath in System.IO.Directory.GetFiles($"{Environment.CurrentDirectory}{System.IO.Path.DirectorySeparatorChar}Plugins"))
+            foreach (string dllPath in System.IO.Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
             {
                 Assembly library;
                 try

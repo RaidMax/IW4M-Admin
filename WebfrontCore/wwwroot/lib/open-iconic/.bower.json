@@ -1,0 +1,31 @@
+{
+  "name": "open-iconic",
+  "description": "An open source icon set in SVG, webfont and raster formats",
+  "version": "1.1.1",
+  "license": [
+    "MIT",
+    "OFL-1.1"
+  ],
+  "homepage": "https://useiconic.com/open",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/iconic/open-iconic.git"
+  },
+  "main": [
+    "./sprite/open-iconic.min.svg"
+  ],
+  "ignore": [
+    "*.json",
+    "*.md"
+  ],
+  "_release": "1.1.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.1.1",
+    "commit": "5f154e7a1482b54d91443142b7b3c747be4b3b64"
+  },
+  "_source": "https://github.com/iconic/open-iconic.git",
+  "_target": "1.1.1",
+  "_originalSource": "open-iconic",
+  "_direct": true
+}

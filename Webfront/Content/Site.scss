@@ -1,0 +1,19 @@
+﻿@import 'bootstrap/bootstrap.scss';
+/* bootstrap overrides */
+
+.navbar-nav .nav-link:hover {
+    background-color: $body-bg;
+}
+
+nav.navbar-dark {
+    border-bottom: 1px solid $secondary;
+}
+
+
+a.nav-link {
+    padding: $spacer * 1.5;
+}
+
+.container {
+    margin-top: 90px;
+}

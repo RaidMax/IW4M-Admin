@@ -13,7 +13,7 @@ namespace SharedLibrary
 
         public override string Filename()
         {
-            return $"config/servers/{IP}_{Port}.cfg";
+            return $"{Utilities.OperatingDirectory}config/servers/{IP}_{Port}.cfg";
         }
     }
 }

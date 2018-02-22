@@ -1,0 +1,11 @@
+﻿@{
+    Layout = null;
+}
+@model IEnumerable<SharedLibrary.Dtos.ServerInfo>
+
+@{
+    foreach (var s in Model)
+    {
+        Html.RenderPartial("../Server/_Server", s);
+    }
+}

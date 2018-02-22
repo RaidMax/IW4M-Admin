@@ -1,0 +1,175 @@
+﻿
+.level-color-user, .level-color-guest {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.level-bgcolor-user, .level-bgcolor-guest {
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+.level-color-trusted, .level-color-user {
+    color: rgba(116,147,99,1);
+}
+
+.level-bgcolor-trusted, .level-bgcolor-user {
+    background-color: rgba(116,147,99,1);
+}
+
+.level-color-flagged {
+    color: rgba(253, 139, 22, 0.85);
+}
+
+.level-bgcolor-flagged {
+    background-color: rgba(253, 139, 22, 0.85);
+}
+
+.level-color-banned {
+    color: rgba(255, 69, 69, 0.85);
+}
+
+.level-bgcolor-banned {
+    background-color: rgba(255, 69, 69, 0.85);
+}
+
+.level-color-moderator {
+    color: rgba(235, 211, 101, 0.75);
+}
+
+.level-bgcolor-moderator {
+    background-color: rgba(235, 211, 101, 0.75);
+}
+
+.level-color-administrator {
+    color: rgba(236, 130, 222, 0.69);
+}
+
+.level-bgcolor-administrator {
+    background-color: rgba(236, 130, 222, 0.69);
+}
+
+.level-color-senioradmin {
+    color: rgba(50, 177, 185, 0.85);
+}
+
+.level-bgcolor-senioradmin {
+    background-color: rgba(50, 177, 185, 0.85);
+}
+
+.level-color-owner {
+    color: rgb(0, 122, 204);
+}
+
+.level-bgcolor-owner {
+    background-color: rgb(0, 122, 204);
+}
+
+.profile-meta-title {
+    color: white;
+}
+
+.profile-meta-entry {
+    font-size: 1.5em;
+}
+
+.penalties-color-kick,
+.penalties-color-unban {
+    color: rgba(116, 147, 99, 1);
+}
+
+.penalties-color-report {
+    color: rgba(116, 147, 99, 1);
+}
+
+.penalties-color-warning {
+    color: rgba(235, 211, 101, 0.75);
+}
+
+.penalties-color-tempban {
+    color: rgba(253, 139, 22, 0.85);
+}
+
+.penalties-color-flag {
+    color: rgba(253, 139, 22, 0.85);
+}
+
+.penalties-color-ban {
+    color: rgba(255, 69, 69, 0.85);
+}
+
+#profile_aliases_btn {
+    position: absolute;
+    top: auto;
+    margin-top: 0.7em;
+    font-size: 0.5em;
+    color: rgb(0, 122, 204);
+    cursor: pointer;
+}
+
+    #profile_aliases_btn:hover {
+        color: white;
+        cursor: pointer;
+    }
+
+#profile_aliases {
+    position: relative;
+    display: none;
+    top: 0.2em;
+    font-size: 0.5em;
+    line-height: 1.2em;
+}
+
+#profile_avatar {
+    height: 200px;
+    width: 200px;
+}
+
+.profile-shortcode {
+    font-size: 150pt;
+    line-height: 11rem;
+    color: white;
+}
+
+#profile_level > span.level {
+    color: rgba(236, 130, 222, 0.69);
+    font-weight: bold;
+    font-size: 1.5em;
+    line-height: 1.4em;
+}
+
+#profile_wrapper {
+    border-bottom: 2px rgb(0, 122, 204) solid;
+}
+
+#profile_level > span.level {
+    color: rgba(236, 130, 222, 0.69);
+    font-weight: bold;
+    font-size: 1.5em;
+    line-height: 1.4em;
+}
+
+#profile_wrapper {
+    border-bottom: 2px rgb(0, 122, 204) solid;
+}
+
+#profile_name {
+    font-size: 4em;
+    margin-top: -2rem;
+}
+
+#profile_info > .text-muted {
+    font-size: 1.5em;
+    line-height: 2.25rem;
+}
+
+#profile_aliases_btn {
+    position: absolute;
+    top: auto;
+    margin-top: 2.25rem;
+    font-size: 0.5em;
+    color: rgb(0,122,204);
+}
+
+    #profile_aliases_btn:hover {
+        color: white;
+        cursor: pointer;
+    }

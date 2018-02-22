@@ -1,0 +1,20 @@
+﻿@model Dictionary<SharedLibrary.Objects.Player.Permission, IList<SharedLibrary.Dtos.ClientInfo>>
+<h3 class="pb-2 text-center ">@ViewBag.Title</h3>
+
+<div class="row border-bottom">
+    @{
+        foreach (var key in Model.Keys)
+        {
+            <div class="col-12 bg-primary pt-2 pb-2">
+                @key.ToString()
+            </div>
+
+            <div class="col-12 bg-dark pt-2 pb-2">
+                @foreach (var client in Model[key])
+                {
+                    <span>@Html.ActionLink(client.Name, "profileasync", "client", new { id = client.ClientId }, new { @class = "text-light" })</span><br />
+                }
+            </div>
+        }
+    }
+</div>

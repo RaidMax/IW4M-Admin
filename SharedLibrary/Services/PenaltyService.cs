@@ -144,7 +144,7 @@ namespace SharedLibrary.Services
                                       select new ProfileMeta()
                                       {
                                           Key = "Event.Penalty",
-                                          Value = new ProfilePenalty
+                                          Value = new PenaltyInfo
                                           {
                                               OffenderName = victimAlias.Name,
                                               OffenderId = victimClient.ClientId,
@@ -175,7 +175,7 @@ namespace SharedLibrary.Services
                                       select new ProfileMeta()
                                       {
                                           Key = "Event.Penalty",
-                                          Value = new ProfilePenalty
+                                          Value = new PenaltyInfo
                                           {
                                               OffenderName = victimAlias.Name,
                                               OffenderId = victimClient.ClientId,

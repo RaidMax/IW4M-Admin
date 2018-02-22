@@ -1,0 +1,24 @@
+﻿<h3 class="pb-2 text-center ">@ViewBag.Title</h3>
+<div class="row">
+    <table class="table table-striped">
+        <thead class="d-none d-md-table-header-group">
+            <tr class="bg-primary pt-2 pb-2">
+                <th scope="col">Name</th>
+                <th scope="col">Type</th>
+                <th scope="col">Offense</th>
+                <th scope="col">Admin</th>
+                <th scope="col" class="text-right">Time/Left</th>
+            </tr>
+        </thead>
+        <tbody id="penalty_table" class="border-bottom bg-dark">
+            @await Component.InvokeAsync("PenaltyList", new { offset = 0 })
+        </tbody>
+    </table>
+    <table class="table d-table d-md-none">
+        <tbody></tbody>
+    </table>
+</div>
+
+@section scripts {
+    <script type="text/javascript" src="~/js/penalty.js"></script>
+}

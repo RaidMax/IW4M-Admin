@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>StatsPlugin</RootNamespace>
     <AssemblyName>StatsPlugin</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -56,6 +56,33 @@
     <OutputPath>bin\x86\Release-Stable\</OutputPath>
     <Optimize>true</Optimize>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-Nightly|x64'">
+    <OutputPath>bin\x64\Release-Nightly\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-Stable|x64'">
+    <OutputPath>bin\x64\Release-Stable\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -81,11 +108,11 @@
     <Compile Include="Models\EFServer.cs" />
     <Compile Include="Models\EFClientStatistics.cs" />
     <Compile Include="Models\EFServerStatistics.cs" />
-    <Compile Include="Pages\ClientMessages.cs" />
-    <Compile Include="Pages\ClientMessageJson.cs" />
-    <Compile Include="Pages\LiveStats.cs" />
-    <Compile Include="Pages\LiveStatsJson.cs" />
-    <Compile Include="Pages\WordCloudJson.cs" />
+    <None Include="Pages\ClientMessages.cs" />
+    <None Include="Pages\ClientMessageJson.cs" />
+    <None Include="Pages\LiveStats.cs" />
+    <None Include="Pages\LiveStatsJson.cs" />
+    <None Include="Pages\WordCloudJson.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

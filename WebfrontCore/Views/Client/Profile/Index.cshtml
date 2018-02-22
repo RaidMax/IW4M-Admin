@@ -1,0 +1,56 @@
+﻿@model SharedLibrary.Dtos.PlayerInfo
+
+<div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-4">
+    <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
+        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.Level.ToLower()">
+            <span class="profile-shortcode">@Model.Name[0].ToString().ToUpper()</span>
+        </div>
+    </div>
+    <div id="profile_info" class="text-center text-sm-left pr-4 pl-4">
+        <div id="profile_name">
+            <span class="client-name">@Model.Name<span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span></span>
+            <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted">
+                @{
+                    foreach (string alias in Model.Aliases)
+                    {
+                        @alias <br />
+                    }
+                }
+            </div>
+        </div>
+        <div id="profile_level" class="text-muted">
+            <span class="level-color-@Model.Level.ToLower()">@Model.Level</span>
+        </div>
+        <div id="profile_time_played" class="text-muted">
+            Played <span class="text-primary">@Model.TimePlayed</span> hours
+        </div>
+        <div id="profile_first_seen" class="text-muted">
+            First seen <span class="text-primary">@Model.FirstSeen</span> ago
+        </div>
+        <div id="profile_last_seen" class="text-muted">
+            Last seen <span class="text-primary">@Model.LastSeen</span> ago
+        </div>
+    </div>
+    <div id="profile_meta" class="text-center text-sm-right pt-2">
+     
+    </div>
+</div>
+<div class="row d-md-flex pt-4">
+    <div id="profile_events" class="text-muted text-left ml-sm-0">
+        @{
+            if (Model.Meta.Count == 0)
+            {
+                <span> No recent events</span>
+            }
+        }
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const clientInfo = {};
+        clientInfo.clientId = @Model.ClientId;
+        clientInfo.Meta =@Html.Raw(Json.Serialize(@Model.Meta));
+    </script>
+    <script type="text/javascript" src="~/js/profile.js"></script>
+}

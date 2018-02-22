@@ -1,0 +1,11 @@
+﻿@{ 
+    Layout = null; 
+}
+@model List<SharedLibrary.Dtos.PenaltyInfo>
+
+@{
+    foreach (var penalty in Model)
+    {
+        Html.RenderPartial("_Penalty", penalty);
+    }
+}

@@ -1,0 +1,20 @@
+﻿
+@model SharedLibrary.Dtos.ServerInfo
+
+@{
+    Layout = null;
+}
+
+<div class="row server-header">
+    <div class="col-md-4 bg-primary text-center  text-md-left">@Model.Name</div>
+    <div class="text-center col-md-4 bg-primary">@Model.Map</div>
+    <div class="text-center text-md-right col-md-4 bg-primary">@Model.ClientCount/@Model.MaxClients</div>
+</div>
+
+<div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity pt-2 pb-2">
+    @Html.Partial("../Server/_ClientActivity", Model)
+</div>
+
+<div class="row server-history mb-4">
+    <div class="server-history-row col-md-12" id="server_history_@Model.ID" data-serverid="@Model.ID" data-clienthistory='@Html.Raw(Json.Serialize(Model.PlayerHistory))'></div>
+</div>

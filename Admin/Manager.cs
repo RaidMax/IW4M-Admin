@@ -17,7 +17,7 @@ using SharedLibrary.Services;
 
 namespace IW4MAdmin
 {
-    class ApplicationManager : IManager
+    public class ApplicationManager : IManager
     {
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
@@ -28,7 +28,7 @@ namespace IW4MAdmin
         List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
         List<MessageToken> MessageTokens;
-        WebService WebSvc;
+        //WebService WebSvc;
         Thread WebThread;
         ClientService ClientSvc;
         AliasService AliasSvc;
@@ -41,7 +41,7 @@ namespace IW4MAdmin
 
         private ApplicationManager()
         {
-            Logger = new Logger("Logs/IW4MAdmin.log");
+            Logger = new Logger($@"{SharedLibrary.Utilities.OperatingDirectory}Logs{Path.DirectorySeparatorChar}IW4MAdmin.log");
             _servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
@@ -69,9 +69,9 @@ namespace IW4MAdmin
         public void Init()
         {
             #region WEBSERVICE
-            SharedLibrary.WebService.Init();
-            WebSvc = new WebService();
-            WebSvc.StartScheduler();
+           // SharedLibrary.WebService.Init();
+            //WebSvc = new WebService();
+            //WebSvc.StartScheduler();
             #endregion
 
             #region PLUGINS
@@ -94,7 +94,7 @@ namespace IW4MAdmin
             #endregion
 
             #region CONFIG
-            var Configs = Directory.EnumerateFiles("config/servers").Where(x => x.Contains(".cfg"));
+            var Configs = Directory.EnumerateFiles($"{Program.OperatingDirectory}config/servers").Where(x => x.Contains(".cfg"));
 
             if (Configs.Count() == 0)
                 ServerConfigurationGenerator.Generate();
@@ -224,8 +224,8 @@ namespace IW4MAdmin
                 S.Broadcast("^1IW4MAdmin going offline!");
 #endif
             _servers.Clear();
-            WebSvc.WebScheduler.Stop();
-            WebSvc.SchedulerThread.Join();
+            //WebSvc.WebScheduler.Stop();
+            //WebSvc.SchedulerThread.Join();
         }
 
 

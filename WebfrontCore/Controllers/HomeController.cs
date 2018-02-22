@@ -12,6 +12,7 @@ namespace WebfrontCore.Controllers
     {
         public IActionResult Index()
         {
+            ViewBag.Title = "Server Overview";
             return View();
         }
 

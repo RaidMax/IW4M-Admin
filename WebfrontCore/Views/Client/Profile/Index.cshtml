@@ -1,14 +1,14 @@
 ﻿@model SharedLibrary.Dtos.PlayerInfo
 
-<div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-4">
+<div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
         <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.Level.ToLower()">
             <span class="profile-shortcode">@Model.Name[0].ToString().ToUpper()</span>
         </div>
     </div>
-    <div id="profile_info" class="text-center text-sm-left pr-4 pl-4">
+    <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
         <div id="profile_name">
-            <span class="client-name">@Model.Name<span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span></span>
+            <h1><span class="client-name">@Model.Name<span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span></span></h1>
             <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted">
                 @{
                     foreach (string alias in Model.Aliases)
@@ -18,8 +18,8 @@
                 }
             </div>
         </div>
-        <div id="profile_level" class="text-muted">
-            <span class="level-color-@Model.Level.ToLower()">@Model.Level</span>
+        <div id="profile_level" class="text-muted  mb-2">
+            <h5><span class="level-color-@Model.Level.ToLower()"><strong>@Model.Level</strong></span></h5>
         </div>
         <div id="profile_time_played" class="text-muted">
             Played <span class="text-primary">@Model.TimePlayed</span> hours
@@ -31,11 +31,11 @@
             Last seen <span class="text-primary">@Model.LastSeen</span> ago
         </div>
     </div>
-    <div id="profile_meta" class="text-center text-sm-right pt-2">
+    <div id="profile_meta" class="text-center text-sm-right pt-2 mt-md-4 pt-md-3">
      
     </div>
 </div>
-<div class="row d-md-flex pt-4">
+<div class="row d-md-flex pt-2">
     <div id="profile_events" class="text-muted text-left ml-sm-0">
         @{
             if (Model.Meta.Count == 0)

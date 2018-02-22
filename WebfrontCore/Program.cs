@@ -16,7 +16,11 @@ namespace WebfrontCore
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseStartup<Startup>()
-                .UseUrls("http://192.168.1.27:5000;http://server.nbsclan.org:8080")
+#if !DEBUG
+                .UseUrls("http://server.nbsclan.org:8080")
+#else
+                .UseUrls("http://192.168.88.254:5000")
+#endif
                 .Build();
 
             host.Run();

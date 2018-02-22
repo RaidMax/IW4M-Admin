@@ -28,7 +28,7 @@ namespace WebfrontCore.ViewComponents
                     Name = p.Name,
                     ClientId = p.ClientId
                 }).ToList(),
-                ChatHistory = s.ChatHistory
+                ChatHistory = s.ChatHistory.ToArray()
             }).ToList();
             return View("_List", serverInfo);
         }

@@ -1,5 +1,5 @@
 ﻿@model Dictionary<SharedLibrary.Objects.Player.Permission, IList<SharedLibrary.Dtos.ClientInfo>>
-<h3 class="pb-2 text-center ">@ViewBag.Title</h3>
+<h4 class="pb-2 text-center ">@ViewBag.Title</h4>
 
 <div class="row border-bottom">
     @{
@@ -12,7 +12,7 @@
             <div class="col-12 bg-dark pt-2 pb-2">
                 @foreach (var client in Model[key])
                 {
-                    <span>@Html.ActionLink(client.Name, "profileasync", "client", new { id = client.ClientId }, new { @class = "text-light" })</span><br />
+                    <span>@Html.ActionLink(client.Name, "profileasync", "client", new { id = client.ClientId }, new { @class = "" })</span><br />
                 }
             </div>
         }

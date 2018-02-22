@@ -71,7 +71,10 @@ function refreshClientActivity() {
     $('.server-history-row').each(function (index) {
         let serverId = $(this).data("serverid");
 
-        $.get("/server/clientactivity/" + serverId)
+        $.get({
+            url: "/server/clientactivity/" + serverId,
+            cache: false
+        })
             .done(function (response) {
                 $('#server_clientactivity_' + serverId).html(response);
             })

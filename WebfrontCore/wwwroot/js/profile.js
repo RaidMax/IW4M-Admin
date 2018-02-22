@@ -3,7 +3,7 @@
 	Expand alias tab if they have any
 	*/
     $('#profile_aliases_btn').click(function (e) {
-        const aliases = $('#profile_aliases').text();
+        const aliases = $('#profile_aliases').text().trim();
         if (aliases && aliases.length !== 0) {
             $('#profile_aliases').slideToggle(150);
         }
@@ -66,6 +66,13 @@ $(document).ready(function () {
                 count++;
             }
             count++;
+        }
+    });
+
+    $.each(clientInfo.Meta, function (index, meta) {
+        if (!meta.key.includes("Event")) {
+            let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-primary">${meta.value}</span><span class="profile-meta-title text-muted"> ${meta.key}</span></div>`;
+            $("#profile_meta").append(metaString);
         }
     });
 

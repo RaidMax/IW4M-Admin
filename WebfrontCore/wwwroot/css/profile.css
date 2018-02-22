@@ -68,7 +68,7 @@
 }
 
 .profile-meta-entry {
-    font-size: 1.5em;
+
 }
 
 .penalties-color-kick,
@@ -113,19 +113,17 @@
 #profile_aliases {
     position: relative;
     display: none;
-    top: 0.2em;
-    font-size: 0.5em;
-    line-height: 1.2em;
+  
 }
 
 #profile_avatar {
-    height: 200px;
-    width: 200px;
+    height: 10.5rem;
+    width: 10.5rem;
 }
 
 .profile-shortcode {
-    font-size: 150pt;
-    line-height: 11rem;
+    font-size: 10.5rem;
+    line-height: 10.5rem;
     color: white;
 }
 
@@ -142,9 +140,7 @@
 
 #profile_level > span.level {
     color: rgba(236, 130, 222, 0.69);
-    font-weight: bold;
-    font-size: 1.5em;
-    line-height: 1.4em;
+    font-weight: bold; 
 }
 
 #profile_wrapper {
@@ -152,24 +148,9 @@
 }
 
 #profile_name {
-    font-size: 4em;
-    margin-top: -2rem;
+  
 }
 
 #profile_info > .text-muted {
-    font-size: 1.5em;
-    line-height: 2.25rem;
+  
 }
-
-#profile_aliases_btn {
-    position: absolute;
-    top: auto;
-    margin-top: 2.25rem;
-    font-size: 0.5em;
-    color: rgb(0,122,204);
-}
-
-    #profile_aliases_btn:hover {
-        color: white;
-        cursor: pointer;
-    }

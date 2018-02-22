@@ -6,6 +6,7 @@
     <AssemblyName>WebfrontCore</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>WebfrontCore</PackageId>
+    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

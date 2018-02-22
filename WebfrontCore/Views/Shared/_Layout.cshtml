@@ -9,6 +9,10 @@
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
         <link rel="stylesheet" href="~/lib/open-iconic/font/css/open-iconic-bootstrap.css" />
     </environment>
+    <environment names="Production">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="~/lib/open-iconic/font/css/open-iconic-bootstrap.min.css" />
+    </environment>
 </head>
 <body>
     <header>
@@ -24,7 +28,7 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
-                   <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />
+                    <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />
                 </form>
             </div>
         </nav>
@@ -38,6 +42,11 @@
         <script type="text/javascript" src="~/lib/jQuery/dist/jquery.js"></script>
         <script type="text/javascript" src="~/lib/popper.js/dist/popper.js"></script>
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+    </environment>
+    <environment names="Production">
+        <script type="text/javascript" src="~/lib/jQuery/dist/jquery.min.js"></script>
+        <script type="text/javascript" src="~/lib/popper.js/dist/popper.min.js"></script>
+        <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
     </environment>
     @RenderSection("scripts", required: false)
 </body>

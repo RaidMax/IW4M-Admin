@@ -169,7 +169,7 @@ namespace SharedLibrary.Commands
         public override async Task ExecuteAsync(Event E)
         {
             String Message = Utilities.RemoveWords(E.Data, 1).Trim();
-            var length = E.Data.Split(' ')[0].ParseTimespan();
+            var length = E.Data.Split(' ')[0].ToLower().ParseTimespan();
 
             if (E.Origin.Level > E.Target.Level)
             {

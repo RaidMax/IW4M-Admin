@@ -11,6 +11,7 @@ namespace WebfrontCore.Controllers
     {
  
         [HttpGet]
+        [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult  ClientActivity(int id)
         {
 
@@ -32,7 +33,7 @@ namespace WebfrontCore.Controllers
                     Name = p.Name,
                     ClientId = p.ClientId
                 }).ToList(),
-                ChatHistory = s.ChatHistory,
+                ChatHistory = s.ChatHistory.OrderBy(c => c.Time).Take((int)Math.Ceiling(s.ClientNum / 2.0)).ToArray(),
                 PlayerHistory = s.PlayerHistory.ToArray()
             };
             return PartialView("_ClientActivity", serverInfo);

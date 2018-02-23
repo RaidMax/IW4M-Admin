@@ -65,3 +65,14 @@ a.link-inverse:hover {
         display: table-header-group !important
     }
 }
+
+#console_command_response {
+    min-height: 20rem;
+}
+
+#console .form-control, #console button {
+    border-radius: 0;
+    border-color: $primary;
+    border-left: 0;
+    border-right: 0;
+}

@@ -26,6 +26,7 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Home", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Penalties", "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-md-left">@Html.ActionLink("Console", "Index", "Console", new { area = "" }, new { @class = "nav-link" })</li>
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
                     <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />

@@ -151,6 +151,7 @@
     <Compile Include="Database\Models\EFClient.cs" />
     <Compile Include="Database\Models\EFPenalty.cs" />
     <Compile Include="Database\Models\SharedEntity.cs" />
+    <Compile Include="Dtos\CommandResponseInfo.cs" />
     <Compile Include="Dtos\PlayerInfo.cs" />
     <Compile Include="Dtos\ClientInfo.cs" />
     <Compile Include="Dtos\ProfileMeta.cs" />
@@ -164,7 +165,6 @@
     <Compile Include="Exceptions\NetworkException.cs" />
     <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\ServerException.cs" />
-    <Compile Include="Helpers\CommandResult.cs" />
     <Compile Include="Helpers\ConfigurationManager.cs" />
     <Compile Include="Helpers\ParseEnum.cs" />
     <Compile Include="Helpers\Vector3.cs" />

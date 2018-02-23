@@ -581,7 +581,7 @@ namespace IW4MAdmin
 #endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
-                Broadcast("IW4M Admin is now ^2ONLINE");
+                await Broadcast("IW4M Admin is now ^2ONLINE");
             }
 #endif
         }

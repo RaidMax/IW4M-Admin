@@ -57,7 +57,7 @@ namespace SharedLibrary.Services
                     // set the level to the level of the existing client if they have the same IP + Name but new NetworkId
                     // fixme: issues?
                     Level = hasExistingAlias ?
-                        context.Clients.First(c => c.AliasLinkId== existingAlias.LinkId).Level :
+                        context.Clients.First(c => c.AliasLinkId == existingAlias.LinkId).Level :
                         Player.Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,
@@ -240,14 +240,39 @@ namespace SharedLibrary.Services
 
                 var iqClients = (from alias in context.Aliases
                                     .AsNoTracking()
-                                where alias.Name
-                                    .Contains(name)
-                                join link in context.AliasLinks
-                                on alias.LinkId equals link.AliasLinkId
-                                join client in context.Clients
+                                 where alias.Name
+                                     .Contains(name)
+                                 join link in context.AliasLinks
+                                 on alias.LinkId equals link.AliasLinkId
+                                 join client in context.Clients
+                                     .AsNoTracking()
+                                 on alias.LinkId equals client.AliasLinkId
+                                 select client)
+                                    .Distinct()
+                                    .Include(c => c.CurrentAlias)
+                                    .Include(c => c.AliasLink.Children);
+
+                return await iqClients.ToListAsync();
+            }
+        }
+
+        public async Task<IList<EFClient>> GetClientByIP(int ipAddress)
+        {
+            using (var context = new DatabaseContext())
+            {
+                context.Configuration.LazyLoadingEnabled = false;
+                context.Configuration.ProxyCreationEnabled = false;
+                context.Configuration.AutoDetectChangesEnabled = false;
+
+                var iqClients = (from alias in context.Aliases
                                     .AsNoTracking()
-                                on alias.LinkId equals client.AliasLinkId
-                                select client)
+                                 where alias.IPAddress == ipAddress
+                                 join link in context.AliasLinks
+                                 on alias.LinkId equals link.AliasLinkId
+                                 join client in context.Clients
+                                     .AsNoTracking()
+                                 on alias.LinkId equals client.AliasLinkId
+                                 select client)
                                     .Distinct()
                                     .Include(c => c.CurrentAlias)
                                     .Include(c => c.AliasLink.Children);

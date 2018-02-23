@@ -10,6 +10,7 @@ using SharedLibrary.Commands;
 using System.Threading.Tasks;
 using SharedLibrary.Helpers;
 using SharedLibrary.Objects;
+using SharedLibrary.Dtos;
 
 namespace SharedLibrary
 {
@@ -171,12 +172,12 @@ namespace SharedLibrary
                 Console.WriteLine(Utilities.StripColors(Message));
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
-            if (commandResult.Count > 15)
-                commandResult.RemoveAt(0);
-            commandResult.Add(new CommandResult()
+            if (CommandResult.Count > 15)
+                CommandResult.RemoveAt(0);
+            CommandResult.Add(new CommandResponseInfo()
             {
-                Message = Utilities.StripColors(Message),
-                Clientd = Target.ClientId
+                Response = Utilities.StripColors(Message),
+                ClientId = Target.ClientId
             });
         }
 
@@ -398,6 +399,6 @@ namespace SharedLibrary
         protected DateTime LastPoll;
 
         //Remote
-        public IList<CommandResult> commandResult = new List<CommandResult>();
+        public IList<CommandResponseInfo> CommandResult = new List<CommandResponseInfo>();
     }
 }

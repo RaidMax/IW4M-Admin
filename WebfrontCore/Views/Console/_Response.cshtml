@@ -1,0 +1,11 @@
+﻿@model List<SharedLibrary.Dtos.CommandResponseInfo>
+@{
+    Layout = null;
+}
+
+@{
+    foreach (var response in Model)
+    {
+        <span class="text-success">@response.Response</span><br />
+    }
+}

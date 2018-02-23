@@ -1,0 +1,20 @@
+﻿@model IEnumerable<SharedLibrary.Dtos.ServerInfo>
+<div class="row justify-content-center">
+    <div id="console" class="col-md-8">
+        @Html.DropDownList("Server", Model.Select(s => new SelectListItem() { Text = s.Name, Value = s.ID.ToString() }).ToList(), new { @class = "form-control bg-dark text-light", id="console_server_select" })
+        <div id="console_command_response" class="bg-dark p-3">
+        </div>
+        <div class="form-row">
+            <div class="col-12  col-sm-9 pr-1 pr-md-0">
+                <input id="console_command_value" class="form-control m-0 bg-dark text-light" type="text" />
+            </div>
+            <div class="col pl-1 pl-md-0">
+               <button id="console_command_button" class="btn btn-primary btn-block m-0">Execute</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript" src="~/js/console.js"></script>
+}

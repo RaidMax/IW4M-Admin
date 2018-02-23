@@ -6076,3 +6076,12 @@ a.link-inverse:hover {
   .d-md-table-header-group {
     display: table-header-group !important; } }
 
+#console_command_response {
+  min-height: 20rem; }
+
+#console .form-control, #console button {
+  border-radius: 0;
+  border-color: #007ACC;
+  border-left: 0;
+  border-right: 0; }
+

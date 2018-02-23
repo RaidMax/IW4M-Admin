@@ -96,7 +96,8 @@ namespace SharedLibrary
         {
             if (str == null)
                 return "";
-            return Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "");
+            return Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "")
+                .Replace("/", " /");
         }
 
         /// <summary>
@@ -346,7 +347,7 @@ namespace SharedLibrary
                 AliasLink = client.AliasLink,
                 AliasLinkId = client.AliasLinkId,
                 ClientId = client.ClientId,
-                ClientNumber = 0,
+                ClientNumber = -1,
                 FirstConnection = client.FirstConnection,
                 Connections = client.Connections,
                 NetworkId = client.NetworkId,

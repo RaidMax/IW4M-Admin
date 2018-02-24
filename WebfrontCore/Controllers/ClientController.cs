@@ -44,6 +44,8 @@ namespace WebfrontCore.Controllers
             clientDto.Meta.AddRange(await IW4MAdmin.ApplicationManager.GetInstance().GetPenaltyService().ReadGetClientPenaltiesAsync(client.ClientId, false));
             clientDto.Meta = clientDto.Meta.OrderByDescending(m => m.When).ToList();
 
+            ViewBag.Title = clientDto.Name;
+
             return View("Profile/Index", clientDto);
         }
 

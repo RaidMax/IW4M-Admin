@@ -28,7 +28,7 @@
 <tr class="d-table-row d-md-none bg-dark">
     <th scope="row" class="bg-primary">Admin</th>
     <td>
-        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "link-inverse" })
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevel.ToLower() })
     </td>
 </tr>
 
@@ -60,7 +60,7 @@
         @Model.Offense
     </td>
     <td>
-        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "link-inverse" })
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevel.ToLower() })
     </td>
     <td class="text-right text-light">
         @{

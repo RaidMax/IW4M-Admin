@@ -24,8 +24,13 @@ namespace StatsPlugin.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
+            if (E.Target?.ClientNumber < 0)
+            {
+                await E.Origin.Tell("The specified player must be ingame");
+                return;
+            }
 
-            if (E.Origin.ClientNumber < 0)
+            if (E.Origin.ClientNumber < 0 && E.Target == null)
             {
                 await E.Origin.Tell("You must be ingame to view your stats");
                 return;
@@ -45,7 +50,7 @@ namespace StatsPlugin.Commands
 
             if (E.Target != null)
             {
-                pStats = clientStats.Find(c => c.ServerId ==serverId && c.ClientId == E.Target.ClientId).First();
+                pStats = clientStats.Find(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId).First();
                 statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
             }
 

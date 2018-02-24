@@ -12,6 +12,7 @@ namespace SharedLibrary.Dtos
         public int OffenderId { get; set; }
         public string PunisherName { get; set; }
         public int PunisherId { get; set; }
+        public string PunisherLevel { get; set; }
         public string Offense { get; set; }
         public string Type { get; set; }
         public string TimePunished { get; set; }

@@ -19,6 +19,7 @@ namespace WebfrontCore.ViewComponents
                 OffenderName = p.Offender.Name,
                 PunisherId = p.PunisherId,
                 PunisherName = p.Punisher.Name,
+                PunisherLevel = p.Punisher.Level.ToString(),
                 Offense = p.Offense,
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),

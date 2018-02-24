@@ -19,7 +19,7 @@ namespace WebfrontCore
 #if !DEBUG
                 .UseUrls("http://server.nbsclan.org:8080")
 #else
-                .UseUrls("http://192.168.88.254:5000")
+                .UseUrls("http://127.0.0.1:5000;http://192.168.88.254:5000")
 #endif
                 .Build();
 

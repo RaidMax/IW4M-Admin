@@ -1,4 +1,7 @@
-﻿$(document).ready(function () {
+﻿// keeps track of how many events have been displayed
+let count = 1;
+
+$(document).ready(function () {
 	/*
 	Expand alias tab if they have any
 	*/
@@ -9,14 +12,43 @@
         }
     });
 
+    /* 
+    load the initial 40 events
+    */
     $.each(clientInfo.Meta, function (index, meta) {
-        loadMeta(meta);
-        if (count % 40 === 0) {
-            count++;
-            return false;
+        if (meta.key.includes("Event")) {
+            loadMeta(meta);
+            if (count % 40 === 0) {
+                count++;
+                return false;
+            }
+            count++
         }
-        count++
     });
+
+    /*
+    load additional events on scroll
+    */
+    $(window).scroll(function () {
+        if ($(window).scrollTop() === $(document).height() - $(window).height() || $(document).height() === $(window).height()) {
+            while (count % 40 !== 0 && count < clientInfo.Meta.length) {
+                loadMeta(clientInfo.Meta[count - 1]);
+                count++;
+            }
+            count++;
+        }
+    });
+
+    /*
+    load meta thats not an event
+    */
+    $.each(clientInfo.Meta, function (index, meta) {
+        if (!meta.key.includes("Event")) {
+            let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-primary">${meta.value}</span><span class="profile-meta-title text-muted"> ${meta.key}</span></div>`;
+            $("#profile_meta").append(metaString);
+        }
+    });
+
 });
 
 function penaltyToName(penaltyName) {
@@ -55,34 +87,3 @@ function loadMeta(meta) {
     }
     $('#profile_events').append(eventString);
 }
-
-let count = 1;
-
-$(document).ready(function () {
-    $(window).scroll(function () {
-        if ($(window).scrollTop() === $(document).height() - $(window).height() || $(document).height() === $(window).height()) {
-            while (count % 40 !== 0 && count < clientInfo.Meta.length) {
-                loadMeta(clientInfo.Meta[count - 1]);
-                count++;
-            }
-            count++;
-        }
-    });
-
-    $.each(clientInfo.Meta, function (index, meta) {
-        if (!meta.key.includes("Event")) {
-            let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-primary">${meta.value}</span><span class="profile-meta-title text-muted"> ${meta.key}</span></div>`;
-            $("#profile_meta").append(metaString);
-        }
-    });
-
-    $.each(clientInfo.Meta, function (index, meta) {
-        loadMeta(meta);
-
-        if (count % 40 === 0) {
-            count++;
-            return false;
-        }
-        count++;
-    });
-});

@@ -174,7 +174,7 @@ namespace SharedLibrary.Services
                 client.Connections = entity.Connections;
                 client.FirstConnection = entity.FirstConnection;
                 client.Masked = entity.Masked;
-                client.TotalConnectionTime = entity.TotalConnectionTime;
+                client.TotalConnectionTime = entity.TotalConnectionTime;                        
 
                 // update in database
                 await context.SaveChangesAsync();

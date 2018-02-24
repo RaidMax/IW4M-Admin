@@ -1,6 +1,16 @@
 ﻿function executeCommand() {
     const serverId = $('#console_server_select').val();
     const command = $('#console_command_value').val();
+
+    if (command.length === 0) {
+        return false;
+    }
+
+    if (command[0] !== '!') {
+        $('#console_command_response').text('All commands must start with !').addClass('text-danger');
+        return false;
+    }
+
     $.get('/Console/ExecuteAsync', { serverId: serverId, command: command })
         .done(function (response) {
             $('#console_command_response').html(response);

@@ -429,15 +429,22 @@ namespace SharedLibrary.Commands
             if (newPerm > Player.Permission.Banned)
             {
                 var ActiveClient = E.Owner.Manager.GetActiveClients().FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
-                ActiveClient.Level = newPerm;
+
 
                 if (ActiveClient != null)
+                {
+                    ActiveClient.Level = newPerm;
                     await ActiveClient.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+                }
+
+                else
+                {
+                    E.Target.Level = newPerm;
+                    await E.Owner.Manager.GetClientService().Update(E.Target);
+                }
 
                 await E.Origin.Tell($"{E.Target.Name} was successfully promoted!");
 
-                E.Target.Level = newPerm;
-                await E.Owner.Manager.GetClientService().Update(E.Target);
             }
 
             else

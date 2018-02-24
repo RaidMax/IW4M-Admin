@@ -28,6 +28,7 @@ namespace WebfrontCore.Controllers
             var requestIPAddress = Request.HttpContext.Connection.RemoteIpAddress;
             var intIP = requestIPAddress.ToString().ConvertToIP();
 
+#if !DEBUG
             var origin = (await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().GetClientByIP(intIP))
                 .OrderByDescending(c => c.Level)
                 .FirstOrDefault()?.AsPlayer() ?? new Player()
@@ -36,6 +37,9 @@ namespace WebfrontCore.Controllers
                     Level = Player.Permission.User,
                     IPAddress = intIP
                 };
+#else
+                   var origin = (await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().GetUnique(0)).AsPlayer();
+#endif
 
             var server = IW4MAdmin.ApplicationManager.GetInstance().Servers.First(s => s.GetHashCode() == serverId);
             origin.CurrentServer = server;

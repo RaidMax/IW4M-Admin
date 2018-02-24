@@ -1,4 +1,7 @@
-﻿
+﻿.level-bgcolor-console {
+    background-color: grey;
+}
+
 .level-color-user, .level-color-guest {
     color: rgba(255, 255, 255, 0.85);
 }
@@ -23,7 +26,7 @@
     background-color: rgba(253, 139, 22, 0.85);
 }
 
-.level-color-banned {
+.level-color-banned, .level-color-console {
     color: rgba(255, 69, 69, 0.85);
 }
 

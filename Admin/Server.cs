@@ -70,12 +70,16 @@ namespace IW4MAdmin
 
                     if (!aliasExists)
                     {
-                        Logger.WriteDebug($"Client {polledPlayer} has connected previously under a different alias");
+                        Logger.WriteDebug($"Client {polledPlayer} has connected previously under a different ip/name");
                         client.CurrentAlias = new SharedLibrary.Database.Models.EFAlias()
                         {
                             IPAddress = polledPlayer.IPAddress,
                             Name = polledPlayer.Name,
                         };
+                        // we need to update their new ip and name to the virtual property
+                        client.Name = polledPlayer.Name;
+                        client.IPAddress = polledPlayer.IPAddress;
+
                         await Manager.GetClientService().Update(client);
                     }
                     player = client.AsPlayer();

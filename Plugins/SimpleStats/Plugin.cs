@@ -41,7 +41,7 @@ namespace StatsPlugin
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case Event.GType.Say:
-                    if (E.Data != string.Empty && E.Data.Trim().Length > 0)
+                    if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Data[0] != '!')
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case Event.GType.MapChange:

@@ -63,4 +63,8 @@
     </Content>
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(SolutionDir)BUILD\Plugins&quot; &quot;$(TargetDir)Plugins\&quot;" />
+  </Target>
+
 </Project>

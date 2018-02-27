@@ -740,7 +740,6 @@ namespace SharedLibrary.Commands
                 return;
             }
 
-            E.Data = E.Data.RemoveWords(1);
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
             await E.Origin.Tell($"Thank you for your report, an administrator has been notified");

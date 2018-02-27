@@ -41,7 +41,7 @@ namespace StatsPlugin
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case Event.GType.Say:
-                    if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Data[0] != '!')
+                    if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Data.Trim()[0] != '!')
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case Event.GType.MapChange:
@@ -69,9 +69,9 @@ namespace StatsPlugin
                     break;
                 case Event.GType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill"))
+                    if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
                         await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);
-                    else
+                    else if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case Event.GType.Death:

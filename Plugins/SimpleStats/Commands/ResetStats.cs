@@ -19,7 +19,7 @@ namespace StatsPlugin.Commands
             if (E.Origin.ClientNumber >= 0)
             {
                 var svc = new SharedLibrary.Services.GenericRepository<EFClientStatistics>();
-                int serverId = E.Origin.GetHashCode();
+                int serverId = E.Owner.GetHashCode();
                 var stats = svc.Find(s => s.ClientId == E.Origin.ClientId && s.ServerId == serverId).First();
 
                 stats.Deaths = 0;

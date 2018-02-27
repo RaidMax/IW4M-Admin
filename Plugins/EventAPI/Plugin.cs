@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 using SharedLibrary;
@@ -9,61 +8,6 @@ using SharedLibrary.Objects;
 
 namespace EventAPI
 {
-    class EventsJSON : IPage
-    {
-        private struct EventResponse
-        {
-            public int eventCount;
-            public RestEvent Event;
-        }
-
-        public string GetName()
-        {
-            return "Events";
-        }
-
-        public string GetPath()
-        {
-            return "/api/events";
-        }
-
-        public async Task<HttpResponse> GetPage(System.Collections.Specialized.NameValueCollection querySet, IDictionary<string, string> headers)
-        {
-            bool shouldQuery = querySet.Get("status") != null;
-            EventResponse requestedEvent = new EventResponse();
-            HttpResponse resp = new HttpResponse();
-
-            if (shouldQuery)
-            {
-                StringBuilder s = new StringBuilder();
-                foreach (var S in Events.ActiveServers)
-                    s.Append(String.Format("{0} has {1}/{4} players playing {2} on {3}\n", S.Hostname, S.GetPlayersAsList().Count, Utilities.GetLocalizedGametype(S.Gametype), S.CurrentMap.Name, S.MaxClients));
-                requestedEvent.Event = new RestEvent(RestEvent.EventType.STATUS, RestEvent.EventVersion.IW4MAdmin, s.ToString(), "Status", "", "");
-                requestedEvent.eventCount = 1; 
-            }
-
-            else if (Events.APIEvents.Count > 0)
-            {
-                requestedEvent.Event = Events.APIEvents.Dequeue();
-                requestedEvent.eventCount = 1;       
-            }
-
-            else
-            {
-                requestedEvent.eventCount = 0;
-            }
-
-            resp.content = Newtonsoft.Json.JsonConvert.SerializeObject(requestedEvent);
-            resp.contentType = GetContentType();           
-            resp.additionalHeaders = new Dictionary<string, string>();
-            return resp;
-        }
-
-        public string GetContentType() => "application/json";
-
-        public bool Visible() => false;
-    }
-
     class Events : IPlugin
     {
         public static Queue<RestEvent> APIEvents { get; private set; }
@@ -84,7 +28,6 @@ namespace EventAPI
             APIEvents = new Queue<RestEvent>();
             flaggedMessagesText = new List<string>();
             ActiveServers = new List<Server>();
-            WebService.PageList.Add(new EventsJSON());
         }
 
         public async Task OnUnloadAsync()
@@ -107,8 +50,7 @@ namespace EventAPI
 
             if (E.Type == Event.GType.Stop)
             {
-                // fixme: this will be bad once FTP is working and there can be multiple servers on the same port.
-                ActiveServers.RemoveAll(s => s.GetPort() == S.GetPort());
+                ActiveServers.RemoveAll(s => s.GetHashCode() == S.GetHashCode());
             }
 
             if (E.Type == Event.GType.Connect)

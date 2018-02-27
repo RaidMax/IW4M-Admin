@@ -405,7 +405,6 @@ copy /Y "$(SolutionDir)_customcallbacks.gsc" "$(SolutionDir)BUILD\userraw\script
 
 copy /Y "$(TargetDir)$(TargetName).exe" "$(SolutionDir)BUILD"
 copy /Y "$(TargetDir)IW4MAdmin.exe.config" "$(SolutionDir)BUILD"
-copy /Y "$(ProjectDir)lib\Kayak.dll" "$(SolutionDir)BUILD\lib"
 xcopy /Y /I /E "$(SolutionDir)SharedLibrary\$(OutDir)*"  "$(SolutionDir)Admin\Lib"
 
 xcopy /Y /I /E "$(ProjectDir)webfront\*"  "$(SolutionDir)BUILD\Webfront"
@@ -418,7 +417,8 @@ if $(ConfigurationName) == Release-Stable powershell.exe -file "$(SolutionDir)DE
 </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>xcopy /Y "$(SolutionDir)BUILD\Plugins" "$(TargetDir)Plugins\"</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -1,4 +1,5 @@
 ﻿using SharedLibrary;
+using StatsPlugin.Cheat;
 using StatsPlugin.Models;
 using System;
 using System.Collections.Generic;
@@ -8,15 +9,16 @@ using System.Threading.Tasks;
 
 namespace StatsPlugin.Helpers
 {
-    public class ServerStats
-    {
+    class ServerStats    {
         public Dictionary<int, EFClientStatistics> PlayerStats { get; set; }
+        public Dictionary<int, Detection> PlayerDetections { get; set; }
         public EFServerStatistics ServerStatistics { get; private set; }
         public EFServer Server { get; private set; }
 
         public ServerStats(EFServer sv, EFServerStatistics st)
         {
             PlayerStats = new Dictionary<int, EFClientStatistics>();
+            PlayerDetections = new Dictionary<int, Detection>();
             ServerStatistics = st;
             Server = sv;
         }

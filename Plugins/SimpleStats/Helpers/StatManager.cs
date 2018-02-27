@@ -123,6 +123,16 @@ namespace StatsPlugin.Helpers
                 }
                 playerStats.Add(pl.ClientNumber, clientStats);
             }
+
+            var detectionStats = Servers[serverId].PlayerDetections;
+            lock (detectionStats)
+            {
+                if (detectionStats.ContainsKey(pl.ClientNumber))
+                    detectionStats.Remove(pl.ClientNumber);
+
+                detectionStats.Add(pl.ClientNumber, new Cheat.Detection(Log));
+            }
+
             return clientStats;
         }
 
@@ -135,6 +145,7 @@ namespace StatsPlugin.Helpers
         {
             int serverId = pl.CurrentServer.GetHashCode();
             var playerStats = Servers[serverId].PlayerStats;
+            var detectionStats = Servers[serverId].PlayerDetections;
             var serverStats = Servers[serverId].ServerStatistics;
             var statsSvc = ContextThreads[serverId];
 
@@ -143,6 +154,8 @@ namespace StatsPlugin.Helpers
             // remove the client from the stats dictionary as they're leaving
             lock (playerStats)
                 playerStats.Remove(pl.ClientNumber);
+            lock (detectionStats)
+                detectionStats.Remove(pl.ClientNumber);
 
             // sync their stats before they leave
             UpdateStats(clientStats);
@@ -163,8 +176,9 @@ namespace StatsPlugin.Helpers
         {
             await AddStandardKill(attacker, victim);
 
-            return;
             var statsSvc = ContextThreads[serverId];
+            var playerDetection = Servers[serverId].PlayerDetections[attacker.ClientNumber];
+
             var kill = new EFClientKill()
             {
                 Active = true,
@@ -179,6 +193,10 @@ namespace StatsPlugin.Helpers
                 HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName))
             };
+
+            playerDetection.ProcessKill(kill);
+
+            return;
 
             statsSvc.KillStatsSvc.Insert(kill);
             await statsSvc.KillStatsSvc.SaveChangesAsync();

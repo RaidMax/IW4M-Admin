@@ -118,6 +118,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cheat\Detection.cs" />
+    <Compile Include="Cheat\Thresholds.cs" />
     <Compile Include="Commands\ResetStats.cs" />
     <Compile Include="Commands\TopStats.cs" />
     <Compile Include="Commands\ViewStats.cs" />

@@ -47,6 +47,19 @@ namespace IW4MAdmin
                 return false;
             }
 
+            if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name) != null)
+            {
+                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name is being used by someone else.\"");
+                return false;
+            }
+
+            if (polledPlayer.Name == "Unknown Soldier" ||
+                polledPlayer.Name == "UnknownSoldier")
+            {
+                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Please change your name using /name.\"");
+                return false;
+            }
+
             Logger.WriteDebug($"Client slot #{polledPlayer.ClientNumber} now reserved");
 
             try
@@ -65,10 +78,10 @@ namespace IW4MAdmin
                 else
                 {
                     client.Connections += 1;
-                    bool aliasExists = client.AliasLink.Children
-                        .FirstOrDefault(a => a.Name == polledPlayer.Name && a.IPAddress == polledPlayer.IPAddress) != null;
+                    var existingAlias = client.AliasLink.Children
+                        .FirstOrDefault(a => a.Name == polledPlayer.Name && a.IPAddress == polledPlayer.IPAddress);
 
-                    if (!aliasExists)
+                    if (existingAlias == null)
                     {
                         Logger.WriteDebug($"Client {polledPlayer} has connected previously under a different ip/name");
                         client.CurrentAlias = new SharedLibrary.Database.Models.EFAlias()
@@ -80,6 +93,12 @@ namespace IW4MAdmin
                         client.Name = polledPlayer.Name;
                         client.IPAddress = polledPlayer.IPAddress;
 
+                        await Manager.GetClientService().Update(client);
+                    }
+
+                    else if (existingAlias.Name  == polledPlayer.Name)
+                    {
+                        client.CurrentAlias = existingAlias;
                         await Manager.GetClientService().Update(client);
                     }
                     player = client.AsPlayer();
@@ -252,7 +271,7 @@ namespace IW4MAdmin
                     else if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
-                        E.Data = Regex.Replace(E.Data, $"\"{E.Target.Name}\"", "", RegexOptions.IgnoreCase).Trim();
+                        E.Data = Regex.Replace(E.Data, Regex.Escape($"\"{E.Target.Name}\""), "", RegexOptions.IgnoreCase).Trim();
 
                         if ((E.Data.ToLower().Trim() == E.Target.Name.ToLower().Trim() ||
                             E.Data == String.Empty) &&

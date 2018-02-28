@@ -176,6 +176,12 @@ namespace StatsPlugin.Helpers
         {
             await AddStandardKill(attacker, victim);
 
+            if (victim == null)
+            {
+                Log.WriteError($"[AddScriptKill] Victim is null");
+                return;
+            }
+
             var statsSvc = ContextThreads[serverId];
             var playerDetection = Servers[serverId].PlayerDetections[attacker.ClientNumber];
 
@@ -209,7 +215,7 @@ namespace StatsPlugin.Helpers
 
             if (victim == null)
             {
-                Log.WriteError($"Stats: Victim is null");
+                Log.WriteError($"[AddStandardKill] Victim is null");
                 return;
             }
 

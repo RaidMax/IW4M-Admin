@@ -157,10 +157,6 @@ namespace StatsPlugin
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
             manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
 
-           // WebService.PageList.Add(new ClientMessageJson());
-            //WebService.PageList.Add(new ClientMessages());
-            //WebService.PageList.Add(new LiveStats());
-
             ServerManager = manager;
 
             return Task.FromResult(

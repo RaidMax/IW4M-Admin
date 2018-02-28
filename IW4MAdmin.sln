@@ -29,20 +29,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		_customcallbacks.gsc = _customcallbacks.gsc
 		README.md = README.md
-		Admin\version.txt = Admin\version.txt
+		version.txt = version.txt
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Plugins\Tests\Tests.csproj", "{B8C2A759-8663-4F6F-9BA4-19595F5E12C1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebfrontCore", "WebfrontCore\WebfrontCore.csproj", "{65340D7D-5831-406C-ACAD-B13BA634BDE2}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Config", "Config", "{4101CDED-AF1E-4FCF-9194-BEA2E634016E}"
-	ProjectSection(SolutionItems) = preProject
-		Admin\Config\maps.cfg = Admin\Config\maps.cfg
-		Admin\Config\messages.cfg = Admin\Config\messages.cfg
-		Admin\Config\rules.cfg = Admin\Config\rules.cfg
-		Admin\Config\web.cfg = Admin\Config\web.cfg
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -350,7 +342,6 @@ Global
 		{C9E821BF-23AD-4CB5-B7F9-B3B99B606650} = {26E8B310-269E-46D4-A612-24601F16065F}
 		{1479DE87-ACB5-4046-81C8-A0BA5041227D} = {26E8B310-269E-46D4-A612-24601F16065F}
 		{B8C2A759-8663-4F6F-9BA4-19595F5E12C1} = {26E8B310-269E-46D4-A612-24601F16065F}
-		{4101CDED-AF1E-4FCF-9194-BEA2E634016E} = {8C8F3945-0AEF-4949-A1F7-B18E952E50BC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84F8F8E0-1F73-41E0-BD8D-BB6676E2EE87}

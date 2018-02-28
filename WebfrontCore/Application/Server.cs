@@ -43,12 +43,14 @@ namespace IW4MAdmin
 
             if (polledPlayer.Name.Length < 3)
             {
+                Logger.WriteDebug($"Kicking {polledPlayer} because their name is too short");
                 await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name must contain atleast 3 characters.\"");
                 return false;
             }
 
             if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name) != null)
             {
+                Logger.WriteDebug($"Kicking {polledPlayer} because their name is already in use");
                 await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name is being used by someone else.\"");
                 return false;
             }
@@ -56,6 +58,7 @@ namespace IW4MAdmin
             if (polledPlayer.Name == "Unknown Soldier" ||
                 polledPlayer.Name == "UnknownSoldier")
             {
+                Logger.WriteDebug($"Kicking {polledPlayer} because their name is generic");
                 await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Please change your name using /name.\"");
                 return false;
             }
@@ -99,6 +102,7 @@ namespace IW4MAdmin
                     else if (existingAlias.Name  == polledPlayer.Name)
                     {
                         client.CurrentAlias = existingAlias;
+                        client.CurrentAliasId = existingAlias.AliasId;
                         await Manager.GetClientService().Update(client);
                     }
                     player = client.AsPlayer();

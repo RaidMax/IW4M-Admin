@@ -59,7 +59,7 @@ namespace CountryLookupProj
             fileInput = new FileStream(fileName, FileMode.Open, FileAccess.Read);
         }
 
-        public string lookupCountryCode(string str)
+        public string LookupCountryCode(string str)
         {
             IPAddress addr;
             try
@@ -70,10 +70,10 @@ namespace CountryLookupProj
             {
                 return "--";
             }
-            return lookupCountryCode(addr);
+            return LookupCountryCode(addr);
         }
 
-        private long addrToNum(IPAddress addr)
+        private long AddrToNum(IPAddress addr)
         {
             long ipnum = 0;
             byte[] b = BitConverter.GetBytes(addr.Address);
@@ -89,12 +89,12 @@ namespace CountryLookupProj
             return ipnum;
         }
 
-        public string lookupCountryCode(IPAddress addr)
+        public string LookupCountryCode(IPAddress addr)
         {
-            return (countryCode[(int)SeekCountry(0, addrToNum(addr), 31)]);
+            return (countryCode[(int)SeekCountry(0, AddrToNum(addr), 31)]);
         }
 
-        public string lookupCountryName(string str)
+        public string LookupCountryName(string str)
         {
             IPAddress addr;
             try
@@ -105,12 +105,12 @@ namespace CountryLookupProj
             {
                 return "a third world country";
             }
-            return lookupCountryName(addr);
+            return LookupCountryName(addr);
         }
 
-        public string lookupCountryName(IPAddress addr)
+        public string LookupCountryName(IPAddress addr)
         {
-            return (countryName[(int)SeekCountry(0, addrToNum(addr), 31)]);
+            return (countryName[(int)SeekCountry(0, AddrToNum(addr), 31)]);
         }
 
         private long SeekCountry(long offset, long ipnum, int depth)

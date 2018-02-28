@@ -206,16 +206,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>move "$(TargetDir)Newtonsoft.Json.dll" "$(TargetDir)lib\Newtonsoft.Json.dll"
-move "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)BUILD\Lib\Newtonsoft.Json.dll"
-copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\lib"
+    <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\lib"
-copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)BUILD\lib"
-copy /Y "$(TargetDir)Newtonsoft.Json.dll" "$(SolutionDir)Admin\lib"
-    if not exist "$(TargetDir)x86" md "$(TargetDir)x86"
-    xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\x86\*.*" "$(TargetDir)x86"
-    if not exist "$(TargetDir)amd64" md "$(TargetDir)amd64"
-    xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\amd64\*.*" "$(TargetDir)amd64"
+
+if not exist "$(TargetDir)x86" md "$(TargetDir)x86"
+  xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\x86\*.*" "$(TargetDir)x86"
+if not exist "$(TargetDir)amd64" md "$(TargetDir)amd64"
+  xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\amd64\*.*" "$(TargetDir)amd64"
 
 
 xcopy /Y /I /E "$(TargetDir)*"  "$(SolutionDir)BUILD\Lib"</PostBuildEvent>

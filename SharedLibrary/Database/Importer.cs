@@ -74,9 +74,9 @@ namespace SharedLibrary.Database
                     context.SaveChanges();
                 }
 
-                catch (Exception e)
+                catch (Exception)
                 {
-                    var a = 1;
+           
                 }
 
                 if (recreateContext)
@@ -152,9 +152,9 @@ namespace SharedLibrary.Database
                     context.SaveChanges();
                 }
 
-                catch (Exception e)
+                catch (Exception)
                 {
-                    var a = 1;
+
                 }
 
                 if (recreateContext)
@@ -208,9 +208,9 @@ namespace SharedLibrary.Database
                     context.SaveChanges();
                 }
 
-                catch (Exception e)
+                catch (Exception)
                 {
-                    var a = 1;
+                  
                 }
 
                 if (recreateContext)

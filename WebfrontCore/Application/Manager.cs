@@ -28,8 +28,6 @@ namespace IW4MAdmin
         List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
         List<MessageToken> MessageTokens;
-        //WebService WebSvc;
-        Thread WebThread;
         ClientService ClientSvc;
         AliasService AliasSvc;
         PenaltyService PenaltySvc;
@@ -221,7 +219,7 @@ namespace IW4MAdmin
             }
 #if !DEBUG
             foreach (var S in Servers)
-                S.Broadcast("^1IW4MAdmin going offline!");
+                S.Broadcast("^1IW4MAdmin going offline!").Wait();
 #endif
             _servers.Clear();
             //WebSvc.WebScheduler.Stop();

@@ -3,10 +3,11 @@
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-    <AssemblyName>WebfrontCore</AssemblyName>
+    <AssemblyName>IW4MAdmin</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>WebfrontCore</PackageId>
     <Platforms>AnyCPU;x86</Platforms>
+    <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -14,7 +15,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Application\Kayak.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="App.config" />
+    <None Include="Application\Kayak.cs" />
     <None Update="wwwroot\**\*">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
@@ -49,9 +55,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Admin\Application.csproj">
-      <Private>true</Private>
-    </ProjectReference>
     <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
       <Private>true</Private>
     </ProjectReference>
@@ -63,8 +66,8 @@
     </Content>
   </ItemGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="xcopy /Y &quot;$(SolutionDir)BUILD\Plugins&quot; &quot;$(TargetDir)Plugins\&quot;" />
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(SolutionDir)BUILD\Plugins&quot; &quot;$(TargetDir)Plugins\&quot;&#xD;&#xA;xcopy /Y /I /E &quot;$(SolutionDir)BUILD\Lib&quot; &quot;$(TargetDir)&quot;" />
   </Target>
 
 </Project>

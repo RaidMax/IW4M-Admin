@@ -127,7 +127,7 @@ namespace Welcome_Plugin
             try
             {
                 CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
-                msg = msg.Replace("{{ClientLocation}}", CLT.lookupCountryName(joining.IPAddressString));
+                msg = msg.Replace("{{ClientLocation}}", CLT.LookupCountryName(joining.IPAddressString));
             }
 
             catch (Exception)

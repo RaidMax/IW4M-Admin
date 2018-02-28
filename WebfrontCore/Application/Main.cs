@@ -22,14 +22,12 @@ namespace IW4MAdmin
         static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
         public static string OperatingDirectory =  Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
 
-        public static void Main(string[] args)
+        public static void Start()
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
             System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
 
             Version = 1.6;
-            handler = new ConsoleEventDelegate(OnProcessExit);
-            SetConsoleCtrlHandler(handler, true);
 
             //double.TryParse(CheckUpdate(), out double latestVersion);
             Console.WriteLine("=====================================================");
@@ -49,7 +47,6 @@ namespace IW4MAdmin
                 Task.Run(() =>
                 {
                     ServerManager.Start();
-                    /*
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
 
@@ -68,7 +65,7 @@ namespace IW4MAdmin
                         ServerManager.Servers[0].ExecuteEvent(E);
                         Console.Write('>');
 
-                    } while (ServerManager.Running);*/
+                    } while (ServerManager.Running);
                 });
 
             }
@@ -80,43 +77,11 @@ namespace IW4MAdmin
                 Console.ReadKey();
                 return;
             }
-
-            try
-            {
-       
-            }
-
-            catch (Exception e)
-            {
-                throw e;
-            }
         }
-
-        static ConsoleEventDelegate handler;
-
-        static private bool OnProcessExit(int e)
-        {
-            try
-            {
-                ServerManager.Stop();
-                return true;
-            }
-
-            catch
-            {
-                return true;
-            }
-        }
-
-        private delegate bool ConsoleEventDelegate(int eventType);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
 
         static void CheckDirectories()
         {
             string curDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-            if (!Directory.Exists($"{curDirectory}Lib"))
-                throw new Exception("Lib folder does not exist");
 
             if (!Directory.Exists($"{curDirectory}Config"))
             {

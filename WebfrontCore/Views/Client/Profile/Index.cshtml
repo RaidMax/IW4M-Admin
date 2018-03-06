@@ -8,7 +8,10 @@
     </div>
     <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
         <div id="profile_name">
-            <h1><span class="client-name mr-4">@Model.Name<span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span></span></h1>
+	    @{
+		string displayAliasButton = Model.Aliases.Count > 0 ? "" : "display: none;";
+	     }
+            <h1><span class="client-name mr-4">@Model.Name<span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2 @displayAliasButton"></span></span></h1>
             <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted">
                 @{
                     foreach (string alias in Model.Aliases)

@@ -6,11 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using SharedLibrary.Objects;
 using System.Reflection;
-
-#if DEBUG
-using SharedLibrary.Database;
-#endif
-
+using System.Linq;
 
 namespace IW4MAdmin
 {
@@ -20,7 +16,7 @@ namespace IW4MAdmin
         public static extern bool AllocConsole();
         static public double Version { get; private set; }
         static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
-        public static string OperatingDirectory =  Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+        public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
 
         public static void Start()
         {
@@ -29,7 +25,6 @@ namespace IW4MAdmin
 
             Version = 1.6;
 
-            //double.TryParse(CheckUpdate(), out double latestVersion);
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
@@ -40,13 +35,16 @@ namespace IW4MAdmin
             {
                 CheckDirectories();
 
-                ServerManager = ApplicationManager.GetInstance();
-                ServerManager.Init();
-
+                Task.Run(async () =>
+               {
+                   ServerManager = ApplicationManager.GetInstance();
+                   SharedLibrary.Database.Repair.Run(ServerManager.Logger);
+                   await ServerManager.Init();
+                   ServerManager.Start();
+               });
 
                 Task.Run(() =>
                 {
-                    ServerManager.Start();
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
 
@@ -66,6 +64,8 @@ namespace IW4MAdmin
                         Console.Write('>');
 
                     } while (ServerManager.Running);
+
+                    Console.WriteLine("Shutdown complete");
                 });
 
             }

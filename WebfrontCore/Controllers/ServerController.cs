@@ -7,15 +7,14 @@ using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers
 {
-    public class ServerController : Controller
+    public class ServerController : BaseController
     {
- 
         [HttpGet]
         [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult  ClientActivity(int id)
         {
 
-            var s = IW4MAdmin.Program.ServerManager.GetServers().FirstOrDefault(s2 => s2.GetHashCode() == id);
+            var s = Manager.GetServers().FirstOrDefault(s2 => s2.GetHashCode() == id);
             if (s == null)
                 return View("Error", "Invalid server!");
 

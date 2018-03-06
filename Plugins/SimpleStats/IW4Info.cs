@@ -1358,7 +1358,9 @@ namespace StatsPlugin
             m40a3_mp,
             peacekeeper_mp,
             dragunov_mp,
-            cobra_player_minigun_mp
+            cobra_player_minigun_mp,
+            destructible_car,
+            sentry_minigun_mp
         }
 
         public enum MapName

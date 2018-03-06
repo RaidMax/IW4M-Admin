@@ -11,8 +11,6 @@ using SharedLibrary.Commands;
 using SharedLibrary.Helpers;
 using SharedLibrary.Exceptions;
 using SharedLibrary.Objects;
-using SharedLibrary.Database;
-using SharedLibrary.Database.Models;
 using SharedLibrary.Services;
 
 namespace IW4MAdmin
@@ -21,6 +19,7 @@ namespace IW4MAdmin
     {
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
+        public List<int> AdministratorIPs { get; set; }
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
 
@@ -34,7 +33,7 @@ namespace IW4MAdmin
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 700;
 #else
-        const int UPDATE_FREQUENCY = 300;
+        const int UPDATE_FREQUENCY = 750;
 #endif
 
         private ApplicationManager()
@@ -47,6 +46,7 @@ namespace IW4MAdmin
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
+            AdministratorIPs = new List<int>();
         }
 
         public IList<Server> GetServers()
@@ -64,12 +64,12 @@ namespace IW4MAdmin
             return Instance ?? (Instance = new ApplicationManager());
         }
 
-        public void Init()
+        public async Task Init()
         {
-            #region WEBSERVICE
-           // SharedLibrary.WebService.Init();
-            //WebSvc = new WebService();
-            //WebSvc.StartScheduler();
+            #region DATABASE
+            AdministratorIPs = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
+                .Select(c => c.IPAddress)
+                .ToList();
             #endregion
 
             #region PLUGINS
@@ -79,7 +79,7 @@ namespace IW4MAdmin
             {
                 try
                 {
-                    Plugin.OnLoadAsync(this);
+                    await Plugin.OnLoadAsync(this);
                 }
 
                 catch (Exception e)
@@ -174,6 +174,7 @@ namespace IW4MAdmin
             Commands.Add(new CIP());
             Commands.Add(new CMask());
             Commands.Add(new CPruneAdmins());
+            Commands.Add(new CRestartServer());
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

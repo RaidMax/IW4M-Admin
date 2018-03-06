@@ -10,6 +10,8 @@ using SharedLibrary.Network;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Objects;
 using System.Text.RegularExpressions;
+using SharedLibrary.Services;
+using SharedLibrary.Database.Models;
 
 namespace IW4MAdmin
 {
@@ -99,7 +101,7 @@ namespace IW4MAdmin
                         await Manager.GetClientService().Update(client);
                     }
 
-                    else if (existingAlias.Name  == polledPlayer.Name)
+                    else if (existingAlias.Name == polledPlayer.Name)
                     {
                         client.CurrentAlias = existingAlias;
                         client.CurrentAliasId = existingAlias.AliasId;
@@ -154,12 +156,13 @@ namespace IW4MAdmin
             if (cNum >= 0 && Players[cNum] != null)
             {
                 Player Leaving = Players[cNum];
+                Logger.WriteInfo($"Client {Leaving} disconnecting...");
+
+                await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
+
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                 Leaving.LastConnection = DateTime.UtcNow;
                 await Manager.GetClientService().Update(Leaving);
-
-                Logger.WriteInfo($"Client {Leaving} disconnecting...");
-                await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
                 Players[cNum] = null;
             }
         }
@@ -357,7 +360,11 @@ namespace IW4MAdmin
 
         async Task<int> PollPlayersAsync()
         {
+            var now = DateTime.Now;
             var CurrentPlayers = await this.GetStatusAsync();
+#if DEBUG
+            Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
+#endif
 
             for (int i = 0; i < Players.Count; i++)
             {
@@ -385,9 +392,9 @@ namespace IW4MAdmin
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
             this.cts = cts;
-#if DEBUG == false
+            //#if DEBUG == false
             try
-#endif
+            //#endif
             {
                 // first start
                 if (firstRun)
@@ -504,7 +511,7 @@ namespace IW4MAdmin
                 }
                 return true;
             }
-#if DEBUG == false
+            //#if !DEBUG
             catch (SharedLibrary.Exceptions.NetworkException)
             {
                 Logger.WriteError($"Could not communicate with {IP}:{Port}");
@@ -518,7 +525,7 @@ namespace IW4MAdmin
                 Logger.WriteDebug("Error Trace: " + E.StackTrace);
                 return false;
             }
-#endif
+            //#endif
         }
 
         public async Task Initialize()
@@ -537,6 +544,7 @@ namespace IW4MAdmin
                 await this.GetDvarAsync<int>("sv_maxclients");
             var gametype = await this.GetDvarAsync<string>("g_gametype");
             var basepath = await this.GetDvarAsync<string>("fs_basepath");
+            WorkingDirectory = basepath.Value;
             var game = await this.GetDvarAsync<string>("fs_game");
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
@@ -705,6 +713,11 @@ namespace IW4MAdmin
 
                 string mapname = this.GetDvarAsync<string>("mapname").Result.Value;
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map(mapname, mapname);
+
+                // todo: make this more efficient
+                ((ApplicationManager)(Manager)).AdministratorIPs = (await new GenericRepository<EFClient>().FindAsync(c => c.Level > Player.Permission.Trusted))
+                     .Select(c => c.IPAddress)
+                     .ToList();
             }
 
             if (E.Type == Event.GType.MapEnd)

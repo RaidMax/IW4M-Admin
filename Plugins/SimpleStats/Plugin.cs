@@ -22,7 +22,7 @@ namespace StatsPlugin
 
         public string Author => "RaidMax";
 
-        private StatManager Manager;
+        public static StatManager Manager { get; private set; }
         private IManager ServerManager;
 
         public async Task OnEventAsync(Event E, Server S)
@@ -35,19 +35,20 @@ namespace StatsPlugin
                 case Event.GType.Stop:
                     break;
                 case Event.GType.Connect:
-                    Manager.AddPlayer(E.Origin);
+                    await Manager.AddPlayer(E.Origin);
                     break;
                 case Event.GType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case Event.GType.Say:
-                    if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Data.Trim()[0] != '!')
+                    if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Message.Trim()[0] != '!' && E.Origin.ClientId > 1)
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case Event.GType.MapChange:
+                    Manager.ResetKillstreaks(S.GetHashCode());
+                    await Manager.Sync(S);
                     break;
                 case Event.GType.MapEnd:
-                    await Manager.Sync(S);
                     break;
                 case Event.GType.Broadcast:
                     break;
@@ -92,6 +93,25 @@ namespace StatsPlugin
                 double kdr = Math.Round(kills / (double)deaths, 2);
                 double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
 
+                double chestRatio = 0;
+                double abdomenRatio = 0;
+                double chestAbdomenRatio = 0;
+
+                if (clientStats.FirstOrDefault()?.HitLocations.Count > 0)
+                {
+                    chestRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
+                    c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
+                    (double)clientStats.Where(c => c.HitLocations.Count > 0)
+                    .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount)), 2);
+
+                    abdomenRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
+                         c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount)), 2);
+
+                    chestAbdomenRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount), 2);
+                }
+
                 return new List<ProfileMeta>()
                 {
                          new ProfileMeta()
@@ -113,6 +133,24 @@ namespace StatsPlugin
                          {
                              Key = "Skill",
                              Value = skill
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Chest Ratio",
+                             Value = chestRatio,
+                             Sensitive = true
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Abdomen Ratio",
+                             Value = abdomenRatio,
+                             Sensitive = true
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Chest To Abdomen Ratio",
+                             Value = chestAbdomenRatio,
+                             Sensitive = true
                          }
                 };
             }

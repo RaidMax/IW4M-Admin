@@ -24,7 +24,9 @@ namespace StatsPlugin.Models
         public int Kills { get; set; }
         [Required]
         public int Deaths { get; set; }
-        [Required]
+
+        public virtual ICollection<EFHitLocationCount> HitLocations { get; set; }
+
         [NotMapped]
         public double KDR
         {
@@ -51,5 +53,7 @@ namespace StatsPlugin.Models
         public int LastScore { get; set; }
         [NotMapped]
         public DateTime LastActive { get; set; }
+        [NotMapped]
+        public int SessionScore { get; set; }
     }
 }

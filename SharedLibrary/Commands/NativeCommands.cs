@@ -11,6 +11,7 @@ using SharedLibrary.Database;
 using System.Data.Entity;
 using SharedLibrary.Database.Models;
 using SharedLibrary.Services;
+using SharedLibrary.Exceptions;
 
 namespace SharedLibrary.Commands
 {
@@ -170,6 +171,9 @@ namespace SharedLibrary.Commands
         {
             String Message = Utilities.RemoveWords(E.Data, 1).Trim();
             var length = E.Data.Split(' ')[0].ToLower().ParseTimespan();
+            if (length.TotalHours >= 1 && length.TotalHours < 2)
+                Message = E.Data;
+
 
             if (E.Origin.Level > E.Target.Level)
             {
@@ -428,8 +432,8 @@ namespace SharedLibrary.Commands
 
             if (newPerm > Player.Permission.Banned)
             {
-                var ActiveClient = E.Owner.Manager.GetActiveClients().FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
-
+                var ActiveClient = E.Owner.Manager.GetActiveClients()
+                    .FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
 
                 if (ActiveClient != null)
                 {
@@ -444,7 +448,6 @@ namespace SharedLibrary.Commands
                 }
 
                 await E.Origin.Tell($"{E.Target.Name} was successfully promoted!");
-
             }
 
             else
@@ -485,17 +488,22 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
+            int numOnline = 0;
             for (int i = 0; i < E.Owner.Players.Count; i++)
             {
                 var P = E.Owner.Players[i];
                 if (P != null && P.Level > Player.Permission.Flagged && !P.Masked)
                 {
+                    numOnline++;
                     if (E.Message[0] == '@')
                         await E.Owner.Broadcast(String.Format("[^3{0}^7] {1}", Utilities.ConvertLevelToColor(P.Level), P.Name));
                     else
                         await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.ConvertLevelToColor(P.Level), P.Name));
                 }
             }
+
+            if (numOnline == 0)
+                await E.Origin.Tell("No visible administrators online");
         }
     }
 
@@ -519,14 +527,14 @@ namespace SharedLibrary.Commands
             {
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
-                    await E.Owner.Broadcast("Changing to map ^2" + m.Alias);
+                    await E.Owner.Broadcast($"Changing to map ^5{m.Alias}");
                     Task.Delay(5000).Wait();
                     await E.Owner.LoadMap(m.Name);
                     return;
                 }
             }
 
-            await E.Owner.Broadcast("Attempting to change to unknown map ^1" + newMap);
+            await E.Owner.Broadcast($"Attempting to change to unknown map ^5{newMap}");
             Task.Delay(5000).Wait();
             await E.Owner.LoadMap(newMap);
         }
@@ -927,7 +935,7 @@ namespace SharedLibrary.Commands
             }
         })
         { }
-  
+
         public override async Task ExecuteAsync(Event E)
         {
             int inactiveDays = 30;
@@ -961,7 +969,89 @@ namespace SharedLibrary.Commands
                 inactiveUsers.ForEach(c => c.Level = Player.Permission.User);
                 await context.SaveChangesAsync();
             }
-                await E.Origin.Tell($"Pruned {inactiveUsers.Count} inactive privileged users");
+            await E.Origin.Tell($"Pruned {inactiveUsers.Count} inactive privileged users");
+
+        }
+    }
+
+    public class CRestartServer : Command
+    {
+        public CRestartServer() : base("restartserver", "restart the server", "restart", Player.Permission.Administrator, false)
+        {
+        }
+
+        public override async Task ExecuteAsync(Event E)
+        {
+            var gameserverProcesses = System.Diagnostics.Process.GetProcessesByName("iw4x");
+            var currentProcess = gameserverProcesses.FirstOrDefault(g => g.GetCommandLine().Contains($"+set net_port {E.Owner.GetPort()}"));
+
+            if (currentProcess == null)
+            {
+                await E.Origin.Tell("Could not find running/stalled instance of IW4x");
+            }
+
+            else
+            {
+                var commandLine = currentProcess.GetCommandLine();
+                // attempt to kill it natively
+                try
+                {
+                    if (!E.Owner.Throttled)
+                    {
+                        //   await E.Owner.ExecuteCommandAsync("quit");
+                    }
+                }
+
+                catch (NetworkException)
+                {
+                    await E.Origin.Tell("Unable to cleanly shutdown server, forcing");
+                }
+
+                if (!currentProcess.HasExited)
+                {
+                    try
+                    {
+                        currentProcess.Kill();
+                    }
+                    catch (Exception e)
+                    {
+                        await E.Origin.Tell("Could not kill IW4x process");
+                        E.Owner.Logger.WriteDebug("Unable to kill process");
+                        E.Owner.Logger.WriteDebug($"Exception: {e.Message}");
+                        return;
+                    }
+
+                    try
+                    {
+
+                        System.Diagnostics.Process process = new System.Diagnostics.Process();
+                        process.StartInfo.UseShellExecute = false;
+#if !DEBUG
+                        process.StartInfo.WorkingDirectory =  E.Owner.WorkingDirectory;
+#else
+                        process.StartInfo.WorkingDirectory = @"C:\Users\User\Desktop\MW2";
+#endif
+                        process.StartInfo.FileName = $"{process.StartInfo.WorkingDirectory}\\iw4x.exe";
+                        process.StartInfo.Arguments = commandLine.Substring(6);
+                        process.StartInfo.UserName = E.Owner.Config.RestartUsername;
+
+                        var pw = new System.Security.SecureString();
+                        foreach (char c in E.Owner.Config.RestartPassword)
+                            pw.AppendChar(c);
+
+                        process.StartInfo.Password = pw;
+                        process.Start();
+                    }
+
+                    catch (Exception e)
+                    {
+                        await E.Origin.Tell("Could not start the IW4x process");
+                        E.Owner.Logger.WriteDebug("Unable to start process");
+                        E.Owner.Logger.WriteDebug($"Exception: {e.Message}");
+                    }
+                }
+            }
+
 
         }
     }

@@ -27,6 +27,9 @@ namespace StatsPlugin.Commands
                 stats.SPM = 0;
                 stats.Skill = 0;
 
+                // reset the cached version
+                Plugin.Manager.ResetStats(E.Origin.ClientId, E.Owner.GetHashCode());
+
                 // fixme: this doesn't work properly when another context exists
                 await svc.SaveChangesAsync();
                 await E.Origin.Tell("Your stats have been reset");

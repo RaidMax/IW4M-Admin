@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers
 {
-    public class ConsoleController : Controller
+    public class ConsoleController : BaseController
     {
         public IActionResult Index()
         {
-            var activeServers = IW4MAdmin.ApplicationManager.GetInstance().Servers.Select(s => new ServerInfo()
+            var activeServers = Manager.Servers.Select(s => new ServerInfo()
             {
                 Name = s.Hostname,
                 ID = s.GetHashCode(),
@@ -38,10 +38,10 @@ namespace WebfrontCore.Controllers
                     IPAddress = intIP
                 };
 #else
-                   var origin = (await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().GetUnique(0)).AsPlayer();
+                   var origin = (await Manager.GetClientService().GetUnique(0)).AsPlayer();
 #endif
 
-            var server = IW4MAdmin.ApplicationManager.GetInstance().Servers.First(s => s.GetHashCode() == serverId);
+            var server = Manager.Servers.First(s => s.GetHashCode() == serverId);
             origin.CurrentServer = server;
             var remoteEvent = new Event(Event.GType.Say, command, origin, null, server);
 

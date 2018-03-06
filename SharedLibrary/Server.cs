@@ -385,6 +385,7 @@ namespace SharedLibrary
         public string Password { get; private set; }
         public bool Throttled { get; protected set; }
         public bool CustomCallback { get; protected set; }
+        public string WorkingDirectory { get; protected set; }
 
         // Internal
         protected string IP;

@@ -8,10 +8,15 @@
     <PackageId>WebfrontCore</PackageId>
     <Platforms>AnyCPU;x86</Platforms>
     <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutputPath>bin\x86\Debug\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,8 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="Application\Kayak.cs" />
     <None Update="wwwroot\**\*">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
@@ -58,12 +61,6 @@
     <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
       <Private>true</Private>
     </ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="app.config">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

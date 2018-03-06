@@ -12,6 +12,12 @@ namespace WebfrontCore.ViewComponents
     {
         public async Task<IViewComponentResult> InvokeAsync(int offset)
         {
+            int ip = HttpContext.Connection.RemoteIpAddress
+                .ToString().ConvertToIP();
+
+            bool authed = IW4MAdmin.ApplicationManager.GetInstance()
+                .AdministratorIPs.Contains(ip);
+
             var penalties = await IW4MAdmin.ApplicationManager.GetInstance().GetPenaltyService().GetRecentPenalties(15, offset);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
@@ -23,8 +29,11 @@ namespace WebfrontCore.ViewComponents
                 Offense = p.Offense,
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
-                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow)
-            }).ToList();
+                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow),
+                Sensitive = p.Type == SharedLibrary.Objects.Penalty.PenaltyType.Flag
+            });
+
+            penaltiesDto = authed ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
 
             return View("_List", penaltiesDto);
         }

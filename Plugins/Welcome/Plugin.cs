@@ -126,7 +126,7 @@ namespace Welcome_Plugin
             msg = msg.Replace("{{ClientLevel}}", Utilities.ConvertLevelToColor(joining.Level));
             try
             {
-                CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup("Plugins/GeoIP.dat");
+                CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup($"{Utilities.OperatingDirectory}Plugins{System.IO.Path.DirectorySeparatorChar}GeoIP.dat");
                 msg = msg.Replace("{{ClientLocation}}", CLT.LookupCountryName(joining.IPAddressString));
             }
 

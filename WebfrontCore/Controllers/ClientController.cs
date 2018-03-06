@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers
 {
-    public class ClientController : Controller
+    public class ClientController : BaseController
     {
         public async Task<IActionResult> ProfileAsync(int id)
         {
-            var client = await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().Get(id);
+            var client = await Manager.GetClientService().Get(id);
             var clientDto = new PlayerInfo()
             {
                 Name = client.Name,
@@ -38,11 +38,15 @@ namespace WebfrontCore.Controllers
                     .OrderBy(i => i)
                     .ToList(),
             };
-
-            clientDto.Meta.AddRange(await MetaService.GetMeta(client.ClientId));
-            clientDto.Meta.AddRange(await IW4MAdmin.ApplicationManager.GetInstance().GetPenaltyService().ReadGetClientPenaltiesAsync(client.ClientId));
-            clientDto.Meta.AddRange(await IW4MAdmin.ApplicationManager.GetInstance().GetPenaltyService().ReadGetClientPenaltiesAsync(client.ClientId, false));
-            clientDto.Meta = clientDto.Meta.OrderByDescending(m => m.When).ToList();
+            var meta = await MetaService.GetMeta(client.ClientId);
+            clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
+            clientDto.Meta.AddRange(await Manager.GetPenaltyService()
+                .ReadGetClientPenaltiesAsync(client.ClientId));
+            clientDto.Meta.AddRange(await Manager.GetPenaltyService()
+                .ReadGetClientPenaltiesAsync(client.ClientId, false));
+            clientDto.Meta = clientDto.Meta
+                .OrderByDescending(m => m.When)
+                .ToList();
 
             ViewBag.Title = clientDto.Name;
 
@@ -51,7 +55,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> PrivilegedAsync()
         {
-            var admins = (await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().GetPrivilegedClients())
+            var admins = (await Manager.GetClientService().GetPrivilegedClients())
                 .Where(a => a.Active)
                 .OrderByDescending(a => a.Level);
             var adminsDict = new Dictionary<SharedLibrary.Objects.Player.Permission, IList<ClientInfo>>();
@@ -74,7 +78,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> FindAsync(string clientName)
         {
-            var clients = (await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().GetClientByName(clientName))
+            var clients = (await Manager.GetClientService().GetClientByName(clientName))
                             .OrderByDescending(c => c.LastConnection);
             var clientsDto = clients.Select(c => new PlayerInfo()
             {

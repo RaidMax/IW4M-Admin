@@ -2,12 +2,13 @@
 using SharedLibrary.Objects;
 using SharedLibrary.Database.Models;
 using SharedLibrary.Services;
+using System.Threading.Tasks;
 
 namespace SharedLibrary.Interfaces
 {
     public interface IManager
     {
-        void Init();
+        Task Init();
         void Start();
         void Stop();
         ILogger GetLogger();
@@ -15,7 +16,7 @@ namespace SharedLibrary.Interfaces
         IList<Command> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();
         IList<Player> GetActiveClients();
-       ClientService GetClientService();
+        ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
     }

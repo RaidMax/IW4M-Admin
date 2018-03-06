@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Dtos
 {
-    public class PenaltyInfo
+    public class PenaltyInfo : SharedInfo
     {
         public string OffenderName { get; set; }
         public int OffenderId { get; set; }

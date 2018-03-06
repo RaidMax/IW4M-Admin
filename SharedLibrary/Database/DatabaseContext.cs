@@ -10,6 +10,7 @@ using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Reflection;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.SqlServerCompact;
+using System.IO;
 
 namespace SharedLibrary.Database
 {
@@ -23,7 +24,8 @@ namespace SharedLibrary.Database
 
         public DatabaseContext() : base("DefaultConnection")
         {
-            System.Data.Entity.Database.SetInitializer(new Initializer());
+            System.Data.Entity.Database.SetInitializer(new MigrateDatabaseToLatestVersion<DatabaseContext, Migrations.Configuration>());
+            //Database.CreateIfNotExists();
             Configuration.LazyLoadingEnabled = true;
         }
 
@@ -50,7 +52,12 @@ namespace SharedLibrary.Database
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
 
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
+            //string dir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar; 
+#if !DEBUG
             foreach (string dllPath in System.IO.Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
+#else
+            foreach (string dllPath in System.IO.Directory.GetFiles(@"C:\Users\User\Desktop\stuff\IW4M-Admin\IW4M-Admin\WebfrontCore\bin\x86\Debug\Plugins"))
+#endif
             {
                 Assembly library;
                 try
@@ -64,7 +71,7 @@ namespace SharedLibrary.Database
                     continue;
                 }
 
-                foreach(var type in library.ExportedTypes)
+                foreach (var type in library.ExportedTypes)
                 {
                     if (type.IsClass && type.IsSubclassOf(typeof(SharedEntity)))
                     {

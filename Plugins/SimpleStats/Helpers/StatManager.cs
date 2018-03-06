@@ -9,6 +9,7 @@ using SharedLibrary.Interfaces;
 using SharedLibrary.Objects;
 using SharedLibrary.Services;
 using StatsPlugin.Models;
+using SharedLibrary.Commands;
 
 namespace StatsPlugin.Helpers
 {
@@ -75,7 +76,7 @@ namespace StatsPlugin.Helpers
 
             catch (Exception e)
             {
-                Log.WriteWarning($"Could not add server to ServerStats - {e.Message}");
+                Log.WriteError($"Could not add server to ServerStats - {e.Message}");
             }
         }
 
@@ -84,9 +85,17 @@ namespace StatsPlugin.Helpers
         /// </summary>
         /// <param name="pl">Player to add/retrieve stats for</param>
         /// <returns>EFClientStatistic of specified player</returns>
-        public EFClientStatistics AddPlayer(Player pl)
+        public async Task<EFClientStatistics> AddPlayer(Player pl)
         {
+            Log.WriteInfo($"Adding {pl} to stats");
             int serverId = pl.CurrentServer.GetHashCode();
+
+            if (!Servers.ContainsKey(serverId))
+            {
+                Log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
+                return null;
+            }
+
             var playerStats = Servers[serverId].PlayerStats;
             var statsSvc = ContextThreads[serverId];
 
@@ -105,33 +114,50 @@ namespace StatsPlugin.Helpers
                     ServerId = serverId,
                     Skill = 0.0,
                     SPM = 0.0,
+                    HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
+                    {
+                        Active = true,
+                        HitCount = 0,
+                        Location = hl
+                    })
+                    .ToList()
                 };
 
                 clientStats = statsSvc.ClientStatSvc.Insert(clientStats);
+                await statsSvc.ClientStatSvc.SaveChangesAsync();
+            }
+
+            // migration for previous existing stats
+            else if (clientStats.HitLocations.Count == 0)
+            {
+                clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
+                {
+                    Active = true,
+                    HitCount = 0,
+                    Location = hl
+                })
+                .ToList();
+                await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
             // set these on connecting
             clientStats.LastActive = DateTime.UtcNow;
             clientStats.LastStatCalculation = DateTime.UtcNow;
+            clientStats.SessionScore = pl.Score;
 
-            lock (playerStats)
+            if (playerStats.ContainsKey(pl.ClientId))
             {
-                if (playerStats.ContainsKey(pl.ClientNumber))
-                {
-                    Log.WriteWarning($"Duplicate clientnumber in stats {pl.ClientId} vs {playerStats[pl.ClientNumber].ClientId}");
-                    playerStats.Remove(pl.ClientNumber);
-                }
-                playerStats.Add(pl.ClientNumber, clientStats);
+                Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId} vs {playerStats[pl.ClientId].ClientId}");
+                playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue);
             }
+            playerStats.TryAdd(pl.ClientId, clientStats);
 
             var detectionStats = Servers[serverId].PlayerDetections;
-            lock (detectionStats)
-            {
-                if (detectionStats.ContainsKey(pl.ClientNumber))
-                    detectionStats.Remove(pl.ClientNumber);
 
-                detectionStats.Add(pl.ClientNumber, new Cheat.Detection(Log));
-            }
+            if (detectionStats.ContainsKey(pl.ClientId))
+                detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue);
+
+            detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log));
 
             return clientStats;
         }
@@ -143,19 +169,27 @@ namespace StatsPlugin.Helpers
         /// <returns></returns>
         public async Task RemovePlayer(Player pl)
         {
+            Log.WriteInfo($"Removing {pl} from stats");
+
             int serverId = pl.CurrentServer.GetHashCode();
             var playerStats = Servers[serverId].PlayerStats;
             var detectionStats = Servers[serverId].PlayerDetections;
             var serverStats = Servers[serverId].ServerStatistics;
             var statsSvc = ContextThreads[serverId];
 
+            if (!playerStats.ContainsKey(pl.ClientId))
+            {
+                Log.WriteWarning($"Client disconnecting not in stats {pl}");
+                return;
+            }
+
             // get individual client's stats
-            var clientStats = playerStats[pl.ClientNumber];
+            var clientStats = playerStats[pl.ClientId];
+            // sync their score
+            clientStats.SessionScore = pl.Score;
             // remove the client from the stats dictionary as they're leaving
-            lock (playerStats)
-                playerStats.Remove(pl.ClientNumber);
-            lock (detectionStats)
-                detectionStats.Remove(pl.ClientNumber);
+            playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue);
+            detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue2);
 
             // sync their stats before they leave
             UpdateStats(clientStats);
@@ -174,16 +208,7 @@ namespace StatsPlugin.Helpers
         public async Task AddScriptKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin)
         {
-            await AddStandardKill(attacker, victim);
-
-            if (victim == null)
-            {
-                Log.WriteError($"[AddScriptKill] Victim is null");
-                return;
-            }
-
             var statsSvc = ContextThreads[serverId];
-            var playerDetection = Servers[serverId].PlayerDetections[attacker.ClientNumber];
 
             var kill = new EFClientKill()
             {
@@ -200,29 +225,87 @@ namespace StatsPlugin.Helpers
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName))
             };
 
-            playerDetection.ProcessKill(kill);
+            if (kill.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
+                kill.Damage == 10000)
+            {
+                // suicide by switching teams so let's not count it against them
+                return;
+            }
 
-            return;
+            await AddStandardKill(attacker, victim);
 
-            statsSvc.KillStatsSvc.Insert(kill);
-            await statsSvc.KillStatsSvc.SaveChangesAsync();
+            var playerDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
+            var playerStats = Servers[serverId].PlayerStats[attacker.ClientId];
+
+            // increment their hit count
+            if (kill.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
+                kill.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET)
+            {
+                playerStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
+                await statsSvc.ClientStatSvc.SaveChangesAsync();
+            }
+
+            //statsSvc.KillStatsSvc.Insert(kill);
+            //await statsSvc.KillStatsSvc.SaveChangesAsync();
+
+            async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
+            {
+                switch (penalty.ClientPenalty)
+                {
+                    case Penalty.PenaltyType.Ban:
+                        await attacker.Ban("You appear to be cheating", new Player() { ClientId = 1 });
+                        break;
+                    case Penalty.PenaltyType.Flag:
+                        if (attacker.Level != Player.Permission.User)
+                            break;
+                        var flagCmd = new CFlag();
+                        await flagCmd.ExecuteAsync(new Event(Event.GType.Flag, $"{(int)penalty.Bone}-{Math.Round(penalty.RatioAmount, 2).ToString()}@{penalty.KillCount}", new Player()
+                        {
+                            ClientId = 1,
+                            Level = Player.Permission.Console,
+                            ClientNumber = -1,
+                            CurrentServer = attacker.CurrentServer
+                        }, attacker, attacker.CurrentServer));
+                        break;
+                }
+            }
+
+            await executePenalty(playerDetection.ProcessKill(kill));
+            await executePenalty(playerDetection.ProcessTotalRatio(playerStats));
         }
 
         public async Task AddStandardKill(Player attacker, Player victim)
         {
             int serverId = attacker.CurrentServer.GetHashCode();
-            var attackerStats = Servers[serverId].PlayerStats[attacker.ClientNumber];
-
-            if (victim == null)
+            EFClientStatistics attackerStats = null;
+            try
             {
-                Log.WriteError($"[AddStandardKill] Victim is null");
+                attackerStats = Servers[serverId].PlayerStats[attacker.ClientId];
+            }
+
+            catch (KeyNotFoundException)
+            {
+                Log.WriteError($"[Stats::AddStandardKill] kill attacker ClientId is invalid {attacker.ClientId}-{attacker}");
                 return;
             }
 
-            var victimStats = Servers[serverId].PlayerStats[victim.ClientNumber];
+            EFClientStatistics victimStats = null;
+            try
+            {
+                victimStats = Servers[serverId].PlayerStats[victim.ClientId];
+            }
+
+            catch (KeyNotFoundException)
+            {
+                Log.WriteError($"[Stats::AddStandardKill] kill victim ClientId is invalid {victim.ClientId}-{victim}");
+                return;
+            }
 
             // update the total stats
             Servers[serverId].ServerStatistics.TotalKills += 1;
+
+            attackerStats.SessionScore = attacker.Score;
+            victimStats.SessionScore = victim.Score;
 
             // calculate for the clients
             CalculateKill(attackerStats, victimStats);
@@ -292,9 +375,7 @@ namespace StatsPlugin.Helpers
                 return clientStats;
 
             // calculate the players Score Per Minute for the current session
-            int currentScore = Manager.GetActiveClients()
-                .First(c => c.ClientId == clientStats.ClientId)
-                .Score;
+            int currentScore = clientStats.SessionScore;
             double killSPM = currentScore / (timeSinceLastCalc * 60.0);
 
             // calculate how much the KDR should weigh
@@ -348,6 +429,25 @@ namespace StatsPlugin.Helpers
 
                 statsSvc.ServerStatsSvc.Insert(serverStats);
             }
+        }
+
+        public void ResetKillstreaks(int serverId)
+        {
+            var serverStats = Servers[serverId];
+            foreach (var stat in serverStats.PlayerStats.Values)
+            {
+                stat.KillStreak = 0;
+                stat.DeathStreak = 0;
+            }
+        }
+
+        public void ResetStats(int clientId, int serverId)
+        {
+            var stats = Servers[serverId].PlayerStats[clientId];
+            stats.Kills = 0;
+            stats.Deaths = 0;
+            stats.SPM = 0;
+            stats.Skill = 0;
         }
 
         public async Task AddMessageAsync(int clientId, int serverId, string message)

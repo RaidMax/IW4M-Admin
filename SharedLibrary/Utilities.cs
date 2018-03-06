@@ -4,11 +4,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
+using System.Management;
 
 using SharedLibrary.Objects;
 using static SharedLibrary.Server;
 using System.Reflection;
 using System.IO;
+using System.Diagnostics;
 
 namespace SharedLibrary
 {
@@ -61,14 +63,14 @@ namespace SharedLibrary
                     int cID = -1;
                     int Ping = -1;
                     Int32.TryParse(playerInfo[2], out Ping);
-                    String cName = Utilities.StripColors(responseLine.Substring(46, 18)).Trim();
+                    String cName = Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(StripColors(responseLine.Substring(46, 18)).Trim())));
                     long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong();
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
                     int cIP = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
                     int score = Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                    Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping, Score = score};
+                    Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping, Score = score };
                     StatusPlayers.Add(P);
                 }
             }
@@ -96,8 +98,11 @@ namespace SharedLibrary
         {
             if (str == null)
                 return "";
-            return Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "")
+            str = Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "");
+            string str2 = Regex.Match(str, @"(^\/+.*$)|(^.*\/+$)")
+                .Value
                 .Replace("/", " /");
+            return str2.Length > 0 ? str2 : str;
         }
 
         /// <summary>
@@ -334,11 +339,6 @@ namespace SharedLibrary
             return "1 hour";
         }
 
-        public static string EscapeMarkdown(this string markdownString)
-        {
-            return markdownString.Replace("<", "\\<").Replace(">", "\\>").Replace("|", "\\|");
-        }
-
         public static Player AsPlayer(this Database.Models.EFClient client)
         {
             return client == null ? null : new Player()
@@ -360,6 +360,36 @@ namespace SharedLibrary
                 CurrentAlias = client.CurrentAlias,
                 CurrentAliasId = client.CurrentAlias.AliasId
             };
+        }
+
+        /*https://stackoverflow.com/questions/2633628/can-i-get-command-line-arguments-of-other-processes-from-net-c*/
+        // Define an extension method for type System.Process that returns the command 
+        // line via WMI.
+        public static string GetCommandLine(this Process process)
+        {
+            string cmdLine = null;
+            using (var searcher = new ManagementObjectSearcher(
+              $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}"))
+            {
+                // By definition, the query returns at most 1 match, because the process 
+                // is looked up by ID (which is unique by definition).
+                var matchEnum = searcher.Get().GetEnumerator();
+                if (matchEnum.MoveNext()) // Move to the 1st item.
+                {
+                    cmdLine = matchEnum.Current["CommandLine"]?.ToString();
+                }
+            }
+            if (cmdLine == null)
+            {
+                // Not having found a command line implies 1 of 2 exceptions, which the
+                // WMI query masked:
+                // An "Access denied" exception due to lack of privileges.
+                // A "Cannot process request because the process (<pid>) has exited."
+                // exception due to the process having terminated.
+                // We provoke the same exception again simply by accessing process.MainModule.
+                var dummy = process.MainModule; // Provoke exception.
+            }
+            return cmdLine;
         }
     }
 }

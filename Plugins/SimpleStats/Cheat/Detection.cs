@@ -1,4 +1,5 @@
 ﻿using SharedLibrary.Interfaces;
+using SharedLibrary.Objects;
 using StatsPlugin.Models;
 using System;
 using System.Collections.Generic;
@@ -30,62 +31,276 @@ namespace StatsPlugin.Cheat
         /// </summary>
         /// <param name="kill">kill performed by the player</param>
         /// <returns>true if detection reached thresholds, false otherwise</returns>
-        public bool ProcessKill(EFClientKill kill)
+        public DetectionPenaltyResult ProcessKill(EFClientKill kill)
         {
-            if (kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET && kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET)
-                return false;
-
-            bool thresholdReached = false;
+            if ((kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
+                kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET) ||
+                kill.HitLoc == IW4Info.HitLocation.none)
+                return new DetectionPenaltyResult()
+                {
+                    ClientPenalty = Penalty.PenaltyType.Any,
+                    RatioAmount = 0
+                };
 
             HitLocationCount[kill.HitLoc]++;
             Kills++;
             AverageKillTime = (AverageKillTime + (DateTime.UtcNow - LastKill).TotalSeconds) / Kills;
 
-            if (Kills > Thresholds.LowSampleMinKills)
+#region SESSION_RATIOS
+            if (Kills >= Thresholds.LowSampleMinKills)
             {
                 double marginOfError = Thresholds.GetMarginOfError(Kills);
                 // determine what the max headshot percentage can be for current number of kills
                 double lerpAmount = Math.Min(1.0, (Kills - Thresholds.LowSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
-                double maxHeadshotLerpValue = Thresholds.Lerp( Thresholds.HeadshotRatioThresholdLowSample, Thresholds.HeadshotRatioThresholdHighSample, lerpAmount);
+                double maxHeadshotLerpValueForFlag = Thresholds.Lerp(Thresholds.HeadshotRatioThresholdLowSample(2.0), Thresholds.HeadshotRatioThresholdHighSample(2.0), lerpAmount) + marginOfError;
+                double maxHeadshotLerpValueForBan = Thresholds.Lerp(Thresholds.HeadshotRatioThresholdLowSample(3.0), Thresholds.HeadshotRatioThresholdHighSample(3.0), lerpAmount) + marginOfError;
                 //  determine what the max bone percentage can be for current number of kills
-                double maxBoneRatioLerpValue = Thresholds.Lerp(Thresholds.BoneRatioThresholdLowSample, Thresholds.BoneRatioThresholdHighSample, lerpAmount);
+                double maxBoneRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.BoneRatioThresholdLowSample(2.25), Thresholds.BoneRatioThresholdHighSample(2.25), lerpAmount) + marginOfError;
+                double maxBoneRatioLerpValueForBan = Thresholds.Lerp(Thresholds.BoneRatioThresholdLowSample(3.25), Thresholds.BoneRatioThresholdHighSample(3.25), lerpAmount) + marginOfError;
+
                 // calculate headshot ratio
-                double headshotRatio = ((HitLocationCount[IW4Info.HitLocation.head] + HitLocationCount[IW4Info.HitLocation.helmet]) / (double)Kills) - marginOfError;
+                double currentHeadshotRatio = ((HitLocationCount[IW4Info.HitLocation.head] + HitLocationCount[IW4Info.HitLocation.helmet]) / (double)Kills);
                 // calculate maximum bone 
-                double maximumBoneRatio = (HitLocationCount.Values.Select(v => v / (double)Kills).Max()) - marginOfError;
+                double currentMaxBoneRatio = (HitLocationCount.Values.Select(v => v / (double)Kills).Max());
 
-                if (headshotRatio > maxHeadshotLerpValue)
+                var bone = HitLocationCount.FirstOrDefault(b => b.Value == HitLocationCount.Values.Max()).Key;
+                #region HEADSHOT_RATIO
+                // flag on headshot
+                if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
                 {
-                    AboveThresholdCount++;
-                    Log.WriteDebug("**Maximum Headshot Ratio Reached**");
-                    Log.WriteDebug($"ClientId: {kill.AttackerId}");
-                    Log.WriteDebug($"**Kills: {Kills}");
-                    Log.WriteDebug($"**Ratio {headshotRatio}");
-                    Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValue}");
-                    var sb = new StringBuilder();
-                    foreach (var kvp in HitLocationCount)
-                        sb.Append($"HitLocation: {kvp.Key}     Count: {kvp.Value}");
-                    Log.WriteDebug(sb.ToString());
-                    Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
-                    thresholdReached = true;
+                    // ban on headshot
+                    if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
+                    {
+                        AboveThresholdCount++;
+                        Log.WriteDebug("**Maximum Headshot Ratio Reached For Ban**");
+                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"**Kills: {Kills}");
+                        Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
+                        Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+                        Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            RatioAmount = currentHeadshotRatio,
+                            Bone = IW4Info.HitLocation.head,
+                            KillCount = Kills
+                        };
+                    }
+                    else
+                    {
+                        AboveThresholdCount++;
+                        Log.WriteDebug("**Maximum Headshot Ratio Reached For Flag**");
+                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"**Kills: {Kills}");
+                        Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
+                        Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+                        Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            RatioAmount = currentHeadshotRatio,
+                            Bone = IW4Info.HitLocation.head,
+                            KillCount = Kills
+                        };
+                    }
                 }
+                #endregion
 
-                else if (maximumBoneRatio > maxBoneRatioLerpValue)
+                #region BONE_RATIO
+                // flag on bone ratio
+                else if (currentMaxBoneRatio > maxBoneRatioLerpValueForFlag)
                 {
-                    Log.WriteDebug("**Maximum Bone Ratio Reached**");
-                    Log.WriteDebug($"ClientId: {kill.AttackerId}");
-                    Log.WriteDebug($"**Kills: {Kills}");
-                    Log.WriteDebug($"**Ratio {maximumBoneRatio}");
-                    Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValue}");
-                    var sb = new StringBuilder();
-                    foreach (var kvp in HitLocationCount)
-                        sb.Append($"HitLocation: {kvp.Key}     Count: {kvp.Value}");
-                    Log.WriteDebug(sb.ToString());
-                    thresholdReached = true;
+                    // ban on bone ratio
+                    if (currentMaxBoneRatio > maxBoneRatioLerpValueForBan)
+                    {
+                        Log.WriteDebug("**Maximum Bone Ratio Reached For Ban**");
+                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"**Kills: {Kills}");
+                        Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
+                        Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForBan}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            RatioAmount = currentMaxBoneRatio,
+                            Bone = bone,
+                            KillCount = Kills
+                        };
+                    }
+                    else
+                    {
+                        Log.WriteDebug("**Maximum Bone Ratio Reached For Flag**");
+                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"**Kills: {Kills}");
+                        Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
+                        Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForFlag}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            RatioAmount = currentMaxBoneRatio,
+                            Bone = bone,
+                            KillCount = Kills
+                        };
+                    }
+                }
+                #endregion
+            }
+
+            #region CHEST_ABDOMEN_RATIO_SESSION
+            int chestKills = HitLocationCount[IW4Info.HitLocation.torso_upper];
+
+            if (chestKills >= Thresholds.MediumSampleMinKills)
+            {
+                double marginOfError = Thresholds.GetMarginOfError(chestKills);
+                double lerpAmount = Math.Min(1.0, (chestKills - Thresholds.LowSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
+                // determine max  acceptable ratio of chest to abdomen kills
+                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(2.25), Thresholds.ChestAbdomenRatioThresholdHighSample(2.25), lerpAmount) + marginOfError;
+                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3.25), Thresholds.ChestAbdomenRatioThresholdHighSample(3.25), lerpAmount) + marginOfError;
+
+                double currentChestAbdomenRatio = HitLocationCount[IW4Info.HitLocation.torso_upper] / (double)HitLocationCount[IW4Info.HitLocation.torso_lower];
+
+                if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)
+                {
+
+                    if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan && chestKills >= Thresholds.MediumSampleMinKills + 30)
+                    {
+                        Log.WriteDebug("**Maximum Chest/Abdomen Ratio Reached For Ban**");
+                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"**Chest Kills: {chestKills}");
+                        Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
+                        Log.WriteDebug($"**MaxRatio {chestAbdomenLerpValueForBan}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+                        //  Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            RatioAmount = currentChestAbdomenRatio,
+                            Bone = IW4Info.HitLocation.torso_upper,
+                            KillCount = chestKills
+                        };
+                    }
+                    else
+                    {
+                        Log.WriteDebug("**Maximum Chest/Abdomen Ratio Reached For Flag**");
+                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"**Chest Kills: {chestKills}");
+                        Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
+                        Log.WriteDebug($"**MaxRatio {chestAbdomenRatioLerpValueForFlag}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+                        // Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            RatioAmount = currentChestAbdomenRatio,
+                            Bone = IW4Info.HitLocation.torso_upper,
+                            KillCount = chestKills
+                        };
+                    }
+                }
+            }
+            #endregion
+#endregion
+            return new DetectionPenaltyResult()
+            {
+                ClientPenalty = Penalty.PenaltyType.Any,
+                RatioAmount = 0
+            };
+        }
+
+        public DetectionPenaltyResult ProcessTotalRatio(EFClientStatistics stats)
+        {
+            int totalChestKills = stats.HitLocations.Single(c => c.Location == IW4Info.HitLocation.left_arm_upper).HitCount;
+
+            if (totalChestKills >= 250)
+            {
+                double marginOfError = Thresholds.GetMarginOfError(totalChestKills);
+                double lerpAmount = Math.Min(1.0, (totalChestKills - Thresholds.LowSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
+                // determine max  acceptable ratio of chest to abdomen kills
+                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(2.25), Thresholds.ChestAbdomenRatioThresholdHighSample(2.25), lerpAmount) + marginOfError;
+                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3.0), Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), lerpAmount) + marginOfError;
+
+                double currentChestAbdomenRatio = HitLocationCount[IW4Info.HitLocation.torso_upper] / (double)HitLocationCount[IW4Info.HitLocation.torso_lower];
+
+                if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)
+                {
+
+                    if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan)
+                    {
+                        Log.WriteDebug("**Maximum Lifetime Chest/Abdomen Ratio Reached For Ban**");
+                        Log.WriteDebug($"ClientId: {stats.ClientId}");
+                        Log.WriteDebug($"**Total Chest Kills: {totalChestKills}");
+                        Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
+                        Log.WriteDebug($"**MaxRatio {chestAbdomenLerpValueForBan}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+                        //  Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            RatioAmount = currentChestAbdomenRatio,
+                            Bone = IW4Info.HitLocation.torso_upper,
+                            KillCount = totalChestKills
+                        };
+                    }
+                    else
+                    {
+                        Log.WriteDebug("**Maximum Lifetime Chest/Abdomen Ratio Reached For Flag**");
+                        Log.WriteDebug($"ClientId: {stats.ClientId}");
+                        Log.WriteDebug($"**Total Chest Kills: {totalChestKills}");
+                        Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
+                        Log.WriteDebug($"**MaxRatio {chestAbdomenRatioLerpValueForFlag}");
+                        var sb = new StringBuilder();
+                        foreach (var kvp in HitLocationCount)
+                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        Log.WriteDebug(sb.ToString());
+                        // Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
+
+                        return new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            RatioAmount = currentChestAbdomenRatio,
+                            Bone = IW4Info.HitLocation.torso_upper,
+                            KillCount = totalChestKills
+                        };
+                    }
                 }
             }
 
-            return thresholdReached;
+            return new DetectionPenaltyResult()
+            {
+                Bone = IW4Info.HitLocation.none,
+                ClientPenalty = Penalty.PenaltyType.Any
+            };
         }
     }
 }

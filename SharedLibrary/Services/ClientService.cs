@@ -168,6 +168,11 @@ namespace SharedLibrary.Services
                     };
                 }
 
+                else
+                {
+                    client.CurrentAliasId = entity.CurrentAliasId;
+                }
+
                 // set remaining non-navigation properties that may have been updated
                 client.Level = entity.Level;
                 client.LastConnection = entity.LastConnection;

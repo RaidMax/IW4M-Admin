@@ -66,7 +66,7 @@ namespace SharedLibrary.Network
                     do
                     {
                         ReceiveBuffer = ServerOOBConnection.Receive(ref Endpoint);
-                        QueryResponseString.Append(Encoding.ASCII.GetString(ReceiveBuffer).TrimEnd('\0'));
+                        QueryResponseString.Append(Encoding.UTF7.GetString(ReceiveBuffer).TrimEnd('\0'));
                     } while (ServerOOBConnection.Available > 0 && ServerOOBConnection.Client.Connected);
 
                     if (QueryResponseString.ToString().Contains("Invalid password"))

@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Dtos
 {
-    public class ProfileMeta
+    public class ProfileMeta : SharedInfo
     {
         public DateTime When { get; set; }
+        public bool Sensitive { get; set; }
         public string WhenString => Utilities.GetTimePassed(When, false);
         public string Key { get; set; }
         public dynamic Value { get; set; }

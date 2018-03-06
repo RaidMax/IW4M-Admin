@@ -8,7 +8,7 @@ using SharedLibrary.Dtos;
 
 namespace WebfrontCore.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
         public IActionResult Index()
         {

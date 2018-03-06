@@ -9,9 +9,9 @@ using WebfrontCore.ViewComponents;
 
 namespace WebfrontCore.Controllers
 {
-    public class PenaltyController : Controller
+    public class PenaltyController : BaseController
     {
-         public IActionResult List()
+        public IActionResult List()
         {
             ViewBag.Title = "Penalty List";
             return View();

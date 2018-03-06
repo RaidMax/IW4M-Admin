@@ -10,6 +10,8 @@ namespace SharedLibrary
         public string FtpPrefix;
         public bool AllowMultipleOwners;
         public bool AllowTrustedRank;
+        public string RestartUsername;
+        public string RestartPassword;
 
         public override string Filename()
         {

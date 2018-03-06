@@ -10,7 +10,6 @@ namespace StatsPlugin.Helpers
 {
     public class ThreadSafeStatsService
     {
-
         public GenericRepository<EFClientStatistics> ClientStatSvc { get; private set; }
         public GenericRepository<EFServer> ServerSvc { get; private set; }
         public GenericRepository<EFClientKill> KillStatsSvc { get; private set; }

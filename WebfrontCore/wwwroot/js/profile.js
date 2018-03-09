@@ -49,6 +49,19 @@ $(document).ready(function () {
         }
     });
 
+    /*
+     get ip geolocation info into modal
+     */
+    $('.ip-locate-link').click(function (e) {
+        $.getJSON("http://ip-api.com/json/" + $(this).data("ip"))
+            .done(function (response) {
+                $('.modal-title').text($(this).data("ip"));
+                $('.modal-body').text(JSON.stringify(response, null, 4));
+                $('#mainModal').modal();
+            });
+
+    });
+
 });
 
 function penaltyToName(penaltyName) {

@@ -14,7 +14,7 @@ namespace SharedLibrary.Dtos
         public string GameType { get; set; }
         public int ClientCount { get; set; }
         public int MaxClients { get; set; }
-        public Chat[] ChatHistory { get; set; }
+        public ChatInfo[] ChatHistory { get; set; }
         public List<PlayerInfo> Players { get; set; }
         public Helpers.PlayerHistory[] PlayerHistory { get; set; }
         public int ID { get; set; }

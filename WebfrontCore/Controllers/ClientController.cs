@@ -38,12 +38,25 @@ namespace WebfrontCore.Controllers
                     .OrderBy(i => i)
                     .ToList(),
             };
+
             var meta = await MetaService.GetMeta(client.ClientId);
+            var penaltyMeta = await Manager.GetPenaltyService()
+                .ReadGetClientPenaltiesAsync(client.ClientId);
+            var administeredPenaltiesMeta = await Manager.GetPenaltyService()
+                .ReadGetClientPenaltiesAsync(client.ClientId, false);
+
+            if (client.Level > SharedLibrary.Objects.Player.Permission.Trusted)
+                clientDto.Meta.Add(new ProfileMeta()
+                {
+                    Key = "Masked",
+                    Value = client.Masked ? "Is" : "Is not",
+                    Sensitive = false,
+                    When = DateTime.MinValue
+                });
+
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
-            clientDto.Meta.AddRange(await Manager.GetPenaltyService()
-                .ReadGetClientPenaltiesAsync(client.ClientId));
-            clientDto.Meta.AddRange(await Manager.GetPenaltyService()
-                .ReadGetClientPenaltiesAsync(client.ClientId, false));
+            clientDto.Meta.AddRange(Authorized ? penaltyMeta : penaltyMeta.Where(m => !m.Sensitive));
+            clientDto.Meta.AddRange(Authorized ? administeredPenaltiesMeta : penaltyMeta.Where(m => !m.Sensitive));
             clientDto.Meta = clientDto.Meta
                 .OrderByDescending(m => m.When)
                 .ToList();

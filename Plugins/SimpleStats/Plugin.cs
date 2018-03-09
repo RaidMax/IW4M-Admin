@@ -97,7 +97,7 @@ namespace StatsPlugin
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
 
-                if (clientStats.FirstOrDefault()?.HitLocations.Count > 0)
+                if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
                 {
                     chestRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
                     c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /

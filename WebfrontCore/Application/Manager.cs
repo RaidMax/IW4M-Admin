@@ -12,6 +12,7 @@ using SharedLibrary.Helpers;
 using SharedLibrary.Exceptions;
 using SharedLibrary.Objects;
 using SharedLibrary.Services;
+using WebfrontCore.Application.API;
 
 namespace IW4MAdmin
 {
@@ -22,6 +23,7 @@ namespace IW4MAdmin
         public List<int> AdministratorIPs { get; set; }
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
+        public EventHandler<Event> ServerEventOccurred { get; private set; }
 
         static ApplicationManager Instance;
         List<AsyncStatus> TaskStatuses;
@@ -47,6 +49,7 @@ namespace IW4MAdmin
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
             AdministratorIPs = new List<int>();
+            ServerEventOccurred += EventAPI.OnServerEventOccurred;
         }
 
         public IList<Server> GetServers()

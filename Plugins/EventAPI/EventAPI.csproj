@@ -69,7 +69,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Plugin.cs" />
+    <None Include="Plugin.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

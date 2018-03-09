@@ -154,6 +154,7 @@
     <Compile Include="Database\Models\EFPenalty.cs" />
     <Compile Include="Database\Models\SharedEntity.cs" />
     <Compile Include="Database\Repair.cs" />
+    <Compile Include="Dtos\ChatInfo.cs" />
     <Compile Include="Dtos\CommandResponseInfo.cs" />
     <Compile Include="Dtos\PlayerInfo.cs" />
     <Compile Include="Dtos\ClientInfo.cs" />
@@ -207,7 +208,16 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.config" />
-    <None Include="packages.config" />
+    <Compile Include="Dtos\EventInfo.cs" />
+    <Content Include="LibSQLCE\x86\Microsoft.VC90.CRT\msvcr90.dll" />
+    <Content Include="LibSQLCE\x86\Microsoft.VC90.CRT\README_ENU.txt" />
+    <Content Include="LibSQLCE\x86\sqlceca40.dll" />
+    <Content Include="LibSQLCE\x86\sqlcecompact40.dll" />
+    <Content Include="LibSQLCE\x86\sqlceer40EN.dll" />
+    <Content Include="LibSQLCE\x86\sqlceme40.dll" />
+    <Content Include="LibSQLCE\x86\sqlceqp40.dll" />
+    <Content Include="LibSQLCE\x86\sqlcese40.dll" />
+    <None Include="LibSQLCE\x86\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="EntityFramework">
@@ -242,10 +252,8 @@
     <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\lib"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)Admin\lib"
 
-if not exist "$(TargetDir)x86" md "$(TargetDir)x86"
-  xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\x86\*.*" "$(TargetDir)x86"
-if not exist "$(TargetDir)amd64" md "$(TargetDir)amd64"
-  xcopy /s /y "$(SolutionDir)packages\Microsoft.SqlServer.Compact.4.0.8876.1\NativeBinaries\amd64\*.*" "$(TargetDir)amd64"
+if not exist "$(ProjectDir)LibSQLCE\x86" md "$(TargetDir)x86"
+  xcopy /s /y "$(ProjectDir)LibSQLCE\x86\*.*" "$(TargetDir)x86"
 
 
 xcopy /Y /I /E "$(TargetDir)*"  "$(SolutionDir)BUILD\Lib"</PostBuildEvent>

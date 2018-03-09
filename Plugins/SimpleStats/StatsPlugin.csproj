@@ -118,6 +118,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cheat\Detection.cs" />
+    <Compile Include="Cheat\DetectionPenaltyResult.cs" />
+    <Compile Include="Cheat\Thresholds.cs" />
     <Compile Include="Commands\ResetStats.cs" />
     <Compile Include="Commands\TopStats.cs" />
     <Compile Include="Commands\ViewStats.cs" />
@@ -147,9 +150,7 @@
       <Name>SharedLibrary</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Cheat\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "$(SolutionDir)BUILD\plugins\"</PostBuildEvent>

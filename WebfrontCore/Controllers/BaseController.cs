@@ -18,7 +18,9 @@ namespace WebfrontCore.Controllers
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             Manager = IW4MAdmin.Program.ServerManager;
-            Authorized = Manager.AdministratorIPs.Contains(context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP());
+            Authorized = context.HttpContext.Connection.RemoteIpAddress.ToString() == "127.0.0.1" || 
+                Manager.AdministratorIPs.Contains(context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP());
+            ViewBag.Authorized = Authorized;
             base.OnActionExecuting(context);
         }
     }

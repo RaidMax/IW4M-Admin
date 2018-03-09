@@ -8,59 +8,6 @@ using SharedLibrary.Objects;
 
 namespace SharedLibrary
 {
-    [Serializable]
-    public class Chat
-    {
-        public Chat(string O, String M, DateTime D)
-        {
-            Name = O;
-            Message = M;
-            Time = D;
-            
-        }
-
-        public String Message { get; private set; }
-        public DateTime Time { get; private set; }
-        public string Name;
-    }
-
-    [Serializable]
-    public struct RestEvent
-    {
-        public RestEvent(EventType Ty, EventVersion V, string M, string T, string O, string Ta)
-        {
-            Type = Ty;
-            Version = V;
-            Message = System.Web.HttpUtility.HtmlEncode(M);
-            Title = T;
-            Origin = System.Web.HttpUtility.HtmlEncode(O);
-            Target = System.Web.HttpUtility.HtmlEncode(Ta);
-
-            ID = Math.Abs(DateTime.Now.GetHashCode());
-        }
-
-        public enum EventType
-        {
-            NOTIFICATION,
-            STATUS,
-            ALERT,
-        }
-
-        public enum EventVersion
-        {
-            IW4MAdmin
-        }
-
-        public EventType Type;
-        public EventVersion Version;
-        public string Message;
-        public string Title;
-        public string Origin;
-        public string Target;
-        public int ID;
-    }
-
-
     public class Event
     {
         public enum GType
@@ -135,10 +82,10 @@ namespace SharedLibrary
                 }
 
                 if (removeTime.Contains("ExitLevel"))
-                    return new Event(GType.MapEnd, line[0], null, null, SV);
+                    return new Event(GType.MapEnd, line[0], new Player() { ClientId = 1 }, null, SV);
 
                 if (removeTime.Contains("InitGame"))
-                    return new Event(GType.MapChange, line[0], null, null, SV);
+                    return new Event(GType.MapChange, line[0], new Player() { ClientId = 1 }, null, SV);
 
 
                 return null;

@@ -12,6 +12,8 @@ using SharedLibrary.Objects;
 using System.Text.RegularExpressions;
 using SharedLibrary.Services;
 using SharedLibrary.Database.Models;
+using SharedLibrary.Dtos;
+using WebfrontCore.Application.Misc;
 
 namespace IW4MAdmin
 {
@@ -58,7 +60,8 @@ namespace IW4MAdmin
             }
 
             if (polledPlayer.Name == "Unknown Soldier" ||
-                polledPlayer.Name == "UnknownSoldier")
+                polledPlayer.Name == "UnknownSoldier" ||
+                polledPlayer.Name == "CHEATER")
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is generic");
                 await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Please change your name using /name.\"");
@@ -139,6 +142,12 @@ namespace IW4MAdmin
 
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
+
+                if (await VPNCheck.UsingVPN(player.IPAddressString))
+                {
+                    await player.Kick("VPNs are not allowed on this server", new Player() { ClientId = 1 });
+                }
+
                 return true;
             }
 
@@ -217,13 +226,13 @@ namespace IW4MAdmin
 
             if (E.Origin.Level < C.Permission)
             {
-                await E.Origin.Tell("You do not have access to that command!");
+                await E.Origin.Tell("You do not have access to that command");
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
             if (Args.Length < (C.RequiredArgumentCount))
             {
-                await E.Origin.Tell($"Not enough arguments supplied!");
+                await E.Origin.Tell($"Not enough arguments supplied");
                 await E.Origin.Tell(C.Syntax);
                 throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
@@ -334,6 +343,7 @@ namespace IW4MAdmin
                 return;
 
             await ProcessEvent(E);
+            ((ApplicationManager)Manager).ServerEventOccurred(this, E);
 
             foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
             {
@@ -588,7 +598,7 @@ namespace IW4MAdmin
 #if DEBUG
             {
                 basepath.Value = (GameName == Game.IW4) ?
-                    @"\\tsclient\J\WIN7_10.25\MW2" :
+                    @"Z:\" :
                     @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
             }
 
@@ -608,16 +618,16 @@ namespace IW4MAdmin
             }
             else
             {
-#if !DEBUG
+                //#if !DEBUG
                 LogFile = new IFile(logPath);
-#else
+                //#else
             }
-            LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
-#endif
+            // LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+            //#endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
                 await Broadcast("IW4M Admin is now ^2ONLINE");
-            }
+            
 #endif
         }
 
@@ -626,7 +636,12 @@ namespace IW4MAdmin
         {
             if (E.Type == Event.GType.Connect)
             {
-                ChatHistory.Add(new Chat(E.Origin.Name, "CONNECTED", DateTime.Now));
+                ChatHistory.Add(new ChatInfo()
+                {
+                    Name = E.Origin.Name,
+                    Message = "CONNECTED",
+                    Time = DateTime.UtcNow
+                });
 
                 if (E.Origin.Level > Player.Permission.Moderator)
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
@@ -646,7 +661,12 @@ namespace IW4MAdmin
 
             else if (E.Type == Event.GType.Disconnect)
             {
-                ChatHistory.Add(new Chat(E.Origin.Name, "DISCONNECTED", DateTime.Now));
+                ChatHistory.Add(new ChatInfo()
+                {
+                    Name = E.Origin.Name,
+                    Message = "DISCONNECTED",
+                    Time = DateTime.UtcNow
+                });
             }
 
             else if (E.Type == Event.GType.Script)
@@ -699,7 +719,12 @@ namespace IW4MAdmin
                 {
                     E.Data = E.Data.StripColors();
 
-                    ChatHistory.Add(new Chat(E.Origin.Name, E.Data, DateTime.Now));
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = E.Data,
+                        Time = DateTime.UtcNow
+                    });
                 }
             }
 

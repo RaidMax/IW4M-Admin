@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace StatsPlugin.Commands
 {
-
     public class ResetStats : Command
     {
         public ResetStats() : base("resetstats", "reset your stats to factory-new", "rs", Player.Permission.User, false) { }
@@ -32,7 +31,7 @@ namespace StatsPlugin.Commands
 
                 // fixme: this doesn't work properly when another context exists
                 await svc.SaveChangesAsync();
-                await E.Origin.Tell("Your stats have been reset");
+                await E.Origin.Tell("Your stats for this server have been reset");
             }
 
             else

@@ -85,7 +85,7 @@ namespace EventAPI
                     message.Contains("wall") ||
                     message.Contains("cheto") ||
                     message.Contains("hak") ||
-                    message.Contains("bot");
+                    message.Contains(" bot ");
 
                 if (flagged)
                 {

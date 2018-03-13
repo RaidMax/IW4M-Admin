@@ -12,14 +12,18 @@ namespace WebfrontCore.Controllers
     {
         public IActionResult Index()
         {
+            ViewBag.Description = "IW4MAdmin is a complete server administration tool for IW4x.";
             ViewBag.Title = "Server Overview";
+            ViewBag.Keywords = "IW4MAdmin, server, administration, IW4x, MW2, Modern Warfare 2";
+
             return View();
         }
 
         public IActionResult Error()
         {
-            //   return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-            return null;
+            ViewBag.Description = "IW4MAdmin encountered and error";
+            ViewBag.Title = "Error!";
+            return View();
         }
     }
 }

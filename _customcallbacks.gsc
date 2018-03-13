@@ -19,6 +19,6 @@ Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vD
 	else if(!isPlayer(attacker) && sMeansOfDeath == "MOD_FALLING")
 		_attacker = victim;
 		
-	logPrint("ScriptKill;" + _attacker.guid + ";" + victim.guid + ";" + _attacker.origin + ";" + victim.origin + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker.angles + ";" + gettime() + "\n");
+	logPrint("ScriptKill;" + _attacker.guid + ";" + victim.guid + ";" + _attacker.origin + ";" + victim.origin + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + vDir + ";" + gettime() + "\n");
 	self maps\mp\gametypes\_damage::Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }

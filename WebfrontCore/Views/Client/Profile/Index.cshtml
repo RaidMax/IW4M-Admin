@@ -1,9 +1,12 @@
 ﻿@model SharedLibrary.Dtos.PlayerInfo
-
+@{ 
+    string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
+    string shortCode = match == string.Empty ? "?" : match;
+}
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
         <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.Level.ToLower()">
-            <span class="profile-shortcode">@Model.Name[0].ToString().ToUpper()</span>
+            <span class="profile-shortcode">@shortCode</span>
         </div>
     </div>
     <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
@@ -29,7 +32,7 @@
                 {
                     foreach (string ip in Model.IPs)
                     {
-                        <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a>
+                        <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a><br/>
                     }
 
                 }

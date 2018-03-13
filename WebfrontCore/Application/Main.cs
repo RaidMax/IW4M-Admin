@@ -12,8 +12,6 @@ namespace IW4MAdmin
 {
     public class Program
     {
-        [DllImport("kernel32.dll")]
-        public static extern bool AllocConsole();
         static public double Version { get; private set; }
         static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
@@ -33,15 +31,20 @@ namespace IW4MAdmin
 
             try
             {
+
+                /*var v1 = SharedLibrary.Helpers.Vector3.Parse("(737, 1117, 268)");
+                var v2 = SharedLibrary.Helpers.Vector3.Parse("(1510, 672.98, -228.66)");
+                double angleBetween = v1.AngleBetween(v2);*/
+
+
                 CheckDirectories();
 
-                Task.Run(async () =>
-               {
-                   ServerManager = ApplicationManager.GetInstance();
-                   SharedLibrary.Database.Repair.Run(ServerManager.Logger);
-                   await ServerManager.Init();
-                   ServerManager.Start();
-               });
+
+
+                ServerManager = ApplicationManager.GetInstance();
+                SharedLibrary.Database.Repair.Run(ServerManager.Logger);
+                ServerManager.Init().Wait();
+                Task.Run(() => ServerManager.Start());
 
                 Task.Run(() =>
                 {
@@ -94,9 +97,6 @@ namespace IW4MAdmin
 
             if (!Directory.Exists($"{curDirectory}Logs"))
                 Directory.CreateDirectory($"{curDirectory}Logs");
-
-            if (!Directory.Exists($"{curDirectory}Database"))
-                Directory.CreateDirectory($"{curDirectory}Database");
 
             if (!Directory.Exists($"{curDirectory}Plugins"))
                 Directory.CreateDirectory($"{curDirectory}Plugins");

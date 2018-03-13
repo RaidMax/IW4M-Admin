@@ -226,7 +226,7 @@ namespace StatsPlugin.Helpers
             };
 
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
-                kill.Damage == 10000)
+                kill.Damage == 100000)
             {
                 // suicide by switching teams so let's not count it against them
                 return;
@@ -247,31 +247,33 @@ namespace StatsPlugin.Helpers
 
             //statsSvc.KillStatsSvc.Insert(kill);
             //await statsSvc.KillStatsSvc.SaveChangesAsync();
-
-            async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
+            if (attacker.CurrentServer.Config.EnableAntiCheat)
             {
-                switch (penalty.ClientPenalty)
+                async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
-                    case Penalty.PenaltyType.Ban:
-                        await attacker.Ban("You appear to be cheating", new Player() { ClientId = 1 });
-                        break;
-                    case Penalty.PenaltyType.Flag:
-                        if (attacker.Level != Player.Permission.User)
+                    switch (penalty.ClientPenalty)
+                    {
+                        case Penalty.PenaltyType.Ban:
+                            await attacker.Ban("You appear to be cheating", new Player() { ClientId = 1 });
                             break;
-                        var flagCmd = new CFlag();
-                        await flagCmd.ExecuteAsync(new Event(Event.GType.Flag, $"{(int)penalty.Bone}-{Math.Round(penalty.RatioAmount, 2).ToString()}@{penalty.KillCount}", new Player()
-                        {
-                            ClientId = 1,
-                            Level = Player.Permission.Console,
-                            ClientNumber = -1,
-                            CurrentServer = attacker.CurrentServer
-                        }, attacker, attacker.CurrentServer));
-                        break;
+                        case Penalty.PenaltyType.Flag:
+                            if (attacker.Level != Player.Permission.User)
+                                break;
+                            var flagCmd = new CFlag();
+                            await flagCmd.ExecuteAsync(new Event(Event.GType.Flag, $"{(int)penalty.Bone}-{Math.Round(penalty.RatioAmount, 2).ToString()}@{penalty.KillCount}", new Player()
+                            {
+                                ClientId = 1,
+                                Level = Player.Permission.Console,
+                                ClientNumber = -1,
+                                CurrentServer = attacker.CurrentServer
+                            }, attacker, attacker.CurrentServer));
+                            break;
+                    }
                 }
-            }
 
-            await executePenalty(playerDetection.ProcessKill(kill));
-            await executePenalty(playerDetection.ProcessTotalRatio(playerStats));
+                await executePenalty(playerDetection.ProcessKill(kill));
+                await executePenalty(playerDetection.ProcessTotalRatio(playerStats));
+            }
         }
 
         public async Task AddStandardKill(Player attacker, Player victim)

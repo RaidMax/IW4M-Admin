@@ -12,6 +12,8 @@ namespace SharedLibrary
         public bool AllowTrustedRank;
         public string RestartUsername;
         public string RestartPassword;
+        public bool EnableAntiCheat;
+        public bool AllowClientVpn;
 
         public override string Filename()
         {

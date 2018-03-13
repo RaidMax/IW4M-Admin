@@ -50,7 +50,7 @@ namespace WebfrontCore.Controllers
                 {
                     Key = "Masked",
                     Value = client.Masked ? "Is" : "Is not",
-                    Sensitive = false,
+                    Sensitive = true,
                     When = DateTime.MinValue
                 });
 
@@ -61,7 +61,12 @@ namespace WebfrontCore.Controllers
                 .OrderByDescending(m => m.When)
                 .ToList();
 
-            ViewBag.Title = clientDto.Name;
+            ViewBag.Title = clientDto.Name.Substring(clientDto.Name.Length - 1).ToLower()[0] == 's' ?
+                clientDto.Name + "'" :
+                clientDto.Name + "'s";
+            ViewBag.Title += " Profile";
+            ViewBag.Description = $"Client information for {clientDto.Name}";
+            ViewBag.Keywords = $"IW4MAdmin, client, profile, {clientDto.Name}";
 
             return View("Profile/Index", clientDto);
         }
@@ -84,7 +89,10 @@ namespace WebfrontCore.Controllers
                 });
             }
 
-            ViewBag.Title = "Current Privileged Users";
+            ViewBag.Title = "Privileged Clients";
+            ViewBag.Description = "List of all privileged clients on IW4MAdmin";
+            ViewBag.Keywords = "IW4MAdmin, privileged, admins, clients, administrators";
+
             return View("Privileged/Index", adminsDict);
         }
 
@@ -102,7 +110,7 @@ namespace WebfrontCore.Controllers
             })
             .ToList();
 
-            ViewBag.Name = $"Clients Matching \"{clientName}\"";
+            ViewBag.Title = $"Clients Matching \"{clientName}\"";
             return View("Find/Index", clientsDto);
         }
     }

@@ -17,6 +17,8 @@ namespace IW4MAdmin
             string Password;
             bool AllowMultipleOwners;
             bool AllowTrustedRank;
+            bool AntiCheat;
+            bool AllowVpns;
 
             while (IP == String.Empty)
             {
@@ -57,13 +59,23 @@ namespace IW4MAdmin
             Console.Write("Allow trusted rank? [y/n]: ");
             AllowTrustedRank = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
 
+            Console.Write("Allow server-side anti-cheat [y/n]: ");
+            AntiCheat = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+
+            Console.Write("Allow client VPNS [y/n]: ");
+            AllowVpns = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+
             var config = new ServerConfiguration()
             {
                 IP = IP,
                 Password = Password,
                 Port = Port,
                 AllowMultipleOwners = AllowMultipleOwners,
-                AllowTrustedRank = AllowTrustedRank
+                AllowTrustedRank = AllowTrustedRank,
+                RestartPassword = "",
+                RestartUsername = "",
+                EnableAntiCheat = AntiCheat,
+                AllowClientVpn = AllowVpns
             };
 
             config.Write();

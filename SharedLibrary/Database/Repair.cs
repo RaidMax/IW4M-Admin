@@ -8,6 +8,9 @@ namespace SharedLibrary.Database
     {
         public static void Run(ILogger log)
         {
+            if (!System.IO.File.Exists($"{Utilities.OperatingDirectory}Database.sdf"))
+                return;
+
             SqlCeEngine engine = new SqlCeEngine(@"Data Source=|DataDirectory|\Database.sdf");
             if (false == engine.Verify())
             {

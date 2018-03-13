@@ -19,7 +19,10 @@ namespace WebfrontCore.Controllers
                 ID = s.GetHashCode(),
             });
 
+            ViewBag.Description = "Use the IW4MAdmin web console to execute commands";
             ViewBag.Title = "Web Console";
+            ViewBag.Keywords = "IW4MAdmin, console, execute, commands";
+
             return View(activeServers);
         }
 

@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<SharedLibrary.Dtos.ServerInfo>
+
 <div class="row justify-content-center">
     <div id="console" class="col-md-8">
         @Html.DropDownList("Server", Model.Select(s => new SelectListItem() { Text = s.Name, Value = s.ID.ToString() }).ToList(), new { @class = "form-control bg-dark text-light", id="console_server_select" })

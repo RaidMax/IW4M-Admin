@@ -53,10 +53,16 @@ $(document).ready(function () {
      get ip geolocation info into modal
      */
     $('.ip-locate-link').click(function (e) {
-        $.getJSON("http://ip-api.com/json/" + $(this).data("ip"))
+        e.preventDefault();
+        const ip = $(this).data("ip");
+        $.getJSON("http://ip-api.com/json/" + ip)
             .done(function (response) {
-                $('.modal-title').text($(this).data("ip"));
-                $('.modal-body').text(JSON.stringify(response, null, 4));
+                $('.modal-title').text(ip);
+                $('.modal-body').text("");
+                $('.modal-body').append("ASN &mdash; " + response["as"] + "<br/>");
+                $('.modal-body').append("ISP &mdash; " + response["isp"] + "<br/>");
+                $('.modal-body').append("Organization &mdash; " + response["org"] + "<br/>");
+                $('.modal-body').append("Location &mdash; " + response["city"] + ", " + response["regionName"] + ", " + response["country"] + "<br/>");
                 $('#mainModal').modal();
             });
 

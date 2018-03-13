@@ -3,7 +3,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>IW4MAdmin::@ViewBag.Title</title>
+    <title>@ViewBag.Title | IW4MAdmin</title>
+    <meta property="og:title" content="@ViewBag.Title | IW4MAdmin">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/favicon.ico">
+    <meta property="og:description" content="@ViewBag.Description">
+    <meta property="og:url" content="@ViewBag.Url">
+    <meta name="description" content="@ViewBag.Description">
+    <meta name="keywords" content="@ViewBag.Keywords">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment names="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
@@ -27,6 +34,10 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Penalties", "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Console", "Index", "Console", new { area = "" }, new { @class = "nav-link" })</li>
+                    @if (ViewBag.DiscordLink != string.Empty)
+                    {
+                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" target="_blank"></a></li>
+                    }
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
                     <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />
@@ -41,13 +52,10 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="mainModalLabel"></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <span aria-hidden="true" class="text-danger">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

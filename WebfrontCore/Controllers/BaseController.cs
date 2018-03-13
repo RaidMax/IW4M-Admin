@@ -21,6 +21,8 @@ namespace WebfrontCore.Controllers
             Authorized = context.HttpContext.Connection.RemoteIpAddress.ToString() == "127.0.0.1" || 
                 Manager.AdministratorIPs.Contains(context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP());
             ViewBag.Authorized = Authorized;
+            ViewBag.Url = Startup.Configuration["Web:Address"];
+            ViewBag.DiscordLink = Startup.Configuration["Discord:InviteLink"];
             base.OnActionExecuting(context);
         }
     }

@@ -104,40 +104,38 @@ namespace IW4MAdmin
             {
                 var Conf = ServerConfiguration.Read(file);
 
-                Task.Run(async () =>
+                try
                 {
-                    try
+                    var ServerInstance = new IW4MServer(this, Conf);
+                    await ServerInstance.Initialize();
+
+                    lock (_servers)
                     {
-                        var ServerInstance = new IW4MServer(this, Conf);
-                        await ServerInstance.Initialize();
-
-                        lock (_servers)
-                        {
-                            _servers.Add(ServerInstance);
-                        }
-
-                        Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
-
-                        // this way we can keep track of execution time and see if problems arise.
-                        var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
-                        lock (TaskStatuses)
-                        {
-                            TaskStatuses.Add(Status);
-                        }
+                        _servers.Add(ServerInstance);
                     }
 
-                    catch (ServerException e)
+                    Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
+
+                    // this way we can keep track of execution time and see if problems arise.
+                    var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
+                    lock (TaskStatuses)
                     {
-                        Logger.WriteError($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
-                        if (e.GetType() == typeof(DvarException))
-                            Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
-                        else if (e.GetType() == typeof(NetworkException))
-                        {
-                            Logger.WriteDebug(e.Message);
-                            Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
-                        }
+                        TaskStatuses.Add(Status);
                     }
-                });
+                }
+
+                catch (ServerException e)
+                {
+                    Logger.WriteError($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
+                    if (e.GetType() == typeof(DvarException))
+                        Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
+                    else if (e.GetType() == typeof(NetworkException))
+                    {
+                        Logger.WriteDebug(e.Message);
+                        Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
+                    }
+                }
+
             }
             #endregion
 

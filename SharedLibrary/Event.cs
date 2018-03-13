@@ -42,7 +42,7 @@ namespace SharedLibrary
         public Event(GType t, string d, Player O, Player T, Server S)
         {
             Type = t;
-            Data = d.Trim();
+            Data = d?.Trim();
             Origin = O;
             Target = T;
             Owner = S;

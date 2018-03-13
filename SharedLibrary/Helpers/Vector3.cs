@@ -40,5 +40,12 @@ namespace SharedLibrary.Helpers
         {
             return Math.Round(Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2) + Math.Pow(b.Z - a.Z, 2)), 2);
         }
+
+        public double DotProduct(Vector3 a) => (a.X * this.X) + (a.Y * this.Y) + (a.Z * this.Z);
+
+        public double Magnitude() => Math.Sqrt((X * X) + (Y * Y) + (Z * Z));
+
+        public double AngleBetween(Vector3 a) => Math.Acos(this.DotProduct(a) / (a.Magnitude() * this.Magnitude()));
+
     }
 }

@@ -92,7 +92,7 @@ namespace IW4MAdmin
                     if (existingAlias == null)
                     {
                         Logger.WriteDebug($"Client {polledPlayer} has connected previously under a different ip/name");
-                        client.CurrentAlias = new SharedLibrary.Database.Models.EFAlias()
+                        client.CurrentAlias = new EFAlias()
                         {
                             IPAddress = polledPlayer.IPAddress,
                             Name = polledPlayer.Name,
@@ -143,7 +143,7 @@ namespace IW4MAdmin
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
 
-                if (await VPNCheck.UsingVPN(player.IPAddressString))
+                if (Config.AllowClientVpn && await VPNCheck.UsingVPN(player.IPAddressString))
                 {
                     await player.Kick("VPNs are not allowed on this server", new Player() { ClientId = 1 });
                 }
@@ -288,10 +288,9 @@ namespace IW4MAdmin
                     {
                         E.Target = matchingPlayers.First();
                         E.Data = Regex.Replace(E.Data, Regex.Escape($"\"{E.Target.Name}\""), "", RegexOptions.IgnoreCase).Trim();
+                        E.Data = Regex.Replace(E.Data, Regex.Escape($"{E.Target.Name}"), "", RegexOptions.IgnoreCase).Trim();
 
-                        if ((E.Data.ToLower().Trim() == E.Target.Name.ToLower().Trim() ||
-                            E.Data == String.Empty) &&
-                            C.RequiresTarget)
+                        if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
@@ -375,7 +374,7 @@ namespace IW4MAdmin
 #if DEBUG
             Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
 #endif
-
+            Throttled = false;
             for (int i = 0; i < Players.Count; i++)
             {
                 if (CurrentPlayers.Find(p => p.ClientNumber == i) == null && Players[i] != null)
@@ -561,7 +560,20 @@ namespace IW4MAdmin
 
             DVAR<int> onelog = null;
             if (GameName == Game.IW4)
-                onelog = await this.GetDvarAsync<int>("iw4x_onelog");
+            {
+                try
+                {
+                    onelog = await this.GetDvarAsync<int>("iw4x_onelog");
+                }
+
+                catch (Exception)
+                {
+                    onelog = new DVAR<int>("iw4x_onelog")
+                    {
+                        Value = -1
+                    };
+                }
+            }
 
             try
             {
@@ -580,8 +592,10 @@ namespace IW4MAdmin
             this.FSGame = game.Value;
 
             await this.SetDvarAsync("sv_kickbantime", 60);
-            await this.SetDvarAsync("sv_network_fps", 1000);
-            await this.SetDvarAsync("com_maxfps", 1000);
+
+            // I don't think this belongs in an admin tool
+            /*await this.SetDvarAsync("sv_network_fps", 1000);
+            await this.SetDvarAsync("com_maxfps", 1000);*/
 
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
@@ -603,7 +617,7 @@ namespace IW4MAdmin
             }
 
 #endif
-            string mainPath = (GameName == Game.IW4) ? "userraw" : "main";
+            string mainPath = (GameName == Game.IW4 && onelog.Value >=0) ? "userraw" : "main";
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{ basepath.Value.Replace("\\", "/")}/{mainPath}/{logfile.Value}" :
@@ -626,8 +640,8 @@ namespace IW4MAdmin
             //#endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
-                await Broadcast("IW4M Admin is now ^2ONLINE");
-            
+            await Broadcast("IW4M Admin is now ^2ONLINE");
+
 #endif
         }
 

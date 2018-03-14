@@ -1,0 +1,241 @@
+{
+  "AutoMessagePeriod": 60,
+  "AutoMessages": [
+    "Over ^5{{TOTALPLAYTIME}} ^7man hours have been played on this server!",
+    "This server uses ^5IW4M Admin v{{VERSION}} ^7get it at ^5raidmax.org/IW4MAdmin",
+    "^5IW4M Admin ^7sees ^5YOU!",
+    "This server has harvested the information of ^5{{TOTALPLAYERS}} ^7players!",
+    "Cheaters are ^1unwelcome ^7 on this server",
+    "Did you know 8/10 people agree with unverified statistics?",
+    "^5{{TOTALKILLS}} ^7innocent people have been murdered in this server!"
+  ],
+  "Rules": [
+    "Cheating/Exploiting is not allowed",
+    "Respect other players",
+    "Administrators have the final say",
+    "No Racism or excessive trolling",
+    "Keep grenade launcher use to a minimum",
+    "Balance teams at ALL times"
+  ],
+  "Maps": [
+    {
+      "Game": "IW4",
+      "Maps": [
+        {
+          "Alias": "Rust",
+          "Name": "mp_rust"
+        },
+
+        {
+          "Alias": "Highrise",
+          "Name": "mp_highrise"
+        },
+
+        {
+          "Alias": "Terminal",
+          "Name": "mp_terminal"
+        },
+
+        {
+          "Alias": "Crash",
+          "Name": "mp_crash"
+        },
+
+        {
+          "Alias": "Skidrow",
+          "Name": "mp_nightshift"
+        },
+
+        {
+          "Alias": "Quarry",
+          "Name": "mp_quarry"
+        },
+
+        {
+          "Alias": "Afghan",
+          "Name": "mp_afghan"
+        },
+
+        {
+          "Alias": "Derail",
+          "Name": "mp_derail"
+        },
+
+        {
+          "Alias": "Estate",
+          "Name": "mp_estate"
+        },
+
+        {
+          "Alias": "Favela",
+          "Name": "mp_favela"
+        },
+
+        {
+          "Alias": "Highrise",
+          "Name": "mp_highrise"
+        },
+
+        {
+          "Alias": "Invasion",
+          "Name": "mp_invasion"
+        },
+
+        {
+          "Alias": "Karachi",
+          "Name": "mp_checkpoint"
+        },
+
+        {
+          "Alias": "Quarry",
+          "Name": "mp_quarry"
+        },
+
+        {
+          "Alias": "Rundown",
+          "Name": "mp_rundown"
+        },
+
+        {
+          "Alias": "Scrapyard",
+          "Name": "mp_boneyard"
+        },
+
+        {
+          "Alias": "Skidrow",
+          "Name": "mp_nightshift"
+        },
+
+        {
+          "Alias": "Sub Base",
+          "Name": "mp_subbase"
+        },
+
+        {
+          "Alias": "Underpass",
+          "Name": "mp_underpass"
+        },
+
+        {
+          "Alias": "Wasteland",
+          "Name": "mp_brecourt"
+        },
+
+        {
+          "Alias": "Overgrown",
+          "Name": "mp_overgrown"
+        },
+
+        {
+          "Alias": "Strike",
+          "Name": "mp_strike"
+        },
+
+        {
+          "Alias": "Vacant",
+          "Name": "mp_vacant"
+        },
+
+        {
+          "Alias": "Carnival",
+          "Name": "mp_abandon"
+        },
+
+        {
+          "Alias": "Trailer Park",
+          "Name": "mp_trailerpark"
+        },
+
+        {
+          "Alias": "Fuel",
+          "Name": "mp_fuel2"
+        },
+
+        {
+          "Alias": "Storm",
+          "Name": "mp_storm"
+        },
+
+        {
+          "Alias": "Bailout",
+          "Name": "mp_complex"
+        },
+
+        {
+          "Alias": "Salvage",
+          "Name": "mp_compact"
+        },
+
+        {
+          "Alias": "Nuketown",
+          "Name": "mp_nuked"
+        },
+
+        {
+          "Alias": "IW4 Credits",
+          "Name": "iw4_credits"
+        },
+
+        {
+          "Alias": "Killhouse",
+          "Name": "mp_killhouse"
+        },
+
+        {
+          "Alias": "Bog",
+          "Name": "mp_bog_sh"
+        },
+
+        {
+          "Alias": "Freighter",
+          "Name": "mp_cargoship_sh"
+        },
+
+        {
+          "Alias": "Shipment",
+          "Name": "mp_shipment"
+        },
+
+        {
+          "Alias": "Shipment - Long",
+          "Name": "mp_shipment_long"
+        },
+
+        {
+          "Alias": "Rust - Long",
+          "Name": "mp_rust_long"
+        },
+
+        {
+          "Alias": "Firing Range",
+          "Name": "mp_firingrange"
+        },
+
+        {
+          "Alias": "Chemical Plant",
+          "Name": "mp_storm_spring"
+        },
+
+        {
+          "Alias": "Favela - Tropical",
+          "Name": "mp_fav_tropical"
+        },
+
+        {
+          "Alias": "Estate - Tropical",
+          "Name": "mp_estate_tropical"
+        },
+
+        {
+          "Alias": "Crash - Tropical",
+          "Name": "mp_crash_tropical"
+        },
+
+        {
+          "Alias": "Forgotten City",
+          "Name": "mp_bloc_sh"
+        }
+      ]
+    }
+  ]
+}

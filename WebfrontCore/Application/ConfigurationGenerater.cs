@@ -44,7 +44,6 @@ namespace IW4MAdmin
                 {
                     continue;
                 }
-
             }
 
             Console.Write("Enter server RCON password: ");

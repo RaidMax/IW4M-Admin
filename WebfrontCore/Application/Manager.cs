@@ -111,12 +111,17 @@ namespace IW4MAdmin
             BuildConfiguration();
             var settings = AppSettings.Get<ApplicationConfiguration>();
 
-            if (settings == null)
+            if (settings?.Servers == null)
             {
-                settings = ConfigurationGenerator.GenerateApplicationConfig();
-                settings.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
+                var newSettings = ConfigurationGenerator.GenerateApplicationConfig();
+                newSettings.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
+                newSettings.AutoMessagePeriod = settings.AutoMessagePeriod;
+                newSettings.AutoMessages = settings.AutoMessages;
+                newSettings.Rules = settings.Rules;
+                newSettings.Maps = settings.Maps;
+                settings = newSettings;
 
-                var appConfigJSON = JsonConvert.SerializeObject(settings, Formatting.Indented);
+                var appConfigJSON = JsonConvert.SerializeObject(newSettings, Formatting.Indented);
                 File.WriteAllText($"{AppDomain.CurrentDomain.BaseDirectory}IW4MAdminSettings.json", appConfigJSON);
                 BuildConfiguration();
             }

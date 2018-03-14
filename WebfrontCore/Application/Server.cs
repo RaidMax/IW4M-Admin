@@ -465,7 +465,7 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
-                if (LastMessage.TotalSeconds > MessageTime && BroadcastMessages.Count > 0 && ClientNum > 0)
+                if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().AutoMessagePeriod && BroadcastMessages.Count > 0 && ClientNum > 0)
                 {
                     await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
@@ -588,8 +588,10 @@ namespace IW4MAdmin
                 Website = "this server's website";
             }
 
+            InitializeMaps();
+
             this.Hostname = hostname.Value.StripColors();
-            this.CurrentMap = Maps.Find(m => m.Name == mapname.Value) ?? new Map(mapname.Value, mapname.Value);
+            this.CurrentMap = Maps.Find(m => m.Name == mapname.Value) ?? new Map() { Alias = mapname.Value, Name = mapname.Value };
             this.MaxClients = maxplayers.Value;
             this.FSGame = game.Value;
 
@@ -619,7 +621,7 @@ namespace IW4MAdmin
             }
 
 #endif
-            string mainPath = (GameName == Game.IW4 && onelog.Value >=0) ? "userraw" : "main";
+            string mainPath = (GameName == Game.IW4 && onelog.Value >= 0) ? "userraw" : "main";
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
@@ -643,7 +645,6 @@ namespace IW4MAdmin
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
             await Broadcast("IW4M Admin is now ^2ONLINE");
-
 #endif
         }
 
@@ -753,7 +754,7 @@ namespace IW4MAdmin
                 FSGame = (await this.GetDvarAsync<string>("fs_game")).Value.StripColors();
 
                 string mapname = this.GetDvarAsync<string>("mapname").Result.Value;
-                CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map(mapname, mapname);
+                CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
 
                 // todo: make this more efficient
                 ((ApplicationManager)(Manager)).AdministratorIPs = (await new GenericRepository<EFClient>().FindAsync(c => c.Level > Player.Permission.Trusted))

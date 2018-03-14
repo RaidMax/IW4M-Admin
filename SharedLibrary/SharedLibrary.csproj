@@ -146,6 +146,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\MapConfiguration.cs" />
     <Compile Include="Configuration\ServerConfiguration.cs" />
     <Compile Include="Database\Importer.cs" />
     <Compile Include="Database\DatabaseContext.cs" />

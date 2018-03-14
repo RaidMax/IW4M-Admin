@@ -12,6 +12,9 @@ namespace SharedLibrary.Configuration
         public string DiscordInviteCode { get; set; }
         public string IPHubAPIKey { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
-
+        public int AutoMessagePeriod { get; set; }
+        public List<string> AutoMessages { get; set; }
+        public List<string> Rules { get; set; }
+        public List<MapConfiguration> Maps { get; set; }
     }
 }

@@ -39,13 +39,11 @@ namespace SharedLibrary
 
             Players = new List<Player>(new Player[18]);
             Reports = new List<Report>();
-            PlayerHistory = new Queue<Helpers.PlayerHistory>();
+            PlayerHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();
-            //Configuration = new ConfigurationManager(this.GetType());
             NextMessage = 0;
             InitializeTokens();
             InitializeAutoMessages();
-            InitializeMaps();
             InitializeRules();
         }
 
@@ -255,24 +253,7 @@ namespace SharedLibrary
         protected void InitializeMaps()
         {
             Maps = new List<Map>();
-
-            IFile mapfile = new IFile($"{Utilities.OperatingDirectory}config/maps.cfg");
-            String[] _maps = mapfile.ReadAllLines();
-            mapfile.Close();
-            if (_maps.Length > 2) // readAll returns minimum one empty string
-            {
-                foreach (String m in _maps)
-                {
-                    String[] m2 = m.Split(':');
-                    if (m2.Length > 1)
-                    {
-                        Map map = new Map(m2[0].Trim(), m2[1].Trim());
-                        Maps.Add(map);
-                    }
-                }
-            }
-            else
-                Logger.WriteInfo("Maps configuration appears to be empty - skipping...");
+            Maps.AddRange(Manager.GetApplicationSettings().Maps.First(m => m.Game == GameName).Maps);
         }
 
         /// <summary>
@@ -283,34 +264,7 @@ namespace SharedLibrary
         {
             BroadcastMessages = new List<String>();
 
-            IFile messageCFG = new IFile($"{Utilities.OperatingDirectory}config/messages.cfg");
-            String[] lines = messageCFG.ReadAllLines();
-            messageCFG.Close();
-
-            if (lines.Length < 2) //readAll returns minimum one empty string
-            {
-                Logger.WriteInfo("Messages configuration appears empty - skipping...");
-                return;
-            }
-
-            int mTime = -1;
-            int.TryParse(lines[0], out mTime);
-
-            if (MessageTime == -1)
-                MessageTime = 60;
-            else
-                MessageTime = mTime;
-
-            foreach (String l in lines)
-            {
-                if (lines[0] != l && l.Length > 1)
-                    BroadcastMessages.Add(l);
-            }
-
-            messageCFG.Close();
-
-            //if (Program.Version != Program.latestVersion && Program.latestVersion != 0)
-            // messages.Add("^5IW4M Admin ^7is outdated. Please ^5update ^7to version " + Program.latestVersion);
+            BroadcastMessages.AddRange(Manager.GetApplicationSettings().AutoMessages);
         }
 
         /// <summary>
@@ -321,21 +275,7 @@ namespace SharedLibrary
         {
             Rules = new List<String>();
 
-            IFile ruleFile = new IFile($"{Utilities.OperatingDirectory}config/rules.cfg");
-            String[] _rules = ruleFile.ReadAllLines();
-            ruleFile.Close();
-            if (_rules.Length > 2) // readAll returns minimum one empty string
-            {
-                foreach (String r in _rules)
-                {
-                    if (r.Length > 1)
-                        Rules.Add(r);
-                }
-            }
-            else
-                Logger.WriteInfo("Rules configuration appears empty - skipping...");
-
-            ruleFile.Close();
+            Rules.AddRange(Manager.GetApplicationSettings().Rules);
         }
 
         public ConfigurationManager Configuration { get; private set; }
@@ -392,7 +332,6 @@ namespace SharedLibrary
         protected string IP;
         protected int Port;
         protected string FSGame;
-        protected int MessageTime;
         protected int NextMessage;
         protected int ConnectionErrors;
         protected List<string> BroadcastMessages;

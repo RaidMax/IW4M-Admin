@@ -31,15 +31,10 @@ namespace IW4MAdmin
 
             try
             {
-
                 /*var v1 = SharedLibrary.Helpers.Vector3.Parse("(737, 1117, 268)");
                 var v2 = SharedLibrary.Helpers.Vector3.Parse("(1510, 672.98, -228.66)");
                 double angleBetween = v1.AngleBetween(v2);*/
-
-
                 CheckDirectories();
-
-
 
                 ServerManager = ApplicationManager.GetInstance();
                 SharedLibrary.Database.Repair.Run(ServerManager.Logger);
@@ -76,6 +71,11 @@ namespace IW4MAdmin
             catch (Exception e)
             {
                 Console.WriteLine($"Fatal Error during initialization: {e.Message}");
+                while(e.InnerException != null)
+                {
+                    e = e.InnerException;
+                    Console.WriteLine($"Inner exception: {e.Message}");
+                }
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
                 return;

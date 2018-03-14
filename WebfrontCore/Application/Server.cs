@@ -620,8 +620,8 @@ namespace IW4MAdmin
             string mainPath = (GameName == Game.IW4 && onelog.Value >=0) ? "userraw" : "main";
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
-                $"{ basepath.Value.Replace("\\", "/")}/{mainPath}/{logfile.Value}" :
-                $"{basepath.Value.Replace("\\", "/")}/{game.Value}/{logfile.Value}";
+                $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
+                $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
 
             if (!File.Exists(logPath))
             {

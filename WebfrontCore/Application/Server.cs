@@ -14,6 +14,7 @@ using SharedLibrary.Services;
 using SharedLibrary.Database.Models;
 using SharedLibrary.Dtos;
 using WebfrontCore.Application.Misc;
+using SharedLibrary.Configuration;
 
 namespace IW4MAdmin
 {
@@ -143,7 +144,8 @@ namespace IW4MAdmin
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
 
-                if (Config.AllowClientVpn && await VPNCheck.UsingVPN(player.IPAddressString))
+                if (!Manager.GetApplicationSettings().EnableClientVPNs &&
+                    await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().IPHubAPIKey))
                 {
                     await player.Kick("VPNs are not allowed on this server", new Player() { ClientId = 1 });
                 }
@@ -621,7 +623,7 @@ namespace IW4MAdmin
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
-                $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+                $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
 
             if (!File.Exists(logPath))
             {
@@ -661,7 +663,7 @@ namespace IW4MAdmin
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
 
                 // give trusted rank
-                if (Config.AllowTrustedRank &&
+                if (Manager.GetApplicationSettings().EnableTrustedRank &&
                     E.Origin.TotalConnectionTime / 60.0 >= 2880 &&
                     E.Origin.Level < Player.Permission.Trusted &&
                     E.Origin.Level != Player.Permission.Flagged)

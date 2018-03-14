@@ -424,9 +424,9 @@ namespace SharedLibrary.Commands
             if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
                 newPerm = Player.Permission.Banned;
 
-            if (newPerm == Player.Permission.Owner && !E.Owner.Config.AllowMultipleOwners)
+            if (newPerm == Player.Permission.Owner && !E.Owner.Manager.GetApplicationSettings().EnableMultipleOwners)
             {
-                await E.Origin.Tell("There can only be 1 owner. Modify your server configuration if multiple owners are required");
+                await E.Origin.Tell("There can only be 1 owner. Modify your appsettings if multiple owners are required");
                 return;
             }
 
@@ -1033,13 +1033,15 @@ namespace SharedLibrary.Commands
 #endif
                         process.StartInfo.FileName = $"{process.StartInfo.WorkingDirectory}\\iw4x.exe";
                         process.StartInfo.Arguments = commandLine.Substring(6);
-                        process.StartInfo.UserName = E.Owner.Config.RestartUsername;
+
+                        /*process.StartInfo.UserName = E.Owner.ServerConfig.RestartUsername;
 
                         var pw = new System.Security.SecureString();
-                        foreach (char c in E.Owner.Config.RestartPassword)
+                        foreach (char c in E.Owner.ServerConfig.RestartPassword)
                             pw.AppendChar(c);
 
                         process.StartInfo.Password = pw;
+                        */
                         process.Start();
                     }
 

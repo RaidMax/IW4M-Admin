@@ -247,7 +247,7 @@ namespace StatsPlugin.Helpers
 
             //statsSvc.KillStatsSvc.Insert(kill);
             //await statsSvc.KillStatsSvc.SaveChangesAsync();
-            if (attacker.CurrentServer.Config.EnableAntiCheat)
+            if(Manager.GetApplicationSettings().EnableAntiCheat)
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {

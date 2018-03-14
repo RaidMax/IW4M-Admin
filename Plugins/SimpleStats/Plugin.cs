@@ -92,6 +92,7 @@ namespace StatsPlugin
                 int deaths = clientStats.Sum(c => c.Deaths);
                 double kdr = Math.Round(kills / (double)deaths, 2);
                 double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
+                double spm = Math.Round(clientStats.Sum(c => c.SPM), 1);
 
                 double chestRatio = 0;
                 double abdomenRatio = 0;
@@ -133,6 +134,11 @@ namespace StatsPlugin
                          {
                              Key = "Skill",
                              Value = skill
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Score Per Minute",
+                             Value = spm
                          },
                          new ProfileMeta()
                          {

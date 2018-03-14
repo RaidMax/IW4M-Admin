@@ -3,6 +3,8 @@ using SharedLibrary.Objects;
 using SharedLibrary.Database.Models;
 using SharedLibrary.Services;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using SharedLibrary.Configuration;
 
 namespace SharedLibrary.Interfaces
 {
@@ -16,6 +18,7 @@ namespace SharedLibrary.Interfaces
         IList<Command> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();
         IList<Player> GetActiveClients();
+        ApplicationConfiguration GetApplicationSettings();
         ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();

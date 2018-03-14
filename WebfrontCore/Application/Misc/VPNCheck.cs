@@ -9,7 +9,7 @@ namespace WebfrontCore.Application.Misc
 {
     public class VPNCheck
     {
-        public static async Task<bool> UsingVPN(string ip)
+        public static async Task<bool> UsingVPN(string ip, string apiKey)
         {
 #if DEBUG
             return false;
@@ -18,7 +18,7 @@ namespace WebfrontCore.Application.Misc
             {
                 using (var RequestClient = new System.Net.Http.HttpClient())
                 {
-                    RequestClient.DefaultRequestHeaders.Add("X-Key", Startup.Configuration["VPN:APIKey"]);
+                    RequestClient.DefaultRequestHeaders.Add("X-Key", apiKey);
                     string response = await RequestClient.GetStringAsync($"http://v2.api.iphub.info/ip/{ip}");
                     var responseJson = JsonConvert.DeserializeObject<JObject>(response);
                     int blockType = Convert.ToInt32(responseJson["block"]);

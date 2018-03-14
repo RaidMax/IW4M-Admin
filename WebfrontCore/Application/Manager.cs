@@ -13,6 +13,11 @@ using SharedLibrary.Exceptions;
 using SharedLibrary.Objects;
 using SharedLibrary.Services;
 using WebfrontCore.Application.API;
+using Microsoft.Extensions.Configuration;
+using WebfrontCore;
+using SharedLibrary.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace IW4MAdmin
 {
@@ -32,6 +37,7 @@ namespace IW4MAdmin
         ClientService ClientSvc;
         AliasService AliasSvc;
         PenaltyService PenaltySvc;
+        IConfigurationRoot AppSettings;
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 700;
 #else
@@ -40,7 +46,7 @@ namespace IW4MAdmin
 
         private ApplicationManager()
         {
-            Logger = new Logger($@"{SharedLibrary.Utilities.OperatingDirectory}Logs{Path.DirectorySeparatorChar}IW4MAdmin.log");
+            Logger = new Logger($@"{Utilities.OperatingDirectory}Logs{Path.DirectorySeparatorChar}IW4MAdmin.log");
             _servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
@@ -50,6 +56,13 @@ namespace IW4MAdmin
             PenaltySvc = new PenaltyService();
             AdministratorIPs = new List<int>();
             ServerEventOccurred += EventAPI.OnServerEventOccurred;
+        }
+
+        private void BuildConfiguration()
+        {
+            AppSettings = new ConfigurationBuilder()
+                .AddJsonFile($"{AppDomain.CurrentDomain.BaseDirectory}IW4MAdminSettings.json")
+                .Build();
         }
 
         public IList<Server> GetServers()
@@ -95,15 +108,21 @@ namespace IW4MAdmin
             #endregion
 
             #region CONFIG
-            var Configs = Directory.EnumerateFiles($"{Program.OperatingDirectory}config/servers").Where(x => x.Contains(".cfg"));
+            BuildConfiguration();
+            var settings = AppSettings.Get<ApplicationConfiguration>();
 
-            if (Configs.Count() == 0)
-                ServerConfigurationGenerator.Generate();
-
-            foreach (var file in Configs)
+            if (settings == null)
             {
-                var Conf = ServerConfiguration.Read(file);
+                settings = ConfigurationGenerator.GenerateApplicationConfig();
+                settings.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
 
+                var appConfigJSON = JsonConvert.SerializeObject(settings, Formatting.Indented);
+                File.WriteAllText($"{AppDomain.CurrentDomain.BaseDirectory}IW4MAdminSettings.json", appConfigJSON);
+                BuildConfiguration();
+            }
+
+            foreach (var Conf in settings.Servers)
+            {
                 try
                 {
                     var ServerInstance = new IW4MServer(this, Conf);
@@ -126,7 +145,7 @@ namespace IW4MAdmin
 
                 catch (ServerException e)
                 {
-                    Logger.WriteError($"Not monitoring server {Conf.IP}:{Conf.Port} due to uncorrectable errors");
+                    Logger.WriteError($"Not monitoring server {Conf.IPAddress}:{Conf.Port} due to uncorrectable errors");
                     if (e.GetType() == typeof(DvarException))
                         Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
                     else if (e.GetType() == typeof(NetworkException))
@@ -260,5 +279,7 @@ namespace IW4MAdmin
         public ClientService GetClientService() => ClientSvc;
         public AliasService GetAliasService() => AliasSvc;
         public PenaltyService GetPenaltyService() => PenaltySvc;
+
+        public ApplicationConfiguration GetApplicationSettings() => AppSettings.Get<ApplicationConfiguration>();
     }
 }

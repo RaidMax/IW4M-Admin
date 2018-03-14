@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SharedLibrary.Helpers;
 using SharedLibrary.Objects;
 using SharedLibrary.Dtos;
+using SharedLibrary.Configuration;
 
 namespace SharedLibrary
 {
@@ -30,11 +31,11 @@ namespace SharedLibrary
         public Server(Interfaces.IManager mgr, ServerConfiguration config)
         {
             Password = config.Password;
-            IP = config.IP;
+            IP = config.IPAddress;
             Port = config.Port;
             Manager = mgr;
             Logger = Manager.GetLogger();
-            Config = config;
+            ServerConfig = config;
 
             Players = new List<Player>(new Player[18]);
             Reports = new List<Report>();
@@ -360,7 +361,7 @@ namespace SharedLibrary
         // Objects
         public Interfaces.IManager Manager { get; protected set; }
         public Interfaces.ILogger Logger { get; private set; }
-        public ServerConfiguration Config { get; private set; }
+        public ServerConfiguration ServerConfig { get; private set; }
         public List<Map> Maps { get; protected set; }
         public List<string> Rules { get; protected set; }
         public List<Report> Reports { get; set; }

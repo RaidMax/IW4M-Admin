@@ -34,9 +34,9 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Penalties", "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Console", "Index", "Console", new { area = "" }, new { @class = "nav-link" })</li>
-                    @if (ViewBag.DiscordLink != string.Empty)
+                    @if (!string.IsNullOrEmpty(ViewBag.DiscordLink))
                     {
-                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" target="_blank"></a></li>
+                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" class="nav-link" target="_blank">Discord</a></li>
                     }
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">

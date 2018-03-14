@@ -22,7 +22,7 @@ namespace WebfrontCore.Controllers
                 Manager.AdministratorIPs.Contains(context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP());
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Startup.Configuration["Web:Address"];
-            ViewBag.DiscordLink = Startup.Configuration["Discord:InviteLink"];
+            ViewBag.DiscordLink = Manager.GetApplicationSettings().DiscordInviteCode;
             base.OnActionExecuting(context);
         }
     }

@@ -144,8 +144,8 @@ namespace IW4MAdmin
                 await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
 
 
-                if (!Manager.GetApplicationSettings().EnableClientVPNs &&
-                    await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().IPHubAPIKey))
+                if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
+                    await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
                 {
                     await player.Kick("VPNs are not allowed on this server", new Player() { ClientId = 1 });
                 }
@@ -314,8 +314,8 @@ namespace IW4MAdmin
                     else if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
-                        E.Data = Regex.Replace(E.Data, $"{E.Target.Name}", "", RegexOptions.IgnoreCase).Trim();
-                        E.Data = Regex.Replace(E.Data, $"{Args[0]}", "", RegexOptions.IgnoreCase).Trim();
+                        E.Data = Regex.Replace(E.Data, Regex.Escape($"{E.Target.Name}"), "", RegexOptions.IgnoreCase).Trim();
+                        E.Data = Regex.Replace(E.Data, Regex.Escape($"{Args[0]}"), "", RegexOptions.IgnoreCase).Trim();
 
                         if ((E.Data.Trim() == E.Target.Name.ToLower().Trim() ||
                             E.Data == String.Empty) &&
@@ -465,7 +465,9 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
-                if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().AutoMessagePeriod && BroadcastMessages.Count > 0 && ClientNum > 0)
+                if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().Configuration().AutoMessagePeriod 
+                    && BroadcastMessages.Count > 0 
+                    && ClientNum > 0)
                 {
                     await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
@@ -664,7 +666,7 @@ namespace IW4MAdmin
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
 
                 // give trusted rank
-                if (Manager.GetApplicationSettings().EnableTrustedRank &&
+                if (Manager.GetApplicationSettings().Configuration().EnableTrustedRank &&
                     E.Origin.TotalConnectionTime / 60.0 >= 2880 &&
                     E.Origin.Level < Player.Permission.Trusted &&
                     E.Origin.Level != Player.Permission.Flagged)
@@ -960,7 +962,6 @@ namespace IW4MAdmin
             {
                 InitializeMaps();
                 InitializeAutoMessages();
-                InitializeRules();
                 return true;
             }
             catch (Exception E)
@@ -968,7 +969,6 @@ namespace IW4MAdmin
                 Logger.WriteError("Unable to reload configs! - " + E.Message);
                 BroadcastMessages = new List<String>();
                 Maps = new List<Map>();
-                Rules = new List<String>();
                 return false;
             }
         }

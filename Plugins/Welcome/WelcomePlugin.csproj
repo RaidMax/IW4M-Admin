@@ -120,6 +120,7 @@
     <Compile Include="CountryLookup.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WelcomeConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GeoIP.dat" />

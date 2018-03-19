@@ -18,7 +18,7 @@ namespace SharedLibrary.Interfaces
         IList<Command> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();
         IList<Player> GetActiveClients();
-        ApplicationConfiguration GetApplicationSettings();
+        IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();
         ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();

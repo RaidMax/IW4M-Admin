@@ -5,10 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 using SharedLibrary;
+using SharedLibrary.Configuration;
 using SharedLibrary.Dtos;
 using SharedLibrary.Helpers;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Services;
+using StatsPlugin.Config;
 using StatsPlugin.Helpers;
 using StatsPlugin.Models;
 
@@ -24,6 +26,7 @@ namespace StatsPlugin
 
         public static StatManager Manager { get; private set; }
         private IManager ServerManager;
+        public static BaseConfigurationHandler<StatsConfiguration> Config { get; private set; }
 
         public async Task OnEventAsync(Event E, Server S)
         {
@@ -80,8 +83,16 @@ namespace StatsPlugin
             }
         }
 
-        public Task OnLoadAsync(IManager manager)
+        public async Task OnLoadAsync(IManager manager)
         {
+            // load custom configuration
+            Config = new BaseConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
+            if (Config.Configuration()== null)
+            {
+                Config.Set((StatsConfiguration)new StatsConfiguration().Generate());
+                await Config.Save();
+            }
+
             // meta data info
             async Task<List<ProfileMeta>> getStats(int clientId)
             {
@@ -203,9 +214,7 @@ namespace StatsPlugin
 
             ServerManager = manager;
 
-            return Task.FromResult(
-                Manager = new StatManager(manager)
-            );
+            Manager = new StatManager(manager);
         }
 
         public async Task OnTickAsync(Server S)

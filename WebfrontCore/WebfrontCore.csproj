@@ -70,7 +70,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y &quot;$(SolutionDir)BUILD\Plugins&quot; &quot;$(TargetDir)Plugins\&quot;&#xD;&#xA;xcopy /Y /I /E &quot;$(SolutionDir)BUILD\Lib&quot; &quot;$(TargetDir)&quot;  &#xD;&#xA;" />
+    <Exec Command="xcopy /Y &quot;$(SolutionDir)BUILD\Plugins&quot; &quot;$(TargetDir)Plugins\&quot;&#xD;&#xA;" />
   </Target>
 
 </Project>

@@ -16,7 +16,7 @@ namespace IW4MAdmin
         static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
 
-        public static void Start()
+        public static bool Start()
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
             System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
@@ -66,6 +66,8 @@ namespace IW4MAdmin
                     Console.WriteLine("Shutdown complete");
                 });
 
+                return true;
+
             }
 
             catch (Exception e)
@@ -78,22 +80,13 @@ namespace IW4MAdmin
                 }
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
-                return;
+                return false;
             }
         }
 
         static void CheckDirectories()
         {
             string curDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-
-            if (!Directory.Exists($"{curDirectory}Config"))
-            {
-                Console.WriteLine("Warning: Config folder does not exist");
-                Directory.CreateDirectory($"{curDirectory}Config");
-            }
-
-            if (!Directory.Exists($"{curDirectory}Config/Servers"))
-                Directory.CreateDirectory($"{curDirectory}Config/Servers");
 
             if (!Directory.Exists($"{curDirectory}Logs"))
                 Directory.CreateDirectory($"{curDirectory}Logs");

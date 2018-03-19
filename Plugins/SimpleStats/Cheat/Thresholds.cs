@@ -31,7 +31,7 @@ namespace StatsPlugin.Cheat
         public const int HighSampleMinKills = 100;
         public const double KillTimeThreshold = 0.2;
 
-        public static double GetMarginOfError(int numKills) => 0.98 / Math.Sqrt(numKills);
+        public static double GetMarginOfError(int numKills) => 1.6455 / Math.Sqrt(numKills);
 
         public static double Lerp(double v1, double v2, double amount)
         {

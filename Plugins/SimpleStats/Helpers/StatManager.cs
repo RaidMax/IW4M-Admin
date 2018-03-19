@@ -10,6 +10,8 @@ using SharedLibrary.Objects;
 using SharedLibrary.Services;
 using StatsPlugin.Models;
 using SharedLibrary.Commands;
+using SharedLibrary.Configuration;
+using StatsPlugin.Config;
 
 namespace StatsPlugin.Helpers
 {
@@ -17,7 +19,6 @@ namespace StatsPlugin.Helpers
     {
         private ConcurrentDictionary<int, ServerStats> Servers;
         private ConcurrentDictionary<int, ThreadSafeStatsService> ContextThreads;
-        private ConcurrentDictionary<int, StreakMessage> StreakMessages;
         private ILogger Log;
         private IManager Manager;
 
@@ -25,7 +26,6 @@ namespace StatsPlugin.Helpers
         {
             Servers = new ConcurrentDictionary<int, ServerStats>();
             ContextThreads = new ConcurrentDictionary<int, ThreadSafeStatsService>();
-            StreakMessages = new ConcurrentDictionary<int, StreakMessage>();
             Log = mgr.GetLogger();
             Manager = mgr;
         }
@@ -48,7 +48,6 @@ namespace StatsPlugin.Helpers
                 int serverId = sv.GetHashCode();
                 var statsSvc = new ThreadSafeStatsService();
                 ContextThreads.TryAdd(serverId, statsSvc);
-                StreakMessages.TryAdd(serverId, new StreakMessage(sv));
 
                 // get the server from the database if it exists, otherwise create and insert a new one
                 var server = statsSvc.ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
@@ -247,7 +246,7 @@ namespace StatsPlugin.Helpers
 
             //statsSvc.KillStatsSvc.Insert(kill);
             //await statsSvc.KillStatsSvc.SaveChangesAsync();
-            if(Manager.GetApplicationSettings().EnableAntiCheat)
+            if(Plugin.Config.Configuration().EnableAntiCheat)
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
@@ -313,10 +312,9 @@ namespace StatsPlugin.Helpers
             CalculateKill(attackerStats, victimStats);
 
             // show encouragement/discouragement
-            var streakMessageGen = StreakMessages[serverId];
             string streakMessage = (attackerStats.ClientId != victimStats.ClientId) ?
-                streakMessageGen.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak) :
-                streakMessageGen.MessageOnStreak(-1, -1);
+                StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak) :
+                StreakMessage.MessageOnStreak(-1, -1);
 
             if (streakMessage != string.Empty)
                 await attacker.Tell(streakMessage);

@@ -10,55 +10,20 @@ namespace StatsPlugin.Helpers
 {
     public class StreakMessage
     {
-        private ConfigurationManager config;
-
-        public StreakMessage(Server sv)
-        {
-            config = new ConfigurationManager(sv);
-
-            // initialize default messages
-            if (config.GetProperty<Dictionary<int, string>>("KillstreakMessages") == null)
-            {
-                var killstreakMessages = new Dictionary<int, string>()
-                {
-                    { -1,  "Try not to kill yourself anymore" },
-                    { 5,  "Great job! You're on a ^55 killstreak!" },
-                    { 10,  "Amazing! ^510 kills ^7without dying!" },
-                    { 25, "You better call in that nuke, ^525 killstreak^7!" }
-                };
-                config.AddProperty(new KeyValuePair<string, object>("KillstreakMessages", killstreakMessages));
-            }
-
-            if (config.GetProperty<Dictionary<int, string>>("DeathstreakMessages") == null)
-            {
-                var deathstreakMessages = new Dictionary<int, string>()
-                {
-                    { 5,  "Pick it up soldier, you've died ^55 times ^7in a row..." },
-                    { 10,  "Seriously? ^510 deaths ^7without getting a kill?" },
-                };
-                config.AddProperty(new KeyValuePair<string, object>("DeathstreakMessages", deathstreakMessages));
-            }
-        }
-
         /// <summary>
         /// Get a message from the configuration encouraging or discouraging clients
         /// </summary>
         /// <param name="killStreak">how many kills the client has without dying</param>
         /// <param name="deathStreak">how many deaths the client has without getting a kill</param>
         /// <returns>message to send to the client</returns>
-        public string MessageOnStreak(int killStreak, int deathStreak)
+        public static string MessageOnStreak(int killStreak, int deathStreak)
         {
-            var killstreakMessage = config.GetProperty<Dictionary<int, string>>("KillstreakMessages");
-            var deathstreakMessage = config.GetProperty<Dictionary<int, string>>("DeathstreakMessages");
+            var killstreakMessage = Plugin.Config.Configuration().KillstreakMessages;
+            var deathstreakMessage = Plugin.Config.Configuration().DeathstreakMessages;
 
-            string message = "";
-
-            if (killstreakMessage.ContainsKey(killStreak))
-                message =killstreakMessage[killStreak];
-            else if (deathstreakMessage.ContainsKey(deathStreak))
-                message = deathstreakMessage[deathStreak];
-
-            return message;
+            string message = killstreakMessage.FirstOrDefault(m => m.Count == killStreak)?.Message;
+            message =  (message == null) ? deathstreakMessage.FirstOrDefault(m => m.Count == deathStreak)?.Message : message;
+            return message ?? "";
         }
     }
 }

@@ -124,6 +124,8 @@
     <Compile Include="Commands\ResetStats.cs" />
     <Compile Include="Commands\TopStats.cs" />
     <Compile Include="Commands\ViewStats.cs" />
+    <Compile Include="Config\StreakMessageConfiguration.cs" />
+    <Compile Include="Config\StatsConfiguration.cs" />
     <Compile Include="Helpers\ServerStats.cs" />
     <Compile Include="Helpers\StatManager.cs" />
     <Compile Include="Helpers\StreakMessage.cs" />
@@ -149,11 +151,6 @@
       <Project>{d51eeceb-438a-47da-870f-7d7b41bc24d6}</Project>
       <Name>SharedLibrary</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions">
-      <Version>1.1.2</Version>
-    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

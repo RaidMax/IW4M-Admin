@@ -37,11 +37,11 @@ namespace IW4MAdmin
         ClientService ClientSvc;
         AliasService AliasSvc;
         PenaltyService PenaltySvc;
-        IConfigurationRoot AppSettings;
+        BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 700;
 #else
-        const int UPDATE_FREQUENCY = 750;
+        const int UPDATE_FREQUENCY = 450;
 #endif
 
         private ApplicationManager()
@@ -56,13 +56,7 @@ namespace IW4MAdmin
             PenaltySvc = new PenaltyService();
             AdministratorIPs = new List<int>();
             ServerEventOccurred += EventAPI.OnServerEventOccurred;
-        }
-
-        private void BuildConfiguration()
-        {
-            AppSettings = new ConfigurationBuilder()
-                .AddJsonFile($"{AppDomain.CurrentDomain.BaseDirectory}IW4MAdminSettings.json")
-                .Build();
+            ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
         }
 
         public IList<Server> GetServers()
@@ -88,6 +82,27 @@ namespace IW4MAdmin
                 .ToList();
             #endregion
 
+
+            #region CONFIG
+            var config = ConfigHandler.Configuration();
+            if (config?.Servers == null)
+            {
+                var newConfig = (ApplicationConfiguration)ConfigHandler.Configuration().Generate();
+                ConfigHandler.Set(newConfig);
+
+                newConfig.AutoMessagePeriod = config.AutoMessagePeriod;
+                newConfig.AutoMessages = config.AutoMessages;
+                newConfig.GlobalRules = config.GlobalRules;
+                newConfig.Maps = config.Maps;
+                newConfig.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
+                config = newConfig;
+                await ConfigHandler.Save();
+            }
+
+            else if (config.Servers.Count == 0)
+                throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
+
+
             #region PLUGINS
             SharedLibrary.Plugins.PluginImporter.Load(this);
 
@@ -107,26 +122,7 @@ namespace IW4MAdmin
             }
             #endregion
 
-            #region CONFIG
-            BuildConfiguration();
-            var settings = AppSettings.Get<ApplicationConfiguration>();
-
-            if (settings?.Servers == null)
-            {
-                var newSettings = ConfigurationGenerator.GenerateApplicationConfig();
-                newSettings.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
-                newSettings.AutoMessagePeriod = settings.AutoMessagePeriod;
-                newSettings.AutoMessages = settings.AutoMessages;
-                newSettings.Rules = settings.Rules;
-                newSettings.Maps = settings.Maps;
-                settings = newSettings;
-
-                var appConfigJSON = JsonConvert.SerializeObject(newSettings, Formatting.Indented);
-                File.WriteAllText($"{AppDomain.CurrentDomain.BaseDirectory}IW4MAdminSettings.json", appConfigJSON);
-                BuildConfiguration();
-            }
-
-            foreach (var Conf in settings.Servers)
+            foreach (var Conf in config.Servers)
             {
                 try
                 {
@@ -285,6 +281,6 @@ namespace IW4MAdmin
         public AliasService GetAliasService() => AliasSvc;
         public PenaltyService GetPenaltyService() => PenaltySvc;
 
-        public ApplicationConfiguration GetApplicationSettings() => AppSettings.Get<ApplicationConfiguration>();
+        public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
     }
 }

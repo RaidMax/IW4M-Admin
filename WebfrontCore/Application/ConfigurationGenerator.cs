@@ -48,6 +48,8 @@ namespace IW4MAdmin
 
             Console.Write("Enter server RCON password: ");
             newConfig.Password = Console.ReadLine();
+            newConfig.AutoMessages = new List<string>();
+            newConfig.Rules = new List<string>();
 
             configList.Add(newConfig);
 
@@ -56,40 +58,6 @@ namespace IW4MAdmin
                 GenerateServerConfig(configList);
 
             return configList;
-        }
-
-        public static ApplicationConfiguration GenerateApplicationConfig()
-        {
-            var config = new ApplicationConfiguration();
-
-            Console.Write("Enable multiple owners? [y/n]: ");
-            config.EnableMultipleOwners = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
-
-            Console.Write("Enable trusted rank? [y/n]: ");
-            config.EnableTrustedRank = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
-
-            Console.Write("Enable server-side anti-cheat [y/n]: ");
-            config.EnableAntiCheat = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
-
-            Console.Write("Enable client VPNS [y/n]: ");
-            config.EnableClientVPNs = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
-
-            if (!config.EnableClientVPNs)
-            {
-                Console.Write("Enter iphub.info api key: ");
-                config.IPHubAPIKey = Console.ReadLine();
-            }
-
-            Console.Write("Display Discord link on webfront [y/n]: ");
-            config.EnableDiscordLink = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
-
-            if (config.EnableDiscordLink)
-            {
-                Console.Write("Enter Discord invite link: ");
-                config.DiscordInviteCode = Console.ReadLine();
-            }
-
-            return config;
         }
     }
 }

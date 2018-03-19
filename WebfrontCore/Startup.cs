@@ -21,7 +21,8 @@ namespace WebfrontCore
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
 
-            IW4MAdmin.Program.Start();
+            if (!IW4MAdmin.Program.Start())
+                Environment.Exit(-1);
         }
 
         public static IConfigurationRoot Configuration { get; private set; }

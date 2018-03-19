@@ -173,8 +173,8 @@ namespace StatsPlugin.Cheat
                 double marginOfError = Thresholds.GetMarginOfError(chestKills);
                 double lerpAmount = Math.Min(1.0, (chestKills - Thresholds.LowSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
                 // determine max  acceptable ratio of chest to abdomen kills
-                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(2.25), Thresholds.ChestAbdomenRatioThresholdHighSample(2.25), lerpAmount) + marginOfError;
-                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3.25), Thresholds.ChestAbdomenRatioThresholdHighSample(3.25), lerpAmount) + marginOfError;
+                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3), Thresholds.ChestAbdomenRatioThresholdHighSample(3), lerpAmount) + marginOfError;
+                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(4), Thresholds.ChestAbdomenRatioThresholdHighSample(4), lerpAmount) + marginOfError;
 
                 double currentChestAbdomenRatio = HitLocationCount[IW4Info.HitLocation.torso_upper] / (double)HitLocationCount[IW4Info.HitLocation.torso_lower];
 
@@ -198,7 +198,7 @@ namespace StatsPlugin.Cheat
                         {
                             ClientPenalty = Penalty.PenaltyType.Ban,
                             RatioAmount = currentChestAbdomenRatio,
-                            Bone = IW4Info.HitLocation.torso_upper,
+                            Bone = 0,
                             KillCount = chestKills
                         };
                     }
@@ -219,7 +219,7 @@ namespace StatsPlugin.Cheat
                         {
                             ClientPenalty = Penalty.PenaltyType.Flag,
                             RatioAmount = currentChestAbdomenRatio,
-                            Bone = IW4Info.HitLocation.torso_upper,
+                            Bone = 0,
                             KillCount = chestKills
                         };
                     }

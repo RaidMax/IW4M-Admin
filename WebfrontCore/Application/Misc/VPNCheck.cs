@@ -12,8 +12,9 @@ namespace WebfrontCore.Application.Misc
         public static async Task<bool> UsingVPN(string ip, string apiKey)
         {
 #if DEBUG
-            return false;
-#endif
+            return await Task.FromResult(false);
+
+#else
             try
             {
                 using (var RequestClient = new System.Net.Http.HttpClient())
@@ -30,6 +31,7 @@ namespace WebfrontCore.Application.Misc
             {
                 return false;
             }
+#endif
         }
     }
 }

@@ -424,7 +424,7 @@ namespace SharedLibrary.Commands
             if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
                 newPerm = Player.Permission.Banned;
 
-            if (newPerm == Player.Permission.Owner && !E.Owner.Manager.GetApplicationSettings().EnableMultipleOwners)
+            if (newPerm == Player.Permission.Owner && !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
             {
                 await E.Origin.Tell("There can only be 1 owner. Modify your appsettings if multiple owners are required");
                 return;
@@ -585,7 +585,8 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
-            if (E.Owner.Rules.Count < 1)
+            if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Count < 1 &&
+                E.Owner.ServerConfig.Rules?.Count < 1)
             {
                 if (E.Message.IsBroadcastCommand())
                     await E.Owner.Broadcast("The server owner has not set any rules");
@@ -595,7 +596,12 @@ namespace SharedLibrary.Commands
 
             else
             {
-                foreach (String r in E.Owner.Rules)
+                var rules = new List<string>();
+                rules.AddRange(E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules);
+                if (E.Owner.ServerConfig.Rules != null)
+                    rules.AddRange(E.Owner.ServerConfig.Rules);
+
+                foreach (string r in rules)
                 {
                     if (E.Message.IsBroadcastCommand())
                         await E.Owner.Broadcast($"- {r}");

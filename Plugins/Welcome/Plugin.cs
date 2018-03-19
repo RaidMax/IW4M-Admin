@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SharedLibrary.Network;
 using SharedLibrary.Objects;
 using SharedLibrary.Helpers;
+using SharedLibrary.Configuration;
 
 namespace Welcome_Plugin
 {
@@ -64,11 +65,17 @@ namespace Welcome_Plugin
 
         public string Name => "Welcome Plugin";
 
-        private Dictionary<int, ConfigurationManager> Configs;
+        private BaseConfigurationHandler<WelcomeConfiguration> Config;
 
         public async Task OnLoadAsync(IManager manager)
         {
-            await Task.FromResult(Configs = new Dictionary<int, ConfigurationManager>());
+            // load custom configuration
+            Config = new BaseConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
+            if (Config.Configuration() == null)
+            {
+                Config.Set((WelcomeConfiguration)new WelcomeConfiguration().Generate());
+                await Config.Save();
+            }
         }
 
         public async Task OnUnloadAsync()
@@ -84,39 +91,15 @@ namespace Welcome_Plugin
             if (E.Type == Event.GType.Connect)
             {
                 Player newPlayer = E.Origin;
-                var cfg = Configs[S.GetHashCode()];
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
-                    await E.Owner.Broadcast(ProcessAnnouncement(cfg.GetProperty<string>("PrivilegedAnnouncementMessage"), newPlayer));
+                    await E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().PrivilegedAnnouncementMessage, newPlayer));
 
-                await newPlayer.Tell(ProcessAnnouncement(cfg.GetProperty<string>("UserWelcomeMessage"), newPlayer));
+                await newPlayer.Tell(ProcessAnnouncement(Config.Configuration().UserWelcomeMessage, newPlayer));
 
                 if (newPlayer.Level == Player.Permission.Flagged)
                     await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7has joined!");
                 else
-                    await E.Owner.Broadcast(ProcessAnnouncement(cfg.GetProperty<string>("UserAnnouncementMessage"), newPlayer));
-            }
-
-            if (E.Type == Event.GType.Start)
-            {
-                var cfg = new ConfigurationManager(S);
-                Configs.Add(S.GetHashCode(), cfg);
-                if (cfg.GetProperty<string>("UserWelcomeMessage") == null)
-                {
-                    string welcomeMsg = "Welcome ^5{{ClientName}}^7, this is your ^5{{TimesConnected}} ^7time connecting!";
-                    cfg.AddProperty(new KeyValuePair<string, dynamic>("UserWelcomeMessage", welcomeMsg));
-                }
-
-                if (cfg.GetProperty<string>("PrivilegedAnnouncementMessage") == null)
-                {
-                    string annoucementMsg = "{{ClientLevel}} {{ClientName}} has joined the server";
-                    cfg.AddProperty(new KeyValuePair<string, dynamic>("PrivilegedAnnouncementMessage", annoucementMsg));
-                }
-
-                if (cfg.GetProperty<string>("UserAnnouncementMessage") == null)
-                {
-                    string annoucementMsg = "^5{{ClientName}} ^7hails from ^5{{ClientLocation}}";
-                    cfg.AddProperty(new KeyValuePair<string, dynamic>("UserAnnouncementMessage", annoucementMsg));
-                }
+                    await E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().UserAnnouncementMessage, newPlayer));
             }
         }
 

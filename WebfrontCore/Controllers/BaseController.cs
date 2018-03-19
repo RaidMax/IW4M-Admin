@@ -22,7 +22,8 @@ namespace WebfrontCore.Controllers
                 Manager.AdministratorIPs.Contains(context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP());
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Startup.Configuration["Web:Address"];
-            ViewBag.DiscordLink = Manager.GetApplicationSettings().DiscordInviteCode;
+            string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
+            ViewBag.DiscordLink = inviteLink.Contains("http") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
             base.OnActionExecuting(context);
         }
     }

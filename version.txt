@@ -2,7 +2,8 @@ Version 1.6:
 CHANGELOG:
 -migrated from SQLite to EntityFramework
 -migrated from kayak to ASP.Net Core MVC
--webfront redone using boostrap and now mobile-friendly
+-webfront redone using bootstrap and now mobile-friendly
+-moved configuration files into IW4MAdminSettings.json
 -added profile page to view client history
 -got rid of pesky "error on character" message
 -optimizations to commands

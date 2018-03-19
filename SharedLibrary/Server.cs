@@ -15,7 +15,6 @@ using SharedLibrary.Configuration;
 
 namespace SharedLibrary
 {
-    [Guid("61d3829e-fcbe-44d3-bb7c-51db8c2d7ac5")]
     public abstract class Server
     {
         public enum Game
@@ -44,7 +43,6 @@ namespace SharedLibrary
             NextMessage = 0;
             InitializeTokens();
             InitializeAutoMessages();
-            InitializeRules();
         }
 
         //Returns current server IP set by `net_ip` -- *STRING*
@@ -253,7 +251,7 @@ namespace SharedLibrary
         protected void InitializeMaps()
         {
             Maps = new List<Map>();
-            Maps.AddRange(Manager.GetApplicationSettings().Maps.First(m => m.Game == GameName).Maps);
+            Maps.AddRange(Manager.GetApplicationSettings().Configuration().Maps.First(m => m.Game == GameName).Maps);
         }
 
         /// <summary>
@@ -264,21 +262,10 @@ namespace SharedLibrary
         {
             BroadcastMessages = new List<String>();
 
-            BroadcastMessages.AddRange(Manager.GetApplicationSettings().AutoMessages);
+            if(ServerConfig.AutoMessages != null)
+                BroadcastMessages.AddRange(ServerConfig.AutoMessages);
+            BroadcastMessages.AddRange(Manager.GetApplicationSettings().Configuration().AutoMessages);
         }
-
-        /// <summary>
-        /// Initialize the rules configuration
-        /// todo: this needs to be a serialized file
-        /// </summary>
-        protected void InitializeRules()
-        {
-            Rules = new List<String>();
-
-            Rules.AddRange(Manager.GetApplicationSettings().Rules);
-        }
-
-        public ConfigurationManager Configuration { get; private set; }
 
         public override string ToString()
         {
@@ -303,10 +290,9 @@ namespace SharedLibrary
         public Interfaces.ILogger Logger { get; private set; }
         public ServerConfiguration ServerConfig { get; private set; }
         public List<Map> Maps { get; protected set; }
-        public List<string> Rules { get; protected set; }
         public List<Report> Reports { get; set; }
         public List<ChatInfo> ChatHistory { get; protected set; }
-        public Queue<Helpers.PlayerHistory> PlayerHistory { get; private set; }
+        public Queue<PlayerHistory> PlayerHistory { get; private set; }
         public Game GameName { get; protected set; }
 
         // Info

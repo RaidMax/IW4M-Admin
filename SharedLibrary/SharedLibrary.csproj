@@ -182,10 +182,6 @@
     <Compile Include="Interfaces\IManager.cs" />
     <Compile Include="Interfaces\ISerializable.cs" />
     <Compile Include="Helpers\MessageToken.cs" />
-    <Compile Include="Migrations\201803030146021_Intial.cs" />
-    <Compile Include="Migrations\201803030146021_Intial.Designer.cs">
-      <DependentUpon>201803030146021_Intial.cs</DependentUpon>
-    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Objects\Alias.cs" />
     <Compile Include="Objects\Penalty.cs" />
@@ -257,11 +253,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\201803030146021_Intial.resx">
-      <DependentUpon>201803030146021_Intial.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

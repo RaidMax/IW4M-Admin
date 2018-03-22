@@ -126,6 +126,7 @@
     <Compile Include="Commands\ViewStats.cs" />
     <Compile Include="Config\StreakMessageConfiguration.cs" />
     <Compile Include="Config\StatsConfiguration.cs" />
+    <Compile Include="Helpers\Extensions.cs" />
     <Compile Include="Helpers\ServerStats.cs" />
     <Compile Include="Helpers\StatManager.cs" />
     <Compile Include="Helpers\StreakMessage.cs" />

@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StatsPlugin.Models
 {
-   public class EFClientKill : SharedEntity
+    public class EFClientKill : SharedEntity
     {
         public EFClientKill() { }
 
@@ -36,5 +36,9 @@ namespace StatsPlugin.Models
         [NotMapped]
         public double Distance => Vector3.Distance(KillOrigin, DeathOrigin) * 0.0254;
         public IW4Info.MapName Map { get; set; }
+        [NotMapped]
+        public long TimeOffset { get; set; }
+        public Vector3 ViewAngles { get; set; }
+        public DateTime When { get; set; }
     }
 }

@@ -56,6 +56,7 @@ namespace StatsPlugin
             left_leg_lower,
             right_foot,
             left_foot,
+            gun,
         }
 
         public enum WeaponName

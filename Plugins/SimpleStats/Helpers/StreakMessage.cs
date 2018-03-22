@@ -22,7 +22,7 @@ namespace StatsPlugin.Helpers
             var deathstreakMessage = Plugin.Config.Configuration().DeathstreakMessages;
 
             string message = killstreakMessage.FirstOrDefault(m => m.Count == killStreak)?.Message;
-            message =  (message == null) ? deathstreakMessage.FirstOrDefault(m => m.Count == deathStreak)?.Message : message;
+            message = message ?? deathstreakMessage.FirstOrDefault(m => m.Count == deathStreak)?.Message;
             return message ?? "";
         }
     }

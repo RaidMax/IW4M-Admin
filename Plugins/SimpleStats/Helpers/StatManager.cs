@@ -205,7 +205,7 @@ namespace StatsPlugin.Helpers
         /// </summary>
         /// <returns></returns>
         public async Task AddScriptKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
-            string damage, string weapon, string killOrigin, string deathOrigin)
+            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset)
         {
             var statsSvc = ContextThreads[serverId];
 
@@ -221,7 +221,10 @@ namespace StatsPlugin.Helpers
                 DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
                 Damage = Int32.Parse(damage),
                 HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
-                Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName))
+                Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
+                ViewAngles = Vector3.Parse(viewAngles).FixIW4Angles(),
+                TimeOffset = Int64.Parse(offset),
+                When = DateTime.UtcNow
             };
 
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
@@ -238,15 +241,17 @@ namespace StatsPlugin.Helpers
 
             // increment their hit count
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
-                kill.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET)
+                kill.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
+                kill.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
             {
                 playerStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
                 await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
-            //statsSvc.KillStatsSvc.Insert(kill);
-            //await statsSvc.KillStatsSvc.SaveChangesAsync();
-            if(Plugin.Config.Configuration().EnableAntiCheat)
+            statsSvc.KillStatsSvc.Insert(kill);
+            await statsSvc.KillStatsSvc.SaveChangesAsync();
+
+            if (Plugin.Config.Configuration().EnableAntiCheat)
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {

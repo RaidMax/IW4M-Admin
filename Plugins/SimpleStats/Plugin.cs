@@ -74,7 +74,8 @@ namespace StatsPlugin
                 case Event.GType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
-                        await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8], killInfo[5], killInfo[6], killInfo[3], killInfo[4]);
+                        await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10]);
                     else if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
@@ -87,7 +88,7 @@ namespace StatsPlugin
         {
             // load custom configuration
             Config = new BaseConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
-            if (Config.Configuration()== null)
+            if (Config.Configuration() == null)
             {
                 Config.Set((StatsConfiguration)new StatsConfiguration().Generate());
                 await Config.Save();
@@ -105,6 +106,7 @@ namespace StatsPlugin
                 double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
                 double spm = Math.Round(clientStats.Sum(c => c.SPM), 1);
 
+                double headRatio = 0;
                 double chestRatio = 0;
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
@@ -122,6 +124,10 @@ namespace StatsPlugin
 
                     chestAbdomenRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
                          (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount), 2);
+
+                    headRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.head).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0)
+                            .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount)), 2);
                 }
 
                 return new List<ProfileMeta>()
@@ -168,6 +174,12 @@ namespace StatsPlugin
                              Key = "Chest To Abdomen Ratio",
                              Value = chestAbdomenRatio,
                              Sensitive = true
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Headshot Ratio",
+                             Value = headRatio,
+                             Sensitive = true
                          }
                 };
             }
@@ -191,7 +203,10 @@ namespace StatsPlugin
                 return messageMeta;
             }
 
-            MetaService.AddMeta(getStats);
+            if (Config.Configuration().EnableAntiCheat)
+            {
+                MetaService.AddMeta(getStats);
+            }
             MetaService.AddMeta(getMessages);
 
             // todo: is this fast? make async?

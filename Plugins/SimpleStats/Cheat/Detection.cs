@@ -1,5 +1,7 @@
-﻿using SharedLibrary.Interfaces;
+﻿using SharedLibrary.Helpers;
+using SharedLibrary.Interfaces;
 using SharedLibrary.Objects;
+using StatsPlugin.Helpers;
 using StatsPlugin.Models;
 using System;
 using System.Collections.Generic;
@@ -34,7 +36,8 @@ namespace StatsPlugin.Cheat
         public DetectionPenaltyResult ProcessKill(EFClientKill kill)
         {
             if ((kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
-                kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET) ||
+                kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
+                kill.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
                 kill.HitLoc == IW4Info.HitLocation.none)
                 return new DetectionPenaltyResult()
                 {
@@ -46,7 +49,19 @@ namespace StatsPlugin.Cheat
             Kills++;
             AverageKillTime = (AverageKillTime + (DateTime.UtcNow - LastKill).TotalSeconds) / Kills;
 
-#region SESSION_RATIOS
+            #region VIEWANGLES
+            double distance = Vector3.Distance(kill.KillOrigin, kill.DeathOrigin);
+            double x = kill.KillOrigin.X + distance * Math.Cos(kill.ViewAngles.Y.ToRadians()) * Math.Cos(kill.ViewAngles.X.ToRadians());
+            double y = kill.KillOrigin.Y + (distance * Math.Sin((360.0f - kill.ViewAngles.Y).ToRadians()));
+            double z = kill.KillOrigin.Z + (distance * Math.Cos(kill.ViewAngles.Y.ToRadians()) * Math.Sin((360.0f - kill.ViewAngles.X).ToRadians()));
+            var trueVector = Vector3.Subtract(kill.KillOrigin, kill.DeathOrigin);
+            var calculatedVector = Vector3.Subtract(kill.KillOrigin, new Vector3((float)x, (float)y, (float)z));
+            double angle = trueVector.AngleBetween(calculatedVector);
+            Console.WriteLine(((float)angle).ToDegrees());
+
+            #endregion
+
+            #region SESSION_RATIOS
             if (Kills >= Thresholds.LowSampleMinKills)
             {
                 double marginOfError = Thresholds.GetMarginOfError(Kills);

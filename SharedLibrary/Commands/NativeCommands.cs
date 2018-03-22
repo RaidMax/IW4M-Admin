@@ -637,21 +637,6 @@ namespace SharedLibrary.Commands
         }
     }
 
-    public class CReload : Command
-    {
-        public CReload() :
-            base("reload", "reload configuration files", "rl", Player.Permission.Owner, false)
-        { }
-
-        public override async Task ExecuteAsync(Event E)
-        {
-            if (E.Owner.Reload())
-                await E.Origin.Tell("Sucessfully reloaded configuration files");
-            else
-                await E.Origin.Tell("Unable to reload configuration files");
-        }
-    }
-
     public class CFlag : Command
     {
         public CFlag() :

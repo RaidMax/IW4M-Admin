@@ -9,9 +9,9 @@ namespace SharedLibrary.Helpers
 {
     public class Vector3
     {
-        public float X { get; private set; }
-        public  float Y { get; private set; }
-        public float Z { get; private set; }
+        public float X { get; protected set; }
+        public  float Y { get; protected set; }
+        public float Z { get; protected set; }
 
         public Vector3(float x, float y, float z)
         {
@@ -40,6 +40,8 @@ namespace SharedLibrary.Helpers
         {
             return Math.Round(Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2) + Math.Pow(b.Z - a.Z, 2)), 2);
         }
+
+        public static Vector3 Subtract(Vector3 a, Vector3 b) => new Vector3(b.X - a.X, b.Y - a.Y, b.Z - a.Z);
 
         public double DotProduct(Vector3 a) => (a.X * this.X) + (a.Y * this.Y) + (a.Z * this.Z);
 

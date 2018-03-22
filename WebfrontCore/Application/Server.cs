@@ -31,7 +31,7 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
-            if (polledPlayer.Ping == 999 || polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)
+            if (/*polledPlayer.Ping == 999 ||*/ polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
                 return true;
@@ -66,6 +66,13 @@ namespace IW4MAdmin
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is generic");
                 await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Please change your name using /name.\"");
+                return false;
+            }
+
+            if (polledPlayer.Name.Where(c => Char.IsControl(c)).Count() > 0)
+            {
+                Logger.WriteDebug($"Kicking {polledPlayer} because their contains control characters");
+                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name cannot contain control characters.\"");
                 return false;
             }
 
@@ -618,7 +625,7 @@ namespace IW4MAdmin
 #if DEBUG
             {
                 basepath.Value = (GameName == Game.IW4) ?
-                    @"Z:\" :
+                    @"D:\" :
                     @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
             }
 
@@ -954,23 +961,6 @@ namespace IW4MAdmin
 
             await Manager.GetPenaltyService().Create(unbanPenalty);
             await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId);
-        }
-
-        public override bool Reload()
-        {
-            try
-            {
-                InitializeMaps();
-                InitializeAutoMessages();
-                return true;
-            }
-            catch (Exception E)
-            {
-                Logger.WriteError("Unable to reload configs! - " + E.Message);
-                BroadcastMessages = new List<String>();
-                Maps = new List<Map>();
-                return false;
-            }
         }
 
         override public void InitializeTokens()

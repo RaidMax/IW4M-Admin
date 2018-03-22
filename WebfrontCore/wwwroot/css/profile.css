@@ -100,7 +100,7 @@
 }
 
 #profile_aliases_btn {
-    position: absolute;
+    position: relative;
     top: auto;
     margin-top: 0.7em;
     font-size: 0.5em;

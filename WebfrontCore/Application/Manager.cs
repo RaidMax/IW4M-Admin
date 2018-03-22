@@ -187,7 +187,6 @@ namespace IW4MAdmin
             Commands.Add(new CFindPlayer());
             Commands.Add(new CListRules());
             Commands.Add(new CPrivateMessage());
-            Commands.Add(new CReload());
             Commands.Add(new CFlag());
             Commands.Add(new CReport());
             Commands.Add(new CListReports());

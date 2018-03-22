@@ -127,12 +127,6 @@ namespace SharedLibrary
         abstract public Task ExecuteEvent(Event E);
 
         /// <summary>
-        /// Reloads all the server configurations
-        /// </summary>
-        /// <returns>True on sucess</returns>
-        abstract public bool Reload();
-
-        /// <summary>
         /// Send a message to all players
         /// </summary>
         /// <param name="Message">Message to be sent to all players</param>

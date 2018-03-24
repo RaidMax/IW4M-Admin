@@ -396,7 +396,7 @@ namespace SharedLibrary.Commands
     public class CSetLevel : Command
     {
         public CSetLevel() :
-            base("setlevel", "set player to specified administration level", "sl", Player.Permission.Owner, true, new CommandArgument[]
+            base("setlevel", "set player to specified administration level", "sl", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                      new CommandArgument()
                      {
@@ -415,7 +415,7 @@ namespace SharedLibrary.Commands
         {
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell("You cannot change your own level.");
+                await E.Origin.Tell("You cannot change your own level");
                 return;
             }
 
@@ -424,10 +424,27 @@ namespace SharedLibrary.Commands
             if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
                 newPerm = Player.Permission.Banned;
 
-            if (newPerm == Player.Permission.Owner && !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
+            if (newPerm == Player.Permission.Owner &&
+                !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
             {
-                await E.Origin.Tell("There can only be 1 owner. Modify your appsettings if multiple owners are required");
+                await E.Origin.Tell("There can only be 1 owner. Modify your settings if multiple owners are required");
                 return;
+            }
+
+            if (E.Origin.Level < Player.Permission.Owner &&
+                !E.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy)
+            {
+                await E.Origin.Tell($"This server does not allow you to promote ^5{E.Target.Name}");
+                return;
+            }
+
+            if (newPerm >= E.Origin.Level)
+            {
+                if (E.Origin.Level < Player.Permission.Owner)
+                {
+                    await E.Origin.Tell($"You can only promote ^5{E.Target.Name} ^7to ^5{(E.Origin.Level - 1)} ^7or lower privilege");
+                    return;
+                }
             }
 
             if (newPerm > Player.Permission.Banned)
@@ -447,11 +464,11 @@ namespace SharedLibrary.Commands
                     await E.Owner.Manager.GetClientService().Update(E.Target);
                 }
 
-                await E.Origin.Tell($"{E.Target.Name} was successfully promoted!");
+                await E.Origin.Tell($"{E.Target.Name} was successfully promoted");
             }
 
             else
-                await E.Origin.Tell("Invalid group specified.");
+                await E.Origin.Tell("Invalid group specified");
         }
     }
 
@@ -989,7 +1006,9 @@ namespace SharedLibrary.Commands
                 {
                     if (!E.Owner.Throttled)
                     {
-                        //   await E.Owner.ExecuteCommandAsync("quit");
+#if !DEBUG
+                        await E.Owner.ExecuteCommandAsync("quit");
+#endif
                     }
                 }
 

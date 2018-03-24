@@ -56,7 +56,7 @@ namespace SharedLibrary.Database
 #if !DEBUG
             foreach (string dllPath in System.IO.Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
 #else
-            foreach (string dllPath in System.IO.Directory.GetFiles(@"C:\Projects\IW4M-Admin\WebfrontCore\bin\x86\Debug\Plugins").Where(f => f.Contains(".dll")))
+            foreach (string dllPath in System.IO.Directory.GetFiles(/*C:\Projects\IW4M - Admin\WebfrontCore */ $@"{Environment.CurrentDirectory}\bin\x86\Debug\Plugins").Where(f => f.Contains(".dll")))
 #endif
             {
                 Assembly library;

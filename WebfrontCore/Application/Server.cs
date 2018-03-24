@@ -296,9 +296,11 @@ namespace IW4MAdmin
                     else if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
-                        E.Data = Regex.Replace(E.Data, Regex.Escape($"\"{E.Target.Name}\""), "", RegexOptions.IgnoreCase).Trim();
-                        E.Data = Regex.Replace(E.Data, Regex.Escape($"{E.Target.Name}"), "", RegexOptions.IgnoreCase).Trim();
 
+                        string escapedName = Regex.Escape(E.Target.Name);
+                        var reg = new Regex($"(\"{escapedName}\")|({escapedName})", RegexOptions.IgnoreCase);
+                        E.Data = reg.Replace(E.Data, "", 1).Trim();
+           
                         if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
@@ -321,8 +323,11 @@ namespace IW4MAdmin
                     else if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
-                        E.Data = Regex.Replace(E.Data, Regex.Escape($"{E.Target.Name}"), "", RegexOptions.IgnoreCase).Trim();
-                        E.Data = Regex.Replace(E.Data, Regex.Escape($"{Args[0]}"), "", RegexOptions.IgnoreCase).Trim();
+
+                        string escapedName = Regex.Escape(E.Target.Name);
+                        string escapedArg = Regex.Escape(Args[0]);
+                        var reg = new Regex($"({escapedName})|({escapedArg})", RegexOptions.IgnoreCase);
+                        E.Data = reg.Replace(E.Data, "", 1).Trim();
 
                         if ((E.Data.Trim() == E.Target.Name.ToLower().Trim() ||
                             E.Data == String.Empty) &&
@@ -631,6 +636,8 @@ namespace IW4MAdmin
 
 #endif
             string mainPath = (GameName == Game.IW4 && onelog.Value >= 0) ? "userraw" : "main";
+            // patch for T5M log path
+            mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
@@ -672,8 +679,8 @@ namespace IW4MAdmin
                 if (E.Origin.Level > Player.Permission.Moderator)
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
 
-                // give trusted rank
-                if (Manager.GetApplicationSettings().Configuration().EnableTrustedRank &&
+                /*// give trusted rank
+                if (Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy &&
                     E.Origin.TotalConnectionTime / 60.0 >= 2880 &&
                     E.Origin.Level < Player.Permission.Trusted &&
                     E.Origin.Level != Player.Permission.Flagged)
@@ -682,7 +689,7 @@ namespace IW4MAdmin
                     await E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands");
                     await E.Origin.Tell("You earned this by playing for ^53 ^7full days");
                     await Manager.GetClientService().Update(E.Origin);
-                }
+                }*/
             }
 
             else if (E.Type == Event.GType.Disconnect)

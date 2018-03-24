@@ -8,7 +8,7 @@ namespace SharedLibrary.Configuration
     public class ApplicationConfiguration : IBaseConfiguration
     {
         public bool EnableMultipleOwners { get; set; }
-        public bool EnableTrustedRank { get; set; }
+        public bool EnableSteppedHierarchy { get; set; }
         public bool EnableClientVPNs { get; set; }
         public bool EnableDiscordLink { get; set; }
         public string DiscordInviteCode { get; set; }
@@ -24,13 +24,13 @@ namespace SharedLibrary.Configuration
             Console.Write("Enable multiple owners? [y/n]: ");
             EnableMultipleOwners = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
 
-            Console.Write("Enable trusted rank? [y/n]: ");
-            EnableTrustedRank = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+            Console.Write("Enable stepped privilege hierarchy? [y/n]: ");
+            EnableSteppedHierarchy = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
 
             Console.Write("Enable client VPNs [y/n]: ");
             EnableClientVPNs = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
 
-            if (EnableClientVPNs)
+            if (!EnableClientVPNs)
             {
                 Console.Write("Enter iphub.info api key: ");
                 IPHubAPIKey = Console.ReadLine();

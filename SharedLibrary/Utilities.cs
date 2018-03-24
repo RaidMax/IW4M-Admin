@@ -239,11 +239,6 @@ namespace SharedLibrary
             return new System.Net.IPAddress(BitConverter.GetBytes(ip)).ToString();
         }
 
-        public static String DateTimeSQLite(DateTime datetime)
-        {
-            return datetime.ToString("yyyy-MM-dd H:mm:ss");
-        }
-
         public static String GetTimePassed(DateTime start)
         {
             return GetTimePassed(start, true);
@@ -288,6 +283,8 @@ namespace SharedLibrary
                 return Game.T4;
             if (gameName.Contains("COD_T5_S"))
                 return Game.T5;
+            if (gameName.Contains("T5M"))
+                return Game.T5M;
             if (gameName.Contains("IW5"))
                 return Game.IW5;
 
@@ -391,5 +388,7 @@ namespace SharedLibrary
             }
             return cmdLine;
         }
+
+        public static bool IsPrivileged(this Player p) => p.Level > Player.Permission.User;
     }
 }

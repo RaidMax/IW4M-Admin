@@ -25,6 +25,7 @@ namespace SharedLibrary
             IW5,
             T4,
             T5,
+            T5M,
         }
 
         public Server(Interfaces.IManager mgr, ServerConfiguration config)

@@ -31,7 +31,7 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
-            if (/*polledPlayer.Ping == 999 ||*/ polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)
+            if (polledPlayer.Ping == 999 || polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
                 return true;

@@ -46,7 +46,7 @@ namespace IW4MAdmin
 
         private ApplicationManager()
         {
-            Logger = new Logger($@"{Utilities.OperatingDirectory}Logs{Path.DirectorySeparatorChar}IW4MAdmin.log");
+            Logger = new Logger($@"{Utilities.OperatingDirectory}IW4MAdmin.log");
             _servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
@@ -81,7 +81,6 @@ namespace IW4MAdmin
                 .Select(c => c.IPAddress)
                 .ToList();
             #endregion
-
 
             #region CONFIG
             var config = ConfigHandler.Configuration();
@@ -246,8 +245,6 @@ namespace IW4MAdmin
                 S.Broadcast("^1IW4MAdmin going offline!").Wait();
 #endif
             _servers.Clear();
-            //WebSvc.WebScheduler.Stop();
-            //WebSvc.SchedulerThread.Join();
         }
 
 

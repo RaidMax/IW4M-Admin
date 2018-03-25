@@ -17,10 +17,12 @@ namespace StatsPlugin.Commands
         public override async Task ExecuteAsync(Event E)
         {
             var statsSvc = new GenericRepository<EFClientStatistics>();
-            int serverId = E.Origin.GetHashCode();
+            int serverId = E.Owner.GetHashCode();
             var iqStats = statsSvc.GetQuery(cs => cs.ServerId == serverId);
 
             var topStats = iqStats.Where(cs => cs.Skill > 100)
+                .Where(cs => cs.TimePlayed >= 3600)
+                .Where(cs => cs.Client.Level != Player.Permission.Banned)
                 .OrderByDescending(cs => cs.Skill)
                 .Take(5)
                 .ToList();

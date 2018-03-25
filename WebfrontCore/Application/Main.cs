@@ -88,9 +88,6 @@ namespace IW4MAdmin
         {
             string curDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
 
-            if (!Directory.Exists($"{curDirectory}Logs"))
-                Directory.CreateDirectory($"{curDirectory}Logs");
-
             if (!Directory.Exists($"{curDirectory}Plugins"))
                 Directory.CreateDirectory($"{curDirectory}Plugins");
         }

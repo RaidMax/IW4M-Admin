@@ -2,6 +2,7 @@
 @{
     string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
     string shortCode = match == string.Empty ? "?" : match;
+    string marginClass = Model.Aliases.Count > 0 ? "mr-4" : "";
 }
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
@@ -12,7 +13,7 @@
     <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
         <div id="profile_name">
             <h1>
-                <span class="client-name mr-4">
+                <span class="client-name @marginClass">
                     @Model.Name
                     @if (Model.Aliases.Count > 0 || ViewBag.Authorized)
                     {

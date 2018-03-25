@@ -57,7 +57,7 @@ namespace StatsPlugin.Cheat
             var trueVector = Vector3.Subtract(kill.KillOrigin, kill.DeathOrigin);
             var calculatedVector = Vector3.Subtract(kill.KillOrigin, new Vector3((float)x, (float)y, (float)z));
             double angle = trueVector.AngleBetween(calculatedVector);
-            Console.WriteLine(((float)angle).ToDegrees());
+           // Console.WriteLine(((float)angle).ToDegrees());
 
             #endregion
 

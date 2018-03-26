@@ -12,11 +12,11 @@ namespace StatsPlugin.Helpers
 
         public static Vector3 FixIW4Angles(this Vector3 vector)
         {
-            float X = vector.X > 0 ? 360.0f - vector.X : Math.Abs(vector.X);
-            float Y = vector.Y > 0 ? 360.0f - vector.Y : Math.Abs(vector.Y);
-            float Z = vector.Z > 0 ? 360.0f - vector.Z : Math.Abs(vector.Z);
+            float X = vector.X >= 0 ? vector.X : 360.0f + vector.X;
+            float Y = vector.Y >= 0 ? vector.Y : 360.0f + vector.Y;
+            float Z = vector.Z >= 0 ? vector.Z : 360.0f + vector.Z;
 
-            return new Vector3(X, Y, Z);
+            return new Vector3(Y, X, Z);
         }
 
         public static float ToRadians(this float value) => (float)Math.PI * value / 180.0f;

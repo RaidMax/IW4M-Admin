@@ -38,7 +38,7 @@ namespace SharedLibrary.Helpers
 
         public static double Distance(Vector3 a, Vector3 b)
         {
-            return Math.Round(Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2) + Math.Pow(b.Z - a.Z, 2)), 2);
+            return Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2) + Math.Pow(b.Z - a.Z, 2));
         }
 
         public static Vector3 Subtract(Vector3 a, Vector3 b) => new Vector3(b.X - a.X, b.Y - a.Y, b.Z - a.Z);

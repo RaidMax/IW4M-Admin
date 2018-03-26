@@ -46,6 +46,7 @@ namespace IW4MAdmin
                 return true;
             }
 
+#if !DEBUG
             if (polledPlayer.Name.Length < 3)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is too short");
@@ -76,6 +77,7 @@ namespace IW4MAdmin
                 return false;
             }
 
+#endif
             Logger.WriteDebug($"Client slot #{polledPlayer.ClientNumber} now reserved");
 
             try
@@ -656,7 +658,7 @@ namespace IW4MAdmin
                 LogFile = new IFile(logPath);
                 //#else
             }
-            // LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+             LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
             //#endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG

@@ -246,7 +246,9 @@ namespace SharedLibrary
         protected void InitializeMaps()
         {
             Maps = new List<Map>();
-            Maps.AddRange(Manager.GetApplicationSettings().Configuration().Maps.First(m => m.Game == GameName).Maps);
+            var gameMaps = Manager.GetApplicationSettings().Configuration().Maps.FirstOrDefault(m => m.Game == GameName);
+            if (gameMaps != null)
+                Maps.AddRange(gameMaps.Maps);
         }
 
         /// <summary>

@@ -75,7 +75,7 @@ namespace StatsPlugin
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
                         await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12]);
                     else if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;

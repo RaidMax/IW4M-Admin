@@ -20,6 +20,22 @@
                         <span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span>
                     }
 
+                    @{
+                        if (ViewBag.Authorized)
+                        {
+                            if (Model.Level == SharedLibrary.Objects.Player.Permission.User.ToString())
+                            {
+
+                                <span id="profile_action_ban_btn" class="oi oi-ban text-danger" title="ban" aria-hidden="true"></span>
+                            }
+
+                            if (Model.Level == SharedLibrary.Objects.Player.Permission.Banned.ToString())
+                            {
+                                <span id="profile_action_unban_btn" class="iconic iconic-carriage-return text-success" title="carriage return" aria-hidden="true"></span>
+                            }
+                        }
+                    }
+
                 </span>
             </h1>
             <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted">

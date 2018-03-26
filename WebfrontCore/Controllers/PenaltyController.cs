@@ -24,7 +24,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> ListAsync(int offset = 0)
         {
-            return View("_List", offset);
+            return await Task.FromResult(View("_List", offset));
         }
 
         public async Task<IActionResult> PublicAsync()

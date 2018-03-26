@@ -205,7 +205,7 @@ namespace StatsPlugin.Helpers
         /// </summary>
         /// <returns></returns>
         public async Task AddScriptKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
-            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset)
+            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads)
         {
             var statsSvc = ContextThreads[serverId];
 
@@ -224,7 +224,9 @@ namespace StatsPlugin.Helpers
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
                 ViewAngles = Vector3.Parse(viewAngles).FixIW4Angles(),
                 TimeOffset = Int64.Parse(offset),
-                When = DateTime.UtcNow
+                When = DateTime.UtcNow,
+                IsKillstreakKill = isKillstreakKill[0] != '0',
+                AdsPercent = float.Parse(Ads)
             };
 
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
@@ -235,6 +237,11 @@ namespace StatsPlugin.Helpers
             }
 
             await AddStandardKill(attacker, victim);
+
+            if (kill.IsKillstreakKill)
+            {
+                return;
+            }
 
             var playerDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
             var playerStats = Servers[serverId].PlayerStats[attacker.ClientId];

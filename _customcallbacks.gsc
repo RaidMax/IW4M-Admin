@@ -68,12 +68,12 @@ Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vD
 		_attacker = attacker.owner;
 	else if(!isPlayer(attacker) && sMeansOfDeath == "MOD_FALLING")
 		_attacker = victim;
-		
+
+	
 	location = victim GetTagOrigin(hitLocationToBone(sHitLoc));
-	//attacker iPrintLnBold(location);
-	//attacker iPrintLnBold(attacker.origin[0]);
+	isKillstreakKill = !isPlayer(attacker) || isKillstreakWeapon(sWeapon);
 
 	/*BulletTrace(_attacker GetTagOrigin("tag_eye"), VectorScale(anglesToForward(attacker getPlayerAngles())), true, attacker)["entity"]*/
-	logPrint("ScriptKill;" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + "\n");
+	logPrint("ScriptKill;" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() +  "\n");
 	self maps\mp\gametypes\_damage::Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }

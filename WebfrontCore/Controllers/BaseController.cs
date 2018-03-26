@@ -23,7 +23,10 @@ namespace WebfrontCore.Controllers
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Startup.Configuration["Web:Address"];
             string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
-            ViewBag.DiscordLink = inviteLink != null && inviteLink.Contains("http") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
+            if (inviteLink != null)
+                ViewBag.DiscordLink = inviteLink.Contains("https") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
+            else
+                ViewBag.DiscorLink = "";
             base.OnActionExecuting(context);
         }
     }

@@ -22,7 +22,7 @@
             lineThickness: 0,
             tickThickness: 0,
             margin: 0,
-            valueFormatString: " ",
+            valueFormatString: " "
         },
         axisY: {
             gridThickness: 0,
@@ -31,19 +31,19 @@
             minimum: 0,
             margin: 0,
             valueFormatString: " ",
-            labelMaxWidth: 0,
+            labelMaxWidth: 0
         },
         legend: {
             maxWidth: 0,
             maxHeight: 0,
-            dockInsidePlotArea: true,
+            dockInsidePlotArea: true
         },
         data: [{
             showInLegend: false,
             type: "splineArea",
             color: "rgba(0, 122, 204, 0.432)",
             markerSize: 0,
-            dataPoints: playerHistory,
+            dataPoints: playerHistory
         }]
     });
     //////////////////////////////////////
@@ -63,9 +63,9 @@ $(window).resize(function () {
     $('.server-history-row').each(function (index) {
         let serverId = $(this).data('serverid');
         charts[serverId].options.width = $('.server-header').first().width();
-        charts[serverId].render()
+        charts[serverId].render();
     });
-})
+});
 
 function refreshClientActivity() {
     $('.server-history-row').each(function (index) {

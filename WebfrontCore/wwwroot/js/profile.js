@@ -22,7 +22,7 @@ $(document).ready(function () {
                 count++;
                 return false;
             }
-            count++
+            count++;
         }
     });
 
@@ -68,12 +68,44 @@ $(document).ready(function () {
 
     });
 
+    /*
+     * handle action modal
+     */
+    $('.profile-action').click(function (e) {
+        const actionType = $(this).data('action');
+        $.get('/Action/' + actionType + 'Form')
+            .done(function (response) {
+                $('#actionModal .modal-body').html(response);
+                $('#actionModal').modal();
+            })
+            .fail(function (jqxhr, textStatus, error) {
+                $('#actionModal .modal-body').html('<span class="text-danger">' + error + '</span>');
+                $('#actionModal').modal();
+            });
+    });
+
+    /*
+     * handle action submit
+     */
+    $(document).on('submit', '.action-form', function (e) {
+        e.preventDefault();
+        $(this).append($('#target_id input'));
+        const data = $(this).serialize();
+        $.get($(this).attr('action') + '/?' + data)
+            .done(function (response) {
+                $('#actionModal .modal-body').html(response);
+                $('#actionModal').modal();
+            })
+            .fail(function (jqxhr, textStatus, error) {
+                $('#actionModal .modal-body').html('<span class="text-danger">Error' + error + '</span>');
+            });
+    });
 });
 
 function penaltyToName(penaltyName) {
     switch (penaltyName) {
         case "Flag":
-            return "Flagged"
+            return "Flagged";
         case "Warning":
             return "Warned";
         case "Report":
@@ -89,15 +121,56 @@ function penaltyToName(penaltyName) {
     }
 }
 
+function shouldIncludePlural(num) {
+    return num > 1 ? 's' : '';
+}
+
+let mostRecentDate = 0;
+let currentStepAmount = 0;
+let lastStep = "";
+function timeStep(stepDifference) {
+    let hours = (stepDifference / (1000 * 60 * 60));
+    let days = (stepDifference / (1000 * 60 * 60 * 24));
+    let weeks = (stepDifference / (1000 * 60 * 60 * 24 * 7));
+
+    if (Math.round(weeks) > Math.round(currentStepAmount / 24 * 7)) {
+        currentStepAmount = Math.round(weeks);
+        return `${currentStepAmount} week${shouldIncludePlural(currentStepAmount)} ago`;
+    }
+
+    if (Math.round(days) > Math.round(currentStepAmount / 24)) {
+        currentStepAmount = Math.round(days);
+        return `${currentStepAmount} day${shouldIncludePlural(currentStepAmount)} ago`;
+    }
+
+    if (Math.round(hours) > currentStepAmount) {
+        currentStepAmount = Math.round(hours);
+        return `${currentStepAmount} hour${shouldIncludePlural(currentStepAmount)} ago`;
+    }
+}
+
 function loadMeta(meta) {
     let eventString = '';
+    const metaDate = Date.parse(meta.when);
+
+    if (mostRecentDate === 0) {
+        mostRecentDate = metaDate;
+    }
+
+    const step = timeStep(new Date().getTime() - metaDate);
+
+    if (step !== lastStep) {
+        $('#profile_events').append('<span class="p2 text-white profile-event-timestep"><span class="text-primary">&mdash;</span> ' + step + '</span>');
+        lastStep = step;
+    }
+
     // it's a penalty
     if (meta.class.includes("Penalty")) {
         if (meta.value.punisherId !== clientInfo.clientId) {
-            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)}</span> by <span class="text-highlight"> <a class="link-inverse"  href="${meta.value.punisherId}">${meta.value.punisherName}</a></span > for <span style="color: white; ">${meta.value.offense}</span> ${meta.whenString} ago </div>`;
+            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)}</span> by <span class="text-highlight"> <a class="link-inverse"  href="${meta.value.punisherId}">${meta.value.punisherName}</a></span > for <span style="color: white; ">${meta.value.offense}</span></div>`;
         }
         else {
-            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)} </span> <span class="text-highlight"><a class="link-inverse" href="${meta.value.offenderId}"> ${meta.value.offenderName}</a></span > for <span style="color: white; ">${meta.value.offense}</span> ${meta.whenString} ago </div>`;
+            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)} </span> <span class="text-highlight"><a class="link-inverse" href="${meta.value.offenderId}"> ${meta.value.offenderName}</a></span > for <span style="color: white; ">${meta.value.offense}</span></div>`;
         }
     }
     // it's a message

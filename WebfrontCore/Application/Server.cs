@@ -302,7 +302,7 @@ namespace IW4MAdmin
                         string escapedName = Regex.Escape(E.Target.Name);
                         var reg = new Regex($"(\"{escapedName}\")|({escapedName})", RegexOptions.IgnoreCase);
                         E.Data = reg.Replace(E.Data, "", 1).Trim();
-           
+
                         if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
@@ -479,8 +479,8 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
-                if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().Configuration().AutoMessagePeriod 
-                    && BroadcastMessages.Count > 0 
+                if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().Configuration().AutoMessagePeriod
+                    && BroadcastMessages.Count > 0
                     && ClientNum > 0)
                 {
                     await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
@@ -658,7 +658,7 @@ namespace IW4MAdmin
                 LogFile = new IFile(logPath);
                 //#else
             }
-             LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+            LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
             //#endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
@@ -775,9 +775,13 @@ namespace IW4MAdmin
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
 
                 // todo: make this more efficient
-                ((ApplicationManager)(Manager)).AdministratorIPs = (await new GenericRepository<EFClient>().FindAsync(c => c.Level > Player.Permission.Trusted))
-                     .Select(c => c.IPAddress)
-                     .ToList();
+                ((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, int>();
+                var ClientSvc = new ClientService();
+                var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
+                    .Select(c => new { c.IPAddress, c.ClientId });
+
+                foreach (var a in ipList)
+                    ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.IPAddress, a.ClientId);
             }
 
             if (E.Type == Event.GType.MapEnd)
@@ -887,11 +891,10 @@ namespace IW4MAdmin
                     return;
                 }
             }
-
+#if !DEBUG
             else
                 await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber } \"^7Player Temporarily Banned: ^5{ Reason }\"");
-
-#if DEBUG
+#else
             await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
 #endif
 
@@ -933,8 +936,9 @@ namespace IW4MAdmin
             {
                 // this is set only because they're still in the server.
                 Target.Level = Player.Permission.Banned;
+#if !DEBUG
                 await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Banned: ^5{Message} ^7(appeal at {Website}) ^7\"");
-#if DEBUG
+#else 
                 await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
 #endif
             }

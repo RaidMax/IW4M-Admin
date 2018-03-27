@@ -15,8 +15,18 @@ namespace WebfrontCore.ViewComponents
             int ip = HttpContext.Connection.RemoteIpAddress
                 .ToString().ConvertToIP();
 
-            bool authed = IW4MAdmin.ApplicationManager.GetInstance()
-                .AdministratorIPs.Contains(ip);
+            bool authed = false;
+
+            try
+            {
+                var a = IW4MAdmin.ApplicationManager.GetInstance()
+               .PrivilegedClients[HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
+            }
+
+            catch (KeyNotFoundException)
+            {
+
+            }
 
             var penalties = await IW4MAdmin.ApplicationManager.GetInstance().GetPenaltyService().GetRecentPenalties(15, offset);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()

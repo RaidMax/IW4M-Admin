@@ -68,11 +68,6 @@ namespace StatsPlugin.Cheat
                 double avg = AverageHitOffset / (float)avgcnt;
             }
 
-/*r = distance,
-x = playerX + r*cos(yaw)*cos(pitch),
-y = playerY + r*sin(yaw)*cos(pitch)
-z = playerZ + r*sin(360-pitch)*/
-
 #endregion
 
 #region SESSION_RATIOS

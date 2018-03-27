@@ -70,10 +70,6 @@
     color: white;
 }
 
-.profile-meta-entry {
-
-}
-
 .penalties-color-kick,
 .penalties-color-unban {
     color: rgba(116, 147, 99, 1);
@@ -101,22 +97,20 @@
 
 #profile_aliases_btn {
     position: relative;
-    top: auto;
-    margin-top: 0.7em;
+    top: -2px;
     font-size: 0.5em;
     color: rgb(0, 122, 204);
     cursor: pointer;
 }
 
     #profile_aliases_btn:hover {
-        color: white;
+        opacity: 0.75;
         cursor: pointer;
     }
 
 #profile_aliases {
     position: relative;
     display: none;
-  
 }
 
 #profile_avatar {
@@ -141,19 +135,26 @@
     border-bottom: 2px rgb(0, 122, 204) solid;
 }
 
+.profile-event-timestep {
+    font-size: 1.25rem;
+}
+
 #profile_level > span.level {
     color: rgba(236, 130, 222, 0.69);
-    font-weight: bold; 
+    font-weight: bold;
 }
 
 #profile_wrapper {
     border-bottom: 2px rgb(0, 122, 204) solid;
 }
 
-#profile_name {
-  
+.profile-action {
+    font-size: 0.5em;
+    padding-left: 0.25em;
+    cursor: pointer;
+    top: -2px !important;
 }
 
-#profile_info > .text-muted {
-  
+.profile-action:hover{
+    opacity: 0.75;
 }

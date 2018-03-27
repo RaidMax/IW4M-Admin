@@ -6085,3 +6085,15 @@ a.link-inverse:hover {
   border-left: 0;
   border-right: 0; }
 
+.close {
+  text-shadow: none !important; }
+
+.modal-footer {
+  border-top-color: #fd7e14; }
+
+.modal-header {
+  border-bottom-color: #fd7e14; }
+
+form * {
+  border-radius: 0 !important; }
+

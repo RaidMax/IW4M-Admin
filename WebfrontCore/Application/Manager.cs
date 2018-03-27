@@ -25,7 +25,7 @@ namespace IW4MAdmin
     {
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
-        public List<int> AdministratorIPs { get; set; }
+        public Dictionary<int, int> PrivilegedClients { get; set; }
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
         public EventHandler<Event> ServerEventOccurred { get; private set; }
@@ -54,7 +54,7 @@ namespace IW4MAdmin
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
-            AdministratorIPs = new List<int>();
+            PrivilegedClients = new Dictionary<int, int>();
             ServerEventOccurred += EventAPI.OnServerEventOccurred;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
         }
@@ -77,9 +77,21 @@ namespace IW4MAdmin
         public async Task Init()
         {
             #region DATABASE
-            AdministratorIPs = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
-                .Select(c => c.IPAddress)
-                .ToList();
+            var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
+                .Select(c => new { c.IPAddress, c.ClientId });
+
+            foreach (var a in ipList)
+            {
+                try
+                {
+                    PrivilegedClients.Add(a.IPAddress, a.ClientId);
+                }
+
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+            }
             #endregion
 
             #region CONFIG

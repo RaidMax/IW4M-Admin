@@ -26,12 +26,12 @@
                             if (Model.Level == SharedLibrary.Objects.Player.Permission.User.ToString())
                             {
 
-                                <span id="profile_action_ban_btn" class="oi oi-ban text-danger" title="ban" aria-hidden="true"></span>
+                                <span id="profile_action_ban_btn" class="profile-action oi oi-ban text-danger" title="Ban Client" data-action="ban" aria-hidden="true"></span>
                             }
 
                             if (Model.Level == SharedLibrary.Objects.Player.Permission.Banned.ToString())
                             {
-                                <span id="profile_action_unban_btn" class="iconic iconic-carriage-return text-success" title="carriage return" aria-hidden="true"></span>
+                                <span id="profile_action_unban_btn" class="profile-action oi oi-action-undo text-success" title="carriage return" data-action="unban" aria-hidden="true"></span>
                             }
                         }
                     }
@@ -84,6 +84,10 @@
         }
     </div>
 </div>
+
+@section targetid {
+    <input type="hidden" name="targetId" value="@Model.ClientId" />
+}
 
 @section scripts {
     <script>

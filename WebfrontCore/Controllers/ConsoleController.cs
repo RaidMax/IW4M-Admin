@@ -41,7 +41,7 @@ namespace WebfrontCore.Controllers
                     IPAddress = intIP
                 };
 #else
-                   var origin = (await Manager.GetClientService().GetUnique(0)).AsPlayer();
+            var origin = (await Manager.GetClientService().GetUnique(0)).AsPlayer();
 #endif
 
             var server = Manager.Servers.First(s => s.GetHashCode() == serverId);

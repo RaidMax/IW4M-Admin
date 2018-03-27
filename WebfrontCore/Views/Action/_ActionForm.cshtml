@@ -1,0 +1,22 @@
+﻿@model WebfrontCore.ViewModels.ActionInfo
+@{
+    Layout = null;
+}
+<form class="action-form" action="/Action/@Model.Action">
+    <div class="input-group mb-3">
+        @foreach (var input in Model.Inputs)
+        {
+
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon-@input.Name">@input.Name</span>
+            </div>
+            {
+                string inputType = input.Type ?? "text";
+                string value = input.Value ?? "";
+
+                <input type="@inputType" name="@input.Name" value="@value" class="form-control" placeholder="@input.Placeholder" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
+            }
+        }
+    </div>
+    <button type="submit" class="btn btn-block btn-primary">@Model.ActionButtonLabel</button>
+</form>

@@ -638,7 +638,7 @@ namespace IW4MAdmin
 
 #endif
             string mainPath = (GameName == Game.IW4 && onelog.Value >= 0) ? "userraw" : "main";
-            // patch for T5M log path
+            // patch for T5M:V2 log path
             mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
@@ -658,8 +658,9 @@ namespace IW4MAdmin
                 LogFile = new IFile(logPath);
                 //#else
             }
+#if DEBUG
             LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
-            //#endif
+#endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
             await Broadcast("IW4M Admin is now ^2ONLINE");
@@ -781,7 +782,17 @@ namespace IW4MAdmin
                     .Select(c => new { c.IPAddress, c.ClientId });
 
                 foreach (var a in ipList)
-                    ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.IPAddress, a.ClientId);
+                {
+                    try
+                    {
+                        ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.IPAddress, a.ClientId);
+                    }
+
+                    catch (ArgumentException)
+                    {
+                        continue;
+                    }
+                }
             }
 
             if (E.Type == Event.GType.MapEnd)

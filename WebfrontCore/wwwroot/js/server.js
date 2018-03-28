@@ -76,7 +76,8 @@ function refreshClientActivity() {
             cache: false
         })
             .done(function (response) {
-                //const clientCount = $(response).find('.col-6 span').length;
+                const clientCount = $(response).find('.col-6 span').length;
+                $('#server_header_' + serverId + ' .server-clientcount').text(clientCount);
                 $('#server_clientactivity_' + serverId).html(response);
             })
             .fail(function (jqxhr, textStatus, error) {

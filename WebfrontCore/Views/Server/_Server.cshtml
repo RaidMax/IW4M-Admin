@@ -6,10 +6,10 @@
     ViewBag.Description += Model.Name + ", ";
 }
 
-<div class="row server-header">
+<div class="row server-header" id="server_header_@Model.ID">
     <div class="col-md-4 bg-primary text-center  text-md-left">@Model.Name</div>
     <div class="text-center col-md-4 bg-primary">@Model.Map</div>
-    <div class="text-center text-md-right col-md-4 bg-primary">@Model.ClientCount/@Model.MaxClients</div>
+    <div class="text-center text-md-right col-md-4 bg-primary"><span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span></div>
 </div>
 
 <div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity pt-2 pb-2">

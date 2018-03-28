@@ -38,7 +38,12 @@ namespace StatsPlugin.Models
         public double Skill { get; set; }
         [Required]
         public int TimePlayed { get; set; }
-        
+
+        [NotMapped]
+        public float AverageHitOffset
+        {
+            get => (float)Math.Round(HitLocations.Sum(c => c.HitOffsetAverage) / HitLocations.Where(c => c.HitOffsetAverage > 0).Count(), 4);
+        }
         [NotMapped]
         public int SessionKills { get; set; }
         [NotMapped]

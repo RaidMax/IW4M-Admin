@@ -172,8 +172,7 @@ namespace SharedLibrary.Commands
             String Message = Utilities.RemoveWords(E.Data, 1).Trim();
             var length = E.Data.Split(' ')[0].ToLower().ParseTimespan();
             if (length.TotalHours >= 1 && length.TotalHours < 2)
-                Message = E.Data;
-
+                Message = E.Data.Replace("1h", "").Replace("1H", "");
 
             if (E.Origin.Level > E.Target.Level)
             {

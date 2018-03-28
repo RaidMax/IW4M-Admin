@@ -56,7 +56,7 @@ namespace WebfrontCore.Controllers
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
             clientDto.Meta.AddRange(Authorized ? penaltyMeta : penaltyMeta.Where(m => !m.Sensitive));
-            clientDto.Meta.AddRange(Authorized ? administeredPenaltiesMeta : penaltyMeta.Where(m => !m.Sensitive));
+            clientDto.Meta.AddRange(Authorized ? administeredPenaltiesMeta : administeredPenaltiesMeta.Where(m => !m.Sensitive));
             clientDto.Meta = clientDto.Meta
                 .OrderByDescending(m => m.When)
                 .ToList();

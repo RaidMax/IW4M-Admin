@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 using SharedLibrary;
@@ -110,6 +109,7 @@ namespace StatsPlugin
                 double chestRatio = 0;
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
+                double hitOffsetAverage = 0;
 
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
                 {
@@ -128,6 +128,8 @@ namespace StatsPlugin
                     headRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.head).HitCount) /
                          (double)clientStats.Where(c => c.HitLocations.Count > 0)
                             .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount)), 2);
+
+                    hitOffsetAverage = clientStats.Sum(c => c.AverageHitOffset) / clientStats.Where(c => c.AverageHitOffset > 0).Count();
                 }
 
                 return new List<ProfileMeta>()
@@ -179,6 +181,12 @@ namespace StatsPlugin
                          {
                              Key = "Headshot Ratio",
                              Value = headRatio,
+                             Sensitive = true
+                         },
+                         new ProfileMeta()
+                         {
+                             Key = "Hit Offset Average",
+                             Value = $"{Math.Round(((float)hitOffsetAverage).ToDegrees(), 4)}°",
                              Sensitive = true
                          }
                 };

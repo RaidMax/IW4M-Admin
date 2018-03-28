@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using SharedLibrary.Database.Models;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -13,8 +9,6 @@ namespace StatsPlugin.Models
 {
     public class EFClientKill : SharedEntity
     {
-        public EFClientKill() { }
-
         [Key]
         public long KillId { get; set; }
         public int VictimId { get; set; }

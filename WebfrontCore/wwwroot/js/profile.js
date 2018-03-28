@@ -65,7 +65,6 @@ $(document).ready(function () {
                 $('.modal-body').append("Location &mdash; " + response["city"] + ", " + response["regionName"] + ", " + response["country"] + "<br/>");
                 $('#mainModal').modal();
             });
-
     });
 
     /*
@@ -127,11 +126,11 @@ function shouldIncludePlural(num) {
 
 let mostRecentDate = 0;
 let currentStepAmount = 0;
-let lastStep = "";
+let lastStep = '';
 function timeStep(stepDifference) {
-    let hours = (stepDifference / (1000 * 60 * 60));
-    let days = (stepDifference / (1000 * 60 * 60 * 24));
-    let weeks = (stepDifference / (1000 * 60 * 60 * 24 * 7));
+    let hours = stepDifference / (1000 * 60 * 60);
+    let days = stepDifference / (1000 * 60 * 60 * 24);
+    let weeks = stepDifference / (1000 * 60 * 60 * 24 * 7);
 
     if (Math.round(weeks) > Math.round(currentStepAmount / 24 * 7)) {
         currentStepAmount = Math.round(weeks);
@@ -151,15 +150,15 @@ function timeStep(stepDifference) {
 
 function loadMeta(meta) {
     let eventString = '';
-    const metaDate = Date.parse(meta.when);
+    const metaDate = moment.utc(meta.when).valueOf();
 
     if (mostRecentDate === 0) {
         mostRecentDate = metaDate;
     }
 
-    const step = timeStep(new Date().getTime() - metaDate);
+    const step = timeStep(moment.utc().valueOf() - metaDate);
 
-    if (step !== lastStep) {
+    if (step !== lastStep && step !== undefined && metaDate > 0) {
         $('#profile_events').append('<span class="p2 text-white profile-event-timestep"><span class="text-primary">&mdash;</span> ' + step + '</span>');
         lastStep = step;
     }

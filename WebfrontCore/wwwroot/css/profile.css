@@ -155,6 +155,6 @@
     top: -2px !important;
 }
 
-.profile-action:hover{
-    opacity: 0.75;
-}
+    .profile-action:hover {
+        opacity: 0.75;
+    }

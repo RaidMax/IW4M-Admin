@@ -156,7 +156,7 @@ namespace StatsPlugin.Helpers
             if (detectionStats.ContainsKey(pl.ClientId))
                 detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue);
 
-            detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log));
+            detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats));
 
             return clientStats;
         }

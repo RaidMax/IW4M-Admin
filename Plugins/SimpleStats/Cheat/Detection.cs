@@ -15,19 +15,19 @@ namespace StatsPlugin.Cheat
         int Kills;
         int AboveThresholdCount;
         double AverageKillTime;
-        double AverageHitOffset;
-        int avgcnt;
         Dictionary<IW4Info.HitLocation, int> HitLocationCount;
+        EFClientStatistics ClientStats;
         DateTime LastKill;
         ILogger Log;
 
-        public Detection(ILogger log)
+        public Detection(ILogger log, EFClientStatistics clientStats)
         {
             Log = log;
             HitLocationCount = new Dictionary<IW4Info.HitLocation, int>();
             foreach (var loc in Enum.GetValues(typeof(IW4Info.HitLocation)))
                 HitLocationCount.Add((IW4Info.HitLocation)loc, 0);
             LastKill = DateTime.UtcNow;
+            ClientStats = clientStats;
         }
 
         /// <summary>
@@ -62,10 +62,11 @@ namespace StatsPlugin.Cheat
 
             if (kill.AdsPercent > 0.5)
             {
-                Log.WriteInfo($"{((float)angle).ToDegrees()}");
-                AverageHitOffset += angle;
-                avgcnt++;
-                double avg = AverageHitOffset / (float)avgcnt;
+                var hitLoc = ClientStats.HitLocations
+                    .First(hl => hl.Location == kill.HitLoc);
+                float previousAverage = hitLoc.HitOffsetAverage;
+                double newAverage = (previousAverage * (hitLoc.HitCount - 1) + angle) / hitLoc.HitCount;
+                hitLoc.HitOffsetAverage = (float)newAverage;
             }
 
 #endregion

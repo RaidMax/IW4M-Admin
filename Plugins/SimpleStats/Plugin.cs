@@ -129,7 +129,7 @@ namespace StatsPlugin
                          (double)clientStats.Where(c => c.HitLocations.Count > 0)
                             .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount)), 2);
 
-                    hitOffsetAverage = clientStats.Sum(c => c.AverageHitOffset) / clientStats.Where(c => c.AverageHitOffset > 0).Count();
+                    hitOffsetAverage = clientStats.Sum(c => c.AverageHitOffset) / Math.Max(1, clientStats.Where(c => c.AverageHitOffset > 0).Count());
                 }
 
                 return new List<ProfileMeta>()

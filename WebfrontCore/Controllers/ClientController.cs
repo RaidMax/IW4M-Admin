@@ -45,7 +45,7 @@ namespace WebfrontCore.Controllers
             var administeredPenaltiesMeta = await Manager.GetPenaltyService()
                 .ReadGetClientPenaltiesAsync(client.ClientId, false);
 
-            if (client.Level > SharedLibrary.Objects.Player.Permission.Trusted)
+            if (Authorized && client.Level > SharedLibrary.Objects.Player.Permission.Trusted)
                 clientDto.Meta.Add(new ProfileMeta()
                 {
                     Key = "Masked",

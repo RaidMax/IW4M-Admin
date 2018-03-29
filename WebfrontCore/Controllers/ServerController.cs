@@ -30,7 +30,8 @@ namespace WebfrontCore.Controllers
                 Players = s.Players.Where(p => p != null).Select(p => new PlayerInfo
                 {
                     Name = p.Name,
-                    ClientId = p.ClientId
+                    ClientId = p.ClientId,
+                    Level = p.Level.ToString()
                 }).ToList(),
                 ChatHistory = s.ChatHistory.OrderBy(c => c.Time).Take((int)Math.Ceiling(s.ClientNum / 2.0)).ToArray(),
                 PlayerHistory = s.PlayerHistory.ToArray()

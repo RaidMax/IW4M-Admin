@@ -271,7 +271,8 @@ if (totalChestKills >= 250)
     double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(2.25), Thresholds.ChestAbdomenRatioThresholdHighSample(2.25), lerpAmount) + marginOfError;
     double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3.0), Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), lerpAmount) + marginOfError;
 
-    double currentChestAbdomenRatio = HitLocationCount[IW4Info.HitLocation.torso_upper] / (double)HitLocationCount[IW4Info.HitLocation.torso_lower];
+                double currentChestAbdomenRatio = stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount /
+                    stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount;
 
     if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)
     {
@@ -284,8 +285,8 @@ if (totalChestKills >= 250)
             Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
             Log.WriteDebug($"**MaxRatio {chestAbdomenLerpValueForBan}");
             var sb = new StringBuilder();
-            foreach (var kvp in HitLocationCount)
-                sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+            foreach (var location in stats.HitLocations)
+                sb.Append($"HitLocation: {location.Location} -> {location.HitCount}\r\n");
             Log.WriteDebug(sb.ToString());
             //  Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
 
@@ -305,8 +306,8 @@ if (totalChestKills >= 250)
             Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
             Log.WriteDebug($"**MaxRatio {chestAbdomenRatioLerpValueForFlag}");
             var sb = new StringBuilder();
-            foreach (var kvp in HitLocationCount)
-                sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+            foreach (var location in stats.HitLocations)
+                sb.Append($"HitLocation: {location.Location} -> {location.HitCount}\r\n");
             Log.WriteDebug(sb.ToString());
             // Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
 

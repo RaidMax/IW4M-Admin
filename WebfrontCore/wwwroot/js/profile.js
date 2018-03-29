@@ -57,12 +57,17 @@ $(document).ready(function () {
         const ip = $(this).data("ip");
         $.getJSON("http://ip-api.com/json/" + ip)
             .done(function (response) {
-                $('.modal-title').text(ip);
-                $('.modal-body').text("");
-                $('.modal-body').append("ASN &mdash; " + response["as"] + "<br/>");
-                $('.modal-body').append("ISP &mdash; " + response["isp"] + "<br/>");
-                $('.modal-body').append("Organization &mdash; " + response["org"] + "<br/>");
-                $('.modal-body').append("Location &mdash; " + response["city"] + ", " + response["regionName"] + ", " + response["country"] + "<br/>");
+                $('#mainModal .modal-title').text(ip);
+                $('#mainModal .modal-body').text("");
+                $('#mainModal .modal-body').append("ASN &mdash; " + response["as"] + "<br/>");
+                $('#mainModal .modal-body').append("ISP &mdash; " + response["isp"] + "<br/>");
+                $('#mainModal .modal-body').append("Organization &mdash; " + response["org"] + "<br/>");
+                $('#mainModal .modal-body').append("Location &mdash; " + response["city"] + ", " + response["regionName"] + ", " + response["country"] + "<br/>");
+                $('#mainModal').modal();
+            })
+            .fail(function (jqxhr, textStatus, error) {
+                $('#mainModal .modal-title').text("Error");
+                $('#mainModal .modal-body').html('<span class="text-danger">&mdash;'+ error + '</span>');
                 $('#mainModal').modal();
             });
     });

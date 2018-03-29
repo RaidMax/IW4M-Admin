@@ -42,7 +42,7 @@ namespace StatsPlugin.Models
         [NotMapped]
         public float AverageHitOffset
         {
-            get => (float)Math.Round(HitLocations.Sum(c => c.HitOffsetAverage) / HitLocations.Where(c => c.HitOffsetAverage > 0).Count(), 4);
+            get => (float)Math.Round(HitLocations.Sum(c => c.HitOffsetAverage) / Math.Max(1, HitLocations.Where(c => c.HitOffsetAverage > 0).Count()), 4);
         }
         [NotMapped]
         public int SessionKills { get; set; }

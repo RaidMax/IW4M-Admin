@@ -390,5 +390,11 @@ namespace SharedLibrary
         }
 
         public static bool IsPrivileged(this Player p) => p.Level > Player.Permission.User;
+
+        public static bool PromptBool(string question)
+        {
+            Console.Write($"{question}? [y/n]: ");
+            return (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+        }
     }
 }

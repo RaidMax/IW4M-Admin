@@ -42,6 +42,8 @@ namespace SharedLibrary
             PlayerHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();
             NextMessage = 0;
+            CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
+            CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
             InitializeTokens();
             InitializeAutoMessages();
         }
@@ -136,7 +138,7 @@ namespace SharedLibrary
 
             string sayCommand = (GameName == Game.IW4) ? "sayraw" : "say";
 #if !DEBUG
-            await this.ExecuteCommandAsync($"{sayCommand} {Message}");
+            await this.ExecuteCommandAsync($"{sayCommand} {(CustomSayEnabled ? CustomSayName : "")} {Message}");
 #else
             Logger.WriteVerbose(Message.StripColors());
 #endif
@@ -153,7 +155,7 @@ namespace SharedLibrary
 
 #if !DEBUG
             if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)
-                await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientNumber} {Message}^7");
+                await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientNumber} {(CustomSayEnabled ? CustomSayName : "")} {Message}^7");
 #else
             Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
 #endif
@@ -321,6 +323,10 @@ namespace SharedLibrary
         protected TimeSpan LastMessage;
         protected IFile LogFile;
         protected DateTime LastPoll;
+
+        // only here for performance
+        private bool CustomSayEnabled;
+        private string CustomSayName;
 
         //Remote
         public IList<CommandResponseInfo> CommandResult = new List<CommandResponseInfo>();

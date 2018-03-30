@@ -11,6 +11,8 @@ namespace SharedLibrary.Configuration
         public bool EnableSteppedHierarchy { get; set; }
         public bool EnableClientVPNs { get; set; }
         public bool EnableDiscordLink { get; set; }
+        public bool EnableCustomSayName { get; set; }
+        public string CustomSayName { get; set; }
         public string DiscordInviteCode { get; set; }
         public string IPHubAPIKey { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
@@ -21,29 +23,22 @@ namespace SharedLibrary.Configuration
 
         public IBaseConfiguration Generate()
         {
-            Console.Write("Enable multiple owners? [y/n]: ");
-            EnableMultipleOwners = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+            EnableMultipleOwners = Utilities.PromptBool("Enable multiple owners");
+            EnableSteppedHierarchy = Utilities.PromptBool("Enable stepped privilege hierarchy");
+            EnableCustomSayName = Utilities.PromptBool("Enable custom say name");
 
-            Console.Write("Enable stepped privilege hierarchy? [y/n]: ");
-            EnableSteppedHierarchy = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+            if (EnableCustomSayName)
+                CustomSayName = Utilities.PromptString("Enter custom say name");
 
-            Console.Write("Enable client VPNs [y/n]: ");
-            EnableClientVPNs = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+            EnableClientVPNs = Utilities.PromptBool("Enable client VPNS");
 
             if (!EnableClientVPNs)
-            {
-                Console.Write("Enter iphub.info api key: ");
-                IPHubAPIKey = Console.ReadLine();
-            }
+                IPHubAPIKey = Utilities.PromptString("Enter iphub.info api key");
 
-            Console.Write("Display discord link on webfront [y/n]: ");
-            EnableDiscordLink = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+            EnableDiscordLink = Utilities.PromptBool("Display discord link on webfront");
 
             if (EnableDiscordLink)
-            {
-                Console.Write("Enter discord invite link: ");
-                DiscordInviteCode = Console.ReadLine();
-            }
+                DiscordInviteCode = Utilities.PromptString("Enter discord invite link");
 
             return this;
         }

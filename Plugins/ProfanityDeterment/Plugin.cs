@@ -23,6 +23,9 @@ namespace ProfanityDeterment
 
         public async Task OnEventAsync(Event E, Server S)
         {
+            if (!Settings.Configuration().EnableProfanityDeterment)
+                return;
+
             if (E.Type == Event.GType.Connect)
             {
                 if (!ProfanityCounts.TryAdd(E.Origin.ClientId, new Tracking(E.Origin)))

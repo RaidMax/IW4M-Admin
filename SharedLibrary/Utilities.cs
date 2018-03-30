@@ -396,5 +396,18 @@ namespace SharedLibrary
             Console.Write($"{question}? [y/n]: ");
             return (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
         }
+
+        public static string PromptString(string question)
+        {
+            Console.Write($"{question}: ");
+
+            string response;
+            do
+            {
+                response = Console.ReadLine();
+            } while (string.IsNullOrWhiteSpace(response));
+
+            return response;
+        }
     }
 }

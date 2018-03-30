@@ -20,7 +20,7 @@
             }
             if (Model.ChatHistory[i].Message != "CONNECTED" && Model.ChatHistory[i].Message != "DISCONNECTED")
             {
-                <span class="text-light">@Model.ChatHistory[i].Name</span><span> &mdash; @message.Substring(0, Math.Min(50, message.Length - 1)) </span><br />
+                <span class="text-light">@Model.ChatHistory[i].Name</span><span> &mdash; @message.Substring(0, Math.Min(50, message.Length)) </span><br />
             }
         }
     }

@@ -96,9 +96,6 @@
 }
 
 #profile_aliases_btn {
-    position: relative;
-    top: -2px;
-    font-size: 0.5em;
     color: rgb(0, 122, 204);
     cursor: pointer;
 }

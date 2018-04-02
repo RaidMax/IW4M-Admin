@@ -24,7 +24,9 @@ namespace WebfrontCore.Controllers
 
             try
             {
-                User.ClientId = Manager.PrivilegedClients[context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
+                var client = Manager.PrivilegedClients[context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
+                User.ClientId = client.ClientId;
+                User.Level = client.Level;
             }
 
             catch (KeyNotFoundException)
@@ -36,11 +38,16 @@ namespace WebfrontCore.Controllers
                 User.ClientId >= 0;
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Startup.Configuration["Web:Address"];
-            string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
-            if (inviteLink != null)
-                ViewBag.DiscordLink = inviteLink.Contains("https") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
-            else
-                ViewBag.DiscordLink = "";
+            ViewBag.User = User;
+
+            if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink)
+            {
+                string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
+                if (inviteLink != null)
+                    ViewBag.DiscordLink = inviteLink.Contains("https") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
+                else
+                    ViewBag.DiscordLink = "";
+            }
             base.OnActionExecuting(context);
         }
     }

@@ -196,7 +196,8 @@
     <Compile Include="Objects\Report.cs" />
     <Compile Include="PluginImporter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RCON.cs" />
+    <Compile Include="RCon\Connection.cs" />
+    <Compile Include="RCon\StaticHelpers.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Configuration\ApplicationConfiguration.cs" />
     <Compile Include="Services\AliasService.cs" />

@@ -2,7 +2,6 @@
 @{
     string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
     string shortCode = match == string.Empty ? "?" : match;
-    string marginClass = Model.Aliases.Count > 0 ? "mr-4" : "";
 }
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
@@ -12,49 +11,46 @@
     </div>
     <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
         <div id="profile_name">
-            <h1>
-                <span class="client-name @marginClass">
-                    @Model.Name
-                    @if (Model.Aliases.Count > 0 || ViewBag.Authorized)
-                    {
-                        <span id="profile_aliases_btn" class="oi oi-caret-bottom pl-2"></span>
-                    }
-
-                    @{
-                        if (ViewBag.Authorized)
-                        {
-                            if (Model.Level == SharedLibrary.Objects.Player.Permission.User.ToString())
-                            {
-
-                                <span id="profile_action_ban_btn" class="profile-action oi oi-ban text-danger" title="Ban Client" data-action="ban" aria-hidden="true"></span>
-                            }
-
-                            if (Model.Level == SharedLibrary.Objects.Player.Permission.Banned.ToString())
-                            {
-                                <span id="profile_action_unban_btn" class="profile-action oi oi-action-undo text-success" title="carriage return" data-action="unban" aria-hidden="true"></span>
-                            }
-                        }
-                    }
-
-                </span>
-            </h1>
-            <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted">
-                @{
-                    foreach (string alias in Model.Aliases)
-                    {
-                        @alias <br />
-                    }
-
-                    if (ViewBag.Authorized)
-                    {
-                        foreach (string ip in Model.IPs)
-                        {
-                            <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a><br />
-                        }
-
-                    }
-                }
+            <div class="client-name h1 d-flex d-inline-flex">
+                @Model.Name
             </div>
+            @{
+                if (ViewBag.Authorized)
+                {
+                    <div class="d-flex d-md-inline-flex justify-content-center order-1">
+                        <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
+
+                        @if (Model.LevelInt < (int)ViewBag.User.Level && 
+                            (SharedLibrary.Objects.Player.Permission)Model.LevelInt != SharedLibrary.Objects.Player.Permission.Banned)
+                        {
+                            <div id="profile_action_ban_btn" class="profile-action oi oi-ban text-danger h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
+                        }
+
+                        @if (Model.LevelInt < (int)ViewBag.User.Level &&
+                           (SharedLibrary.Objects.Player.Permission)Model.LevelInt == SharedLibrary.Objects.Player.Permission.Banned)
+                        {
+                            <div id="profile_action_unban_btn" class="profile-action oi oi-action-undo text-success h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
+                        }
+                    </div>
+
+                    <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted order-0">
+                        @{
+                            foreach (string alias in Model.Aliases)
+                            {
+                                @alias <br />
+                            }
+
+                            if (ViewBag.Authorized)
+                            {
+                                foreach (string ip in Model.IPs)
+                                {
+                                    <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a><br />
+                                }
+                            }
+                        }
+                    </div>
+                }
+            }
         </div>
         <div id="profile_level" class="text-muted  mb-2">
             <h5><span class="level-color-@Model.Level.ToLower()"><strong>@Model.Level</strong></span></h5>

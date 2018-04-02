@@ -4,17 +4,17 @@ using System.Threading;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 using SharedLibrary;
-using SharedLibrary.Network;
 using SharedLibrary.Interfaces;
 using SharedLibrary.Objects;
-using System.Text.RegularExpressions;
 using SharedLibrary.Services;
 using SharedLibrary.Database.Models;
 using SharedLibrary.Dtos;
-using WebfrontCore.Application.Misc;
 using SharedLibrary.Configuration;
+
+using WebfrontCore.Application.Misc;
 
 namespace IW4MAdmin
 {
@@ -386,7 +386,19 @@ namespace IW4MAdmin
         async Task<int> PollPlayersAsync()
         {
             var now = DateTime.Now;
-            var CurrentPlayers = await this.GetStatusAsync();
+
+            List<Player> CurrentPlayers = null;
+            try
+            {
+                CurrentPlayers = await this.GetStatusAsync();
+            }
+
+            // when the server has lost connection
+            catch (SharedLibrary.Exceptions.NetworkException)
+            {
+                Throttled = true;
+                return ClientNum;
+            }
 #if DEBUG
             Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
 #endif
@@ -659,7 +671,7 @@ namespace IW4MAdmin
                 //#else
             }
 #if DEBUG
-            LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+            //LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #endif
             Logger.WriteInfo($"Log file is {logPath}");
 #if !DEBUG
@@ -776,16 +788,20 @@ namespace IW4MAdmin
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
 
                 // todo: make this more efficient
-                ((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, int>();
+                ((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, Player>();
                 var ClientSvc = new ClientService();
                 var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
-                    .Select(c => new { c.IPAddress, c.ClientId });
+                    .Select(c => new { c.IPAddress, c.ClientId, c.Level });
 
                 foreach (var a in ipList)
                 {
                     try
                     {
-                        ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.IPAddress, a.ClientId);
+                        ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.IPAddress, new Player()
+                        {
+                            ClientId = a.ClientId,
+                            Level = a.Level
+                        });
                     }
 
                     catch (ArgumentException)

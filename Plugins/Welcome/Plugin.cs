@@ -1,12 +1,9 @@
 ﻿using System;
-using SharedLibrary;
-using System.Collections.Generic;
-using SharedLibrary.Interfaces;
 using System.Threading.Tasks;
 
-using SharedLibrary.Network;
+using SharedLibrary;
+using SharedLibrary.Interfaces;
 using SharedLibrary.Objects;
-using SharedLibrary.Helpers;
 using SharedLibrary.Configuration;
 
 namespace Welcome_Plugin
@@ -48,12 +45,12 @@ namespace Welcome_Plugin
                     return "fourth";
                 case 5:
                     return "fifth";
-            /*  case 100:
-                    return "One-Hundreth (amazing!)";
-                case 500:
-                    return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
-                case 1000:
-                    return "you deserve a medal. it's your ^11000th^7";*/
+                /*  case 100:
+                        return "One-Hundreth (amazing!)";
+                    case 500:
+                        return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
+                    case 1000:
+                        return "you deserve a medal. it's your ^11000th^7";*/
                 default:
                     return connection.ToString() + Prefix;
             }

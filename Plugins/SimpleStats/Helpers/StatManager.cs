@@ -255,8 +255,8 @@ namespace StatsPlugin.Helpers
                 await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
-            statsSvc.KillStatsSvc.Insert(kill);
-            await statsSvc.KillStatsSvc.SaveChangesAsync();
+            //statsSvc.KillStatsSvc.Insert(kill);
+            //await statsSvc.KillStatsSvc.SaveChangesAsync();
 
             if (Plugin.Config.Configuration().EnableAntiCheat)
             {
@@ -330,13 +330,10 @@ namespace StatsPlugin.Helpers
 
             if (streakMessage != string.Empty)
                 await attacker.Tell(streakMessage);
-
-            // immediately write changes in debug
-            //#if DEBUG
+            
+            // todo: do we want to save this immediately?
             var statsSvc = ContextThreads[serverId];
             statsSvc.ClientStatSvc.SaveChanges();
-            //statsSvc.ServerStatsSvc.SaveChanges();
-            //#endif
         }
 
         /// <summary>

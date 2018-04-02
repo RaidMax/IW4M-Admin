@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
-using SharedLibrary.Network;
+using SharedLibrary.RCon;
 using SharedLibrary.Commands;
 using System.Threading.Tasks;
 using SharedLibrary.Helpers;
@@ -36,6 +36,7 @@ namespace SharedLibrary
             Manager = mgr;
             Logger = Manager.GetLogger();
             ServerConfig = config;
+            RemoteConnection = new RCon.Connection(IP, Port, Password, Logger);
 
             Players = new List<Player>(new Player[18]);
             Reports = new List<Report>();
@@ -312,6 +313,7 @@ namespace SharedLibrary
         public bool Throttled { get; protected set; }
         public bool CustomCallback { get; protected set; }
         public string WorkingDirectory { get; protected set; }
+        public RCon.Connection RemoteConnection { get; protected set; }
 
         // Internal
         protected string IP;

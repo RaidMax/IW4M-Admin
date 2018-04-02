@@ -18,6 +18,7 @@ namespace WebfrontCore.Controllers
             {
                 Name = client.Name,
                 Level = client.Level.ToString(),
+                LevelInt = (int)client.Level,
                 ClientId = client.ClientId,
                 IPAddress = client.IPAddressString,
                 NetworkId = client.NetworkId,
@@ -53,6 +54,17 @@ namespace WebfrontCore.Controllers
                     Sensitive = true,
                     When = DateTime.MinValue
                 });
+
+            if (Authorized)
+            {
+                clientDto.Meta.AddRange(client.AliasLink.Children.Select(a => new ProfileMeta()
+                {
+                    Key = "AliasEvent",
+                    Value = $"Connected with name {a.Name}",
+                    Sensitive = true,
+                    When = a.DateAdded
+                }));
+            }
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
             clientDto.Meta.AddRange(Authorized ? penaltyMeta : penaltyMeta.Where(m => !m.Sensitive));
@@ -105,6 +117,7 @@ namespace WebfrontCore.Controllers
             {
                 Name = c.Name,
                 Level = c.Level.ToString(),
+                LevelInt = (int)c.Level,
                 ClientId = c.ClientId,
                 LastSeen = Utilities.GetTimePassed(c.LastConnection, false)
             })

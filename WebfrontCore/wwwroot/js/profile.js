@@ -9,6 +9,7 @@ $(document).ready(function () {
         const aliases = $('#profile_aliases').text().trim();
         if (aliases && aliases.length !== 0) {
             $('#profile_aliases').slideToggle(150);
+            $(this).toggleClass('oi-caret-top');
         }
     });
 
@@ -176,6 +177,9 @@ function loadMeta(meta) {
         else {
             eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)} </span> <span class="text-highlight"><a class="link-inverse" href="${meta.value.offenderId}"> ${meta.value.offenderName}</a></span > for <span style="color: white; ">${meta.value.offense}</span></div>`;
         }
+    }
+    else if (meta.key.includes("Alias")) {
+        eventString = `<div><span class="text-primary">${meta.value}</span></div>`;
     }
     // it's a message
     else if (meta.key.includes("Event")) {

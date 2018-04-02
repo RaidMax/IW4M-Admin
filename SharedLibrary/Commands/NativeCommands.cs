@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using System.Threading.Tasks;
-
-using SharedLibrary.Network;
-using SharedLibrary.Helpers;
-using SharedLibrary.Objects;
-using SharedLibrary.Database;
-using System.Data.Entity;
+﻿using SharedLibrary.Database;
 using SharedLibrary.Database.Models;
-using SharedLibrary.Services;
 using SharedLibrary.Exceptions;
+using SharedLibrary.Objects;
+using SharedLibrary.Services;
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SharedLibrary.Commands
 {
@@ -419,9 +416,6 @@ namespace SharedLibrary.Commands
             }
 
             Player.Permission newPerm = Utilities.MatchPermission(E.Data);
-
-            if (newPerm == Player.Permission.Owner && E.Origin.Level != Player.Permission.Console)
-                newPerm = Player.Permission.Banned;
 
             if (newPerm == Player.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
@@ -981,16 +975,16 @@ namespace SharedLibrary.Commands
         }
     }
 
-    public class CRestartServer : Command
+    public class CKillServer : Command
     {
-        public CRestartServer() : base("restartserver", "restart the server", "restart", Player.Permission.Administrator, false)
+        public CKillServer() : base("killserver", "kill the game server", "kill", Player.Permission.Administrator, false)
         {
         }
 
         public override async Task ExecuteAsync(Event E)
         {
             var gameserverProcesses = System.Diagnostics.Process.GetProcessesByName("iw4x");
-            var currentProcess = gameserverProcesses.FirstOrDefault(g => g.GetCommandLine().Contains($"+set net_port {E.Owner.GetPort()}"));
+            var currentProcess = gameserverProcesses.FirstOrDefault(g => g.MainWindowTitle.Contains(E.Owner.Hostname));
 
             if (currentProcess == null)
             {
@@ -999,7 +993,6 @@ namespace SharedLibrary.Commands
 
             else
             {
-                var commandLine = currentProcess.GetCommandLine();
                 // attempt to kill it natively
                 try
                 {
@@ -1021,51 +1014,17 @@ namespace SharedLibrary.Commands
                     try
                     {
                         currentProcess.Kill();
+                        await E.Origin.Tell("Successfully killed server process");
                     }
                     catch (Exception e)
                     {
-                        await E.Origin.Tell("Could not kill IW4x process");
+                        await E.Origin.Tell("Could not kill server process");
                         E.Owner.Logger.WriteDebug("Unable to kill process");
                         E.Owner.Logger.WriteDebug($"Exception: {e.Message}");
                         return;
                     }
-
-                    try
-                    {
-
-                        System.Diagnostics.Process process = new System.Diagnostics.Process();
-                        process.StartInfo.UseShellExecute = false;
-#if !DEBUG
-                        process.StartInfo.WorkingDirectory =  E.Owner.WorkingDirectory;
-#else
-                        process.StartInfo.WorkingDirectory = @"C:\Users\User\Desktop\MW2";
-#endif
-                        process.StartInfo.FileName = $"{process.StartInfo.WorkingDirectory}\\iw4x.exe";
-                        process.StartInfo.Arguments = commandLine.Substring(6);
-
-                        /*process.StartInfo.UserName = E.Owner.ServerConfig.RestartUsername;
-
-                        var pw = new System.Security.SecureString();
-                        foreach (char c in E.Owner.ServerConfig.RestartPassword)
-                            pw.AppendChar(c);
-
-                        process.StartInfo.Password = pw;
-                        */
-                        process.Start();
-                    }
-
-                    catch (Exception e)
-                    {
-                        await E.Origin.Tell("Could not start the IW4x process");
-                        E.Owner.Logger.WriteDebug("Unable to start process");
-                        E.Owner.Logger.WriteDebug($"Exception: {e.Message}");
-                    }
                 }
             }
-
-
         }
     }
 }
-
-

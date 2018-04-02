@@ -25,7 +25,7 @@ namespace IW4MAdmin
     {
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
-        public Dictionary<int, int> PrivilegedClients { get; set; }
+        public Dictionary<int, Player> PrivilegedClients { get; set; }
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
         public EventHandler<Event> ServerEventOccurred { get; private set; }
@@ -54,7 +54,7 @@ namespace IW4MAdmin
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
-            PrivilegedClients = new Dictionary<int, int>();
+            PrivilegedClients = new Dictionary<int, Player>();
             ServerEventOccurred += EventAPI.OnServerEventOccurred;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
         }
@@ -78,13 +78,17 @@ namespace IW4MAdmin
         {
             #region DATABASE
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
-                .Select(c => new { c.IPAddress, c.ClientId });
+                .Select(c => new { c.IPAddress, c.ClientId, c.Level });
 
             foreach (var a in ipList)
             {
                 try
                 {
-                    PrivilegedClients.Add(a.IPAddress, a.ClientId);
+                    PrivilegedClients.Add(a.IPAddress, new Player()
+                    {
+                        ClientId = a.ClientId,
+                        Level = a.Level
+                    });
                 }
 
                 catch (ArgumentException)
@@ -208,7 +212,7 @@ namespace IW4MAdmin
             Commands.Add(new CIP());
             Commands.Add(new CMask());
             Commands.Add(new CPruneAdmins());
-            Commands.Add(new CRestartServer());
+            Commands.Add(new CKillServer());
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
@@ -238,7 +242,7 @@ namespace IW4MAdmin
                         else
                         {
                             Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
-                            if (Status.RunAverage > 1000 + UPDATE_FREQUENCY)
+                            if (Status.RunAverage > 1000 + UPDATE_FREQUENCY && !(Status.Dependant as Server).Throttled)
                                 Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
                         }
                     }

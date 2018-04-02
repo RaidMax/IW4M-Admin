@@ -31,7 +31,8 @@ namespace WebfrontCore.Controllers
                 {
                     Name = p.Name,
                     ClientId = p.ClientId,
-                    Level = p.Level.ToString()
+                    Level = p.Level.ToString(),
+                    LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory.OrderBy(c => c.Time).Take((int)Math.Ceiling(s.ClientNum / 2.0)).ToArray(),
                 PlayerHistory = s.PlayerHistory.ToArray()

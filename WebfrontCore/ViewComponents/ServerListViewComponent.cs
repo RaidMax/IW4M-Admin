@@ -27,7 +27,8 @@ namespace WebfrontCore.ViewComponents
                 {
                     Name = p.Name,
                     ClientId = p.ClientId,
-                    Level = p.Level.ToString()
+                    Level = p.Level.ToString(),
+                    LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToArray()
             }).ToList();

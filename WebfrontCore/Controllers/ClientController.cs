@@ -57,13 +57,16 @@ namespace WebfrontCore.Controllers
 
             if (Authorized)
             {
-                clientDto.Meta.AddRange(client.AliasLink.Children.Select(a => new ProfileMeta()
-                {
-                    Key = "AliasEvent",
-                    Value = $"Connected with name {a.Name}",
-                    Sensitive = true,
-                    When = a.DateAdded
-                }));
+                clientDto.Meta.AddRange(client.AliasLink.Children
+                    .GroupBy(a => a.Name)
+                    .Select(a => a.First())
+                    .Select(a => new ProfileMeta()
+                    {
+                        Key = "AliasEvent",
+                        Value = $"Connected with name {a.Name}",
+                        Sensitive = true,
+                        When = a.DateAdded
+                    }));
             }
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
@@ -89,6 +92,7 @@ namespace WebfrontCore.Controllers
                 .Where(a => a.Active)
                 .OrderByDescending(a => a.Level);
             var adminsDict = new Dictionary<SharedLibrary.Objects.Player.Permission, IList<ClientInfo>>();
+
             foreach (var admin in admins)
             {
                 if (!adminsDict.ContainsKey(admin.Level))
@@ -123,7 +127,7 @@ namespace WebfrontCore.Controllers
             })
             .ToList();
 
-            ViewBag.Title = $"Clients Matching \"{clientName}\"";
+            ViewBag.Title = $"{clientsDto.Count} Clients Matching \"{clientName}\"";
             return View("Find/Index", clientsDto);
         }
     }

@@ -70,6 +70,10 @@ namespace SharedLibrary
                     long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong();
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
+#if DEBUG
+                    Ping = 1;
+#endif
+
                     int cIP = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
                     int score = Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]);

@@ -12,8 +12,8 @@
         animationEnabled: true,
         toolTip: {
             contentFormatter: function (e) {
-                var date = new Date(e.entries[0].dataPoint.x);
-                return date.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: true }) + " - " + e.entries[0].dataPoint.y + " players";
+                const date = moment.utc(e.entries[0].dataPoint.x);
+                return date.local().format('h:mm A') + " - " + e.entries[0].dataPoint.y + " players";
             }
         },
         axisX: {

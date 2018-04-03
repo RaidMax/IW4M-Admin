@@ -167,7 +167,7 @@ namespace IW4MAdmin
                     else if (e.GetType() == typeof(NetworkException))
                     {
                         Logger.WriteDebug(e.Message);
-                        Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
+                        //Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
                     }
 
                     // throw the exception to the main method to stop before instantly exiting

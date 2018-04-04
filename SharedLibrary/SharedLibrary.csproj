@@ -173,6 +173,7 @@
     <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\ServerException.cs" />
     <Compile Include="Helpers\BaseConfigurationHandler.cs" />
+    <Compile Include="Helpers\Hashing.cs" />
     <Compile Include="Helpers\ParseEnum.cs" />
     <Compile Include="Helpers\Vector3.cs" />
     <Compile Include="Interfaces\IBaseConfiguration.cs" />
@@ -241,6 +242,9 @@
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>11.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="SimpleCrypto">
+      <Version>0.3.30.26</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

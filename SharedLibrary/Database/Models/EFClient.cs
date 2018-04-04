@@ -36,6 +36,9 @@ namespace SharedLibrary.Database.Models
         [ForeignKey("CurrentAliasId")]
         public virtual EFAlias CurrentAlias { get; set; }
 
+        public string Password { get; set; }
+        public string PasswordSalt { get; set; }
+
         [NotMapped]
         public virtual string Name
         {

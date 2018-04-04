@@ -65,7 +65,7 @@ namespace SharedLibrary.Services
                     Masked = false,
                     NetworkId = entity.NetworkId,
                     AliasLink = aliasLink,
-                    CurrentAlias = existingAlias
+                    CurrentAlias = existingAlias,
                 };
 
                 context.Clients.Add(client);
@@ -179,7 +179,9 @@ namespace SharedLibrary.Services
                 client.Connections = entity.Connections;
                 client.FirstConnection = entity.FirstConnection;
                 client.Masked = entity.Masked;
-                client.TotalConnectionTime = entity.TotalConnectionTime;                        
+                client.TotalConnectionTime = entity.TotalConnectionTime;
+                client.Password = entity.Password;
+                client.PasswordSalt = entity.PasswordSalt;
 
                 // update in database
                 await context.SaveChangesAsync();

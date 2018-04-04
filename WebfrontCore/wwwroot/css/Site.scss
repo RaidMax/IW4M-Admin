@@ -42,7 +42,7 @@ a.nav-link {
 .server-activity,
 #mobile_seperator,
 .border-bottom {
-    border-bottom: 1px solid $primary !important;
+    border-bottom: 2px solid $primary !important;
 }
 
 #client_search {
@@ -91,4 +91,10 @@ a.link-inverse:hover {
 
 form * {
     border-radius: 0 !important;
+}
+
+.oi-fix-navbar {
+    line-height: 1.5 !important;
+    top: 0 !important;
+    font-size: 1rem !important;
 }

@@ -78,16 +78,26 @@ namespace IW4MAdmin
         {
             #region DATABASE
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
-                .Select(c => new { c.IPAddress, c.ClientId, c.Level });
+                .Select(c => new
+                {
+                    c.Password,
+                    c.PasswordSalt,
+                    c.ClientId,
+                    c.Level,
+                    c.Name
+                });
 
             foreach (var a in ipList)
             {
                 try
                 {
-                    PrivilegedClients.Add(a.IPAddress, new Player()
+                    PrivilegedClients.Add(a.ClientId, new Player()
                     {
+                        Name = a.Name,
                         ClientId = a.ClientId,
-                        Level = a.Level
+                        Level = a.Level,
+                        PasswordSalt = a.PasswordSalt,
+                        Password = a.Password
                     });
                 }
 
@@ -213,6 +223,7 @@ namespace IW4MAdmin
             Commands.Add(new CMask());
             Commands.Add(new CPruneAdmins());
             Commands.Add(new CKillServer());
+            Commands.Add(new CSetPassword());
 
             foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

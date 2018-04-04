@@ -21,7 +21,7 @@ namespace WebfrontCore.Controllers
 
         public IActionResult Error()
         {
-            ViewBag.Description = "IW4MAdmin encountered and error";
+            ViewBag.Description = "IW4MAdmin encountered an error";
             ViewBag.Title = "Error!";
             return View();
         }

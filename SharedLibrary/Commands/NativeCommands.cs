@@ -975,6 +975,29 @@ namespace SharedLibrary.Commands
         }
     }
 
+    public class CSetPassword : Command
+    {
+        public CSetPassword() : base("setpassword", "set your authentication password", "sp", Player.Permission.Moderator, false, new CommandArgument[]
+            {
+                new CommandArgument()
+                {
+                    Name = "password",
+                    Required = true
+                }
+            })
+        { }
+
+        public override async Task ExecuteAsync(Event E)
+        {
+            string[] hashedPassword = Helpers.Hashing.Hash(E.Data);
+
+            E.Origin.Password = hashedPassword[0];
+            E.Origin.PasswordSalt = hashedPassword[1];
+
+            await E.Owner.Manager.GetClientService().Update(E.Origin);
+        }
+    }
+
     public class CKillServer : Command
     {
         public CKillServer() : base("killserver", "kill the game server", "kill", Player.Permission.Administrator, false)

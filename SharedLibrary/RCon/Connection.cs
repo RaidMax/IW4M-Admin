@@ -11,10 +11,24 @@ namespace SharedLibrary.RCon
 {
     class ConnectionState
     {
-        public Socket Client { get; set; }
-        public const int BufferSize = 8192;
-        public byte[] Buffer = new byte[BufferSize];
-        public readonly StringBuilder ResponseString = new StringBuilder();
+        public Socket Client { get; private set; }
+        public int BufferSize { get; private set; }
+        public byte[] Buffer { get; private set; }
+
+        private readonly StringBuilder sb;
+
+        public StringBuilder ResponseString
+        {
+            get => sb;
+        }
+
+        public ConnectionState(Socket cl)
+        {
+            BufferSize = 8192;
+            Buffer = new byte[BufferSize];
+            Client = cl;
+            sb = new StringBuilder();
+        }
     }
 
     public class Connection
@@ -26,6 +40,7 @@ namespace SharedLibrary.RCon
         int FailedSends;
         int FailedReceives;
         DateTime LastQuery;
+        string response;
 
         ManualResetEvent OnConnected;
         ManualResetEvent OnSent;
@@ -92,14 +107,11 @@ namespace SharedLibrary.RCon
 #if DEBUG
                 Log.WriteDebug($"Sent {sentByteNum} bytes to {ServerConnection.RemoteEndPoint}");
 #endif
-                FailedSends = 0;
                 OnSent.Set();
             }
 
-            catch (Exception e)
+            catch (SocketException)
             {
-                FailedSends++;
-                Log.WriteWarning($"Could not send RCon data to server - {e.Message}");
             }
         }
 
@@ -126,30 +138,32 @@ namespace SharedLibrary.RCon
                     }
                     else
                     {
-                        FailedReceives = 0;
+                        response = connectionState.ResponseString.ToString();
                         OnReceived.Set();
                     }
                 }
                 else
                 {
+                    response = connectionState.ResponseString.ToString();
                     OnReceived.Set();
                 }
             }
 
-            catch (Exception)
+            catch (SocketException)
             {
-                FailedReceives++;
+
             }
         }
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
         {
             // will this really prevent flooding?
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 300)
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 150)
             {
-                await Task.Delay(300);
-                LastQuery = DateTime.Now;
+                await Task.Delay(150);
             }
+
+            LastQuery = DateTime.Now;
 
             OnSent.Reset();
             OnReceived.Reset();
@@ -168,66 +182,103 @@ namespace SharedLibrary.RCon
 
             byte[] payload = Encoding.Default.GetBytes(queryString);
 
+            retrySend:
             try
             {
-                retrySend:
                 ServerConnection.BeginSend(payload, 0, payload.Length, 0, new AsyncCallback(OnSentCallback), ServerConnection);
                 bool success = await Task.FromResult(OnSent.WaitOne(StaticHelpers.SocketTimeout));
 
                 if (!success)
                 {
+                    FailedSends++;
 #if DEBUG
                     Log.WriteDebug($"{FailedSends} failed sends to {ServerConnection.RemoteEndPoint.ToString()}");
 #endif
                     if (FailedSends < 4)
                         goto retrySend;
-                    else
-                        throw new NetworkException($"Could not send data to server - {new SocketException((int)SocketError.TimedOut).Message}");
+                    else if (FailedSends == 4)
+                        Log.WriteError($"Failed to send data to {ServerConnection.RemoteEndPoint}");
+                }
+
+                else
+                {
+                    if (FailedSends >= 4)
+                    {
+                        Log.WriteVerbose($"Resumed send RCon connection with {ServerConnection.RemoteEndPoint}");
+                        FailedSends = 0;
+                    }
                 }
             }
 
             catch (SocketException e)
             {
                 // this result is normal if the server is not listening
-                if (e.HResult != (int)SocketError.ConnectionReset)
+                if (e.NativeErrorCode != (int)SocketError.ConnectionReset &&
+                   e.NativeErrorCode != (int)SocketError.TimedOut)
                     throw new NetworkException($"Unexpected error while sending data to server - {e.Message}");
             }
 
-            var connectionState = new ConnectionState
-            {
-                Client = ServerConnection
-            };
+            var connectionState = new ConnectionState(ServerConnection);
 
+            retryReceive:
             try
             {
-                retryReceive:
                 ServerConnection.BeginReceive(connectionState.Buffer, 0, connectionState.Buffer.Length, 0,
                     new AsyncCallback(OnReceivedCallback), connectionState);
                 bool success = await Task.FromResult(OnReceived.WaitOne(StaticHelpers.SocketTimeout));
 
                 if (!success)
                 {
+                    FailedReceives++;
 #if DEBUG
                     Log.WriteDebug($"{FailedReceives} failed receives from {ServerConnection.RemoteEndPoint.ToString()}");
 #endif
-                    FailedReceives++;
                     if (FailedReceives < 4)
-                        goto retryReceive;
+                        goto retrySend;
                     else if (FailedReceives == 4)
-                        Log.WriteError($"Failed to receive data from {ServerConnection.RemoteEndPoint}");
-                    else
-                        throw new NetworkException($"Could not receive data from the server - {new SocketException((int)SocketError.TimedOut).Message}");
+                    {
+                        Log.WriteError($"Failed to receive data from {ServerConnection.RemoteEndPoint} after {FailedReceives} tries");
+                    }
+
+                    if (FailedReceives >= 4)
+                    {
+                        throw new NetworkException($"Could not receive data from the {ServerConnection.RemoteEndPoint}");
+                    }
+                }
+
+                else
+                {
+                    if (FailedReceives >= 4)
+                    {
+                        Log.WriteVerbose($"Resumed receive RCon connection from {ServerConnection.RemoteEndPoint}");
+                        FailedReceives = 0;
+                    }
                 }
             }
 
             catch (SocketException e)
             {
                 // this result is normal if the server is not listening
-                if (e.HResult != (int)SocketError.ConnectionReset)
+                if (e.NativeErrorCode != (int)SocketError.ConnectionReset &&
+                    e.NativeErrorCode != (int)SocketError.TimedOut)
                     throw new NetworkException($"Unexpected error while receiving data from server - {e.Message}");
+                else if (FailedReceives < 4)
+                {
+                    goto retryReceive;
+                }
+
+                else if (FailedReceives == 4)
+                {
+                    Log.WriteError($"Failed to receive data from {ServerConnection.RemoteEndPoint} after {FailedReceives} tries");
+                }
+
+                if (FailedReceives >= 4)
+                {
+                    throw new NetworkException(e.Message);
+                }
             }
 
-            string queryResponse = connectionState.ResponseString.ToString();
+            string queryResponse = response;
 
             if (queryResponse.Contains("Invalid password"))
                 throw new NetworkException("RCON password is invalid");

@@ -23,13 +23,13 @@
                         @if (Model.LevelInt < (int)ViewBag.User.Level && 
                             (SharedLibrary.Objects.Player.Permission)Model.LevelInt != SharedLibrary.Objects.Player.Permission.Banned)
                         {
-                            <div id="profile_action_ban_btn" class="profile-action oi oi-ban text-danger h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
+                            <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
                         }
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
                            (SharedLibrary.Objects.Player.Permission)Model.LevelInt == SharedLibrary.Objects.Player.Permission.Banned)
                         {
-                            <div id="profile_action_unban_btn" class="profile-action oi oi-action-undo text-success h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
+                            <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                         }
                     </div>
 

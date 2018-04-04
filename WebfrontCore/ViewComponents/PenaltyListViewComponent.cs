@@ -19,8 +19,8 @@ namespace WebfrontCore.ViewComponents
 
             try
             {
-                var a = IW4MAdmin.ApplicationManager.GetInstance()
-               .PrivilegedClients[HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
+               // var a = IW4MAdmin.ApplicationManager.GetInstance()
+               //.PrivilegedClients[HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
             }
 
             catch (KeyNotFoundException)

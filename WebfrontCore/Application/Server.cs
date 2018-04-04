@@ -791,16 +791,26 @@ namespace IW4MAdmin
                 ((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, Player>();
                 var ClientSvc = new ClientService();
                 var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
-                    .Select(c => new { c.IPAddress, c.ClientId, c.Level });
+                .Select(c => new
+                {
+                    c.Password,
+                    c.PasswordSalt,
+                    c.ClientId,
+                    c.Level,
+                    c.Name
+                });
 
                 foreach (var a in ipList)
                 {
                     try
                     {
-                        ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.IPAddress, new Player()
+                        ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.ClientId, new Player()
                         {
+                            Name = a.Name,
                             ClientId = a.ClientId,
-                            Level = a.Level
+                            Level = a.Level,
+                            PasswordSalt = a.PasswordSalt,
+                            Password = a.Password
                         });
                     }
 

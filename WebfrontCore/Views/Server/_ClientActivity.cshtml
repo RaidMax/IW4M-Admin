@@ -32,7 +32,7 @@
                 for (int i = 0; i < half; i++)
                 {
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].Level.ToLower()}";
-                    <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId }, new { @class=levelColorClass })</span><br />
+                    <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId }, new { @class = levelColorClass })</span><br />
                 }
             }
         </div>
@@ -46,4 +46,29 @@
             }
         </div>
     </div>
+</div>
+@if (Model.ChatHistory.Length > 0)
+{
+    <div class="w-100 border-bottom d-md-none d-block mt-1 mb-1"></div>
+}
+<div class="col-12 col-md-8 d-md-none d-block text-left">
+    @{
+        for (int i = 0; i < Model.ChatHistory.Length; i++)
+        {
+            string message = @Model.ChatHistory[i].Message;
+            if (Model.ChatHistory[i].Message == "CONNECTED")
+            {
+                <span class="text-light"><span class="oi oi-account-login mr-2 text-success"> </span>@Model.ChatHistory[i].Name</span><br />
+            }
+            if (Model.ChatHistory[i].Message == "DISCONNECTED")
+            {
+
+                <span class="text-light"><span class="oi oi-account-logout mr-2 text-danger"> </span>@Model.ChatHistory[i].Name</span><br />
+            }
+            if (Model.ChatHistory[i].Message != "CONNECTED" && Model.ChatHistory[i].Message != "DISCONNECTED")
+            {
+                <span class="text-light">@Model.ChatHistory[i].Name</span><span> &mdash; @message.Substring(0, Math.Min(65, message.Length)) </span><br />
+            }
+        }
+    }
 </div>

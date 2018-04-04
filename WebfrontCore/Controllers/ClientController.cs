@@ -63,7 +63,7 @@ namespace WebfrontCore.Controllers
                     .Select(a => new ProfileMeta()
                     {
                         Key = "AliasEvent",
-                        Value = $"Connected with name {a.Name}",
+                        Value = $"Joined with alias {a.Name}",
                         Sensitive = true,
                         When = a.DateAdded
                     }));

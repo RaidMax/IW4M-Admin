@@ -28,29 +28,16 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> ExecuteAsync(int serverId, string command)
         {
-            var requestIPAddress = Request.HttpContext.Connection.RemoteIpAddress;
-            var intIP = requestIPAddress.ToString().ConvertToIP();
-
-#if !DEBUG
-            var origin = (await IW4MAdmin.ApplicationManager.GetInstance().GetClientService().GetClientByIP(intIP))
-                .OrderByDescending(c => c.Level)
-                .FirstOrDefault()?.AsPlayer() ?? new Player()
-                {
-                    Name = "WebConsoleUser",
-                    Level = Player.Permission.User,
-                    IPAddress = intIP
-                };
-#else
-            var origin = (await Manager.GetClientService().GetUnique(0)).AsPlayer();
-#endif
 
             var server = Manager.Servers.First(s => s.GetHashCode() == serverId);
-            origin.CurrentServer = server;
-            var remoteEvent = new Event(Event.GType.Say, command, origin, null, server);
+            var client = User.AsPlayer();
+            client.CurrentServer = server;
+
+            var remoteEvent = new Event(Event.GType.Say, command, client, null, server);
 
             await server.ExecuteEvent(remoteEvent);
 
-            var response = server.CommandResult.Where(c => c.ClientId == origin.ClientId).ToList();
+            var response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
             // remove the added command response
             for (int i = 0; i < response.Count; i++)

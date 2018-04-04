@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using SharedLibrary;
 using SharedLibrary.Database.Models;
+using SharedLibrary.Objects;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 
 namespace WebfrontCore.Controllers
 {
@@ -24,18 +28,17 @@ namespace WebfrontCore.Controllers
 
             try
             {
-                var client = Manager.PrivilegedClients[context.HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
-                User.ClientId = client.ClientId;
-                User.Level = client.Level;
+                User.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
+                User.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), base.User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
+                User.CurrentAlias = new EFAlias() { Name = base.User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
             }
 
-            catch (KeyNotFoundException)
+            catch (InvalidOperationException)
             {
 
             }
 
-            Authorized = context.HttpContext.Connection.RemoteIpAddress.ToString() == "127.0.0.1" ||
-                User.ClientId >= 0;
+            Authorized = User.ClientId >= 0;
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Startup.Configuration["Web:Address"];
             ViewBag.User = User;

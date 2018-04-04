@@ -56,53 +56,47 @@ $(document).ready(function () {
     $('.ip-locate-link').click(function (e) {
         e.preventDefault();
         const ip = $(this).data("ip");
-        $.getJSON("http://ip-api.com/json/" + ip)
+        $.getJSON('https://extreme-ip-lookup.com/json/' + ip)
             .done(function (response) {
                 $('#mainModal .modal-title').text(ip);
                 $('#mainModal .modal-body').text("");
-                $('#mainModal .modal-body').append("ASN &mdash; " + response["as"] + "<br/>");
-                $('#mainModal .modal-body').append("ISP &mdash; " + response["isp"] + "<br/>");
-                $('#mainModal .modal-body').append("Organization &mdash; " + response["org"] + "<br/>");
-                $('#mainModal .modal-body').append("Location &mdash; " + response["city"] + ", " + response["regionName"] + ", " + response["country"] + "<br/>");
+                if (response.ipName.length > 0) {
+                    $('#mainModal .modal-body').append("Hostname &mdash; " + response.ipName + '<br/>');
+                }
+                if (response.isp.length > 0) {
+                    $('#mainModal .modal-body').append("ISP &mdash; " + response.isp + '<br/>');
+                }
+                if (response.ipType.length > 0) {
+                    $('#mainModal .modal-body').append("Type &mdash; " + response.ipType + '<br/>');
+                }
+                if (response.org.length > 0) {
+                    $('#mainModal .modal-body').append("Organization &mdash; " + response.org + '<br/>');
+                }
+                if (response['businessName'].length > 0) {
+                    $('#mainModal .modal-body').append("Business &mdash; " + response.businessName + '<br/>');
+                }
+                if (response['businessWebsite'].length > 0) {
+                    $('#mainModal .modal-body').append("Website &mdash; " + response.businessWebsite + '<br/>');
+                }
+                if (response.city.length > 0 || response.region.length > 0 || response.country.length > 0) {
+                    $('#mainModal .modal-body').append("Location &mdash; ");
+                }
+                if (response.city.length > 0) {
+                    $('#mainModal .modal-body').append(response.city);
+                }
+                if (response.region.length > 0) {
+                    $('#mainModal .modal-body').append(', ' + response.region);
+                }
+                if (response.country.length > 0) {
+                    $('#mainModal .modal-body').append(', ' + response.country);
+                }
+
                 $('#mainModal').modal();
             })
             .fail(function (jqxhr, textStatus, error) {
                 $('#mainModal .modal-title').text("Error");
                 $('#mainModal .modal-body').html('<span class="text-danger">&mdash;'+ error + '</span>');
                 $('#mainModal').modal();
-            });
-    });
-
-    /*
-     * handle action modal
-     */
-    $('.profile-action').click(function (e) {
-        const actionType = $(this).data('action');
-        $.get('/Action/' + actionType + 'Form')
-            .done(function (response) {
-                $('#actionModal .modal-body').html(response);
-                $('#actionModal').modal();
-            })
-            .fail(function (jqxhr, textStatus, error) {
-                $('#actionModal .modal-body').html('<span class="text-danger">' + error + '</span>');
-                $('#actionModal').modal();
-            });
-    });
-
-    /*
-     * handle action submit
-     */
-    $(document).on('submit', '.action-form', function (e) {
-        e.preventDefault();
-        $(this).append($('#target_id input'));
-        const data = $(this).serialize();
-        $.get($(this).attr('action') + '/?' + data)
-            .done(function (response) {
-                $('#actionModal .modal-body').html(response);
-                $('#actionModal').modal();
-            })
-            .fail(function (jqxhr, textStatus, error) {
-                $('#actionModal .modal-body').html('<span class="text-danger">Error' + error + '</span>');
             });
     });
 });
@@ -179,7 +173,7 @@ function loadMeta(meta) {
         }
     }
     else if (meta.key.includes("Alias")) {
-        eventString = `<div><span class="text-primary">${meta.value}</span></div>`;
+        eventString = `<div><span class="text-success">${meta.value}</span></div>`;
     }
     // it's a message
     else if (meta.key.includes("Event")) {

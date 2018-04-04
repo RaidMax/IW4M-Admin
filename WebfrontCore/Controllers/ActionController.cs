@@ -71,5 +71,34 @@ namespace WebfrontCore.Controllers
                 command = $"!unban @{targetId} {Reason}"
             }));
         }
+
+        public IActionResult LoginForm()
+        {
+            var login = new ActionInfo()
+            {
+                ActionButtonLabel = "Login",
+                Name = "Login",
+                Inputs = new List<InputInfo>()
+                {
+                    new InputInfo()
+                    {
+                        Name = "UserID"
+                    },
+                    new InputInfo()
+                    {
+                        Name = "Password",
+                        Type = "password",
+                    }
+                },
+                Action = "Login"
+            };
+
+            return View("_ActionForm", login);
+        }
+
+        public IActionResult Login(int userId, string password)
+        {
+            return RedirectToAction("Login", "Account", new { userId, password });
+        }
     }
 }

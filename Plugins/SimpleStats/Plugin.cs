@@ -105,6 +105,41 @@ namespace StatsPlugin
                 double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
                 double spm = Math.Round(clientStats.Sum(c => c.SPM), 1);
 
+                return new List<ProfileMeta>()
+                {
+                    new ProfileMeta()
+                    {
+                           Key = "Kills",
+                           Value = kills
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Deaths",
+                        Value = deaths
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "KDR",
+                        Value = kdr
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Skill",
+                        Value = skill
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Score Per Minute",
+                        Value = spm
+                    }
+                };
+            }
+
+            async Task<List<ProfileMeta>> getAnticheatInfo(int clientId)
+            {
+                var statsSvc = new GenericRepository<EFClientStatistics>();
+                var clientStats = await statsSvc.FindAsync(c => c.ClientId == clientId);
+
                 double headRatio = 0;
                 double chestRatio = 0;
                 double abdomenRatio = 0;
@@ -134,61 +169,36 @@ namespace StatsPlugin
 
                 return new List<ProfileMeta>()
                 {
-                         new ProfileMeta()
-                         {
-                                Key = "Kills",
-                                Value = kills
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Deaths",
-                             Value = deaths
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "KDR",
-                             Value = kdr
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Skill",
-                             Value = skill
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Score Per Minute",
-                             Value = spm
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Chest Ratio",
-                             Value = chestRatio,
-                             Sensitive = true
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Abdomen Ratio",
-                             Value = abdomenRatio,
-                             Sensitive = true
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Chest To Abdomen Ratio",
-                             Value = chestAbdomenRatio,
-                             Sensitive = true
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Headshot Ratio",
-                             Value = headRatio,
-                             Sensitive = true
-                         },
-                         new ProfileMeta()
-                         {
-                             Key = "Hit Offset Average",
-                             Value = $"{Math.Round(((float)hitOffsetAverage).ToDegrees(), 4)}°",
-                             Sensitive = true
-                         }
+                    new ProfileMeta()
+                    {
+                    Key = "Chest Ratio",
+                    Value = chestRatio,
+                    Sensitive = true
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Abdomen Ratio",
+                        Value = abdomenRatio,
+                        Sensitive = true
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Chest To Abdomen Ratio",
+                        Value = chestAbdomenRatio,
+                        Sensitive = true
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Headshot Ratio",
+                        Value = headRatio,
+                        Sensitive = true
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Hit Offset Average",
+                        Value = $"{Math.Round(((float)hitOffsetAverage).ToDegrees(), 4)}°",
+                        Sensitive = true
+                    }
                 };
             }
 
@@ -211,10 +221,13 @@ namespace StatsPlugin
                 return messageMeta;
             }
 
+            MetaService.AddMeta(getStats);
+
             if (Config.Configuration().EnableAntiCheat)
             {
-                MetaService.AddMeta(getStats);
+                MetaService.AddMeta(getAnticheatInfo);
             }
+
             MetaService.AddMeta(getMessages);
 
             // todo: is this fast? make async?
@@ -240,10 +253,7 @@ namespace StatsPlugin
             Manager = new StatManager(manager);
         }
 
-        public async Task OnTickAsync(Server S)
-        {
-
-        }
+        public Task OnTickAsync(Server S) => Utilities.CompletedTask;
 
         public async Task OnUnloadAsync()
         {

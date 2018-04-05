@@ -75,13 +75,9 @@ namespace Welcome_Plugin
             }
         }
 
-        public async Task OnUnloadAsync()
-        {
-        }
+        public Task OnUnloadAsync() => Utilities.CompletedTask;
 
-        public async Task OnTickAsync(Server S)
-        {
-        }
+        public Task OnTickAsync(Server S) => Utilities.CompletedTask;
 
         public async Task OnEventAsync(Event E, Server S)
         {

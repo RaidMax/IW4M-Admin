@@ -3,58 +3,72 @@
 }
 
 .level-color-user, .level-color-guest {
+    color: #fff;
     color: rgba(255, 255, 255, 0.7);
 }
 
 .level-bgcolor-user, .level-bgcolor-guest {
+    background-color: #fff;
     background-color: rgba(255, 255, 255, 0.85);
 }
 
 .level-color-trusted {
+    color: #749363;
     color: rgba(116,147,99,1);
 }
 
-.level-bgcolor-trusted, .level-bgcolor-user {
+.level-bgcolor-trusted {
+    background-color: #749363;
     background-color: rgba(116,147,99,1);
 }
 
 .level-color-flagged {
+    color: #fd9c38;
     color: rgba(253, 139, 22, 0.85);
 }
 
 .level-bgcolor-flagged {
+    background-color: #fd9c38;
     background-color: rgba(253, 139, 22, 0.85);
 }
 
 .level-color-banned, .level-color-console {
+    color: #ff6060;
     color: rgba(255, 69, 69, 0.85);
 }
 
 .level-bgcolor-banned {
+    background-color: #ff6060;
     background-color: rgba(255, 69, 69, 0.85);
 }
 
 .level-color-moderator {
+    color: #f0de8b;
     color: rgba(235, 211, 101, 0.75);
 }
 
 .level-bgcolor-moderator {
+    background-color: #f0de8b;
     background-color: rgba(235, 211, 101, 0.75);
 }
 
 .level-color-administrator {
+    color: #f1a8e8;
     color: rgba(236, 130, 222, 0.69);
 }
 
 .level-bgcolor-administrator {
+    background-color: #f1a8e8;
     background-color: rgba(236, 130, 222, 0.69);
 }
 
 .level-color-senioradmin {
+    color: #50bcc3;
     color: rgba(50, 177, 185, 0.85);
 }
 
 .level-bgcolor-senioradmin {
+    background-color: #50bcc3;
     background-color: rgba(50, 177, 185, 0.85);
 }
 
@@ -72,26 +86,32 @@
 
 .penalties-color-kick,
 .penalties-color-unban {
+    color: #749363;
     color: rgba(116, 147, 99, 1);
 }
 
 .penalties-color-report {
+    color: #749363;
     color: rgba(116, 147, 99, 1);
 }
 
 .penalties-color-warning {
+    color: #f0de8b;
     color: rgba(235, 211, 101, 0.75);
 }
 
 .penalties-color-tempban {
+    color: #fd9c38;
     color: rgba(253, 139, 22, 0.85);
 }
 
 .penalties-color-flag {
+    color: #fd9c38;
     color: rgba(253, 139, 22, 0.85);
 }
 
 .penalties-color-ban {
+    color: #ff6060;
     color: rgba(255, 69, 69, 0.85);
 }
 
@@ -122,6 +142,7 @@
 }
 
 #profile_level > span.level {
+    color: #f1a8e8;
     color: rgba(236, 130, 222, 0.69);
     font-weight: bold;
     font-size: 1.5em;
@@ -137,6 +158,7 @@
 }
 
 #profile_level > span.level {
+    color: #f1a8e8;
     color: rgba(236, 130, 222, 0.69);
     font-weight: bold;
 }

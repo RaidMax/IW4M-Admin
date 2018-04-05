@@ -20,6 +20,7 @@ namespace SharedLibrary
     public static class Utilities
     {
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+        public static readonly Task CompletedTask = Task.FromResult(false);
 
         //Get string with specified number of spaces -- really only for visual output
         public static String GetSpaces(int Num)
@@ -52,7 +53,7 @@ namespace SharedLibrary
             return newStr;
         }
 
-        public static List<Player> PlayersFromStatus(String[] Status)
+        public static List<Player> PlayersFromStatus(string[] Status)
         {
             List<Player> StatusPlayers = new List<Player>();
 

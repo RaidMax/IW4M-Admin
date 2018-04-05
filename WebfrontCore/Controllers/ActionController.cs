@@ -82,7 +82,7 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                        Name = "UserID"
+                        Name = "User ID"
                     },
                     new InputInfo()
                     {

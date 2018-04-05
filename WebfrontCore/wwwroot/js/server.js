@@ -1,4 +1,4 @@
-﻿function getPlayerHistoryChart(playerHistory, i, width) {
+﻿function getPlayerHistoryChart(playerHistory, i, width, color) {
     ///////////////////////////////////////
     // thanks to canvasjs :(
     playerHistory.forEach(function (item, i) {
@@ -6,7 +6,7 @@
     });
 
     return new CanvasJS.Chart(`server_history_${i}`, {
-        backgroundColor: "#191919",
+        backgroundColor: '#191919',
         height: 100,
         width: width,
         animationEnabled: true,
@@ -41,7 +41,7 @@
         data: [{
             showInLegend: false,
             type: "splineArea",
-            color: "rgba(0, 122, 204, 0.432)",
+            color: color,
             markerSize: 0,
             dataPoints: playerHistory
         }]
@@ -53,8 +53,9 @@ var charts = {};
 $('.server-history-row').each(function (index, element) {
     let clientHistory = $(this).data('clienthistory');
     let serverId = $(this).data('serverid');
+    let color = $(this).data('online') === 'True' ? '#007acc' : '#ff6060'
     let width = $('.server-header').first().width();
-    let historyChart = getPlayerHistoryChart(clientHistory, serverId, width);
+    let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color);
     historyChart.render();
     charts[serverId] = historyChart;
 });

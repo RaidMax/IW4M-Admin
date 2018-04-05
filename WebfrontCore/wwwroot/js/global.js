@@ -6,12 +6,14 @@
         const actionType = $(this).data('action');
         $.get('/Action/' + actionType + 'Form')
             .done(function (response) {
-                $('#actionModal .modal-body').html(response);
+                $('#actionModal .modal-message').fadeOut('fast');
+                $('#actionModal .modal-body-content').html(response);
                 $('#actionModal').modal();
             })
             .fail(function (jqxhr, textStatus, error) {
-                $('#actionModal .modal-body').html('<span class="text-danger">' + error + '</span>');
+                $('#actionModal .modal-message').text('Error &mdash ' + error);
                 $('#actionModal').modal();
+                $('#actionModal .modal-message').fadeIn('fast');
             });
     });
 
@@ -29,18 +31,22 @@
                     location.reload();
                 }
                 else {
-                    $('#actionModal .modal-body').html(response);
+                    $('#actionModal .modal-message').fadeOut('fast');
+                    $('#actionModal .modal-body-content').html(response);
                     $('#actionModal').modal();
                 }
             })
             .fail(function (jqxhr, textStatus, error) {
-                if (jqxhr.status == 401) {
-                    $('#actionModal .modal-body').removeClass('text-danger');
-                    $('#actionModal .modal-body').prepend('<div class="text-danger mb-3">Invalid login credentials</div>');
+                if ($('#actionModal .modal-message').text.length > 0) {
+                    $('#actionModal .modal-message').fadeOut('fast');
+                }
+                if (jqxhr.status === 401) {
+                    $('#actionModal .modal-message').text('Invalid login credentials');
                 }
                 else {
-                    $('#actionModal .modal-body').html('<span class="text-danger">Error &mdash; ' + error + '</span>');
+                    $('#actionModal .modal-message').text('Error &mdash; ' + error);
                 }
+                $('#actionModal .modal-message').fadeIn('fast');
             });
     });
 });

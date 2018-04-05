@@ -788,7 +788,7 @@ namespace IW4MAdmin
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
 
                 // todo: make this more efficient
-                ((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, Player>();
+                /*((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, Player>();
                 var ClientSvc = new ClientService();
                 var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
@@ -818,7 +818,7 @@ namespace IW4MAdmin
                     {
                         continue;
                     }
-                }
+                }*/
             }
 
             if (E.Type == Event.GType.MapEnd)

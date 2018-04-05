@@ -457,6 +457,16 @@ namespace SharedLibrary.Commands
                     await E.Owner.Manager.GetClientService().Update(E.Target);
                 }
 
+                try
+                {
+                    E.Owner.Manager.GetPrivilegedClients().Add(E.Target.ClientId, E.Target);
+                }
+
+                catch (Exception)
+                {
+                    E.Owner.Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
+                }
+
                 await E.Origin.Tell($"{E.Target.Name} was successfully promoted");
             }
 
@@ -989,12 +999,22 @@ namespace SharedLibrary.Commands
 
         public override async Task ExecuteAsync(Event E)
         {
+            if (E.Data.Length < 5)
+            {
+                await E.Origin.Tell("Your password must be atleast 5 characters long");
+                return;
+            }
+
             string[] hashedPassword = Helpers.Hashing.Hash(E.Data);
 
             E.Origin.Password = hashedPassword[0];
             E.Origin.PasswordSalt = hashedPassword[1];
 
+            // update the password for the client in privileged
+            E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId] = E.Origin;
+
             await E.Owner.Manager.GetClientService().Update(E.Origin);
+            await E.Origin.Tell("Your password has been set successfully");
         }
     }
 

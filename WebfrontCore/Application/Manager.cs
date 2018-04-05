@@ -57,7 +57,14 @@ namespace IW4MAdmin
             PrivilegedClients = new Dictionary<int, Player>();
             ServerEventOccurred += EventAPI.OnServerEventOccurred;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
         }
+
+        private void OnCancelKey(object sender, ConsoleCancelEventArgs args)
+        {
+            Stop();
+        }
+
 
         public IList<Server> GetServers()
         {
@@ -305,5 +312,7 @@ namespace IW4MAdmin
         public PenaltyService GetPenaltyService() => PenaltySvc;
 
         public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
+
+        public IDictionary<int, Player> GetPrivilegedClients() => PrivilegedClients;
     }
 }

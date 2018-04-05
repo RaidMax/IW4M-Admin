@@ -142,6 +142,7 @@ namespace SharedLibrary
             await this.ExecuteCommandAsync($"{sayCommand} {(CustomSayEnabled ? CustomSayName : "")} {Message}");
 #else
             Logger.WriteVerbose(Message.StripColors());
+            await Utilities.CompletedTask;
 #endif
         }
 
@@ -159,6 +160,7 @@ namespace SharedLibrary
                 await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientNumber} {(CustomSayEnabled ? CustomSayName : "")} {Message}^7");
 #else
             Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
+            await Utilities.CompletedTask;
 #endif
 
             if (Target.Level == Player.Permission.Console)

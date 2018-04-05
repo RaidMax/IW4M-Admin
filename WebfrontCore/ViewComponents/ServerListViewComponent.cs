@@ -30,7 +30,8 @@ namespace WebfrontCore.ViewComponents
                     Level = p.Level.ToString(),
                     LevelInt = (int)p.Level
                 }).ToList(),
-                ChatHistory = s.ChatHistory.ToArray()
+                ChatHistory = s.ChatHistory.ToArray(),
+                Online = !s.Throttled
             }).ToList();
             return View("_List", serverInfo);
         }

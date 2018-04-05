@@ -18,5 +18,6 @@ namespace SharedLibrary.Dtos
         public List<PlayerInfo> Players { get; set; }
         public Helpers.PlayerHistory[] PlayerHistory { get; set; }
         public int ID { get; set; }
+        public bool Online { get; set; }
     }
 }

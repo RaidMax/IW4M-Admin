@@ -30,8 +30,12 @@ namespace WebfrontCore.Controllers
         {
 
             var server = Manager.Servers.First(s => s.GetHashCode() == serverId);
-            var client = User.AsPlayer();
-            client.CurrentServer = server;
+            var client = new Player()
+            {
+                ClientId = User.ClientId,
+                Level = User.Level,
+                CurrentServer = server
+            };
 
             var remoteEvent = new Event(Event.GType.Say, command, client, null, server);
 

@@ -380,7 +380,7 @@ namespace StatsPlugin.Helpers
             double timeSinceLastActive = (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0;
 
             // prevent NaN or inactive time lowering SPM
-            if (timeSinceLastCalc == 0 || timeSinceLastActive > 3)
+            if (timeSinceLastCalc == 0 || timeSinceLastActive > 3 || clientStats.SPM < 1)
                 return clientStats;
 
             // calculate the players Score Per Minute for the current session
@@ -403,6 +403,9 @@ namespace StatsPlugin.Helpers
 
             // calculate the new weight against average times the weight against play time
             clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
+            // fixme: how does this happen?
+            if (clientStats.SPM == double.NaN)
+                clientStats.SPM = 0;
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
             clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
 

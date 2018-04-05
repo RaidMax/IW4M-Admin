@@ -22,5 +22,6 @@ namespace SharedLibrary.Interfaces
         ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
+        IDictionary<int, Player> GetPrivilegedClients();
     }
 }

@@ -55,7 +55,8 @@ namespace WebfrontCore
                 AuthenticationScheme = CookieAuthenticationDefaults.AuthenticationScheme,
                 AutomaticAuthenticate = true,
                 AutomaticChallenge = true,
-                LoginPath = "/Account/Login/"
+                LoginPath = "/Account/Login/",
+                ExpireTimeSpan = TimeSpan.FromDays(30),
             });
 
             app.UseMvc(routes =>
@@ -65,7 +66,6 @@ namespace WebfrontCore
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            //app.UseBasicAuthentication(Authentication.Basic.Generate());
         }
     }
 }

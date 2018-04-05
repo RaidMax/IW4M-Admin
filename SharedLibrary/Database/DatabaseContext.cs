@@ -56,7 +56,18 @@ namespace SharedLibrary.Database
 #if !DEBUG
             foreach (string dllPath in System.IO.Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
 #else
-            foreach (string dllPath in System.IO.Directory.GetFiles(/*C:\Projects\IW4M - Admin\WebfrontCore */ $@"{Environment.CurrentDirectory}\bin\x86\Debug\Plugins").Where(f => f.Contains(".dll")))
+            IEnumerable<string> directoryFiles;
+            try
+            {
+                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}\bin\x86\Debug\Plugins").Where(f => f.Contains(".dll"));
+            }
+
+            catch(Exception)
+            {
+                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}\Plugins").Where(f => f.Contains(".dll"));
+            }
+
+            foreach (string dllPath in directoryFiles)
 #endif
             {
                 Assembly library;

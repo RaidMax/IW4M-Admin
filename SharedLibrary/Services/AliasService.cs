@@ -16,8 +16,8 @@ namespace SharedLibrary.Services
     {
         public async Task<EFAlias> Create(EFAlias entity)
         {
-            throw new Exception();
-            using (var context = new DatabaseContext())
+            throw await Task.FromResult(new Exception());
+            /*using (var context = new DatabaseContext())
             {
                 var alias = new EFAlias()
                 {
@@ -32,7 +32,7 @@ namespace SharedLibrary.Services
                 context.Aliases.Add(entity);
                 await context.SaveChangesAsync();
                 return entity;
-            }
+            }*/
         }
 
         public Task<EFAlias> CreateProxy()
@@ -80,14 +80,14 @@ namespace SharedLibrary.Services
 
         public async Task<EFAlias> Update(EFAlias entity)
         {
-            throw new Exception();
-            using (var context = new DatabaseContext())
+            throw await Task.FromResult(new Exception());
+            /*using (var context = new DatabaseContext())
             {
                 entity = context.Aliases.Attach(entity);
                 context.Entry(entity).State = EntityState.Modified;
                 await context.SaveChangesAsync();
                 return entity;
-            }
+            }*/
         }
 
         public async Task<EFAliasLink> CreateLink(EFAliasLink link)

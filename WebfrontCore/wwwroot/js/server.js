@@ -53,7 +53,7 @@ var charts = {};
 $('.server-history-row').each(function (index, element) {
     let clientHistory = $(this).data('clienthistory');
     let serverId = $(this).data('serverid');
-    let color = $(this).data('online') === 'True' ? '#007acc' : '#ff6060'
+    let color = $(this).data('online') === 'True' ? 'rgba(0, 122, 204, 0.432)' : '#ff6060'
     let width = $('.server-header').first().width();
     let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color);
     historyChart.render();

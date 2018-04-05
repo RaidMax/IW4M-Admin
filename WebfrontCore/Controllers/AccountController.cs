@@ -9,16 +9,16 @@ namespace WebfrontCore.Controllers
     public class AccountController : BaseController
     {
         [HttpGet]
-        public async Task<IActionResult> Login(int userId, string password)
+        public async Task<IActionResult> LoginAsync(int clientId, string password)
         {
-            if (userId == 0 || string.IsNullOrEmpty(password))
+            if (clientId == 0 || string.IsNullOrEmpty(password))
             {
                 return Unauthorized();
             }
 
             try
             {
-                var client = IW4MAdmin.Program.ServerManager.PrivilegedClients[userId];
+                var client = IW4MAdmin.Program.ServerManager.PrivilegedClients[clientId];
                 string[] hashedPassword = await Task.FromResult(SharedLibrary.Helpers.Hashing.Hash(password, client.PasswordSalt));
 
                 if (hashedPassword[0] == client.Password)
@@ -50,6 +50,13 @@ namespace WebfrontCore.Controllers
             }
 
             return Unauthorized();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> LogoutAsync()
+        {
+            await HttpContext.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Index", "Home");
         }
     }
 }

@@ -35,17 +35,20 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Console", "Index", "Console", new { area = "" }, new { @class = "nav-link" })</li>
                     @if (!string.IsNullOrEmpty(ViewBag.DiscordLink))
-                    {
-                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" class="nav-link" target="_blank">Discord</a></li>
-                    }
+    {
+                <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" class="nav-link" target="_blank">Discord</a></li>
+}
                     @if (ViewBag.Authorized)
-                    {
-                        <li class="nav-item text-center text-md-left">@Html.ActionLink("", "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new { @class = "nav-link oi oi-person oi-fix-navbar w-100", title = "Client Profile" })</li>
-                    }
-                    else
-                    {
-                        <li class="nav-item text-center text-md-left"><a href="#" id="profile_action_login_btn" class="nav-link profile-action oi oi-key oi-fix-navbar w-100" title="Login" data-action="login" aria-hidden="true"></a></li>
-                    }
+    {
+                <li class="nav-item text-center text-md-left">@Html.ActionLink("Logout", "LogoutAsync", "Account", new { area = "" }, new { @class = "nav-link" })</li>
+                <li class="nav-item text-center text-md-left">@Html.ActionLink("", "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new { @class = "nav-link oi oi-person oi-fix-navbar w-100", title = "Client Profile" })</li>
+}
+else
+{
+                <li class="nav-item text-center text-md-left">
+                    <a href="#" id="profile_action_login_btn" class="nav-link profile-action oi oi-key oi-fix-navbar w-100" title="Login" data-action="login" aria-hidden="true"></a>
+                </li>
+}
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
                     <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />

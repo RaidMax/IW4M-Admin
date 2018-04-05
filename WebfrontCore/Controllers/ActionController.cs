@@ -82,23 +82,25 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                        Name = "User ID"
+                        Name = "clientId",
+                        Label = "Client ID"
                     },
                     new InputInfo()
                     {
                         Name = "Password",
+                        Label ="Password",
                         Type = "password",
                     }
                 },
-                Action = "Login"
+                Action = "LoginAsync"
             };
 
             return View("_ActionForm", login);
         }
 
-        public IActionResult Login(int userId, string password)
+        public async Task<IActionResult> LoginAsync(int clientId, string password)
         {
-            return RedirectToAction("Login", "Account", new { userId, password });
+            return await Task.FromResult(RedirectToAction("LoginAsync", "Account", new { clientId, password }));
         }
     }
 }

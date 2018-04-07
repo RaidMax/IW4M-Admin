@@ -6,7 +6,7 @@ using System.Data.SqlServerCe;
 
 namespace SharedLibrary.Database
 {
-    class ContextConfiguration : DbConfiguration
+    public class ContextConfiguration : DbConfiguration
     {
         public ContextConfiguration()
         {
@@ -20,10 +20,10 @@ namespace SharedLibrary.Database
 
             else
             {
-               /* SetExecutionStrategy("MySql.Data.MySqlClient", () => new DefaultExecutionStrategy());
+                SetExecutionStrategy("MySql.Data.MySqlClient", () => new DefaultExecutionStrategy());
                 SetProviderFactory("MySql.Data.MySqlClient", new MySql.Data.MySqlClient.MySqlClientFactory());
                 SetProviderServices("MySql.Data.MySqlClient", new MySql.Data.MySqlClient.MySqlProviderServices());
-                SetDefaultConnectionFactory(new MySql.Data.Entity.MySqlConnectionFactory());*/
+                SetDefaultConnectionFactory(new MySql.Data.Entity.MySqlConnectionFactory());
             }
         }
     }

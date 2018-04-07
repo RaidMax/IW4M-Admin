@@ -11,6 +11,10 @@ namespace SharedLibrary.Migrations
         {
             AutomaticMigrationsEnabled = true;
             AutomaticMigrationDataLossAllowed = true;
+            if (Utilities.IsRunningOnMono())
+            {
+                SetSqlGenerator("MySql.Data.MySqlClient", new MySql.Data.Entity.MySqlMigrationSqlGenerator());
+            }
         }
 
         protected override void Seed(SharedLibrary.Database.DatabaseContext context)

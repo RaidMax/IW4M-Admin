@@ -244,7 +244,7 @@
       <Version>6.10.6</Version>
     </PackageReference>
     <PackageReference Include="MySql.Data.Entity">
-      <Version>6.10.6</Version>
+      <Version>6.9.11</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>11.0.1</Version>

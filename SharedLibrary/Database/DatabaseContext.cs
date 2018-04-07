@@ -63,12 +63,12 @@ namespace SharedLibrary.Database
             IEnumerable<string> directoryFiles;
             try
             {
-                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}\bin\x86\Debug\Plugins").Where(f => f.Contains(".dll"));
+                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x86{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}Plugins").Where(f => f.Contains(".dll"));
             }
 
             catch (Exception)
             {
-                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}\Plugins").Where(f => f.Contains(".dll"));
+                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}Plugins").Where(f => f.Contains(".dll"));
             }
 
             foreach (string dllPath in directoryFiles)

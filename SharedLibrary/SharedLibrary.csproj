@@ -41,7 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
-    <CodeAnalysisRuleSet>..\..\..\RuleSet1.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Nightly|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -132,6 +132,9 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -219,6 +222,8 @@
     <Content Include="LibSQLCe\x86\sqlceme40.dll" />
     <Content Include="LibSQLCe\x86\sqlceqp40.dll" />
     <Content Include="LibSQLCe\x86\sqlcese40.dll" />
+    <None Include="BuildScripts\PostBuild.bat" />
+    <None Include="BuildScripts\PreBuild.bat" />
     <None Include="LibSQLCe\x86\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" />
   </ItemGroup>
   <ItemGroup>
@@ -247,7 +252,7 @@
       <Version>6.9.11</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>11.0.1</Version>
+      <Version>11.0.2</Version>
     </PackageReference>
     <PackageReference Include="SimpleCrypto">
       <Version>0.3.30.26</Version>
@@ -267,13 +272,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent Condition=" '$(OS)' != 'Unix' ">if not exist "$(ProjectDir)LibSQLCE\x86" md "$(TargetDir)x86"
-xcopy /y "$(ProjectDir)LibSQLCE\x86" "$(TargetDir)x86\"
-</PostBuildEvent>
+    <PreBuildEvent>call $(ProjectDir)BuildScripts\PreBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir)</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent Condition=" '$(OS)' != 'Unix' ">if not exist "$(SolutionDir)BUILD" mkdir  "$(SolutionDir)BUILD"
-if not exist "$(SolutionDir)BUILD\userraw\scripts" mkdir "$(SolutionDir)BUILD\userraw\scripts"</PreBuildEvent>
+    <PostBuildEvent>call $(ProjectDir)BuildScripts\PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

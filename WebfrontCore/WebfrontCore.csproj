@@ -47,7 +47,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="1.1.5" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Routing" Version="1.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.IISIntegration" Version="1.1.4" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.1.3" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="1.1.2" />
@@ -97,11 +96,12 @@
     <Folder Include="Views\Account\" />
   </ItemGroup>
 
- <PropertyGroup>
-    <PostBuildEvent Condition=" '$(OS)' != 'Unix' ">if not exist "$(ProjectDir)LibSQLCE\x86" md "$(TargetDir)x86" xcopy /y "$(ProjectDir)LibSQLCE\x86" "$(TargetDir)x86\"</PostBuildEvent>
- </PropertyGroup>
- <PropertyGroup>
-    <PreBuildEvent Condition=" '$(OS)' != 'Unix' ">if not exist "$(SolutionDir)BUILD" mkdir  "$(SolutionDir)BUILD" if not exist "$(SolutionDir)BUILD\userraw\scripts" mkdir "$(SolutionDir)BUILD\userraw\scripts"</PreBuildEvent>
- </PropertyGroup>
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="call BuildScripts/PreBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir)" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call BuildScripts/PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir)&#xD;&#xA;call BuildScripts/PostPublish.bat $(SolutionDir) $(ProjectDir) $(TargetDir)" />
+  </Target>
 
 </Project>

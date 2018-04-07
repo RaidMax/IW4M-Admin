@@ -25,10 +25,10 @@ namespace WebfrontCore.Controllers
                 {
                     var claims = new[]
                     {
-                    new Claim(ClaimTypes.NameIdentifier, client.Name),
-                    new Claim(ClaimTypes.Role, client.Level.ToString()),
-                    new Claim(ClaimTypes.Sid, client.ClientId.ToString())
-                };
+                        new Claim(ClaimTypes.NameIdentifier, client.Name),
+                        new Claim(ClaimTypes.Role, client.Level.ToString()),
+                        new Claim(ClaimTypes.Sid, client.ClientId.ToString())
+                    };
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);

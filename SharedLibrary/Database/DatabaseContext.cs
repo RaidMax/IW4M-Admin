@@ -28,7 +28,9 @@ namespace SharedLibrary.Database
 
         public DatabaseContext() : base(ConnectionString)
         {
-            System.Data.Entity.Database.SetInitializer(new MigrateDatabaseToLatestVersion<DatabaseContext, Migrations.Configuration>());
+            // todo: make this work with MySQL
+            if (!Utilities.IsRunningOnMono())
+                System.Data.Entity.Database.SetInitializer(new MigrateDatabaseToLatestVersion<DatabaseContext, Migrations.Configuration>());
             //Database.CreateIfNotExists();
             Configuration.LazyLoadingEnabled = true;
         }
@@ -56,7 +58,6 @@ namespace SharedLibrary.Database
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
 
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
-            //string dir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar; 
 #if !DEBUG
             foreach (string dllPath in System.IO.Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
 #else

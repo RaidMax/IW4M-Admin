@@ -434,5 +434,7 @@ namespace SharedLibrary
 #endif
             return Utilities.PlayersFromStatus(response);
         }
+
+        public static bool IsRunningOnMono() => Type.GetType("Mono.Runtime") != null;
     }
 }

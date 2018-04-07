@@ -11,10 +11,12 @@ using System.Reflection;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.SqlServerCompact;
 using System.IO;
+using System.Data.Common;
 
 namespace SharedLibrary.Database
 {
 
+    [DbConfigurationType(typeof(ContextConfiguration))]
     public class DatabaseContext : DbContext
     {
         public DbSet<EFClient> Clients { get; set; }
@@ -22,7 +24,9 @@ namespace SharedLibrary.Database
         public DbSet<EFAliasLink> AliasLinks { get; set; }
         public DbSet<EFPenalty> Penalties { get; set; }
 
-        public DatabaseContext() : base("DefaultConnection")
+        public static string ConnectionString;
+
+        public DatabaseContext() : base(ConnectionString)
         {
             System.Data.Entity.Database.SetInitializer(new MigrateDatabaseToLatestVersion<DatabaseContext, Migrations.Configuration>());
             //Database.CreateIfNotExists();
@@ -62,7 +66,7 @@ namespace SharedLibrary.Database
                 directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}\bin\x86\Debug\Plugins").Where(f => f.Contains(".dll"));
             }
 
-            catch(Exception)
+            catch (Exception)
             {
                 directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}\Plugins").Where(f => f.Contains(".dll"));
             }

@@ -16,7 +16,19 @@ namespace WebfrontCore
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables();
+
+
             Configuration = builder.Build();
+            // fixme: this is really really terrible
+            if (!SharedLibrary.Utilities.IsRunningOnMono())
+            {
+                SharedLibrary.Database.DatabaseContext.ConnectionString = Configuration["ConnectionStrings:WindowsConnection"];
+            }
+
+            else
+            {
+                SharedLibrary.Database.DatabaseContext.ConnectionString = Configuration["ConnectionStrings:LinuxConnection"];
+            }
 
             if (!IW4MAdmin.Program.Start())
                 Environment.Exit(-1);

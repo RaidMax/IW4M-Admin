@@ -148,6 +148,7 @@
   <ItemGroup>
     <Compile Include="Configuration\MapConfiguration.cs" />
     <Compile Include="Configuration\ServerConfiguration.cs" />
+    <Compile Include="Database\ContextConfiguration.cs" />
     <Compile Include="Database\Importer.cs" />
     <Compile Include="Database\DatabaseContext.cs" />
     <Compile Include="Database\Models\EFAlias.cs" />
@@ -209,7 +210,6 @@
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="app.config" />
     <Compile Include="Dtos\EventInfo.cs" />
     <Content Include="LibSQLCe\x86\Microsoft.VC90.CRT\msvcr90.dll" />
     <Content Include="LibSQLCe\x86\Microsoft.VC90.CRT\README_ENU.txt" />
@@ -240,6 +240,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json">
       <Version>1.1.2</Version>
     </PackageReference>
+    <PackageReference Include="MySql.Data">
+      <Version>6.10.6</Version>
+    </PackageReference>
+    <PackageReference Include="MySql.Data.Entity">
+      <Version>6.10.6</Version>
+    </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>11.0.1</Version>
     </PackageReference>
@@ -261,12 +267,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if not exist "$(ProjectDir)LibSQLCE\x86" md "$(TargetDir)x86"
+    <PostBuildEvent Condition=" '$(OS)' != 'Unix' ">if not exist "$(ProjectDir)LibSQLCE\x86" md "$(TargetDir)x86"
 xcopy /y "$(ProjectDir)LibSQLCE\x86" "$(TargetDir)x86\"
 </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>if not exist "$(SolutionDir)BUILD" mkdir  "$(SolutionDir)BUILD"
+    <PreBuildEvent Condition=" '$(OS)' != 'Unix' ">if not exist "$(SolutionDir)BUILD" mkdir  "$(SolutionDir)BUILD"
 if not exist "$(SolutionDir)BUILD\userraw\scripts" mkdir "$(SolutionDir)BUILD\userraw\scripts"</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

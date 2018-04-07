@@ -230,7 +230,6 @@ namespace StatsPlugin
 
             MetaService.AddMeta(getMessages);
 
-            // todo: is this fast? make async?
             string totalKills()
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();

@@ -625,10 +625,6 @@ namespace IW4MAdmin
 
             await this.SetDvarAsync("sv_kickbantime", 60);
 
-            // I don't think this belongs in an admin tool
-            /*await this.SetDvarAsync("sv_network_fps", 1000);
-            await this.SetDvarAsync("com_maxfps", 1000);*/
-
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
                 // this DVAR isn't set until the a map is loaded
@@ -641,14 +637,7 @@ namespace IW4MAdmin
             }
 
             CustomCallback = await ScriptLoaded();
-#if DEBUG
-            {
-                basepath.Value = (GameName == Game.IW4) ?
-                    @"D:\" :
-                    @"\\tsclient\G\Program Files (x86)\Steam\SteamApps\common\Call of Duty 4";
-            }
 
-#endif
             string mainPath = (GameName == Game.IW4 && onelog.Value >= 0) ? "userraw" : "main";
             // patch for T5M:V2 log path
             mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
@@ -656,6 +645,12 @@ namespace IW4MAdmin
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+
+            // fix to prevent wine drive prefix when running in mono
+            if (Utilities.IsRunningOnMono())
+            {
+                logPath = Regex.Replace(logPath, @"[A-Z]:", "");
+            }
 
             if (!File.Exists(logPath))
             {
@@ -666,15 +661,13 @@ namespace IW4MAdmin
             }
             else
             {
-                //#if !DEBUG
                 LogFile = new IFile(logPath);
-                //#else
             }
+
+            Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
             //LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
-#endif
-            Logger.WriteInfo($"Log file is {logPath}");
-#if !DEBUG
+#else
             await Broadcast("IW4M Admin is now ^2ONLINE");
 #endif
         }
@@ -693,18 +686,6 @@ namespace IW4MAdmin
 
                 if (E.Origin.Level > Player.Permission.Moderator)
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
-
-                /*// give trusted rank
-                if (Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy &&
-                    E.Origin.TotalConnectionTime / 60.0 >= 2880 &&
-                    E.Origin.Level < Player.Permission.Trusted &&
-                    E.Origin.Level != Player.Permission.Flagged)
-                {
-                    E.Origin.Level = Player.Permission.Trusted;
-                    await E.Origin.Tell("Congratulations, you are now a ^5trusted ^7player! Type ^5!help ^7to view new commands");
-                    await E.Origin.Tell("You earned this by playing for ^53 ^7full days");
-                    await Manager.GetClientService().Update(E.Origin);
-                }*/
             }
 
             else if (E.Type == Event.GType.Disconnect)
@@ -786,39 +767,6 @@ namespace IW4MAdmin
 
                 string mapname = this.GetDvarAsync<string>("mapname").Result.Value;
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
-
-                // todo: make this more efficient
-                /*((ApplicationManager)(Manager)).PrivilegedClients = new Dictionary<int, Player>();
-                var ClientSvc = new ClientService();
-                var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
-                .Select(c => new
-                {
-                    c.Password,
-                    c.PasswordSalt,
-                    c.ClientId,
-                    c.Level,
-                    c.Name
-                });
-
-                foreach (var a in ipList)
-                {
-                    try
-                    {
-                        ((ApplicationManager)(Manager)).PrivilegedClients.Add(a.ClientId, new Player()
-                        {
-                            Name = a.Name,
-                            ClientId = a.ClientId,
-                            Level = a.Level,
-                            PasswordSalt = a.PasswordSalt,
-                            Password = a.Password
-                        });
-                    }
-
-                    catch (ArgumentException)
-                    {
-                        continue;
-                    }
-                }*/
             }
 
             if (E.Type == Event.GType.MapEnd)
@@ -975,7 +923,7 @@ namespace IW4MAdmin
                 Target.Level = Player.Permission.Banned;
 #if !DEBUG
                 await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Banned: ^5{Message} ^7(appeal at {Website}) ^7\"");
-#else 
+#else
                 await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
 #endif
             }

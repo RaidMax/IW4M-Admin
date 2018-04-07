@@ -1,6 +1,7 @@
 ﻿using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -180,7 +181,7 @@ namespace SharedLibrary.RCon
                     break;
             }
 
-            byte[] payload = Encoding.Default.GetBytes(queryString);
+            byte[] payload = queryString.Select(Convert.ToByte).ToArray();
 
             retrySend:
             try

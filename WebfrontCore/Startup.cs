@@ -17,7 +17,6 @@ namespace WebfrontCore
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables();
 
-
             Configuration = builder.Build();
             // fixme: this is really really terrible
             if (!SharedLibrary.Utilities.IsRunningOnMono())
@@ -63,11 +62,11 @@ namespace WebfrontCore
 
             app.UseCookieAuthentication(new CookieAuthenticationOptions()
             {
-                AccessDeniedPath = "/Account/Login/",
+                AccessDeniedPath = "/",
                 AuthenticationScheme = CookieAuthenticationDefaults.AuthenticationScheme,
                 AutomaticAuthenticate = true,
                 AutomaticChallenge = true,
-                LoginPath = "/Account/Login/",
+                LoginPath = "/",
                 ExpireTimeSpan = TimeSpan.FromDays(30),
             });
 

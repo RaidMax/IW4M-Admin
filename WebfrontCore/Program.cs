@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
@@ -15,12 +16,19 @@ namespace WebfrontCore
             var host = new WebHostBuilder()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
                 .UseStartup<Startup>()
                 .UseUrls(config["Web:Address"])
                 .Build();
 
-            host.Run();
+            if (!SharedLibrary.Utilities.IsRunningOnMono())
+            {
+                host.Run();
+            }
+            
+            else
+            {
+                Console.ReadLine();
+            }
         }
     }
 }

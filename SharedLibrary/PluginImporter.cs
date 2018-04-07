@@ -13,7 +13,7 @@ namespace SharedLibrary.Plugins
 
         public static bool Load(IManager Manager)
         {
-            string[] dllFileNames = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\plugins", "*.dll");
+            string[] dllFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.dll");
 
             if (dllFileNames.Length == 0)
             {

@@ -258,7 +258,6 @@ namespace SharedLibrary
 
         /// <summary>
         /// Initialize the messages to be broadcasted
-        /// todo: this needs to be a serialized file
         /// </summary>
         protected void InitializeAutoMessages()
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -9,6 +10,8 @@ namespace SharedLibraryCore.Helpers
 {
     public class Vector3
     {
+        [Key]
+        public int Vector3Id { get; set; }
         public float X { get; protected set; }
         public  float Y { get; protected set; }
         public float Z { get; protected set; }

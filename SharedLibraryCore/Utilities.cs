@@ -294,6 +294,8 @@ namespace SharedLibraryCore
                 return Game.T5M;
             if (gameName.Contains("IW5"))
                 return Game.IW5;
+            if (gameName.Contains("COD_T6_S"))
+                return Game.T6M;
 
             return Game.UKN;
         }

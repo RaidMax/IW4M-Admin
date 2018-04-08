@@ -12,28 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="LibSQLCe\x86\Microsoft.VC90.CRT\msvcr90.dll" />
-    <None Remove="LibSQLCe\x86\Microsoft.VC90.CRT\README_ENU.txt" />
-    <None Remove="LibSQLCe\x86\sqlceca40.dll" />
-    <None Remove="LibSQLCe\x86\sqlcecompact40.dll" />
-    <None Remove="LibSQLCe\x86\sqlceer40EN.dll" />
-    <None Remove="LibSQLCe\x86\sqlceme40.dll" />
-    <None Remove="LibSQLCe\x86\sqlceqp40.dll" />
-    <None Remove="LibSQLCe\x86\sqlcese40.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="LibSQLCe\x86\Microsoft.VC90.CRT\msvcr90.dll" />
-    <Content Include="LibSQLCe\x86\Microsoft.VC90.CRT\README_ENU.txt" />
-    <Content Include="LibSQLCe\x86\sqlceca40.dll" />
-    <Content Include="LibSQLCe\x86\sqlcecompact40.dll" />
-    <Content Include="LibSQLCe\x86\sqlceer40EN.dll" />
-    <Content Include="LibSQLCe\x86\sqlceme40.dll" />
-    <Content Include="LibSQLCe\x86\sqlceqp40.dll" />
-    <Content Include="LibSQLCe\x86\sqlcese40.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />

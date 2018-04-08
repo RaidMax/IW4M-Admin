@@ -23,5 +23,6 @@ namespace SharedLibraryCore.Interfaces
         PenaltyService GetPenaltyService();
         IDictionary<int, Player> GetPrivilegedClients();
         IEventApi GetEventApi();
+        bool ShutdownRequested();
     }
 }

@@ -18,8 +18,32 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
-    <ProjectReference Include="..\WebfrontCore\WebfrontCore.csproj" />
+    <None Remove="IW4MAdminSettings.json" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="IW4MAdminSettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
+      <Private>true</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\WebfrontCore\WebfrontCore.csproj">
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="call $(ProjectDir)BuildScripts\PreBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call  $(ProjectDir)BuildScripts\PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)&#xD;&#xA;&#xD;&#xA;if $(ProjectDir) == &quot;*Undefined*&quot; (&#xD;&#xA;call BuildScripts\PostPublish.bat $(SolutionDir)&#xD;&#xA;)&#xD;&#xA;" />
+  </Target>
 
 </Project>

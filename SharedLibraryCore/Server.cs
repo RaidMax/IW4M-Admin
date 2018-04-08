@@ -22,6 +22,7 @@ namespace SharedLibraryCore
             T4,
             T5,
             T5M,
+            T6M,
         }
 
         public Server(Interfaces.IManager mgr, ServerConfiguration config)

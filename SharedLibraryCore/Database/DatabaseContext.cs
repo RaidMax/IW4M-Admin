@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Data.Sqlite;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Database
 {
@@ -83,7 +84,7 @@ namespace SharedLibraryCore.Database
                 Assembly library;
                 try
                 {
-                    library = Assembly.LoadFile(dllPath);
+                    library = Assembly.LoadFrom(dllPath);
                 }
 
                 // not a valid assembly, ie plugin files
@@ -91,14 +92,19 @@ namespace SharedLibraryCore.Database
                 {
                     continue;
                 }
+                
+                var configurations = library.ExportedTypes.Where(c => c.GetInterfaces().FirstOrDefault(i => typeof(IModelConfiguration).IsAssignableFrom(i)) != null)
+                    .Select( c => (IModelConfiguration)Activator.CreateInstance(c));
+
+                foreach (var configurable in configurations)
+                    configurable.Configure(modelBuilder);
 
                 foreach (var type in library.ExportedTypes)
                 {
                     if (type.IsClass && type.IsSubclassOf(typeof(SharedEntity)))
                     {
-                        var method = modelBuilder.GetType().GetMethod("Entity");
-                        method = method.MakeGenericMethod(new Type[] { type });
-                        method.Invoke(modelBuilder, null);
+                        var method = modelBuilder.GetType().GetMethod("Entity", new[] { typeof(Type) });
+                        method.Invoke(modelBuilder, new[] { type });
                     }
                 }
             }

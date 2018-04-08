@@ -16,7 +16,11 @@ namespace WebfrontCore
 
         public static IWebHost BuildWebHost() =>
             new WebHostBuilder()
+#if DEBUG
+                .UseContentRoot(Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\", "WebfrontCore")))
+#else
                 .UseContentRoot(Directory.GetCurrentDirectory())
+#endif
                 .UseKestrel()
                 .UseStartup<Startup>()
                 .Build();

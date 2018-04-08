@@ -1,9 +1,10 @@
 ﻿using IW4MAdmin;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using SharedLibrary;
-using SharedLibrary.Database.Models;
-using SharedLibrary.Objects;
+using SharedLibraryCore;
+using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +15,14 @@ namespace WebfrontCore.Controllers
     public class BaseController : Controller
     {
         protected ApplicationManager Manager;
+        protected readonly DatabaseContext Context;
         protected bool Authorized { get; private set; }
         protected EFClient User { get; private set; }
+
+       /* public BaseController(DatabaseContext ctx)
+        {
+            Context = ctx;
+        }*/
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {

@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SharedLibrary;
-using SharedLibrary.Dtos;
-using SharedLibrary.Services;
+using SharedLibraryCore;
+using SharedLibraryCore.Database;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> ProfileAsync(int id)
         {
             var client = await Manager.GetClientService().Get(id);
+
             var clientDto = new PlayerInfo()
             {
                 Name = client.Name,
@@ -46,7 +48,7 @@ namespace WebfrontCore.Controllers
             var administeredPenaltiesMeta = await Manager.GetPenaltyService()
                 .ReadGetClientPenaltiesAsync(client.ClientId, false);
 
-            if (Authorized && client.Level > SharedLibrary.Objects.Player.Permission.Trusted)
+            if (Authorized && client.Level > SharedLibraryCore.Objects.Player.Permission.Trusted)
                 clientDto.Meta.Add(new ProfileMeta()
                 {
                     Key = "Masked",
@@ -91,7 +93,7 @@ namespace WebfrontCore.Controllers
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
                 .Where(a => a.Active)
                 .OrderByDescending(a => a.Level);
-            var adminsDict = new Dictionary<SharedLibrary.Objects.Player.Permission, IList<ClientInfo>>();
+            var adminsDict = new Dictionary<SharedLibraryCore.Objects.Player.Permission, IList<ClientInfo>>();
 
             foreach (var admin in admins)
             {

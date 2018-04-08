@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SharedLibrary;
-using SharedLibrary.Database.Models;
-using SharedLibrary.Dtos;
-using SharedLibrary.Services;
+using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +30,7 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> PublicAsync()
         {
             var penalties = await (new GenericRepository<EFPenalty>())
-                .FindAsync(p => p.Type == SharedLibrary.Objects.Penalty.PenaltyType.Ban && p.Active);
+                .FindAsync(p => p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Ban && p.Active);
 
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {

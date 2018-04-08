@@ -1,5 +1,5 @@
-﻿using SharedLibrary;
-using SharedLibrary.Configuration;
+﻿using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;

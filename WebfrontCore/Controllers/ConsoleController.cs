@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SharedLibrary;
-using SharedLibrary.Dtos;
-using SharedLibrary.Objects;
+using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;

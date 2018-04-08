@@ -202,3 +202,4 @@ ModelManifest.xml
 /.vs/IW4MAdmin/v15
 /.vs/IW4MAdmin/v15
 /.vs/IW4MAdmin/v15/Browse.VC.db
+**/wwwroot/lib

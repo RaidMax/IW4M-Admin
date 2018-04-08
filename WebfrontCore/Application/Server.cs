@@ -6,13 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
-using SharedLibrary;
-using SharedLibrary.Interfaces;
-using SharedLibrary.Objects;
-using SharedLibrary.Services;
-using SharedLibrary.Database.Models;
-using SharedLibrary.Dtos;
-using SharedLibrary.Configuration;
+using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Objects;
+using SharedLibraryCore.Services;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Configuration;
 
 using WebfrontCore.Application.Misc;
 
@@ -229,7 +229,7 @@ namespace IW4MAdmin
             if (C == null)
             {
                 await E.Origin.Tell("You entered an unknown command");
-                throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
+                throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
             }
 
             E.Data = E.Data.RemoveWords(1);
@@ -238,14 +238,14 @@ namespace IW4MAdmin
             if (E.Origin.Level < C.Permission)
             {
                 await E.Origin.Tell("You do not have access to that command");
-                throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
+                throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
             if (Args.Length < (C.RequiredArgumentCount))
             {
                 await E.Origin.Tell($"Not enough arguments supplied");
                 await E.Origin.Tell(C.Syntax);
-                throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
             if (C.RequiresTarget || Args.Length > 0)
@@ -293,7 +293,7 @@ namespace IW4MAdmin
                     if (matchingPlayers.Count > 1)
                     {
                         await E.Origin.Tell("Multiple players match that name");
-                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
+                        throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
                     {
@@ -307,7 +307,7 @@ namespace IW4MAdmin
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
-                            throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                            throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
                     }
                 }
@@ -320,7 +320,7 @@ namespace IW4MAdmin
                         await E.Origin.Tell("Multiple players match that name");
                         foreach (var p in matchingPlayers)
                             await E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
-                        throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
+                        throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
                     {
@@ -337,7 +337,7 @@ namespace IW4MAdmin
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
-                            throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                            throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
                     }
                 }
@@ -345,7 +345,7 @@ namespace IW4MAdmin
                 if (E.Target == null && C.RequiresTarget)
                 {
                     await E.Origin.Tell("Unable to find specified player.");
-                    throw new SharedLibrary.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
+                    throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
                 }
             }
             E.Data = E.Data.Trim();
@@ -360,7 +360,7 @@ namespace IW4MAdmin
             await ProcessEvent(E);
             ((ApplicationManager)Manager).ServerEventOccurred(this, E);
 
-            foreach (IPlugin P in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+            foreach (IPlugin P in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
             {
                 //#if !DEBUG
                 try
@@ -394,7 +394,7 @@ namespace IW4MAdmin
             }
 
             // when the server has lost connection
-            catch (SharedLibrary.Exceptions.NetworkException)
+            catch (SharedLibraryCore.Exceptions.NetworkException)
             {
                 Throttled = true;
                 return ClientNum;
@@ -456,7 +456,7 @@ namespace IW4MAdmin
                     LastPoll = DateTime.Now;
                 }
 
-                catch (SharedLibrary.Exceptions.NetworkException e)
+                catch (SharedLibraryCore.Exceptions.NetworkException e)
                 {
                     ConnectionErrors++;
                     if (ConnectionErrors == 1)
@@ -473,7 +473,7 @@ namespace IW4MAdmin
 
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
-                    foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+                    foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                     {
                         if (cts.IsCancellationRequested)
                             break;
@@ -483,11 +483,11 @@ namespace IW4MAdmin
                     tickTime = DateTime.Now;
                 }
 
-                if ((lastCount - playerCountStart).TotalMinutes >= SharedLibrary.Helpers.PlayerHistory.UpdateInterval)
+                if ((lastCount - playerCountStart).TotalMinutes >= SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval)
                 {
-                    while (PlayerHistory.Count > ((60 / SharedLibrary.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
+                    while (PlayerHistory.Count > ((60 / SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
                         PlayerHistory.Dequeue();
-                    PlayerHistory.Enqueue(new SharedLibrary.Helpers.PlayerHistory(ClientNum));
+                    PlayerHistory.Enqueue(new SharedLibraryCore.Helpers.PlayerHistory(ClientNum));
                     playerCountStart = DateTime.Now;
                 }
 
@@ -542,7 +542,7 @@ namespace IW4MAdmin
                 l_size = LogFile.Length();
                 if (!((ApplicationManager)Manager).Running)
                 {
-                    foreach (var plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+                    foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                         await plugin.OnUnloadAsync();
 
                     for (int i = 0; i < Players.Count; i++)
@@ -551,7 +551,7 @@ namespace IW4MAdmin
                 return true;
             }
             //#if !DEBUG
-            catch (SharedLibrary.Exceptions.NetworkException)
+            catch (SharedLibraryCore.Exceptions.NetworkException)
             {
                 Logger.WriteError($"Could not communicate with {IP}:{Port}");
                 return false;
@@ -611,7 +611,7 @@ namespace IW4MAdmin
                 Website = website.Value;
             }
 
-            catch (SharedLibrary.Exceptions.DvarException)
+            catch (SharedLibraryCore.Exceptions.DvarException)
             {
                 Website = "this server's website";
             }
@@ -656,7 +656,7 @@ namespace IW4MAdmin
             {
                 Logger.WriteError($"Gamelog {logPath} does not exist!");
 #if !DEBUG
-                throw new SharedLibrary.Exceptions.ServerException($"Invalid gamelog file {logPath}");
+                throw new SharedLibraryCore.Exceptions.ServerException($"Invalid gamelog file {logPath}");
 #endif
             }
             else
@@ -714,7 +714,7 @@ namespace IW4MAdmin
                         C = await ValidateCommand(E);
                     }
 
-                    catch (SharedLibrary.Exceptions.CommandException e)
+                    catch (SharedLibraryCore.Exceptions.CommandException e)
                     {
                         Logger.WriteInfo(e.Message);
                     }
@@ -963,8 +963,8 @@ namespace IW4MAdmin
 
         override public void InitializeTokens()
         {
-            Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("TOTALPLAYERS", Manager.GetClientService().GetTotalClientsAsync().Result.ToString));
-            Manager.GetMessageTokens().Add(new SharedLibrary.Helpers.MessageToken("VERSION", Program.Version.ToString));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", Manager.GetClientService().GetTotalClientsAsync().Result.ToString));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", Program.Version.ToString));
         }
     }
 }

@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using SharedLibraryCore.Dtos;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+
 using WebfrontCore.Application.API;
 
 namespace WebfrontCore.Controllers.API
@@ -14,7 +13,7 @@ namespace WebfrontCore.Controllers.API
         public ActionResult Index()
         {
             var events = EventAPI.Events;
-            var eventsDto = new List<SharedLibrary.Dtos.EventInfo>();
+            var eventsDto = new List<EventInfo>();
             while (events.Count > 0)
                 eventsDto.Add(events.Dequeue());
             return Json(eventsDto);

@@ -1,12 +1,10 @@
 ﻿
 using System;
-using System.Runtime.InteropServices;
-using SharedLibrary;
+using SharedLibraryCore;
 using System.Threading.Tasks;
 using System.IO;
-using SharedLibrary.Objects;
+using SharedLibraryCore.Objects;
 using System.Reflection;
-using System.Linq;
 
 namespace IW4MAdmin
 {
@@ -31,13 +29,9 @@ namespace IW4MAdmin
 
             try
             {
-                /*var v1 = SharedLibrary.Helpers.Vector3.Parse("(737, 1117, 268)");
-                var v2 = SharedLibrary.Helpers.Vector3.Parse("(1510, 672.98, -228.66)");
-                double angleBetween = v1.AngleBetween(v2);*/
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
-                SharedLibrary.Database.Repair.Run(ServerManager.Logger);
                 ServerManager.Init().Wait();
                 Task.Run(() => ServerManager.Start());
 

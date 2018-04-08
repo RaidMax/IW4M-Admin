@@ -1,15 +1,21 @@
-﻿using System;
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Database;
+using System;
+using System.IO;
 
 namespace WebfrontCore
 {
     public class Startup
     {
+        private IHostingEnvironment _appHost;
+        public static IConfigurationRoot Configuration { get; private set; }
+
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
@@ -18,28 +24,34 @@ namespace WebfrontCore
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
-            // fixme: this is really really terrible
-            if (!SharedLibrary.Utilities.IsRunningOnMono())
-            {
-                SharedLibrary.Database.DatabaseContext.ConnectionString = Configuration["ConnectionStrings:WindowsConnection"];
-            }
 
-            else
-            {
-                SharedLibrary.Database.DatabaseContext.ConnectionString = Configuration["ConnectionStrings:LinuxConnection"];
-            }
+            _appHost = env;
 
-            if (!IW4MAdmin.Program.Start())
-                Environment.Exit(-1);
+            using (var db = new DatabaseContext())
+            {
+                db.Database.EnsureCreated();
+                db.Database.Migrate();
+                new ContextSeed(db).Seed().Wait();
+            }
         }
-
-        public static IConfigurationRoot Configuration { get; private set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
             services.AddMvc();
+            services.AddEntityFrameworkSqlite()
+                .AddDbContext<DatabaseContext>();
+
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+                {
+                    options.AccessDeniedPath = "/";
+                    options.LoginPath = "/";
+                });
+
+              if (!IW4MAdmin.Program.Start())
+                 Environment.Exit(-1);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,16 +71,7 @@ namespace WebfrontCore
             }
 
             app.UseStaticFiles();
-
-            app.UseCookieAuthentication(new CookieAuthenticationOptions()
-            {
-                AccessDeniedPath = "/",
-                AuthenticationScheme = CookieAuthenticationDefaults.AuthenticationScheme,
-                AutomaticAuthenticate = true,
-                AutomaticChallenge = true,
-                LoginPath = "/",
-                ExpireTimeSpan = TimeSpan.FromDays(30),
-            });
+            app.UseAuthentication();
 
             app.UseMvc(routes =>
             {
@@ -76,7 +79,6 @@ namespace WebfrontCore
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
-
         }
     }
 }

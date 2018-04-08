@@ -5,17 +5,17 @@ using System.Threading;
 using System.IO;
 using System.Threading.Tasks;
 
-using SharedLibrary;
-using SharedLibrary.Interfaces;
-using SharedLibrary.Commands;
-using SharedLibrary.Helpers;
-using SharedLibrary.Exceptions;
-using SharedLibrary.Objects;
-using SharedLibrary.Services;
+using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Commands;
+using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Objects;
+using SharedLibraryCore.Services;
 using WebfrontCore.Application.API;
 using Microsoft.Extensions.Configuration;
 using WebfrontCore;
-using SharedLibrary.Configuration;
+using SharedLibraryCore.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -136,9 +136,9 @@ namespace IW4MAdmin
 
 
             #region PLUGINS
-            SharedLibrary.Plugins.PluginImporter.Load(this);
+            SharedLibraryCore.Plugins.PluginImporter.Load(this);
 
-            foreach (var Plugin in SharedLibrary.Plugins.PluginImporter.ActivePlugins)
+            foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
             {
                 try
                 {
@@ -232,7 +232,7 @@ namespace IW4MAdmin
             Commands.Add(new CKillServer());
             Commands.Add(new CSetPassword());
 
-            foreach (Command C in SharedLibrary.Plugins.PluginImporter.ActiveCommands)
+            foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
             #endregion
 

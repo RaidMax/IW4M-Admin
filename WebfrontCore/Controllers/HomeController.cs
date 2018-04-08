@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using SharedLibrary.Dtos;
+using SharedLibraryCore.Dtos;
 
 namespace WebfrontCore.Controllers
 {

@@ -5,7 +5,7 @@ set TargetDir=%3
 if not exist "%TargetDir%x86" (
 	echo "Copying SQLCe binaries"
 	md "%TargetDir%x86"
-	xcopy /y "%SolutionDir%SharedLibrary\LibSQLCe\x86" "%TargetDir%x86\"
+	xcopy /y "%SolutionDir%SharedLibraryCore\LibSQLCe\x86" "%TargetDir%x86\"
 )
 
 if not exist "%TargetDir%Plugins" (

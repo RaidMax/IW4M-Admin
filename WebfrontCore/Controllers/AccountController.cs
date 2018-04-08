@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using System;
+using Microsoft.AspNetCore.Authentication;
 
 namespace WebfrontCore.Controllers
 {
@@ -19,7 +20,7 @@ namespace WebfrontCore.Controllers
             try
             {
                 var client = IW4MAdmin.Program.ServerManager.PrivilegedClients[clientId];
-                string[] hashedPassword = await Task.FromResult(SharedLibrary.Helpers.Hashing.Hash(password, client.PasswordSalt));
+                string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt));
 
                 if (hashedPassword[0] == client.Password)
                 {
@@ -32,7 +33,7 @@ namespace WebfrontCore.Controllers
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
-                    await HttpContext.Authentication.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new Microsoft.AspNetCore.Http.Authentication.AuthenticationProperties()
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new AuthenticationProperties()
                     {
                         AllowRefresh = true,
                         ExpiresUtc = DateTime.UtcNow.AddDays(30),
@@ -55,7 +56,7 @@ namespace WebfrontCore.Controllers
         [HttpGet]
         public async Task<IActionResult> LogoutAsync()
         {
-            await HttpContext.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
         }
     }

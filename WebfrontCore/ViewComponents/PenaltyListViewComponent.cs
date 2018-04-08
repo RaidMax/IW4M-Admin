@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SharedLibrary;
-using SharedLibrary.Dtos;
+using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +40,7 @@ namespace WebfrontCore.ViewComponents
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
                 TimeRemaining = DateTime.UtcNow > p.Expires ? "" : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow),
-                Sensitive = p.Type == SharedLibrary.Objects.Penalty.PenaltyType.Flag
+                Sensitive = p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Flag
             });
 
             penaltiesDto = authed ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();

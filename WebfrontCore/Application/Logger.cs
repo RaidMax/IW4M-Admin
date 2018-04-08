@@ -3,7 +3,7 @@ using System.IO;
 
 namespace IW4MAdmin
 {
-    class Logger : SharedLibrary.Interfaces.ILogger
+    class Logger : SharedLibraryCore.Interfaces.ILogger
     {
         enum LogType
         { 

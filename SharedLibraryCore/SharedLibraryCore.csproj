@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <ApplicationIcon />
+    <StartupObject />
+    <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
+    <Version>2.0.0</Version>
+    <Authors>RaidMax</Authors>
+    <Company>Forever None</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="LibSQLCe\x86\Microsoft.VC90.CRT\msvcr90.dll" />
+    <None Remove="LibSQLCe\x86\Microsoft.VC90.CRT\README_ENU.txt" />
+    <None Remove="LibSQLCe\x86\sqlceca40.dll" />
+    <None Remove="LibSQLCe\x86\sqlcecompact40.dll" />
+    <None Remove="LibSQLCe\x86\sqlceer40EN.dll" />
+    <None Remove="LibSQLCe\x86\sqlceme40.dll" />
+    <None Remove="LibSQLCe\x86\sqlceqp40.dll" />
+    <None Remove="LibSQLCe\x86\sqlcese40.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="LibSQLCe\x86\Microsoft.VC90.CRT\msvcr90.dll" />
+    <Content Include="LibSQLCe\x86\Microsoft.VC90.CRT\README_ENU.txt" />
+    <Content Include="LibSQLCe\x86\sqlceca40.dll" />
+    <Content Include="LibSQLCe\x86\sqlcecompact40.dll" />
+    <Content Include="LibSQLCe\x86\sqlceer40EN.dll" />
+    <Content Include="LibSQLCe\x86\sqlceme40.dll" />
+    <Content Include="LibSQLCe\x86\sqlceqp40.dll" />
+    <Content Include="LibSQLCe\x86\sqlcese40.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -28,7 +28,7 @@ namespace WebfrontCore.ViewComponents
 
             }
 
-            var penalties = await IW4MAdmin.ApplicationManager.GetInstance().GetPenaltyService().GetRecentPenalties(15, offset);
+            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(15, offset);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
                 OffenderId = p.OffenderId,

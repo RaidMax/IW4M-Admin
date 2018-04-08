@@ -1,20 +1,19 @@
-﻿using IW4MAdmin;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using SharedLibraryCore;
-using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+
+using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Objects;
 
 namespace WebfrontCore.Controllers
 {
     public class BaseController : Controller
     {
-        protected ApplicationManager Manager;
+        protected IManager Manager;
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; private set; }
         protected EFClient User { get; private set; }
@@ -26,7 +25,7 @@ namespace WebfrontCore.Controllers
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            Manager = IW4MAdmin.Program.ServerManager;
+            Manager = Program.Manager;
 
             User = new EFClient()
             {

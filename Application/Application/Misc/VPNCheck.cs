@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace WebfrontCore.Application.Misc
+namespace IW4MAdmin.Application.Misc
 {
     public class VPNCheck
     {

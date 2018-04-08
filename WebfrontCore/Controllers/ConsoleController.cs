@@ -13,7 +13,7 @@ namespace WebfrontCore.Controllers
     {
         public IActionResult Index()
         {
-            var activeServers = Manager.Servers.Select(s => new ServerInfo()
+            var activeServers = Manager.GetServers().Select(s => new ServerInfo()
             {
                 Name = s.Hostname,
                 ID = s.GetHashCode(),
@@ -29,7 +29,7 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> ExecuteAsync(int serverId, string command)
         {
 
-            var server = Manager.Servers.First(s => s.GetHashCode() == serverId);
+            var server = Manager.GetServers().First(s => s.GetHashCode() == serverId);
             var client = new Player()
             {
                 ClientId = User.ClientId,

@@ -1,15 +1,17 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Objects;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace WebfrontCore.Application.API
+using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Objects;
+
+namespace IW4MAdmin.Application.API
 {
-    class EventAPI
+    class EventApi : IEventApi
     {
-        public static Queue<EventInfo> Events = new Queue<EventInfo>();
-        static DateTime LastFlagEvent;
+        Queue<EventInfo> Events = new Queue<EventInfo>();
+        DateTime LastFlagEvent;
         static string[] FlaggedMessageContains =
         {
             " wh ",
@@ -22,9 +24,11 @@ namespace WebfrontCore.Application.API
             "hak",
             "bot"
         };
-        static int FlaggedMessageCount;
+        int FlaggedMessageCount;
 
-        public static void OnServerEventOccurred(object sender, Event E)
+        public Queue<EventInfo> GetEvents() => Events;
+
+        public void OnServerEvent(object sender, Event E)
         {
             if (E.Type == Event.GType.Say && E.Origin.Level < Player.Permission.Trusted)
             {

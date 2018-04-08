@@ -49,9 +49,6 @@ namespace WebfrontCore
                     options.AccessDeniedPath = "/";
                     options.LoginPath = "/";
                 });
-
-              if (!IW4MAdmin.Program.Start())
-                 Environment.Exit(-1);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

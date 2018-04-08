@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
-using WebfrontCore.Application.API;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -12,7 +11,7 @@ namespace WebfrontCore.Controllers.API
         [Route("event")]
         public ActionResult Index()
         {
-            var events = EventAPI.Events;
+            var events = Manager.GetEventApi().GetEvents();
             var eventsDto = new List<EventInfo>();
             while (events.Count > 0)
                 eventsDto.Add(events.Dequeue());

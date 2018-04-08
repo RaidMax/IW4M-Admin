@@ -12,14 +12,14 @@ using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
-using WebfrontCore.Application.API;
+using IW4MAdmin.Application.API;
 using Microsoft.Extensions.Configuration;
 using WebfrontCore;
 using SharedLibraryCore.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace IW4MAdmin
+namespace IW4MAdmin.Application
 {
     public class ApplicationManager : IManager
     {
@@ -38,6 +38,7 @@ namespace IW4MAdmin
         AliasService AliasSvc;
         PenaltyService PenaltySvc;
         BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
+        EventApi Api;
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 700;
 #else
@@ -55,7 +56,8 @@ namespace IW4MAdmin
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
             PrivilegedClients = new Dictionary<int, Player>();
-            ServerEventOccurred += EventAPI.OnServerEventOccurred;
+            Api = new EventApi();
+            ServerEventOccurred += Api.OnServerEvent;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
         }
@@ -314,5 +316,7 @@ namespace IW4MAdmin
         public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
 
         public IDictionary<int, Player> GetPrivilegedClients() => PrivilegedClients;
+
+        public IEventApi GetEventApi() => Api;
     }
 }

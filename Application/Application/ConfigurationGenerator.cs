@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IW4MAdmin
+namespace IW4MAdmin.Application
 {
     class ConfigurationGenerator
     {

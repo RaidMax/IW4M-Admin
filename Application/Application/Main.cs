@@ -6,7 +6,7 @@ using System.IO;
 using SharedLibraryCore.Objects;
 using System.Reflection;
 
-namespace IW4MAdmin
+namespace IW4MAdmin.Application
 {
     public class Program
     {
@@ -14,7 +14,7 @@ namespace IW4MAdmin
         static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
 
-        public static bool Start()
+        public static void Main(string[] args)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
             System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
@@ -60,8 +60,7 @@ namespace IW4MAdmin
                     Console.WriteLine("Shutdown complete");
                 });
 
-                return true;
-
+                WebfrontCore.Program.Init(ServerManager);
             }
 
             catch (Exception e)
@@ -74,7 +73,6 @@ namespace IW4MAdmin
                 }
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
-                return false;
             }
         }
 

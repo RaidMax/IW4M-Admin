@@ -1,16 +1,20 @@
 ﻿using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static IManager Manager;
+
+        public static void Init(IManager mgr)
         {
-            BuildWebHost(args).Run();
+            Manager = mgr;
+            BuildWebHost().Run();
         }
 
-        public static IWebHost BuildWebHost(string[] args) =>
+        public static IWebHost BuildWebHost() =>
             new WebHostBuilder()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseKestrel()

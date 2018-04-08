@@ -14,7 +14,7 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
 
-using WebfrontCore.Application.Misc;
+using IW4MAdmin.Application.Misc;
 
 namespace IW4MAdmin
 {
@@ -358,20 +358,20 @@ namespace IW4MAdmin
                 return;
 
             await ProcessEvent(E);
-            ((ApplicationManager)Manager).ServerEventOccurred(this, E);
+            Manager.GetEventApi().OnServerEvent(this, E);
 
             foreach (IPlugin P in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
             {
-                //#if !DEBUG
+#if !DEBUG
                 try
-                //#endif
+#endif
                 {
                     if (cts.IsCancellationRequested)
                         break;
 
                     await P.OnEventAsync(E, this);
                 }
-                //#if !DEBUG
+#if !DEBUG
                 catch (Exception Except)
                 {
                     Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
@@ -379,7 +379,7 @@ namespace IW4MAdmin
                     Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                     continue;
                 }
-                //#endif
+#endif
             }
         }
 
@@ -540,7 +540,6 @@ namespace IW4MAdmin
                 }
                 oldLines = lines;
                 l_size = LogFile.Length();
-                if (!((ApplicationManager)Manager).Running)
                 {
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                         await plugin.OnUnloadAsync();
@@ -964,7 +963,7 @@ namespace IW4MAdmin
         override public void InitializeTokens()
         {
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", Manager.GetClientService().GetTotalClientsAsync().Result.ToString));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", Program.Version.ToString));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", IW4MAdmin.Application.Program.Version.ToString));
         }
     }
 }

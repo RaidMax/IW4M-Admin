@@ -15,6 +15,9 @@
     <PackageProjectUrl>https://raidmax.org/IW4MAdmin</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
     <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>

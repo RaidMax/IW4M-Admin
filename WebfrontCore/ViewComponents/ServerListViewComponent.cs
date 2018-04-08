@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Dtos;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebfrontCore.ViewComponents
 {
@@ -11,7 +8,7 @@ namespace WebfrontCore.ViewComponents
     {
         public IViewComponentResult Invoke()
         {
-            var servers = IW4MAdmin.Program.ServerManager.GetServers();
+            var servers = Program.Manager.GetServers();
             var serverInfo = servers.Select(s => new ServerInfo()
             {
                 Name = s.Hostname,

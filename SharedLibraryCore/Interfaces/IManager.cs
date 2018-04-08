@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
-using System.Threading.Tasks;
 using SharedLibraryCore.Configuration;
 
 namespace SharedLibraryCore.Interfaces
@@ -21,5 +22,6 @@ namespace SharedLibraryCore.Interfaces
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
         IDictionary<int, Player> GetPrivilegedClients();
+        IEventApi GetEventApi();
     }
 }

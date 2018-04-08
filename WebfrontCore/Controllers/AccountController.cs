@@ -19,7 +19,7 @@ namespace WebfrontCore.Controllers
 
             try
             {
-                var client = IW4MAdmin.Program.ServerManager.PrivilegedClients[clientId];
+                var client = Manager.GetPrivilegedClients()[clientId];
                 string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt));
 
                 if (hashedPassword[0] == client.Password)

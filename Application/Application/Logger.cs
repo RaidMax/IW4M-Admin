@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace IW4MAdmin
+namespace IW4MAdmin.Application
 {
     class Logger : SharedLibraryCore.Interfaces.ILogger
     {

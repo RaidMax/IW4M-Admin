@@ -130,7 +130,10 @@ namespace SharedLibraryCore.RCon
 #if DEBUG
                     Log.WriteDebug($"Received {bytesRead} bytes from {ServerConnection.RemoteEndPoint}");
 #endif
-                    connectionState.ResponseString.Append(Encoding.UTF7.GetString(connectionState.Buffer, 0, bytesRead).TrimEnd('\0'));
+                    connectionState.ResponseString.Append(Encoding.UTF7.GetString(connectionState.Buffer, 0, bytesRead).TrimEnd('\0') + '\n');
+
+                    if (!connectionState.Buffer.Take(4).ToArray().SequenceEqual(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }))
+                        throw new NetworkException("Unexpected packet received");
 
                     if (serverConnection.Available > 0)
                     {
@@ -159,9 +162,9 @@ namespace SharedLibraryCore.RCon
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
         {
             // will this really prevent flooding?
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 150)
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 35)
             {
-                await Task.Delay(150);
+                await Task.Delay(35);
             }
 
             LastQuery = DateTime.Now;
@@ -174,10 +177,10 @@ namespace SharedLibraryCore.RCon
             {
                 case StaticHelpers.QueryType.DVAR:
                 case StaticHelpers.QueryType.COMMAND:
-                    queryString = $"ÿÿÿÿrcon {RConPassword} {parameters}";
+                    queryString = $"ÿÿÿÿ\x02rcon {RConPassword} {parameters}";
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
-                    queryString = "ÿÿÿÿgetstatus";
+                    queryString = "ÿÿÿÿ\x02getstatus";
                     break;
             }
 
@@ -288,8 +291,9 @@ namespace SharedLibraryCore.RCon
 
             string[] splitResponse = queryResponse.Split(new char[]
             {
-                StaticHelpers.SeperatorChar
-            }, StringSplitOptions.RemoveEmptyEntries);
+                '\n'
+            }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim()).ToArray();
             return splitResponse;
         }
     }

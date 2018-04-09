@@ -1,11 +1,6 @@
-﻿using SharedLibrary.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SharedLibraryCore.Interfaces;
 
-namespace Welcome_Plugin
+namespace IW4MAdmin.Plugins.Welcome
 {
     class WelcomeConfiguration : IBaseConfiguration
     {

@@ -193,7 +193,7 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
                 return await context.Clients
-                    .Where(c => c.Level == Objects.Player.Permission.Owner)
+                    .Where(c => c.Level == Player.Permission.Owner)
                     .ToListAsync();
         }
 
@@ -229,18 +229,18 @@ namespace SharedLibraryCore.Services
             using (var context = new DatabaseContext())
             {
                 var iqClients = (from alias in context.Aliases
-                                    .AsNoTracking()
-                                 where alias.Name
-                                     .Contains(name)
-                                 join link in context.AliasLinks
-                                 on alias.LinkId equals link.AliasLinkId
-                                 join client in context.Clients
-                                     .AsNoTracking()
-                                 on alias.LinkId equals client.AliasLinkId
-                                 select client)
-                                    .Distinct()
-                                    .Include(c => c.CurrentAlias)
-                                    .Include(c => c.AliasLink.Children);
+                       .AsNoTracking()
+                    where alias.Name
+                        .Contains(name)
+                    join link in context.AliasLinks
+                    on alias.LinkId equals link.AliasLinkId
+                    join client in context.Clients
+                        .AsNoTracking()
+                    on alias.LinkId equals client.AliasLinkId
+                    select client)
+                       .Distinct()
+                       .Include(c => c.CurrentAlias)
+                       .Include(c => c.AliasLink.Children);
 
                 return await iqClients.ToListAsync();
             }
@@ -251,17 +251,17 @@ namespace SharedLibraryCore.Services
             using (var context = new DatabaseContext())
             {
                 var iqClients = (from alias in context.Aliases
-                                    .AsNoTracking()
-                                 where alias.IPAddress == ipAddress
-                                 join link in context.AliasLinks
-                                 on alias.LinkId equals link.AliasLinkId
-                                 join client in context.Clients
-                                     .AsNoTracking()
-                                 on alias.LinkId equals client.AliasLinkId
-                                 select client)
-                                    .Distinct()
-                                    .Include(c => c.CurrentAlias)
-                                    .Include(c => c.AliasLink.Children);
+                       .AsNoTracking()
+                    where alias.IPAddress == ipAddress
+                    join link in context.AliasLinks
+                    on alias.LinkId equals link.AliasLinkId
+                    join client in context.Clients
+                        .AsNoTracking()
+                    on alias.LinkId equals client.AliasLinkId
+                    select client)
+                       .Distinct()
+                       .Include(c => c.CurrentAlias)
+                       .Include(c => c.AliasLink.Children);
 
                 return await iqClients.ToListAsync();
             }
@@ -288,7 +288,7 @@ namespace SharedLibraryCore.Services
                     .AsNoTracking()
                     .Where(c => (DateTime.UtcNow - c.LastConnection).TotalDays >= inactiveDays)
                     .ToListAsync();
-                inactive.ForEach(c => c.Level = Objects.Player.Permission.User);
+                inactive.ForEach(c => c.Level = Player.Permission.User);
                 await context.SaveChangesAsync();
                 return inactive;
             }

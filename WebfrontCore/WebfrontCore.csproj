@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
     <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
     <Version>2.0.0</Version>
@@ -15,7 +17,7 @@
     <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
     <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
     <ApplicationIcon />
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <StartupObject />
   </PropertyGroup>
 
@@ -26,7 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\Account\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
@@ -41,13 +42,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
+    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
+      <Private></Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="appsettings.json">
+    <Content Update="WebfrontSettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties WebfrontSettings_1json__JSONSchema="http://json.schemastore.org/appsettings" /></VisualStudio></ProjectExtensions>
 
 </Project>

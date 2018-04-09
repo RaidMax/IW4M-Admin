@@ -1,10 +1,11 @@
-﻿
-using System;
-using SharedLibraryCore;
+﻿using System;
 using System.Threading.Tasks;
 using System.IO;
-using SharedLibraryCore.Objects;
 using System.Reflection;
+
+using SharedLibraryCore;
+using SharedLibraryCore.Objects;
+using SharedLibraryCore.Database;
 
 namespace IW4MAdmin.Application
 {
@@ -29,6 +30,9 @@ namespace IW4MAdmin.Application
 
             try
             {
+                using (var db = new DatabaseContext())
+                    new ContextSeed(db).Seed().Wait();
+
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
@@ -66,7 +70,7 @@ namespace IW4MAdmin.Application
             catch (Exception e)
             {
                 Console.WriteLine($"Fatal Error during initialization: {e.Message}");
-                while(e.InnerException != null)
+                while (e.InnerException != null)
                 {
                     e = e.InnerException;
                     Console.WriteLine($"Inner exception: {e.Message}");

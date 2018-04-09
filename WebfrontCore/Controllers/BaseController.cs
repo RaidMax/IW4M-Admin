@@ -18,11 +18,6 @@ namespace WebfrontCore.Controllers
         protected bool Authorized { get; private set; }
         protected EFClient User { get; private set; }
 
-       /* public BaseController(DatabaseContext ctx)
-        {
-            Context = ctx;
-        }*/
-
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             Manager = Program.Manager;

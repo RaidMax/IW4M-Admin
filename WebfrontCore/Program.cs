@@ -8,6 +8,11 @@ namespace WebfrontCore
     {
         public static IManager Manager;
 
+        static void Main(string[] args)
+        {
+            throw new System.Exception("Webfront core cannot be run as a standalone application");
+        }
+
         public static void Init(IManager mgr)
         {
             Manager = mgr;

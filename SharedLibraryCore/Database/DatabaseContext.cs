@@ -63,6 +63,12 @@ namespace SharedLibraryCore.Database
                 .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // force full name for database conversion
+            modelBuilder.Entity<EFClient>().ToTable("EFClients");
+            modelBuilder.Entity<EFAlias>().ToTable("EFAlias");
+            modelBuilder.Entity<EFAliasLink>().ToTable("EFAliasLinks");
+            modelBuilder.Entity<EFPenalty>().ToTable("EFPenalties");
+
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
 #if !DEBUG
             foreach (string dllPath in Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))

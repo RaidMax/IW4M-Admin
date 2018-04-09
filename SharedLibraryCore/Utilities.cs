@@ -362,7 +362,7 @@ namespace SharedLibraryCore
                 Name = client.CurrentAlias.Name,
                 IPAddress = client.CurrentAlias.IPAddress,
                 Level = client.Level,
-                LastConnection = DateTime.UtcNow,
+                LastConnection = client.LastConnection == DateTime.MinValue ? DateTime.UtcNow : client.LastConnection,
                 CurrentAlias = client.CurrentAlias,
                 CurrentAliasId = client.CurrentAlias.AliasId
             };
@@ -391,7 +391,9 @@ namespace SharedLibraryCore
 
         public static async Task<DVAR<T>> GetDvarAsync<T>(this Server server, string dvarName)
         {
-            string[] LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName);
+            string[] LineSplit = server.GameName != Game.T6M ?
+                await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName) :
+                await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
 
             if (LineSplit.Length != 3)
             {

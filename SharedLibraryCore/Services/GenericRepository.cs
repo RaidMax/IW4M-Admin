@@ -51,10 +51,13 @@ namespace SharedLibraryCore.Services
             return this.GetQuery(predicate, orderExpression).AsEnumerable();
         }
 
-
         public virtual IQueryable<TEntity> GetQuery(Expression<Func<TEntity, bool>> predicate = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderExpression = null)
         {
             IQueryable<TEntity> qry = this.DBSet;
+
+            foreach (var property in this.Context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+                qry = qry.Include(property.Name);
+
 
             if (predicate != null)
                 qry = qry.Where(predicate);

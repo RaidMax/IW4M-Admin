@@ -9,7 +9,7 @@ namespace SharedLibraryCore.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AliasLinks",
+                name: "EFAliasLinks",
                 columns: table => new
                 {
                     AliasLinkId = table.Column<int>(nullable: false)
@@ -18,11 +18,11 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AliasLinks", x => x.AliasLinkId);
+                    table.PrimaryKey("PK_EFAliasLinks", x => x.AliasLinkId);
                 });
 
             migrationBuilder.CreateTable(
-                name: "EFServer",
+                name: "EFServers",
                 columns: table => new
                 {
                     ServerId = table.Column<int>(nullable: false),
@@ -31,7 +31,7 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EFServer", x => x.ServerId);
+                    table.PrimaryKey("PK_EFServers", x => x.ServerId);
                 });
 
             migrationBuilder.CreateTable(
@@ -50,7 +50,7 @@ namespace SharedLibraryCore.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Aliases",
+                name: "EFAlias",
                 columns: table => new
                 {
                     AliasId = table.Column<int>(nullable: false)
@@ -63,11 +63,11 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Aliases", x => x.AliasId);
+                    table.PrimaryKey("PK_EFAlias", x => x.AliasId);
                     table.ForeignKey(
-                        name: "FK_Aliases_AliasLinks_LinkId",
+                        name: "FK_EFAlias_EFAliasLinks_LinkId",
                         column: x => x.LinkId,
-                        principalTable: "AliasLinks",
+                        principalTable: "EFAliasLinks",
                         principalColumn: "AliasLinkId",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -87,15 +87,15 @@ namespace SharedLibraryCore.Migrations
                 {
                     table.PrimaryKey("PK_EFServerStatistics", x => x.StatisticId);
                     table.ForeignKey(
-                        name: "FK_EFServerStatistics_EFServer_ServerId",
+                        name: "FK_EFServerStatistics_EFServers_ServerId",
                         column: x => x.ServerId,
-                        principalTable: "EFServer",
+                        principalTable: "EFServers",
                         principalColumn: "ServerId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Clients",
+                name: "EFClients",
                 columns: table => new
                 {
                     ClientId = table.Column<int>(nullable: false)
@@ -115,23 +115,23 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Clients", x => x.ClientId);
+                    table.PrimaryKey("PK_EFClients", x => x.ClientId);
                     table.ForeignKey(
-                        name: "FK_Clients_AliasLinks_AliasLinkId",
+                        name: "FK_EFClients_EFAliasLinks_AliasLinkId",
                         column: x => x.AliasLinkId,
-                        principalTable: "AliasLinks",
+                        principalTable: "EFAliasLinks",
                         principalColumn: "AliasLinkId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Clients_Aliases_CurrentAliasId",
+                        name: "FK_EFClients_EFAlias_CurrentAliasId",
                         column: x => x.CurrentAliasId,
-                        principalTable: "Aliases",
+                        principalTable: "EFAlias",
                         principalColumn: "AliasId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "EFClientKill",
+                name: "EFClientKills",
                 columns: table => new
                 {
                     KillId = table.Column<long>(nullable: false)
@@ -152,39 +152,39 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EFClientKill", x => x.KillId);
+                    table.PrimaryKey("PK_EFClientKills", x => x.KillId);
                     table.ForeignKey(
-                        name: "FK_EFClientKill_Clients_AttackerId",
+                        name: "FK_EFClientKills_EFClients_AttackerId",
                         column: x => x.AttackerId,
-                        principalTable: "Clients",
+                        principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFClientKill_Vector3_DeathOriginVector3Id",
+                        name: "FK_EFClientKills_Vector3_DeathOriginVector3Id",
                         column: x => x.DeathOriginVector3Id,
                         principalTable: "Vector3",
                         principalColumn: "Vector3Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_EFClientKill_Vector3_KillOriginVector3Id",
+                        name: "FK_EFClientKills_Vector3_KillOriginVector3Id",
                         column: x => x.KillOriginVector3Id,
                         principalTable: "Vector3",
                         principalColumn: "Vector3Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_EFClientKill_EFServer_ServerId",
+                        name: "FK_EFClientKills_EFServers_ServerId",
                         column: x => x.ServerId,
-                        principalTable: "EFServer",
+                        principalTable: "EFServers",
                         principalColumn: "ServerId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFClientKill_Clients_VictimId",
+                        name: "FK_EFClientKills_EFClients_VictimId",
                         column: x => x.VictimId,
-                        principalTable: "Clients",
+                        principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFClientKill_Vector3_ViewAnglesVector3Id",
+                        name: "FK_EFClientKills_Vector3_ViewAnglesVector3Id",
                         column: x => x.ViewAnglesVector3Id,
                         principalTable: "Vector3",
                         principalColumn: "Vector3Id",
@@ -192,7 +192,7 @@ namespace SharedLibraryCore.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EFClientMessage",
+                name: "EFClientMessages",
                 columns: table => new
                 {
                     MessageId = table.Column<long>(nullable: false)
@@ -205,17 +205,17 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EFClientMessage", x => x.MessageId);
+                    table.PrimaryKey("PK_EFClientMessages", x => x.MessageId);
                     table.ForeignKey(
-                        name: "FK_EFClientMessage_Clients_ClientId",
+                        name: "FK_EFClientMessages_EFClients_ClientId",
                         column: x => x.ClientId,
-                        principalTable: "Clients",
+                        principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFClientMessage_EFServer_ServerId",
+                        name: "FK_EFClientMessages_EFServers_ServerId",
                         column: x => x.ServerId,
-                        principalTable: "EFServer",
+                        principalTable: "EFServers",
                         principalColumn: "ServerId",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -237,21 +237,21 @@ namespace SharedLibraryCore.Migrations
                 {
                     table.PrimaryKey("PK_EFClientStatistics", x => new { x.ClientId, x.ServerId });
                     table.ForeignKey(
-                        name: "FK_EFClientStatistics_Clients_ClientId",
+                        name: "FK_EFClientStatistics_EFClients_ClientId",
                         column: x => x.ClientId,
-                        principalTable: "Clients",
+                        principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFClientStatistics_EFServer_ServerId",
+                        name: "FK_EFClientStatistics_EFServers_ServerId",
                         column: x => x.ServerId,
-                        principalTable: "EFServer",
+                        principalTable: "EFServers",
                         principalColumn: "ServerId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Penalties",
+                name: "EFPenalties",
                 columns: table => new
                 {
                     PenaltyId = table.Column<int>(nullable: false)
@@ -267,111 +267,123 @@ namespace SharedLibraryCore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Penalties", x => x.PenaltyId);
+                    table.PrimaryKey("PK_EFPenalties", x => x.PenaltyId);
                     table.ForeignKey(
-                        name: "FK_Penalties_AliasLinks_LinkId",
+                        name: "FK_EFPenalties_EFAliasLinks_LinkId",
                         column: x => x.LinkId,
-                        principalTable: "AliasLinks",
+                        principalTable: "EFAliasLinks",
                         principalColumn: "AliasLinkId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Penalties_Clients_OffenderId",
+                        name: "FK_EFPenalties_EFClients_OffenderId",
                         column: x => x.OffenderId,
-                        principalTable: "Clients",
+                        principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Penalties_Clients_PunisherId",
+                        name: "FK_EFPenalties_EFClients_PunisherId",
                         column: x => x.PunisherId,
-                        principalTable: "Clients",
+                        principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "EFHitLocationCount",
+                name: "EFHitLocationCounts",
                 columns: table => new
                 {
                     HitLocationCountId = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Active = table.Column<bool>(nullable: false),
-                    EFClientStatisticsClientId = table.Column<int>(nullable: true),
-                    EFClientStatisticsServerId = table.Column<int>(nullable: true),
+                    EFClientStatistics_ClientId = table.Column<int>(nullable: false),
                     HitCount = table.Column<int>(nullable: false),
                     HitOffsetAverage = table.Column<float>(nullable: false),
-                    Location = table.Column<int>(nullable: false)
+                    Location = table.Column<int>(nullable: false),
+                    EFClientStatistics_ServerId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EFHitLocationCount", x => x.HitLocationCountId);
+                    table.PrimaryKey("PK_EFHitLocationCounts", x => x.HitLocationCountId);
                     table.ForeignKey(
-                        name: "FK_EFHitLocationCount_EFClientStatistics_EFClientStatisticsClientId_EFClientStatisticsServerId",
-                        columns: x => new { x.EFClientStatisticsClientId, x.EFClientStatisticsServerId },
+                        name: "FK_EFHitLocationCounts_EFClients_EFClientStatistics_ClientId",
+                        column: x => x.EFClientStatistics_ClientId,
+                        principalTable: "EFClients",
+                        principalColumn: "ClientId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EFHitLocationCounts_EFServers_EFClientStatistics_ServerId",
+                        column: x => x.EFClientStatistics_ServerId,
+                        principalTable: "EFServers",
+                        principalColumn: "ServerId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
+                        columns: x => new { x.EFClientStatistics_ClientId, x.EFClientStatistics_ServerId },
                         principalTable: "EFClientStatistics",
                         principalColumns: new[] { "ClientId", "ServerId" },
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Aliases_LinkId",
-                table: "Aliases",
+                name: "IX_EFAlias_LinkId",
+                table: "EFAlias",
                 column: "LinkId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Clients_AliasLinkId",
-                table: "Clients",
-                column: "AliasLinkId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Clients_CurrentAliasId",
-                table: "Clients",
-                column: "CurrentAliasId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Clients_NetworkId",
-                table: "Clients",
-                column: "NetworkId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EFClientKill_AttackerId",
-                table: "EFClientKill",
+                name: "IX_EFClientKills_AttackerId",
+                table: "EFClientKills",
                 column: "AttackerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientKill_DeathOriginVector3Id",
-                table: "EFClientKill",
+                name: "IX_EFClientKills_DeathOriginVector3Id",
+                table: "EFClientKills",
                 column: "DeathOriginVector3Id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientKill_KillOriginVector3Id",
-                table: "EFClientKill",
+                name: "IX_EFClientKills_KillOriginVector3Id",
+                table: "EFClientKills",
                 column: "KillOriginVector3Id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientKill_ServerId",
-                table: "EFClientKill",
+                name: "IX_EFClientKills_ServerId",
+                table: "EFClientKills",
                 column: "ServerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientKill_VictimId",
-                table: "EFClientKill",
+                name: "IX_EFClientKills_VictimId",
+                table: "EFClientKills",
                 column: "VictimId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientKill_ViewAnglesVector3Id",
-                table: "EFClientKill",
+                name: "IX_EFClientKills_ViewAnglesVector3Id",
+                table: "EFClientKills",
                 column: "ViewAnglesVector3Id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientMessage_ClientId",
-                table: "EFClientMessage",
+                name: "IX_EFClientMessages_ClientId",
+                table: "EFClientMessages",
                 column: "ClientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFClientMessage_ServerId",
-                table: "EFClientMessage",
+                name: "IX_EFClientMessages_ServerId",
+                table: "EFClientMessages",
                 column: "ServerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFClients_AliasLinkId",
+                table: "EFClients",
+                column: "AliasLinkId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFClients_CurrentAliasId",
+                table: "EFClients",
+                column: "CurrentAliasId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFClients_NetworkId",
+                table: "EFClients",
+                column: "NetworkId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_EFClientStatistics_ServerId",
@@ -379,47 +391,52 @@ namespace SharedLibraryCore.Migrations
                 column: "ServerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFHitLocationCount_EFClientStatisticsClientId_EFClientStatisticsServerId",
-                table: "EFHitLocationCount",
-                columns: new[] { "EFClientStatisticsClientId", "EFClientStatisticsServerId" });
+                name: "IX_EFHitLocationCounts_EFClientStatistics_ServerId",
+                table: "EFHitLocationCounts",
+                column: "EFClientStatistics_ServerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFHitLocationCounts_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
+                table: "EFHitLocationCounts",
+                columns: new[] { "EFClientStatistics_ClientId", "EFClientStatistics_ServerId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFPenalties_LinkId",
+                table: "EFPenalties",
+                column: "LinkId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFPenalties_OffenderId",
+                table: "EFPenalties",
+                column: "OffenderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFPenalties_PunisherId",
+                table: "EFPenalties",
+                column: "PunisherId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EFServerStatistics_ServerId",
                 table: "EFServerStatistics",
                 column: "ServerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Penalties_LinkId",
-                table: "Penalties",
-                column: "LinkId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Penalties_OffenderId",
-                table: "Penalties",
-                column: "OffenderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Penalties_PunisherId",
-                table: "Penalties",
-                column: "PunisherId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "EFClientKill");
+                name: "EFClientKills");
 
             migrationBuilder.DropTable(
-                name: "EFClientMessage");
+                name: "EFClientMessages");
 
             migrationBuilder.DropTable(
-                name: "EFHitLocationCount");
+                name: "EFHitLocationCounts");
+
+            migrationBuilder.DropTable(
+                name: "EFPenalties");
 
             migrationBuilder.DropTable(
                 name: "EFServerStatistics");
-
-            migrationBuilder.DropTable(
-                name: "Penalties");
 
             migrationBuilder.DropTable(
                 name: "Vector3");
@@ -428,16 +445,16 @@ namespace SharedLibraryCore.Migrations
                 name: "EFClientStatistics");
 
             migrationBuilder.DropTable(
-                name: "Clients");
+                name: "EFClients");
 
             migrationBuilder.DropTable(
-                name: "EFServer");
+                name: "EFServers");
 
             migrationBuilder.DropTable(
-                name: "Aliases");
+                name: "EFAlias");
 
             migrationBuilder.DropTable(
-                name: "AliasLinks");
+                name: "EFAliasLinks");
         }
     }
 }

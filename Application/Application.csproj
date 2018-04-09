@@ -1,8 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
     <PackageId>RaidMax.IW4MAdmin.Application</PackageId>
     <Version>2.0.0</Version>
     <Authors>RaidMax</Authors>
@@ -15,6 +16,7 @@
     <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
     <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
     <ApplicationIcon />
+    <AssemblyName>IW4MAdmin</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -43,7 +45,7 @@
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="call  $(ProjectDir)BuildScripts\PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)&#xD;&#xA;&#xD;&#xA;if $(ProjectDir) == &quot;*Undefined*&quot; (&#xD;&#xA;call BuildScripts\PostPublish.bat $(SolutionDir)&#xD;&#xA;)&#xD;&#xA;" />
+    <Exec Command="call $(ProjectDir)BuildScripts\PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>
 
 </Project>

@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
-using SharedLibraryCore.Services;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
@@ -95,7 +94,9 @@ namespace IW4MAdmin
                 // client has connected in the past
                 else
                 {
+                    player.LastConnection = DateTime.UtcNow;
                     client.Connections += 1;
+
                     var existingAlias = client.AliasLink.Children
                         .FirstOrDefault(a => a.Name == polledPlayer.Name && a.IPAddress == polledPlayer.IPAddress);
 
@@ -641,16 +642,12 @@ namespace IW4MAdmin
             string mainPath = (GameName == Game.IW4 && onelog.Value >= 0) ? "userraw" : "main";
             // patch for T5M:V2 log path
             mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
+            // patch for T6M:PLUTONIUM
+            mainPath = (GameName == Game.T6M) ? "t6r/data" : mainPath;
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
-
-            // fix to prevent wine drive prefix when running in mono
-            if (Utilities.IsRunningOnMono())
-            {
-                logPath = Regex.Replace(logPath, @"[A-Z]:", "");
-            }
 
             if (!File.Exists(logPath))
             {
@@ -964,7 +961,7 @@ namespace IW4MAdmin
         override public void InitializeTokens()
         {
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", Manager.GetClientService().GetTotalClientsAsync().Result.ToString));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", IW4MAdmin.Application.Program.Version.ToString));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", Application.Program.Version.ToString));
         }
     }
 }

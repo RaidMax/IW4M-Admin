@@ -5,11 +5,11 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
-    <PackageId>RaidMax.IW4MAdmin.Plugins.Stats</PackageId>
+    <PackageId>RaidMax.IW4MAdmin.Plugins.Welcome</PackageId>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
-    <Product>Client Statistics</Product>
-    <Description>Client Statistics Plugin for IW4MAdmin</Description>
+    <Product>Welcome Plugin for IW4MAdmin</Product>
+    <Description>Welcome plugin for IW4MAdmin welcomes clients to the server</Description>
     <Copyright>2018</Copyright>
   </PropertyGroup>
 
@@ -18,11 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Database\" />
+    <None Update="MaxMind\GeoIP.dat">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;copy &quot;$(ProjectDir)MaxMind\GeoIP.dat&quot; &quot;$(SolutionDir)BUILD\Plugins\GeoIP.dat&quot;" />
   </Target>
 
 </Project>

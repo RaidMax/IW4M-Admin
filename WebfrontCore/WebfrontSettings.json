@@ -9,9 +9,5 @@
   },
   "Web": {
     "Address": "http://127.0.0.1:5000"
-  },
-  "ConnectionStrings": {
-    "WindowsConnection": "Data Source=|DataDirectory|\\Database.sdf",
-    "LinuxConnection": "Server=127.0.0.1;User=user;Database=IW4MAdmin;Password=password"
   }
 }

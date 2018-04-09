@@ -12,7 +12,7 @@ using System;
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20180408213153_Initial Create")]
+    [Migration("20180409183408_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -66,7 +66,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasIndex("ViewAnglesVector3Id");
 
-                    b.ToTable("EFClientKill");
+                    b.ToTable("EFClientKills");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientMessage", b =>
@@ -90,7 +90,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("EFClientMessage");
+                    b.ToTable("EFClientMessages");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientStatistics", b =>
@@ -125,9 +125,8 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<bool>("Active");
 
-                    b.Property<int?>("EFClientStatisticsClientId");
-
-                    b.Property<int?>("EFClientStatisticsServerId");
+                    b.Property<int>("ClientId")
+                        .HasColumnName("EFClientStatistics_ClientId");
 
                     b.Property<int>("HitCount");
 
@@ -135,11 +134,16 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<int>("Location");
 
+                    b.Property<int>("ServerId")
+                        .HasColumnName("EFClientStatistics_ServerId");
+
                     b.HasKey("HitLocationCountId");
 
-                    b.HasIndex("EFClientStatisticsClientId", "EFClientStatisticsServerId");
+                    b.HasIndex("ServerId");
 
-                    b.ToTable("EFHitLocationCount");
+                    b.HasIndex("ClientId", "ServerId");
+
+                    b.ToTable("EFHitLocationCounts");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFServer", b =>
@@ -152,7 +156,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasKey("ServerId");
 
-                    b.ToTable("EFServer");
+                    b.ToTable("EFServers");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFServerStatistics", b =>
@@ -195,7 +199,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasIndex("LinkId");
 
-                    b.ToTable("Aliases");
+                    b.ToTable("EFAlias");
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFAliasLink", b =>
@@ -207,7 +211,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasKey("AliasLinkId");
 
-                    b.ToTable("AliasLinks");
+                    b.ToTable("EFAliasLinks");
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFClient", b =>
@@ -248,7 +252,7 @@ namespace SharedLibraryCore.Migrations
                     b.HasIndex("NetworkId")
                         .IsUnique();
 
-                    b.ToTable("Clients");
+                    b.ToTable("EFClients");
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFPenalty", b =>
@@ -281,7 +285,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasIndex("PunisherId");
 
-                    b.ToTable("Penalties");
+                    b.ToTable("EFPenalties");
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Helpers.Vector3", b =>
@@ -358,9 +362,20 @@ namespace SharedLibraryCore.Migrations
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFHitLocationCount", b =>
                 {
+                    b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFClientStatistics")
                         .WithMany("HitLocations")
-                        .HasForeignKey("EFClientStatisticsClientId", "EFClientStatisticsServerId");
+                        .HasForeignKey("ClientId", "ServerId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFServerStatistics", b =>

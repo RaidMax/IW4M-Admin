@@ -17,6 +17,10 @@ namespace SharedLibraryCore.Database
 
         public async Task Seed()
         {
+            // make sure database exists
+            //context.Database.EnsureCreated();
+            context.Database.Migrate();
+
             if (context.AliasLinks.Count() == 0)
             {
                 context.AliasLinks.Add(new EFAliasLink()

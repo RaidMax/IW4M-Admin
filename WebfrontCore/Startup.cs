@@ -20,19 +20,12 @@ namespace WebfrontCore
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile("WebfrontSettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
 
             _appHost = env;
-
-            using (var db = new DatabaseContext())
-            {
-                db.Database.EnsureCreated();
-                db.Database.Migrate();
-                new ContextSeed(db).Seed().Wait();
-            }
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.

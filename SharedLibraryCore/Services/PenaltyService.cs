@@ -14,36 +14,45 @@ namespace SharedLibraryCore.Services
 {
     public class PenaltyService : Interfaces.IEntityService<EFPenalty>
     {
-        public async Task<EFPenalty> Create(EFPenalty entity)
+        public async Task<EFPenalty> Create(EFPenalty newEntity)
         {
             using (var context = new DatabaseContext())
             {
-                entity.Offender = context.Clients.Single(e => e.ClientId == entity.Offender.ClientId);
-                entity.Punisher = context.Clients.Single(e => e.ClientId == entity.Punisher.ClientId);
-                entity.Link = context.AliasLinks.Single(l => l.AliasLinkId == entity.Link.AliasLinkId);
+                // create the actual EFPenalty
+                EFPenalty addedEntity = new EFPenalty()
+                {
+                    OffenderId = newEntity.Offender.ClientId,
+                    PunisherId = newEntity.Punisher.ClientId,
+                    LinkId = newEntity.Link.AliasLinkId,
+                    Type = newEntity.Type,
+                    Active = true,
+                    Expires = newEntity.Expires,
+                    Offense = newEntity.Offense,
+                    When = newEntity.When,
+                };
 
-                if (entity.Expires == DateTime.MaxValue)
-                    entity.Expires = DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString());
+                if (addedEntity.Expires == DateTime.MaxValue)
+                    addedEntity.Expires = DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString());
 
                 // make bans propogate to all aliases
-                if (entity.Type == Objects.Penalty.PenaltyType.Ban)
+                if (addedEntity.Type == Objects.Penalty.PenaltyType.Ban)
                 {
                     await context.Clients
-                        .Where(c => c.AliasLinkId == entity.Link.AliasLinkId)
+                        .Where(c => c.AliasLinkId == addedEntity.LinkId)
                         .ForEachAsync(c => c.Level = Objects.Player.Permission.Banned);
                 }
 
                 // make flags propogate to all aliases
-                else if (entity.Type == Objects.Penalty.PenaltyType.Flag)
+                else if (addedEntity.Type == Objects.Penalty.PenaltyType.Flag)
                 {
                     await context.Clients
-                      .Where(c => c.AliasLinkId == entity.Link.AliasLinkId)
+                      .Where(c => c.AliasLinkId == addedEntity.LinkId)
                       .ForEachAsync(c => c.Level = Objects.Player.Permission.Flagged);
                 }
 
-                context.Penalties.Add(entity);
+                context.Penalties.Add(addedEntity);
                 await context.SaveChangesAsync();
-                return entity;
+                return addedEntity;
             }
         }
 

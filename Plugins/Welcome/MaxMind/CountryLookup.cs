@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+using SharedLibraryCore;
 using System;
 using System.IO;
-using System.Data;
 using System.Net;
 
 
@@ -59,24 +59,10 @@ namespace CountryLookupProj
             fileInput = new FileStream(fileName, FileMode.Open, FileAccess.Read);
         }
 
-        public string LookupCountryCode(string str)
-        {
-            IPAddress addr;
-            try
-            {
-                addr = IPAddress.Parse(str);
-            }
-            catch (FormatException)
-            {
-                return "--";
-            }
-            return LookupCountryCode(addr);
-        }
-
         private long AddrToNum(IPAddress addr)
         {
             long ipnum = 0;
-            byte[] b = BitConverter.GetBytes(addr.Address);
+            byte[] b = BitConverter.GetBytes((UInt32)addr.ToString().ConvertToIP());
             for (int i = 0; i < 4; ++i)
             {
                 long y = b[i];

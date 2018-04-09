@@ -12,11 +12,9 @@ namespace IW4MAdmin.Plugins.Stats.Models
 {
     public class EFClientStatistics : SharedEntity
     {
-        //[Key, Column(Order = 0)]
         public int ClientId { get; set; }
         [ForeignKey("ClientId")]
         public virtual EFClient Client { get; set; }
-        //[Key, Column(Order = 1)]
         public int ServerId { get; set; }
         [ForeignKey("ServerId")]
         public virtual EFServer Server { get; set; }

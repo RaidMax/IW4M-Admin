@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using SharedLibrary;
-using SharedLibrary.Interfaces;
-using SharedLibrary.Objects;
-using SharedLibrary.Configuration;
+using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Objects;
+using SharedLibraryCore.Configuration;
 
-namespace Welcome_Plugin
+namespace IW4MAdmin.Plugins.Welcome
 {
     public class Plugin : IPlugin
     {
@@ -45,12 +45,6 @@ namespace Welcome_Plugin
                     return "fourth";
                 case 5:
                     return "fifth";
-                /*  case 100:
-                        return "One-Hundreth (amazing!)";
-                    case 500:
-                        return "you're really ^5dedicated ^7to this server! This is your ^5500th^7";
-                    case 1000:
-                        return "you deserve a medal. it's your ^11000th^7";*/
                 default:
                     return connection.ToString() + Prefix;
             }
@@ -108,7 +102,7 @@ namespace Welcome_Plugin
 
             catch (Exception)
             {
-                joining.CurrentServer.Manager.GetLogger().WriteError("Could not open file Plugins/GeoIP.dat for Welcome Plugin");
+                joining.CurrentServer.Manager.GetLogger().WriteError("Could not open file Plugins\\GeoIP.dat for Welcome Plugin");
             }
             msg = msg.Replace("{{TimesConnected}}", TimesConnected(joining));
 

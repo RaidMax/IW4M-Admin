@@ -3,7 +3,7 @@ set ProjectDir=%2
 set TargetDir=%3
 set OutDir=%4
 
-echo "Copying dependency configs"
+echo Copying dependency configs
 copy "%SolutionDir%WebfrontCore\%OutDir%*.deps.json" "%TargetDir%"
 copy "%SolutionDir%SharedLibaryCore\%OutDir%*.deps.json" "%TargetDir%"
 
@@ -13,3 +13,6 @@ if not exist "%TargetDir%Plugins" (
 )
 
 xcopy /y "%SolutionDir%Build\Plugins" "%TargetDir%Plugins\"
+
+echo Copying plugins for publish
+xcopy /Y "%SolutionDir%BUILD\Plugins" "%SolutionDir%Publish\Windows\Plugins\"

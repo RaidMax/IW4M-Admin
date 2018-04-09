@@ -1,5 +1,6 @@
 ﻿using SharedLibraryCore.Database.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IW4MAdmin.Plugins.Stats.Models
 {
@@ -13,5 +14,12 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int HitCount { get; set; }
         [Required]
         public float HitOffsetAverage { get; set; }
+        public int ClientId { get; set; }
+        [ForeignKey("ClientId"), Column(Order = 0 )]
+        public EFClient Client { get; set; }
+        public int ServerId { get; set; }
+        [ForeignKey("ServerId"), Column(Order = 1)]
+        public EFServer Server { get; set; }
+
     }
 }

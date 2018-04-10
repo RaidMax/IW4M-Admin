@@ -6122,3 +6122,15 @@ form * {
   padding: 5px;
   visibility: hidden; }
 
+.input-border-transition {
+  -webkit-transition: border 500ms ease-out;
+  -moz-transition: border 500ms ease-out;
+  -o-transition: border 500ms ease-out; }
+
+.input-text-danger {
+  border-color: rgba(255, 69, 69, 0.85) !important; }
+
+.form-control:focus {
+  box-shadow: none;
+  -webkit-box-shadow: none; }
+

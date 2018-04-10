@@ -123,3 +123,18 @@ form * {
     padding: 5px;
     visibility:hidden;
 }
+
+.input-border-transition {
+    -webkit-transition: border 500ms ease-out;
+    -moz-transition: border 500ms ease-out;
+    -o-transition: border 500ms ease-out;
+}
+
+.input-text-danger {
+    border-color: $red !important;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    -webkit-box-shadow: none;
+} 

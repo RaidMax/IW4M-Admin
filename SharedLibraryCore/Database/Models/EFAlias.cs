@@ -12,13 +12,9 @@ namespace SharedLibraryCore.Database.Models
         public int LinkId { get; set; }
         [ForeignKey("LinkId")]
         public virtual EFAliasLink Link { get; set; }
-       // [Index("IX_IPandName", 0, IsUnique = true)]
-        //[MaxLength(24)]
         [Required]
         public string Name { get; set; }
-       //  [Index("IX_IPandName", 1, IsUnique = true)]
-       // [MaxLength(24)]
-       [Required]
+        [Required]
         public int IPAddress { get; set; }
         [Required]
         public DateTime DateAdded { get; set; }

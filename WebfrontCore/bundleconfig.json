@@ -17,7 +17,8 @@
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",
       "wwwroot/js/profile.js",
-      "wwwroot/js/server.js"
+      "wwwroot/js/server.js",
+      "wwwroot/js/search.js"
     ],
     // Optionally specify minification options
     "minify": {

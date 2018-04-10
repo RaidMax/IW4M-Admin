@@ -25,7 +25,21 @@ namespace IW4MAdmin
 
         public override int GetHashCode()
         {
-            return Math.Abs($"{IP}:{Port.ToString()}".GetHashCode());
+            // todo: make this better with collisions
+            int id = Math.Abs($"{IP}:{Port.ToString()}".Select(a => (int)a).Sum());
+
+            // this is a nasty fix for get hashcode being changed
+            switch(id)
+            {
+                case 765:
+                    return 886229536;
+                case 760:
+                    return 1645744423;
+                case 761:
+                    return 1645809959;
+            }
+
+            return id;
         }
 
         override public async Task<bool> AddPlayer(Player polledPlayer)

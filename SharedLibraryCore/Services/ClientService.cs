@@ -230,8 +230,8 @@ namespace SharedLibraryCore.Services
             {
                 var iqClients = (from alias in context.Aliases
                        .AsNoTracking()
-                    where alias.Name
-                        .Contains(name)
+                    where alias.Name.ToLower()
+                        .Contains(name.ToLower())
                     join link in context.AliasLinks
                     on alias.LinkId equals link.AliasLinkId
                     join client in context.Clients

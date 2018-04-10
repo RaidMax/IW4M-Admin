@@ -1,4 +1,27 @@
-﻿$(document).ready(function () {
+﻿function hideLoader() {
+    $('.layout-loading-icon').fadeOut();
+}
+
+function showLoader() {
+    $('.layout-loading-icon').attr('style', 'visibility:visible');
+    $('.layout-loading-icon').removeClass('text-danger');
+    $('.layout-loading-icon').fadeIn();
+}
+
+function errorLoader() {
+    $('.layout-loading-icon').addClass('text-danger');
+}
+
+$(document).ready(function () {
+    hideLoader();
+
+    /*
+     * hide loader when clicking
+     */
+    $(document).click(function (e) {
+        hideLoader()
+    });
+
     /*
      * handle action modal
      */
@@ -24,8 +47,10 @@
         e.preventDefault();
         $(this).append($('#target_id input'));
         const data = $(this).serialize();
+        showLoader();
         $.get($(this).attr('action') + '/?' + data)
             .done(function (response) {
+                hideLoader();
                 // success without content
                 if (response.length === 0) {
                     location.reload();
@@ -37,6 +62,8 @@
                 }
             })
             .fail(function (jqxhr, textStatus, error) {
+                errorLoader();
+                hideLoader();
                 if ($('#actionModal .modal-message').text.length > 0) {
                     $('#actionModal .modal-message').fadeOut('fast');
                 }

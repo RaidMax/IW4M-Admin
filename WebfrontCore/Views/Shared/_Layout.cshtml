@@ -13,12 +13,12 @@
     <meta name="keywords" content="@ViewBag.Keywords">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment include="Development">
-        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/css/bootstrap-custom.css" />
         <link rel="stylesheet" href="~/lib/open-iconic/font/css/open-iconic-bootstrap.css" />
+        <link rel="stylesheet" href="~/css/profile.css" />
     </environment>
     <environment include="Production">
-        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-        <link rel="stylesheet" href="~/lib/open-iconic/font/css/open-iconic-bootstrap.min.css" />
+        <link rel="stylesheet" href="~/css/global.min.css" />
     </environment>
 </head>
 <body>
@@ -35,20 +35,20 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink("Console", "Index", "Console", new { area = "" }, new { @class = "nav-link" })</li>
                     @if (!string.IsNullOrEmpty(ViewBag.DiscordLink))
-    {
-                <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" class="nav-link" target="_blank">Discord</a></li>
-}
+                    {
+                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" class="nav-link" target="_blank">Discord</a></li>
+                    }
                     @if (ViewBag.Authorized)
-    {
-                <li class="nav-item text-center text-md-left">@Html.ActionLink("Logout", "LogoutAsync", "Account", new { area = "" }, new { @class = "nav-link" })</li>
-                <li class="nav-item text-center text-md-left">@Html.ActionLink("", "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new { @class = "nav-link oi oi-person oi-fix-navbar w-100", title = "Client Profile" })</li>
-}
-else
-{
-                <li class="nav-item text-center text-md-left">
-                    <a href="#" id="profile_action_login_btn" class="nav-link profile-action oi oi-key oi-fix-navbar w-100" title="Login" data-action="login" aria-hidden="true"></a>
-                </li>
-}
+                    {
+                        <li class="nav-item text-center text-md-left">@Html.ActionLink("Logout", "LogoutAsync", "Account", new { area = "" }, new { @class = "nav-link" })</li>
+                        <li class="nav-item text-center text-md-left">@Html.ActionLink("", "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new { @class = "nav-link oi oi-person oi-fix-navbar w-100", title = "Client Profile" })</li>
+                    }
+                    else
+                    {
+                        <li class="nav-item text-center text-md-left">
+                            <a href="#" id="profile_action_login_btn" class="nav-link profile-action oi oi-key oi-fix-navbar w-100" title="Login" data-action="login" aria-hidden="true"></a>
+                        </li>
+                    }
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
                     <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />
@@ -56,6 +56,8 @@ else
             </div>
         </nav>
     </header>
+    <!-- loading icon -->
+        <div class="oi oi-loop-circular layout-loading-icon"></div>
 
     <!-- Main Modal -->
     <div class="modal fade" id="mainModal" tabindex="-1" role="dialog" aria-labelledby="mainModalLabel" aria-hidden="true">
@@ -107,17 +109,17 @@ else
         <script type="text/javascript" src="~/lib/jQuery/dist/jquery.js"></script>
         <script type="text/javascript" src="~/lib/moment/moment.js"></script>
         <script type="text/javascript" src="~/lib/moment-timezone/builds/moment-timezone-with-data.js"></script>
-        <!--<script type="text/javascript" src="~/lib/popper.js/dist/popper.js"></script>-->
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
-        <script type="text/javascript" src="~/js/global.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
+        <script type="text/javascript" src="~/js/action.js"></script>
     </environment>
     <environment include="Production">
         <script type="text/javascript" src="~/lib/jQuery/dist/jquery.min.js"></script>
         <script type="text/javascript" src="~/lib/moment/min/moment.min.js"></script>
         <script type="text/javascript" src="~/lib/moment-timezone/builds/moment-timezone.min.js"></script>
-        <!--<script type="text/javascript" src="~/lib/popper.js/dist/popper.min.js"></script>-->
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="~/js/global.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
+        <script type="text/javascript" src="~/js/global.min.js"></script>
     </environment>
     @RenderSection("scripts", required: false)
 </body>

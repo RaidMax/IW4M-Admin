@@ -10,13 +10,16 @@
         $('#console_command_response').text('All commands must start with !').addClass('text-danger');
         return false;
     }
-
+    showLoader();
     $.get('/Console/ExecuteAsync', { serverId: serverId, command: command })
         .done(function (response) {
+            hideLoader();
             $('#console_command_response').html(response);
             $('#console_command_value').val("");
         })
         .fail(function (jqxhr, textStatus, error) {
+            errorLoader();
+            hideLoader();
             $('#console_command_response').text('Could not execute command: ' + error).addClass('text-danger');
         });
 }

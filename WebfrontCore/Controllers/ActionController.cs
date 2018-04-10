@@ -21,6 +21,7 @@ namespace WebfrontCore.Controllers
                     new InputInfo()
                     {
                       Name = "Reason",
+                      Label = "Reason",
                       Placeholder = ""
                     }
                 },
@@ -52,6 +53,7 @@ namespace WebfrontCore.Controllers
                     new InputInfo()
                     {
                       Name = "Reason",
+                      Label = "Reason",
                       Placeholder = ""
                     }
                 },

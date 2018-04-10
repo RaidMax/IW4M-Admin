@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore
@@ -16,18 +17,28 @@ namespace WebfrontCore
         public static void Init(IManager mgr)
         {
             Manager = mgr;
+
             BuildWebHost().Run();
         }
 
-        public static IWebHost BuildWebHost() =>
-            new WebHostBuilder()
+        public static IWebHost BuildWebHost()
+        {
+
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("WebfrontSettings.json", optional: false, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
+
+            return new WebHostBuilder()
 #if DEBUG
                 .UseContentRoot(Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\", "WebfrontCore")))
 #else
                 .UseContentRoot(Directory.GetCurrentDirectory())
 #endif
+                .UseUrls(config["Web:Address"])
                 .UseKestrel()
                 .UseStartup<Startup>()
                 .Build();
+        }
     }
 }

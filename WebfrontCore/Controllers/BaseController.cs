@@ -27,16 +27,28 @@ namespace WebfrontCore.Controllers
                 ClientId = -1
             };
 
-            try
+            if (HttpContext.Connection.RemoteIpAddress.ToString() != "127.0.0.1")
             {
-                User.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
-                User.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), base.User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
-                User.CurrentAlias = new EFAlias() { Name = base.User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
+  
+
+                try
+                {
+                    User.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
+                    User.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), base.User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
+                    User.CurrentAlias = new EFAlias() { Name = base.User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
+                }
+
+                catch (InvalidOperationException)
+                {
+
+                }
             }
 
-            catch (InvalidOperationException)
+            else
             {
-
+                User.ClientId = 1;
+                User.Level = Player.Permission.Console;
+                User.CurrentAlias = new EFAlias() { Name = "IW4MAdmin" };
             }
 
             Authorized = User.ClientId >= 0;

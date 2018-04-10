@@ -1,5 +1,4 @@
 ﻿@import '../lib/bootstrap/scss/bootstrap.scss';
-@import 'profile.css';
 
 /*custom variables*/
 
@@ -97,4 +96,30 @@ form * {
     line-height: 1.5 !important;
     top: 0 !important;
     font-size: 1rem !important;
+}
+
+@-webkit-keyframes rotation {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+
+    to {
+        -webkit-transform: rotate(359deg);
+    }
+}
+
+.layout-loading-icon {
+    position: fixed !important;
+    left: 50%;
+    top: 50% !important;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    color: $primary;
+    font-size: 4rem;
+    -webkit-animation: rotation 1s infinite linear;
+    background-color: $black;
+    background-color: rgba(0, 0,0, 0.5);
+    border-radius: 40px;
+    padding: 5px;
+    visibility:hidden;
 }

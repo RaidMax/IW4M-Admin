@@ -2,6 +2,11 @@
 let count = 1;
 
 $(document).ready(function () {
+
+    if (typeof clientInfo === 'undefined') {
+        return false;
+    }
+
 	/*
 	Expand alias tab if they have any
 	*/
@@ -65,9 +70,6 @@ $(document).ready(function () {
                 }
                 if (response.isp.length > 0) {
                     $('#mainModal .modal-body').append("ISP &mdash; " + response.isp + '<br/>');
-                }
-                if (response.ipType.length > 0) {
-                    $('#mainModal .modal-body').append("Type &mdash; " + response.ipType + '<br/>');
                 }
                 if (response.org.length > 0) {
                     $('#mainModal .modal-body').append("Organization &mdash; " + response.org + '<br/>');

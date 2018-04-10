@@ -3,13 +3,13 @@
 }
 
 .level-color-user, .level-color-guest {
-    color: #fff;
-    color: rgba(255, 255, 255, 0.7);
+    color: #6c757d;
+    color: rgba(255, 255, 255, 0.68);
 }
 
 .level-bgcolor-user, .level-bgcolor-guest {
-    background-color: #fff;
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: #6c757d;
+    background-color: rgba(255, 255, 255, 0.68);
 }
 
 .level-color-trusted {
@@ -168,10 +168,8 @@
 }
 
 .profile-action {
-    font-size: 0.5em;
     padding-left: 0.25em;
     cursor: pointer;
-    top: -2px !important;
 }
 
     .profile-action:hover {

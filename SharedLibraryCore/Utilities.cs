@@ -395,7 +395,7 @@ namespace SharedLibraryCore
                 await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName) :
                 await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
 
-            if (LineSplit.Length != 3)
+            if (LineSplit.Length < 3)
             {
                 var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
                 e.Data["dvar_name"] = dvarName;

@@ -3,15 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using SharedLibraryCore;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
-using SharedLibraryCore.Services;
-using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Commands;
-using SharedLibraryCore.Configuration;
-using IW4MAdmin.Plugins.Stats.Config;
+using IW4MAdmin.Plugins.Stats.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -209,6 +207,25 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             var statsSvc = ContextThreads[serverId];
 
+
+            Vector3 vDeathOrigin = null;
+            Vector3 vKillOrigin = null;
+
+
+            try
+            {
+                vDeathOrigin = Vector3.Parse(deathOrigin);
+                vKillOrigin = Vector3.Parse(killOrigin);
+            }
+
+            catch (FormatException)
+            {
+                Log.WriteWarning("Could not parse kill or death origin vector");
+                Log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin}");
+                await AddStandardKill(attacker, victim);
+                return;
+            }
+
             var kill = new EFClientKill()
             {
                 Active = true,
@@ -216,8 +233,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 VictimId = victim.ClientId,
                 ServerId = serverId,
                 Map = ParseEnum<IW4Info.MapName>.Get(map, typeof(IW4Info.MapName)),
-                DeathOrigin = Vector3.Parse(deathOrigin),
-                KillOrigin = Vector3.Parse(killOrigin),
+                DeathOrigin = vDeathOrigin,
+                KillOrigin = vKillOrigin,
                 DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
                 Damage = Int32.Parse(damage),
                 HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),

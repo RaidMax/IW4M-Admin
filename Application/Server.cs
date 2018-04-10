@@ -94,7 +94,7 @@ namespace IW4MAdmin
                 // client has connected in the past
                 else
                 {
-                    player.LastConnection = DateTime.UtcNow;
+                    client.LastConnection = DateTime.UtcNow;
                     client.Connections += 1;
 
                     var existingAlias = client.AliasLink.Children
@@ -378,6 +378,11 @@ namespace IW4MAdmin
                     Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
                     Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
                     Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
+                    while (Except.InnerException != null)
+                    {
+                        Except = Except.InnerException;
+                        Logger.WriteDebug($"Inner exception: {Except.Message}");
+                    }
                     continue;
                 }
 #endif

@@ -85,10 +85,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                 // calculate headshot ratio
                 double currentHeadshotRatio = ((HitLocationCount[IW4Info.HitLocation.head] + HitLocationCount[IW4Info.HitLocation.helmet]) / (double)Kills);
+
                 // calculate maximum bone 
                 double currentMaxBoneRatio = (HitLocationCount.Values.Select(v => v / (double)Kills).Max());
-
                 var bone = HitLocationCount.FirstOrDefault(b => b.Value == HitLocationCount.Values.Max()).Key;
+
                 #region HEADSHOT_RATIO
                 // flag on headshot
                 if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
@@ -196,7 +197,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             if (chestKills >= Thresholds.MediumSampleMinKills)
             {
                 double marginOfError = Thresholds.GetMarginOfError(chestKills);
-                double lerpAmount = Math.Min(1.0, (chestKills - Thresholds.LowSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
+                double lerpAmount = Math.Min(1.0, (chestKills - Thresholds.MediumSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
                 // determine max  acceptable ratio of chest to abdomen kills
                 double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3), Thresholds.ChestAbdomenRatioThresholdHighSample(3), lerpAmount) + marginOfError;
                 double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(4), Thresholds.ChestAbdomenRatioThresholdHighSample(4), lerpAmount) + marginOfError;
@@ -263,13 +264,13 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         {
             int totalChestKills = stats.HitLocations.Single(c => c.Location == IW4Info.HitLocation.left_arm_upper).HitCount;
 
-            if (totalChestKills >= 250)
+            if (totalChestKills >= 60)
             {
                 double marginOfError = Thresholds.GetMarginOfError(totalChestKills);
-                double lerpAmount = Math.Min(1.0, (totalChestKills - Thresholds.LowSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
+                double lerpAmount = Math.Min(1.0, (totalChestKills - 60) / 250.0);
                 // determine max  acceptable ratio of chest to abdomen kills
-                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(2.25), Thresholds.ChestAbdomenRatioThresholdHighSample(2.25), lerpAmount) + marginOfError;
-                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3.0), Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), lerpAmount) + marginOfError;
+                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), Thresholds.ChestAbdomenRatioThresholdHighSample(2), lerpAmount) + marginOfError;
+                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdHighSample(4.0), Thresholds.ChestAbdomenRatioThresholdHighSample(4.0), lerpAmount) + marginOfError;
 
                 double currentChestAbdomenRatio = stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount /
                     stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount;

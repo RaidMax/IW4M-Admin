@@ -37,7 +37,6 @@ namespace IW4MAdmin.Application
 
                 ServerManager = ApplicationManager.GetInstance();
                 ServerManager.Init().Wait();
-                Task.Run(() => ServerManager.Start());
 
                 Task.Run(() =>
                 {
@@ -60,11 +59,12 @@ namespace IW4MAdmin.Application
                         Console.Write('>');
 
                     } while (ServerManager.Running);
-
-                    Console.WriteLine("Shutdown complete");
                 });
 
-                WebfrontCore.Program.Init(ServerManager);
+                Task.Run(() => WebfrontCore.Program.Init(ServerManager));
+                ServerManager.Start();
+                ServerManager.Logger.WriteVerbose("Shutdown complete");
+
             }
 
             catch (Exception e)

@@ -662,7 +662,7 @@ namespace IW4MAdmin
             // patch for T5M:V2 log path
             mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
             // patch for T6M:PLUTONIUM
-            mainPath = (GameName == Game.T6M) ? "t6r/data" : mainPath;
+            mainPath = (GameName == Game.T6M) ? $"t6r{Path.DirectorySeparatorChar}data" : mainPath;
 
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
@@ -682,7 +682,7 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
-            //LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+            LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
             await Broadcast("IW4M Admin is now ^2ONLINE");
 #endif

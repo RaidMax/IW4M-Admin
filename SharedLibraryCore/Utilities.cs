@@ -52,7 +52,7 @@ namespace SharedLibraryCore
             return newStr;
         }
 
-        public static List<Player> PlayersFromStatus(string[] Status)
+        public static List<Player> PlayersFromStatus(this Server sv, string[] Status)
         {
             List<Player> StatusPlayers = new List<Player>();
 
@@ -65,9 +65,22 @@ namespace SharedLibraryCore
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     int cID = -1;
                     int Ping = -1;
-                    Int32.TryParse(playerInfo[2], out Ping);
-                    String cName = Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(StripColors(responseLine.Substring(46, 18)).Trim())));
-                    long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong();
+
+                    try
+                    {
+                        Ping = (sv.GameName != Game.T6M) ?
+                          Int32.Parse(playerInfo[2]) :
+                          Int32.Parse(playerInfo[3]);
+                    }
+
+                    catch (FormatException) { }
+                    String cName = (sv.GameName != Game.T6M) ?
+                        Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(StripColors(responseLine.Substring(46, 18)).Trim()))) :
+                        Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(StripColors(responseLine.Substring(50, 15)).Trim())));
+                    long npID = sv.GameName != Game.T6M ?
+                        Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong() :
+                        playerInfo[4].ConvertLong();
+
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
 #if DEBUG
@@ -76,7 +89,9 @@ namespace SharedLibraryCore
 
                     int cIP = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
-                    int score = Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                    int score = (sv.GameName != Game.T6M) ?
+                        Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]) :
+                        Int32.Parse(playerInfo[1]);
                     Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping, Score = score };
                     StatusPlayers.Add(P);
                 }
@@ -391,31 +406,80 @@ namespace SharedLibraryCore
 
         public static async Task<DVAR<T>> GetDvarAsync<T>(this Server server, string dvarName)
         {
-            string[] LineSplit = server.GameName != Game.T6M ?
-                await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName) :
-                await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
-
-            if (LineSplit.Length < 3)
+            string[] LineSplit = null;
+            bool t6m = false;
+            if (server.GameName == Game.UKN)
             {
-                var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
-                e.Data["dvar_name"] = dvarName;
-                throw e;
+                LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
+                if (LineSplit.Where(l => l.Contains("Unknown command")).Count() > 0)
+                {
+                    LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName);
+                }
+
+                else
+                    t6m = true;
             }
 
-            string[] ValueSplit = LineSplit[1].Split(new char[] { '"' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (ValueSplit.Length != 5)
+            else if (server.GameName == Game.T6M)
             {
-                var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
-                e.Data["dvar_name"] = dvarName;
-                throw e;
+                LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
             }
 
-            string DvarName = Regex.Replace(ValueSplit[0], @"\^[0-9]", "");
-            string DvarCurrentValue = Regex.Replace(ValueSplit[2], @"\^[0-9]", "");
-            string DvarDefaultValue = Regex.Replace(ValueSplit[4], @"\^[0-9]", "");
+            else
+            {
+                LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName); ;
+            }
 
-            return new DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
+            if (server.GameName != Game.T6M && !t6m)
+            {
+                if (LineSplit.Length < 3)
+                {
+                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
+                    e.Data["dvar_name"] = dvarName;
+                    throw e;
+                }
+
+                string[] ValueSplit = LineSplit[1].Split(new char[] { '"' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (ValueSplit.Length != 5)
+                {
+                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
+                    e.Data["dvar_name"] = dvarName;
+                    throw e;
+                }
+
+                string DvarName = Regex.Replace(ValueSplit[0], @"\^[0-9]", "");
+                string DvarCurrentValue = Regex.Replace(ValueSplit[2], @"\^[0-9]", "");
+                string DvarDefaultValue = Regex.Replace(ValueSplit[4], @"\^[0-9]", "");
+
+                return new DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
+            }
+
+            else
+            {
+                if (LineSplit.Length < 2)
+                {
+                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
+                    e.Data["dvar_name"] = dvarName;
+                    throw e;
+                }
+
+                string[] ValueSplit = LineSplit[1].Split(new char[] { '"' });
+
+                if (ValueSplit.Length == 0)
+                {
+                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
+                    e.Data["dvar_name"] = dvarName;
+                    throw e;
+                }
+
+                string DvarName = dvarName;
+                string DvarCurrentValue = Regex.Replace(ValueSplit[1], @"\^[0-9]", "");
+
+                return new DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
+            }
+
+            
         }
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
@@ -435,7 +499,7 @@ namespace SharedLibraryCore
 #else
             string[] response = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, "status");
 #endif
-            return Utilities.PlayersFromStatus(response);
+            return server.PlayersFromStatus(response);
         }
 
         public static bool IsRunningOnMono() => Type.GetType("Mono.Runtime") != null;

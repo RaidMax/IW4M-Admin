@@ -156,6 +156,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats));
 
+            // todo: look at this more
+            statsSvc.ClientStatSvc.Update(clientStats);
+            await statsSvc.ClientStatSvc.SaveChangesAsync();
+
             return clientStats;
         }
 
@@ -192,6 +196,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             UpdateStats(clientStats);
 
             // todo: should this be saved every disconnect?
+            statsSvc.ClientStatSvc.Update(clientStats);
             await statsSvc.ClientStatSvc.SaveChangesAsync();
             // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
@@ -260,15 +265,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            var playerDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
-            var playerStats = Servers[serverId].PlayerStats[attacker.ClientId];
+            var clientDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
+            var clientStats = Servers[serverId].PlayerStats[attacker.ClientId];
 
             // increment their hit count
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
                 kill.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
                 kill.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
             {
-                playerStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
+                clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
+
+                statsSvc.ClientStatSvc.Update(clientStats);
                 await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
@@ -299,8 +306,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                await executePenalty(playerDetection.ProcessKill(kill));
-                await executePenalty(playerDetection.ProcessTotalRatio(playerStats));
+                await executePenalty(clientDetection.ProcessKill(kill));
+                await executePenalty(clientDetection.ProcessTotalRatio(clientStats));
             }
         }
 
@@ -347,10 +354,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (streakMessage != string.Empty)
                 await attacker.Tell(streakMessage);
-            
+
             // todo: do we want to save this immediately?
             var statsSvc = ContextThreads[serverId];
-            statsSvc.ClientStatSvc.SaveChanges();
+            statsSvc.ClientStatSvc.Update(attackerStats);
+            statsSvc.ClientStatSvc.Update(victimStats);
+            await statsSvc.ClientStatSvc.SaveChangesAsync();
         }
 
         /// <summary>
@@ -393,16 +402,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         private EFClientStatistics UpdateStats(EFClientStatistics clientStats)
         {
+            // prevent NaN or inactive time lowering SPM
+            if ((DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0 < 0.1 ||
+                (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0 > 3 || 
+                clientStats.SessionScore < 1)
+                return clientStats;
+
             double timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
             double timeSinceLastActive = (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0;
 
-            // prevent NaN or inactive time lowering SPM
-            if (timeSinceLastCalc == 0 || timeSinceLastActive > 3 || clientStats.SPM < 1)
-                return clientStats;
-
             // calculate the players Score Per Minute for the current session
-            int currentScore = clientStats.SessionScore;
-            double killSPM = currentScore / (timeSinceLastCalc * 60.0);
+            int scoreDifference = clientStats.LastScore == 0 ? 0 : clientStats.SessionScore - clientStats.LastScore;
+            double killSPM = scoreDifference / timeSinceLastCalc;
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
@@ -427,7 +438,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
 
             clientStats.LastStatCalculation = DateTime.UtcNow;
-            clientStats.LastScore = currentScore;
+            clientStats.LastScore = clientStats.SessionScore;
 
             return clientStats;
         }

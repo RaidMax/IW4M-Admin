@@ -177,10 +177,10 @@ namespace SharedLibraryCore.RCon
             {
                 case StaticHelpers.QueryType.DVAR:
                 case StaticHelpers.QueryType.COMMAND:
-                    queryString = $"ÿÿÿÿ\x02rcon {RConPassword} {parameters}";
+                    queryString = $"ÿÿÿÿrcon {RConPassword} {parameters}";
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
-                    queryString = "ÿÿÿÿ\x02getstatus";
+                    queryString = "ÿÿÿÿgetstatus";
                     break;
             }
 
@@ -233,6 +233,12 @@ namespace SharedLibraryCore.RCon
 
                 if (!success)
                 {
+                    // t6m doesn't respond to set requests
+                    if (type == StaticHelpers.QueryType.DVAR && parameters.Contains("set "))
+                    {
+                        return await Task.FromResult(new string[] { "" });
+                    }
+
                     FailedReceives++;
 #if DEBUG
                     Log.WriteDebug($"{FailedReceives} failed receives from {ServerConnection.RemoteEndPoint.ToString()}");

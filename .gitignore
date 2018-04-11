@@ -218,3 +218,7 @@ __pycache__/
 Thumbs.db
 
 DEPLOY
+global.min.css
+global.min.js
+bootstrap-custom.css
+bootstrap-custom.min.css

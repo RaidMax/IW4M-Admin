@@ -17,10 +17,6 @@
     <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Database\" />
-  </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
   </Target>

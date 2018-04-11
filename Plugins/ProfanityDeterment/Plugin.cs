@@ -1,18 +1,19 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
-using SharedLibrary;
-using SharedLibrary.Configuration;
-using SharedLibrary.Interfaces;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Objects;
 
-namespace ProfanityDeterment
+namespace IW4MAdmin.Plugins.ProfanityDeterment
 {
     public class Plugin : IPlugin
     {
-        public string Name => "ProfanityFilter";
+        public string Name => "ProfanityDeterment";
 
-        public float Version => 0.1f;
+        public float Version => Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
 
         public string Author => "RaidMax";
 
@@ -53,7 +54,7 @@ namespace ProfanityDeterment
                     var clientProfanity = ProfanityCounts[E.Origin.ClientId];
                     if (clientProfanity.Infringements >= Settings.Configuration().KickAfterInfringementCount)
                     {
-                        await clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new SharedLibrary.Objects.Player()
+                        await clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
                         {
                             ClientId = 1
                         });
@@ -63,7 +64,7 @@ namespace ProfanityDeterment
                     {
                         clientProfanity.Infringements++;
 
-                        await clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new SharedLibrary.Objects.Player()
+                        await clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new Player()
                         {
                             ClientId = 1
                         });

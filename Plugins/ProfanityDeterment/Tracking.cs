@@ -1,9 +1,9 @@
-﻿using SharedLibrary.Objects;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using SharedLibraryCore.Objects;
 
-namespace ProfanityDeterment
+namespace IW4MAdmin.Plugins.ProfanityDeterment
 {
     class Tracking
     {

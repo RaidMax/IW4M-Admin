@@ -1,10 +1,8 @@
-﻿using SharedLibrary.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using SharedLibrary;
+﻿using System.Collections.Generic;
+using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 
-namespace ProfanityDeterment
+namespace IW4MAdmin.Plugins.ProfanityDeterment
 {
     class Configuration : IBaseConfiguration
     {

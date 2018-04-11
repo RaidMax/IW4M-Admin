@@ -67,6 +67,13 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 float previousAverage = hitLoc.HitOffsetAverage;
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + angle) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
+
+                if (hitLoc.HitOffsetAverage == float.NaN)
+                {
+                    Log.WriteWarning("[Detection::ProcessKill] HitOffsetAvgerage NaN");
+                    Log.WriteDebug($"{previousAverage}-{hitLoc.HitCount}-{hitLoc}-{newAverage}");
+                    hitLoc.HitOffsetAverage = 0f;
+                }
             }
 
             #endregion

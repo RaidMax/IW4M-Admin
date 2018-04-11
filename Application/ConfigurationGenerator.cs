@@ -51,6 +51,8 @@ namespace IW4MAdmin.Application
             newConfig.AutoMessages = new List<string>();
             newConfig.Rules = new List<string>();
 
+            newConfig.UseT6MParser = Utilities.PromptBool("Use T6M parser");
+
             configList.Add(newConfig);
 
             Console.Write("Configuration saved, add another? [y/n]:");

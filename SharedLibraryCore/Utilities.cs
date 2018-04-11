@@ -52,54 +52,6 @@ namespace SharedLibraryCore
             return newStr;
         }
 
-        public static List<Player> PlayersFromStatus(this Server sv, string[] Status)
-        {
-            List<Player> StatusPlayers = new List<Player>();
-
-            foreach (String S in Status)
-            {
-                String responseLine = S.Trim();
-
-                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 72) // its a client line!
-                {
-                    String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    int cID = -1;
-                    int Ping = -1;
-
-                    try
-                    {
-                        Ping = (sv.GameName != Game.T6M) ?
-                          Int32.Parse(playerInfo[2]) :
-                          Int32.Parse(playerInfo[3]);
-                    }
-
-                    catch (FormatException) { }
-                    String cName = (sv.GameName != Game.T6M) ?
-                        Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(StripColors(responseLine.Substring(46, 18)).Trim()))) :
-                        Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(StripColors(responseLine.Substring(50, 15)).Trim())));
-                    long npID = sv.GameName != Game.T6M ?
-                        Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong() :
-                        playerInfo[4].ConvertLong();
-
-                    int.TryParse(playerInfo[0], out cID);
-                    var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
-#if DEBUG
-                    Ping = 1;
-#endif
-
-                    int cIP = regex.Value.Split(':')[0].ConvertToIP();
-                    regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
-                    int score = (sv.GameName != Game.T6M) ?
-                        Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]) :
-                        Int32.Parse(playerInfo[1]);
-                    Player P = new Player() { Name = cName, NetworkId = npID, ClientNumber = cID, IPAddress = cIP, Ping = Ping, Score = score };
-                    StatusPlayers.Add(P);
-                }
-            }
-
-            return StatusPlayers;
-        }
-
         public static Player.Permission MatchPermission(String str)
         {
             String lookingFor = str.ToLower();
@@ -393,115 +345,23 @@ namespace SharedLibraryCore
 
         public static string PromptString(string question)
         {
-            Console.Write($"{question}: ");
-
             string response;
             do
             {
+                Console.Write($"{question}: ");
                 response = Console.ReadLine();
             } while (string.IsNullOrWhiteSpace(response));
 
             return response;
         }
 
-        public static async Task<DVAR<T>> GetDvarAsync<T>(this Server server, string dvarName)
-        {
-            string[] LineSplit = null;
-            bool t6m = false;
-            if (server.GameName == Game.UKN)
-            {
-                LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
-                if (LineSplit.Where(l => l.Contains("Unknown command")).Count() > 0)
-                {
-                    LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName);
-                }
+        public static async Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => await server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
 
-                else
-                    t6m = true;
-            }
+        public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
 
-            else if (server.GameName == Game.T6M)
-            {
-                LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, $"get {dvarName}");
-            }
+        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
 
-            else
-            {
-                LineSplit = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, dvarName); ;
-            }
+        public static async Task<List<Player>> GetStatusAsync(this Server server) => await server.RconParser.GetStatusAsync(server.RemoteConnection);
 
-            if (server.GameName != Game.T6M && !t6m)
-            {
-                if (LineSplit.Length < 3)
-                {
-                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
-                    e.Data["dvar_name"] = dvarName;
-                    throw e;
-                }
-
-                string[] ValueSplit = LineSplit[1].Split(new char[] { '"' }, StringSplitOptions.RemoveEmptyEntries);
-
-                if (ValueSplit.Length != 5)
-                {
-                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
-                    e.Data["dvar_name"] = dvarName;
-                    throw e;
-                }
-
-                string DvarName = Regex.Replace(ValueSplit[0], @"\^[0-9]", "");
-                string DvarCurrentValue = Regex.Replace(ValueSplit[2], @"\^[0-9]", "");
-                string DvarDefaultValue = Regex.Replace(ValueSplit[4], @"\^[0-9]", "");
-
-                return new DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
-            }
-
-            else
-            {
-                if (LineSplit.Length < 2)
-                {
-                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
-                    e.Data["dvar_name"] = dvarName;
-                    throw e;
-                }
-
-                string[] ValueSplit = LineSplit[1].Split(new char[] { '"' });
-
-                if (ValueSplit.Length == 0)
-                {
-                    var e = new Exceptions.DvarException($"DVAR \"{dvarName}\" does not exist");
-                    e.Data["dvar_name"] = dvarName;
-                    throw e;
-                }
-
-                string DvarName = dvarName;
-                string DvarCurrentValue = Regex.Replace(ValueSplit[1], @"\^[0-9]", "");
-
-                return new DVAR<T>(DvarName) { Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)) };
-            }
-
-            
-        }
-
-        public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
-        {
-            await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, $"set {dvarName} {dvarValue}");
-        }
-
-        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
-        {
-            return (await server.RemoteConnection.SendQueryAsync(QueryType.COMMAND, commandName)).Skip(1).ToArray();
-        }
-
-        public static async Task<List<Player>> GetStatusAsync(this Server server)
-        {
-#if DEBUG && DEBUG_PLAYERS
-            string[] response = await Task.Run(() => System.IO.File.ReadAllLines("players.txt"));
-#else
-            string[] response = await server.RemoteConnection.SendQueryAsync(QueryType.DVAR, "status");
-#endif
-            return server.PlayersFromStatus(response);
-        }
-
-        public static bool IsRunningOnMono() => Type.GetType("Mono.Runtime") != null;
     }
 }

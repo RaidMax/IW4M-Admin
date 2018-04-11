@@ -159,7 +159,7 @@ namespace SharedLibraryCore.RCon
             }
         }
 
-        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
+        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", bool waitForResponse = true)
         {
             // will this really prevent flooding?
             if ((DateTime.Now - LastQuery).TotalMilliseconds < 35)
@@ -222,6 +222,9 @@ namespace SharedLibraryCore.RCon
                     throw new NetworkException($"Unexpected error while sending data to server - {e.Message}");
             }
 
+            if (!waitForResponse)
+                return await Task.FromResult(new string[] { "" });
+
             var connectionState = new ConnectionState(ServerConnection);
 
             retryReceive:
@@ -233,11 +236,6 @@ namespace SharedLibraryCore.RCon
 
                 if (!success)
                 {
-                    // t6m doesn't respond to set requests
-                    if (type == StaticHelpers.QueryType.DVAR && parameters.Contains("set "))
-                    {
-                        return await Task.FromResult(new string[] { "" });
-                    }
 
                     FailedReceives++;
 #if DEBUG

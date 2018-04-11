@@ -17,10 +17,6 @@ a.nav-link {
     padding: $spacer * 1.5;
 }
 
-.container {
-    margin-top: 90px;
-}
-
 .server-history-row {
     height: 100px;
     padding: 0 !important;
@@ -100,11 +96,11 @@ form * {
 
 @-webkit-keyframes rotation {
     from {
-        -webkit-transform: rotate(0deg);
+        -webkit-transform: rotate(359deg);
     }
 
     to {
-        -webkit-transform: rotate(359deg);
+        -webkit-transform: rotate(0deg);
     }
 }
 
@@ -112,16 +108,17 @@ form * {
     position: fixed !important;
     left: 50%;
     top: 50% !important;
-    transform: translate(-50%, -50%);
-    z-index: 100;
+    margin-left: -37px;
+    margin-top: -37px;
     color: $primary;
+    z-index: 100;
     font-size: 4rem;
     -webkit-animation: rotation 1s infinite linear;
     background-color: $black;
     background-color: rgba(0, 0,0, 0.5);
     border-radius: 40px;
     padding: 5px;
-    visibility:hidden;
+    visibility: hidden;
 }
 
 .input-border-transition {

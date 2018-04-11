@@ -23,7 +23,7 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark">
             @Html.ActionLink("IW4MAdmin", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -101,7 +101,7 @@
     </div>
     <!-- End Action Modal -->
 
-    <div class="container pt-0 pb-4 pl-4 pr-4">
+    <div class="container p-4">
         @RenderBody()
         <footer></footer>
     </div>

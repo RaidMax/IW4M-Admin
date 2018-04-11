@@ -8,6 +8,7 @@ using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore
 {
@@ -25,7 +26,7 @@ namespace SharedLibraryCore
             T6M,
         }
 
-        public Server(Interfaces.IManager mgr, ServerConfiguration config)
+        public Server(IManager mgr, ServerConfiguration config)
         {
             Password = config.Password;
             IP = config.IPAddress;
@@ -313,6 +314,7 @@ namespace SharedLibraryCore
         public bool CustomCallback { get; protected set; }
         public string WorkingDirectory { get; protected set; }
         public RCon.Connection RemoteConnection { get; protected set; }
+        public IRConParser RconParser { get; protected set; }
 
         // Internal
         protected string IP;

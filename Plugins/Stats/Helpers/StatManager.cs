@@ -355,6 +355,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (streakMessage != string.Empty)
                 await attacker.Tell(streakMessage);
 
+            // fixme: why?
+            if (victimStats.SPM == double.NaN || victimStats.Skill == double.NaN)
+            {
+                victimStats.SPM = 0.0;
+                victimStats.Skill = 0.0;
+            }
+
             // todo: do we want to save this immediately?
             var statsSvc = ContextThreads[serverId];
             statsSvc.ClientStatSvc.Update(attackerStats);
@@ -417,10 +424,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
-            double KDRWeight = Math.Round(Math.Pow(clientStats.KDR, 1.637 / Math.E), 3);
+            double kdr = clientStats.Deaths == 0 ? clientStats.Kills : clientStats.KDR;
+            double KDRWeight = Math.Round(Math.Pow(kdr, 1.637 / Math.E), 3);
 
             // if no SPM, weight is 1 else the weight ishe current session's spm / lifetime average score per minute
-            double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
+            //double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
 
             // calculate the weight of the new play time against last 10 hours of gameplay
             int totalPlayTime = (clientStats.TimePlayed == 0) ?
@@ -431,11 +439,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate the new weight against average times the weight against play time
             clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
-            // fixme: how does this happen?
-            if (clientStats.SPM == double.NaN)
-                clientStats.SPM = 0;
+
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
+
             clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
+
+            // fixme: how does this happen?
+            if (clientStats.SPM == double.NaN || clientStats.Skill == double.NaN)
+            {
+                Log.WriteWarning("[StatManager::UpdateStats] clientStats SPM/Skill NaN");
+                Log.WriteDebug($"{killSPM}-{KDRWeight}-{totalPlayTime}-{SPMAgainstPlayWeight}-{clientStats.SPM}-{clientStats.Skill}-{scoreDifference}");
+                clientStats.SPM = 0;
+                clientStats.Skill = 0;
+            }
 
             clientStats.LastStatCalculation = DateTime.UtcNow;
             clientStats.LastScore = clientStats.SessionScore;

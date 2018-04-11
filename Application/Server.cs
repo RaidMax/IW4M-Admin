@@ -14,6 +14,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
 
 using IW4MAdmin.Application.Misc;
+using Application.RconParsers;
 
 namespace IW4MAdmin
 {
@@ -589,6 +590,8 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
+            RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MParser() : new IW4Parser();
+
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
 
@@ -608,7 +611,7 @@ namespace IW4MAdmin
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
 
-            DVAR<int> onelog = null;
+            Dvar<int> onelog = null;
             if (GameName == Game.IW4)
             {
                 try
@@ -618,7 +621,7 @@ namespace IW4MAdmin
 
                 catch (Exception)
                 {
-                    onelog = new DVAR<int>("iw4x_onelog")
+                    onelog = new Dvar<int>("iw4x_onelog")
                     {
                         Value = -1
                     };
@@ -682,7 +685,7 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
-            LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+ //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
             await Broadcast("IW4M Admin is now ^2ONLINE");
 #endif

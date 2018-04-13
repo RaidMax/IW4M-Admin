@@ -193,7 +193,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue2);
 
             // sync their stats before they leave
-            UpdateStats(clientStats);
+            clientStats = UpdateStats(clientStats);
 
             // todo: should this be saved every disconnect?
             statsSvc.ClientStatSvc.Update(clientStats);
@@ -211,11 +211,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads)
         {
             var statsSvc = ContextThreads[serverId];
-
-
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
-
 
             try
             {
@@ -295,7 +292,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             if (attacker.Level != Player.Permission.User)
                                 break;
                             var flagCmd = new CFlag();
-                            await flagCmd.ExecuteAsync(new Event(Event.GType.Flag, $"{(int)penalty.Bone}-{Math.Round(penalty.RatioAmount, 2).ToString()}@{penalty.KillCount}", new Player()
+                            await flagCmd.ExecuteAsync(new GameEvent(GameEvent.EventType.Flag, $"{(int)penalty.Bone}-{Math.Round(penalty.RatioAmount, 2).ToString()}@{penalty.KillCount}", new Player()
                             {
                                 ClientId = 1,
                                 Level = Player.Permission.Console,
@@ -356,10 +353,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await attacker.Tell(streakMessage);
 
             // fixme: why?
-            if (victimStats.SPM == double.NaN || victimStats.Skill == double.NaN)
+            if (double.IsNaN(victimStats.SPM) || double.IsNaN(victimStats.Skill))
             {
+                Log.WriteDebug($"[StatManager::AddStandardKill] victim SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
                 victimStats.SPM = 0.0;
                 victimStats.Skill = 0.0;
+            }
+
+            if (double.IsNaN(attackerStats.SPM) || double.IsNaN(attackerStats.Skill))
+            {
+                Log.WriteDebug($"[StatManager::AddStandardKill] attacker SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
+                attackerStats.SPM = 0.0;
+                attackerStats.Skill = 0.0;
             }
 
             // todo: do we want to save this immediately?
@@ -393,7 +398,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.KillStreak = 0;
 
             // process the attacker's stats after the kills
-            UpdateStats(attackerStats);
+            attackerStats = UpdateStats(attackerStats);
 
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
@@ -410,7 +415,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private EFClientStatistics UpdateStats(EFClientStatistics clientStats)
         {
             // prevent NaN or inactive time lowering SPM
-            if ((DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0 < 0.1 ||
+            if ((DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0 < 0.01 ||
                 (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0 > 3 || 
                 clientStats.SessionScore < 1)
                 return clientStats;
@@ -439,13 +444,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate the new weight against average times the weight against play time
             clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
-
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
-
             clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
 
             // fixme: how does this happen?
-            if (clientStats.SPM == double.NaN || clientStats.Skill == double.NaN)
+            if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
             {
                 Log.WriteWarning("[StatManager::UpdateStats] clientStats SPM/Skill NaN");
                 Log.WriteDebug($"{killSPM}-{KDRWeight}-{totalPlayTime}-{SPMAgainstPlayWeight}-{clientStats.SPM}-{clientStats.Skill}-{scoreDifference}");

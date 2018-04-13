@@ -5,6 +5,9 @@ using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Services;
+using SharedLibraryCore.Database.Models;
+using System.Linq;
 
 namespace IW4MAdmin.Plugins.Welcome
 {
@@ -73,9 +76,9 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public Task OnTickAsync(Server S) => Utilities.CompletedTask;
 
-        public async Task OnEventAsync(Event E, Server S)
+        public async Task OnEventAsync(GameEvent E, Server S)
         {
-            if (E.Type == Event.GType.Connect)
+            if (E.Type == GameEvent.EventType.Connect)
             {
                 Player newPlayer = E.Origin;
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
@@ -84,7 +87,10 @@ namespace IW4MAdmin.Plugins.Welcome
                 await newPlayer.Tell(ProcessAnnouncement(Config.Configuration().UserWelcomeMessage, newPlayer));
 
                 if (newPlayer.Level == Player.Permission.Flagged)
-                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7has joined!");
+                {
+                    var penalty = await new GenericRepository<EFPenalty>().FindAsync(p => p.OffenderId == newPlayer.ClientId && p.Type == Penalty.PenaltyType.Flag);
+                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penalty.FirstOrDefault()?.Offense}) has joined!");
+                }
                 else
                     await E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().UserAnnouncementMessage, newPlayer));
             }

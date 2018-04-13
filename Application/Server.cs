@@ -15,6 +15,7 @@ using SharedLibraryCore.Configuration;
 
 using IW4MAdmin.Application.Misc;
 using Application.RconParsers;
+using Application.EventParsers;
 
 namespace IW4MAdmin
 {
@@ -59,19 +60,20 @@ namespace IW4MAdmin
                 Players[polledPlayer.ClientNumber].Score = polledPlayer.Score;
                 return true;
             }
-
 #if !DEBUG
             if (polledPlayer.Name.Length < 3)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is too short");
-                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name must contain atleast 3 characters.\"");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Your name must contain atleast 3 characters.");
+                await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
 
             if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name) != null)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is already in use");
-                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name is being used by someone else.\"");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Your name is being used by someone else.");
+                await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
 
@@ -80,14 +82,16 @@ namespace IW4MAdmin
                 polledPlayer.Name == "CHEATER")
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is generic");
-                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Please change your name using /name.\"");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Please change your name using /name.");
+                await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
 
             if (polledPlayer.Name.Where(c => Char.IsControl(c)).Count() > 0)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their contains control characters");
-                await this.ExecuteCommandAsync($"clientkick {polledPlayer.ClientNumber} \"Your name cannot contain control characters.\"");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Your name cannot contain control characters.");
+                await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
 
@@ -145,7 +149,7 @@ namespace IW4MAdmin
                 player.CurrentServer = this;
                 Players[player.ClientNumber] = player;
 
-                var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId);
+                var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
                 var currentBan = activePenalties.FirstOrDefault(b => b.Expires > DateTime.UtcNow);
 
                 if (currentBan != null)
@@ -155,7 +159,10 @@ namespace IW4MAdmin
                     autoKickClient.CurrentServer = this;
 
                     if (currentBan.Type == Penalty.PenaltyType.TempBan)
-                        await this.ExecuteCommandAsync($"clientkick {player.ClientNumber} \"You are temporarily banned. ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} left)\"");
+                    {
+                        string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, $"You are temporarily banned. ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} left)");
+                        await this.ExecuteCommandAsync(formattedKick);
+                    }
                     else
                         await player.Kick($"Previously banned for {currentBan.Offense}", autoKickClient);
 
@@ -166,7 +173,7 @@ namespace IW4MAdmin
 
                 Logger.WriteInfo($"Client {player} connecting...");
 
-                await ExecuteEvent(new Event(Event.GType.Connect, "", player, null, this));
+                await ExecuteEvent(new GameEvent(GameEvent.EventType.Connect, "", player, null, this));
 
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
@@ -194,7 +201,7 @@ namespace IW4MAdmin
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
 
-                await ExecuteEvent(new Event(Event.GType.Disconnect, "", Leaving, null, this));
+                await ExecuteEvent(new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this));
 
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                 Leaving.LastConnection = DateTime.UtcNow;
@@ -203,34 +210,9 @@ namespace IW4MAdmin
             }
         }
 
-        //Another version of client from line, written for the line created by a kill or death event
-        override public Player ParseClientFromString(String[] L, int cIDPos)
-        {
-            if (L.Length < cIDPos)
-            {
-                Logger.WriteError("Line sent for client creation is not long enough!");
-                return null;
-            }
-
-            int pID = -2; // apparently falling = -1 cID so i can't use it now
-            int.TryParse(L[cIDPos].Trim(), out pID);
-
-            if (pID == -1) // special case similar to mod_suicide
-                int.TryParse(L[2], out pID);
-
-            if (pID < 0 || pID > 17)
-            {
-                Logger.WriteError("Event player index " + pID + " is out of bounds!");
-                Logger.WriteDebug("Offending line -- " + String.Join(";", L));
-                return null;
-            }
-
-            return Players[pID];
-        }
-
         //Process requested command correlating to an event
         // todo: this needs to be removed out of here
-        override public async Task<Command> ValidateCommand(Event E)
+        override public async Task<Command> ValidateCommand(GameEvent E)
         {
             string CommandString = E.Data.Substring(1, E.Data.Length - 1).Split(' ')[0];
             E.Message = E.Data;
@@ -368,7 +350,7 @@ namespace IW4MAdmin
             return C;
         }
 
-        public override async Task ExecuteEvent(Event E)
+        public override async Task ExecuteEvent(GameEvent E)
         {
             if (Throttled)
                 return;
@@ -457,7 +439,7 @@ namespace IW4MAdmin
                 // first start
                 if (firstRun)
                 {
-                    await ExecuteEvent(new Event(Event.GType.Start, "Server started", null, null, this));
+                    await ExecuteEvent(new GameEvent(GameEvent.EventType.Start, "Server started", null, null, this));
                     firstRun = false;
                 }
 
@@ -546,8 +528,7 @@ namespace IW4MAdmin
 
                             else
                             {
-                                string[] game_event = lines[count].Split(';');
-                                Event event_ = Event.ParseEventString(game_event, this);
+                                GameEvent event_ = EventParser.GetEvent(this, lines[count]);
                                 if (event_ != null)
                                 {
                                     if (event_.Origin == null)
@@ -590,7 +571,8 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
-            RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MParser() : new IW4Parser();
+            RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW4RConParser();
+            EventParser = ServerConfig.UseT6MParser ? (IEventParser)new T6MEventParser() : new IW4EventParser();
 
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
@@ -666,7 +648,9 @@ namespace IW4MAdmin
             mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
             // patch for T6M:PLUTONIUM
             mainPath = (GameName == Game.T6M) ? $"t6r{Path.DirectorySeparatorChar}data" : mainPath;
-
+#if DEBUG
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+#endif
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
@@ -685,16 +669,16 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
- //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+        //    LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
             await Broadcast("IW4M Admin is now ^2ONLINE");
 #endif
         }
 
         //Process any server event
-        override protected async Task ProcessEvent(Event E)
+        override protected async Task ProcessEvent(GameEvent E)
         {
-            if (E.Type == Event.GType.Connect)
+            if (E.Type == GameEvent.EventType.Connect)
             {
                 ChatHistory.Add(new ChatInfo()
                 {
@@ -707,7 +691,7 @@ namespace IW4MAdmin
                     await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
             }
 
-            else if (E.Type == Event.GType.Disconnect)
+            else if (E.Type == GameEvent.EventType.Disconnect)
             {
                 ChatHistory.Add(new ChatInfo()
                 {
@@ -717,12 +701,12 @@ namespace IW4MAdmin
                 });
             }
 
-            else if (E.Type == Event.GType.Script)
+            else if (E.Type == GameEvent.EventType.Script)
             {
-                await ExecuteEvent(new Event(Event.GType.Kill, E.Data, E.Origin, E.Target, this));
+                await ExecuteEvent(new GameEvent(GameEvent.EventType.Kill, E.Data, E.Origin, E.Target, this));
             }
 
-            if (E.Type == Event.GType.Say && E.Data.Length >= 2)
+            if (E.Type == GameEvent.EventType.Say && E.Data.Length >= 2)
             {
                 if (E.Data.Substring(0, 1) == "!" || E.Data.Substring(0, 1) == "@" || E.Origin.Level == Player.Permission.Console)
                 {
@@ -776,7 +760,7 @@ namespace IW4MAdmin
                 }
             }
 
-            if (E.Type == Event.GType.MapChange)
+            if (E.Type == GameEvent.EventType.MapChange)
             {
                 Logger.WriteInfo($"New map loaded - {ClientNum} active players");
 
@@ -788,7 +772,7 @@ namespace IW4MAdmin
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
             }
 
-            if (E.Type == Event.GType.MapEnd)
+            if (E.Type == GameEvent.EventType.MapEnd)
             {
                 Logger.WriteInfo("Game ending...");
             }
@@ -821,7 +805,10 @@ namespace IW4MAdmin
             else
             {
                 if (Target.Warnings >= 4)
+                {
                     await Target.Kick("Too many warnings!", (await Manager.GetClientService().Get(1)).AsPlayer());
+                    return;
+                }
 
                 Target.Warnings++;
                 String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Reason);
@@ -859,7 +846,10 @@ namespace IW4MAdmin
             }
 #if !DEBUG
             else
-                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Kicked: ^5{Reason}^7\"");
+            {
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"You were Kicked - ^5{Reason}^7");
+                await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
+            }
 #endif
 
 #if DEBUG
@@ -897,7 +887,10 @@ namespace IW4MAdmin
             }
 #if !DEBUG
             else
-                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber } \"^7Player Temporarily Banned: ^5{ Reason }\"");
+            {
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"^7You're Temporarily Banned - ^5{Reason}");
+                await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
+            }
 #else
             await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
 #endif
@@ -941,7 +934,8 @@ namespace IW4MAdmin
                 // this is set only because they're still in the server.
                 Target.Level = Player.Permission.Banned;
 #if !DEBUG
-                await Target.CurrentServer.ExecuteCommandAsync($"clientkick {Target.ClientNumber}  \"Player Banned: ^5{Message} ^7(appeal at {Website}) ^7\"");
+                string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"You're Banned - ^5{Message} ^7(appeal at {Website})^7");
+                await Target.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
                 await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
 #endif

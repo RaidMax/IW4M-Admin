@@ -134,4 +134,9 @@ form * {
 .form-control:focus {
     box-shadow: none;
     -webkit-box-shadow: none;
-} 
+}
+
+.dropdown-item {
+    border-bottom: 1px solid $secondary;
+    margin-top: -3px;
+}

@@ -355,6 +355,17 @@ namespace SharedLibraryCore
             return response;
         }
 
+        public static int ClientIdFromString(String[] lineSplit, int cIDPos)
+        {
+            int pID = -2; // apparently falling = -1 cID so i can't use it now
+            int.TryParse(lineSplit[cIDPos].Trim(), out pID);
+
+            if (pID == -1) // special case similar to mod_suicide
+                int.TryParse(lineSplit[2], out pID);
+
+            return pID;
+        }
+
         public static async Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => await server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);

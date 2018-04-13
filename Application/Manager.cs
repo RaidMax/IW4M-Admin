@@ -28,7 +28,7 @@ namespace IW4MAdmin.Application
         public Dictionary<int, Player> PrivilegedClients { get; set; }
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
-        public EventHandler<Event> ServerEventOccurred { get; private set; }
+        public EventHandler<GameEvent> ServerEventOccurred { get; private set; }
 
         static ApplicationManager Instance;
         List<AsyncStatus> TaskStatuses;

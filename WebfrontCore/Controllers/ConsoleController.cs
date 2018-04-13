@@ -34,10 +34,16 @@ namespace WebfrontCore.Controllers
             {
                 ClientId = User.ClientId,
                 Level = User.Level,
-                CurrentServer = server
+                CurrentServer = server,
+                CurrentAlias = new Alias() { Name = User.Name }
             };
-
-            var remoteEvent = new Event(Event.GType.Say, command, client, null, server);
+            var remoteEvent = new GameEvent()
+            {
+                Type = GameEvent.EventType.Say,
+                Data = command,
+                Origin = client,
+                Owner = server
+            };
 
             await server.ExecuteEvent(remoteEvent);
 

@@ -68,7 +68,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + angle) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
 
-                if (hitLoc.HitOffsetAverage == float.NaN)
+                if (double.IsNaN(hitLoc.HitOffsetAverage))
                 {
                     Log.WriteWarning("[Detection::ProcessKill] HitOffsetAvgerage NaN");
                     Log.WriteDebug($"{previousAverage}-{hitLoc.HitCount}-{hitLoc}-{newAverage}");
@@ -269,7 +269,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
         public DetectionPenaltyResult ProcessTotalRatio(EFClientStatistics stats)
         {
-            int totalChestKills = stats.HitLocations.Single(c => c.Location == IW4Info.HitLocation.left_arm_upper).HitCount;
+            int totalChestKills = stats.HitLocations.Single(c => c.Location == IW4Info.HitLocation.torso_upper).HitCount;
 
             if (totalChestKills >= 60)
             {
@@ -279,7 +279,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), Thresholds.ChestAbdomenRatioThresholdHighSample(2), lerpAmount) + marginOfError;
                 double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdHighSample(4.0), Thresholds.ChestAbdomenRatioThresholdHighSample(4.0), lerpAmount) + marginOfError;
 
-                double currentChestAbdomenRatio = stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount /
+                double currentChestAbdomenRatio = totalChestKills /
                     stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount;
 
                 if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)

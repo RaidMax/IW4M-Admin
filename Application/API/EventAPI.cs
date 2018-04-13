@@ -28,9 +28,9 @@ namespace IW4MAdmin.Application.API
 
         public Queue<EventInfo> GetEvents() => Events;
 
-        public void OnServerEvent(object sender, Event E)
+        public void OnServerEvent(object sender, GameEvent E)
         {
-            if (E.Type == Event.GType.Say && E.Origin.Level < Player.Permission.Trusted)
+            if (E.Type == GameEvent.EventType.Say && E.Origin.Level < Player.Permission.Trusted)
             {
                 bool flaggedMessage = false;
                 foreach (string msg in FlaggedMessageContains)
@@ -62,7 +62,7 @@ namespace IW4MAdmin.Application.API
                 }
             }
 
-            if (E.Type == Event.GType.Report)
+            if (E.Type == GameEvent.EventType.Report)
             {
                 Events.Enqueue(new EventInfo(
                     EventInfo.EventType.ALERT,

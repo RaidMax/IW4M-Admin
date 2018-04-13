@@ -13,7 +13,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     {
         public ResetStats() : base("resetstats", "reset your stats to factory-new", "rs", Player.Permission.User, false) { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.ClientNumber >= 0)
             {

@@ -1,16 +1,16 @@
-﻿using SharedLibraryCore.Objects;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using SharedLibraryCore.Objects;
+using SharedLibraryCore.RCon;
 
 namespace SharedLibraryCore.Interfaces
 {
     public interface IRConParser
     {
-        Task<Dvar<T>> GetDvarAsync<T>(RCon.Connection connection, string dvarName);
-        Task<bool> SetDvarAsync(RCon.Connection connection, string dvarName, object dvarValue);
-        Task<string[]> ExecuteCommandAsync(RCon.Connection connection, string command);
-        Task<List<Player>> GetStatusAsync(RCon.Connection connection);
+        Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName);
+        Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue);
+        Task<string[]> ExecuteCommandAsync(Connection connection, string command);
+        Task<List<Player>> GetStatusAsync(Connection connection);
+        CommandPrefix GetCommandPrefixes();
     }
 }

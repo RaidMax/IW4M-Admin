@@ -13,7 +13,7 @@ function loadMorePenalties() {
     offset += 15;
 }
 
-if ($('#penalty_table').length == 1) {
+if ($('#penalty_table').length === 1) {
     /*
     https://stackoverflow.com/questions/19731730/jquery-js-detect-users-scroll-attempt-without-any-window-overflow-to-scroll
     */

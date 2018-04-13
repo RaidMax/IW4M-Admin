@@ -12,8 +12,19 @@ using System.Text;
 
 namespace Application.RconParsers
 {
-    public class T6MParser : IRConParser
+    public class T6MRConParser : IRConParser
     {
+        private static CommandPrefix Prefixes = new CommandPrefix()
+        {
+            Tell = "tell {0} {1}",
+            Say = "say {0}",
+            Kick = "clientKick {0}",
+            Ban = "clientKick {0}",
+            TempBan = "clientKick {0}"
+        };
+
+        public CommandPrefix GetCommandPrefixes() => Prefixes;
+
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
             await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command, false);
@@ -69,19 +80,20 @@ namespace Application.RconParsers
 
             foreach (string statusLine in status)
             {
-                String responseLine = statusLine.Trim();
+                String responseLine = statusLine;
 
-                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 72) // its a client line!
+                if (Regex.Matches(responseLine, @"^\d+", RegexOptions.IgnoreCase).Count > 0) // its a client line!
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     int clientId = -1;
                     int Ping = -1;
 
                     Int32.TryParse(playerInfo[3], out Ping);
-                    string name = Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(responseLine.Substring(50, 15).StripColors().Trim())));
+                    var regex = Regex.Match(responseLine, @"\^7.*\ +0 ");
+                    string name = Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(regex.Value.Substring(0, regex.Value.Length - 2).StripColors().Trim())));
                     long networkId = playerInfo[4].ConvertLong();
                     int.TryParse(playerInfo[0], out clientId);
-                    var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
+                    regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
 #if DEBUG
                     Ping = 1;
 #endif

@@ -22,7 +22,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Target?.ClientNumber < 0)
             {

@@ -5,7 +5,7 @@ namespace SharedLibraryCore.Interfaces
 {
     public interface IEventApi
     {
-        void OnServerEvent(object sender, Event E);
+        void OnServerEvent(object sender, GameEvent E);
         Queue<EventInfo> GetEvents();
     }
 }

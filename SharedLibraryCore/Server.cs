@@ -79,13 +79,6 @@ namespace SharedLibraryCore
         /// <returns>true if removal succeded, false otherwise</returns>
         abstract public Task RemovePlayer(int cNum);
 
-        /// <summary>
-        /// Get the player from the server's list by line from game long
-        /// </summary>
-        /// <param name="L">Game log line containing event</param>
-        /// <param name="cIDPos">Position in the line where the cliet ID is written</param>
-        /// <returns>Matching player if found</returns>
-        abstract public Player ParseClientFromString(String[] L, int cIDPos);
 
         /// <summary>
         /// Get a player by name
@@ -113,7 +106,7 @@ namespace SharedLibraryCore
         /// <param name="E">Event parameter</param>
         /// <param name="C">Command requested from the event</param>
         /// <returns></returns>
-        abstract public Task<Command> ValidateCommand(Event E);
+        abstract public Task<Command> ValidateCommand(GameEvent E);
 
         virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
@@ -125,8 +118,8 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="E">Event</param>
         /// <returns>True on sucess</returns>
-        abstract protected Task ProcessEvent(Event E);
-        abstract public Task ExecuteEvent(Event E);
+        abstract protected Task ProcessEvent(GameEvent E);
+        abstract public Task ExecuteEvent(GameEvent E);
 
         /// <summary>
         /// Send a message to all players
@@ -134,10 +127,9 @@ namespace SharedLibraryCore
         /// <param name="Message">Message to be sent to all players</param>
         public async Task Broadcast(String Message)
         {
-
-            string sayCommand = (GameName == Game.IW4) ? "sayraw" : "say";
 #if !DEBUG
-            await this.ExecuteCommandAsync($"{sayCommand} {(CustomSayEnabled ? CustomSayName : "")} {Message}");
+            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, Message);
+            await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose(Message.StripColors());
             await Utilities.CompletedTask;
@@ -151,11 +143,11 @@ namespace SharedLibraryCore
         /// <param name="Target">Player to send message to</param>
         public async Task Tell(String Message, Player Target)
         {
-            string tellCommand = (GameName == Game.IW4) ? "tellraw" : "tell";
 
 #if !DEBUG
+            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Tell, Target.ClientNumber, Message);
             if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)
-                await this.ExecuteCommandAsync($"{tellCommand} {Target.ClientNumber} {(CustomSayEnabled ? CustomSayName : "")} {Message}^7");
+                await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
             await Utilities.CompletedTask;
@@ -286,8 +278,8 @@ namespace SharedLibraryCore
         }
 
         // Objects
-        public Interfaces.IManager Manager { get; protected set; }
-        public Interfaces.ILogger Logger { get; private set; }
+        public IManager Manager { get; protected set; }
+        public ILogger Logger { get; private set; }
         public ServerConfiguration ServerConfig { get; private set; }
         public List<Map> Maps { get; protected set; }
         public List<Report> Reports { get; set; }
@@ -315,6 +307,7 @@ namespace SharedLibraryCore
         public string WorkingDirectory { get; protected set; }
         public RCon.Connection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; protected set; }
+        public IEventParser EventParser { get; set; }
 
         // Internal
         protected string IP;

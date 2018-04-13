@@ -139,6 +139,7 @@ namespace SharedLibraryCore.Services
 
                 if (victim)
                 {
+                    var now = DateTime.UtcNow;
                     var iqPenalties = from penalty in context.Penalties.AsNoTracking()
                                       where penalty.OffenderId == clientId
                                       join victimClient in context.Clients.AsNoTracking()
@@ -160,13 +161,22 @@ namespace SharedLibraryCore.Services
                                               PunisherName = punisherAlias.Name,
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
-                                              Type = penalty.Type.ToString()
+                                              Type = penalty.Type.ToString(),
+                                              TimeRemaining = now > penalty.Expires ? ""  : penalty.Expires.ToString()
                                           },
                                           When = penalty.When,
                                           Sensitive = penalty.Type == Objects.Penalty.PenaltyType.Flag
                                       };
                     // fixme: is this good and fast?
-                    return await iqPenalties.ToListAsync();
+                    var list = await iqPenalties.ToListAsync();
+                    list.ForEach(p =>
+                    {
+                        var pi = ((PenaltyInfo)p.Value);
+                        if (pi.TimeRemaining.Length > 0)
+                            pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
+                    }
+                    );
+                    return list;
                 }
 
                 else
@@ -204,17 +214,26 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int aliasId)
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int aliasId, int ip = 0)
         {
             using (var context = new DatabaseContext())
             {
-                var iqPenalties = from link in context.AliasLinks
-                                  where link.AliasLinkId == aliasId
-                                  join penalty in context.Penalties
-                                  on link.AliasLinkId equals penalty.LinkId
-                                  where penalty.Active
-                                  select penalty;
-                return await iqPenalties.ToListAsync();
+                var iqPenalties = await (from link in context.AliasLinks
+                                         where link.AliasLinkId == aliasId
+                                         join penalty in context.Penalties
+                                         on link.AliasLinkId equals penalty.LinkId
+                                         where penalty.Active
+                                         select penalty).ToListAsync();
+                if (ip != 0)
+                {
+                    iqPenalties.AddRange(await (from alias in context.Aliases
+                                                where alias.IPAddress == ip
+                                                join penalty in context.Penalties
+                                                on alias.LinkId equals penalty.LinkId
+                                                where penalty.Active
+                                                select penalty).ToListAsync());
+                }
+                return iqPenalties;
             }
         }
 

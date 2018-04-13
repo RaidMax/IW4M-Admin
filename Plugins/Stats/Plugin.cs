@@ -28,50 +28,50 @@ namespace IW4MAdmin.Plugins.Stats
         private IManager ServerManager;
         public static BaseConfigurationHandler<StatsConfiguration> Config { get; private set; }
 
-        public async Task OnEventAsync(Event E, Server S)
+        public async Task OnEventAsync(GameEvent E, Server S)
         {
             switch (E.Type)
             {
-                case Event.GType.Start:
+                case GameEvent.EventType.Start:
                     Manager.AddServer(S);
                     break;
-                case Event.GType.Stop:
+                case GameEvent.EventType.Stop:
                     break;
-                case Event.GType.Connect:
+                case GameEvent.EventType.Connect:
                     await Manager.AddPlayer(E.Origin);
                     break;
-                case Event.GType.Disconnect:
+                case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
                     break;
-                case Event.GType.Say:
+                case GameEvent.EventType.Say:
                     if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Message.Trim()[0] != '!' && E.Origin.ClientId > 1)
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
-                case Event.GType.MapChange:
+                case GameEvent.EventType.MapChange:
                     Manager.ResetKillstreaks(S.GetHashCode());
                     await Manager.Sync(S);
                     break;
-                case Event.GType.MapEnd:
+                case GameEvent.EventType.MapEnd:
                     break;
-                case Event.GType.Broadcast:
+                case GameEvent.EventType.Broadcast:
                     break;
-                case Event.GType.Tell:
+                case GameEvent.EventType.Tell:
                     break;
-                case Event.GType.Kick:
+                case GameEvent.EventType.Kick:
                     break;
-                case Event.GType.Ban:
+                case GameEvent.EventType.Ban:
                     break;
-                case Event.GType.Remote:
+                case GameEvent.EventType.Remote:
                     break;
-                case Event.GType.Unknown:
+                case GameEvent.EventType.Unknown:
                     break;
-                case Event.GType.Report:
+                case GameEvent.EventType.Report:
                     break;
-                case Event.GType.Flag:
+                case GameEvent.EventType.Flag:
                     break;
-                case Event.GType.Script:
+                case GameEvent.EventType.Script:
                     break;
-                case Event.GType.Kill:
+                case GameEvent.EventType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
                         await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
@@ -79,7 +79,7 @@ namespace IW4MAdmin.Plugins.Stats
                     else if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
-                case Event.GType.Death:
+                case GameEvent.EventType.Death:
                     break;
             }
         }

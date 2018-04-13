@@ -29,8 +29,6 @@ namespace WebfrontCore.Controllers
 
             if (HttpContext.Connection.RemoteIpAddress.ToString() != "127.0.0.1")
             {
-  
-
                 try
                 {
                     User.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);

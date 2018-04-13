@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Objects;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace WebfrontCore.ViewComponents
@@ -12,22 +13,6 @@ namespace WebfrontCore.ViewComponents
     {
         public async Task<IViewComponentResult> InvokeAsync(int offset)
         {
-            int ip = HttpContext.Connection.RemoteIpAddress
-                .ToString().ConvertToIP();
-
-            bool authed = false;
-
-            try
-            {
-               // var a = IW4MAdmin.ApplicationManager.GetInstance()
-               //.PrivilegedClients[HttpContext.Connection.RemoteIpAddress.ToString().ConvertToIP()];
-            }
-
-            catch (KeyNotFoundException)
-            {
-
-            }
-
             var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(15, offset);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
@@ -40,10 +25,11 @@ namespace WebfrontCore.ViewComponents
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
                 TimeRemaining = DateTime.UtcNow > p.Expires ? "" : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow),
-                Sensitive = p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Flag
+                Sensitive = p.Type == Penalty.PenaltyType.Flag
             });
 
-            penaltiesDto = authed ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
+            bool authorized = User.Identity.IsAuthenticated;
+            penaltiesDto =  authorized ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
 
             return View("_List", penaltiesDto);
         }

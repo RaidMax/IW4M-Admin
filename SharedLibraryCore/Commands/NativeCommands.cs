@@ -18,7 +18,7 @@ namespace SharedLibraryCore.Commands
             base("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, false)
         { }
 
-        public override Task ExecuteAsync(Event E)
+        public override Task ExecuteAsync(GameEvent E)
         {
             return Task.Run(() => { E.Owner.Manager.Stop(); });
         }
@@ -30,7 +30,7 @@ namespace SharedLibraryCore.Commands
             base("owner", "claim ownership of the server", "o", Player.Permission.User, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if ((await (E.Owner.Manager.GetClientService() as Services.ClientService).GetOwners()).Count == 0)
             {
@@ -61,7 +61,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.Level <= E.Target.Level)
                 await E.Origin.Tell($"You do not have the required privileges to warn {E.Target.Name}");
@@ -83,7 +83,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             E.Target.Warnings = 0;
             String Message = String.Format("All warning cleared for {0}", E.Target.Name);
@@ -109,11 +109,11 @@ namespace SharedLibraryCore.Commands
             })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.Level > E.Target.Level)
             {
-                await E.Owner.ExecuteEvent(new Event(Event.GType.Kick, E.Data, E.Origin, E.Target, E.Owner));
+                await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Kick, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Kick(E.Data, E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7has been kicked");
             }
@@ -135,9 +135,9 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Owner.Broadcast($"^:{E.Origin.Name} - ^6{E.Data}^7");
+            await E.Owner.Broadcast($"{(E.Owner.GameName == Server.Game.IW4 ? "^:" : "")}{E.Origin.Name} - ^6{E.Data}^7");
         }
     }
 
@@ -164,7 +164,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             String Message = Utilities.RemoveWords(E.Data, 1).Trim();
             var length = E.Data.Split(' ')[0].ToLower().ParseTimespan();
@@ -199,7 +199,7 @@ namespace SharedLibraryCore.Commands
             })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.Level > E.Target.Level)
             {
@@ -229,10 +229,10 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId);
-            if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban).FirstOrDefault() != null)
+            if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan).FirstOrDefault() != null)
             {
                 await E.Owner.Unban(E.Data, E.Target, E.Origin);
                 await E.Origin.Tell($"Successfully unbanned {E.Target}");
@@ -250,7 +250,7 @@ namespace SharedLibraryCore.Commands
             base("whoami", "give information about yourself.", "who", Player.Permission.User, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddressString);
             await E.Origin.Tell(You);
@@ -263,7 +263,7 @@ namespace SharedLibraryCore.Commands
             base("list", "list active clients", "l", Player.Permission.Moderator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             StringBuilder playerList = new StringBuilder();
             int count = 0;
@@ -305,7 +305,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             String cmd = E.Data.Trim();
 
@@ -361,7 +361,7 @@ namespace SharedLibraryCore.Commands
             base("fastrestart", "fast restart current map", "fr", Player.Permission.Moderator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             await E.Owner.ExecuteCommandAsync("fast_restart");
 
@@ -378,7 +378,7 @@ namespace SharedLibraryCore.Commands
             base("maprotate", "cycle to the next map in rotation", "mr", Player.Permission.Administrator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (!E.Origin.Masked)
                 await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5{E.Origin.Name}^7]");
@@ -407,7 +407,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Target == E.Origin)
             {
@@ -481,7 +481,7 @@ namespace SharedLibraryCore.Commands
             base("usage", "get current application memory usage", "us", Player.Permission.Moderator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             await E.Origin.Tell("IW4M Admin is using " + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
         }
@@ -493,7 +493,7 @@ namespace SharedLibraryCore.Commands
             base("uptime", "get current application running time", "up", Player.Permission.Moderator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
             await E.Origin.Tell(String.Format("IW4M Admin has been up for {0} days, {1} hours, and {2} minutes", uptime.Days, uptime.Hours, uptime.Minutes));
@@ -506,7 +506,7 @@ namespace SharedLibraryCore.Commands
             base("admins", "list currently connected admins", "a", Player.Permission.User, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             int numOnline = 0;
             for (int i = 0; i < E.Owner.Players.Count; i++)
@@ -540,7 +540,7 @@ namespace SharedLibraryCore.Commands
             })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             string newMap = E.Data.Trim().ToLower();
             foreach (Map m in E.Owner.Maps)
@@ -573,7 +573,7 @@ namespace SharedLibraryCore.Commands
             })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             IList<EFClient> db_players = (await (E.Owner.Manager.GetClientService() as ClientService)
                 .GetClientByName(E.Data))
@@ -603,7 +603,7 @@ namespace SharedLibraryCore.Commands
             base("rules", "list server rules", "r", Player.Permission.User, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Count < 1 &&
                 E.Owner.ServerConfig.Rules?.Count < 1)
@@ -650,7 +650,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             await E.Target.Tell($"^1{E.Origin.Name} ^3[PM]^7 - {E.Data}");
             await E.Origin.Tell($"To ^3{E.Target.Name} ^7-> {E.Data}");
@@ -675,7 +675,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             // todo: move unflag to seperate command
             if (E.Target.Level >= E.Origin.Level)
@@ -708,7 +708,7 @@ namespace SharedLibraryCore.Commands
                 };
 
                 await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
-                await E.Owner.ExecuteEvent(new Event(Event.GType.Flag, E.Data, E.Origin, E.Target, E.Owner));
+                await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Flag, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Origin.Tell($"You have flagged ^5{E.Target.Name}");
             }
 
@@ -733,7 +733,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Data.ToLower().Contains("camp"))
             {
@@ -762,7 +762,7 @@ namespace SharedLibraryCore.Commands
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
             await E.Origin.Tell($"Thank you for your report, an administrator has been notified");
-            await E.Owner.ExecuteEvent(new Event(Event.GType.Report, E.Data, E.Origin, E.Target, E.Owner));
+            await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
     }
@@ -780,7 +780,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Data != null && E.Data.ToLower().Contains("clear"))
             {
@@ -806,7 +806,7 @@ namespace SharedLibraryCore.Commands
             base("mask", "hide your presence as an administrator", "hide", Player.Permission.Moderator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.Masked)
             {
@@ -836,7 +836,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             var B = await E.Owner.Manager.GetPenaltyService().GetClientPenaltiesAsync(E.Target.ClientId);
 
@@ -865,7 +865,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             StringBuilder message = new StringBuilder();
             var names = new List<string>(E.Target.AliasLink.Children.Select(a => a.Name));
@@ -897,7 +897,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             var Response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
             foreach (string S in Response)
@@ -913,7 +913,7 @@ namespace SharedLibraryCore.Commands
             base("plugins", "view all loaded plugins", "p", Player.Permission.Administrator, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             await E.Origin.Tell("^5Loaded Plugins:");
             foreach (var P in Plugins.PluginImporter.ActivePlugins)
@@ -929,7 +929,7 @@ namespace SharedLibraryCore.Commands
             base("getexternalip", "view your external IP address", "ip", Player.Permission.User, false)
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             await E.Origin.Tell($"Your external IP is ^5{E.Origin.IPAddressString}");
         }
@@ -947,7 +947,7 @@ namespace SharedLibraryCore.Commands
         })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             int inactiveDays = 30;
 
@@ -997,7 +997,7 @@ namespace SharedLibraryCore.Commands
             })
         { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Data.Length < 5)
             {
@@ -1024,7 +1024,7 @@ namespace SharedLibraryCore.Commands
         {
         }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             var gameserverProcesses = System.Diagnostics.Process.GetProcessesByName("iw4x");
             var currentProcess = gameserverProcesses.FirstOrDefault(g => g.MainWindowTitle.Contains(E.Owner.Hostname));

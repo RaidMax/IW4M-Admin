@@ -22,12 +22,12 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
         IManager Manager;
         Task CompletedTask = Task.FromResult(false);
 
-        public async Task OnEventAsync(Event E, Server S)
+        public async Task OnEventAsync(GameEvent E, Server S)
         {
             if (!Settings.Configuration().EnableProfanityDeterment)
                 return;
 
-            if (E.Type == Event.GType.Connect)
+            if (E.Type == GameEvent.EventType.Connect)
             {
                 if (!ProfanityCounts.TryAdd(E.Origin.ClientId, new Tracking(E.Origin)))
                 {
@@ -36,7 +36,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
             }
 
-            if (E.Type == Event.GType.Disconnect)
+            if (E.Type == GameEvent.EventType.Disconnect)
             {
                 if (!ProfanityCounts.TryRemove(E.Origin.ClientId, out Tracking old))
                 {
@@ -44,7 +44,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                 }
             }
 
-            if (E.Type == Event.GType.Say)
+            if (E.Type == GameEvent.EventType.Say)
             {
                 var objectionalWords = Settings.Configuration().OffensiveWords;
                 bool containsObjectionalWord = objectionalWords.FirstOrDefault(w => E.Data.ToLower().Contains(w)) != null;

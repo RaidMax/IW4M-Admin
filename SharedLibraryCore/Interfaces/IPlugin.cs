@@ -7,7 +7,7 @@ namespace SharedLibraryCore.Interfaces
     {
         Task OnLoadAsync(IManager manager);
         Task OnUnloadAsync();
-        Task OnEventAsync(Event E, Server S);
+        Task OnEventAsync(GameEvent E, Server S);
         Task OnTickAsync(Server S);
 
         //for logging purposes

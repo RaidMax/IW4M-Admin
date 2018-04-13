@@ -12,8 +12,17 @@ using SharedLibraryCore.Exceptions;
 
 namespace Application.RconParsers
 {
-    class IW4Parser : IRConParser
+    class IW4RConParser : IRConParser
     {
+        private static CommandPrefix Prefixes = new CommandPrefix()
+        {
+            Tell = "tellraw {0} {1}",
+            Say = "sayraw {0}",
+            Kick = "clientkick {0} \"{1}\"",
+            Ban = "clientkick {0} \"{1}\"",
+            TempBan = "tempbanclient {0} \"{1}\""
+        };
+       
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command)).Skip(1).ToArray();
@@ -60,6 +69,8 @@ namespace Application.RconParsers
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, $"set {dvarName} {dvarValue}")).Length > 0;
         }
 
+        public CommandPrefix GetCommandPrefixes() => Prefixes;
+
         private List<Player> ClientsFromStatus(string[] Status)
         {
             List<Player> StatusPlayers = new List<Player>();
@@ -68,7 +79,7 @@ namespace Application.RconParsers
             {
                 String responseLine = S.Trim();
 
-                if (Regex.Matches(responseLine, @"\d+$", RegexOptions.IgnoreCase).Count > 0 && responseLine.Length > 72) // its a client line!
+                if (Regex.Matches(responseLine, @"^\d+", RegexOptions.IgnoreCase).Count > 0)
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     int cID = -1;

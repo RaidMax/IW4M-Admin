@@ -14,7 +14,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     {
         public TopStats() : base("topstats", "view the top 5 players on this server", "ts", Player.Permission.User, false) { }
 
-        public override async Task ExecuteAsync(Event E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             var statsSvc = new GenericRepository<EFClientStatistics>();
             int serverId = E.Owner.GetHashCode();

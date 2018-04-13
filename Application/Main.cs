@@ -38,7 +38,7 @@ namespace IW4MAdmin.Application
                 ServerManager = ApplicationManager.GetInstance();
                 ServerManager.Init().Wait();
 
-                Task.Run(() =>
+                Task.Run((Action)(() =>
                 {
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
@@ -54,12 +54,12 @@ namespace IW4MAdmin.Application
                             return;
 
                         Origin.CurrentServer = ServerManager.Servers[0];
-                        Event E = new Event(Event.GType.Say, userInput, Origin, null, ServerManager.Servers[0]);
+                        GameEvent E = new GameEvent((GameEvent.EventType)GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
                         ServerManager.Servers[0].ExecuteEvent(E);
                         Console.Write('>');
 
                     } while (ServerManager.Running);
-                });
+                }));
 
                 Task.Run(() => WebfrontCore.Program.Init(ServerManager));
                 ServerManager.Start();

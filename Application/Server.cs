@@ -16,6 +16,7 @@ using SharedLibraryCore.Configuration;
 using IW4MAdmin.Application.Misc;
 using Application.RconParsers;
 using Application.EventParsers;
+using SharedLibraryCore.Exceptions;
 
 namespace IW4MAdmin
 {
@@ -31,7 +32,7 @@ namespace IW4MAdmin
             int id = Math.Abs($"{IP}:{Port.ToString()}".Select(a => (int)a).Sum());
 
             // this is a nasty fix for get hashcode being changed
-            switch(id)
+            switch (id)
             {
                 case 765:
                     return 886229536;
@@ -227,7 +228,7 @@ namespace IW4MAdmin
             if (C == null)
             {
                 await E.Origin.Tell("You entered an unknown command");
-                throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
+                throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
             }
 
             E.Data = E.Data.RemoveWords(1);
@@ -236,14 +237,14 @@ namespace IW4MAdmin
             if (E.Origin.Level < C.Permission)
             {
                 await E.Origin.Tell("You do not have access to that command");
-                throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
+                throw new CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
             if (Args.Length < (C.RequiredArgumentCount))
             {
                 await E.Origin.Tell($"Not enough arguments supplied");
                 await E.Origin.Tell(C.Syntax);
-                throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
             if (C.RequiresTarget || Args.Length > 0)
@@ -291,7 +292,7 @@ namespace IW4MAdmin
                     if (matchingPlayers.Count > 1)
                     {
                         await E.Origin.Tell("Multiple players match that name");
-                        throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
+                        throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
                     {
@@ -305,7 +306,7 @@ namespace IW4MAdmin
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
-                            throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                            throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
                     }
                 }
@@ -318,7 +319,7 @@ namespace IW4MAdmin
                         await E.Origin.Tell("Multiple players match that name");
                         foreach (var p in matchingPlayers)
                             await E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
-                        throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} had multiple players found for {C.Name}");
+                        throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
                     {
@@ -335,7 +336,7 @@ namespace IW4MAdmin
                         {
                             await E.Origin.Tell($"Not enough arguments supplied!");
                             await E.Origin.Tell(C.Syntax);
-                            throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                            throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
                     }
                 }
@@ -343,7 +344,7 @@ namespace IW4MAdmin
                 if (E.Target == null && C.RequiresTarget)
                 {
                     await E.Origin.Tell("Unable to find specified player.");
-                    throw new SharedLibraryCore.Exceptions.CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
+                    throw new CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
                 }
             }
             E.Data = E.Data.Trim();
@@ -397,7 +398,7 @@ namespace IW4MAdmin
             }
 
             // when the server has lost connection
-            catch (SharedLibraryCore.Exceptions.NetworkException)
+            catch (NetworkException)
             {
                 Throttled = true;
                 return ClientNum;
@@ -459,7 +460,7 @@ namespace IW4MAdmin
                     LastPoll = DateTime.Now;
                 }
 
-                catch (SharedLibraryCore.Exceptions.NetworkException e)
+                catch (NetworkException e)
                 {
                     ConnectionErrors++;
                     if (ConnectionErrors == 1)
@@ -553,7 +554,7 @@ namespace IW4MAdmin
                 return true;
             }
             //#if !DEBUG
-            catch (SharedLibraryCore.Exceptions.NetworkException)
+            catch (NetworkException)
             {
                 Logger.WriteError($"Could not communicate with {IP}:{Port}");
                 return false;
@@ -649,7 +650,7 @@ namespace IW4MAdmin
             // patch for T6M:PLUTONIUM
             mainPath = (GameName == Game.T6M) ? $"t6r{Path.DirectorySeparatorChar}data" : mainPath;
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+         //   basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath = (game.Value == "" || onelog?.Value == 1) ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
@@ -717,7 +718,7 @@ namespace IW4MAdmin
                         C = await ValidateCommand(E);
                     }
 
-                    catch (SharedLibraryCore.Exceptions.CommandException e)
+                    catch (CommandException e)
                     {
                         Logger.WriteInfo(e.Message);
                     }
@@ -731,7 +732,26 @@ namespace IW4MAdmin
 
                         try
                         {
+                            if (!E.Remote && E.Origin.Level != Player.Permission.Console)
+                            {
+                                await ExecuteEvent(new GameEvent()
+                                {
+                                    Type = GameEvent.EventType.Command,
+                                    Data = string.Empty,
+                                    Origin = E.Origin,
+                                    Target = E.Target,
+                                    Owner = this,
+                                    Extra = C,
+                                    Remote = E.Remote
+                                });
+                            }
+
                             await C.ExecuteAsync(E);
+                        }
+
+                        catch (AuthorizationException e)
+                        {
+                            await E.Origin.Tell($"You are not authorized to execute that command - {e.Message}");
                         }
 
                         catch (Exception Except)

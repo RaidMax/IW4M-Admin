@@ -82,7 +82,7 @@ namespace Application.RconParsers
             {
                 String responseLine = statusLine;
 
-                if (Regex.Matches(responseLine, @"^\d+", RegexOptions.IgnoreCase).Count > 0) // its a client line!
+                if (Regex.Matches(responseLine, @"^ *\d+", RegexOptions.IgnoreCase).Count > 0) // its a client line!
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     int clientId = -1;

@@ -42,7 +42,8 @@ namespace WebfrontCore.Controllers
                 Type = GameEvent.EventType.Say,
                 Data = command,
                 Origin = client,
-                Owner = server
+                Owner = server,
+                Remote = true
             };
 
             await server.ExecuteEvent(remoteEvent);

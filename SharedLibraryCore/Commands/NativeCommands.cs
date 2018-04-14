@@ -937,7 +937,7 @@ namespace SharedLibraryCore.Commands
 
     public class CPruneAdmins : Command
     {
-        public CPruneAdmins() : base("prune", "demote any admins that have not connected recently (defaults to 30 days)", "p", Player.Permission.Owner, false, new CommandArgument[]
+        public CPruneAdmins() : base("prune", "demote any admins that have not connected recently (defaults to 30 days)", "pa", Player.Permission.Owner, false, new CommandArgument[]
         {
             new CommandArgument()
             {
@@ -1067,6 +1067,37 @@ namespace SharedLibraryCore.Commands
                         return;
                     }
                 }
+            }
+        }
+    }
+
+
+    public class CPing : Command
+    {
+        public CPing() : base("ping", "get client's ping", "pi", Player.Permission.User, false, new CommandArgument[]
+        {
+            new CommandArgument()
+            {
+                Name = "client",
+                Required = false
+            }
+        }){}
+
+        public override async Task ExecuteAsync(GameEvent E)
+        {
+            if (E.Message.IsBroadcastCommand())
+            {
+                if (E.Target == null)
+                    await E.Owner.Broadcast($"{E.Origin.Name}'s ping is ^5{E.Origin.Ping}^7ms");
+                else
+                    await E.Owner.Broadcast($"{E.Target.Name}'s ping is ^5{E.Origin.Ping}^7ms");
+            }
+            else
+            {
+                if (E.Target == null)
+                    await E.Origin.Tell($"Your ping is ^5{E.Origin.Ping}^7ms");
+                else
+                    await E.Origin.Tell($"{E.Target.Name}'s ping is ^5{E.Origin.Ping}^7ms");
             }
         }
     }

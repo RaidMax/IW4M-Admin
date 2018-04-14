@@ -133,10 +133,6 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                /*context.Configuration.LazyLoadingEnabled = false;
-                context.Configuration.ProxyCreationEnabled = false;
-                context.Configuration.AutoDetectChangesEnabled = false;*/
-
                 if (victim)
                 {
                     var now = DateTime.UtcNow;
@@ -162,7 +158,7 @@ namespace SharedLibraryCore.Services
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
                                               Type = penalty.Type.ToString(),
-                                              TimeRemaining = now > penalty.Expires ? ""  : penalty.Expires.ToString()
+                                              TimeRemaining = now > penalty.Expires ? "" : penalty.Expires.ToString()
                                           },
                                           When = penalty.When,
                                           Sensitive = penalty.Type == Objects.Penalty.PenaltyType.Flag

@@ -31,6 +31,7 @@ namespace SharedLibraryCore
             //FROM PLAYER
             Report,
             Flag,
+            Command,
 
             // FROM GAME
             Script,
@@ -57,5 +58,6 @@ namespace SharedLibraryCore
         public Player Target;
         public Server Owner;
         public Boolean Remote = false;
+        public object Extra { get; set; }
     }
 }

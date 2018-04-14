@@ -233,6 +233,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CPruneAdmins());
             Commands.Add(new CKillServer());
             Commands.Add(new CSetPassword());
+            Commands.Add(new CPing());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

@@ -17,6 +17,7 @@ using IW4MAdmin.Application.Misc;
 using Application.RconParsers;
 using Application.EventParsers;
 using SharedLibraryCore.Exceptions;
+using System.Runtime.InteropServices;
 
 namespace IW4MAdmin
 {
@@ -573,13 +574,20 @@ namespace IW4MAdmin
         public async Task Initialize()
         {
             RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW4RConParser();
-            EventParser = ServerConfig.UseT6MParser ? (IEventParser)new T6MEventParser() : new IW4EventParser();
 
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
 
-            if (GameName == Game.UKN)
+            if (GameName == Game.IW4)
+                EventParser = new IW4EventParser();
+            else if (GameName == Game.IW5)
+                EventParser = new IW5EventParser();
+            else if (GameName == Game.T6M)
+                EventParser = new T6MEventParser();
+            else if (GameName == Game.UKN)
                 Logger.WriteWarning($"Game name not recognized: {version}");
+            else
+                EventParser = new IW4EventParser();
 
             var shortversion = await this.GetDvarAsync<string>("shortversion");
             var hostname = await this.GetDvarAsync<string>("sv_hostname");
@@ -617,7 +625,7 @@ namespace IW4MAdmin
                 Website = website.Value;
             }
 
-            catch (SharedLibraryCore.Exceptions.DvarException)
+            catch (DvarException)
             {
                 Website = "this server's website";
             }
@@ -643,18 +651,20 @@ namespace IW4MAdmin
             }
 
             CustomCallback = await ScriptLoaded();
-
-            string mainPath = (GameName == Game.IW4 && onelog.Value >= 0) ? "userraw" : "main";
-            // patch for T5M:V2 log path
-            mainPath = (GameName == Game.T5M) ? "rzodemo" : mainPath;
-            // patch for T6M:PLUTONIUM
-            mainPath = (GameName == Game.T6M) ? $"t6r{Path.DirectorySeparatorChar}data" : mainPath;
+            string mainPath = EventParser.GetGameDir();
+            mainPath = (GameName == Game.IW4 && onelog.Value > 0) ? "main" : mainPath;
 #if DEBUG
          //   basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
-            string logPath = (game.Value == "" || onelog?.Value == 1) ?
+            string logPath = game.Value == string.Empty ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+
+            // hopefully fix wine drive name mangling
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                logPath = Regex.Replace(logPath, @"[A-Z]:", "");
+            }
 
             if (!File.Exists(logPath))
             {

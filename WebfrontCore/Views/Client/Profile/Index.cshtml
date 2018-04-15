@@ -11,6 +11,15 @@
     </div>
     <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
         <div id="profile_name">
+            @if (Model.Online)
+            {
+                <span class="oi oi-media-record text-success pr-2 h4" title="Online for @Model.TimeOnline"></span>
+            }
+
+            else
+            {
+                <span class="oi oi-media-record text-danger pr-2 h4" title="Offline"></span>
+            }
             <div class="client-name h1 d-flex d-inline-flex">
                 @Model.Name
             </div>
@@ -21,13 +30,13 @@
                         <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-                          (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
+              (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
                         }
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-                         (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
+             (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                         }

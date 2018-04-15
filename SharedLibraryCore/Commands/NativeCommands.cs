@@ -1090,14 +1090,14 @@ namespace SharedLibraryCore.Commands
                 if (E.Target == null)
                     await E.Owner.Broadcast($"{E.Origin.Name}'s ping is ^5{E.Origin.Ping}^7ms");
                 else
-                    await E.Owner.Broadcast($"{E.Target.Name}'s ping is ^5{E.Origin.Ping}^7ms");
+                    await E.Owner.Broadcast($"{E.Target.Name}'s ping is ^5{E.Target.Ping}^7ms");
             }
             else
             {
                 if (E.Target == null)
                     await E.Origin.Tell($"Your ping is ^5{E.Origin.Ping}^7ms");
                 else
-                    await E.Origin.Tell($"{E.Target.Name}'s ping is ^5{E.Origin.Ping}^7ms");
+                    await E.Origin.Tell($"{E.Target.Name}'s ping is ^5{E.Target.Ping}^7ms");
             }
         }
     }

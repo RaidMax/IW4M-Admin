@@ -22,5 +22,7 @@ namespace SharedLibraryCore.Dtos
         public string TimePlayed { get; set; }
         public bool Authenticated { get; set; }
         public List<ProfileMeta> Meta { get; set; }
+        public bool Online { get; set; }
+        public string TimeOnline { get; set; }
     }
 }

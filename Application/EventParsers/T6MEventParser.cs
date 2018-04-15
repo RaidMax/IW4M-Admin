@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using SharedLibraryCore;
@@ -88,5 +89,7 @@ namespace Application.EventParsers
                 Owner = server
             };
         }
+
+        public string GetGameDir() => $"t6r{Path.DirectorySeparatorChar}data";
     }
 }

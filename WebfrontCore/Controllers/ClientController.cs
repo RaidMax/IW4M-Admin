@@ -40,6 +40,8 @@ namespace WebfrontCore.Controllers
                     .Distinct()
                     .OrderBy(i => i)
                     .ToList(),
+                Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
+                TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText()
             };
 
             var meta = await MetaService.GetMeta(client.ClientId);

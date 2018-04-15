@@ -104,5 +104,8 @@ namespace Application.EventParsers
                 Owner = server
             };
         }
+
+        // other parsers can derive from this parser so we make it virtual
+        public virtual string GetGameDir() => "userraw";
     }
 }

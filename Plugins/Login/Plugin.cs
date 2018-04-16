@@ -36,6 +36,9 @@ namespace IW4MAdmin.Plugins.Login
 
             if (E.Type == GameEvent.EventType.Command)
             {
+                if (E.Origin.Level < SharedLibraryCore.Objects.Player.Permission.Moderator)
+                    return Task.CompletedTask;
+
                 if (((Command)E.Extra).Name == new SharedLibraryCore.Commands.CSetPassword().Name &&
                     E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId].Password == null)
                     return Task.CompletedTask;

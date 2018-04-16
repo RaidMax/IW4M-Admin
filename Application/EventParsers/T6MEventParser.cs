@@ -12,22 +12,34 @@ namespace Application.EventParsers
     {
         public GameEvent GetEvent(Server server, string logLine)
         {
-            string[] lineSplit = logLine.Split(';');
-            string cleanedEventName = Regex.Replace(lineSplit[0], @" +[0-9]+:[0-9]+ +", "");
+            string cleanedLogLine = Regex.Replace(logLine, @"^ *[0-9]+:[0-9]+ *", "");
+            string[] lineSplit = cleanedLogLine.Split(';');
 
-            if (cleanedEventName[0] == 'K')
+            if (lineSplit[0][0] == 'K')
             {
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.Script,
-                    Data = logLine,
+                    Data = cleanedLogLine,
                     Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
                     Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
                     Owner = server
                 };
             }
 
-            if (cleanedEventName == "say")
+            if (lineSplit[0][0] == 'D')
+            {
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.Damage,
+                    Data = cleanedLogLine,
+                    Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
+                    Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
+                    Owner = server
+                };
+            }
+
+            if (lineSplit[0] == "say")
             {
                 return new GameEvent()
                 {
@@ -39,7 +51,7 @@ namespace Application.EventParsers
                 };
             }
 
-            if (cleanedEventName.Contains("ShutdownGame"))
+            if (lineSplit[0].Contains("ShutdownGame"))
             {
                 return new GameEvent()
                 {
@@ -57,7 +69,7 @@ namespace Application.EventParsers
                 };
             }
 
-            if (cleanedEventName.Contains("InitGame"))
+            if (lineSplit[0].Contains("InitGame"))
             {
                 return new GameEvent()
                 {

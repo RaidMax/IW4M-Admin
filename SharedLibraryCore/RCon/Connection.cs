@@ -34,8 +34,8 @@ namespace SharedLibraryCore.RCon
 
     public class Connection
     {
-        IPEndPoint Endpoint;
-        string RConPassword;
+        public IPEndPoint Endpoint { get; private set; }
+        public string RConPassword { get; private set; }
         Socket ServerConnection;
         ILogger Log;
         int FailedSends;

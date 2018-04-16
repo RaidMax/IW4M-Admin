@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace SharedLibraryCore
 {
@@ -23,12 +24,6 @@ namespace SharedLibraryCore
                 FileCache = cl.GetStringAsync(Location).Result.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public override string[] Tail(int lineCount)
-        {
-           // Retrieve();
-            return FileCache;
-        }
-
         public override long Length()
         {
             Retrieve();
@@ -44,7 +39,8 @@ namespace SharedLibraryCore
             if (fileName != string.Empty)
             {
                 Name = fileName;
-                Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true), Encoding.UTF7);
+
                 sze = Handle.BaseStream.Length;
             }
         }
@@ -70,20 +66,20 @@ namespace SharedLibraryCore
             return Handle?.ReadToEnd();
         }
 
-        public virtual String[] Tail(int lineCount)
+        public virtual async Task<String[]> Tail(int lineCount)
         {
             var buffer = new List<string>(lineCount);
             string line;
             for (int i = 0; i < lineCount; i++)
             {
-                line = Handle.ReadLine();
+                line = await Handle.ReadLineAsync();
                 if (line == null) return buffer.ToArray();
                 buffer.Add(line);
             }
 
             int lastLine = lineCount - 1;           //The index of the last line read from the buffer.  Everything > this index was read earlier than everything <= this indes
 
-            while (null != (line = Handle.ReadLine()))
+            while (null != (line = await Handle.ReadLineAsync()))
             {
                 lastLine++;
                 if (lastLine == lineCount) lastLine = 0;

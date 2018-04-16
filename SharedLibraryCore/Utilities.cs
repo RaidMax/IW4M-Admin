@@ -331,7 +331,8 @@ namespace SharedLibraryCore
                 Level = client.Level,
                 LastConnection = client.LastConnection == DateTime.MinValue ? DateTime.UtcNow : client.LastConnection,
                 CurrentAlias = client.CurrentAlias,
-                CurrentAliasId = client.CurrentAlias.AliasId
+                CurrentAliasId = client.CurrentAlias.AliasId,
+                IsBot = client.NetworkId == -1
             };
         }
 
@@ -366,13 +367,13 @@ namespace SharedLibraryCore
             return pID;
         }
 
-        public static async Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => await server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
+        public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
 
-        public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
+        public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
 
-        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
+        public static Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
 
-        public static async Task<List<Player>> GetStatusAsync(this Server server) => await server.RconParser.GetStatusAsync(server.RemoteConnection);
+        public static Task<List<Player>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
 
     }
 }

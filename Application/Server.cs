@@ -48,7 +48,10 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
-            if (polledPlayer.Ping == 999 || polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || polledPlayer.ClientNumber < 0)
+
+            if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot)|| 
+                polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || 
+                polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
                 return true;
@@ -430,6 +433,7 @@ namespace IW4MAdmin
         DateTime lastCount = DateTime.Now;
         DateTime tickTime = DateTime.Now;
         bool firstRun = true;
+        int count = 0;
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
@@ -510,14 +514,13 @@ namespace IW4MAdmin
 
                 if (l_size != LogFile.Length())
                 {
-                    // this should be the longest running task
-                    await Task.FromResult(lines = LogFile.Tail(12));
+                    lines = l_size != -1 ? await LogFile.Tail(12) : lines;
                     if (lines != oldLines)
                     {
                         l_size = LogFile.Length();
                         int end = (lines.Length == oldLines.Length) ? lines.Length - 1 : Math.Abs((lines.Length - oldLines.Length)) - 1;
 
-                        for (int count = 0; count < lines.Length; count++)
+                        for (count = 0; count < lines.Length; count++)
                         {
                             if (lines.Length < 1 && oldLines.Length < 1)
                                 continue;
@@ -558,6 +561,13 @@ namespace IW4MAdmin
             catch (NetworkException)
             {
                 Logger.WriteError($"Could not communicate with {IP}:{Port}");
+                return false;
+            }
+
+            catch (InvalidOperationException)
+            {
+                Logger.WriteWarning("Event could not parsed properly");
+                Logger.WriteDebug($"Log Line: {lines[count]}");
                 return false;
             }
 
@@ -654,7 +664,7 @@ namespace IW4MAdmin
             string mainPath = EventParser.GetGameDir();
             mainPath = (GameName == Game.IW4 && onelog.Value > 0) ? "main" : mainPath;
 #if DEBUG
-         //   basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath = game.Value == string.Empty ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
@@ -680,7 +690,7 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
-        //    LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+ //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
             await Broadcast("IW4M Admin is now ^2ONLINE");
 #endif

@@ -313,13 +313,9 @@ namespace IW4MAdmin.Application
         public ClientService GetClientService() => ClientSvc;
         public AliasService GetAliasService() => AliasSvc;
         public PenaltyService GetPenaltyService() => PenaltySvc;
-
         public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
-
         public IDictionary<int, Player> GetPrivilegedClients() => PrivilegedClients;
-
         public IEventApi GetEventApi() => Api;
-
         public bool ShutdownRequested() => !Running;
     }
 }

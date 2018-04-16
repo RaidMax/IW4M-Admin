@@ -7,6 +7,7 @@ namespace SharedLibraryCore.Configuration
 {
     public class ApplicationConfiguration : IBaseConfiguration
     {
+        public bool EnableWebFront { get; set; }
         public bool EnableMultipleOwners { get; set; }
         public bool EnableSteppedHierarchy { get; set; }
         public bool EnableClientVPNs { get; set; }
@@ -23,6 +24,7 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
+            EnableWebFront = Utilities.PromptBool("Enable webfront");
             EnableMultipleOwners = Utilities.PromptBool("Enable multiple owners");
             EnableSteppedHierarchy = Utilities.PromptBool("Enable stepped privilege hierarchy");
             EnableCustomSayName = Utilities.PromptBool("Enable custom say name");

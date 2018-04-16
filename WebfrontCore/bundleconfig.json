@@ -13,6 +13,10 @@
   {
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
+      "wwwroot/lib/jQuery/dist/jquery.min.js",
+      "wwwroot/lib/moment/min/moment.min.js",
+      "wwwroot/lib/moment-timezone/builds/moment-timezone.min.js",
+      "wwwroot/lib/bootstrap/dist/js/bootstrap.min.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",

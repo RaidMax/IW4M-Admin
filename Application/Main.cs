@@ -38,7 +38,7 @@ namespace IW4MAdmin.Application
                 ServerManager = ApplicationManager.GetInstance();
                 ServerManager.Init().Wait();
 
-                Task.Run((Action)(() =>
+                Task.Run(() =>
                 {
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
@@ -59,9 +59,12 @@ namespace IW4MAdmin.Application
                         Console.Write('>');
 
                     } while (ServerManager.Running);
-                }));
+                });
 
-                Task.Run(() => WebfrontCore.Program.Init(ServerManager));
+                if (ServerManager.GetApplicationSettings().Configuration().EnableWebFront)
+                {
+                    Task.Run(() => WebfrontCore.Program.Init(ServerManager));
+                }
                 ServerManager.Start();
                 ServerManager.Logger.WriteVerbose("Shutdown complete");
 

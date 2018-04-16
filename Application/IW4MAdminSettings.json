@@ -234,6 +234,135 @@
           "Name": "mp_bloc_sh"
         }
       ]
+    },
+    {
+      "Game": "T6M",
+      "Maps": [
+        {
+          "Alias": "Aftermath",
+          "Name": "mp_la"
+        },
+        {
+          "Alias": "Cargo",
+          "Name": "mp_dockside"
+        },
+        {
+          "Alias": "Carrier",
+          "Name": "mp_carrier"
+        },
+        {
+          "Alias": "Drone",
+          "Name": "mp_drone"
+        },
+        {
+          "Alias": "Express",
+          "Name": "mp_express"
+        },
+        {
+          "Alias": "Hijacked",
+          "Name": "mp_hijacked"
+        },
+        {
+          "Alias": "Meltdown",
+          "Name": "mp_meltdown"
+        },
+        {
+          "Alias": "Overflow",
+          "Name": "mp_overflow"
+        },
+        {
+          "Alias": "Plaza",
+          "Name": "mp_nightclub"
+        },
+        {
+          "Alias": "Raid",
+          "Name": "mp_raid"
+        },
+        {
+          "Alias": "Slums",
+          "Name": "mp_slums"
+        },
+        {
+          "Alias": "Standoff",
+          "Name": "mp_village"
+        },
+        {
+          "Alias": "Turbine",
+          "Name": "mp_turbine"
+        },
+        {
+          "Alias": "Yemen",
+          "Name": "mp_socotra"
+        },
+        {
+          "Alias": "Nuketown 2025",
+          "Name": "mp_nuketown_2020"
+        },
+        {
+          "Alias": "Downhill",
+          "Name": "mp_downhill"
+        },
+        {
+          "Alias": "Mirage",
+          "Name": "mp_mirage"
+        },
+        {
+          "Alias": "Hydro",
+          "Name": "mp_hydro"
+        },
+        {
+          "Alias": "Grind",
+          "Name": "mp_skate"
+        },
+        {
+          "Alias": "Encore",
+          "Name": "mp_concert"
+        },
+        {
+          "Alias": "Magma",
+          "Name": "mp_magma"
+        },
+        {
+          "Alias": "Vertigo",
+          "Name": "mp_vertigo"
+        },
+        {
+          "Alias": "Studio",
+          "Name": "mp_studio"
+        },
+        {
+          "Alias": "Uplink",
+          "Name": "mp_uplink"
+        },
+        {
+          "Alias": "Detour",
+          "Name": "mp_bridge"
+        },
+        {
+          "Alias": "Cove",
+          "Name": "mp_castaway"
+        },
+        {
+          "Alias": "Rush",
+          "Name": "mp_paintball"
+        },
+        {
+          "Alias": "Dig",
+          "Name": "mp_dig"
+        },
+        {
+          "Alias": "Frost",
+          "Name": "mp_frostbite"
+        },
+        {
+          "Alias": "Pod",
+          "Name": "mp_pod"
+        },
+        {
+          "Alias": "Takeoff",
+          "Name": "mp_takeoff"
+        }
+      ]
     }
   ]
 }

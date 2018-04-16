@@ -136,7 +136,7 @@ namespace IW4MAdmin.Application
             else if (config.Servers.Count == 0)
                 throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
 
-
+            #endregion
             #region PLUGINS
             SharedLibraryCore.Plugins.PluginImporter.Load(this);
 
@@ -153,46 +153,6 @@ namespace IW4MAdmin.Application
                     Logger.WriteDebug($"Exception: {e.Message}");
                     Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
                 }
-            }
-            #endregion
-
-            foreach (var Conf in config.Servers)
-            {
-                try
-                {
-                    var ServerInstance = new IW4MServer(this, Conf);
-                    await ServerInstance.Initialize();
-
-                    lock (_servers)
-                    {
-                        _servers.Add(ServerInstance);
-                    }
-
-                    Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
-
-                    // this way we can keep track of execution time and see if problems arise.
-                    var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
-                    lock (TaskStatuses)
-                    {
-                        TaskStatuses.Add(Status);
-                    }
-                }
-
-                catch (ServerException e)
-                {
-                    Logger.WriteError($"Not monitoring server {Conf.IPAddress}:{Conf.Port} due to uncorrectable errors");
-                    if (e.GetType() == typeof(DvarException))
-                        Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
-                    else if (e.GetType() == typeof(NetworkException))
-                    {
-                        Logger.WriteDebug(e.Message);
-                        //Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
-                    }
-
-                    // throw the exception to the main method to stop before instantly exiting
-                    throw e;
-                }
-
             }
             #endregion
 
@@ -237,6 +197,48 @@ namespace IW4MAdmin.Application
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
+            #endregion
+
+            #region INIT
+            async Task Init(ServerConfiguration Conf)
+            {
+                try
+                {
+                    var ServerInstance = new IW4MServer(this, Conf);
+                    await ServerInstance.Initialize();
+
+                    lock (_servers)
+                    {
+                        _servers.Add(ServerInstance);
+                    }
+
+                    Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
+
+                    // this way we can keep track of execution time and see if problems arise.
+                    var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
+                    lock (TaskStatuses)
+                    {
+                        TaskStatuses.Add(Status);
+                    }
+                }
+
+                catch (ServerException e)
+                {
+                    Logger.WriteError($"Not monitoring server {Conf.IPAddress}:{Conf.Port} due to uncorrectable errors");
+                    if (e.GetType() == typeof(DvarException))
+                        Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
+                    else if (e.GetType() == typeof(NetworkException))
+                    {
+                        Logger.WriteDebug(e.Message);
+                    }
+
+                    // throw the exception to the main method to stop before instantly exiting
+                    throw e;
+                }
+            }
+
+            await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
+
             #endregion
 
             Running = true;

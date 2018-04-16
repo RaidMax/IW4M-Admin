@@ -11,6 +11,8 @@
     <meta property="og:url" content="@ViewBag.Url">
     <meta name="description" content="@ViewBag.Description">
     <meta name="keywords" content="@ViewBag.Keywords">
+    <link rel="icon" type="image/png" href="~/images/icon.png">
+
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment include="Development">
         <link rel="stylesheet" href="~/css/bootstrap-custom.css" />
@@ -136,10 +138,6 @@
         <script type="text/javascript" src="~/js/search.js"></script>
     </environment>
     <environment include="Production">
-        <script type="text/javascript" src="~/lib/jQuery/dist/jquery.min.js"></script>
-        <script type="text/javascript" src="~/lib/moment/min/moment.min.js"></script>
-        <script type="text/javascript" src="~/lib/moment-timezone/builds/moment-timezone.min.js"></script>
-        <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
         <script type="text/javascript" src="~/js/global.min.js"></script>
     </environment>

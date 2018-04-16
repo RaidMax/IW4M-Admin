@@ -34,9 +34,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
+    <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="Always" />
+    <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="Always" />
+    <None Include="wwwroot\images\icon.png" CopyToPublishDirectory="Always" />
+    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.ttf" CopyToPublishDirectory="Always" />
+    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.woff" CopyToPublishDirectory="Always" />
+    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.otf" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Bower" Version="1.3.11" />
     <PackageReference Include="BuildBundlerMinifier" Version="2.6.375" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />
   </ItemGroup>
 
   <ItemGroup>

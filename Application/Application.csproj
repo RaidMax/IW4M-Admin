@@ -48,4 +48,8 @@
     <Exec Command="call $(ProjectDir)BuildScripts\PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>
 
+  <Target Name="PostPublish" AfterTargets="Publish">
+    <Exec Command="call $(ProjectDir)BuildScripts\PostPublish.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
+  </Target>
+
 </Project>

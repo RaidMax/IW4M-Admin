@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
@@ -12,12 +13,12 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Exceptions;
 
-using IW4MAdmin.Application.Misc;
+using Application.Misc;
 using Application.RconParsers;
 using Application.EventParsers;
-using SharedLibraryCore.Exceptions;
-using System.Runtime.InteropServices;
+
 
 namespace IW4MAdmin
 {
@@ -612,23 +613,6 @@ namespace IW4MAdmin
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
 
-            Dvar<int> onelog = null;
-            if (GameName == Game.IW4)
-            {
-                try
-                {
-                    onelog = await this.GetDvarAsync<int>("iw4x_onelog");
-                }
-
-                catch (Exception)
-                {
-                    onelog = new Dvar<int>("iw4x_onelog")
-                    {
-                        Value = -1
-                    };
-                }
-            }
-
             try
             {
                 var website = await this.GetDvarAsync<string>("_website");
@@ -662,9 +646,8 @@ namespace IW4MAdmin
 
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
-            mainPath = (GameName == Game.IW4 && onelog.Value > 0) ? "main" : mainPath;
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+ //           basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath = game.Value == string.Empty ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :

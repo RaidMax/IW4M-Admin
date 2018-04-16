@@ -1,16 +1,24 @@
-﻿let offset = 15;
+﻿let offset = 12;
+let isLoading = false;
 
 function loadMorePenalties() {
+    if (isLoading) {
+        return false;
+    }
+
     showLoader();
+    isLoading = true;
     $.get('/Penalty/ListAsync', { offset: offset })
         .done(function (response) {
             $('#penalty_table').append(response);
             hideLoader();
+            isLoading = false;
         })
         .fail(function (jqxhr, statis, error) {
             errorLoader();
+            isLoading = false;
         });
-    offset += 15;
+    offset += 12;
 }
 
 if ($('#penalty_table').length === 1) {
@@ -37,10 +45,13 @@ if ($('#penalty_table').length === 1) {
     var hasScrollBar = false;
 
     $document.ready(function () {
-
         $window
             .off('scroll', ScrollHandler)
             .on('scroll', ScrollHandler);
+
+        $('#load_penalties_button').hover(function () {
+            loadMorePenalties();
+        });
     });
 
     function ScrollHandler(e) {

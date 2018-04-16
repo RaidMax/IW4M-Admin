@@ -22,7 +22,7 @@ namespace WebfrontCore.Controllers
         {
             Manager = Program.Manager;
 
-            User = new EFClient()
+            User = User ?? new EFClient()
             {
                 ClientId = -1
             };

@@ -4,7 +4,6 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Objects;
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace WebfrontCore.ViewComponents
@@ -13,7 +12,7 @@ namespace WebfrontCore.ViewComponents
     {
         public async Task<IViewComponentResult> InvokeAsync(int offset)
         {
-            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(15, offset);
+            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(12, offset);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
                 OffenderId = p.OffenderId,
@@ -28,8 +27,7 @@ namespace WebfrontCore.ViewComponents
                 Sensitive = p.Type == Penalty.PenaltyType.Flag
             });
 
-            bool authorized = User.Identity.IsAuthenticated;
-            penaltiesDto =  authorized ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
+            penaltiesDto = User.Identity.IsAuthenticated ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
 
             return View("_List", penaltiesDto);
         }

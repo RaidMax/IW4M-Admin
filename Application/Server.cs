@@ -630,6 +630,7 @@ namespace IW4MAdmin
             this.CurrentMap = Maps.Find(m => m.Name == mapname.Value) ?? new Map() { Alias = mapname.Value, Name = mapname.Value };
             this.MaxClients = maxplayers.Value;
             this.FSGame = game.Value;
+            this.Gametype = (await this.GetDvarAsync<string>("g_gametype")).Value;
 
             await this.SetDvarAsync("sv_kickbantime", 60);
 
@@ -647,7 +648,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
- //           basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath = game.Value == string.Empty ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :

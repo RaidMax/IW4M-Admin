@@ -1,0 +1,16 @@
+aniso8601==3.0.0
+click==6.7
+Flask==0.12.2
+Flask-JWT==0.3.2
+Flask-JWT-Extended==3.8.1
+Flask-RESTful==0.3.6
+itsdangerous==0.24
+Jinja2==2.10
+MarkupSafe==1.0
+marshmallow==3.0.0b8
+pip==9.0.1
+PyJWT==1.4.2
+pytz==2018.4
+setuptools==39.0.1
+six==1.11.0
+Werkzeug==0.14.1

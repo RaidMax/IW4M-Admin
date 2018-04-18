@@ -29,6 +29,7 @@ namespace IW4MAdmin.Application
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
         public EventHandler<GameEvent> ServerEventOccurred { get; private set; }
+        public DateTime StartTime { get; private set; }
 
         static ApplicationManager Instance;
         List<AsyncStatus> TaskStatuses;
@@ -60,6 +61,7 @@ namespace IW4MAdmin.Application
             ServerEventOccurred += Api.OnServerEvent;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
+            StartTime = DateTime.UtcNow;
         }
 
         private void OnCancelKey(object sender, ConsoleCancelEventArgs args)
@@ -131,6 +133,15 @@ namespace IW4MAdmin.Application
                 newConfig.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
                 config = newConfig;
                 await ConfigHandler.Save();
+            }
+
+            else if(config != null)
+            {
+                if (string.IsNullOrEmpty(config.Id))
+                {
+                    config.Id = Guid.NewGuid().ToString();
+                    await ConfigHandler.Save();
+                }
             }
 
             else if (config.Servers.Count == 0)
@@ -244,8 +255,71 @@ namespace IW4MAdmin.Application
             Running = true;
         }
 
+        private void HeartBeatThread()
+        {
+            bool successfulConnection = false;
+            restartConnection:
+            while (!successfulConnection)
+            {
+                try
+                {
+                    API.Master.Heartbeat.Send(this, true).Wait();
+                    successfulConnection = true;
+                }
+
+                catch (Exception e)
+                {
+                    successfulConnection = false;
+                    Logger.WriteWarning($"Could not connect to heartbeat server - {e.Message}");
+                }
+
+                Thread.Sleep(30000);
+            }
+
+            while (Running)
+            {
+                Logger.WriteDebug("Sending heartbeat...");
+                try
+                {
+                    API.Master.Heartbeat.Send(this).Wait();
+                }
+                catch (System.Net.Http.HttpRequestException e)
+                {
+                    Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                }
+
+                catch (AggregateException e)
+                {
+                    Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    var exceptions = e.InnerExceptions.Where(ex => ex.GetType() == typeof(RestEase.ApiException));
+
+                    foreach (var ex in exceptions)
+                    {
+                        if (((RestEase.ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        {
+                            successfulConnection = false;
+                            goto restartConnection;
+                        }
+                    }
+                }
+
+                catch (RestEase.ApiException e)
+                {
+                    Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        successfulConnection = false;
+                        goto restartConnection;
+                    }
+                }
+
+                Thread.Sleep(30000);
+            }
+        }
+
         public void Start()
         {
+            Task.Run(() => HeartBeatThread());
             while (Running || TaskStatuses.Count > 0)
             {
                 for (int i = 0; i < TaskStatuses.Count; i++)

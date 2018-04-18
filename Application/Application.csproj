@@ -31,6 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="RestEase" Version="1.4.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
       <Private>true</Private>
     </ProjectReference>

@@ -65,6 +65,7 @@ namespace IW4MAdmin.Application
                 {
                     Task.Run(() => WebfrontCore.Program.Init(ServerManager));
                 }
+
                 ServerManager.Start();
                 ServerManager.Logger.WriteVerbose("Shutdown complete");
 

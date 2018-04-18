@@ -16,6 +16,7 @@ namespace SharedLibraryCore.Configuration
         public string CustomSayName { get; set; }
         public string DiscordInviteCode { get; set; }
         public string IPHubAPIKey { get; set; }
+        public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }
         public List<string> AutoMessages { get; set; }
@@ -24,6 +25,7 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
+            Id = Guid.NewGuid().ToString();
             EnableWebFront = Utilities.PromptBool("Enable webfront");
             EnableMultipleOwners = Utilities.PromptBool("Enable multiple owners");
             EnableSteppedHierarchy = Utilities.PromptBool("Enable stepped privilege hierarchy");

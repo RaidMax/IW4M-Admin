@@ -51,7 +51,7 @@ namespace Application.EventParsers
                 };
             }
 
-            if (lineSplit[0].Contains("ShutdownGame"))
+            if (lineSplit[0].Contains("ExitLevel"))
             {
                 return new GameEvent()
                 {
@@ -68,6 +68,11 @@ namespace Application.EventParsers
                     Owner = server
                 };
             }
+
+            /*if (lineSplit[0].Contains("ShutdownGame"))
+            {
+                
+            }*/
 
             if (lineSplit[0].Contains("InitGame"))
             {

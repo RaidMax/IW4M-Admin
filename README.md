@@ -1,111 +1,155 @@
-# <span style="color: #007ACC;">IW4MAdmin</span>
-### <span style="color: #007ACC; opacity:0.75;">Quick Start Guide</span>
-### Version 1.5
+
+# IW4MAdmin
+### Quick Start Guide
+### Version 2.0
 _______
+### About
+**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [T6M](https://plutonium.pw/), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 
 ### Setup
-IW4MAdmin requires minimal configuration to run. There is only one prerequisite.  
-1. [.NET Framework 4.5](https://www.microsoft.com/en-us/download/details.aspx?id=30653) *or newer*  
+**IW4MAdmin** requires minimal configuration to run. There is only one prerequisite.  
+* [.NET Core 2.0 Runtime](https://www.microsoft.com/net/download/dotnet-core/runtime-2.0.5) *or newer*  
 
-Extract `IW4MAdmin.zip`  
-Run `IW4MAdmin.exe`
+1. Extract `IW4MAdmin-<version>.zip`  
+2. Open command prompt or terminal in the extracted folder
+3. Run `>dotnet IW4MAdmin.dll`
 ___
 
 ### Configuration
-_If you wish to customize your experience of IW4MAdmin, the following configuration files will allow you to changes core options._
+#### Initial Configuration
+When **IW4MAdmin** is launched for the _first time_, you will be prompted to setup your configuration.
 
-`maps.cfg`
-  * This is the configuration file that links an IW4 map file name to its common/in-game name
-  * This can be safely modified to add additional SP/DLC maps
+`Enable webfront`
+* Enables you to monitor and control your server(s) through a web interface [defaults to `http://127.0.0.1:1624`]
 
-`messages.cfg`
-  * This is the configuration file that broadcasts messages to your server at a set time
-  * The _first line_ specifies the amount of time between messages (in seconds)
-  * Every new line is interpreted as a new message
-  * Color codes are allowed in the messages
-  * Tokens are denoted by double braces: {{TOKEN}}
+`Enable multiple owners`
+* Enables more than one client to be promoted to level of `Owner`
 
-`rules.cfg`
-  * This is the configuration file that sets the server's rules.
-  * Every new line is interpreted as a new rule
-  * All rules are _global_ across servers
+`Enable stepped privilege hierarchy`
+* Allows privileged clients to promote other clients to the level below their current level
 
-`web.cfg`
-  * This is the configuration file that specifies the web front bindings
-  * The first line specifies the `IP` or `Hostname` to bind to
-  * The second line specifies the `port` to bind to
+`Enable custom say name`
+* Shows a prefix to every message send by **IW4MAdmin** -- `[Admin] message`
+* _This feature requires you specify a custom say name_
 
+`Enable client VPNs`
+* Allow clients to use a [VPN](https://en.wikipedia.org/wiki/Virtual_private_network) 
+* _This feature requires an active api key on [iphub.info](https://iphub.info/)_
+
+`Enable discord link`
+* Shows a link to your server's discord on the webfront
+* _This feature requires an invite link to your discord server_
+
+#### Advanced Configuration
+If you wish to further customize your experience of **IW4MAdmin**, the following configuration file(s) will allow you to changes core options using any text-editor.
+
+#### `IW4MAdminSettings.json`-- _this file is created after initial setup_
+* This file uses the [JSON](https://en.wikipedia.org/wiki/JSON#JSON_sample) specification, so please validate it before running **IW4MAdmin**
+
+`WebfrontBindUrl`
+* Specifies the address and port the webfront will listen on.
+* The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port
+
+`Servers`
+* Specifies the list of servers **IW4MAdmin** will monitor
+* `IPAddress`
+	* Specifies the IP Address of the particular server
+* `Port`
+	* Specifies the port of the particular server
+* `Password`
+	* Specifies the `rcon_password` of the particular server
+* `AutoMessages`
+	* Specifies the list of messages that are broadcasted to the particular server
+* `Rules`
+	* Specifies the list of rules that apply to the particular server
+
+`AutoMessagePeriod`
+* Specifies (in seconds) how often messages should be broadcasted to the server(s)
+
+`AutoMessages`
+* Specifies the list of messages that are broadcasted to **all** servers
+
+`GlobalRules`
+* Specifies the list of rules that apply to **all** servers`
+
+`Maps`
+* Specifies the list of maps for each supported game
+* `Name`
+	* Specifies the name of the map as returned by the game
+* `Alias`
+	* Specifies the display name of the map (as seen while loading in)
 ___
+
 ### Commands
 |Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
 |--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
-|disabletrusted|dt|disable trusted player group for the server|False|!dt |Owner|
-|enabletrusted|et|enable trusted player group for the server|False|!et |Owner|
-|prune|p|demote any admins that have not connected recently (defaults to 30 days)|False|!p \<optional inactive days\>|Owner|
+|prune|pa|demote any admins that have not connected recently (defaults to 30 days)|False|!pa \<optional inactive days\>|Owner|
 |quit|q|quit IW4MAdmin|False|!q |Owner|
 |rcon|rcon|send rcon command to server|False|!rcon \<command\>|Owner|
-|reload|rl|reload configuration files|False|!rl |Owner|
-|setlevel|sl|set player to specified administration level|True|!sl \<player\> \<level\>|Owner|
 |ban|b|permanently ban a player from the server|True|!b \<player\> \<reason\>|SeniorAdmin|
-|fredisable|frd|disable fast restarting at the end of a map|False|!frd |SeniorAdmin|
-|frenable|fre|enable fast restarting at the end of a map|False|!fre |SeniorAdmin|
-|unban|ub|unban player by database id|True|!ub \<databaseID\>|SeniorAdmin|
+|unban|ub|unban player by database id|True|!ub \<databaseID\> \<reason\>|SeniorAdmin|
 |find|f|find player in database|False|!f \<player\>|Administrator|
-|findall|fa|find a player by their aliase(s)|False|!fa \<player\>|Administrator|
+|killserver|kill|kill the game server|False|!kill |Administrator|
 |map|m|change to specified map|False|!m \<map\>|Administrator|
 |maprotate|mr|cycle to the next map in rotation|False|!mr |Administrator|
-|mask|hide|hide your online presence from online admin list|False|!hide |Administrator|
 |plugins|p|view all loaded plugins|False|!p |Administrator|
 |alias|known|get past aliases and ips of a player|True|!known \<player\>|Moderator|
 |baninfo|bi|get information about a ban for a player|True|!bi \<player\>|Moderator|
 |fastrestart|fr|fast restart current map|False|!fr |Moderator|
 |flag|fp|flag a suspicious player and announce to admins on join|True|!fp \<player\> \<reason\>|Moderator|
 |list|l|list active clients|False|!l |Moderator|
+|mask|hide|hide your presence as an administrator|False|!hide |Moderator|
 |reports|reps|get or clear recent reports|False|!reps \<optional clear\>|Moderator|
 |say|s|broadcast message to all players|False|!s \<message\>|Moderator|
+|setlevel|sl|set player to specified administration level|True|!sl \<player\> \<level\>|Moderator|
+|setpassword|sp|set your authentication password|False|!sp \<password\>|Moderator|
 |tempban|tb|temporarily ban a player for specified time (defaults to 1 hour)|True|!tb \<player\> \<duration (m\|h\|d\|w\|y)\> \<reason\>|Moderator|
 |uptime|up|get current application running time|False|!up |Moderator|
 |usage|us|get current application memory usage|False|!us |Moderator|
 |kick|k|kick a player by name|True|!k \<player\> \<reason\>|Trusted|
+|login|l|login using password|False|!l \<password\>|Trusted|
 |warn|w|warn player for infringing rules|True|!w \<player\> \<reason\>|Trusted|
 |warnclear|wc|remove all warning for a player|True|!wc \<player\>|Trusted|
 |admins|a|list currently connected admins|False|!a |User|
 |getexternalip|ip|view your external IP address|False|!ip |User|
 |help|h|list all available commands|False|!h \<optional command\>|User|
+|ping|pi|get client's ping|False|!pi \<optional client\>|User|
 |privatemessage|pm|send message to other player|True|!pm \<player\> \<message\>|User|
 |report|rep|report a player for suspicious behavior|True|!rep \<player\> \<reason\>|User|
 |resetstats|rs|reset your stats to factory-new|False|!rs |User|
 |rules|r|list server rules|False|!r |User|
 |stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
 |topstats|ts|view the top 5 players on this server|False|!ts |User|
-|vote|v|vote for the next map|False|!v \<map\>|User|
-|votecancel|vc|cancel your vote for the next map|False|!vc |User|
 |whoami|who|give information about yourself.|False|!who |User|
+_These commands include all shipped plugin commands._
+
+---
 
 #### Player Identification
 All players are identified 4 seperate ways   
 1. `npID/GUID/XUID` - The ID corresponding to the player's hardware or forum account   
 2. `IP` - The player's IP Address   
-3. `Database ID` - The internal reference to a player, generated by IW4MAdmin   
+3. `Client ID` - The internal reference to a player, generated by **IW4MAdmin**   
 4. `Name` - The visible player name as it appears in game   
 
 For most commands players are identified by their `Name`  
-However, if they are currently offline, or their name contains un-typable characters, their `Database ID` must be used   
+However, if they are currently offline, or their name contains un-typable characters, their `Client ID` must be used   
 
-The `dbID` is specified by prefixing a player's reference number with `@`.  
-For example, `@123` would reference the player with a `dbID` of 123.  
-Players can also be referenced by `clientID`, which is simply their slot (0 - 17)
+The `Client ID` is specified by prefixing a player's reference number with `@`.  
+For example, `@123` would reference the player with a `Client ID` of 123.  
+While in-game, [layers can also be referenced by `Client Number`, which is simply their slot [0 - 17]
 
 **All commands that require a `target` look at the `first argument` for a form of player identification**
 
+---
 
-#### Additional Command Parameters
+#### Additional Command Examples
 `setlevel`
 - _shortcut_ - `sl`
 - _Parameter 1_ - Player to modify level of
-- _Parameter 2_ - Level to set the player to ```[ User, Trusted, Moderator, Administrator, SeniorAdmin ]```
+- _Parameter 2_ - Level to set the player to ```[ User, Trusted, Moderator, Administrator, SeniorAdmin, Owner ]```
 - _Example_ - `!setlevel Player1 SeniorAdmin`, `!sl @123 Moderator`
-- **NOTE** - It has been purposefully designed that there should only be **1 Owner** ( owner cannot set another player's level to owner unless the configuration option is enabled during setup)
+- **NOTE** - An `owner` cannot set another player's level to `owner` unless the configuration option is enabled during setup
 
 `ban`
 - _Shortcut_ - `b`
@@ -126,58 +170,57 @@ Players can also be referenced by `clientID`, which is simply their slot (0 - 17
 
 ___
 ### Plugins
-#### EventAPI
-- This plugin adds a page to the webfront that serves JSON content in the form of server events   
-- The page is located at 127.0.0.1/api/events
-- JSON Object Structure
- 	* **eventCount** - Number of events in the generated response ( 0 or 1 )
- 	* **Event** - The event object corresponding to generated event ( will be null if eventCount = 0 )
- 	  * _Version_ - The supported version of the Event Object ( IW4MAdmin = 0 )
- 	  * _Type_ - The type of Event Object ( Notification = 0, Status = 1, Alert = 2 )
- 	  * _Message_ - The string contents of the Event Object ( ie chat message text )
- 	  * _Title_ - The string header/title of the Event Object ( optional )
- 	  * _Origin_ - The string origin of the Event Object ( ie player name or sv_hostname )
- 	  * _Target_ - The string target of the Event Object ( ie reported player's name )
- 	  * _ID_ - The int ID of the Event Object ( will be unique unless two events are generated simultaneously )
-- Optional Parameters 
-  * appending a `GET` parameter of `status=1` to your request will generate a list of currently monitored servers
-  * For example: 127.0.0.1/api/events?status=1
-  * The contents of the response will be in the `Message` property of the response
-- Each event will be consumed ( eaten by the request, so save the event if you need to use it later )
-- The plugin additionally scans chat messages for phrases that indicate a cheater on the server
-- If enough matching phrases are detected, an alert will be generated
-- No commands are added by this plugin
-- Additional Features will be added in the future   
+
 #### Welcome   
-- This plugin uses geolocation data to welcome a player based on their IP's country
-- All privileged users ( Trusted or higher ) recieve a specialized welcome message as well 
+- This plugin uses geo-location data to welcome a player based on their country of origin
+- All privileged users ( Trusted or higher ) receive a specialized welcome message as well 
+- Welcome messages can be customized in `WelcomePluginSettings.json`
 
 #### Stats
-- This plugin calculates basic player performance, skill approximation, and kill/death ratio
-- Total play-time is stored by this plugin
-- After 3 days ( 36 hours ) of total play-time, a user earns the `Trusted` rank ( will be optional in a later release )  
+- This plugin calculates basic player performance, skill approximation, and kill/death ratio 
 
 **Commands added by this plugin** 
 
 
 |Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
 |--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
-|disabletrusted|dt|disable trusted player group for the server|False|!dt |Owner|
-|enabletrusted|et|enable trusted player group for the server|False|!et |Owner|
-|prune|p|demote any admins that have not connected recently (defaults to 30 days)|False|!p \<optional inactive days\>|Owner|
 |resetstats|rs|reset your stats to factory-new|False|!rs |User|
 |stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
 |topstats|ts|view the top 5 players on this server|False|!ts |User|
 
-- To qualify for top stats, a player must meet the following criteria
-  * `Skill` > 10
-  * `Kills` > 150
-  * `Play Time` > 1 hour
+- To qualify for top stats, a client must have played for at least `1 hour` and connected within the past `30 days`.
 
-- Each server has seperated stats and can be reset by deleting `stats_<port>.rm`
+#### Login
+- This plugin deters GUID spoofing by requiring privileged users to login with their password before executing commands
+- A password must be set using the `setpassword` command before logging in
 
+ **Commands added by this plugin** 
+|Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
+|--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
+|login|l|login using password|False|!l \<password\>|Trusted|
+
+#### Profanity Determent
+- This plugin warns and kicks players for using profanity
+- Profane words and warning message can be specified in `ProfanityDetermentSettings.json`
 ___
+### Webfront
+`Home`
+* Shows an overview of the monitored server(s)
+
+`Penalties`
+* Shows a chronological ordered list of client penalties (scrolling down loads older penalties)
+
+`Admins`
+* Shows a list of privileged clients
+
+`Login`
+* Allows privileged users to login using their `Client ID` and password set via `setpassword`
+
+`Profile`
+* Shows a client's information and history 
+
+---
+
 ### Misc
 #### Database Storage
-All unique client information is stored in `clients.rm`. Should you need to reset your database, this file can simply be deleted.
-Player aliases and previous ips are stored in `aliases.rm`.
+All **IW4MAdmin** information is stored in `Database.db`. Should you need to reset your database, this file can simply be deleted. Additionally, this file should be preserved during updates to retain client information.

@@ -267,6 +267,11 @@ namespace SharedLibraryCore
             return Game.UKN;
         }
 
+        public static string EscapeMarkdown(this string markdownString)
+        {
+            return markdownString.Replace("<", "\\<").Replace(">", "\\>").Replace("|", "\\|");
+        }
+
         public static TimeSpan ParseTimespan(this string input)
         {
             var expressionMatch = Regex.Match(input, @"[0-9]+.\b");

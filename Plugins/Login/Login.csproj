@@ -12,6 +12,10 @@
     <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
   </ItemGroup>

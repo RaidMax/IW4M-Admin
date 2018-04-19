@@ -39,7 +39,7 @@ namespace Application.EventParsers
                 };
             }
 
-            if (lineSplit[0] == "say")
+            if (lineSplit[0] == "say" || lineSplit[0] == "sayteam")
             {
                 return new GameEvent()
                 {

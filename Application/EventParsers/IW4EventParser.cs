@@ -12,7 +12,7 @@ namespace Application.EventParsers
         public GameEvent GetEvent(Server server, string logLine)
         {
             string[] lineSplit = logLine.Split(';');
-            string cleanedEventLine = Regex.Replace(lineSplit[0], @"[0-9]+:[0-9]+\ ", "");
+            string cleanedEventLine = Regex.Replace(lineSplit[0], @"[0-9]+:[0-9]+\ ", "").Trim();
 
             if (cleanedEventLine[0] == 'K')
             {
@@ -29,7 +29,7 @@ namespace Application.EventParsers
                 }
             }
 
-            if (lineSplit[0].Substring(lineSplit[0].Length - 3).Trim() == "say")
+            if (cleanedEventLine == "say" || cleanedEventLine == "sayteam")
             {
                 return new GameEvent()
                 {
@@ -37,7 +37,7 @@ namespace Application.EventParsers
                     Data = lineSplit[4].Replace("\x15", ""),
                     Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
                     Owner = server,
-                    Message = lineSplit[4]
+                    Message = lineSplit[4].Replace("\x15", "")
                 };
             }
 

@@ -121,6 +121,7 @@ ___
 |stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
 |topstats|ts|view the top 5 players on this server|False|!ts |User|
 |whoami|who|give information about yourself.|False|!who |User|
+
 _These commands include all shipped plugin commands._
 
 ---
@@ -181,7 +182,6 @@ ___
 
 **Commands added by this plugin** 
 
-
 |Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
 |--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
 |resetstats|rs|reset your stats to factory-new|False|!rs |User|
@@ -194,7 +194,8 @@ ___
 - This plugin deters GUID spoofing by requiring privileged users to login with their password before executing commands
 - A password must be set using the `setpassword` command before logging in
 
- **Commands added by this plugin** 
+ **Commands added by this plugin**  
+
 |Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
 |--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
 |login|l|login using password|False|!l \<password\>|Trusted|

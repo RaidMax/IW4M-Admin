@@ -20,7 +20,6 @@ namespace WebfrontCore
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("WebfrontSettings.json", optional: false, reloadOnChange: false)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
@@ -42,17 +41,16 @@ namespace WebfrontCore
                     options.AccessDeniedPath = "/";
                     options.LoginPath = "/";
                 });
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
+            //loggerFactory.AddConsole(Configuration.GetSection("Logging"));
 
             if (env.IsDevelopment())
             {
+                loggerFactory.AddDebug();
                 app.UseDeveloperExceptionPage();
                 app.UseBrowserLink();
             }

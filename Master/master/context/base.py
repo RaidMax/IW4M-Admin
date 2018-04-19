@@ -23,7 +23,10 @@ class Base():
                 print('[_remove_staleinstances] removing stale instance {id}'.format(id=key))
                 del self.instance_list[key]
                 del self.token_list[key]
-        print('[_remove_staleinstances] {count} active instances'.format(count=len(self.instance_list)))
+        print('[_remove_staleinstances] {count} active instances'.format(count=len(self.instance_list.items())))
+
+    def get_instances(self):
+        return self.instance_list.values()
 
     def get_server_count(self):
         return self.server_list.count

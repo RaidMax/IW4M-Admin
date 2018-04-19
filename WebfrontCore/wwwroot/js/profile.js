@@ -168,7 +168,7 @@ function loadMeta(meta) {
     // it's a penalty
     if (meta.class.includes("Penalty")) {
         if (meta.value.punisherId !== clientInfo.clientId) {
-            const timeRemaining = meta.value.type == 'TempBan' && meta.value.timeRemaining.length > 0 ?
+            const timeRemaining = meta.value.type === 'TempBan' && meta.value.timeRemaining.length > 0 ?
                 `(${meta.value.timeRemaining} remaining)` :
                 '';
             eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)}</span> by <span class="text-highlight"> <a class="link-inverse"  href="${meta.value.punisherId}">${meta.value.punisherName}</a></span > for <span style="color: white; ">${meta.value.offense}</span><span class="text-muted"> ${timeRemaining}</span></div>`;

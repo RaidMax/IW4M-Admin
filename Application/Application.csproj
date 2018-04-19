@@ -17,18 +17,8 @@
     <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
     <ApplicationIcon />
     <AssemblyName>IW4MAdmin</AssemblyName>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="IW4MAdminSettings.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="IW4MAdminSettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="RestEase" Version="1.4.5" />
@@ -42,6 +32,12 @@
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="DefaultSettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

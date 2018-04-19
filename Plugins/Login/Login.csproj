@@ -9,6 +9,7 @@
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>Login Plugin for IW4MAdmin</Product>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

@@ -25,6 +25,11 @@
 }
 
 $(document).ready(function () {
+
+    if ($('#console_command_button').length === 0) {
+        return false;
+    }
+
     $('#console_command_button').click(function (e) {
         executeCommand();
     });

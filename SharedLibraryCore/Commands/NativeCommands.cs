@@ -314,7 +314,8 @@ namespace SharedLibraryCore.Commands
                 bool found = false;
                 foreach (Command C in E.Owner.Manager.GetCommands())
                 {
-                    if (C.Name == cmd.ToLower())
+                    if (C.Name == cmd.ToLower() ||
+                        C.Alias == cmd.ToLower())
                     {
                         await E.Origin.Tell("[^3" + C.Name + "^7] " + C.Description);
                         await E.Origin.Tell(C.Syntax);

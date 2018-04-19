@@ -10,15 +10,13 @@ namespace IW4MAdmin.Application.API.Master
 {
     public class Heartbeat
     {
-        static IMasterApi api;
 
         public static async Task Send(ApplicationManager mgr, bool firstHeartbeat = false)
         {
+            var api = Endpoint.Get();
 
             if (firstHeartbeat)
             {
-                api = RestClient.For<IMasterApi>("http://127.0.0.1");
-
                 var token = await api.Authenticate(new AuthenticationId()
                 {
                     Id = mgr.GetApplicationSettings().Configuration().Id
@@ -48,12 +46,12 @@ namespace IW4MAdmin.Application.API.Master
 
             if (firstHeartbeat)
             {
-                instance = await api.AddInstance(instance);
+                var message = await api.AddInstance(instance);
             }
 
             else
             {
-                instance = await api.UpdateInstance(instance.Id, instance);
+                var message = await api.UpdateInstance(instance.Id, instance);
             }
         }
     }

@@ -17,15 +17,12 @@ namespace WebfrontCore
         public static void Init(IManager mgr)
         {
             Manager = mgr;
-
             BuildWebHost().Run();
         }
 
         public static IWebHost BuildWebHost()
         {
-
             var config = new ConfigurationBuilder()
-                .AddJsonFile("WebfrontSettings.json", optional: false, reloadOnChange: false)
                 .AddEnvironmentVariables()
                 .Build();
 
@@ -35,7 +32,7 @@ namespace WebfrontCore
 #else
                 .UseContentRoot(Directory.GetCurrentDirectory())
 #endif
-                .UseUrls(config["Web:Address"])
+                .UseUrls(Manager.GetApplicationSettings().Configuration().WebfrontBindUrl)
                 .UseKestrel()
                 .UseStartup<Startup>()
                 .Build();

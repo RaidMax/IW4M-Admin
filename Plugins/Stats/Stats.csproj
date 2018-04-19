@@ -11,6 +11,7 @@
     <Product>Client Statistics</Product>
     <Description>Client Statistics Plugin for IW4MAdmin</Description>
     <Copyright>2018</Copyright>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

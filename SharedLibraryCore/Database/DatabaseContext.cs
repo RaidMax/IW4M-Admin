@@ -93,7 +93,7 @@ namespace SharedLibraryCore.Database
                     library = Assembly.LoadFrom(dllPath);
                 }
 
-                // not a valid assembly, ie plugin files
+                // not a valid assembly, ie plugin support files
                 catch (Exception)
                 {
                     continue;

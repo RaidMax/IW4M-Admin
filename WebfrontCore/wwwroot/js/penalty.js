@@ -49,7 +49,7 @@ if ($('#penalty_table').length === 1) {
             .off('scroll', ScrollHandler)
             .on('scroll', ScrollHandler);
 
-        $('#load_penalties_button').hover(function () {
+        $('#load_penalties_button').click(function () {
             loadMorePenalties();
         });
     });

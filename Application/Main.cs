@@ -25,7 +25,7 @@ namespace IW4MAdmin.Application
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
-            Console.WriteLine($" Version {Version}");
+            Console.WriteLine($" Version {Version.ToString("0.0")}");
             Console.WriteLine("=====================================================");
 
             try
@@ -36,9 +36,63 @@ namespace IW4MAdmin.Application
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
+
+                var api = API.Master.Endpoint.Get();
+                var version = new API.Master.VersionInfo()
+                {
+                    CurrentVersionStable = 99.99f
+                };
+
+                try
+                {
+                    version = api.GetVersion().Result;
+                }
+
+                catch (Exception e)
+                {
+                    ServerManager.Logger.WriteWarning($"Could not get latest IW4MAdmin version");
+                    while (e.InnerException != null)
+                    {
+                        e = e.InnerException;
+                    }
+
+                    ServerManager.Logger.WriteDebug(e.Message);
+                }
+
+                if (version.CurrentVersionStable == 99.99f)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Could not get latest IW4MAdmin version.");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
+#if !PRERELEASE
+                else if (version.CurrentVersionStable > Version)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine($"IW4MAdmin has an update. Latest version is [v{version.CurrentVersionStable.ToString("0.0")}]");
+                    Console.WriteLine($"Your version is [v{Version.ToString("0.0")}]");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+#else
+                else if (version.CurrentVersionPrerelease > Version)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine($"IW4MAdmin-Prerelease has an update. Latest version is [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
+                    Console.WriteLine($"Your version is [v{Version.ToString("0.0")}-pr]");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+#endif 
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("IW4MAdmin is up to date.");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
                 ServerManager.Init().Wait();
 
-                Task.Run(() =>
+                var consoleTask = Task.Run(() =>
                 {
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
@@ -51,10 +105,13 @@ namespace IW4MAdmin.Application
                             ServerManager.Stop();
 
                         if (ServerManager.Servers.Count == 0)
-                            return;
+                        {
+                            Console.WriteLine("No servers are currently being monitored");
+                            continue;
+                        }
 
                         Origin.CurrentServer = ServerManager.Servers[0];
-                        GameEvent E = new GameEvent((GameEvent.EventType)GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
+                        GameEvent E = new GameEvent(GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
                         ServerManager.Servers[0].ExecuteEvent(E);
                         Console.Write('>');
 
@@ -73,12 +130,12 @@ namespace IW4MAdmin.Application
 
             catch (Exception e)
             {
-                Console.WriteLine($"Fatal Error during initialization: {e.Message}");
+                Console.WriteLine($"Fatal Error during initialization");
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
-                    Console.WriteLine($"Inner exception: {e.Message}");
                 }
+                Console.WriteLine($"Exception: {e.Message}");
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
             }

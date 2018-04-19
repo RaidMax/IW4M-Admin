@@ -19,6 +19,7 @@
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -55,12 +56,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="WebfrontSettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ProjectExtensions><VisualStudio><UserProperties WebfrontSettings_1json__JSONSchema="http://json.schemastore.org/appsettings" /></VisualStudio></ProjectExtensions>
+  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
 </Project>

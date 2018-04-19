@@ -27,6 +27,11 @@
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Prerelease' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <OutputPath>bin\Prerelease\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="master\context\base.py">
       <SubType>Code</SubType>
@@ -50,6 +55,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Master\resources\null.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Master\resources\version.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Master\resources\__init__.py">
@@ -76,6 +84,7 @@
     <Folder Include="master\" />
     <Folder Include="master\context\" />
     <Folder Include="master\models\" />
+    <Folder Include="master\config\" />
     <Folder Include="master\schema\" />
     <Folder Include="Master\resources\" />
     <Folder Include="Master\static\" />
@@ -86,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="FolderProfile.pubxml" />
+    <Content Include="master\config\master.json" />
     <Content Include="requirements.txt" />
     <Content Include="Master\static\content\bootstrap.css" />
     <Content Include="Master\static\content\bootstrap.min.css" />

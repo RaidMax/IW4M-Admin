@@ -9,6 +9,7 @@
     <Version>2.0.0</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

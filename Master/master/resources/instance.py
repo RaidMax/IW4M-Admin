@@ -9,7 +9,7 @@ class Instance(Resource):
     def get(self, id=None):
         if id is None:
             schema = InstanceSchema(many=True)
-            instances = schema.dump(ctx.instance_list.values())
+            instances = schema.dump(ctx.get_instances())
             return instances
         else:
             try:
@@ -25,13 +25,13 @@ class Instance(Resource):
         except ValidationError as err:
             return {'message' : err.messages }, 400
         ctx.update_instance(instance)
-        return InstanceSchema().dump(instance)
+        return { 'message' : 'instance updated successfully' }, 200
 
     @jwt_required
     def post(self):
         try:
             instance = InstanceSchema().load(request.json)
         except ValidationError as err:
-            return err.messages
+            return {'message' : err.messages }, 400
         ctx.add_instance(instance)
-        return InstanceSchema().dump(instance)
+        return { 'message' : 'instance added successfully' }, 200

@@ -16,6 +16,7 @@ namespace SharedLibraryCore.Configuration
         public string CustomSayName { get; set; }
         public string DiscordInviteCode { get; set; }
         public string IPHubAPIKey { get; set; }
+        public string WebfrontBindUrl { get; set; }
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }
@@ -30,6 +31,8 @@ namespace SharedLibraryCore.Configuration
             EnableMultipleOwners = Utilities.PromptBool("Enable multiple owners");
             EnableSteppedHierarchy = Utilities.PromptBool("Enable stepped privilege hierarchy");
             EnableCustomSayName = Utilities.PromptBool("Enable custom say name");
+
+            WebfrontBindUrl = "http://127.0.0.1:1624";
 
             if (EnableCustomSayName)
                 CustomSayName = Utilities.PromptString("Enter custom say name");

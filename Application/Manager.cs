@@ -121,25 +121,39 @@ namespace IW4MAdmin.Application
 
             #region CONFIG
             var config = ConfigHandler.Configuration();
-            if (config?.Servers == null)
-            {
-                var newConfig = (ApplicationConfiguration)ConfigHandler.Configuration().Generate();
-                ConfigHandler.Set(newConfig);
 
-                newConfig.AutoMessagePeriod = config.AutoMessagePeriod;
-                newConfig.AutoMessages = config.AutoMessages;
-                newConfig.GlobalRules = config.GlobalRules;
-                newConfig.Maps = config.Maps;
-                newConfig.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
-                config = newConfig;
-                await ConfigHandler.Save();
+            // copy over default config if it doesn't exist
+            if (config == null)
+            {
+                var defaultConfig = new BaseConfigurationHandler<DefaultConfiguration>("DefaultSettings").Configuration();
+                ConfigHandler.Set((ApplicationConfiguration)new ApplicationConfiguration().Generate());
+                var newConfig = ConfigHandler.Configuration();
+
+                newConfig.AutoMessagePeriod = defaultConfig.AutoMessagePeriod;
+                newConfig.AutoMessages = defaultConfig.AutoMessages;
+                newConfig.GlobalRules = defaultConfig.GlobalRules;
+                newConfig.Maps = defaultConfig.Maps;
+
+                if (newConfig.Servers == null)
+                {
+                    ConfigHandler.Set(newConfig);
+                    newConfig.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
+                    config = newConfig;
+                    await ConfigHandler.Save();
+                }
             }
 
-            else if(config != null)
+            else if (config != null)
             {
                 if (string.IsNullOrEmpty(config.Id))
                 {
                     config.Id = Guid.NewGuid().ToString();
+                    await ConfigHandler.Save();
+                }
+
+                if (string.IsNullOrEmpty(config.WebfrontBindUrl))
+                {
+                    config.WebfrontBindUrl = "http://127.0.0.1:1624";
                     await ConfigHandler.Save();
                 }
             }

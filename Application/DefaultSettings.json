@@ -1,4 +1,4 @@
-{
+﻿{
   "AutoMessagePeriod": 60,
   "AutoMessages": [
     "This server uses ^5IW4M Admin v{{VERSION}} ^7get it at ^5raidmax.org/IW4MAdmin",
@@ -361,6 +361,34 @@
         {
           "Alias": "Takeoff",
           "Name": "mp_takeoff"
+        },
+        {
+          "Alias": "Buried/Resolution 1295",
+          "Name": "zm_buried"
+        },
+        {
+          "Alias": "Die Rise/Great Leap Forward",
+          "Name": "zm_highrise"
+        },
+        {
+          "Alias": "Nuketown",
+          "Name": "zm_nuked"
+        },
+        {
+          "Alias": "Mob of the Dead",
+          "Name": "zm_prison"
+        },
+        {
+          "Alias": "Origins",
+          "Name": "zm_tomb"
+        },
+        {
+          "Alias": "Diner",
+          "Name": "zm_transit_dr"
+        },
+        {
+          "Alias": "Green Run/Bus Depot/Farm/Town",
+          "Name": "zm_transit"
         }
       ]
     }

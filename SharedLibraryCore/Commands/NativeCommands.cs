@@ -214,11 +214,11 @@ namespace SharedLibraryCore.Commands
     public class CUnban : Command
     {
         public CUnban() :
-            base("unban", "unban player by database id", "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("unban", "unban player by client id", "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "databaseID",
+                        Name = "client id",
                         Required = true,
                     },
                     new CommandArgument()
@@ -576,6 +576,12 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
+            if (E.Data.Length < 3)
+            {
+                await E.Origin.Tell("Please enter at least 3 characters");
+                return;
+            }
+
             IList<EFClient> db_players = (await (E.Owner.Manager.GetClientService() as ClientService)
                 .GetClientByName(E.Data))
                 .OrderByDescending(p => p.LastConnection)

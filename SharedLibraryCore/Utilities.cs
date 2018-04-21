@@ -20,6 +20,7 @@ namespace SharedLibraryCore
     {
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
         public static readonly Task CompletedTask = Task.FromResult(false);
+        public static Encoding EncodingType;
 
         //Get string with specified number of spaces -- really only for visual output
         public static String GetSpaces(int Num)
@@ -197,15 +198,9 @@ namespace SharedLibraryCore
 
         public static int ConvertToIP(this string str)
         {
-            try
-            {
-                return BitConverter.ToInt32(System.Net.IPAddress.Parse(str).GetAddressBytes(), 0);
-            }
+            System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip);
 
-            catch (FormatException)
-            {
-                return 0;
-            }
+            return ip == null ? 0 : BitConverter.ToInt32(ip.GetAddressBytes(), 0);
         }
 
         public static string ConvertIPtoString(this int ip)

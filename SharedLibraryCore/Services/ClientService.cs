@@ -226,6 +226,9 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<EFClient>> GetClientByName(string name)
         {
+            if (name.Length < 3)
+                return new List<EFClient>();
+
             using (var context = new DatabaseContext())
             {
                 var iqClients = (from alias in context.Aliases

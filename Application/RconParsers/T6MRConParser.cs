@@ -166,7 +166,7 @@ namespace Application.RconParsers
 
                     Int32.TryParse(playerInfo[3], out Ping);
                     var regex = Regex.Match(responseLine, @"\^7.*\ +0 ");
-                    string name = Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(regex.Value.Substring(0, regex.Value.Length - 2).StripColors().Trim())));
+                    string name = Encoding.UTF8.GetString(Encoding.Convert(Utilities.EncodingType, Encoding.UTF8, Utilities.EncodingType.GetBytes(regex.Value.Substring(0, regex.Value.Length - 2).StripColors().Trim())));
                     long networkId = playerInfo[4].ConvertLong();
                     int.TryParse(playerInfo[0], out clientId);
                     regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
@@ -175,7 +175,9 @@ namespace Application.RconParsers
 #endif
                     int ipAddress = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
-                    int score = Int32.Parse(playerInfo[1]);
+                    int score = 0;
+                    // todo: fix this when T6M score is valid ;)
+                    //int score = Int32.Parse(playerInfo[1]);
 
                     StatusPlayers.Add(new Player()
                     {
@@ -184,7 +186,8 @@ namespace Application.RconParsers
                         ClientNumber = clientId,
                         IPAddress = ipAddress,
                         Ping = Ping,
-                        Score = score
+                        Score = score,
+                        IsBot = networkId < 1
                     });
                 }
             }

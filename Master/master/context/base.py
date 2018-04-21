@@ -1,11 +1,15 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from master.context.history import History
+
+from master.schema.instanceschema import InstanceSchema
+
 import time
 
 class Base():
     def __init__(self):
+        self.history = History()
         self.instance_list = {}
-        self.server_list = {}
         self.token_list = {}
         self.scheduler = BackgroundScheduler()
         self.scheduler.start()
@@ -16,6 +20,23 @@ class Base():
             name='Remove stale instances if no heartbeat in 120 seconds',
             replace_existing=True
         )
+        self.scheduler.add_job(
+        func=self._update_history_count,
+        trigger=IntervalTrigger(seconds=30),
+        id='update history',
+        name='update client and instance count every 30 seconds',
+        replace_existing=True
+        )
+
+    def _update_history_count(self):
+        servers = [instance.servers for instance in self.instance_list.values()]
+        servers = [inner for outer in servers for inner in outer]
+        client_num = 0
+        # force it being a number
+        for server in servers:
+            client_num += server.clientnum
+        self.history.add_client_history(client_num)
+        self.history.add_instance_history(len(self.instance_list))
 
     def _remove_staleinstances(self):
         for key, value in list(self.instance_list.items()):
@@ -27,9 +48,6 @@ class Base():
 
     def get_instances(self):
         return self.instance_list.values()
-
-    def get_server_count(self):
-        return self.server_list.count
 
     def get_instance_count(self):
         return self.instance_list.count

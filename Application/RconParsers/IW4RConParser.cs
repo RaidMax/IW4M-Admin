@@ -32,7 +32,7 @@ namespace Application.RconParsers
         {
             string[] LineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.DVAR, dvarName);
 
-            if (LineSplit.Length != 3)
+            if (LineSplit.Length < 3)
             {
                 var e = new DvarException($"DVAR \"{dvarName}\" does not exist");
                 e.Data["dvar_name"] = dvarName;
@@ -41,7 +41,7 @@ namespace Application.RconParsers
 
             string[] ValueSplit = LineSplit[1].Split(new char[] { '"' }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (ValueSplit.Length != 5)
+            if (ValueSplit.Length < 5)
             {
                 var e = new DvarException($"DVAR \"{dvarName}\" does not exist");
                 e.Data["dvar_name"] = dvarName;
@@ -75,17 +75,20 @@ namespace Application.RconParsers
         {
             List<Player> StatusPlayers = new List<Player>();
 
+            if (Status.Length < 4)
+                throw new ServerException("Unexpected status response received");
+
             foreach (String S in Status)
             {
                 String responseLine = S.Trim();
 
-                if (Regex.Matches(responseLine, @"^\d+", RegexOptions.IgnoreCase).Count > 0)
+                if (Regex.Matches(responseLine, @" *^\d+", RegexOptions.IgnoreCase).Count > 0)
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     int cID = -1;
                     int Ping = -1;
                     Int32.TryParse(playerInfo[2], out Ping);
-                    String cName = Encoding.UTF8.GetString(Encoding.Convert(Encoding.UTF7, Encoding.UTF8, Encoding.UTF7.GetBytes(responseLine.Substring(46, 18).StripColors().Trim())));
+                    String cName = Encoding.UTF8.GetString(Encoding.Convert(Utilities.EncodingType, Encoding.UTF8, Utilities.EncodingType.GetBytes(responseLine.Substring(46, 18).StripColors().Trim())));
                     long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong();
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
@@ -99,7 +102,8 @@ namespace Application.RconParsers
                         ClientNumber = cID,
                         IPAddress = cIP,
                         Ping = Ping,
-                        Score = score
+                        Score = score,
+                        IsBot = npID == -1
                     };
                     StatusPlayers.Add(P);
                 }

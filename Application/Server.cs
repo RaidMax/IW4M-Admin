@@ -151,6 +151,7 @@ namespace IW4MAdmin
 
                 // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
+                player.IsBot = polledPlayer.IsBot;
                 player.Score = polledPlayer.Score;
                 player.CurrentServer = this;
                 Players[player.ClientNumber] = player;
@@ -648,7 +649,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"D:\";
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath = game.Value == string.Empty ?
                 $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :

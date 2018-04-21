@@ -39,7 +39,7 @@ namespace SharedLibraryCore
             if (fileName != string.Empty)
             {
                 Name = fileName;
-                Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true), Encoding.UTF8);
+                Handle = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true), Utilities.EncodingType);
 
                 sze = Handle.BaseStream.Length;
             }

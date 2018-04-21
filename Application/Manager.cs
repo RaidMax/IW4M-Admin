@@ -18,6 +18,7 @@ using WebfrontCore;
 using SharedLibraryCore.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace IW4MAdmin.Application
 {
@@ -160,6 +161,9 @@ namespace IW4MAdmin.Application
 
             else if (config.Servers.Count == 0)
                 throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            Utilities.EncodingType = Encoding.GetEncoding(config.CustomParserEncoding ?? "windows-1252");
 
             #endregion
             #region PLUGINS

@@ -17,6 +17,7 @@ namespace SharedLibraryCore.Configuration
         public string DiscordInviteCode { get; set; }
         public string IPHubAPIKey { get; set; }
         public string WebfrontBindUrl { get; set; }
+        public string CustomParserEncoding { get; set; }
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }
@@ -31,6 +32,10 @@ namespace SharedLibraryCore.Configuration
             EnableMultipleOwners = Utilities.PromptBool("Enable multiple owners");
             EnableSteppedHierarchy = Utilities.PromptBool("Enable stepped privilege hierarchy");
             EnableCustomSayName = Utilities.PromptBool("Enable custom say name");
+
+            bool useCustomParserEncoding = Utilities.PromptBool("Use custom encoding parser");
+            CustomParserEncoding = useCustomParserEncoding ? Utilities.PromptString("Enter encoding string") : "windows-1252";
+
 
             WebfrontBindUrl = "http://127.0.0.1:1624";
 

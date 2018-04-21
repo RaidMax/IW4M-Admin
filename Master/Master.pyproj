@@ -36,6 +36,9 @@
     <Compile Include="master\context\base.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="master\context\history.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="master\context\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -49,6 +52,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Master\resources\authenticate.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="master\resources\history_graph.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Master\resources\instance.py">
@@ -88,37 +94,12 @@
     <Folder Include="master\schema\" />
     <Folder Include="Master\resources\" />
     <Folder Include="Master\static\" />
-    <Folder Include="Master\static\content\" />
-    <Folder Include="Master\static\fonts\" />
-    <Folder Include="Master\static\scripts\" />
     <Folder Include="Master\templates\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FolderProfile.pubxml" />
     <Content Include="master\config\master.json" />
     <Content Include="requirements.txt" />
-    <Content Include="Master\static\content\bootstrap.css" />
-    <Content Include="Master\static\content\bootstrap.min.css" />
-    <Content Include="Master\static\content\site.css" />
-    <Content Include="Master\static\fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Master\static\fonts\glyphicons-halflings-regular.svg" />
-    <Content Include="Master\static\fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="Master\static\fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="Master\static\scripts\bootstrap.js" />
-    <Content Include="Master\static\scripts\bootstrap.min.js" />
-    <Content Include="Master\static\scripts\jquery-1.10.2.intellisense.js" />
-    <Content Include="Master\static\scripts\jquery-1.10.2.js" />
-    <Content Include="Master\static\scripts\jquery-1.10.2.min.js" />
-    <Content Include="Master\static\scripts\jquery-1.10.2.min.map" />
-    <Content Include="Master\static\scripts\jquery.validate-vsdoc.js" />
-    <Content Include="Master\static\scripts\jquery.validate.js" />
-    <Content Include="Master\static\scripts\jquery.validate.min.js" />
-    <Content Include="Master\static\scripts\jquery.validate.unobtrusive.js" />
-    <Content Include="Master\static\scripts\jquery.validate.unobtrusive.min.js" />
-    <Content Include="Master\static\scripts\modernizr-2.6.2.js" />
-    <Content Include="Master\static\scripts\respond.js" />
-    <Content Include="Master\static\scripts\respond.min.js" />
-    <Content Include="Master\static\scripts\_references.js" />
     <Content Include="Master\templates\index.html" />
     <Content Include="Master\templates\layout.html" />
   </ItemGroup>

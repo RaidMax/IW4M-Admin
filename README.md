@@ -1,4 +1,5 @@
 
+
 # IW4MAdmin
 ### Quick Start Guide
 ### Version 2.0
@@ -39,6 +40,10 @@ When **IW4MAdmin** is launched for the _first time_, you will be prompted to set
 `Enable discord link`
 * Shows a link to your server's discord on the webfront
 * _This feature requires an invite link to your discord server_
+
+`Use Custom Encoding Parser`
+* Allows alternative encodings to be used for parsing game information and events
+* **Russian users should use this and then specify** `windows-1251` **as the encoding string**
 
 #### Advanced Configuration
 If you wish to further customize your experience of **IW4MAdmin**, the following configuration file(s) will allow you to changes core options using any text-editor.

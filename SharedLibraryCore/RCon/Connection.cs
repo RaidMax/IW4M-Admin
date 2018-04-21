@@ -130,7 +130,7 @@ namespace SharedLibraryCore.RCon
 #if DEBUG
                     Log.WriteDebug($"Received {bytesRead} bytes from {ServerConnection.RemoteEndPoint}");
 #endif
-                    connectionState.ResponseString.Append(Encoding.UTF7.GetString(connectionState.Buffer, 0, bytesRead).TrimEnd('\0') + '\n');
+                    connectionState.ResponseString.Append(Utilities.EncodingType.GetString(connectionState.Buffer, 0, bytesRead).TrimEnd('\0') + '\n');
 
                     if (!connectionState.Buffer.Take(4).ToArray().SequenceEqual(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }))
                         throw new NetworkException("Unexpected packet received");

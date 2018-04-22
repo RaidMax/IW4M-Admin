@@ -26,13 +26,14 @@
             $.get('/history/' + zoomLevel)
                 .done(function (content) {
                     $('#history_graph').html(content.message);
+                    dataPoints = content.data_points
                 });
         }
         setInterval(updateHistoryGraph, 30000);
 
         $('#history_graph_zoom_out').click(function () {
            // console.log(zoomLevel);
-            zoomLevel = zoomLevel * 2 < dataPoints ? Math.ceil(zoomLevel * 2) : dataPoints;
+            zoomLevel = zoomLevel * 2 <= 1440 ? Math.ceil(zoomLevel * 2) : dataPoints;
             updateHistoryGraph();
         });
 

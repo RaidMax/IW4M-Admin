@@ -29,7 +29,7 @@ namespace SharedLibraryCore
 
         public String Name { get; private set; }
         public String Description { get; private set; }
-        public String Syntax => $"syntax: !{Alias} {String.Join(" ", Arguments.Select(a => $"<{(a.Required ? "" : "optional ")}{a.Name}>"))}";
+        public String Syntax => $"{Utilities.CurrentLocalization.LocalizationSet["COMMAND_HELP_SYNTAX"]} !{Alias} {String.Join(" ", Arguments.Select(a => $"<{(a.Required ? "" : Utilities.CurrentLocalization.LocalizationSet["COMMAND_HELP_OPTIONAL"] + " ")}{a.Name}>"))}";
         public String Alias { get; private set; }
         public int RequiredArgumentCount => Arguments.Count(c => c.Required);
         public bool RequiresTarget { get; private set; }

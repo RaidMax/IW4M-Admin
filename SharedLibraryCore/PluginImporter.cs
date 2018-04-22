@@ -17,7 +17,7 @@ namespace SharedLibraryCore.Plugins
 
             if (dllFileNames.Length == 0)
             {
-                Manager.GetLogger().WriteDebug("No plugins found to load");
+                Manager.GetLogger().WriteDebug(Utilities.CurrentLocalization.LocalizationSet["PLUGIN_IMPORTER_NOTFOUND"]);
                 return true;
             }
 
@@ -43,7 +43,7 @@ namespace SharedLibraryCore.Plugins
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             ActiveCommands.Add(newCommand);
-                            Manager.GetLogger().WriteDebug("Registered command \"" + newCommand.Name + "\"");
+                            Manager.GetLogger().WriteDebug($"{Utilities.CurrentLocalization.LocalizationSet["PLUGIN_IMPORTER_REGISTERCMD"]} \"{newCommand.Name}\"");
                             LoadedCommands++;
                             continue;
                         }

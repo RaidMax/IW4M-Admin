@@ -14,7 +14,7 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
-            UseT6MParser = Utilities.PromptBool("Use T6M parser");
+            UseT6MParser = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_USET6M"]);
             return this;
         }
 

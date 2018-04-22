@@ -27,30 +27,32 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
+            var loc = Utilities.CurrentLocalization.LocalizationSet;
             Id = Guid.NewGuid().ToString();
-            EnableWebFront = Utilities.PromptBool("Enable webfront");
-            EnableMultipleOwners = Utilities.PromptBool("Enable multiple owners");
-            EnableSteppedHierarchy = Utilities.PromptBool("Enable stepped privilege hierarchy");
-            EnableCustomSayName = Utilities.PromptBool("Enable custom say name");
+            
+            EnableWebFront = Utilities.PromptBool(loc["SETUP_ENABLE_WEBFRONT"]);
+            EnableMultipleOwners = Utilities.PromptBool(loc["SETUP_ENABLE_MULTIOWN"]);
+            EnableSteppedHierarchy = Utilities.PromptBool(loc["SETUP_ENABLE_STEPPEDPRIV"]);
+            EnableCustomSayName = Utilities.PromptBool(loc["SETUP_ENABLE_CUSTOMSAY"]);
 
-            bool useCustomParserEncoding = Utilities.PromptBool("Use custom encoding parser");
-            CustomParserEncoding = useCustomParserEncoding ? Utilities.PromptString("Enter encoding string") : "windows-1252";
+            bool useCustomParserEncoding = Utilities.PromptBool(loc["SETUP_USE_CUSTOMENCODING"]);
+            CustomParserEncoding = useCustomParserEncoding ? Utilities.PromptString(loc["SETUP_ENCODING_STRING"]) : "windows-1252";
 
 
             WebfrontBindUrl = "http://127.0.0.1:1624";
 
             if (EnableCustomSayName)
-                CustomSayName = Utilities.PromptString("Enter custom say name");
+                CustomSayName = Utilities.PromptString(loc["SETUP_SAY_NAME"]);
 
-            EnableClientVPNs = Utilities.PromptBool("Enable client VPNS");
+            EnableClientVPNs = Utilities.PromptBool(loc["SETUP_ENABLE_VPNS"]);
 
             if (!EnableClientVPNs)
-                IPHubAPIKey = Utilities.PromptString("Enter iphub.info api key");
+                IPHubAPIKey = Utilities.PromptString(loc["SETUP_IPHUB_KEY"]);
 
-            EnableDiscordLink = Utilities.PromptBool("Display discord link on webfront");
+            EnableDiscordLink = Utilities.PromptBool(loc["SETUP_DISPLAY_DISCORD"]);
 
             if (EnableDiscordLink)
-                DiscordInviteCode = Utilities.PromptString("Enter discord invite link");
+                DiscordInviteCode = Utilities.PromptString(loc["SETUP_DISCORD_INVITE"]);
 
             return this;
         }

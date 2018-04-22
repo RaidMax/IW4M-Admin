@@ -35,11 +35,11 @@ namespace SharedLibraryCore.Commands
             if ((await (E.Owner.Manager.GetClientService() as Services.ClientService).GetOwners()).Count == 0)
             {
                 E.Origin.Level = Player.Permission.Owner;
-                await E.Origin.Tell("Congratulations, you have claimed ownership of this server!");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_SUCCESS"]);
                 await E.Owner.Manager.GetClientService().Update(E.Origin);
             }
             else
-                await E.Origin.Tell("This server already has an owner!");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_FAIL"]);
         }
     }
 
@@ -64,7 +64,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.Level <= E.Target.Level)
-                await E.Origin.Tell($"You do not have the required privileges to warn {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARN_FAIL"]} {E.Target.Name}");
             else
                 await E.Target.Warn(E.Data, E.Origin);
         }
@@ -86,7 +86,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             E.Target.Warnings = 0;
-            String Message = String.Format("All warning cleared for {0}", E.Target.Name);
+            String Message = $"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARNCLEAR_SUCCESS"]} {E.Target.Name}";
             await E.Owner.Broadcast(Message);
         }
     }
@@ -115,10 +115,10 @@ namespace SharedLibraryCore.Commands
             {
                 await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Kick, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Kick(E.Data, E.Origin);
-                await E.Origin.Tell($"^5{E.Target} ^7has been kicked");
+                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_SUCCESS"]}");
             }
             else
-                await E.Origin.Tell($"You do not have the required privileges to kick {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_FAIL"]} {E.Target.Name}");
         }
     }
 
@@ -174,10 +174,10 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Target.TempBan(Message, length, E.Origin);
-                await E.Origin.Tell($"^5{E.Target} ^7has been temporarily banned for ^5{length.TimeSpanText()}");
+                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}");
             }
             else
-                await E.Origin.Tell("You cannot temp ban " + E.Target.Name);
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
         }
     }
 
@@ -204,10 +204,10 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Target.Ban(E.Data, E.Origin);
-                await E.Origin.Tell($"^5{E.Target} ^7has been permanently banned");
+                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BAN_SUCCESS"]}");
             }
             else
-                await E.Origin.Tell("You cannot ban " + E.Target.Name);
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BAN_FAIL"]} {E.Target.Name}");
         }
     }
 
@@ -235,11 +235,11 @@ namespace SharedLibraryCore.Commands
             if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan).FirstOrDefault() != null)
             {
                 await E.Owner.Unban(E.Data, E.Target, E.Origin);
-                await E.Origin.Tell($"Successfully unbanned {E.Target}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UNBAN_SUCCESS"]} {E.Target}");
             }
             else
             {
-                await E.Origin.Tell($"{E.Target} is not banned");
+                await E.Origin.Tell($"{E.Target} {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UNBAN_FAIL"]}");
             }
         }
     }
@@ -324,7 +324,7 @@ namespace SharedLibraryCore.Commands
                 }
 
                 if (!found)
-                    await E.Origin.Tell("Could not find that command");
+                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_HELP_NOTFOUND"]);
             }
 
             else
@@ -351,7 +351,7 @@ namespace SharedLibraryCore.Commands
                     }
                 }
                 await E.Origin.Tell(helpResponse.ToString());
-                await E.Origin.Tell("Type !help <cmd> to get command usage syntax");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_HELP_MOREINFO"]);
             }
         }
     }
@@ -367,9 +367,9 @@ namespace SharedLibraryCore.Commands
             await E.Owner.ExecuteCommandAsync("fast_restart");
 
             if (!E.Origin.Masked)
-                await E.Owner.Broadcast($"^5{E.Origin.Name} ^7fast restarted the server");
+                await E.Owner.Broadcast($"^5{E.Origin.Name} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FASTRESTART_UNMASKED"]}");
             else
-                await E.Owner.Broadcast($"The server has been fast restarted");
+                await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FASTRESTART_MASKED"]);
         }
     }
 
@@ -382,9 +382,9 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             if (!E.Origin.Masked)
-                await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5{E.Origin.Name}^7]");
+                await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAPROTATE"]} [^5{E.Origin.Name}^7]");
             else
-                await E.Owner.Broadcast($"Map rotating in ^55 ^7seconds [^5Masked Admin^7]");
+                await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAPROTATE"]);
             Task.Delay(5000).Wait();
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }
@@ -412,7 +412,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell("You cannot change your own level");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_SELF"]);
                 return;
             }
 
@@ -421,14 +421,14 @@ namespace SharedLibraryCore.Commands
             if (newPerm == Player.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
             {
-                await E.Origin.Tell("There can only be 1 owner. Modify your settings if multiple owners are required");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_OWNER"]);
                 return;
             }
 
             if (E.Origin.Level < Player.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy)
             {
-                await E.Origin.Tell($"This server does not allow you to promote ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{E.Target.Name}");
                 return;
             }
 
@@ -436,6 +436,7 @@ namespace SharedLibraryCore.Commands
             {
                 if (E.Origin.Level < Player.Permission.Owner)
                 {
+                    await E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
                     await E.Origin.Tell($"You can only promote ^5{E.Target.Name} ^7to ^5{(E.Origin.Level - 1)} ^7or lower privilege");
                     return;
                 }
@@ -449,7 +450,7 @@ namespace SharedLibraryCore.Commands
                 if (ActiveClient != null)
                 {
                     ActiveClient.Level = newPerm;
-                    await ActiveClient.Tell("Congratulations! You have been promoted to ^3" + newPerm);
+                    await ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
                 }
 
                 else
@@ -468,11 +469,11 @@ namespace SharedLibraryCore.Commands
                     E.Owner.Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
 
-                await E.Origin.Tell($"{E.Target.Name} was successfully promoted");
+                await E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_SUCCESS"]}");
             }
 
             else
-                await E.Origin.Tell("Invalid group specified");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_FAIL"]);
         }
     }
 
@@ -524,7 +525,7 @@ namespace SharedLibraryCore.Commands
             }
 
             if (numOnline == 0)
-                await E.Origin.Tell("No visible administrators online");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ADMINS_NONE"]);
         }
     }
 
@@ -548,14 +549,14 @@ namespace SharedLibraryCore.Commands
             {
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
-                    await E.Owner.Broadcast($"Changing to map ^5{m.Alias}");
+                    await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAP_SUCCESS"]} ^5{m.Alias}");
                     Task.Delay(5000).Wait();
                     await E.Owner.LoadMap(m.Name);
                     return;
                 }
             }
 
-            await E.Owner.Broadcast($"Attempting to change to unknown map ^5{newMap}");
+            await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAP_UKN"]} ^5{newMap}");
             Task.Delay(5000).Wait();
             await E.Owner.LoadMap(newMap);
         }
@@ -578,7 +579,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Data.Length < 3)
             {
-                await E.Origin.Tell("Please enter at least 3 characters");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FIND_MIN"]);
                 return;
             }
 
@@ -589,7 +590,7 @@ namespace SharedLibraryCore.Commands
 
             if (db_players.Count == 0)
             {
-                await E.Origin.Tell("No players found");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FIND_EMPTY"]);
                 return;
             }
 
@@ -616,9 +617,9 @@ namespace SharedLibraryCore.Commands
                 E.Owner.ServerConfig.Rules?.Count < 1)
             {
                 if (E.Message.IsBroadcastCommand())
-                    await E.Owner.Broadcast("The server owner has not set any rules");
+                    await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RULES_NONE"]);
                 else
-                    await E.Origin.Tell("The server owner has not set any rules");
+                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RULES_NONE"]);
             }
 
             else
@@ -687,7 +688,7 @@ namespace SharedLibraryCore.Commands
             // todo: move unflag to seperate command
             if (E.Target.Level >= E.Origin.Level)
             {
-                await E.Origin.Tell($"You cannot flag {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_FAIL"]} ^5{E.Target.Name}");
                 return;
             }
 
@@ -695,7 +696,7 @@ namespace SharedLibraryCore.Commands
             {
                 E.Target.Level = Player.Permission.User;
                 await E.Owner.Manager.GetClientService().Update(E.Target);
-                await E.Origin.Tell($"You have ^5unflagged ^7{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
             }
 
             else
@@ -716,7 +717,7 @@ namespace SharedLibraryCore.Commands
 
                 await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
                 await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Flag, E.Data, E.Origin, E.Target, E.Owner));
-                await E.Origin.Tell($"You have flagged ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
             }
 
         }
@@ -744,31 +745,31 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Data.ToLower().Contains("camp"))
             {
-                await E.Origin.Tell("You cannot report a player for camping");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL_CAMP"]);
                 return;
             }
 
             if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.NetworkId == E.Target.NetworkId)) != null)
             {
-                await E.Origin.Tell("You have already reported this player");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL_DUPLICATE"]);
                 return;
             }
 
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell("You cannot report yourself");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL_SELF"]);
                 return;
             }
 
             if (E.Target.Level > E.Origin.Level)
             {
-                await E.Origin.Tell($"You cannot report {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL"]} {E.Target.Name}");
                 return;
             }
 
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
-            await E.Origin.Tell($"Thank you for your report, an administrator has been notified");
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_SUCCESS"]);
             await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
@@ -792,13 +793,13 @@ namespace SharedLibraryCore.Commands
             if (E.Data != null && E.Data.ToLower().Contains("clear"))
             {
                 E.Owner.Reports = new List<Report>();
-                await E.Origin.Tell("Reports successfully cleared!");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_CLEAR_SUCCESS"]);
                 return;
             }
 
             if (E.Owner.Reports.Count < 1)
             {
-                await E.Origin.Tell("No players reported yet");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_NONE"]);
                 return;
             }
 
@@ -818,12 +819,12 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Masked)
             {
                 E.Origin.Masked = false;
-                await E.Origin.Tell("You are now unmasked");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MASK_OFF"]);
             }
             else
             {
                 E.Origin.Masked = true;
-                await E.Origin.Tell("You are now masked");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MASK_ON"]);
             }
 
             await E.Owner.Manager.GetClientService().Update(E.Origin);
@@ -851,12 +852,16 @@ namespace SharedLibraryCore.Commands
 
             if (penalty == null)
             {
-                await E.Origin.Tell("No active ban was found for that player");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BANINFO_NONE"]);
                 return;
             }
 
-            await E.Origin.Tell(String.Format("^1{0} ^7was banned by ^5{1} ^7for: {2} {3}", E.Target.Name, penalty.Punisher.Name, penalty.Offense, penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires - DateTime.UtcNow).TimeSpanText()} remaining)" : ""));
+            string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
+            string success = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BANINO_SUCCESS"];
+
+            await E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, penalty.Punisher.Name)} {penalty.Punisher.Name} {timeRemaining}");
         }
+        
     }
 
     public class CListAlias : Command
@@ -880,12 +885,12 @@ namespace SharedLibraryCore.Commands
 
             await E.Target.Tell($"[^3{E.Target}^7]");
 
-            message.Append("Aliases: ");
+            message.Append($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ALIAS_ALIASES"]}: ");
             message.Append(String.Join(" | ", names));
             await E.Origin.Tell(message.ToString());
 
             message.Clear();
-            message.Append("IPs: ");
+            message.Append($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ALIAS_IPS"]}: ");
             message.Append(String.Join(" | ", IPs));
             await E.Origin.Tell(message.ToString());
         }
@@ -910,7 +915,7 @@ namespace SharedLibraryCore.Commands
             foreach (string S in Response)
                 await E.Origin.Tell(S.StripColors());
             if (Response.Length == 0)
-                await E.Origin.Tell("Successfully sent RCON command!");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RCON_SUCCESS"]);
         }
     }
 
@@ -922,7 +927,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell("^5Loaded Plugins:");
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PLUGINS_LOADE"]);
             foreach (var P in Plugins.PluginImporter.ActivePlugins)
             {
                 await E.Origin.Tell(String.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
@@ -938,7 +943,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell($"Your external IP is ^5{E.Origin.IPAddressString}");
+            await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_IP_SUCCESS"]} ^5{E.Origin.IPAddressString}");
         }
     }
 
@@ -987,7 +992,7 @@ namespace SharedLibraryCore.Commands
                 inactiveUsers.ForEach(c => c.Level = Player.Permission.User);
                 await context.SaveChangesAsync();
             }
-            await E.Origin.Tell($"Pruned {inactiveUsers.Count} inactive privileged users");
+            await E.Origin.Tell($"^5{inactiveUsers.Count} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PRUNE_SUCCESS"]}");
 
         }
     }
@@ -1008,7 +1013,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Data.Length < 5)
             {
-                await E.Origin.Tell("Your password must be atleast 5 characters long");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PASSWORD_FAIL"]);
                 return;
             }
 
@@ -1021,7 +1026,7 @@ namespace SharedLibraryCore.Commands
             E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId] = E.Origin;
 
             await E.Owner.Manager.GetClientService().Update(E.Origin);
-            await E.Origin.Tell("Your password has been set successfully");
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PASSWORD_SUCCESS"]);
         }
     }
 
@@ -1095,16 +1100,16 @@ namespace SharedLibraryCore.Commands
             if (E.Message.IsBroadcastCommand())
             {
                 if (E.Target == null)
-                    await E.Owner.Broadcast($"{E.Origin.Name}'s ping is ^5{E.Origin.Ping}^7ms");
+                    await E.Owner.Broadcast($"{E.Origin.Name}'s {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_TARGET"]} ^5{E.Origin.Ping}^7ms");
                 else
-                    await E.Owner.Broadcast($"{E.Target.Name}'s ping is ^5{E.Target.Ping}^7ms");
+                    await E.Owner.Broadcast($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
             }
             else
             {
                 if (E.Target == null)
-                    await E.Origin.Tell($"Your ping is ^5{E.Origin.Ping}^7ms");
+                    await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_SELF"]} ^5{E.Origin.Ping}^7ms");
                 else
-                    await E.Origin.Tell($"{E.Target.Name}'s ping is ^5{E.Target.Ping}^7ms");
+                    await E.Origin.Tell($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
             }
         }
     }

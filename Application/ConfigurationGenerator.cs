@@ -14,14 +14,14 @@ namespace IW4MAdmin.Application
         public static List<ServerConfiguration> GenerateServerConfig(List<ServerConfiguration> configList)
         {
 
+            var loc = Utilities.CurrentLocalization.LocalizationSet;
             var newConfig = new ServerConfiguration();
 
             while (string.IsNullOrEmpty(newConfig.IPAddress))
             {
                 try
                 {
-                    Console.Write("Enter server IP Address: ");
-                    string input = Console.ReadLine();
+                    string input = Utilities.PromptString(loc["SETUP_SERVER_IP"]);
                     IPAddress.Parse(input);
                     newConfig.IPAddress = input;
                 }
@@ -36,8 +36,7 @@ namespace IW4MAdmin.Application
             {
                 try
                 {
-                    Console.Write("Enter server port: ");
-                    newConfig.Port = Int16.Parse(Console.ReadLine());
+                    newConfig.Port = Int16.Parse(Utilities.PromptString(loc["SETUP_SERVER_PORT"]));
                 }
 
                 catch (Exception)
@@ -46,17 +45,15 @@ namespace IW4MAdmin.Application
                 }
             }
 
-            Console.Write("Enter server RCON password: ");
-            newConfig.Password = Console.ReadLine();
+            newConfig.Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
             newConfig.AutoMessages = new List<string>();
             newConfig.Rules = new List<string>();
 
-            newConfig.UseT6MParser = Utilities.PromptBool("Use T6M parser");
+            newConfig.UseT6MParser = Utilities.PromptBool(loc["SETUP_SERVER_USET6M"]);
 
             configList.Add(newConfig);
 
-            Console.Write("Configuration saved, add another? [y/n]:");
-            if (Console.ReadLine().ToLower().First() == 'y')
+            if (Utilities.PromptBool(loc["SETUP_SERVER_SAVE"]))
                 GenerateServerConfig(configList);
 
             return configList;

@@ -19,6 +19,8 @@ namespace IW4MAdmin.Application
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
             System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
+            Localization.Configure.Initialize();
+            var loc = Utilities.CurrentLocalization.LocalizationSet;
 
             Version = Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
 
@@ -50,7 +52,7 @@ namespace IW4MAdmin.Application
 
                 catch (Exception e)
                 {
-                    ServerManager.Logger.WriteWarning($"Could not get latest IW4MAdmin version");
+                    ServerManager.Logger.WriteWarning(loc["MANAGER_VERSION_FAIL"]);
                     while (e.InnerException != null)
                     {
                         e = e.InnerException;
@@ -62,7 +64,7 @@ namespace IW4MAdmin.Application
                 if (version.CurrentVersionStable == 99.99f)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Could not get latest IW4MAdmin version.");
+                    Console.WriteLine(loc["MANAGER_VERSION_FAIL"]);
                     Console.ForegroundColor = ConsoleColor.White;
                 }
 
@@ -70,23 +72,23 @@ namespace IW4MAdmin.Application
                 else if (version.CurrentVersionStable > Version)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine($"IW4MAdmin has an update. Latest version is [v{version.CurrentVersionStable.ToString("0.0")}]");
-                    Console.WriteLine($"Your version is [v{Version.ToString("0.0")}]");
+                    Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString("0.0")}]");
+                    Console.WriteLine($"{loc["MANAGER_VERSION_CURRENT"]} [v{Version.ToString("0.0")}]");
                     Console.ForegroundColor = ConsoleColor.White;
                 }
 #else
                 else if (version.CurrentVersionPrerelease > Version)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine($"IW4MAdmin-Prerelease has an update. Latest version is [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
-                    Console.WriteLine($"Your version is [v{Version.ToString("0.0")}-pr]");
+                    Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
+                    Console.WriteLine($"{loc["MANAGER_VERSION_CURRENT"]} [v{Version.ToString("0.0")}-pr]");
                     Console.ForegroundColor = ConsoleColor.White;
                 }
 #endif 
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("IW4MAdmin is up to date.");
+                    Console.WriteLine(loc["MANAGER_VERSION_SUCCESS"]);
                     Console.ForegroundColor = ConsoleColor.White;
                 }
 
@@ -130,13 +132,13 @@ namespace IW4MAdmin.Application
 
             catch (Exception e)
             {
-                Console.WriteLine($"Fatal Error during initialization");
+                Console.WriteLine(loc["MANAGER_INIT_FAIL"]);
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
                 }
                 Console.WriteLine($"Exception: {e.Message}");
-                Console.WriteLine("Press any key to exit...");
+                Console.WriteLine(loc["MANAGER_EXIT"]);
                 Console.ReadKey();
             }
         }

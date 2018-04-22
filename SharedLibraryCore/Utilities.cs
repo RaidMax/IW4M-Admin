@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
@@ -9,10 +8,7 @@ using SharedLibraryCore.Objects;
 using static SharedLibraryCore.Server;
 using System.Reflection;
 using System.IO;
-using System.Diagnostics;
 using System.Threading.Tasks;
-using static SharedLibraryCore.RCon.StaticHelpers;
-using System.Runtime.InteropServices;
 
 namespace SharedLibraryCore
 {
@@ -21,6 +17,7 @@ namespace SharedLibraryCore
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
         public static readonly Task CompletedTask = Task.FromResult(false);
         public static Encoding EncodingType;
+        public static Localization.Layout CurrentLocalization;
 
         //Get string with specified number of spaces -- really only for visual output
         public static String GetSpaces(int Num)

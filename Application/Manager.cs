@@ -163,7 +163,7 @@ namespace IW4MAdmin.Application
                 throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            Utilities.EncodingType = Encoding.GetEncoding(config.CustomParserEncoding ?? "windows-1252");
+            Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(config.CustomParserEncoding) ? config.CustomParserEncoding : "windows-1252");
 
             #endregion
             #region PLUGINS
@@ -373,7 +373,7 @@ namespace IW4MAdmin.Application
             }
 #if !DEBUG
             foreach (var S in Servers)
-                S.Broadcast("^1IW4MAdmin going offline!").Wait();
+                S.Broadcast(Utilities.CurrentLocalization.LocalizationSet["BROADCAST_OFFLINE"]).Wait();
 #endif
             _servers.Clear();
         }

@@ -25,6 +25,7 @@ namespace IW4MAdmin
     public class IW4MServer : Server
     {
         private CancellationToken cts;
+        private static Dictionary<string, string> loc = Utilities.CurrentLocalization.LocalizationSet;
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
@@ -70,7 +71,7 @@ namespace IW4MAdmin
             if (polledPlayer.Name.Length < 3)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is too short");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Your name must contain atleast 3 characters.");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_MINNAME"]);
                 await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
@@ -78,7 +79,7 @@ namespace IW4MAdmin
             if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name) != null)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is already in use");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Your name is being used by someone else.");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_NAME_INUSE"]);
                 await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
@@ -88,15 +89,15 @@ namespace IW4MAdmin
                 polledPlayer.Name == "CHEATER")
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is generic");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Please change your name using /name.");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_GENERICNAME"]);
                 await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
 
             if (polledPlayer.Name.Where(c => Char.IsControl(c)).Count() > 0)
             {
-                Logger.WriteDebug($"Kicking {polledPlayer} because their contains control characters");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, "Your name cannot contain control characters.");
+                Logger.WriteDebug($"Kicking {polledPlayer} because their name contains control characters");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_CONTROLCHARS"]);
                 await this.ExecuteCommandAsync(formattedKick);
                 return false;
             }
@@ -167,14 +168,14 @@ namespace IW4MAdmin
 
                     if (currentBan.Type == Penalty.PenaltyType.TempBan)
                     {
-                        string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, $"You are temporarily banned. ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} left)");
+                        string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} left)");
                         await this.ExecuteCommandAsync(formattedKick);
                     }
                     else
-                        await player.Kick($"Previously banned for {currentBan.Offense}", autoKickClient);
+                        await player.Kick($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense}", autoKickClient);
 
                     if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
-                        await player.Ban($"Previously banned for {currentBan.Offense}", autoKickClient);
+                        await player.Ban($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense}", autoKickClient);
                     return true;
                 }
 
@@ -186,7 +187,7 @@ namespace IW4MAdmin
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
                 {
-                    await player.Kick("VPNs are not allowed on this server", new Player() { ClientId = 1 });
+                    await player.Kick(Utilities.CurrentLocalization.LocalizationSet["SERVER_KICK_VPNS_NOTALLOWED"], new Player() { ClientId = 1 });
                 }
 
                 return true;
@@ -233,7 +234,7 @@ namespace IW4MAdmin
 
             if (C == null)
             {
-                await E.Origin.Tell("You entered an unknown command");
+                await E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
                 throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
             }
 
@@ -242,13 +243,13 @@ namespace IW4MAdmin
 
             if (E.Origin.Level < C.Permission)
             {
-                await E.Origin.Tell("You do not have access to that command");
+                await E.Origin.Tell(loc["COMMAND_NOACCESS"]);
                 throw new CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
             if (Args.Length < (C.RequiredArgumentCount))
             {
-                await E.Origin.Tell($"Not enough arguments supplied");
+                await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
                 await E.Origin.Tell(C.Syntax);
                 throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
@@ -297,7 +298,7 @@ namespace IW4MAdmin
                     matchingPlayers = GetClientByName(E.Data.Trim());
                     if (matchingPlayers.Count > 1)
                     {
-                        await E.Origin.Tell("Multiple players match that name");
+                        await E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
@@ -310,7 +311,7 @@ namespace IW4MAdmin
 
                         if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
                         {
-                            await E.Origin.Tell($"Not enough arguments supplied!");
+                            await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
                             await E.Origin.Tell(C.Syntax);
                             throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
@@ -322,7 +323,7 @@ namespace IW4MAdmin
                     matchingPlayers = GetClientByName(Args[0]);
                     if (matchingPlayers.Count > 1)
                     {
-                        await E.Origin.Tell("Multiple players match that name");
+                        await E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         foreach (var p in matchingPlayers)
                             await E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
@@ -340,7 +341,7 @@ namespace IW4MAdmin
                             E.Data == String.Empty) &&
                             C.RequiresTarget)
                         {
-                            await E.Origin.Tell($"Not enough arguments supplied!");
+                            await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
                             await E.Origin.Tell(C.Syntax);
                             throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
@@ -349,7 +350,7 @@ namespace IW4MAdmin
 
                 if (E.Target == null && C.RequiresTarget)
                 {
-                    await E.Origin.Tell("Unable to find specified player.");
+                    await E.Origin.Tell(loc["COMMAND_TARGET_NOTFOUND"]);
                     throw new CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
                 }
             }
@@ -622,7 +623,7 @@ namespace IW4MAdmin
 
             catch (DvarException)
             {
-                Website = "this server's website";
+                Website = loc["SERVER_WEBSITE_GENERIC"];
             }
 
             InitializeMaps();
@@ -665,7 +666,7 @@ namespace IW4MAdmin
             {
                 Logger.WriteError($"Gamelog {logPath} does not exist!");
 #if !DEBUG
-                throw new SharedLibraryCore.Exceptions.ServerException($"Invalid gamelog file {logPath}");
+                throw new ServerException($"Invalid gamelog file {logPath}");
 #endif
             }
             else
@@ -677,7 +678,7 @@ namespace IW4MAdmin
 #if DEBUG
  //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
-            await Broadcast("IW4M Admin is now ^2ONLINE");
+            await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
         }
 
@@ -694,7 +695,7 @@ namespace IW4MAdmin
                 });
 
                 if (E.Origin.Level > Player.Permission.Moderator)
-                    await E.Origin.Tell($"There are ^5{Reports.Count} ^7recent reports");
+                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)
@@ -756,7 +757,7 @@ namespace IW4MAdmin
 
                         catch (AuthorizationException e)
                         {
-                            await E.Origin.Tell($"You are not authorized to execute that command - {e.Message}");
+                            await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
                         }
 
                         catch (Exception Except)
@@ -831,12 +832,12 @@ namespace IW4MAdmin
             {
                 if (Target.Warnings >= 4)
                 {
-                    await Target.Kick("Too many warnings!", (await Manager.GetClientService().Get(1)).AsPlayer());
+                    await Target.Kick(loc["SERVER_WARNLIMT_REACHED"], (await Manager.GetClientService().Get(1)).AsPlayer());
                     return;
                 }
 
                 Target.Warnings++;
-                String Message = String.Format("^1WARNING ^7[^3{0}^7]: ^3{1}^7, {2}", Target.Warnings, Target.Name, Reason);
+                String Message = $"^1{loc["SERVER_WARNING"]} ^7[^3{Target.Warnings}^7]: ^3{Target.Name}^7, {Reason}";
                 await Target.CurrentServer.Broadcast(Message);
             }
 
@@ -872,7 +873,7 @@ namespace IW4MAdmin
 #if !DEBUG
             else
             {
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"You were Kicked - ^5{Reason}^7");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #endif
@@ -913,7 +914,7 @@ namespace IW4MAdmin
 #if !DEBUG
             else
             {
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"^7You're Temporarily Banned - ^5{Reason}");
+                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"^7{loc["SERVER_TB_TEXT"]}- ^5{Reason}");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #else
@@ -959,7 +960,7 @@ namespace IW4MAdmin
                 // this is set only because they're still in the server.
                 Target.Level = Player.Permission.Banned;
 #if !DEBUG
-                string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"You're Banned - ^5{Message} ^7(appeal at {Website})^7");
+                string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
                 await Target.CurrentServer.RemovePlayer(Target.ClientNumber);

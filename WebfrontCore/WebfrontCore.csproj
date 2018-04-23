@@ -47,13 +47,17 @@
   <ItemGroup>
     <PackageReference Include="Bower" Version="1.3.11" />
     <PackageReference Include="BuildBundlerMinifier" Version="2.6.375" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
       <Private></Private>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.NETCore.App" Version="2.0.7" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>

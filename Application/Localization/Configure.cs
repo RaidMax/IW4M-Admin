@@ -13,7 +13,7 @@ namespace IW4MAdmin.Application.Localization
         {
             string currentLocal = CultureInfo.CurrentCulture.Name;
 #if DEBUG
-            currentLocal = "ru-RU";
+ //           currentLocal = "ru-RU";
 #endif
             string localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocal}.json";
             string localizationContents;

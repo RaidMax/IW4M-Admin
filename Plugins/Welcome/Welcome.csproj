@@ -24,6 +24,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="Microsoft.NETCore.App" Version="2.0.7" />
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;copy &quot;$(ProjectDir)MaxMind\GeoIP.dat&quot; &quot;$(SolutionDir)BUILD\Plugins\GeoIP.dat&quot;" />
   </Target>

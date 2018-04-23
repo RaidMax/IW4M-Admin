@@ -2,18 +2,18 @@
 
 # IW4MAdmin
 ### Quick Start Guide
-### Version 2.0
+### Version 2.1
 _______
 ### About
-**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [T6M](https://plutonium.pw/), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
+**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6) [Pluto IW5](https://forum.plutonium.pw/category/5/plutonium-iw5), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 
 ### Setup
 **IW4MAdmin** requires minimal configuration to run. There is only one prerequisite.  
-* [.NET Core 2.0.5 Runtime](https://www.microsoft.com/net/download/dotnet-core/runtime-2.0.5) *or newer*  
+* [.NET Core 2.0.7 Runtime](https://www.microsoft.com/net/download/dotnet-core/runtime-2.0.7) *or newer*  
 
 1. Extract `IW4MAdmin-<version>.zip`  
 2. Open command prompt or terminal in the extracted folder
-3. Run `>dotnet IW4MAdmin.dll`
+3. Run `dotnet IW4MAdmin.dll`
 ___
 
 ### Configuration

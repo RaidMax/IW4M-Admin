@@ -14,5 +14,8 @@ def home():
         'index.html',
         title='API Overview',
         history_graph = _history_graph[0]['message'],
-        data_points = _history_graph[0]['data_points']
+        data_points = _history_graph[0]['data_points'],
+        instance_count = _history_graph[0]['instance_count'],
+        client_count = _history_graph[0]['client_count'],
+        max_data_points = 1440
     )

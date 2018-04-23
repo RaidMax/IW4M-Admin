@@ -1,6 +1,7 @@
 Version 2.1:
 CHANGELOG:
 -add support for localization
+-upgraded projects to .NET Core 2.0.7
 
 Version 2.0:
 CHANGELOG:

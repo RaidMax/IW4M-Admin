@@ -21,10 +21,6 @@ class HistoryGraph(Resource):
             )
 
             graph = pygal.StackedLine(
-                interpolate='cubic', 
-                interpolation_precision=3, 
-                #x_labels_major_every=100,
-                #x_labels_major_count=500, 
                 stroke_style={'width': 0.4}, 
                 show_dots=False, 
                 show_legend=False, 
@@ -37,10 +33,15 @@ class HistoryGraph(Resource):
             if len(instance_count) > 0:
                 graph.x_labels = [ timeago.format(instance_count[0])]
 
-            graph.add('Instance Count', [history['count'] for history in ctx.history.instance_history][-history_count:])
-            graph.add('Client Count', [history['count'] for history in ctx.history.client_history][-history_count:])
+            instance_counts = [history['count'] for history in ctx.history.instance_history][-history_count:]
+            client_counts = [history['count'] for history in ctx.history.client_history][-history_count:]
+
+            graph.add('Instance Count', instance_counts)
+            graph.add('Client Count', client_counts)
             return { 'message' :  graph.render(), 
-                     'data_points' : len(instance_count)
+                     'data_points' : len(instance_count),
+                     'instance_count' : 0 if len(instance_counts) is 0 else instance_counts[-1],
+                     'client_count' : 0 if len(client_counts) is 0 else client_counts[-1]
                    }, 200
         except Exception as e:
             return { 'message' : str(e) }, 500

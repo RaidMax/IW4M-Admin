@@ -63,6 +63,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="Microsoft.NETCore.App" Version="2.0.7" />
+  </ItemGroup>
+
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="call $(ProjectDir)BuildScripts\PreBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>

@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace SharedLibraryCore.Configuration
@@ -6,7 +7,7 @@ namespace SharedLibraryCore.Configuration
     public class ServerConfiguration : IBaseConfiguration
     {
         public string IPAddress { get; set; }
-        public short Port { get; set; }
+        public ushort Port { get; set; }
         public string Password { get; set; }
         public List<string> Rules { get; set; }
         public List<string> AutoMessages { get; set; }
@@ -16,11 +17,34 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
-            UseT6MParser = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_USET6M"]);
+            var loc = Utilities.CurrentLocalization.LocalizationSet;
+
+            while (string.IsNullOrEmpty(IPAddress))
+            {
+                string input = Utilities.PromptString(loc["SETUP_SERVER_IP"]);
+
+                if (System.Net.IPAddress.TryParse(input, out System.Net.IPAddress ip))
+                    IPAddress = input;
+            }
+
+            while(Port < 1)
+            {
+                string input = Utilities.PromptString(loc["SETUP_SERVER_PORT"]);
+                if (UInt16.TryParse(input, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.CurrentCulture, out ushort port))
+                    Port = port;
+            }
+
+            Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
+
+            AutoMessages = new List<string>();
+            Rules = new List<string>();
+
+
+            UseT6MParser = Utilities.PromptBool(loc["SETUP_SERVER_USET6M"]);
             if (!UseT6MParser)
-                UseIW5MParser = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_USEIW5M"]);
+                UseIW5MParser = Utilities.PromptBool(loc["SETUP_SERVER_USEIW5M"]);
             if (UseIW5MParser)
-                ManualLogPath = Utilities.PromptString(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_MANUALLOG"]);
+                ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_MANUALLOG"]);
 
             return this;
         }

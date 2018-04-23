@@ -138,7 +138,13 @@ namespace IW4MAdmin.Application
                 if (newConfig.Servers == null)
                 {
                     ConfigHandler.Set(newConfig);
-                    newConfig.Servers = ConfigurationGenerator.GenerateServerConfig(new List<ServerConfiguration>());
+                    newConfig.Servers = new List<ServerConfiguration>();
+
+                    do
+                    {
+                        newConfig.Servers.Add((ServerConfiguration)new ServerConfiguration().Generate());
+                    } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_SAVE"]));
+
                     config = newConfig;
                     await ConfigHandler.Save();
                 }

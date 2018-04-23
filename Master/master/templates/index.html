@@ -5,12 +5,19 @@
     <div class="col-12">
         <figure>
             <div id="history_graph">{{history_graph|safe}}</div>
-            <figcaption class="float-right pr-3 mr-4">
+            <figcaption class="float-right">
                 <span id="history_graph_zoom_out" class="h4 oi oi-zoom-out text-muted" style="cursor:pointer;"></span>
                 <span id="history_graph_zoom_in" class="h4 oi oi-zoom-in text-muted" style="cursor:pointer;"></span>
             </figcaption>
+            <figcaption class="float-left">
+                <span class="h4 text-muted">{{instance_count}} instances</span>
+                <span class="h4 text-muted">&mdash; {{client_count}} clients</span>
+            </figcaption>
         </figure>
        
+    </div>
+    <div class="col-12">
+    
     </div>
 </div>
 {% endblock %}
@@ -20,6 +27,7 @@
     <script>
         let dataPoints = {{data_points}};
         let zoomLevel = Math.ceil(dataPoints / 2);
+        let maxPoints = {{max_data_points}}
         //console.log(dataPoints);
 
         function updateHistoryGraph() {
@@ -33,7 +41,7 @@
 
         $('#history_graph_zoom_out').click(function () {
            // console.log(zoomLevel);
-            zoomLevel = zoomLevel * 2 <= 1440 ? Math.ceil(zoomLevel * 2) : dataPoints;
+            zoomLevel = zoomLevel * 2 <= maxPoints ? Math.ceil(zoomLevel * 2) : dataPoints;
             updateHistoryGraph();
         });
 

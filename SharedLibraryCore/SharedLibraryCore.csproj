@@ -23,6 +23,10 @@
     <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="Microsoft.NETCore.App" Version="2.0.7" />
+  </ItemGroup>
+
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="if not exist &quot;$(SolutionDir)BUILD&quot; (&#xD;&#xA;md &quot;$(SolutionDir)BUILD&quot;&#xD;&#xA;)&#xD;&#xA;if not exist &quot;$(SolutionDir)BUILD\Plugins&quot; (&#xD;&#xA;md &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;)" />
   </Target>

@@ -361,7 +361,7 @@ namespace IW4MAdmin
         public override async Task ExecuteEvent(GameEvent E)
         {
             //if (Throttled)
-             //   return;
+            //   return;
 
             await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
@@ -658,7 +658,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            //          basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath;
             if (GameName == Game.IW5)

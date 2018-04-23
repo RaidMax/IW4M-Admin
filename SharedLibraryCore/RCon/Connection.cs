@@ -172,19 +172,23 @@ namespace SharedLibraryCore.RCon
             OnSent.Reset();
             OnReceived.Reset();
             string queryString = "";
+            byte[] payload = null;
 
             switch (type)
             {
                 case StaticHelpers.QueryType.DVAR:
                 case StaticHelpers.QueryType.COMMAND:
-                    queryString = $"ÿÿÿÿrcon {RConPassword} {parameters}";
+                    var header = "ÿÿÿÿrcon ".Select(Convert.ToByte).ToList();
+                    byte[] p = Utilities.EncodingType.GetBytes($"{RConPassword} {parameters}");
+                    header.AddRange(p);
+                    payload = header.ToArray();
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
-                    queryString = "ÿÿÿÿgetstatus";
+                    payload = "ÿÿÿÿgetstatus".Select(Convert.ToByte).ToArray();
                     break;
             }
 
-            byte[] payload = queryString.Select(Convert.ToByte).ToArray();
+           // byte[] payload = Utilities.EncodingType.GetBytes(queryString); // queryString.Select(Convert.ToByte).ToArray();
 
             retrySend:
             try

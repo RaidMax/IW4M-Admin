@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,15 +13,15 @@ namespace Application.EventParsers
     {
         public GameEvent GetEvent(Server server, string logLine)
         {
-            string cleanedLogLine = Regex.Replace(logLine, @"^ *[0-9]+:[0-9]+ *", "");
-            string[] lineSplit = cleanedLogLine.Split(';');
+            string cleanedEventLine = Regex.Replace(logLine, @"^ *[0-9]+:[0-9]+ *", "").Trim();
+            string[] lineSplit = cleanedEventLine.Split(';');
 
             if (lineSplit[0][0] == 'K')
             {
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.Script,
-                    Data = cleanedLogLine,
+                    Data = cleanedEventLine,
                     Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
                     Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
                     Owner = server
@@ -32,7 +33,7 @@ namespace Application.EventParsers
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.Damage,
-                    Data = cleanedLogLine,
+                    Data = cleanedEventLine,
                     Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
                     Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
                     Owner = server
@@ -69,13 +70,15 @@ namespace Application.EventParsers
                 };
             }
 
-            /*if (lineSplit[0].Contains("ShutdownGame"))
-            {
-                
-            }*/
-
             if (lineSplit[0].Contains("InitGame"))
             {
+                string dump = cleanedEventLine.Replace("InitGame: ", "");
+                string[] values = dump.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+                var dict = new Dictionary<string, string>();
+
+                for (int i = 0; i < values.Length; i += 2)
+                    dict.Add(values[i], values[i + 1]);
+
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.MapChange,
@@ -88,7 +91,8 @@ namespace Application.EventParsers
                     {
                         ClientId = 1
                     },
-                    Owner = server
+                    Owner = server,
+                    Extra = dict
                 };
             }
 

@@ -149,7 +149,6 @@ namespace Application.RconParsers
             }
         }
 
-
         private List<Player> ClientsFromStatus(string[] status)
         {
             List<Player> StatusPlayers = new List<Player>();

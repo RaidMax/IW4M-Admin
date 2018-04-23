@@ -11,10 +11,17 @@ namespace SharedLibraryCore.Configuration
         public List<string> Rules { get; set; }
         public List<string> AutoMessages { get; set; }
         public bool UseT6MParser { get; set; }
+        public bool UseIW5MParser { get; set; }
+        public string ManualLogPath { get; set; }
 
         public IBaseConfiguration Generate()
         {
             UseT6MParser = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_USET6M"]);
+            if (!UseT6MParser)
+                UseIW5MParser = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_USEIW5M"]);
+            if (UseIW5MParser)
+                ManualLogPath = Utilities.PromptString(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_MANUALLOG"]);
+
             return this;
         }
 

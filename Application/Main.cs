@@ -6,6 +6,8 @@ using System.Reflection;
 using SharedLibraryCore;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Database;
+using System.Text;
+using System.Threading;
 
 namespace IW4MAdmin.Application
 {
@@ -21,8 +23,10 @@ namespace IW4MAdmin.Application
             System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
             Localization.Configure.Initialize();
             var loc = Utilities.CurrentLocalization.LocalizationSet;
+            Console.OutputEncoding = Encoding.UTF8;
 
             Version = Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
+            Version = Math.Round(Version, 2);
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");

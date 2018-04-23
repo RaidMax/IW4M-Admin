@@ -51,8 +51,8 @@ namespace IW4MAdmin
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
 
-            if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot)|| 
-                polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) || 
+            if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
+                polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) ||
                 polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
@@ -360,8 +360,8 @@ namespace IW4MAdmin
 
         public override async Task ExecuteEvent(GameEvent E)
         {
-            if (Throttled)
-                return;
+            //if (Throttled)
+             //   return;
 
             await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
@@ -422,7 +422,9 @@ namespace IW4MAdmin
 
             for (int i = 0; i < CurrentPlayers.Count; i++)
             {
-                await AddPlayer(CurrentPlayers[i]);
+                // todo: wait til GUID is included in status to fix this
+                if (GameName != Game.IW5)
+                    await AddPlayer(CurrentPlayers[i]);
             }
 
             return CurrentPlayers.Count;
@@ -457,15 +459,19 @@ namespace IW4MAdmin
 
                 try
                 {
-                    int polledPlayerCount = await PollPlayersAsync();
-
-                    if (ConnectionErrors > 0)
+                    // trying to reduce the polling rate as every 450ms is unnecessary
+                    if ((DateTime.Now - LastPoll).TotalSeconds >= 10)
                     {
-                        Logger.WriteVerbose($"Connection has been reestablished with {IP}:{Port}");
-                        Throttled = false;
+                        int polledPlayerCount = await PollPlayersAsync();
+
+                        if (ConnectionErrors > 0)
+                        {
+                            Logger.WriteVerbose($"Connection has been reestablished with {IP}:{Port}");
+                            Throttled = false;
+                        }
+                        ConnectionErrors = 0;
+                        LastPoll = DateTime.Now;
                     }
-                    ConnectionErrors = 0;
-                    LastPoll = DateTime.Now;
                 }
 
                 catch (NetworkException e)
@@ -587,6 +593,8 @@ namespace IW4MAdmin
         public async Task Initialize()
         {
             RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW4RConParser();
+            if (ServerConfig.UseIW5MParser)
+                RconParser = new IW5MRConParser();
 
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
@@ -632,9 +640,9 @@ namespace IW4MAdmin
             this.CurrentMap = Maps.Find(m => m.Name == mapname.Value) ?? new Map() { Alias = mapname.Value, Name = mapname.Value };
             this.MaxClients = maxplayers.Value;
             this.FSGame = game.Value;
-            this.Gametype = (await this.GetDvarAsync<string>("g_gametype")).Value;
+            this.Gametype = gametype.Value;
 
-            await this.SetDvarAsync("sv_kickbantime", 60);
+            //wait this.SetDvarAsync("sv_kickbantime", 60);
 
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
@@ -650,11 +658,19 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            //          basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
-            string logPath = game.Value == string.Empty ?
-                $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
-                $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+            string logPath;
+            if (GameName == Game.IW5)
+            {
+                logPath = ServerConfig.ManualLogPath;
+            }
+            else
+            {
+                logPath = game.Value == string.Empty ?
+                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
+                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+            }
 
             // hopefully fix wine drive name mangling
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -676,7 +692,7 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
- //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+            //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
             await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
@@ -687,15 +703,33 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.Connect)
             {
-                ChatHistory.Add(new ChatInfo()
+                // special case for IW5 when connect is from the log
+                if (E.Extra != null)
                 {
-                    Name = E.Origin.Name,
-                    Message = "CONNECTED",
-                    Time = DateTime.UtcNow
-                });
+                    var logClient = (Player)E.Extra;
+                    var client = (await this.GetStatusAsync())
+                        .Single(c => c.ClientNumber == logClient.ClientNumber &&
+                        c.Name == logClient.Name);
+                    client.NetworkId = logClient.NetworkId;
 
-                if (E.Origin.Level > Player.Permission.Moderator)
-                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                    await AddPlayer(client);
+
+                    // hack: to prevent plugins from registering it as a real connect
+                    E.Type = GameEvent.EventType.Unknown;
+                }
+
+                else
+                {
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = "CONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+
+                    if (E.Origin.Level > Player.Permission.Moderator)
+                        await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                }
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)
@@ -790,11 +824,11 @@ namespace IW4MAdmin
             {
                 Logger.WriteInfo($"New map loaded - {ClientNum} active players");
 
-                Gametype = (await this.GetDvarAsync<string>("g_gametype")).Value.StripColors();
-                Hostname = (await this.GetDvarAsync<string>("sv_hostname")).Value.StripColors();
-                FSGame = (await this.GetDvarAsync<string>("fs_game")).Value.StripColors();
+                var dict = (Dictionary<string, string>)E.Extra;
+                Gametype = dict["g_gametype"].StripColors();
+                Hostname = dict["sv_hostname"].StripColors();
 
-                string mapname = this.GetDvarAsync<string>("mapname").Result.Value;
+                string mapname = dict["mapname"].StripColors();
                 CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
             }
 

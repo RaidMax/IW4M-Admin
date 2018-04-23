@@ -9,6 +9,7 @@ using static SharedLibraryCore.Server;
 using System.Reflection;
 using System.IO;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace SharedLibraryCore
 {
@@ -181,16 +182,8 @@ namespace SharedLibraryCore
 
         public static long ConvertLong(this string str)
         {
-            try
-            {
-                return Int64.Parse(str, System.Globalization.NumberStyles.HexNumber);
-            }
-
-
-            catch (FormatException)
-            {
-                return -1;
-            }
+            Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id);
+            return id;
         }
 
         public static int ConvertToIP(this string str)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using SharedLibraryCore;
@@ -9,7 +10,7 @@ namespace Application.EventParsers
 {
     class IW4EventParser : IEventParser
     {
-        public GameEvent GetEvent(Server server, string logLine)
+        public virtual GameEvent GetEvent(Server server, string logLine)
         {
             string[] lineSplit = logLine.Split(';');
             string cleanedEventLine = Regex.Replace(lineSplit[0], @"[0-9]+:[0-9]+\ ", "").Trim();
@@ -73,6 +74,13 @@ namespace Application.EventParsers
 
             if (cleanedEventLine.Contains("InitGame"))
             {
+                string dump = cleanedEventLine.Replace("InitGame: ", "");
+                string[] values = dump.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+                var dict = new Dictionary<string, string>();
+
+                for (int i = 0; i < values.Length; i += 2)
+                    dict.Add(values[i], values[i + 1]);
+
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.MapChange,
@@ -85,7 +93,8 @@ namespace Application.EventParsers
                     {
                         ClientId = 1
                     },
-                    Owner = server
+                    Owner = server, 
+                    Extra = dict
                 };
             }
 

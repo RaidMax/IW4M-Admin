@@ -290,8 +290,8 @@ namespace SharedLibraryCore
         // Info
         public string Hostname { get; protected set; }
         public string Website { get; protected set; }
-        public string Gametype { get; protected set; }
-        public Map CurrentMap { get; protected set; }
+        public string Gametype { get; set; }
+        public Map CurrentMap { get; set; }
         public int ClientNum
         {
             get

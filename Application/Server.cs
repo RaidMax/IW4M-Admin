@@ -195,7 +195,7 @@ namespace IW4MAdmin
 
             catch (Exception E)
             {
-                Manager.GetLogger().WriteError($"Unable to add player {polledPlayer.Name}::{polledPlayer.NetworkId}");
+                Manager.GetLogger().WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {polledPlayer.Name}::{polledPlayer.NetworkId}");
                 Manager.GetLogger().WriteDebug(E.StackTrace);
                 return false;
             }
@@ -466,7 +466,7 @@ namespace IW4MAdmin
 
                         if (ConnectionErrors > 0)
                         {
-                            Logger.WriteVerbose($"Connection has been reestablished with {IP}:{Port}");
+                            Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
                             Throttled = false;
                         }
                         ConnectionErrors = 0;
@@ -479,7 +479,7 @@ namespace IW4MAdmin
                     ConnectionErrors++;
                     if (ConnectionErrors == 1)
                     {
-                        Logger.WriteError($"{e.Message} {IP}:{Port}, reducing polling rate");
+                        Logger.WriteError($"{e.Message} {IP}:{Port}, {loc["SERVER_ERROR_POLLING"]}");
                         Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
                         Throttled = true;
                     }
@@ -569,7 +569,7 @@ namespace IW4MAdmin
             //#if !DEBUG
             catch (NetworkException)
             {
-                Logger.WriteError($"Could not communicate with {IP}:{Port}");
+                Logger.WriteError($"{loc["SERVER_ERROR_COMMUNICATION"]} {IP}:{Port}");
                 return false;
             }
 
@@ -582,7 +582,7 @@ namespace IW4MAdmin
 
             catch (Exception E)
             {
-                Logger.WriteError($"Encountered error on {IP}:{Port}");
+                Logger.WriteError($"{loc["SERVER_ERROR_EXCEPTION"]} {IP}:{Port}");
                 Logger.WriteDebug("Error Message: " + E.Message);
                 Logger.WriteDebug("Error Trace: " + E.StackTrace);
                 return false;
@@ -680,9 +680,9 @@ namespace IW4MAdmin
 
             if (!File.Exists(logPath))
             {
-                Logger.WriteError($"Gamelog {logPath} does not exist!");
+                Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG
-                throw new ServerException($"Invalid gamelog file {logPath}");
+                throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
 #endif
             }
             else
@@ -796,10 +796,10 @@ namespace IW4MAdmin
 
                         catch (Exception Except)
                         {
-                            Logger.WriteError(String.Format("A command request \"{0}\" generated an error.", C.Name));
+                            Logger.WriteError(String.Format($"\"{0}\" {loc["SERVER_ERROR_COMMAND_LOG"]}", C.Name));
                             Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
                             Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
-                            await E.Origin.Tell("^1An internal error occured while processing your command^7");
+                            await E.Origin.Tell($"^1{loc["SERVER_ERROR_COMMAND_INGAME"]}");
 #if DEBUG
                             await E.Origin.Tell(Except.Message);
 #endif
@@ -824,12 +824,29 @@ namespace IW4MAdmin
             {
                 Logger.WriteInfo($"New map loaded - {ClientNum} active players");
 
-                var dict = (Dictionary<string, string>)E.Extra;
-                Gametype = dict["g_gametype"].StripColors();
-                Hostname = dict["sv_hostname"].StripColors();
+                // iw4 doesn't log the game info
+                if (E.Extra == null)
+                {
+                    var dict = await this.GetInfoAsync();
 
-                string mapname = dict["mapname"].StripColors();
-                CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                    Gametype = dict["gametype"].StripColors();
+                    Hostname = dict["hostname"].StripColors();
+
+                    string mapname = dict["mapname"].StripColors();
+                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                }
+
+                else
+
+                {
+                    var dict = (Dictionary<string, string>)E.Extra;
+                    Gametype = dict["g_gametype"].StripColors();
+                    Hostname = dict["sv_hostname"].StripColors();
+
+                    string mapname = dict["mapname"].StripColors();
+                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                }
+
             }
 
             if (E.Type == GameEvent.EventType.MapEnd)

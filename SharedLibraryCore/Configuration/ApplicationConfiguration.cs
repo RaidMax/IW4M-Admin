@@ -18,6 +18,7 @@ namespace SharedLibraryCore.Configuration
         public string IPHubAPIKey { get; set; }
         public string WebfrontBindUrl { get; set; }
         public string CustomParserEncoding { get; set; }
+        public string CustomLocale { get; set; }
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }

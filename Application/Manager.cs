@@ -184,7 +184,7 @@ namespace IW4MAdmin.Application
 
                 catch (Exception e)
                 {
-                    Logger.WriteError($"An error occured loading plugin {Plugin.Name}");
+                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
                     Logger.WriteDebug($"Exception: {e.Message}");
                     Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
                 }
@@ -226,7 +226,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CIP());
             Commands.Add(new CMask());
             Commands.Add(new CPruneAdmins());
-            Commands.Add(new CKillServer());
+            //Commands.Add(new CKillServer());
             Commands.Add(new CSetPassword());
             Commands.Add(new CPing());
 
@@ -247,7 +247,7 @@ namespace IW4MAdmin.Application
                         _servers.Add(ServerInstance);
                     }
 
-                    Logger.WriteVerbose($"Now monitoring {ServerInstance.Hostname}");
+                    Logger.WriteVerbose($"{Utilities.CurrentLocalization.LocalizationSet["MANAGER_MONITORING_TEXT"]} {ServerInstance.Hostname}");
 
                     // this way we can keep track of execution time and see if problems arise.
                     var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
@@ -259,9 +259,9 @@ namespace IW4MAdmin.Application
 
                 catch (ServerException e)
                 {
-                    Logger.WriteError($"Not monitoring server {Conf.IPAddress}:{Conf.Port} due to uncorrectable errors");
+                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_UNFIXABLE"]} [{Conf.IPAddress}:{Conf.Port}]");
                     if (e.GetType() == typeof(DvarException))
-                        Logger.WriteDebug($"Could not get the dvar value for {(e as DvarException).Data["dvar_name"]} (ensure the server has a map loaded)");
+                        Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_DVAR"]} {(e as DvarException).Data["dvar_name"]} ({Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_DVAR_HELP"]})");
                     else if (e.GetType() == typeof(NetworkException))
                     {
                         Logger.WriteDebug(e.Message);

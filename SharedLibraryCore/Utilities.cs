@@ -182,8 +182,9 @@ namespace SharedLibraryCore
 
         public static long ConvertLong(this string str)
         {
-            Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id);
-            return id;
+            if (Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
+                return id;
+            return 0;
         }
 
         public static int ConvertToIP(this string str)
@@ -357,6 +358,22 @@ namespace SharedLibraryCore
             return pID;
         }
 
+        public static Dictionary<string, string> DictionaryFromKeyValue(this string eventLine)
+        {
+            string[] values = eventLine.Substring(1).Split('\\');
+
+            Dictionary<string, string> dict = null;
+
+            if (values.Length % 2 == 0 && values.Length > 1)
+            {
+                dict = new Dictionary<string, string>();
+                for (int i = 0; i < values.Length; i += 2)
+                    dict.Add(values[i], values[i + 1]);
+            }
+
+            return dict;
+        }
+
         public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
 
         public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
@@ -364,6 +381,12 @@ namespace SharedLibraryCore
         public static Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
 
         public static Task<List<Player>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
+
+        public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)
+        {
+            var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
+            return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
+        } 
 
     }
 }

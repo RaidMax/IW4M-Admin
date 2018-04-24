@@ -73,11 +73,6 @@ namespace Application.EventParsers
             if (lineSplit[0].Contains("InitGame"))
             {
                 string dump = cleanedEventLine.Replace("InitGame: ", "");
-                string[] values = dump.Split('\\', StringSplitOptions.RemoveEmptyEntries);
-                var dict = new Dictionary<string, string>();
-
-                for (int i = 0; i < values.Length; i += 2)
-                    dict.Add(values[i], values[i + 1]);
 
                 return new GameEvent()
                 {
@@ -92,7 +87,7 @@ namespace Application.EventParsers
                         ClientId = 1
                     },
                     Owner = server,
-                    Extra = dict
+                    Extra = dump.DictionaryFromKeyValue()
                 };
             }
 

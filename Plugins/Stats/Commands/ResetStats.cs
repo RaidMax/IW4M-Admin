@@ -11,7 +11,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
-        public ResetStats() : base("resetstats", "reset your stats to factory-new", "rs", Player.Permission.User, false) { }
+        public ResetStats() : base("resetstats", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_RESET_DESC"], "rs", Player.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
@@ -31,12 +31,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 // fixme: this doesn't work properly when another context exists
                 await svc.SaveChangesAsync();
-                await E.Origin.Tell("Your stats for this server have been reset");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 
             else
             {
-                await E.Origin.Tell("You must be connected to a server to reset your stats");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
             }
         }
     }

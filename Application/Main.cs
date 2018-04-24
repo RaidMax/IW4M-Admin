@@ -130,7 +130,7 @@ namespace IW4MAdmin.Application
                 }
 
                 ServerManager.Start();
-                ServerManager.Logger.WriteVerbose("Shutdown complete");
+                ServerManager.Logger.WriteVerbose(loc["MANAGER_SHUTDOWN_SUCCESS"]);
 
             }
 

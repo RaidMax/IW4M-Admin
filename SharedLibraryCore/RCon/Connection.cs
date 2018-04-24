@@ -171,7 +171,6 @@ namespace SharedLibraryCore.RCon
 
             OnSent.Reset();
             OnReceived.Reset();
-            string queryString = "";
             byte[] payload = null;
 
             switch (type)
@@ -186,9 +185,10 @@ namespace SharedLibraryCore.RCon
                 case StaticHelpers.QueryType.GET_STATUS:
                     payload = "ÿÿÿÿgetstatus".Select(Convert.ToByte).ToArray();
                     break;
+                case StaticHelpers.QueryType.GET_INFO:
+                    payload = "ÿÿÿÿgetinfo".Select(Convert.ToByte).ToArray();
+                    break;
             }
-
-           // byte[] payload = Utilities.EncodingType.GetBytes(queryString); // queryString.Select(Convert.ToByte).ToArray();
 
             retrySend:
             try

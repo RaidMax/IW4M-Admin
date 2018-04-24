@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SharedLibraryCore;
+using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace IW4MAdmin.Application
@@ -28,7 +30,19 @@ namespace IW4MAdmin.Application
 
         void Write(string msg, LogType type)
         {
-            string LogLine = $"[{DateTime.Now.ToString("HH:mm:ss")}] - {type}: {msg}";
+            string stringType;
+
+            try
+            {
+                stringType = Utilities.CurrentLocalization.LocalizationSet[$"GLOBAL_{type.ToString().ToUpper()}"];
+            }
+
+            catch(KeyNotFoundException)
+            {
+                stringType = type.ToString();
+            }
+
+            string LogLine = $"[{DateTime.Now.ToString("HH:mm:ss")}] - {stringType}: {msg}";
             lock (ThreadLock)
             {
 #if DEBUG

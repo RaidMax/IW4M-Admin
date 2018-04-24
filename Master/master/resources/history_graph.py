@@ -11,18 +11,18 @@ class HistoryGraph(Resource):
             custom_style = Style(
             background='transparent',
             plot_background='transparent',
-            foreground='rgba(109, 118, 126, 0.3)',
-            foreground_strong='rgba(109, 118, 126, 0.3)',
-            foreground_subtle='rgba(109, 118, 126, 0.3)',
+            foreground='#6c757d',
+            foreground_strong='#6c757d',
+            foreground_subtle='#6c757d',
             opacity='0.1',
             opacity_hover='0.2',
-            transition='100ms ease-in',
-            colors=('#007acc', '#749363')
+            transition='0ms',
+            colors=('#749363','#007acc'),
             )
 
-            graph = pygal.StackedLine(
+            graph = pygal.Line(
                 stroke_style={'width': 0.4}, 
-                show_dots=False, 
+                #show_dots=False, 
                 show_legend=False, 
                 fill=True, 
                 style=custom_style, 
@@ -36,9 +36,9 @@ class HistoryGraph(Resource):
             instance_counts = [history['count'] for history in ctx.history.instance_history][-history_count:]
             client_counts = [history['count'] for history in ctx.history.client_history][-history_count:]
 
-            graph.add('Instance Count', instance_counts)
             graph.add('Client Count', client_counts)
-            return { 'message' :  graph.render(), 
+            graph.add('Instance Count', instance_counts)
+            return { 'message' :  graph.render().replace("<title>Pygal</title>", ""), 
                      'data_points' : len(instance_count),
                      'instance_count' : 0 if len(instance_counts) is 0 else instance_counts[-1],
                      'client_count' : 0 if len(client_counts) is 0 else client_counts[-1]

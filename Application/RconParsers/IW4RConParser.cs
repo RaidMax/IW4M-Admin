@@ -103,7 +103,7 @@ namespace Application.RconParsers
                         IPAddress = cIP,
                         Ping = Ping,
                         Score = score,
-                        IsBot = npID == -1
+                        IsBot = npID == 0
                     };
                     StatusPlayers.Add(P);
                 }

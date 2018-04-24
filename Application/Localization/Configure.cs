@@ -11,16 +11,17 @@ namespace IW4MAdmin.Application.Localization
     {
         public static void Initialize()
         {
-            string currentLocal = CultureInfo.CurrentCulture.Name;
+            string currentLocale = Program.ServerManager.GetApplicationSettings().Configuration().CustomLocale ?? 
+                CultureInfo.CurrentCulture.Name.Substring(0, 2);
 #if DEBUG
  //           currentLocal = "ru-RU";
 #endif
-            string localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocal}.json";
+            string localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocale}-{currentLocale.ToUpper()}.json";
             string localizationContents;
 
             if (File.Exists(localizationFile))
             {
-                localizationContents = File.ReadAllText(localizationFile, Encoding.UTF8);           
+                localizationContents = File.ReadAllText(localizationFile, Encoding.UTF8);
             }
 
             else

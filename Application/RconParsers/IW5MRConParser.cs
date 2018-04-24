@@ -155,7 +155,7 @@ namespace Application.RconParsers
                         IPAddress = ipAddress,
                         Ping = Ping,
                         Score = score,
-                        IsBot = networkId < 1
+                        IsBot = networkId == 0
                     });
                 }
             }

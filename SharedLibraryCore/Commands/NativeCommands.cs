@@ -15,7 +15,7 @@ namespace SharedLibraryCore.Commands
     public class CQuit : Command
     {
         public CQuit() :
-            base("quit", "quit IW4MAdmin", "q", Player.Permission.Owner, false)
+            base("quit", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_QUIT_DESC"], "q", Player.Permission.Owner, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -27,7 +27,7 @@ namespace SharedLibraryCore.Commands
     public class COwner : Command
     {
         public COwner() :
-            base("owner", "claim ownership of the server", "o", Player.Permission.User, false)
+            base("owner", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_DESC"], "o", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -46,16 +46,16 @@ namespace SharedLibraryCore.Commands
     public class CWarn : Command
     {
         public CWarn() :
-            base("warn", "warn player for infringing rules", "w", Player.Permission.Trusted, true, new CommandArgument[]
+            base("warn", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARN_DESC"], "w", Player.Permission.Trusted, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = "reason",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -73,11 +73,11 @@ namespace SharedLibraryCore.Commands
     public class CWarnClear : Command
     {
         public CWarnClear() :
-            base("warnclear", "remove all warning for a player", "wc", Player.Permission.Trusted, true, new CommandArgument[]
+            base("warnclear", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARNCLEAR_DESC"], "wc", Player.Permission.Trusted, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     }
                 })
@@ -94,17 +94,17 @@ namespace SharedLibraryCore.Commands
     public class CKick : Command
     {
         public CKick() :
-            base("kick", "kick a player by name", "k", Player.Permission.Trusted, true, new CommandArgument[]
+            base("kick", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_DESC"], "k", Player.Permission.Trusted, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = "player",
+                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
                 new CommandArgument()
                 {
-                Name = "reason",
-                Required = true
+                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                    Required = true
                 }
             })
         { }
@@ -125,11 +125,11 @@ namespace SharedLibraryCore.Commands
     public class CSay : Command
     {
         public CSay() :
-            base("say", "broadcast message to all players", "s", Player.Permission.Moderator, false, new CommandArgument[]
+            base("say", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SAY_DESC"], "s", Player.Permission.Moderator, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "message",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_MESSAGE"],
                         Required = true
                     }
                 })
@@ -144,21 +144,21 @@ namespace SharedLibraryCore.Commands
     public class CTempBan : Command
     {
         public CTempBan() :
-            base("tempban", "temporarily ban a player for specified time (defaults to 1 hour)", "tb", Player.Permission.Moderator, true, new CommandArgument[]
+            base("tempban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_DESC"], "tb", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = "duration (m|h|d|w|y)",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_DURATION"],
                         Required = true,
                     },
                     new CommandArgument()
                     {
-                        Name = "reason",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -184,16 +184,16 @@ namespace SharedLibraryCore.Commands
     public class CBan : Command
     {
         public CBan() :
-            base("ban", "permanently ban a player from the server", "b", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("ban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BAN_DESC"], "b", Player.Permission.SeniorAdmin, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = "player",
+                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
                 new CommandArgument()
                 {
-                    Name = "reason",
+                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
                     Required = true
                 }
             })
@@ -214,16 +214,16 @@ namespace SharedLibraryCore.Commands
     public class CUnban : Command
     {
         public CUnban() :
-            base("unban", "unban player by client id", "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("unban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UNBAN_DESC"], "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "client id",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_CLIENTID"],
                         Required = true,
                     },
                     new CommandArgument()
                     {
-                        Name = "reason",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
                         Required  = true
                     }
                 })
@@ -247,7 +247,7 @@ namespace SharedLibraryCore.Commands
     public class CWhoAmI : Command
     {
         public CWhoAmI() :
-            base("whoami", "give information about yourself.", "who", Player.Permission.User, false)
+            base("whoami", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WHO_DESC"], "who", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -260,7 +260,7 @@ namespace SharedLibraryCore.Commands
     public class CList : Command
     {
         public CList() :
-            base("list", "list active clients", "l", Player.Permission.Moderator, false)
+            base("list", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_LIST_DESC"], "l", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -295,11 +295,11 @@ namespace SharedLibraryCore.Commands
     public class CHelp : Command
     {
         public CHelp() :
-            base("help", "list all available commands", "h", Player.Permission.User, false, new CommandArgument[]
+            base("help", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_HELP_DESC"], "h", Player.Permission.User, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "command",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_COMMANDS"],
                         Required = false
                     }
                 })
@@ -359,7 +359,7 @@ namespace SharedLibraryCore.Commands
     public class CFastRestart : Command
     {
         public CFastRestart() :
-            base("fastrestart", "fast restart current map", "fr", Player.Permission.Moderator, false)
+            base("fastrestart", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FASTRESTART_DESC"], "fr", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -376,7 +376,7 @@ namespace SharedLibraryCore.Commands
     public class CMapRotate : Command
     {
         public CMapRotate() :
-            base("maprotate", "cycle to the next map in rotation", "mr", Player.Permission.Administrator, false)
+            base("maprotate", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAPROTATE_DESC"], "mr", Player.Permission.Administrator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -393,16 +393,16 @@ namespace SharedLibraryCore.Commands
     public class CSetLevel : Command
     {
         public CSetLevel() :
-            base("setlevel", "set player to specified administration level", "sl", Player.Permission.Moderator, true, new CommandArgument[]
+            base("setlevel", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_DESC"], "sl", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                      new CommandArgument()
                      {
-                         Name = "player",
+                         Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                          Required = true
                      },
                      new CommandArgument()
                      {
-                         Name = "level",
+                         Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_LEVEL"],
                          Required = true
                      }
                 })
@@ -437,7 +437,6 @@ namespace SharedLibraryCore.Commands
                 if (E.Origin.Level < Player.Permission.Owner)
                 {
                     await E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
-                    await E.Origin.Tell($"You can only promote ^5{E.Target.Name} ^7to ^5{(E.Origin.Level - 1)} ^7or lower privilege");
                     return;
                 }
             }
@@ -480,32 +479,33 @@ namespace SharedLibraryCore.Commands
     public class CUsage : Command
     {
         public CUsage() :
-            base("usage", "get current application memory usage", "us", Player.Permission.Moderator, false)
+            base("usage", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_USAGE_DESC"], "us", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell("IW4M Admin is using " + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
+            await E.Origin.Tell($"IW4MAdmin {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_USAGE_TEXT"]}" + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
         }
     }
 
     public class CUptime : Command
     {
         public CUptime() :
-            base("uptime", "get current application running time", "up", Player.Permission.Moderator, false)
+            base("uptime", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UPTIME_DESC"], "up", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
-            await E.Origin.Tell(String.Format("IW4M Admin has been up for {0} days, {1} hours, and {2} minutes", uptime.Days, uptime.Hours, uptime.Minutes));
+            var loc = Utilities.CurrentLocalization.LocalizationSet;
+            await E.Origin.Tell($"IW4M Admin {loc["COMMANDS_UPTIME_TEXT"]} {uptime.Days} {loc["GLOBAL_DAYS"]}, {uptime.Hours} {loc["GLOBAL_HOURS"]}, {uptime.Minutes} {loc["GLOBAL_MINUTES"]}");
         }
     }
 
     public class CListAdmins : Command
     {
         public CListAdmins() :
-            base("admins", "list currently connected admins", "a", Player.Permission.User, false)
+            base("admins", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ADMINS_DESC"], "a", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -532,11 +532,11 @@ namespace SharedLibraryCore.Commands
     public class CLoadMap : Command
     {
         public CLoadMap() :
-            base("map", "change to specified map", "m", Player.Permission.Administrator, false, new CommandArgument[]
+            base("map", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAP_DESC"], "m", Player.Permission.Administrator, false, new CommandArgument[]
             {
                  new CommandArgument()
                  {
-                     Name = "map",
+                     Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_MAP"],
                      Required = true
                  }
             })
@@ -565,11 +565,11 @@ namespace SharedLibraryCore.Commands
     public class CFindPlayer : Command
     {
         public CFindPlayer() :
-            base("find", "find player in database", "f", Player.Permission.Administrator, false, new CommandArgument[]
+            base("find", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FIND_DESC"], "f", Player.Permission.Administrator, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = "player",
+                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 }
             })
@@ -608,7 +608,7 @@ namespace SharedLibraryCore.Commands
     public class CListRules : Command
     {
         public CListRules() :
-            base("rules", "list server rules", "r", Player.Permission.User, false)
+            base("rules", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RULES_DESC"], "r", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -643,16 +643,16 @@ namespace SharedLibraryCore.Commands
     public class CPrivateMessage : Command
     {
         public CPrivateMessage() :
-            base("privatemessage", "send message to other player", "pm", Player.Permission.User, true, new CommandArgument[]
+            base("privatemessage", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PM_DESC"], "pm", Player.Permission.User, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = "message",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_MESSAGE"],
                         Required = true
                     }
                 })
@@ -668,16 +668,16 @@ namespace SharedLibraryCore.Commands
     public class CFlag : Command
     {
         public CFlag() :
-            base("flag", "flag a suspicious player and announce to admins on join", "fp", Player.Permission.Moderator, true, new CommandArgument[]
+            base("flag", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_DESC"], "fp", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = "reason",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -726,16 +726,16 @@ namespace SharedLibraryCore.Commands
     public class CReport : Command
     {
         public CReport() :
-            base("report", "report a player for suspicious behavior", "rep", Player.Permission.User, true, new CommandArgument[]
+            base("report", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_DESC"], "rep", Player.Permission.User, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = "reason",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -778,11 +778,11 @@ namespace SharedLibraryCore.Commands
     public class CListReports : Command
     {
         public CListReports() :
-            base("reports", "get or clear recent reports", "reps", Player.Permission.Moderator, false, new CommandArgument[]
+            base("reports", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_DESC"], "reps", Player.Permission.Moderator, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "clear",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_CLEAR"],
                         Required = false
                     }
                 })
@@ -790,7 +790,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            if (E.Data != null && E.Data.ToLower().Contains("clear"))
+            if (E.Data != null && E.Data.ToLower().Contains(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_CLEAR"]))
             {
                 E.Owner.Reports = new List<Report>();
                 await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_CLEAR_SUCCESS"]);
@@ -811,7 +811,7 @@ namespace SharedLibraryCore.Commands
     public class CMask : Command
     {
         public CMask() :
-            base("mask", "hide your presence as an administrator", "hide", Player.Permission.Moderator, false)
+            base("mask", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MASK_DESC"], "hide", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -834,11 +834,11 @@ namespace SharedLibraryCore.Commands
     public class CListBanInfo : Command
     {
         public CListBanInfo() :
-            base("baninfo", "get information about a ban for a player", "bi", Player.Permission.Moderator, true, new CommandArgument[]
+            base("baninfo", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BANINFO_DESC"], "bi", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     }
                 })
@@ -861,17 +861,17 @@ namespace SharedLibraryCore.Commands
 
             await E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, penalty.Punisher.Name)} {penalty.Punisher.Name} {timeRemaining}");
         }
-        
+
     }
 
     public class CListAlias : Command
     {
         public CListAlias() :
-            base("alias", "get past aliases and ips of a player", "known", Player.Permission.Moderator, true, new CommandArgument[]
+            base("alias", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ALIAS_DESC"], "known", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "player",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                         Required = true,
                     }
                 })
@@ -899,11 +899,11 @@ namespace SharedLibraryCore.Commands
     public class CExecuteRCON : Command
     {
         public CExecuteRCON() :
-            base("rcon", "send rcon command to server", "rcon", Player.Permission.Owner, false, new CommandArgument[]
+            base("rcon", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RCON_DESC"], "rcon", Player.Permission.Owner, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = "command",
+                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_COMMANDS"],
                         Required = true
                     }
                 })
@@ -922,12 +922,12 @@ namespace SharedLibraryCore.Commands
     public class CPlugins : Command
     {
         public CPlugins() :
-            base("plugins", "view all loaded plugins", "p", Player.Permission.Administrator, false)
+            base("plugins", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PLUGINS_DESC"], "p", Player.Permission.Administrator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PLUGINS_LOADE"]);
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PLUGINS_LOADED"]);
             foreach (var P in Plugins.PluginImporter.ActivePlugins)
             {
                 await E.Origin.Tell(String.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
@@ -938,7 +938,7 @@ namespace SharedLibraryCore.Commands
     public class CIP : Command
     {
         public CIP() :
-            base("getexternalip", "view your external IP address", "ip", Player.Permission.User, false)
+            base("getexternalip", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_IP_DESC"], "ip", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -949,11 +949,11 @@ namespace SharedLibraryCore.Commands
 
     public class CPruneAdmins : Command
     {
-        public CPruneAdmins() : base("prune", "demote any admins that have not connected recently (defaults to 30 days)", "pa", Player.Permission.Owner, false, new CommandArgument[]
+        public CPruneAdmins() : base("prune", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PRUNE_DESC"], "pa", Player.Permission.Owner, false, new CommandArgument[]
         {
             new CommandArgument()
             {
-                Name = "inactive days",
+                Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_INACTIVE"],
                 Required = false
             }
         })
@@ -975,7 +975,7 @@ namespace SharedLibraryCore.Commands
 
             catch (FormatException)
             {
-                await E.Origin.Tell("Invalid number of inactive days");
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PRUNE_FAIL"]);
                 return;
             }
 
@@ -999,11 +999,11 @@ namespace SharedLibraryCore.Commands
 
     public class CSetPassword : Command
     {
-        public CSetPassword() : base("setpassword", "set your authentication password", "sp", Player.Permission.Moderator, false, new CommandArgument[]
+        public CSetPassword() : base("setpassword", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETPASSWORD_DESC"], "sp", Player.Permission.Moderator, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = "password",
+                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PASSWORD"],
                     Required = true
                 }
             })
@@ -1030,6 +1030,7 @@ namespace SharedLibraryCore.Commands
         }
     }
 
+    /*
     public class CKillServer : Command
     {
         public CKillServer() : base("killserver", "kill the game server", "kill", Player.Permission.Administrator, false)
@@ -1081,19 +1082,20 @@ namespace SharedLibraryCore.Commands
                 }
             }
         }
-    }
+    }*/
 
 
     public class CPing : Command
     {
-        public CPing() : base("ping", "get client's ping", "pi", Player.Permission.User, false, new CommandArgument[]
+        public CPing() : base("ping", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_DESC"], "pi", Player.Permission.User, false, new CommandArgument[]
         {
             new CommandArgument()
             {
-                Name = "client",
+                Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
                 Required = false
             }
-        }){}
+        })
+        { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {

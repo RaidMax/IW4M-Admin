@@ -12,7 +12,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class CViewStats : Command
     {
-        public CViewStats() : base("stats", "view your stats", "xlrstats", Player.Permission.User, false, new CommandArgument[]
+        public CViewStats() : base("stats", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_VIEW_DESC"], "xlrstats", Player.Permission.User, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -24,15 +24,17 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
+            var loc = Utilities.CurrentLocalization.LocalizationSet;
+
             if (E.Target?.ClientNumber < 0)
             {
-                await E.Origin.Tell("The specified player must be ingame");
+                await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL_INGAME"]);
                 return;
             }
 
             if (E.Origin.ClientNumber < 0 && E.Target == null)
             {
-                await E.Origin.Tell("You must be ingame to view your stats");
+                await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL_INGAME_SELF"]);
                 return;
             }
 
@@ -41,7 +43,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             if (E.Data.Length > 0 && E.Target == null)
             {
-                await E.Origin.Tell("Cannot find the player you specified");
+                await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL"]);
                 return;
             }
 
@@ -51,26 +53,26 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             if (E.Target != null)
             {
                 pStats = clientStats.Find(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId).First();
-                statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
+                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Skill} ^7{loc["PLUGINS_STATS_TEXT_SKILL"]}";
             }
 
             else
             {
                 pStats = pStats = clientStats.Find(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId).First();
-                statLine = String.Format("^5{0} ^7KILLS | ^5{1} ^7DEATHS | ^5{2} ^7KDR | ^5{3} ^7SKILL", pStats.Kills, pStats.Deaths, pStats.KDR, pStats.Skill);
+                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Skill} ^7{loc["PLUGINS_STATS_TEXT_SKILL"]}";
             }
 
             if (E.Message.IsBroadcastCommand())
             {
                 string name = E.Target == null ? E.Origin.Name : E.Target.Name;
-                await E.Owner.Broadcast($"Stats for ^5{name}^7");
+                await E.Owner.Broadcast($"{loc["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"]} ^5{name}^7");
                 await E.Owner.Broadcast(statLine);
             }
 
             else
             {
                 if (E.Target != null)
-                    await E.Origin.Tell($"Stats for ^5{E.Target.Name}^7");
+                    await E.Origin.Tell($"{loc["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"]} ^5{E.Target.Name}^7");
                 await E.Origin.Tell(statLine);
             }
         }

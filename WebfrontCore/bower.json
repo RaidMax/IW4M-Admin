@@ -2,14 +2,14 @@
   "name": "asp.net",
   "private": true,
   "dependencies": {
-    "bootstrap": "v4.0.0",
+    "bootstrap": "v4.1.0",
     "jquery": "3.3.1",
     "popper.js": "v1.12.9",
     "open-iconic": "1.1.1",
     "moment-timezone": "0.5.14"
   },
   "resolutions": {
-    "bootstrap": "v4.0.0",
+    "bootstrap": "v4.1.0",
     "jquery": "3.3.1"
   }
 }

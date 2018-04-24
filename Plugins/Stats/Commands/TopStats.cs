@@ -12,7 +12,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     class TopStats : Command
     {
-        public TopStats() : base("topstats", "view the top 5 players on this server", "ts", Player.Permission.User, false) { }
+        public TopStats() : base("topstats", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_TOP_DESC"], "ts", Player.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
@@ -43,17 +43,17 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 if (!E.Message.IsBroadcastCommand())
                 {
-                    await E.Origin.Tell("^5--Top Players--");
+                    await E.Origin.Tell($"^5--{Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--");
 
                     foreach (var stat in topStats)
-                        await E.Origin.Tell($"^3{stat.Name}^7 - ^5{stat.KDR} ^7KDR | ^5{stat.Skill} ^7SKILL");
+                        await E.Origin.Tell($"^3{stat.Name}^7 - ^5{stat.KDR} ^7KDR | ^5{stat.Skill} ^7{Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_TEXT_SKILL"]}");
                 }
                 else
                 {
-                    await E.Owner.Broadcast("^5--Top Players--");
+                    await E.Owner.Broadcast($"^5--{Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--");
 
                     foreach (var stat in topStats)
-                        await E.Owner.Broadcast($"^3{stat.Name}^7 - ^5{stat.KDR} ^7KDR | ^5{stat.Skill} ^7SKILL");
+                        await E.Owner.Broadcast($"^3{stat.Name}^7 - ^5{stat.KDR} ^7KDR | ^5{stat.Skill} ^7{Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_TEXT_SKILL"]}");
                 }
             }
         }

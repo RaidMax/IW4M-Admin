@@ -36,12 +36,12 @@ namespace IW4MAdmin.Application
 
             try
             {
-                using (var db = new DatabaseContext())
-                    new ContextSeed(db).Seed().Wait();
-
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
+
+                 using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration().ConnectionString))
+                    new ContextSeed(db).Seed().Wait();
 
                 var api = API.Master.Endpoint.Get();
                 var version = new API.Master.VersionInfo()

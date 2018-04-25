@@ -130,6 +130,7 @@ namespace SharedLibraryCore.RCon
 #if DEBUG
                     Log.WriteDebug($"Received {bytesRead} bytes from {ServerConnection.RemoteEndPoint}");
 #endif
+                    FailedReceives = 0;
                     connectionState.ResponseString.Append(Utilities.EncodingType.GetString(connectionState.Buffer, 0, bytesRead).TrimEnd('\0') + '\n');
 
                     if (!connectionState.Buffer.Take(4).ToArray().SequenceEqual(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }))

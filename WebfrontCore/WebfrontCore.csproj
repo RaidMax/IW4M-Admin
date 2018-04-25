@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <!--<MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>-->
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
     <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>

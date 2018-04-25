@@ -7,7 +7,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 
-namespace Application.EventParsers
+namespace IW4MAdmin.Application.EventParsers
 {
     class T6MEventParser : IEventParser
     {

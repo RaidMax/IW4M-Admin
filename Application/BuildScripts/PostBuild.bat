@@ -15,4 +15,6 @@ if not exist "%TargetDir%Plugins" (
 xcopy /y "%SolutionDir%Build\Plugins" "%TargetDir%Plugins\"
 
 echo Copying plugins for publish
+del %SolutionDir%BUILD\Plugins\Tests.dll
 xcopy /Y "%SolutionDir%BUILD\Plugins" "%SolutionDir%Publish\Windows\Plugins\"
+xcopy /Y "%SolutionDir%BUILD\Plugins" "%SolutionDir%Publish\WindowsPrerelease\Plugins\"

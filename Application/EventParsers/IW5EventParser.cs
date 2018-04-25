@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Application.EventParsers
+namespace IW4MAdmin.Application.EventParsers
 {
     class IW5EventParser : IW4EventParser
     {

@@ -107,7 +107,7 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                return await new DatabaseContext().Clients
+                return await context.Clients
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children)
@@ -216,7 +216,7 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                return await new DatabaseContext().Clients
+                return await context.Clients
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
                     .Where(c => c.Level >= Player.Permission.Trusted)

@@ -17,7 +17,14 @@ namespace SharedLibraryCore.Database
         public DbSet<EFAliasLink> AliasLinks { get; set; }
         public DbSet<EFPenalty> Penalties { get; set; }
 
+        private static string _ConnectionString;
+
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
+
+        public DatabaseContext(string connStr)
+        {
+            _ConnectionString = connStr;
+        }
 
         public DatabaseContext()
         {
@@ -25,12 +32,20 @@ namespace SharedLibraryCore.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase);
-            var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
-            var connectionString = connectionStringBuilder.ToString();
-            var connection = new SqliteConnection(connectionString);
+            if (string.IsNullOrEmpty(_ConnectionString))
+            {
+                string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase);
+                var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
+                var connectionString = connectionStringBuilder.ToString();
+                var connection = new SqliteConnection(connectionString);
 
-            optionsBuilder.UseSqlite(connection);
+                optionsBuilder.UseSqlite(connection);
+            }
+
+            else
+            {
+                optionsBuilder.UseMySql(_ConnectionString);
+            }
         }
 
 
@@ -98,9 +113,9 @@ namespace SharedLibraryCore.Database
                 {
                     continue;
                 }
-                
+
                 var configurations = library.ExportedTypes.Where(c => c.GetInterfaces().FirstOrDefault(i => typeof(IModelConfiguration).IsAssignableFrom(i)) != null)
-                    .Select( c => (IModelConfiguration)Activator.CreateInstance(c));
+                    .Select(c => (IModelConfiguration)Activator.CreateInstance(c));
 
                 foreach (var configurable in configurations)
                     configurable.Configure(modelBuilder);

@@ -17,8 +17,7 @@ using SharedLibraryCore.Exceptions;
 
 using Application.Misc;
 using Application.RconParsers;
-using Application.EventParsers;
-
+using IW4MAdmin.Application.EventParsers;
 
 namespace IW4MAdmin
 {
@@ -608,7 +607,7 @@ namespace IW4MAdmin
             else if (GameName == Game.UKN)
                 Logger.WriteWarning($"Game name not recognized: {version}");
             else
-                EventParser = new IW4EventParser();
+                EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
 
             var shortversion = await this.GetDvarAsync<string>("shortversion");
             var hostname = await this.GetDvarAsync<string>("sv_hostname");
@@ -658,7 +657,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            basepath.Value = @"\\192.168.88.253\Call of Duty 4";
 #endif
             string logPath;
             if (GameName == Game.IW5)

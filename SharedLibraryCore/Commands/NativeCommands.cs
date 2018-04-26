@@ -32,7 +32,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            if ((await (E.Owner.Manager.GetClientService() as Services.ClientService).GetOwners()).Count == 0)
+            if ((await (E.Owner.Manager.GetClientService() as ClientService).GetOwners()).Count == 0)
             {
                 E.Origin.Level = Player.Permission.Owner;
                 await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_SUCCESS"]);
@@ -94,7 +94,7 @@ namespace SharedLibraryCore.Commands
     public class CKick : Command
     {
         public CKick() :
-            base("kick", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_DESC"], "k", Player.Permission.Trusted, true, new CommandArgument[]
+            base("kick", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_DESC"], "k", Player.Permission.Moderator, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -113,7 +113,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Origin.Level > E.Target.Level)
             {
-                await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Kick, E.Data, E.Origin, E.Target, E.Owner));
+                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Kick, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Kick(E.Data, E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_SUCCESS"]}");
             }
@@ -144,7 +144,7 @@ namespace SharedLibraryCore.Commands
     public class CTempBan : Command
     {
         public CTempBan() :
-            base("tempban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_DESC"], "tb", Player.Permission.Moderator, true, new CommandArgument[]
+            base("tempban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_DESC"], "tb", Player.Permission.Administrator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -716,7 +716,7 @@ namespace SharedLibraryCore.Commands
                 };
 
                 await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
-                await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Flag, E.Data, E.Origin, E.Target, E.Owner));
+                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Flag, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
             }
 
@@ -770,7 +770,7 @@ namespace SharedLibraryCore.Commands
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
             await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_SUCCESS"]);
-            await E.Owner.ExecuteEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));
+            E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
     }
@@ -1023,7 +1023,8 @@ namespace SharedLibraryCore.Commands
             E.Origin.PasswordSalt = hashedPassword[1];
 
             // update the password for the client in privileged
-            E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId] = E.Origin;
+            E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId].Password = hashedPassword[0];
+            E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId].PasswordSalt = hashedPassword[1];
 
             await E.Owner.Manager.GetClientService().Update(E.Origin);
             await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PASSWORD_SUCCESS"]);

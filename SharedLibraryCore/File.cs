@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace SharedLibraryCore
 {
@@ -27,7 +28,12 @@ namespace SharedLibraryCore
         public override long Length()
         {
             Retrieve();
-            return FileCache[0].Length;
+            return FileCache.Sum(l => l.Length);
+        }
+
+        public override Task<string[]> Tail(int lineCount)
+        {
+            return Task.FromResult(FileCache);
         }
 
     }

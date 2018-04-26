@@ -16,24 +16,37 @@ namespace WebfrontCore.Controllers
         protected IManager Manager;
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; private set; }
-        protected EFClient User { get; private set; }
+        protected EFClient Client { get; private set; }
+        private static byte[] LocalHost = { 127, 0, 0, 1 };
+        private static string DiscordLink;
+
+        public BaseController()
+        {
+            var Manager = Program.Manager;
+            if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink)
+            {
+                string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
+                if (inviteLink != null)
+                    DiscordLink = inviteLink.Contains("https") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
+                else
+                    DiscordLink = "";
+            }
+        }
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            Manager = Program.Manager;
-
-            User = User ?? new EFClient()
+            Client = Client ?? new EFClient()
             {
                 ClientId = -1
             };
 
-            if (HttpContext.Connection.RemoteIpAddress.ToString() != "127.0.0.1")
+            if (!HttpContext.Connection.RemoteIpAddress.GetAddressBytes().SequenceEqual(LocalHost))
             {
                 try
                 {
-                    User.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
-                    User.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), base.User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
-                    User.CurrentAlias = new EFAlias() { Name = base.User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
+                    Client.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
+                    Client.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
+                    Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
                 }
 
                 catch (InvalidOperationException)
@@ -44,24 +57,17 @@ namespace WebfrontCore.Controllers
 
             else
             {
-                User.ClientId = 1;
-                User.Level = Player.Permission.Console;
-                User.CurrentAlias = new EFAlias() { Name = "IW4MAdmin" };
+                Client.ClientId = 1;
+                Client.Level = Player.Permission.Console;
+                Client.CurrentAlias = new EFAlias() { Name = "IW4MAdmin" };
             }
 
-            Authorized = User.ClientId >= 0;
+            Authorized = Client.ClientId >= 0;
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Startup.Configuration["Web:Address"];
-            ViewBag.User = User;
+            ViewBag.User = Client;
+            ViewBag.DiscordLink = DiscordLink;
 
-            if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink)
-            {
-                string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
-                if (inviteLink != null)
-                    ViewBag.DiscordLink = inviteLink.Contains("https") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
-                else
-                    ViewBag.DiscordLink = "";
-            }
             base.OnActionExecuting(context);
         }
     }

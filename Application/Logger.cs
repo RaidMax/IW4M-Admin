@@ -30,17 +30,8 @@ namespace IW4MAdmin.Application
 
         void Write(string msg, LogType type)
         {
-            string stringType;
-
-            try
-            {
-                stringType = Utilities.CurrentLocalization.LocalizationSet[$"GLOBAL_{type.ToString().ToUpper()}"];
-            }
-
-            catch(KeyNotFoundException)
-            {
+            if (!Utilities.CurrentLocalization.LocalizationSet.TryGetValue($"GLOBAL_{type.ToString().ToUpper()}", out string stringType))
                 stringType = type.ToString();
-            }
 
             string LogLine = $"[{DateTime.Now.ToString("HH:mm:ss")}] - {stringType}: {msg}";
             lock (ThreadLock)

@@ -23,6 +23,15 @@ namespace SharedLibraryCore.Interfaces
         PenaltyService GetPenaltyService();
         IDictionary<int, Player> GetPrivilegedClients();
         IEventApi GetEventApi();
+        /// <summary>
+        /// Get the event handlers
+        /// </summary>
+        /// <returns>EventHandler for the manager</returns>
+        IEventHandler GetEventHandler();
+        /// <summary>
+        /// Signal to the manager that event(s) needs to be processed
+        /// </summary>
+        void SetHasEvent();
         bool ShutdownRequested();
     }
 }

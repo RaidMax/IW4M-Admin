@@ -41,6 +41,7 @@ namespace SharedLibraryCore
             PlayerHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();
             NextMessage = 0;
+            OnEvent = new ManualResetEventSlim();
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
             CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
             InitializeTokens();
@@ -132,7 +133,7 @@ namespace SharedLibraryCore
             await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose(Message.StripColors());
-            await Utilities.CompletedTask;
+            await Task.CompletedTask;
 #endif
         }
 
@@ -150,7 +151,7 @@ namespace SharedLibraryCore
                 await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
-            await Utilities.CompletedTask;
+            await Task.CompletedTask;
 #endif
 
             if (Target.Level == Player.Permission.Console)
@@ -308,6 +309,7 @@ namespace SharedLibraryCore
         public RCon.Connection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; protected set; }
         public IEventParser EventParser { get; set; }
+        public ManualResetEventSlim OnEvent { get; private set; }
 
         // Internal
         protected string IP;

@@ -24,6 +24,7 @@ namespace IW4MAdmin.Application
             Localization.Configure.Initialize();
             var loc = Utilities.CurrentLocalization.LocalizationSet;
             Console.OutputEncoding = Encoding.UTF8;
+            Console.ForegroundColor = ConsoleColor.Gray;
 
             Version = Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
             Version = Math.Round(Version, 2);
@@ -40,7 +41,7 @@ namespace IW4MAdmin.Application
 
                 ServerManager = ApplicationManager.GetInstance();
 
-                 using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration().ConnectionString))
+                using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration().ConnectionString))
                     new ContextSeed(db).Seed().Wait();
 
                 var api = API.Master.Endpoint.Get();
@@ -69,7 +70,7 @@ namespace IW4MAdmin.Application
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine(loc["MANAGER_VERSION_FAIL"]);
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Gray;
                 }
 
 #if !PRERELEASE
@@ -78,7 +79,7 @@ namespace IW4MAdmin.Application
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString("0.0")}]");
                     Console.WriteLine($"{loc["MANAGER_VERSION_CURRENT"]} [v{Version.ToString("0.0")}]");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Gray;
                 }
 #else
                 else if (version.CurrentVersionPrerelease > Version)
@@ -86,14 +87,14 @@ namespace IW4MAdmin.Application
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
                     Console.WriteLine($"{loc["MANAGER_VERSION_CURRENT"]} [v{Version.ToString("0.0")}-pr]");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Gray;
                 }
 #endif 
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(loc["MANAGER_VERSION_SUCCESS"]);
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Gray;
                 }
 
                 ServerManager.Init().Wait();
@@ -112,13 +113,13 @@ namespace IW4MAdmin.Application
 
                         if (ServerManager.Servers.Count == 0)
                         {
-                            Console.WriteLine("No servers are currently being monitored");
+                            Console.WriteLine(loc["MANAGER_CONSOLE_NOSERV"]);
                             continue;
                         }
 
                         Origin.CurrentServer = ServerManager.Servers[0];
                         GameEvent E = new GameEvent(GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
-                        ServerManager.Servers[0].ExecuteEvent(E);
+                        ServerManager.GetEventHandler().AddEvent(E);
                         Console.Write('>');
 
                     } while (ServerManager.Running);
@@ -128,10 +129,6 @@ namespace IW4MAdmin.Application
                 {
                     Task.Run(() => WebfrontCore.Program.Init(ServerManager));
                 }
-
-                ServerManager.Start();
-                ServerManager.Logger.WriteVerbose(loc["MANAGER_SHUTDOWN_SUCCESS"]);
-
             }
 
             catch (Exception e)
@@ -145,6 +142,10 @@ namespace IW4MAdmin.Application
                 Console.WriteLine(loc["MANAGER_EXIT"]);
                 Console.ReadKey();
             }
+
+
+            ServerManager.Start();
+            ServerManager.Logger.WriteVerbose(loc["MANAGER_SHUTDOWN_SUCCESS"]);
         }
 
         static void CheckDirectories()

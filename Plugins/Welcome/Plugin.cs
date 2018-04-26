@@ -72,9 +72,9 @@ namespace IW4MAdmin.Plugins.Welcome
             }
         }
 
-        public Task OnUnloadAsync() => Utilities.CompletedTask;
+        public Task OnUnloadAsync() => Task.CompletedTask;
 
-        public Task OnTickAsync(Server S) => Utilities.CompletedTask;
+        public Task OnTickAsync(Server S) => Task.CompletedTask;
 
         public async Task OnEventAsync(GameEvent E, Server S)
         {

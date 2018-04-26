@@ -41,10 +41,13 @@ namespace IW4MAdmin.Application
         PenaltyService PenaltySvc;
         BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         EventApi Api;
+        GameEventHandler Handler;
+        ManualResetEventSlim OnEvent;
+        Timer StatusUpdateTimer;
 #if FTP_LOG
         const int UPDATE_FREQUENCY = 700;
 #else
-        const int UPDATE_FREQUENCY = 450;
+        const int UPDATE_FREQUENCY = 2000;
 #endif
 
         private ApplicationManager()
@@ -63,6 +66,7 @@ namespace IW4MAdmin.Application
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
             StartTime = DateTime.UtcNow;
+            OnEvent = new ManualResetEventSlim();
         }
 
         private void OnCancelKey(object sender, ConsoleCancelEventArgs args)
@@ -86,8 +90,18 @@ namespace IW4MAdmin.Application
             return Instance ?? (Instance = new ApplicationManager());
         }
 
+        public void UpdateStatus(object state)
+        {
+            foreach (var server in Servers)
+            {
+                Task.Run(() => server.ProcessUpdatesAsync(new CancellationToken()));
+            }
+        }
+
         public async Task Init()
         {
+            // setup the event handler after the class is initialized
+            Handler = new GameEventHandler(this);
             #region DATABASE
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
@@ -248,13 +262,8 @@ namespace IW4MAdmin.Application
                     }
 
                     Logger.WriteVerbose($"{Utilities.CurrentLocalization.LocalizationSet["MANAGER_MONITORING_TEXT"]} {ServerInstance.Hostname}");
-
-                    // this way we can keep track of execution time and see if problems arise.
-                    var Status = new AsyncStatus(ServerInstance, UPDATE_FREQUENCY);
-                    lock (TaskStatuses)
-                    {
-                        TaskStatuses.Add(Status);
-                    }
+                    // add the start event for this server
+                    Handler.AddEvent(new GameEvent(GameEvent.EventType.Start, "Server started", null, null, ServerInstance));
                 }
 
                 catch (ServerException e)
@@ -273,6 +282,8 @@ namespace IW4MAdmin.Application
             }
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
+            // start polling servers
+            StatusUpdateTimer = new Timer(UpdateStatus, null, 0, 10000);
 
             #endregion
 
@@ -344,38 +355,32 @@ namespace IW4MAdmin.Application
         public void Start()
         {
             Task.Run(() => HeartBeatThread());
-            while (Running || TaskStatuses.Count > 0)
+            GameEvent newEvent;
+            while (Running)
             {
-                for (int i = 0; i < TaskStatuses.Count; i++)
+                // wait for new event to be added
+                OnEvent.Wait();
+              
+                // todo: sequencially or parallelize?
+                while ((newEvent = Handler.GetNextEvent()) != null)
                 {
-                    var Status = TaskStatuses[i];
-
-                    // task is read to be rerun
-                    if (Status.RequestedTask == null || Status.RequestedTask.Status == TaskStatus.RanToCompletion)
+                    try
                     {
-                        // remove the task when we want to quit and last run has finished
-                        if (!Running)
-                        {
-                            TaskStatuses.RemoveAt(i);
-                            continue;
-                        }
-                        // normal operation
-                        else
-                        {
-                            Status.Update(new Task<bool>(() => { return (Status.Dependant as Server).ProcessUpdatesAsync(Status.GetToken()).Result; }));
-                            if (Status.RunAverage > 1000 + UPDATE_FREQUENCY && !(Status.Dependant as Server).Throttled)
-                                Logger.WriteWarning($"Update task average execution is longer than desired for {(Status.Dependant as Server)} [{Status.RunAverage}ms]");
-                        }
+                        Task.WaitAll(newEvent.Owner.ExecuteEvent(newEvent));
                     }
 
-                    if (Status.RequestedTask.Status == TaskStatus.Faulted)
+                    catch (Exception E)
                     {
-                        Logger.WriteWarning($"Update task for  {(Status.Dependant as Server)} faulted, restarting");
-                        Status.Abort();
+                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
+                        Logger.WriteDebug("Error Message: " + E.Message);
+                        Logger.WriteDebug("Error Trace: " + E.StackTrace);
                     }
+                    // tell anyone waiting for the output that we're done
+                    newEvent.OnProcessed.Set();
                 }
 
-                Thread.Sleep(UPDATE_FREQUENCY);
+                // signal that all events have been processed
+                OnEvent.Reset();
             }
 #if !DEBUG
             foreach (var S in Servers)
@@ -388,6 +393,9 @@ namespace IW4MAdmin.Application
         public void Stop()
         {
             Running = false;
+
+            // trigger the event processing loop to end
+            SetHasEvent();
         }
 
         public ILogger GetLogger()
@@ -417,5 +425,11 @@ namespace IW4MAdmin.Application
         public IDictionary<int, Player> GetPrivilegedClients() => PrivilegedClients;
         public IEventApi GetEventApi() => Api;
         public bool ShutdownRequested() => !Running;
+        public IEventHandler GetEventHandler() => Handler;
+
+        public void SetHasEvent()
+        {
+            OnEvent.Set();
+        }
     }
 }

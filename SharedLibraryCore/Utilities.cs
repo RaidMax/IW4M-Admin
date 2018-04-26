@@ -16,7 +16,6 @@ namespace SharedLibraryCore
     public static class Utilities
     {
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-        public static readonly Task CompletedTask = Task.FromResult(false);
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization;
 

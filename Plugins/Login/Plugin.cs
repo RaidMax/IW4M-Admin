@@ -70,12 +70,8 @@ namespace IW4MAdmin.Plugins.Login
             Config = cfg.Configuration();
         }
 
-        public Task OnTickAsync(Server S) => Utilities.CompletedTask;
+        public Task OnTickAsync(Server S) => Task.CompletedTask;
 
-        public Task OnUnloadAsync()
-        {
-            AuthorizedClients.Clear();
-            return Utilities.CompletedTask;
-        }
+        public Task OnUnloadAsync() => Task.CompletedTask;
     }
 }

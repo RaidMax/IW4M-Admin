@@ -32,10 +32,10 @@ namespace WebfrontCore.Controllers
             var server = Manager.GetServers().First(s => s.GetHashCode() == serverId);
             var client = new Player()
             {
-                ClientId = User.ClientId,
-                Level = User.Level,
+                ClientId = Client.ClientId,
+                Level = Client.Level,
                 CurrentServer = server,
-                CurrentAlias = new Alias() { Name = User.Name }
+                CurrentAlias = new Alias() { Name = Client.Name }
             };
             var remoteEvent = new GameEvent()
             {
@@ -46,8 +46,9 @@ namespace WebfrontCore.Controllers
                 Remote = true
             };
 
-            await server.ExecuteEvent(remoteEvent);
-
+            Manager.GetEventHandler().AddEvent(remoteEvent);
+            // wait for the event to process
+            remoteEvent.OnProcessed.Wait();
             var response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
             // remove the added command response

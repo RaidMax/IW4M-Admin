@@ -20,7 +20,6 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
         BaseConfigurationHandler<Configuration> Settings;
         ConcurrentDictionary<int, Tracking> ProfanityCounts;
         IManager Manager;
-        Task CompletedTask = Task.FromResult(false);
 
         public async Task OnEventAsync(GameEvent E, Server S)
         {
@@ -87,8 +86,8 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
             Manager = manager;
         }
 
-        public Task OnTickAsync(Server S) => CompletedTask;
+        public Task OnTickAsync(Server S) => Task.CompletedTask;
 
-        public Task OnUnloadAsync() => CompletedTask;
+        public Task OnUnloadAsync() => Task.CompletedTask;
     }
 }

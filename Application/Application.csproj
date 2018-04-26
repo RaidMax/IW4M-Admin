@@ -19,6 +19,7 @@
     <AssemblyName>IW4MAdmin</AssemblyName>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <Win32Resource />
+    <RootNamespace>IW4MAdmin.Application</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

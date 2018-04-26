@@ -18,6 +18,7 @@ using SharedLibraryCore.Exceptions;
 using Application.Misc;
 using Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.IO;
 
 namespace IW4MAdmin
 {
@@ -25,6 +26,8 @@ namespace IW4MAdmin
     {
         private CancellationToken cts;
         private static Dictionary<string, string> loc = Utilities.CurrentLocalization.LocalizationSet;
+        private GameLogEvent LogEvent;
+
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
@@ -180,7 +183,8 @@ namespace IW4MAdmin
 
                 Logger.WriteInfo($"Client {player} connecting...");
 
-                await ExecuteEvent(new GameEvent(GameEvent.EventType.Connect, "", player, null, this));
+
+                Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Connect, "", player, null, this));
 
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
@@ -208,7 +212,7 @@ namespace IW4MAdmin
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
 
-                await ExecuteEvent(new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this));
+                Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this));
 
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                 Leaving.LastConnection = DateTime.UtcNow;
@@ -255,16 +259,8 @@ namespace IW4MAdmin
 
             if (C.RequiresTarget || Args.Length > 0)
             {
-                int cNum = -1;
-                try
-                {
-                    cNum = Convert.ToInt32(Args[0]);
-                }
-
-                catch (FormatException)
-                {
-
-                }
+                if (!Int32.TryParse(Args[0], out int cNum))
+                    cNum = -1;
 
                 if (Args[0][0] == '@') // user specifying target by database ID
                 {
@@ -359,24 +355,27 @@ namespace IW4MAdmin
 
         public override async Task ExecuteEvent(GameEvent E)
         {
-            //if (Throttled)
-            //   return;
-
+            bool canExecuteCommand = true;
             await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
 
             foreach (IPlugin P in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
             {
-#if !DEBUG
                 try
-#endif
                 {
                     if (cts.IsCancellationRequested)
                         break;
 
                     await P.OnEventAsync(E, this);
                 }
-#if !DEBUG
+
+                // this happens if a plugin (login) wants to stop commands from executing
+                catch (AuthorizationException e)
+                {
+                    await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
+                    canExecuteCommand = false;
+                }
+
                 catch (Exception Except)
                 {
                     Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
@@ -389,9 +388,167 @@ namespace IW4MAdmin
                     }
                     continue;
                 }
-#endif
+
             }
+
+            // hack: this prevents commands from getting executing that 'shouldn't' be
+            if (E.Type == GameEvent.EventType.Command &&
+                E.Extra != null &&
+                (canExecuteCommand || 
+                E.Origin?.Level == Player.Permission.Console))
+            {
+                await (((Command)E.Extra).ExecuteAsync(E));
+            }
+
         }
+
+        /// <summary>
+        /// Perform the server specific tasks when an event occurs 
+        /// </summary>
+        /// <param name="E"></param>
+        /// <returns></returns>
+        override protected async Task ProcessEvent(GameEvent E)
+        {
+            if (E.Type == GameEvent.EventType.Connect)
+            {
+                // special case for IW5 when connect is from the log
+                if (E.Extra != null)
+                {
+                    var logClient = (Player)E.Extra;
+                    var client = (await this.GetStatusAsync())
+                        .Single(c => c.ClientNumber == logClient.ClientNumber &&
+                        c.Name == logClient.Name);
+                    client.NetworkId = logClient.NetworkId;
+
+                    await AddPlayer(client);
+
+                    // hack: to prevent plugins from registering it as a real connect
+                    E.Type = GameEvent.EventType.Unknown;
+                }
+
+                else
+                {
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = "CONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+
+                    if (E.Origin.Level > Player.Permission.Moderator)
+                        await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                }
+            }
+
+            else if (E.Type == GameEvent.EventType.Disconnect)
+            {
+                ChatHistory.Add(new ChatInfo()
+                {
+                    Name = E.Origin.Name,
+                    Message = "DISCONNECTED",
+                    Time = DateTime.UtcNow
+                });
+            }
+
+            else if (E.Type == GameEvent.EventType.Script)
+            {
+                Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Kill, E.Data, E.Origin, E.Target, this));
+            }
+
+            if (E.Type == GameEvent.EventType.Say && E.Data.Length >= 2)
+            {
+                if (E.Data.Substring(0, 1) == "!" ||
+                    E.Data.Substring(0, 1) == "@" ||
+                    E.Origin.Level == Player.Permission.Console)
+                {
+                    Command C = null;
+
+                    try
+                    {
+                        C = await ValidateCommand(E);
+                    }
+
+                    catch (CommandException e)
+                    {
+                        Logger.WriteInfo(e.Message);
+                    }
+
+                    if (C != null)
+                    {
+                        if (C.RequiresTarget && E.Target == null)
+                        {
+                            Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
+                        }
+
+                        Manager.GetEventHandler().AddEvent(new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Command,
+                            Data = E.Data,
+                            Origin = E.Origin,
+                            Target = E.Target,
+                            Owner = this,
+                            Extra = C,
+                            Remote = E.Remote,
+                            Message = E.Message
+                        });
+                    }
+                }
+
+                else // Not a command
+                {
+                    E.Data = E.Data.StripColors();
+
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = E.Data,
+                        Time = DateTime.UtcNow
+                    });
+                }
+            }
+
+            if (E.Type == GameEvent.EventType.MapChange)
+            {
+                Logger.WriteInfo($"New map loaded - {ClientNum} active players");
+
+                // iw4 doesn't log the game info
+                if (E.Extra == null)
+                {
+                    var dict = await this.GetInfoAsync();
+
+                    Gametype = dict["gametype"].StripColors();
+                    Hostname = dict["hostname"].StripColors();
+
+                    string mapname = dict["mapname"].StripColors();
+                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                }
+
+                else
+                {
+                    var dict = (Dictionary<string, string>)E.Extra;
+                    Gametype = dict["g_gametype"].StripColors();
+                    Hostname = dict["sv_hostname"].StripColors();
+
+                    string mapname = dict["mapname"].StripColors();
+                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                }
+            }
+
+            if (E.Type == GameEvent.EventType.MapEnd)
+            {
+                Logger.WriteInfo("Game ending...");
+            }
+
+            //todo: move
+            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
+                ChatHistory.RemoveAt(0);
+
+            // the last client hasn't fully disconnected yet
+            // so there will still be at least 1 client left
+            if (ClientNum < 2)
+                ChatHistory.Clear();
+        }
+
 
         async Task<int> PollPlayersAsync()
         {
@@ -429,30 +586,16 @@ namespace IW4MAdmin
             return CurrentPlayers.Count;
         }
 
-        long l_size = -1;
-        String[] lines = new String[8];
-        String[] oldLines = new String[8];
         DateTime start = DateTime.Now;
         DateTime playerCountStart = DateTime.Now;
         DateTime lastCount = DateTime.Now;
         DateTime tickTime = DateTime.Now;
-        bool firstRun = true;
-        int count = 0;
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
             this.cts = cts;
-            //#if DEBUG == false
             try
-            //#endif
             {
-                // first start
-                if (firstRun)
-                {
-                    await ExecuteEvent(new GameEvent(GameEvent.EventType.Start, "Server started", null, null, this));
-                    firstRun = false;
-                }
-
                 if ((DateTime.Now - LastPoll).TotalMinutes < 2 && ConnectionErrors >= 1)
                     return true;
 
@@ -517,44 +660,6 @@ namespace IW4MAdmin
                     start = DateTime.Now;
                 }
 
-                if (LogFile == null)
-                    return true;
-
-                if (l_size != LogFile.Length())
-                {
-                    lines = l_size != -1 ? await LogFile.Tail(12) : lines;
-                    if (lines != oldLines)
-                    {
-                        l_size = LogFile.Length();
-                        int end = (lines.Length == oldLines.Length) ? lines.Length - 1 : Math.Abs((lines.Length - oldLines.Length)) - 1;
-
-                        for (count = 0; count < lines.Length; count++)
-                        {
-                            if (lines.Length < 1 && oldLines.Length < 1)
-                                continue;
-
-                            if (lines[count] == oldLines[oldLines.Length - 1])
-                                continue;
-
-                            if (lines[count].Length < 10) // it's not a needed line 
-                                continue;
-
-                            else
-                            {
-                                GameEvent event_ = EventParser.GetEvent(this, lines[count]);
-                                if (event_ != null)
-                                {
-                                    if (event_.Origin == null)
-                                        continue;
-
-                                    await ExecuteEvent(event_);
-                                }
-                            }
-                        }
-                    }
-                }
-                oldLines = lines;
-                l_size = LogFile.Length();
                 if (Manager.ShutdownRequested())
                 {
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
@@ -565,7 +670,6 @@ namespace IW4MAdmin
                 }
                 return true;
             }
-            //#if !DEBUG
             catch (NetworkException)
             {
                 Logger.WriteError($"{loc["SERVER_ERROR_COMMUNICATION"]} {IP}:{Port}");
@@ -575,7 +679,6 @@ namespace IW4MAdmin
             catch (InvalidOperationException)
             {
                 Logger.WriteWarning("Event could not parsed properly");
-                Logger.WriteDebug($"Log Line: {lines[count]}");
                 return false;
             }
 
@@ -586,7 +689,6 @@ namespace IW4MAdmin
                 Logger.WriteDebug("Error Trace: " + E.StackTrace);
                 return false;
             }
-            //#endif
         }
 
         public async Task Initialize()
@@ -657,7 +759,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty 4";
+            basepath.Value = @"\\192.168.88.253\mw2\";
 #endif
             string logPath;
             if (GameName == Game.IW5)
@@ -670,6 +772,7 @@ namespace IW4MAdmin
                     $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                     $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
             }
+
 
             // hopefully fix wine drive name mangling
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -686,181 +789,16 @@ namespace IW4MAdmin
             }
             else
             {
-                LogFile = new IFile(logPath);
-            }
+                // LogFile = new IFile(logPath);
 
+            }
+            LogEvent = new GameLogEvent(this, logPath, logfile.Value);
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
-            //           LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
+            // LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
 #else
             await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
-        }
-
-        //Process any server event
-        override protected async Task ProcessEvent(GameEvent E)
-        {
-            if (E.Type == GameEvent.EventType.Connect)
-            {
-                // special case for IW5 when connect is from the log
-                if (E.Extra != null)
-                {
-                    var logClient = (Player)E.Extra;
-                    var client = (await this.GetStatusAsync())
-                        .Single(c => c.ClientNumber == logClient.ClientNumber &&
-                        c.Name == logClient.Name);
-                    client.NetworkId = logClient.NetworkId;
-
-                    await AddPlayer(client);
-
-                    // hack: to prevent plugins from registering it as a real connect
-                    E.Type = GameEvent.EventType.Unknown;
-                }
-
-                else
-                {
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin.Name,
-                        Message = "CONNECTED",
-                        Time = DateTime.UtcNow
-                    });
-
-                    if (E.Origin.Level > Player.Permission.Moderator)
-                        await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
-                }
-            }
-
-            else if (E.Type == GameEvent.EventType.Disconnect)
-            {
-                ChatHistory.Add(new ChatInfo()
-                {
-                    Name = E.Origin.Name,
-                    Message = "DISCONNECTED",
-                    Time = DateTime.UtcNow
-                });
-            }
-
-            else if (E.Type == GameEvent.EventType.Script)
-            {
-                await ExecuteEvent(new GameEvent(GameEvent.EventType.Kill, E.Data, E.Origin, E.Target, this));
-            }
-
-            if (E.Type == GameEvent.EventType.Say && E.Data.Length >= 2)
-            {
-                if (E.Data.Substring(0, 1) == "!" || E.Data.Substring(0, 1) == "@" || E.Origin.Level == Player.Permission.Console)
-                {
-                    Command C = null;
-
-                    try
-                    {
-                        C = await ValidateCommand(E);
-                    }
-
-                    catch (CommandException e)
-                    {
-                        Logger.WriteInfo(e.Message);
-                    }
-
-                    if (C != null)
-                    {
-                        if (C.RequiresTarget && E.Target == null)
-                        {
-                            Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
-                        }
-
-                        try
-                        {
-                            if (!E.Remote && E.Origin.Level != Player.Permission.Console)
-                            {
-                                await ExecuteEvent(new GameEvent()
-                                {
-                                    Type = GameEvent.EventType.Command,
-                                    Data = string.Empty,
-                                    Origin = E.Origin,
-                                    Target = E.Target,
-                                    Owner = this,
-                                    Extra = C,
-                                    Remote = E.Remote
-                                });
-                            }
-
-                            await C.ExecuteAsync(E);
-                        }
-
-                        catch (AuthorizationException e)
-                        {
-                            await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
-                        }
-
-                        catch (Exception Except)
-                        {
-                            Logger.WriteError(String.Format($"\"{0}\" {loc["SERVER_ERROR_COMMAND_LOG"]}", C.Name));
-                            Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
-                            Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
-                            await E.Origin.Tell($"^1{loc["SERVER_ERROR_COMMAND_INGAME"]}");
-#if DEBUG
-                            await E.Origin.Tell(Except.Message);
-#endif
-                        }
-                    }
-                }
-
-                else // Not a command
-                {
-                    E.Data = E.Data.StripColors();
-
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin.Name,
-                        Message = E.Data,
-                        Time = DateTime.UtcNow
-                    });
-                }
-            }
-
-            if (E.Type == GameEvent.EventType.MapChange)
-            {
-                Logger.WriteInfo($"New map loaded - {ClientNum} active players");
-
-                // iw4 doesn't log the game info
-                if (E.Extra == null)
-                {
-                    var dict = await this.GetInfoAsync();
-
-                    Gametype = dict["gametype"].StripColors();
-                    Hostname = dict["hostname"].StripColors();
-
-                    string mapname = dict["mapname"].StripColors();
-                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
-                }
-
-                else
-
-                {
-                    var dict = (Dictionary<string, string>)E.Extra;
-                    Gametype = dict["g_gametype"].StripColors();
-                    Hostname = dict["sv_hostname"].StripColors();
-
-                    string mapname = dict["mapname"].StripColors();
-                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
-                }
-
-            }
-
-            if (E.Type == GameEvent.EventType.MapEnd)
-            {
-                Logger.WriteInfo("Game ending...");
-            }
-
-            //todo: move
-            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
-                ChatHistory.RemoveAt(0);
-
-            // the last client hasn't fully disconnected yet
-            // so there will still be at least 1 client left
-            if (ClientNum < 2)
-                ChatHistory.Clear();
         }
 
         public override async Task Warn(String Reason, Player Target, Player Origin)

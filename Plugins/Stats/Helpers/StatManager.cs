@@ -187,7 +187,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
             // sync their score
-            clientStats.SessionScore = pl.Score;
+            clientStats.SessionScore += (pl.Score - clientStats.LastScore);
             // remove the client from the stats dictionary as they're leaving
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue);
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue2);
@@ -213,11 +213,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var statsSvc = ContextThreads[serverId];
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
+            Vector3 vViewAngles = null;
 
             try
             {
                 vDeathOrigin = Vector3.Parse(deathOrigin);
                 vKillOrigin = Vector3.Parse(killOrigin);
+                vViewAngles = Vector3.Parse(viewAngles).FixIW4Angles();
             }
 
             catch (FormatException)
@@ -241,7 +243,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 Damage = Int32.Parse(damage),
                 HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
-                ViewAngles = Vector3.Parse(viewAngles).FixIW4Angles(),
+                ViewAngles = vViewAngles,
                 TimeOffset = Int64.Parse(offset),
                 When = DateTime.UtcNow,
                 IsKillstreakKill = isKillstreakKill[0] != '0',
@@ -338,11 +340,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // update the total stats
             Servers[serverId].ServerStatistics.TotalKills += 1;
 
-            attackerStats.SessionScore = attacker.Score;
-            victimStats.SessionScore = victim.Score;
+            attackerStats.SessionScore += (attacker.Score - attackerStats.LastScore);
+            victimStats.SessionScore += (victim.Score - victimStats.LastScore);
 
             // calculate for the clients
             CalculateKill(attackerStats, victimStats);
+            // this should fix the negative SPM
+            attackerStats.LastScore = attacker.Score;
+            victimStats.LastScore = victim.Score;
 
             // show encouragement/discouragement
             string streakMessage = (attackerStats.ClientId != victimStats.ClientId) ?
@@ -457,7 +462,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             clientStats.LastStatCalculation = DateTime.UtcNow;
-            clientStats.LastScore = clientStats.SessionScore;
+            //clientStats.LastScore = clientStats.SessionScore;
 
             return clientStats;
         }

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-
+using System.Threading;
 using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore
@@ -47,10 +47,13 @@ namespace SharedLibraryCore
             Origin = O;
             Target = T;
             Owner = S;
+            OnProcessed = new ManualResetEventSlim();
         }
 
-        public GameEvent() { }
-
+        public GameEvent()
+        {
+            OnProcessed = new ManualResetEventSlim(); 
+        }
 
         public EventType Type;
         public string Data; // Data is usually the message sent by player
@@ -60,5 +63,6 @@ namespace SharedLibraryCore
         public Server Owner;
         public Boolean Remote = false;
         public object Extra { get; set; }
+        public ManualResetEventSlim OnProcessed { get; private set; }
     }
 }

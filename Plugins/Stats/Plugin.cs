@@ -253,7 +253,7 @@ namespace IW4MAdmin.Plugins.Stats
             Manager = new StatManager(manager);
         }
 
-        public Task OnTickAsync(Server S) => Utilities.CompletedTask;
+        public Task OnTickAsync(Server S) => Task.CompletedTask;
 
         public async Task OnUnloadAsync()
         {

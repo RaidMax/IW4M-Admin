@@ -12,6 +12,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="server">server the event occurred on</param>
         /// <param name="logLine">single log line string</param>
         /// <returns></returns>
+        /// todo: make this integrate without needing the server
         GameEvent GetEvent(Server server, string logLine);
         /// <summary>
         /// Get game specific folder prefix for log files

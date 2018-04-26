@@ -51,8 +51,9 @@ namespace IW4MAdmin.Plugins
 
         public Task OnLoadAsync(IManager manager) => Task.CompletedTask;
 
-        public async Task OnTickAsync(Server S)
+        public Task OnTickAsync(Server S)
         {
+            return Task.CompletedTask;
            /*
             if ((DateTime.Now - Interval).TotalSeconds > 1)
             {

@@ -85,6 +85,8 @@ namespace Application.RconParsers
                 if (Regex.Matches(responseLine, @" *^\d+", RegexOptions.IgnoreCase).Count > 0)
                 {
                     String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (playerInfo.Length < 4)
+                        continue;
                     int cID = -1;
                     int Ping = -1;
                     Int32.TryParse(playerInfo[2], out Ping);

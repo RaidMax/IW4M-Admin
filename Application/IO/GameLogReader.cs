@@ -18,21 +18,23 @@ namespace IW4MAdmin.Application.IO
             Parser = parser;
         }
 
-        public ICollection<GameEvent> EventsFromLog(Server server, long fileSizeDiff)
+        public ICollection<GameEvent> EventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
             // allocate the bytes for the new log lines
-            byte[] fileBytes = new byte[fileSizeDiff];
+            List<string> logLines = new List<string>();
 
             // open the file as a stream
-            using (var rd = new BinaryReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
+            using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
             {
-                rd.BaseStream.Seek(rd.BaseStream.Length - fileSizeDiff - 1, SeekOrigin.Begin);
+                // take the old start position and go back the number of new characters
+                rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
                 // the difference should be in the range of a int :P
-                rd.Read(fileBytes, 0, (int)fileSizeDiff);
+                string newLine;
+                while (!String.IsNullOrEmpty(newLine = rd.ReadLine()))
+                {
+                    logLines.Add(newLine.Replace("\r\n", ""));
+                }
             }
-
-            // convert to event line list
-            string[] logLines = Utilities.EncodingType.GetString(fileBytes).Replace("\r", "").Split('\n');
 
             List<GameEvent> events = new List<GameEvent>();
 
@@ -40,7 +42,17 @@ namespace IW4MAdmin.Application.IO
             foreach (string eventLine in logLines)
             {
                 if (eventLine.Length > 0)
-                    events.Add(Parser.GetEvent(server, eventLine));
+                {
+                    try
+                    {
+                        // todo: catch elsewhere
+                        events.Add(Parser.GetEvent(server, eventLine));
+                    }
+                    
+                    catch (Exception e)
+                    {
+                    }
+                }
             }
 
             return events;

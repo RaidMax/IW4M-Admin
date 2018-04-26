@@ -249,9 +249,14 @@ namespace SharedLibraryCore.Services
                     p.Active = false;
                     // reset the player levels
                     if (p.Type == Objects.Penalty.PenaltyType.Ban)
-                        await context.Clients
-                            .Where(c => c.AliasLinkId == p.LinkId)
-                            .ForEachAsync(c => c.Level = Objects.Player.Permission.User);
+                    {
+                        using (var internalContext = new DatabaseContext())
+                        {
+                            await internalContext.Clients
+                                .Where(c => c.AliasLinkId == p.LinkId)
+                                .ForEachAsync(c => c.Level = Objects.Player.Permission.User);
+                        }
+                    }
                 });
 
                 await context.SaveChangesAsync();

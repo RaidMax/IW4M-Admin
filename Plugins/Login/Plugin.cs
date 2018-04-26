@@ -37,7 +37,8 @@ namespace IW4MAdmin.Plugins.Login
 
             if (E.Type == GameEvent.EventType.Command)
             {
-                if (E.Origin.Level < Player.Permission.Moderator)
+                if (E.Origin.Level < Player.Permission.Moderator ||
+                    E.Origin.Level == Player.Permission.Console)
                     return Task.CompletedTask;
 
                 E.Owner.Manager.GetPrivilegedClients().TryGetValue(E.Origin.ClientId, out Player client);

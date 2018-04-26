@@ -12,7 +12,10 @@ namespace IW4MAdmin.Application.Localization
         public static void Initialize()
         {
             string currentLocale = Program.ServerManager.GetApplicationSettings().Configuration().CustomLocale ?? 
-                CultureInfo.CurrentCulture.Name.Substring(0, 2);
+                CultureInfo.CurrentCulture.Name?.Substring(0, 2);
+
+            if (currentLocale == null)
+                throw new Exception("Computer CurrentCulture does not exist");
 #if DEBUG
  //           currentLocal = "ru-RU";
 #endif
@@ -26,10 +29,12 @@ namespace IW4MAdmin.Application.Localization
 
             else
             {
-                localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.en-US.json";
+                localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.en-EN.json";
                 localizationContents = File.ReadAllText(localizationFile, Encoding.UTF8);
             }
 
+            if (localizationContents.Length < 1)
+                throw new Exception($"Localization file {localizationFile} does not exist");
             Utilities.CurrentLocalization = Newtonsoft.Json.JsonConvert.DeserializeObject<SharedLibraryCore.Localization.Layout>(localizationContents);
         }
     }

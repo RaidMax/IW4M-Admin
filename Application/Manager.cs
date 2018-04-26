@@ -366,7 +366,10 @@ namespace IW4MAdmin.Application
                 {
                     try
                     {
-                        Task.WaitAll(newEvent.Owner.ExecuteEvent(newEvent));
+                        newEvent.Owner.ExecuteEvent(newEvent).Wait();
+#if DEBUG
+                        Logger.WriteDebug("Processed Event");
+#endif
                     }
 
                     catch (Exception E)
@@ -374,6 +377,8 @@ namespace IW4MAdmin.Application
                         Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
                         Logger.WriteDebug("Error Message: " + E.Message);
                         Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                        newEvent.OnProcessed.Set();
+                        continue;
                     }
                     // tell anyone waiting for the output that we're done
                     newEvent.OnProcessed.Set();

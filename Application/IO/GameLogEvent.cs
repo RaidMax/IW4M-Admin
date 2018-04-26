@@ -17,7 +17,6 @@ namespace IW4MAdmin.Application.IO
         GameLogReader Reader;
         Timer RefreshInfoTimer;
         string GameLogFile;
-        FileInfo Info;
 
         public GameLogEvent(Server server, string gameLogPath, string gameLogName)
         {
@@ -26,13 +25,11 @@ namespace IW4MAdmin.Application.IO
             Server = server;
             RefreshInfoTimer = new Timer((sender) => 
             {
-                var newInfo = new FileInfo(GameLogFile);
-                if (newInfo.Length - Info?.Length > 0)
-                    LogPathWatcher_Changed(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, "", ""));
-                Info = newInfo;
+                long newLength = new FileInfo(GameLogFile).Length;
+                UpdateLogEvents(newLength);
 
             }, null, 0, 100);
-            LogPathWatcher = new FileSystemWatcher()
+            /*LogPathWatcher = new FileSystemWatcher()
             {
                 Path = gameLogPath.Replace(gameLogName, ""),
                 Filter = gameLogName,
@@ -40,33 +37,33 @@ namespace IW4MAdmin.Application.IO
                 InternalBufferSize = 4096
             };
 
-            LogPathWatcher.Changed += LogPathWatcher_Changed;
-            LogPathWatcher.EnableRaisingEvents = true;
+           // LogPathWatcher.Changed += LogPathWatcher_Changed;
+            LogPathWatcher.EnableRaisingEvents = true;*/
         }
 
+        /*
         ~GameLogEvent()
         {
             LogPathWatcher.EnableRaisingEvents = false;
-        }
+        }*/
 
-        private void LogPathWatcher_Changed(object sender, FileSystemEventArgs e)
+        private void UpdateLogEvents(long fileSize)
         {
-            // retrieve the new file size 
-            long newFileSize = new FileInfo(GameLogFile).Length;
-
             if (PreviousFileSize == 0)
-                PreviousFileSize = newFileSize;
+                PreviousFileSize = fileSize;
 
-            long fileDiff = newFileSize - PreviousFileSize;
+            long fileDiff = fileSize - PreviousFileSize;
 
             if (fileDiff < 1)
                 return;
 
-            var events = Reader.EventsFromLog(Server, fileDiff);
+            PreviousFileSize = fileSize;
+
+            var events = Reader.EventsFromLog(Server, fileDiff, 0);
             foreach (var ev in events)
                 Server.Manager.GetEventHandler().AddEvent(ev);
 
-            PreviousFileSize = newFileSize;
+            PreviousFileSize = fileSize;
         }
     }
 }

@@ -22,7 +22,7 @@ namespace WebfrontCore.Controllers
 
         public BaseController()
         {
-            var Manager = Program.Manager;
+            Manager = Program.Manager;
             if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink)
             {
                 string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;

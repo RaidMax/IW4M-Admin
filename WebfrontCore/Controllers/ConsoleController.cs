@@ -48,7 +48,7 @@ namespace WebfrontCore.Controllers
 
             Manager.GetEventHandler().AddEvent(remoteEvent);
             // wait for the event to process
-            remoteEvent.OnProcessed.Wait();
+            await Task.Run(() => remoteEvent.OnProcessed.Wait());
             var response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
             // remove the added command response

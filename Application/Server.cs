@@ -984,8 +984,8 @@ namespace IW4MAdmin
                 Link = Target.AliasLink
             };
 
-            await Manager.GetPenaltyService().Create(unbanPenalty);
             await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId);
+            await Manager.GetPenaltyService().Create(unbanPenalty);
         }
 
         override public void InitializeTokens()

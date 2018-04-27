@@ -27,7 +27,7 @@ namespace SharedLibraryCore.Commands
     public class COwner : Command
     {
         public COwner() :
-            base("owner", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_DESC"], "o", Player.Permission.User, false)
+            base("owner", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_DESC"], "iamgod", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)

@@ -84,7 +84,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns>EFClientStatistic of specified player</returns>
         public async Task<EFClientStatistics> AddPlayer(Player pl)
         {
-            Log.WriteInfo($"Adding {pl} to stats");
             int serverId = pl.CurrentServer.GetHashCode();
 
             if (!Servers.ContainsKey(serverId))
@@ -95,6 +94,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var playerStats = Servers[serverId].PlayerStats;
             var statsSvc = ContextThreads[serverId];
+            var detectionStats = Servers[serverId].PlayerDetections;
+
+            if (playerStats.ContainsKey(pl.ClientId))
+            {
+                Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
+                return null;
+            }
 
             // get the client's stats from the database if it exists, otherwise create and attach a new one
             // if this fails we want to throw an exception
@@ -142,19 +148,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             clientStats.LastStatCalculation = DateTime.UtcNow;
             clientStats.SessionScore = pl.Score;
 
-            if (playerStats.ContainsKey(pl.ClientId))
-            {
-                Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId} vs {playerStats[pl.ClientId].ClientId}");
-                playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue);
-            }
-            playerStats.TryAdd(pl.ClientId, clientStats);
+            Log.WriteInfo($"Adding {pl} to stats");
 
-            var detectionStats = Servers[serverId].PlayerDetections;
+            if (!playerStats.TryAdd(pl.ClientId, clientStats))
+                Log.WriteDebug($"Could not add client to stats {pl}");
 
-            if (detectionStats.ContainsKey(pl.ClientId))
-                detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue);
+            if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
+                Log.WriteDebug("Could not add client to detection");
 
-            detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats));
 
             // todo: look at this more
             statsSvc.ClientStatSvc.Update(clientStats);
@@ -181,6 +182,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (!playerStats.ContainsKey(pl.ClientId))
             {
                 Log.WriteWarning($"Client disconnecting not in stats {pl}");
+                // remove the client from the stats dictionary as they're leaving
+                playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue1);
+                detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue2);
                 return;
             }
 
@@ -188,9 +192,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var clientStats = playerStats[pl.ClientId];
             // sync their score
             clientStats.SessionScore += (pl.Score - clientStats.LastScore);
+
             // remove the client from the stats dictionary as they're leaving
-            playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue);
-            detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue2);
+            playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
+            detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
@@ -421,7 +426,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             // prevent NaN or inactive time lowering SPM
             if ((DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0 < 0.01 ||
-                (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0 > 3 || 
+                (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0 > 3 ||
                 clientStats.SessionScore < 1)
                 return clientStats;
 

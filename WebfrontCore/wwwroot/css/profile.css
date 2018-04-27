@@ -84,7 +84,10 @@
     color: white;
 }
 
-.penalties-color-kick,
+.penalties-color-kick {
+    color: rgb(182, 129, 43);
+}
+
 .penalties-color-unban {
     color: #749363;
     color: rgba(116, 147, 99, 1);

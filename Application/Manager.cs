@@ -92,10 +92,14 @@ namespace IW4MAdmin.Application
 
         public void UpdateStatus(object state)
         {
+            var taskList = new List<Task>();
+
             foreach (var server in Servers)
             {
-                Task.Run(() => server.ProcessUpdatesAsync(new CancellationToken()));
+                taskList.Add(Task.Run(() => server.ProcessUpdatesAsync(new CancellationToken())));
             }
+
+            Task.WaitAll(taskList.ToArray());
         }
 
         public async Task Init()

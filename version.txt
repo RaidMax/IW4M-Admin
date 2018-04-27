@@ -2,6 +2,8 @@ Version 2.1:
 CHANGELOG:
 -add support for localization
 -upgraded projects to .NET Core 2.0.7
+-redid the event system to haev a single line of execution
+-added support for MySQL provider via "ConnectrionString"
 
 Version 2.0:
 CHANGELOG:

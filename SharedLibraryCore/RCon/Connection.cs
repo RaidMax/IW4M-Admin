@@ -163,9 +163,9 @@ namespace SharedLibraryCore.RCon
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", bool waitForResponse = true)
         {
             // will this really prevent flooding?
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 35)
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 150)
             {
-                await Task.Delay(35);
+                await Task.Delay(150);
             }
 
             LastQuery = DateTime.Now;

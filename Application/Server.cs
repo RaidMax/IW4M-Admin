@@ -183,9 +183,10 @@ namespace IW4MAdmin
 
                 Logger.WriteInfo($"Client {player} connecting...");
 
+                var e = new GameEvent(GameEvent.EventType.Connect, "", player, null, this);
+                Manager.GetEventHandler().AddEvent(e);
 
-                Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Connect, "", player, null, this));
-
+                e.OnProcessed.Wait();
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
@@ -212,7 +213,9 @@ namespace IW4MAdmin
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
 
-                Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this));
+                var e = new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this);
+                Manager.GetEventHandler().AddEvent(e);
+                e.OnProcessed.Wait();
 
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                 Leaving.LastConnection = DateTime.UtcNow;
@@ -394,7 +397,7 @@ namespace IW4MAdmin
             // hack: this prevents commands from getting executing that 'shouldn't' be
             if (E.Type == GameEvent.EventType.Command &&
                 E.Extra != null &&
-                (canExecuteCommand || 
+                (canExecuteCommand ||
                 E.Origin?.Level == Player.Permission.Console))
             {
                 await (((Command)E.Extra).ExecuteAsync(E));
@@ -697,6 +700,7 @@ namespace IW4MAdmin
             if (ServerConfig.UseIW5MParser)
                 RconParser = new IW5MRConParser();
 
+
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
 
@@ -704,25 +708,40 @@ namespace IW4MAdmin
                 EventParser = new IW4EventParser();
             else if (GameName == Game.IW5)
                 EventParser = new IW5EventParser();
+            else if (GameName == Game.T5M)
+                EventParser = new T5MEventParser();
             else if (GameName == Game.T6M)
                 EventParser = new T6MEventParser();
-            else if (GameName == Game.UKN)
-                Logger.WriteWarning($"Game name not recognized: {version}");
             else
                 EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
 
-            var shortversion = await this.GetDvarAsync<string>("shortversion");
-            var hostname = await this.GetDvarAsync<string>("sv_hostname");
-            var mapname = await this.GetDvarAsync<string>("mapname");
-            var maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
-                await this.GetDvarAsync<int>("party_maxplayers") :
-                await this.GetDvarAsync<int>("sv_maxclients");
-            var gametype = await this.GetDvarAsync<string>("g_gametype");
+            if (GameName == Game.UKN)
+                Logger.WriteWarning($"Game name not recognized: {version}");
+
+            var infoResponse = await this.GetInfoAsync();
+            // this is normally slow, but I'm only doing it because different games have different prefixes
+            var hostname = infoResponse == null ? 
+                (await this.GetDvarAsync<string>("sv_hostname")).Value :
+                infoResponse.Where(kvp => kvp.Key.Contains("hostname")).Select(kvp => kvp.Value).First();
+            var mapname = infoResponse == null ? 
+                (await this.GetDvarAsync<string>("mapname")).Value :
+                infoResponse["mapname"];
+            int maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
+                (await this.GetDvarAsync<int>("party_maxplayers")).Value :
+                infoResponse == null ?
+                (await this.GetDvarAsync<int>("sv_maxclients")).Value :
+                Convert.ToInt32(infoResponse["sv_maxclients"]);
+            var gametype = infoResponse == null ? 
+                (await this.GetDvarAsync<string>("g_gametype")).Value :
+                infoResponse.Where(kvp => kvp.Key.Contains("gametype")).Select(kvp => kvp.Value).First();
             var basepath = await this.GetDvarAsync<string>("fs_basepath");
-            WorkingDirectory = basepath.Value;
-            var game = await this.GetDvarAsync<string>("fs_game");
+            var game = infoResponse == null || !infoResponse.ContainsKey("fs_game") ? 
+                (await this.GetDvarAsync<string>("fs_game")).Value :
+                infoResponse["fs_game"];
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
+
+            WorkingDirectory = basepath.Value;
 
             try
             {
@@ -737,11 +756,11 @@ namespace IW4MAdmin
 
             InitializeMaps();
 
-            this.Hostname = hostname.Value.StripColors();
-            this.CurrentMap = Maps.Find(m => m.Name == mapname.Value) ?? new Map() { Alias = mapname.Value, Name = mapname.Value };
-            this.MaxClients = maxplayers.Value;
-            this.FSGame = game.Value;
-            this.Gametype = gametype.Value;
+            this.Hostname = hostname.StripColors();
+            this.CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+            this.MaxClients = maxplayers;
+            this.FSGame = game;
+            this.Gametype = gametype;
 
             //wait this.SetDvarAsync("sv_kickbantime", 60);
 
@@ -759,7 +778,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\mw2\";
+            basepath.Value = @"\\192.168.88.253\Call of Duty 4\";
 #endif
             string logPath;
             if (GameName == Game.IW5)
@@ -768,9 +787,9 @@ namespace IW4MAdmin
             }
             else
             {
-                logPath = game.Value == string.Empty ?
+                logPath = game == string.Empty ?
                     $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
-                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Value.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
             }
 
 
@@ -789,10 +808,9 @@ namespace IW4MAdmin
             }
             else
             {
-                // LogFile = new IFile(logPath);
-
+                LogEvent = new GameLogEvent(this, logPath, logfile.Value);
             }
-            LogEvent = new GameLogEvent(this, logPath, logfile.Value);
+   
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
             // LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");

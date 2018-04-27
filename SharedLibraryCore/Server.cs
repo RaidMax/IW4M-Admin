@@ -109,10 +109,7 @@ namespace SharedLibraryCore
         /// <returns></returns>
         abstract public Task<Command> ValidateCommand(GameEvent E);
 
-        virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts)
-        {
-            return null;
-        }
+        virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts) => (Task<bool>)Task.CompletedTask;
 
         /// <summary>
         /// Process any server event

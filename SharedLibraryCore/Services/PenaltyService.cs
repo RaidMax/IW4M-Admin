@@ -7,6 +7,7 @@ using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore.Services
 {
@@ -135,16 +136,17 @@ namespace SharedLibraryCore.Services
             {
                 if (victim)
                 {
+                    context.ChangeTracker.AutoDetectChangesEnabled = false;
                     var now = DateTime.UtcNow;
                     var iqPenalties = from penalty in context.Penalties.AsNoTracking()
                                       where penalty.OffenderId == clientId
                                       join victimClient in context.Clients.AsNoTracking()
                                       on penalty.OffenderId equals victimClient.ClientId
-                                      join victimAlias in context.Aliases
+                                      join victimAlias in context.Aliases.AsNoTracking()
                                       on victimClient.CurrentAliasId equals victimAlias.AliasId
-                                      join punisherClient in context.Clients
+                                      join punisherClient in context.Clients.AsNoTracking()
                                       on penalty.PunisherId equals punisherClient.ClientId
-                                      join punisherAlias in context.Aliases
+                                      join punisherAlias in context.Aliases.AsNoTracking()
                                       on punisherClient.CurrentAliasId equals punisherAlias.AliasId
                                       //orderby penalty.When descending
                                       select new ProfileMeta()
@@ -170,6 +172,9 @@ namespace SharedLibraryCore.Services
                         var pi = ((PenaltyInfo)p.Value);
                         if (pi.TimeRemaining.Length > 0)
                             pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
+                        // todo: why does this have to be done?
+                        if (pi.Type.Length > 2)
+                            pi.Type = ((Penalty.PenaltyType)Convert.ToInt32(pi.Type)).ToString();
                     }
                     );
                     return list;
@@ -203,7 +208,16 @@ namespace SharedLibraryCore.Services
                                           When = penalty.When
                                       };
                     // fixme: is this good and fast?
-                    return await iqPenalties.ToListAsync();
+                    var list = await iqPenalties.ToListAsync();
+
+                    list.ForEach(p =>
+                    {
+                        // todo: why does this have to be done?
+                        if (((PenaltyInfo)p.Value).Type.Length < 2)
+                            ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
+                    });
+
+                    return list;
                 }
 
 

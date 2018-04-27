@@ -41,7 +41,7 @@ namespace IW4MAdmin.Application
 
                 ServerManager = ApplicationManager.GetInstance();
 
-                using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration().ConnectionString))
+                using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration()?.ConnectionString))
                     new ContextSeed(db).Seed().Wait();
 
                 var api = API.Master.Endpoint.Get();

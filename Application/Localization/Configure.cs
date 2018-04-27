@@ -11,8 +11,8 @@ namespace IW4MAdmin.Application.Localization
     {
         public static void Initialize()
         {
-            string currentLocale = Program.ServerManager.GetApplicationSettings().Configuration().CustomLocale ?? 
-                CultureInfo.CurrentCulture.Name?.Substring(0, 2);
+            string currentLocale = Program.ServerManager.GetApplicationSettings().Configuration()?.CustomLocale ?? 
+                CultureInfo.CurrentCulture?.Name?.Substring(0, 2);
 
             if (currentLocale == null)
                 throw new Exception("Computer CurrentCulture does not exist");

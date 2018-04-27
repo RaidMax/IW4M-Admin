@@ -13,6 +13,6 @@ namespace SharedLibraryCore.RCon
         }
 
         public static char SeperatorChar = (char)int.Parse("0a", System.Globalization.NumberStyles.AllowHexSpecifier);
-        public static readonly TimeSpan SocketTimeout = new TimeSpan(0, 0, 10);
+        public static readonly TimeSpan SocketTimeout = new TimeSpan(0, 0, 2);
     }
 }

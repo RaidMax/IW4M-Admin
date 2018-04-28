@@ -389,58 +389,55 @@ namespace IW4MAdmin.Application
             }
         }
 
-        public void Start()
+        public async Task Start()
         {
 #if !DEBUG
             // start heartbeat
             HeartbeatTimer = new Timer(SendHeartbeat, new HeartbeatState(), 0, 30000);
 #endif
-            // start polling servers
-            //          StatusUpdateTimer = new Timer(UpdateStatus, null, 0, 5000);
+            // this needs to be run seperately from the main thread
             Task.Run(() => UpdateStatus(null));
+
             GameEvent newEvent;
 
-            Task.Run(async () =>
+            while (Running)
             {
-                while (Running)
+                // wait for new event to be added
+                OnEvent.Wait();
+
+                // todo: sequencially or parallelize?
+                while ((newEvent = Handler.GetNextEvent()) != null)
                 {
-                    // wait for new event to be added
-                    OnEvent.Wait();
-
-                    // todo: sequencially or parallelize?
-                    while ((newEvent = Handler.GetNextEvent()) != null)
+                    try
                     {
-                        try
-                        {
-                            await newEvent.Owner.ExecuteEvent(newEvent);
+                        await newEvent.Owner.ExecuteEvent(newEvent);
 #if DEBUG
-                            Logger.WriteDebug("Processed Event");
+                        Logger.WriteDebug("Processed Event");
 #endif
-                        }
-
-                        catch (Exception E)
-                        {
-                            Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
-                            Logger.WriteDebug("Error Message: " + E.Message);
-                            Logger.WriteDebug("Error Trace: " + E.StackTrace);
-                            newEvent.OnProcessed.Set();
-                            continue;
-                        }
-                        // tell anyone waiting for the output that we're done
-                        newEvent.OnProcessed.Set();
                     }
 
-                    // signal that all events have been processed
-                    OnEvent.Reset();
+                    catch (Exception E)
+                    {
+                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
+                        Logger.WriteDebug("Error Message: " + E.Message);
+                        Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                        newEvent.OnProcessed.Set();
+                        continue;
+                    }
+                    // tell anyone waiting for the output that we're done
+                    newEvent.OnProcessed.Set();
                 }
+
+                // signal that all events have been processed
+                OnEvent.Reset();
+            }
 #if !DEBUG
             HeartbeatTimer.Change(0, Timeout.Infinite);
 
             foreach (var S in Servers)
                 S.Broadcast(Utilities.CurrentLocalization.LocalizationSet["BROADCAST_OFFLINE"]).Wait();
 #endif
-                _servers.Clear();
-            }).Wait();
+            _servers.Clear();
         }
 
 

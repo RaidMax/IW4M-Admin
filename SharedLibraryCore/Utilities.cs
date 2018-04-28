@@ -325,7 +325,9 @@ namespace SharedLibraryCore
                 LastConnection = client.LastConnection == DateTime.MinValue ? DateTime.UtcNow : client.LastConnection,
                 CurrentAlias = client.CurrentAlias,
                 CurrentAliasId = client.CurrentAlias.AliasId,
-                IsBot = client.NetworkId == -1
+                IsBot = client.NetworkId == -1,
+                Password = client.Password,
+                PasswordSalt = client.PasswordSalt
             };
         }
 

@@ -134,9 +134,10 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
                 if (victim)
                 {
-                    context.ChangeTracker.AutoDetectChangesEnabled = false;
                     var now = DateTime.UtcNow;
                     var iqPenalties = from penalty in context.Penalties.AsNoTracking()
                                       where penalty.OffenderId == clientId
@@ -163,20 +164,21 @@ namespace SharedLibraryCore.Services
                                               TimeRemaining = now > penalty.Expires ? "" : penalty.Expires.ToString()
                                           },
                                           When = penalty.When,
-                                          Sensitive = penalty.Type == Objects.Penalty.PenaltyType.Flag
+                                          Sensitive = penalty.Type == Penalty.PenaltyType.Flag
                                       };
                     // fixme: is this good and fast?
                     var list = await iqPenalties.ToListAsync();
                     list.ForEach(p =>
                     {
+                        // todo: why does this have to be done?
+                        if (((PenaltyInfo)p.Value).Type.Length < 2)
+                            ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
+
                         var pi = ((PenaltyInfo)p.Value);
                         if (pi.TimeRemaining.Length > 0)
                             pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
-                        // todo: why does this have to be done?
-                        if (pi.Type.Length > 2)
-                            pi.Type = ((Penalty.PenaltyType)Convert.ToInt32(pi.Type)).ToString();
-                    }
-                    );
+                       
+                    });
                     return list;
                 }
 
@@ -268,7 +270,7 @@ namespace SharedLibraryCore.Services
                         {
                             await internalContext.Clients
                                 .Where(c => c.AliasLinkId == p.LinkId)
-                                .ForEachAsync(c => c.Level = Objects.Player.Permission.User);
+                                .ForEachAsync(c => c.Level = Player.Permission.User);
                             await internalContext.SaveChangesAsync();
                         }
 

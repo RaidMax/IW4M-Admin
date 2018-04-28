@@ -55,6 +55,27 @@ namespace SharedLibraryCore
             OnProcessed = new ManualResetEventSlim(); 
         }
 
+        public static GameEvent TranferWaiter(EventType newType, GameEvent e)
+        {
+            var newEvent = new GameEvent()
+            {
+                Data = e.Data,
+                Extra = e.Extra,
+                Message = e.Message,
+                OnProcessed = e.OnProcessed,
+                Origin = e.Origin,
+                Owner = e.Owner,
+                Remote = e.Remote,
+                Target = e.Target,
+                Type = newType
+            };
+
+            // hack: prevent the previous event from completing until this one is done
+            e.OnProcessed = new ManualResetEventSlim();
+
+            return newEvent;
+        }
+
         public EventType Type;
         public string Data; // Data is usually the message sent by player
         public string Message;
@@ -63,6 +84,6 @@ namespace SharedLibraryCore
         public Server Owner;
         public Boolean Remote = false;
         public object Extra { get; set; }
-        public ManualResetEventSlim OnProcessed { get; private set; }
+        public ManualResetEventSlim OnProcessed { get; set; }
     }
 }

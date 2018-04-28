@@ -441,7 +441,7 @@ namespace SharedLibraryCore.Commands
                 }
             }
 
-            if (newPerm > Player.Permission.Banned)
+            else if (newPerm > Player.Permission.Banned)
             {
                 var ActiveClient = E.Owner.Manager.GetActiveClients()
                     .FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
@@ -465,6 +465,7 @@ namespace SharedLibraryCore.Commands
 
                 catch (Exception)
                 {
+                    // this updates their privilege level to the webfront claims
                     E.Owner.Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
 

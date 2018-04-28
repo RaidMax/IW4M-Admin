@@ -48,6 +48,7 @@ namespace WebfrontCore.Controllers
 
             Manager.GetEventHandler().AddEvent(remoteEvent);
             // wait for the event to process
+
             await Task.Run(() => remoteEvent.OnProcessed.Wait());
             var response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 

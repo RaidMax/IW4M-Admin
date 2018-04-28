@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Interfaces
     public interface IManager
     {
         Task Init();
-        void Start();
+        Task Start();
         void Stop();
         ILogger GetLogger();
         IList<Server> GetServers();

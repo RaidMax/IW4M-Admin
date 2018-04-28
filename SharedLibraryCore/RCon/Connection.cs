@@ -255,7 +255,7 @@ namespace SharedLibraryCore.RCon
 
                     if (FailedReceives >= 4)
                     {
-                        throw new NetworkException($"Could not receive data from the {ServerConnection.RemoteEndPoint}");
+                        throw new NetworkException($"Could not receive data from {ServerConnection.RemoteEndPoint}");
                     }
                 }
 

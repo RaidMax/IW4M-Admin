@@ -156,7 +156,7 @@ namespace IW4MAdmin.Application
             }
 
 
-            ServerManager.Start();
+            ServerManager.Start().Wait();
             ServerManager.Logger.WriteVerbose(loc["MANAGER_SHUTDOWN_SUCCESS"]);
         }
 

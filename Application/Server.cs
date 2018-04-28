@@ -36,7 +36,7 @@ namespace IW4MAdmin
             // todo: make this better with collisions
             int id = Math.Abs($"{IP}:{Port.ToString()}".Select(a => (int)a).Sum());
 
-            // this is a nasty fix for get hashcode being changed
+            // hack: this is a nasty fix for get hashcode being changed
             switch (id)
             {
                 case 765:
@@ -455,7 +455,7 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Script)
             {
-                Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Kill, E.Data, E.Origin, E.Target, this));
+                Manager.GetEventHandler().AddEvent(GameEvent.TranferWaiter(GameEvent.EventType.Kill, E));
             }
 
             if (E.Type == GameEvent.EventType.Say && E.Data.Length >= 2)
@@ -483,17 +483,12 @@ namespace IW4MAdmin
                             Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
                         }
 
-                        Manager.GetEventHandler().AddEvent(new GameEvent()
-                        {
-                            Type = GameEvent.EventType.Command,
-                            Data = E.Data,
-                            Origin = E.Origin,
-                            Target = E.Target,
-                            Owner = this,
-                            Extra = C,
-                            Remote = E.Remote,
-                            Message = E.Message
-                        });
+                        E.Extra = C;
+                        
+
+
+                        // reprocess event as a command
+                        Manager.GetEventHandler().AddEvent(GameEvent.TranferWaiter(GameEvent.EventType.Command, E));
                     }
                 }
 
@@ -988,6 +983,8 @@ namespace IW4MAdmin
             };
 
             await Manager.GetPenaltyService().Create(newPenalty);
+            // prevent them from logging in again
+            Manager.GetPrivilegedClients().Remove(Target.ClientId);
         }
 
         override public async Task Unban(string reason, Player Target, Player Origin)

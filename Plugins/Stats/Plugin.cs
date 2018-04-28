@@ -103,8 +103,8 @@ namespace IW4MAdmin.Plugins.Stats
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
                 double kdr = Math.Round(kills / (double)deaths, 2);
-                double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Count, 2);
-                double spm = Math.Round(clientStats.Sum(c => c.SPM), 1);
+                double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Where(c => c.Skill > 0).Count(), 2);
+                double spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Where(c => c.SPM > 0).Count(), 1);
 
                 return new List<ProfileMeta>()
                 {

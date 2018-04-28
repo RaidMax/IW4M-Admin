@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -47,11 +48,24 @@ namespace WebfrontCore.Controllers
                     Client.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
                     Client.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
                     Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
+                    var stillExists = Manager.GetPrivilegedClients()[Client.ClientId];
+                    
+                    // this happens if their level has been updated
+                    if (stillExists.Level != Client.Level)
+                    {
+                        Client.Level = stillExists.Level;
+                    }
                 }
 
                 catch (InvalidOperationException)
                 {
 
+                }
+
+                catch (System.Collections.Generic.KeyNotFoundException)
+                {
+                    // force the "banned" client to be signed out
+                    HttpContext.SignOutAsync().Wait();
                 }
             }
 

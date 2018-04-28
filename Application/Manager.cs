@@ -19,6 +19,7 @@ using SharedLibraryCore.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using IW4MAdmin.Application.API.Master;
 
 namespace IW4MAdmin.Application
 {
@@ -43,12 +44,7 @@ namespace IW4MAdmin.Application
         EventApi Api;
         GameEventHandler Handler;
         ManualResetEventSlim OnEvent;
-        Timer StatusUpdateTimer;
-#if FTP_LOG
-        const int UPDATE_FREQUENCY = 700;
-#else
-        const int UPDATE_FREQUENCY = 2000;
-#endif
+        Timer HeartbeatTimer;
 
         private ApplicationManager()
         {
@@ -90,16 +86,62 @@ namespace IW4MAdmin.Application
             return Instance ?? (Instance = new ApplicationManager());
         }
 
-        public void UpdateStatus(object state)
+        public async Task UpdateStatus(object state)
         {
             var taskList = new List<Task>();
 
-            foreach (var server in Servers)
+            while (Running)
             {
-                taskList.Add(Task.Run(() => server.ProcessUpdatesAsync(new CancellationToken())));
-            }
+                taskList.Clear();
+                foreach (var server in Servers)
+                {
+                    taskList.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await server.ProcessUpdatesAsync(new CancellationToken());
+                        }
 
-            Task.WaitAll(taskList.ToArray());
+                        catch (Exception e)
+                        {
+                            Logger.WriteWarning($"Failed to update status for {server}");
+                            Logger.WriteDebug($"Exception: {e.Message}");
+                            Logger.WriteDebug($"StackTrace: {e.StackTrace}");
+                        }
+                    }));
+                }
+#if DEBUG
+                Logger.WriteDebug($"{taskList.Count} servers queued for stats updates");
+                ThreadPool.GetMaxThreads(out int workerThreads, out int n);
+                ThreadPool.GetAvailableThreads(out int availableThreads, out int m);
+                Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
+#endif
+
+                await Task.WhenAll(taskList.ToArray());
+
+                GameEvent sensitiveEvent;
+                while ((sensitiveEvent = Handler.GetNextSensitiveEvent()) != null)
+                {
+                    try
+                    {
+                        await sensitiveEvent.Owner.ExecuteEvent(sensitiveEvent);
+#if DEBUG
+                        Logger.WriteDebug($"Processed Sensitive Event {sensitiveEvent.Type}");
+#endif
+                    }
+
+                    catch (Exception E)
+                    {
+                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {sensitiveEvent.Owner}");
+                        Logger.WriteDebug("Error Message: " + E.Message);
+                        Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                        sensitiveEvent.OnProcessed.Set();
+                        continue;
+                    }
+                }
+
+                await Task.Delay(5000);
+            }
         }
 
         public async Task Init()
@@ -286,41 +328,35 @@ namespace IW4MAdmin.Application
             }
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
-            // start polling servers
-            StatusUpdateTimer = new Timer(UpdateStatus, null, 0, 10000);
-
             #endregion
 
             Running = true;
         }
 
-        private void HeartBeatThread()
+        private void SendHeartbeat(object state)
         {
-            bool successfulConnection = false;
-            restartConnection:
-            while (!successfulConnection)
+            var heartbeatState = (HeartbeatState)state;
+
+            if (!heartbeatState.Connected)
             {
                 try
                 {
-                    API.Master.Heartbeat.Send(this, true).Wait();
-                    successfulConnection = true;
+                    Heartbeat.Send(this, true).Wait();
+                    heartbeatState.Connected = true;
                 }
 
                 catch (Exception e)
                 {
-                    successfulConnection = false;
+                    heartbeatState.Connected = false;
                     Logger.WriteWarning($"Could not connect to heartbeat server - {e.Message}");
                 }
-
-                Thread.Sleep(30000);
             }
 
-            while (Running)
+            else
             {
-                Logger.WriteDebug("Sending heartbeat...");
                 try
                 {
-                    API.Master.Heartbeat.Send(this).Wait();
+                    Heartbeat.Send(this).Wait();
                 }
                 catch (System.Net.Http.HttpRequestException e)
                 {
@@ -336,8 +372,7 @@ namespace IW4MAdmin.Application
                     {
                         if (((RestEase.ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         {
-                            successfulConnection = false;
-                            goto restartConnection;
+                            heartbeatState.Connected = false;
                         }
                     }
                 }
@@ -347,55 +382,65 @@ namespace IW4MAdmin.Application
                     Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
                     if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
-                        successfulConnection = false;
-                        goto restartConnection;
+                        heartbeatState.Connected = false;
                     }
                 }
 
-                Thread.Sleep(30000);
             }
         }
 
         public void Start()
         {
-            Task.Run(() => HeartBeatThread());
-            GameEvent newEvent;
-            while (Running)
-            {
-                // wait for new event to be added
-                OnEvent.Wait();
-              
-                // todo: sequencially or parallelize?
-                while ((newEvent = Handler.GetNextEvent()) != null)
-                {
-                    try
-                    {
-                        newEvent.Owner.ExecuteEvent(newEvent).Wait();
-#if DEBUG
-                        Logger.WriteDebug("Processed Event");
-#endif
-                    }
-
-                    catch (Exception E)
-                    {
-                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
-                        Logger.WriteDebug("Error Message: " + E.Message);
-                        Logger.WriteDebug("Error Trace: " + E.StackTrace);
-                        newEvent.OnProcessed.Set();
-                        continue;
-                    }
-                    // tell anyone waiting for the output that we're done
-                    newEvent.OnProcessed.Set();
-                }
-
-                // signal that all events have been processed
-                OnEvent.Reset();
-            }
 #if !DEBUG
+            // start heartbeat
+            HeartbeatTimer = new Timer(SendHeartbeat, new HeartbeatState(), 0, 30000);
+#endif
+            // start polling servers
+            //          StatusUpdateTimer = new Timer(UpdateStatus, null, 0, 5000);
+            Task.Run(() => UpdateStatus(null));
+            GameEvent newEvent;
+
+            Task.Run(async () =>
+            {
+                while (Running)
+                {
+                    // wait for new event to be added
+                    OnEvent.Wait();
+
+                    // todo: sequencially or parallelize?
+                    while ((newEvent = Handler.GetNextEvent()) != null)
+                    {
+                        try
+                        {
+                            await newEvent.Owner.ExecuteEvent(newEvent);
+#if DEBUG
+                            Logger.WriteDebug("Processed Event");
+#endif
+                        }
+
+                        catch (Exception E)
+                        {
+                            Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
+                            Logger.WriteDebug("Error Message: " + E.Message);
+                            Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                            newEvent.OnProcessed.Set();
+                            continue;
+                        }
+                        // tell anyone waiting for the output that we're done
+                        newEvent.OnProcessed.Set();
+                    }
+
+                    // signal that all events have been processed
+                    OnEvent.Reset();
+                }
+#if !DEBUG
+            HeartbeatTimer.Change(0, Timeout.Infinite);
+
             foreach (var S in Servers)
                 S.Broadcast(Utilities.CurrentLocalization.LocalizationSet["BROADCAST_OFFLINE"]).Wait();
 #endif
-            _servers.Clear();
+                _servers.Clear();
+            }).Wait();
         }
 
 

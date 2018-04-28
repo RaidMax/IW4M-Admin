@@ -1,6 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,12 +9,14 @@ namespace IW4MAdmin.Application
 {
     class GameEventHandler : IEventHandler
     {
-        private Queue<GameEvent> EventQueue;
+        private ConcurrentQueue<GameEvent> EventQueue;
+        private ConcurrentQueue<GameEvent> StatusSensitiveQueue;
         private IManager Manager;
 
         public GameEventHandler(IManager mgr)
         {
-            EventQueue = new Queue<GameEvent>();
+            EventQueue = new ConcurrentQueue<GameEvent>();
+            StatusSensitiveQueue = new ConcurrentQueue<GameEvent>();
             Manager = mgr;
         }
 
@@ -22,7 +25,21 @@ namespace IW4MAdmin.Application
 #if DEBUG
             Manager.GetLogger().WriteDebug($"Got new event of type {gameEvent.Type} for {gameEvent.Owner}");
 #endif
-            EventQueue.Enqueue(gameEvent);
+            // we need this to keep accurate track of the score
+            if (gameEvent.Type == GameEvent.EventType.Script ||
+                gameEvent.Type == GameEvent.EventType.Kill)
+            {
+#if DEBUG
+                Manager.GetLogger().WriteDebug($"Added sensitive event to queue");
+#endif
+                StatusSensitiveQueue.Enqueue(gameEvent);
+                return;
+            }
+
+            else
+            {
+                EventQueue.Enqueue(gameEvent);
+            }
 #if DEBUG
             Manager.GetLogger().WriteDebug($"There are now {EventQueue.Count} events in queue");
 #endif
@@ -34,13 +51,43 @@ namespace IW4MAdmin.Application
             throw new NotImplementedException();
         }
 
+        public GameEvent GetNextSensitiveEvent()
+        {
+            if (StatusSensitiveQueue.Count > 0)
+            {
+                if (!StatusSensitiveQueue.TryDequeue(out GameEvent newEvent))
+                {
+                    Manager.GetLogger().WriteWarning("Could not dequeue time sensitive event for processing");
+                }
+
+                else
+                {
+                    return newEvent;
+                }
+            }
+
+            return null;
+        }
+
         public GameEvent GetNextEvent()
         {
+            if (EventQueue.Count > 0)
+            {
 #if DEBUG
-            Manager.GetLogger().WriteDebug("Getting next event to be processed");
+                Manager.GetLogger().WriteDebug("Getting next event to be processed");
 #endif
+                if (!EventQueue.TryDequeue(out GameEvent newEvent))
+                {
+                    Manager.GetLogger().WriteWarning("Could not dequeue event for processing");
+                }
 
-            return EventQueue.Count > 0 ? EventQueue.Dequeue() : null;
+                else
+                {
+                    return newEvent;
+                }
+            }
+
+            return null;
         }
     }
 }

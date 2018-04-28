@@ -25,6 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 stats.Kills = 0;
                 stats.SPM = 0.0;
                 stats.Skill = 0.0;
+                stats.TimePlayed = 0;
 
                 // reset the cached version
                 Plugin.Manager.ResetStats(E.Origin.ClientId, E.Owner.GetHashCode());

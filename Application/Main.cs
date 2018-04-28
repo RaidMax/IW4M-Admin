@@ -127,7 +127,19 @@ namespace IW4MAdmin.Application
 
                 if (ServerManager.GetApplicationSettings().Configuration().EnableWebFront)
                 {
-                    Task.Run(() => WebfrontCore.Program.Init(ServerManager));
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            WebfrontCore.Program.Init(ServerManager);
+                        }
+
+                        catch (Exception e)
+                        {
+                            ServerManager.Logger.WriteWarning("Webfront had unhandled exception");
+                            ServerManager.Logger.WriteDebug(e.Message);
+                        }
+                    });
                 }
             }
 

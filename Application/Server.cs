@@ -54,7 +54,7 @@ namespace IW4MAdmin
         {
 
             if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
-                polledPlayer.Ping < 1 || polledPlayer.ClientNumber > (MaxClients) ||
+                polledPlayer.Ping < 1 ||
                 polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
@@ -415,7 +415,7 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.Connect)
             {
                 // special case for IW5 when connect is from the log
-                if (E.Extra != null)
+                if (E.Extra != null && GameName == Game.IW5)
                 {
                     var logClient = (Player)E.Extra;
                     var client = (await this.GetStatusAsync())
@@ -573,10 +573,12 @@ namespace IW4MAdmin
             Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
 #endif
             Throttled = false;
-            for (int i = 0; i < Players.Count; i++)
+
+            var clients = GetPlayersAsList();
+            foreach(var client in clients)
             {
-                if (CurrentPlayers.Find(p => p.ClientNumber == i) == null && Players[i] != null)
-                    await RemovePlayer(i);
+                if (!CurrentPlayers.Select(c => c.NetworkId).Contains(client.NetworkId))
+                    await RemovePlayer(client.ClientNumber);
             }
 
             for (int i = 0; i < CurrentPlayers.Count; i++)
@@ -673,15 +675,15 @@ namespace IW4MAdmin
                 }
                 return true;
             }
-            catch (NetworkException)
-            {
-                Logger.WriteError($"{loc["SERVER_ERROR_COMMUNICATION"]} {IP}:{Port}");
-                return false;
-            }
 
-            catch (InvalidOperationException)
+            // this one is ok
+            catch (ServerException e)
             {
-                Logger.WriteWarning("Event could not parsed properly");
+                if (e is NetworkException)
+                {
+                    Logger.WriteError($"{loc["SERVER_ERROR_COMMUNICATION"]} {IP}:{Port}");
+                }
+
                 return false;
             }
 
@@ -778,7 +780,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty 4\";
+            basepath.Value = @"\\192.168.88.253\mw2";
 #endif
             string logPath;
             if (GameName == Game.IW5)

@@ -183,6 +183,9 @@ namespace SharedLibraryCore
         {
             if (Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
                 return id;
+            var bot = Regex.Match(str, @"bot[0-9]+").Value;
+            if (!string.IsNullOrEmpty(bot))
+                return -Convert.ToInt64(bot.Substring(3));
             return 0;
         }
 

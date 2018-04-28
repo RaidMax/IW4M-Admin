@@ -11,41 +11,46 @@ namespace IW4MAdmin.Application.IO
 {
     class GameLogEvent
     {
-        FileSystemWatcher LogPathWatcher;
         Server Server;
         long PreviousFileSize;
         GameLogReader Reader;
         Timer RefreshInfoTimer;
         string GameLogFile;
 
+        class EventState
+        {
+            public ILogger Log { get; set; }
+            public string ServerId { get; set; }
+        }
+
         public GameLogEvent(Server server, string gameLogPath, string gameLogName)
         {
             GameLogFile = gameLogPath;
             Reader = new GameLogReader(gameLogPath, server.EventParser);
             Server = server;
-            RefreshInfoTimer = new Timer((sender) => 
+            RefreshInfoTimer = new Timer(OnEvent, new EventState()
             {
-                long newLength = new FileInfo(GameLogFile).Length;
-                UpdateLogEvents(newLength);
-
-            }, null, 0, 100);
-            /*LogPathWatcher = new FileSystemWatcher()
-            {
-                Path = gameLogPath.Replace(gameLogName, ""),
-                Filter = gameLogName,
-                NotifyFilter = (NotifyFilters)383,
-                InternalBufferSize = 4096
-            };
-
-           // LogPathWatcher.Changed += LogPathWatcher_Changed;
-            LogPathWatcher.EnableRaisingEvents = true;*/
+                Log = server.Manager.GetLogger(),
+                ServerId = server.ToString()
+            }, 0, 100);
         }
 
-        /*
-        ~GameLogEvent()
+        private void OnEvent(object state)
         {
-            LogPathWatcher.EnableRaisingEvents = false;
-        }*/
+            long newLength = new FileInfo(GameLogFile).Length;
+
+            try
+            {
+                UpdateLogEvents(newLength);
+            }
+
+            catch (Exception e)
+            {
+                ((EventState)state).Log.WriteWarning($"Failed to update log event for {((EventState)state).ServerId}");
+                ((EventState)state).Log.WriteDebug($"Exception: {e.Message}");
+                ((EventState)state).Log.WriteDebug($"StackTrace: {e.StackTrace}");
+            }
+        }
 
         private void UpdateLogEvents(long fileSize)
         {

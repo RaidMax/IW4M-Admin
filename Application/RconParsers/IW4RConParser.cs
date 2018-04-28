@@ -91,7 +91,7 @@ namespace Application.RconParsers
                     int Ping = -1;
                     Int32.TryParse(playerInfo[2], out Ping);
                     String cName = Encoding.UTF8.GetString(Encoding.Convert(Utilities.EncodingType, Encoding.UTF8, Utilities.EncodingType.GetBytes(responseLine.Substring(46, 18).StripColors().Trim())));
-                    long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}", RegexOptions.IgnoreCase).Value.ConvertLong();
+                    long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}|bot[0-9]+", RegexOptions.IgnoreCase).Value.ConvertLong();
                     int.TryParse(playerInfo[0], out cID);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
                     int cIP = regex.Value.Split(':')[0].ConvertToIP();
@@ -105,8 +105,9 @@ namespace Application.RconParsers
                         IPAddress = cIP,
                         Ping = Ping,
                         Score = score,
-                        IsBot = npID == 0
+                        IsBot = cIP == 0
                     };
+
                     StatusPlayers.Add(P);
                 }
             }

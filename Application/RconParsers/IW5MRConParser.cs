@@ -147,7 +147,7 @@ namespace Application.RconParsers
                     regex = Regex.Match(responseLine, @" +(\d+ +){3}");
                     int score = Int32.Parse(regex.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0]);
 
-                    StatusPlayers.Add(new Player()
+                    var p = new Player()
                     {
                         Name = name,
                         NetworkId = networkId,
@@ -156,7 +156,12 @@ namespace Application.RconParsers
                         Ping = Ping,
                         Score = score,
                         IsBot = networkId == 0
-                    });
+                    };
+
+                    StatusPlayers.Add(p);
+
+                    if (p.IsBot)
+                        p.NetworkId = -p.ClientNumber;
                 }
             }
 

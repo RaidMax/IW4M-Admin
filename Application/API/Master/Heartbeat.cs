@@ -8,9 +8,13 @@ using SharedLibraryCore;
 
 namespace IW4MAdmin.Application.API.Master
 {
+    public class HeartbeatState
+    {
+        public bool Connected { get; set; }
+    }
+
     public class Heartbeat
     {
-
         public static async Task Send(ApplicationManager mgr, bool firstHeartbeat = false)
         {
             var api = Endpoint.Get();

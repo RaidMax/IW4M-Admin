@@ -56,7 +56,34 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int LastScore { get; set; }
         [NotMapped]
         public DateTime LastActive { get; set; }
+        public void StartNewSession()
+        {
+            KillStreak = 0;
+            DeathStreak = 0;
+            LastScore = 0;
+            SessionScores.Add(0);
+        }
         [NotMapped]
-        public int SessionScore { get; set; }
+        public int SessionScore
+        {
+            set
+            {
+                SessionScores[SessionScores.Count - 1] = value;
+            }
+            get
+            {
+                return SessionScores.Sum();
+            }
+        }
+        [NotMapped]
+        public int RoundScore
+        {
+            get
+            {
+                return SessionScores[SessionScores.Count - 1];
+            }
+        }
+        [NotMapped]
+        private List<int> SessionScores = new List<int>() { 0 };
     }
 }

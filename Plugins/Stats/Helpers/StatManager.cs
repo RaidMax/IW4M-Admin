@@ -190,15 +190,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
-            // sync their score
-            clientStats.SessionScore += (pl.Score - clientStats.LastScore);
+            /*// sync their score
+            clientStats.SessionScore += pl.Score;*/
 
             // remove the client from the stats dictionary as they're leaving
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
-            // sync their stats before they leave
-            clientStats = UpdateStats(clientStats);
+           /* // sync their stats before they leave
+            clientStats = UpdateStats(clientStats);*/
 
             // todo: should this be saved every disconnect?
             statsSvc.ClientStatSvc.Update(clientStats);
@@ -229,8 +229,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (FormatException)
             {
-                Log.WriteWarning("Could not parse kill or death origin vector");
-                Log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin}");
+                Log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
+                Log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAgnel - {viewAngles}");
                 await AddStandardKill(attacker, victim);
                 return;
             }
@@ -342,15 +342,27 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
+#if DEBUG
+            Log.WriteDebug("Calculating standard kill");
+#endif
+
             // update the total stats
             Servers[serverId].ServerStatistics.TotalKills += 1;
 
-            attackerStats.SessionScore += (attacker.Score - attackerStats.LastScore);
-            victimStats.SessionScore += (victim.Score - victimStats.LastScore);
+            // this happens when the round has changed
+            if (attackerStats.SessionScore == 0)
+                attackerStats.LastScore = 0;
+
+            if (victimStats.SessionScore == 0)
+                victimStats.LastScore = 0;
+
+            attackerStats.SessionScore = attacker.Score;
+            victimStats.SessionScore = victim.Score;
 
             // calculate for the clients
             CalculateKill(attackerStats, victimStats);
             // this should fix the negative SPM
+            // updates their last score after being calculated
             attackerStats.LastScore = attacker.Score;
             victimStats.LastScore = victim.Score;
 
@@ -427,23 +439,24 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // prevent NaN or inactive time lowering SPM
             if ((DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0 < 0.01 ||
                 (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0 > 3 ||
-                clientStats.SessionScore < 1)
+                clientStats.SessionScore == 0)
+            {
+                // prevents idle time counting
+                clientStats.LastStatCalculation = DateTime.UtcNow;
                 return clientStats;
+            }
 
             double timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
             double timeSinceLastActive = (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0;
 
             // calculate the players Score Per Minute for the current session
-            int scoreDifference = clientStats.LastScore == 0 ? 0 : clientStats.SessionScore - clientStats.LastScore;
+            int scoreDifference = clientStats.RoundScore - clientStats.LastScore;
             double killSPM = scoreDifference / timeSinceLastCalc;
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
             double kdr = clientStats.Deaths == 0 ? clientStats.Kills : clientStats.KDR;
             double KDRWeight = Math.Round(Math.Pow(kdr, 1.637 / Math.E), 3);
-
-            // if no SPM, weight is 1 else the weight ishe current session's spm / lifetime average score per minute
-            //double SPMWeightAgainstAverage = (clientStats.SPM < 1) ? 1 : killSPM / clientStats.SPM;
 
             // calculate the weight of the new play time against last 10 hours of gameplay
             int totalPlayTime = (clientStats.TimePlayed == 0) ?
@@ -504,10 +517,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             var serverStats = Servers[serverId];
             foreach (var stat in serverStats.PlayerStats.Values)
-            {
-                stat.KillStreak = 0;
-                stat.DeathStreak = 0;
-            }
+                stat.StartNewSession();
         }
 
         public void ResetStats(int clientId, int serverId)
@@ -517,6 +527,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             stats.Deaths = 0;
             stats.SPM = 0;
             stats.Skill = 0;
+            stats.TimePlayed = 0;
         }
 
         public async Task AddMessageAsync(int clientId, int serverId, string message)

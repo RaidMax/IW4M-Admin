@@ -177,8 +177,7 @@ namespace Application.RconParsers
                     int score = 0;
                     // todo: fix this when T6M score is valid ;)
                     //int score = Int32.Parse(playerInfo[1]);
-
-                    StatusPlayers.Add(new Player()
+                    var p = new Player()
                     {
                         Name = name,
                         NetworkId = networkId,
@@ -187,7 +186,12 @@ namespace Application.RconParsers
                         Ping = Ping,
                         Score = score,
                         IsBot = networkId == 0
-                    });
+                    };
+
+                    if (p.IsBot)
+                        p.NetworkId = -p.ClientNumber;
+
+                    StatusPlayers.Add(p);
                 }
             }
 

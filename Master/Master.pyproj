@@ -7,8 +7,7 @@
     <ProjectGuid>f5051a32-6bd0-4128-abba-c202ee15fc5c</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <ProjectTypeGuids>{789894c7-04a9-4a11-a6b5-3f4435165112};{1b580a1a-fdb3-4b32-83e1-6407eb2722e6};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>master\runserver.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -19,6 +18,11 @@
     <Name>Master</Name>
     <RootNamespace>Master</RootNamespace>
     <InterpreterId>MSBuild|dev_env|$(MSBuildProjectFullPath)</InterpreterId>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <PythonRunWebServerCommand>master\runserver</PythonRunWebServerCommand>
+    <PythonDebugWebServerCommand>master\runserver</PythonDebugWebServerCommand>
+    <PythonRunWebServerCommandType>module</PythonRunWebServerCommandType>
+    <PythonDebugWebServerCommandType>module</PythonDebugWebServerCommandType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -71,6 +75,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="master\routes.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="master\runserver.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="master\schema\instanceschema.py">

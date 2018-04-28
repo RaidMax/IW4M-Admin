@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{26E8
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C8F3945-0AEF-4949-A1F7-B18E952E50BC}"
 	ProjectSection(SolutionItems) = preProject
+		_commands.gsc = _commands.gsc
 		_customcallbacks.gsc = _customcallbacks.gsc
 		README.md = README.md
 		version.txt = version.txt
@@ -28,7 +29,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Login", "Plugins\Login\Logi
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Master", "Master\Master.pyproj", "{F5051A32-6BD0-4128-ABBA-C202EE15FC5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Plugins\Tests\Tests.csproj", "{B72DEBFB-9D48-4076-8FF5-1FD72A830845}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Plugins\Tests\Tests.csproj", "{B72DEBFB-9D48-4076-8FF5-1FD72A830845}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4ScriptCommands", "Plugins\IW4ScriptCommands\IW4ScriptCommands.csproj", "{6C706CE5-A206-4E46-8712-F8C48D526091}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -260,6 +263,30 @@ Global
 		{B72DEBFB-9D48-4076-8FF5-1FD72A830845}.Release|x64.Build.0 = Release|Any CPU
 		{B72DEBFB-9D48-4076-8FF5-1FD72A830845}.Release|x86.ActiveCfg = Release|Any CPU
 		{B72DEBFB-9D48-4076-8FF5-1FD72A830845}.Release|x86.Build.0 = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Debug|x86.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|Any CPU.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|x64.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|x64.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|x86.ActiveCfg = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Prerelease|x86.Build.0 = Debug|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x64.ActiveCfg = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x64.Build.0 = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x86.ActiveCfg = Release|Any CPU
+		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -270,6 +297,7 @@ Global
 		{958FF7EC-0226-4E85-A85B-B84EC768197D} = {26E8B310-269E-46D4-A612-24601F16065F}
 		{D9F2ED28-6FA5-40CA-9912-E7A849147AB1} = {26E8B310-269E-46D4-A612-24601F16065F}
 		{B72DEBFB-9D48-4076-8FF5-1FD72A830845} = {26E8B310-269E-46D4-A612-24601F16065F}
+		{6C706CE5-A206-4E46-8712-F8C48D526091} = {26E8B310-269E-46D4-A612-24601F16065F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84F8F8E0-1F73-41E0-BD8D-BB6676E2EE87}

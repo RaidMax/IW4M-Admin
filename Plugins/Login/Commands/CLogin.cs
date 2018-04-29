@@ -8,7 +8,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
 {
     public class CLogin : Command
     {
-        public CLogin() : base("login", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"], "l", Player.Permission.Trusted, false, new CommandArgument[]
+        public CLogin() : base("login", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"], "li", Player.Permission.Trusted, false, new CommandArgument[]
         {
             new CommandArgument()
             {

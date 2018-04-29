@@ -32,7 +32,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                 return new GameEvent()
                 {
-                    Type = GameEvent.EventType.Connect,
+                    Type = GameEvent.EventType.Join,
                     Origin = new Player()
                     {
                         ClientId = 1

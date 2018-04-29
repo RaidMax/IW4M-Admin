@@ -38,7 +38,9 @@ namespace WebfrontCore.Controllers
         {
             Client = Client ?? new EFClient()
             {
-                ClientId = -1
+                ClientId = -1,
+                Level = Player.Permission.User,
+                CurrentAlias = new EFAlias() { Name = "Web Console Guest" }
             };
 
             if (!HttpContext.Connection.RemoteIpAddress.GetAddressBytes().SequenceEqual(LocalHost))
@@ -49,7 +51,7 @@ namespace WebfrontCore.Controllers
                     Client.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
                     Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
                     var stillExists = Manager.GetPrivilegedClients()[Client.ClientId];
-                    
+
                     // this happens if their level has been updated
                     if (stillExists.Level != Client.Level)
                     {
@@ -78,9 +80,9 @@ namespace WebfrontCore.Controllers
 
             Authorized = Client.ClientId >= 0;
             ViewBag.Authorized = Authorized;
-            ViewBag.Url = Startup.Configuration["Web:Address"];
+            ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontBindUrl;
             ViewBag.User = Client;
-            ViewBag.DiscordLink = DiscordLink;
+            ViewBag.DiscordLink = DiscordLink ?? "";
 
             base.OnActionExecuting(context);
         }

@@ -15,11 +15,6 @@ namespace SharedLibraryCore.Services
         private dynamic _context;
         private DbSet<TEntity> _dbSet;
 
-        ~GenericRepository()
-        {
-            _context.Dispose();
-        }
-
         protected DbContext Context
         {
             get

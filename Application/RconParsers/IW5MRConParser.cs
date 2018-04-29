@@ -140,7 +140,7 @@ namespace Application.RconParsers
 
                     Int32.TryParse(playerInfo[2], out Ping);
                     string name = Encoding.UTF8.GetString(Encoding.Convert(Utilities.EncodingType, Encoding.UTF8, Utilities.EncodingType.GetBytes(responseLine.Substring(23, 15).StripColors().Trim())));
-                    long networkId = playerInfo[4].ConvertLong();
+                    long networkId = 0;//playerInfo[4].ConvertLong();
                     int.TryParse(playerInfo[0], out clientId);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
                     int ipAddress = regex.Value.Split(':')[0].ConvertToIP();
@@ -155,7 +155,7 @@ namespace Application.RconParsers
                         IPAddress = ipAddress,
                         Ping = Ping,
                         Score = score,
-                        IsBot = networkId == 0
+                        IsBot = false
                     };
 
                     StatusPlayers.Add(p);

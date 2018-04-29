@@ -35,7 +35,7 @@ namespace WebfrontCore.Controllers
                 ClientId = Client.ClientId,
                 Level = Client.Level,
                 CurrentServer = server,
-                CurrentAlias = new Alias() { Name = Client.Name }
+                Name = Client.Name
             };
             var remoteEvent = new GameEvent()
             {

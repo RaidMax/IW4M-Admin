@@ -20,7 +20,7 @@ namespace IW4MAdmin.Application
         public static void Main(string[] args)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
-            System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
+            //System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
             Localization.Configure.Initialize();
             var loc = Utilities.CurrentLocalization.LocalizationSet;
             Console.OutputEncoding = Encoding.UTF8;

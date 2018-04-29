@@ -186,7 +186,7 @@ namespace IW4MAdmin
                 var e = new GameEvent(GameEvent.EventType.Connect, "", player, null, this);
                 Manager.GetEventHandler().AddEvent(e);
 
-                e.OnProcessed.Wait();
+ //               e.OnProcessed.Wait();
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
@@ -414,6 +414,19 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.Connect)
             {
+                ChatHistory.Add(new ChatInfo()
+                {
+                    Name = E.Origin.Name,
+                    Message = "CONNECTED",
+                    Time = DateTime.UtcNow
+                });
+
+                if (E.Origin.Level > Player.Permission.Moderator)
+                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+            }
+
+            else if (E.Type == GameEvent.EventType.Join)
+            {
                 // special case for IW5 when connect is from the log
                 if (E.Extra != null && GameName == Game.IW5)
                 {
@@ -424,22 +437,6 @@ namespace IW4MAdmin
                     client.NetworkId = logClient.NetworkId;
 
                     await AddPlayer(client);
-
-                    // hack: to prevent plugins from registering it as a real connect
-                    E.Type = GameEvent.EventType.Unknown;
-                }
-
-                else
-                {
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin.Name,
-                        Message = "CONNECTED",
-                        Time = DateTime.UtcNow
-                    });
-
-                    if (E.Origin.Level > Player.Permission.Moderator)
-                        await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
                 }
             }
 
@@ -484,7 +481,7 @@ namespace IW4MAdmin
                         }
 
                         E.Extra = C;
-                        
+
 
 
                         // reprocess event as a command
@@ -570,10 +567,19 @@ namespace IW4MAdmin
             Throttled = false;
 
             var clients = GetPlayersAsList();
-            foreach(var client in clients)
+            foreach (var client in clients)
             {
-                if (!CurrentPlayers.Select(c => c.NetworkId).Contains(client.NetworkId))
-                    await RemovePlayer(client.ClientNumber);
+                if (GameName == Game.IW5)
+                {
+                    if (!CurrentPlayers.Select(c => c.ClientNumber).Contains(client.ClientNumber))
+                        await RemovePlayer(client.ClientNumber);
+                }
+
+                else
+                {
+                    if (!CurrentPlayers.Select(c => c.NetworkId).Contains(client.NetworkId))
+                        await RemovePlayer(client.ClientNumber);
+                }
             }
 
             for (int i = 0; i < CurrentPlayers.Count; i++)
@@ -717,10 +723,10 @@ namespace IW4MAdmin
 
             var infoResponse = await this.GetInfoAsync();
             // this is normally slow, but I'm only doing it because different games have different prefixes
-            var hostname = infoResponse == null ? 
+            var hostname = infoResponse == null ?
                 (await this.GetDvarAsync<string>("sv_hostname")).Value :
                 infoResponse.Where(kvp => kvp.Key.Contains("hostname")).Select(kvp => kvp.Value).First();
-            var mapname = infoResponse == null ? 
+            var mapname = infoResponse == null ?
                 (await this.GetDvarAsync<string>("mapname")).Value :
                 infoResponse["mapname"];
             int maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
@@ -728,11 +734,11 @@ namespace IW4MAdmin
                 infoResponse == null ?
                 (await this.GetDvarAsync<int>("sv_maxclients")).Value :
                 Convert.ToInt32(infoResponse["sv_maxclients"]);
-            var gametype = infoResponse == null ? 
+            var gametype = infoResponse == null ?
                 (await this.GetDvarAsync<string>("g_gametype")).Value :
                 infoResponse.Where(kvp => kvp.Key.Contains("gametype")).Select(kvp => kvp.Value).First();
             var basepath = await this.GetDvarAsync<string>("fs_basepath");
-            var game = infoResponse == null || !infoResponse.ContainsKey("fs_game") ? 
+            var game = infoResponse == null || !infoResponse.ContainsKey("fs_game") ?
                 (await this.GetDvarAsync<string>("fs_game")).Value :
                 infoResponse["fs_game"];
             var logfile = await this.GetDvarAsync<string>("g_log");
@@ -807,7 +813,7 @@ namespace IW4MAdmin
             {
                 LogEvent = new GameLogEvent(this, logPath, logfile.Value);
             }
-   
+
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
             // LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");

@@ -230,7 +230,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             catch (FormatException)
             {
                 Log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
-                Log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAgnel - {viewAngles}");
+                Log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles}");
                 await AddStandardKill(attacker, victim);
                 return;
             }

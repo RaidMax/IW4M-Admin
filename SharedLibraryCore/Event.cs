@@ -15,6 +15,8 @@ namespace SharedLibraryCore
             Start,
             Stop,
             Connect,
+            // this is for IW5 compatibility
+            Join,
             Disconnect,
             Say,
             MapChange,

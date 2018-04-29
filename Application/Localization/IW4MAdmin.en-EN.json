@@ -192,6 +192,9 @@
     "GLOBAL_ERROR": "Error",
     "GLOBAL_WARNING": "Warning",
     "GLOBAL_INFO": "Info",
-    "GLOBAL_VERBOSE": "Verbose"
+    "GLOBAL_VERBOSE": "Verbose",
+
+    "MANAGER_CONSOLE_NOSERV": "No servers are currently being monitored",
+    "SERVER_PLUGIN_ERROR": "A plugin generated an error"
   }
 }

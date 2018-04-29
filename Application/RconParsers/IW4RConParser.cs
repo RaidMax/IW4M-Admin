@@ -22,7 +22,9 @@ namespace Application.RconParsers
             Ban = "clientkick {0} \"{1}\"",
             TempBan = "tempbanclient {0} \"{1}\""
         };
-       
+
+        private static string StatusRegex = @"^( *[0-9]+) +([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|bot[0-9]+) +(.{0,20}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:\d{1,5}|0+.0+:\d{1,5}) +(-*[0-9]+) +([0-9]+) *$";
+
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command)).Skip(1).ToArray();
@@ -82,30 +84,33 @@ namespace Application.RconParsers
             {
                 String responseLine = S.Trim();
 
-                if (Regex.Matches(responseLine, @" *^\d+", RegexOptions.IgnoreCase).Count > 0)
+                var regex = Regex.Match(responseLine, StatusRegex, RegexOptions.IgnoreCase);
+                if (regex.Success)
                 {
-                    String[] playerInfo = responseLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (playerInfo.Length < 4)
-                        continue;
-                    int cID = -1;
-                    int Ping = -1;
-                    Int32.TryParse(playerInfo[2], out Ping);
-                    String cName = Encoding.UTF8.GetString(Encoding.Convert(Utilities.EncodingType, Encoding.UTF8, Utilities.EncodingType.GetBytes(responseLine.Substring(46, 18).StripColors().Trim())));
-                    long npID = Regex.Match(responseLine, @"([a-z]|[0-9]){16}|bot[0-9]+", RegexOptions.IgnoreCase).Value.ConvertLong();
-                    int.TryParse(playerInfo[0], out cID);
-                    var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
-                    int cIP = regex.Value.Split(':')[0].ConvertToIP();
-                    regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
-                    int score = Int32.Parse(regex.Value.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                    int clientNumber = int.Parse(regex.Groups[1].Value);
+                    int score = int.Parse(regex.Groups[2].Value);
+
+                    int ping = 999;
+
+                    // their state can be CNCT, ZMBI etc
+                    if (regex.Groups[3].Value.Length <= 3)
+                    {
+                        ping = int.Parse(regex.Groups[3].Value);
+                    }
+
+                    long networkId = regex.Groups[4].Value.ConvertLong();
+                    string name = regex.Groups[5].Value.StripColors().Trim();
+                    int ip = regex.Groups[7].Value.Split(':')[0].ConvertToIP();
+
                     Player P = new Player()
                     {
-                        Name = cName,
-                        NetworkId = npID,
-                        ClientNumber = cID,
-                        IPAddress = cIP,
-                        Ping = Ping,
+                        Name = name,
+                        NetworkId = networkId,
+                        ClientNumber = clientNumber,
+                        IPAddress = ip,
+                        Ping = ping,
                         Score = score,
-                        IsBot = cIP == 0
+                        IsBot = ip == 0
                     };
 
                     StatusPlayers.Add(P);

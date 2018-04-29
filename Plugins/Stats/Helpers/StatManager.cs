@@ -467,6 +467,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate the new weight against average times the weight against play time
             clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
+
+            if (clientStats.SPM < 0)
+            {
+                Log.WriteWarning("[StatManager:UpdateStats] clientStats SPM < 0");
+                Log.WriteDebug($"{scoreDifference}-{clientStats.RoundScore} - {clientStats.LastScore} - {clientStats.SessionScore}");
+                clientStats.SPM = 0;
+            }
+
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
             clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
 

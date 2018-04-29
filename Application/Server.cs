@@ -178,6 +178,9 @@ namespace IW4MAdmin
 
                     if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
                         await player.Ban($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense}", autoKickClient);
+
+                    // they didn't fully connect so empty their slot
+                    Players[player.ClientNumber] = null;
                     return true;
                 }
 
@@ -186,7 +189,7 @@ namespace IW4MAdmin
                 var e = new GameEvent(GameEvent.EventType.Connect, "", player, null, this);
                 Manager.GetEventHandler().AddEvent(e);
 
- //               e.OnProcessed.Wait();
+                e.OnProcessed.Wait();
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
@@ -362,14 +365,15 @@ namespace IW4MAdmin
             await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
 
-            foreach (IPlugin P in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+            // this allows us to catch exceptions but still run it parallel
+            async Task pluginHandlingAsync(Task onEvent, string pluginName)
             {
                 try
                 {
                     if (cts.IsCancellationRequested)
-                        break;
+                        return;
 
-                    await P.OnEventAsync(E, this);
+                    await onEvent;
                 }
 
                 // this happens if a plugin (login) wants to stop commands from executing
@@ -381,7 +385,7 @@ namespace IW4MAdmin
 
                 catch (Exception Except)
                 {
-                    Logger.WriteError(String.Format("The plugin \"{0}\" generated an error. ( see log )", P.Name));
+                    Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{pluginName}]");
                     Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
                     Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                     while (Except.InnerException != null)
@@ -389,10 +393,14 @@ namespace IW4MAdmin
                         Except = Except.InnerException;
                         Logger.WriteDebug($"Inner exception: {Except.Message}");
                     }
-                    continue;
                 }
-
             }
+
+            var pluginTasks = SharedLibraryCore.Plugins.PluginImporter.ActivePlugins.
+                Select(p => pluginHandlingAsync(p.OnEventAsync(E, this), p.Name));
+
+            // execute all the plugin updates simultaneously
+            await Task.WhenAll(pluginTasks);
 
             // hack: this prevents commands from getting executing that 'shouldn't' be
             if (E.Type == GameEvent.EventType.Command &&
@@ -402,7 +410,6 @@ namespace IW4MAdmin
             {
                 await (((Command)E.Extra).ExecuteAsync(E));
             }
-
         }
 
         /// <summary>
@@ -599,27 +606,35 @@ namespace IW4MAdmin
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
+            // this isn't really used anymore
             this.cts = cts;
+
             try
             {
+                if (Manager.ShutdownRequested())
+                {
+                    foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+                        await plugin.OnUnloadAsync();
+
+                    for (int i = 0; i < Players.Count; i++)
+                        await RemovePlayer(i);
+                }
+
+                // only check every 2 minutes if the server doesn't seem to be responding
                 if ((DateTime.Now - LastPoll).TotalMinutes < 2 && ConnectionErrors >= 1)
                     return true;
 
                 try
                 {
-                    // trying to reduce the polling rate as every 450ms is unnecessary
-                    if ((DateTime.Now - LastPoll).TotalSeconds >= 10)
-                    {
-                        int polledPlayerCount = await PollPlayersAsync();
+                    int polledPlayerCount = await PollPlayersAsync();
 
-                        if (ConnectionErrors > 0)
-                        {
-                            Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
-                            Throttled = false;
-                        }
-                        ConnectionErrors = 0;
-                        LastPoll = DateTime.Now;
+                    if (ConnectionErrors > 0)
+                    {
+                        Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
+                        Throttled = false;
                     }
+                    ConnectionErrors = 0;
+                    LastPoll = DateTime.Now;
                 }
 
                 catch (NetworkException e)
@@ -637,6 +652,8 @@ namespace IW4MAdmin
                 LastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
 
+                // todo: re-enable on tick
+                /*
                 if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
                 {
                     foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
@@ -647,8 +664,9 @@ namespace IW4MAdmin
                         await Plugin.OnTickAsync(this);
                     }
                     tickTime = DateTime.Now;
-                }
+                }*/
 
+                // update the player history 
                 if ((lastCount - playerCountStart).TotalMinutes >= SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval)
                 {
                     while (PlayerHistory.Count > ((60 / SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
@@ -657,6 +675,7 @@ namespace IW4MAdmin
                     playerCountStart = DateTime.Now;
                 }
 
+                // send out broadcast messages
                 if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().Configuration().AutoMessagePeriod
                     && BroadcastMessages.Count > 0
                     && ClientNum > 0)
@@ -666,14 +685,6 @@ namespace IW4MAdmin
                     start = DateTime.Now;
                 }
 
-                if (Manager.ShutdownRequested())
-                {
-                    foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
-                        await plugin.OnUnloadAsync();
-
-                    for (int i = 0; i < Players.Count; i++)
-                        await RemovePlayer(i);
-                }
                 return true;
             }
 

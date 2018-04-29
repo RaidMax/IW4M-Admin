@@ -33,6 +33,16 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     S.Logger.WriteWarning("Could not add client to profanity tracking");
                 }
 
+                var objectionalWords = Settings.Configuration().OffensiveWords;
+                bool containsObjectionalWord = objectionalWords.FirstOrDefault(w => E.Origin.Name.ToLower().Contains(w)) != null;
+
+                if (containsObjectionalWord)
+                {
+                    await E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
+                    {
+                        ClientId = 1
+                    });
+                };
             }
 
             if (E.Type == GameEvent.EventType.Disconnect)

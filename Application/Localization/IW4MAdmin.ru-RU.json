@@ -40,7 +40,7 @@
     "SERVER_WARNLIMT_REACHED": "Слишком много предупреждений",
     "SERVER_WARNING": "Предупреждение",
     "SERVER_WEBSITE_GENERIC": "веб-сайт этого сервера",
-    "BROADCAST_ONLINE": "^5IW4MADMIN ^7сейчас ^В СЕТИ",
+    "BROADCAST_ONLINE": "^5IW4MADMIN ^7сейчас СЕТИ",
     "BROADCAST_OFFLINE": "IW4MAdmin отключается",
     "COMMAND_HELP_SYNTAX": "синтаксис:",
     "COMMAND_HELP_OPTIONAL": "опционально",

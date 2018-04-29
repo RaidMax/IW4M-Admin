@@ -37,6 +37,7 @@ namespace WebfrontCore.Controllers
                 CurrentServer = server,
                 Name = Client.Name
             };
+
             var remoteEvent = new GameEvent()
             {
                 Type = GameEvent.EventType.Say,

@@ -23,6 +23,11 @@ namespace Application.Misc
                     string response = await RequestClient.GetStringAsync($"http://v2.api.iphub.info/ip/{ip}");
                     var responseJson = JsonConvert.DeserializeObject<JObject>(response);
                     int blockType = Convert.ToInt32(responseJson["block"]);
+                    if (responseJson.ContainsKey("isp"))
+                    {
+                        if (responseJson["isp"].ToString() == "TSF-IP-CORE")
+                            return true;
+                    }
                     return blockType == 1;
                 }
             }

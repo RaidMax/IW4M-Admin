@@ -80,13 +80,16 @@ namespace Application.RconParsers
             if (Status.Length < 4)
                 throw new ServerException("Unexpected status response received");
 
+            int validMatches = 0;
             foreach (String S in Status)
             {
                 String responseLine = S.Trim();
 
                 var regex = Regex.Match(responseLine, StatusRegex, RegexOptions.IgnoreCase);
+
                 if (regex.Success)
                 {
+                    validMatches++;
                     int clientNumber = int.Parse(regex.Groups[1].Value);
                     int score = int.Parse(regex.Groups[2].Value);
 
@@ -113,7 +116,23 @@ namespace Application.RconParsers
                         IsBot = ip == 0
                     };
 
+                    if (P.IsBot)
+                    {
+                        P.NetworkId = -(P.ClientNumber + 1);
+                        P.IPAddress = P.ClientNumber + 1;
+                    }
+
                     StatusPlayers.Add(P);
+                }
+            }
+
+
+            if (Status.Length > 5 && validMatches == 0)
+            {
+                IW4MAdmin.Application.Program.ServerManager.Logger.WriteError("BAD STATUS!");
+                foreach (var s in Status)
+                {
+                    IW4MAdmin.Application.Program.ServerManager.Logger.WriteDebug(s);
                 }
             }
 

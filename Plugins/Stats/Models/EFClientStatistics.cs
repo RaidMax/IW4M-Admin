@@ -36,6 +36,8 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public double Skill { get; set; }
         [Required]
         public int TimePlayed { get; set; }
+        [Required]
+        public double MaxStrain { get; set; }
 
         [NotMapped]
         public float AverageHitOffset

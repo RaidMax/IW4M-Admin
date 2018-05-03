@@ -22,6 +22,10 @@
     <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
   <ItemGroup>
     <Content Remove="bower.json" />
     <Content Remove="bundleconfig.json" />

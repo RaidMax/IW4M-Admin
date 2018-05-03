@@ -27,6 +27,10 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.4.0" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
       <Private>true</Private>

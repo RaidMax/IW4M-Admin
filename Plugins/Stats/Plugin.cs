@@ -74,12 +74,15 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
-                        await Manager.AddScriptKill(E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12]);
+                        await Manager.AddScriptKill(E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     else if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case GameEvent.EventType.Death:
+                    break;
+                case GameEvent.EventType.Damage:
+                    Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Owner.GetHashCode());
                     break;
             }
         }
@@ -146,6 +149,8 @@ namespace IW4MAdmin.Plugins.Stats
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
+                double maxStrain = clientStats.Count(c=> c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
+                //double maxAngle = clientStats.Max(cs => cs.HitLocations.Max(hl => hl.MaxAngleDistance));
 
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
                 {
@@ -172,9 +177,9 @@ namespace IW4MAdmin.Plugins.Stats
                 {
                     new ProfileMeta()
                     {
-                    Key = "Chest Ratio",
-                    Value = chestRatio,
-                    Sensitive = true
+                        Key = "Chest Ratio",
+                        Value = chestRatio,
+                        Sensitive = true
                     },
                     new ProfileMeta()
                     {
@@ -197,9 +202,21 @@ namespace IW4MAdmin.Plugins.Stats
                     new ProfileMeta()
                     {
                         Key = "Hit Offset Average",
-                        Value = $"{Math.Round(((float)hitOffsetAverage).ToDegrees(), 4)}°",
+                        Value = $"{Math.Round(((float)hitOffsetAverage), 4)}°",
                         Sensitive = true
-                    }
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = "Max Strain",
+                        Value = Math.Round(maxStrain, 3),
+                        Sensitive = true
+                    },
+                    /*new ProfileMeta()
+                    {
+                        Key = "Max Angle Distance",
+                        Value = Math.Round(maxAngle, 1),
+                        Sensitive = true
+                    }*/
                 };
             }
 

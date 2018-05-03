@@ -54,6 +54,18 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
+            if (cleanedEventLine[0] == 'D')
+            {
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.Damage,
+                    Data = Regex.Replace(logLine, @"[0-9]+:[0-9]+\ ", "").Trim(),
+                    Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong()),
+                    Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                    Owner = server
+                };
+            }
+
             if (cleanedEventLine.Contains("ExitLevel"))
             {
                 return new GameEvent()

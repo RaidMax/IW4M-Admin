@@ -161,6 +161,15 @@ namespace IW4MAdmin
 
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
                 var currentBan = activePenalties.FirstOrDefault(b => b.Expires > DateTime.UtcNow);
+                var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
+                    .OrderByDescending(p => p.When)
+                    .FirstOrDefault();
+
+                // remove their auto flag status after a week
+                if (currentAutoFlag != null && (DateTime.Now - currentAutoFlag.When).TotalDays > 7)
+                {
+                    player.Level = Player.Permission.User;
+                }
 
                 if (currentBan != null)
                 {
@@ -189,7 +198,7 @@ namespace IW4MAdmin
                 var e = new GameEvent(GameEvent.EventType.Connect, "", player, null, this);
                 Manager.GetEventHandler().AddEvent(e);
 
-                e.OnProcessed.Wait();
+                e.OnProcessed.WaitHandle.WaitOne(5000);
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
@@ -218,7 +227,7 @@ namespace IW4MAdmin
 
                 var e = new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this);
                 Manager.GetEventHandler().AddEvent(e);
-                e.OnProcessed.Wait();
+                e.OnProcessed.WaitHandle.WaitOne(5000);
 
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                 Leaving.LastConnection = DateTime.UtcNow;
@@ -459,10 +468,10 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Script)
             {
-                Manager.GetEventHandler().AddEvent(GameEvent.TranferWaiter(GameEvent.EventType.Kill, E));
+                Manager.GetEventHandler().AddEvent(GameEvent.TransferWaiter(GameEvent.EventType.Kill, E));
             }
 
-            if (E.Type == GameEvent.EventType.Say && E.Data.Length >= 2)
+            if (E.Type == GameEvent.EventType.Say && E.Data?.Length >= 2)
             {
                 if (E.Data.Substring(0, 1) == "!" ||
                     E.Data.Substring(0, 1) == "@" ||
@@ -492,7 +501,7 @@ namespace IW4MAdmin
 
 
                         // reprocess event as a command
-                        Manager.GetEventHandler().AddEvent(GameEvent.TranferWaiter(GameEvent.EventType.Command, E));
+                        Manager.GetEventHandler().AddEvent(GameEvent.TransferWaiter(GameEvent.EventType.Command, E));
                     }
                 }
 
@@ -518,11 +527,20 @@ namespace IW4MAdmin
                 {
                     var dict = await this.GetInfoAsync();
 
-                    Gametype = dict["gametype"].StripColors();
-                    Hostname = dict["hostname"].StripColors();
+                    if (dict == null)
+                    {
+                        Logger.WriteWarning("Map change event response doesn't have any data");
+                    }
 
-                    string mapname = dict["mapname"].StripColors();
-                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                    else
+                    {
+
+                        Gametype = dict["gametype"].StripColors();
+                        Hostname = dict["hostname"]?.StripColors();
+
+                        string mapname = dict["mapname"]?.StripColors() ?? CurrentMap.Name;
+                        CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                    }
                 }
 
                 else
@@ -827,8 +845,6 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 #if DEBUG
-            // LogFile = new RemoteFile("https://raidmax.org/IW4MAdmin/getlog.php");
-#else
             await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
         }

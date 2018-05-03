@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using SharedLibraryCore.Objects;
 
@@ -50,14 +47,16 @@ namespace SharedLibraryCore
             Target = T;
             Owner = S;
             OnProcessed = new ManualResetEventSlim();
+            Time = DateTime.UtcNow;
         }
 
         public GameEvent()
         {
-            OnProcessed = new ManualResetEventSlim(); 
+            OnProcessed = new ManualResetEventSlim();
+            Time = DateTime.UtcNow;
         }
 
-        public static GameEvent TranferWaiter(EventType newType, GameEvent e)
+        public static GameEvent TransferWaiter(EventType newType, GameEvent e)
         {
             var newEvent = new GameEvent()
             {
@@ -69,11 +68,12 @@ namespace SharedLibraryCore
                 Owner = e.Owner,
                 Remote = e.Remote,
                 Target = e.Target,
-                Type = newType
+                Type = newType, 
             };
 
             // hack: prevent the previous event from completing until this one is done
             e.OnProcessed = new ManualResetEventSlim();
+            newEvent.Time = e.Time;
 
             return newEvent;
         }
@@ -87,5 +87,6 @@ namespace SharedLibraryCore
         public Boolean Remote = false;
         public object Extra { get; set; }
         public ManualResetEventSlim OnProcessed { get; set; }
+        public DateTime Time { get; private set; }
     }
 }

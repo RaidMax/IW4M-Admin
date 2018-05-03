@@ -4,6 +4,7 @@ using SharedLibraryCore.Database.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 using SharedLibraryCore.Helpers;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace IW4MAdmin.Plugins.Stats.Models
 {
@@ -38,5 +39,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public bool IsKillstreakKill { get; set; }
         [NotMapped]
         public float AdsPercent { get; set; }
+        [NotMapped]
+        public List<Vector3> AnglesList { get; set; }
     }
 }

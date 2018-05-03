@@ -1,12 +1,12 @@
 ﻿using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
-using IW4MAdmin.Plugins.Stats.Helpers;
 using IW4MAdmin.Plugins.Stats.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
@@ -19,6 +19,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         EFClientStatistics ClientStats;
         DateTime LastKill;
         ILogger Log;
+        Strain Strain;
 
         public Detection(ILogger log, EFClientStatistics clientStats)
         {
@@ -26,8 +27,28 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             HitLocationCount = new Dictionary<IW4Info.HitLocation, int>();
             foreach (var loc in Enum.GetValues(typeof(IW4Info.HitLocation)))
                 HitLocationCount.Add((IW4Info.HitLocation)loc, 0);
-            LastKill = DateTime.UtcNow;
             ClientStats = clientStats;
+            Strain = new Strain();
+        }
+
+        public void ProcessDamage(string damageLine)
+        {
+            string regex = @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+
+            var match = Regex.Match(damageLine, regex, RegexOptions.IgnoreCase);
+
+            if (match.Success)
+            {
+                var meansOfDeath = ParseEnum<IW4Info.MeansOfDeath>.Get(match.Groups[12].Value, typeof(IW4Info.MeansOfDeath));
+                var hitLocation = ParseEnum<IW4Info.HitLocation>.Get(match.Groups[13].Value, typeof(IW4Info.HitLocation));
+
+                if (meansOfDeath == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
+                meansOfDeath == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
+                meansOfDeath == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
+                {
+                    ClientStats.HitLocations.First(hl => hl.Location == hitLocation).HitCount += 1;
+                }
+            }
         }
 
         /// <summary>
@@ -47,20 +68,82 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     RatioAmount = 0
                 };
 
+            if (LastKill == DateTime.MinValue)
+                LastKill = DateTime.UtcNow;
+
             HitLocationCount[kill.HitLoc]++;
             Kills++;
             AverageKillTime = (AverageKillTime + (DateTime.UtcNow - LastKill).TotalSeconds) / Kills;
 
+            #region SNAPSHOTS
+
+
+
+            #endregion
+
             #region VIEWANGLES
-            double distance = Vector3.Distance(kill.KillOrigin, kill.DeathOrigin);
+            /*double distance = Vector3.Distance(kill.KillOrigin, kill.DeathOrigin);
             double x = kill.KillOrigin.X + distance * Math.Cos(kill.ViewAngles.X.ToRadians()) * Math.Cos(kill.ViewAngles.Y.ToRadians());
             double y = kill.KillOrigin.Y + (distance * Math.Sin(kill.ViewAngles.X.ToRadians()) * Math.Cos(kill.ViewAngles.Y.ToRadians()));
             double z = kill.KillOrigin.Z + distance * Math.Sin((360.0f - kill.ViewAngles.Y).ToRadians());
             var trueVector = Vector3.Subtract(kill.KillOrigin, kill.DeathOrigin);
             var calculatedVector = Vector3.Subtract(kill.KillOrigin, new Vector3((float)x, (float)y, (float)z));
-            double angle = trueVector.AngleBetween(calculatedVector);
+            double angle = trueVector.AngleBetween(calculatedVector);*/
 
-            if (kill.AdsPercent > 0.5 && kill.Distance > 3)
+
+            // make sure it's divisible by 2
+            if (kill.AnglesList.Count % 2 == 0)
+            {
+                double maxDistance = 0;
+                for (int i = 0; i < kill.AnglesList.Count - 1; i += 1)
+                {
+                    // Log.WriteDebug($"Fixed 1 {kill.AnglesList[i]}");
+                    // Log.WriteDebug($"Fixed 2 {kill.AnglesList[i + 1]}");
+
+                    // fix max distance
+                    double currDistance = Vector3.AbsoluteDistance(kill.AnglesList[i], kill.AnglesList[i + 1]);
+                    //Log.WriteDebug($"Distance {currDistance}");
+                    if (currDistance > maxDistance)
+                    {
+                        maxDistance = currDistance;
+                    }
+                }
+
+                double realAgainstPredict = Vector3.AbsoluteDistance(kill.ViewAngles, kill.AnglesList[10]);
+
+                var hitLoc = ClientStats.HitLocations
+                    .First(hl => hl.Location == kill.HitLoc);
+                float previousAverage = hitLoc.HitOffsetAverage;
+                double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
+                hitLoc.HitOffsetAverage = (float)newAverage;
+
+                if (maxDistance > hitLoc.MaxAngleDistance)
+                    hitLoc.MaxAngleDistance = (float)maxDistance;
+
+                if (double.IsNaN(hitLoc.HitOffsetAverage))
+                {
+                    Log.WriteWarning("[Detection::ProcessKill] HitOffsetAvgerage NaN");
+                    Log.WriteDebug($"{previousAverage}-{hitLoc.HitCount}-{hitLoc}-{newAverage}");
+                    hitLoc.HitOffsetAverage = 0f;
+                }
+
+#if DEBUG
+                Log.WriteDebug($"MaxDistance={maxDistance}, PredictVsReal={realAgainstPredict}");
+#endif
+            }
+
+            var currentStrain = Strain.GetStrain(kill.ViewAngles, (kill.When - LastKill).TotalMilliseconds);
+
+            if (currentStrain > ClientStats.MaxStrain)
+            {
+                ClientStats.MaxStrain = currentStrain;
+            }
+
+#if DEBUG
+            Log.WriteDebug($"Current Strain: {currentStrain}");
+#endif
+
+            /*if (kill.AdsPercent > 0.5 && kill.Distance > 3)
             {
                 var hitLoc = ClientStats.HitLocations
                     .First(hl => hl.Location == kill.HitLoc);
@@ -74,7 +157,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     Log.WriteDebug($"{previousAverage}-{hitLoc.HitCount}-{hitLoc}-{newAverage}");
                     hitLoc.HitOffsetAverage = 0f;
                 }
-            }
+            }*/
+
+            LastKill = kill.When;
 
             #endregion
 

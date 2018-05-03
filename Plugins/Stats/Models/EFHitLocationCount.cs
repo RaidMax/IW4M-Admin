@@ -14,6 +14,9 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int HitCount { get; set; }
         [Required]
         public float HitOffsetAverage { get; set; }
+        [Required]
+        public float MaxAngleDistance { get; set; }
+        [Required]
         public int ClientId { get; set; }
         [ForeignKey("ClientId"), Column(Order = 0 )]
         public EFClient Client { get; set; }

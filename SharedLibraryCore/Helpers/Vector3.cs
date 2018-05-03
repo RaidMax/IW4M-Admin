@@ -44,6 +44,19 @@ namespace SharedLibraryCore.Helpers
             return Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2) + Math.Pow(b.Z - a.Z, 2));
         }
 
+        public static double AbsoluteDistance(Vector3 a, Vector3 b)
+        {
+            double deltaX = Math.Abs(b.X -a.X);
+            double deltaY = Math.Abs(b.Y - a.Y);
+            double deltaZ = Math.Abs(b.Z - a.Z);
+
+            double dx = deltaX < 360.0 / 2 ? deltaX : 360.0 - deltaX;
+            double dy = deltaY < 360.0 / 2 ? deltaY : 360.0 - deltaY;
+            double dz = deltaZ < 360.0 / 2 ? deltaZ : 360.0 - deltaZ;
+
+            return Math.Sqrt((dx * dx) + (dy * dy) + (dz * dx));
+        }
+
         public static Vector3 Subtract(Vector3 a, Vector3 b) => new Vector3(b.X - a.X, b.Y - a.Y, b.Z - a.Z);
 
         public double DotProduct(Vector3 a) => (a.X * this.X) + (a.Y * this.Y) + (a.Z * this.Z);

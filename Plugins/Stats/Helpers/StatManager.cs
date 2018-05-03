@@ -130,8 +130,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
+            else
+            {
+                // todo: look at this more
+                statsSvc.ClientStatSvc.Update(clientStats);
+            }
+
             // migration for previous existing stats
-            else if (clientStats.HitLocations.Count == 0)
+            if (clientStats.HitLocations.Count == 0)
             {
                 clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
                 {
@@ -140,7 +146,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Location = hl
                 })
                 .ToList();
-                await statsSvc.ClientStatSvc.SaveChangesAsync();
+                //await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
             // set these on connecting
@@ -156,10 +162,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
                 Log.WriteDebug("Could not add client to detection");
 
-
-            // todo: look at this more
-            statsSvc.ClientStatSvc.Update(clientStats);
-            await statsSvc.ClientStatSvc.SaveChangesAsync();
+            /*
+            await statsSvc.ClientStatSvc.SaveChangesAsync();*/
 
             return clientStats;
         }
@@ -197,23 +201,32 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
-           /* // sync their stats before they leave
-            clientStats = UpdateStats(clientStats);*/
+            /* // sync their stats before they leave
+             clientStats = UpdateStats(clientStats);*/
 
             // todo: should this be saved every disconnect?
             statsSvc.ClientStatSvc.Update(clientStats);
             await statsSvc.ClientStatSvc.SaveChangesAsync();
             // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
-            await statsSvc.ServerStatsSvc.SaveChangesAsync();
+            //await statsSvc.ServerStatsSvc.SaveChangesAsync();
+        }
+
+        public void AddDamageEvent(string eventLine, int clientId, int serverId)
+        {
+            if (Plugin.Config.Configuration().EnableAntiCheat)
+            {
+                var clientDetection = Servers[serverId].PlayerDetections[clientId];
+                clientDetection.ProcessDamage(eventLine);
+            }
         }
 
         /// <summary>
         /// Process stats for kill event
         /// </summary>
         /// <returns></returns>
-        public async Task AddScriptKill(Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
-            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads)
+        public async Task AddScriptKill(DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
+            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads, string snapAngles)
         {
             var statsSvc = ContextThreads[serverId];
             Vector3 vDeathOrigin = null;
@@ -235,6 +248,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
+            var snapshotAngles = new List<Vector3>();
+
+            try
+            {
+                foreach(string angle in snapAngles.Split(':', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    snapshotAngles.Add(Vector3.Parse(angle).FixIW4Angles());
+                }
+            }
+            
+            catch (FormatException)
+            {
+                Log.WriteWarning("Could not parse snapshot angles");
+                return;
+            }
+            
             var kill = new EFClientKill()
             {
                 Active = true,
@@ -250,9 +279,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
                 ViewAngles = vViewAngles,
                 TimeOffset = Int64.Parse(offset),
-                When = DateTime.UtcNow,
+                When = time,
                 IsKillstreakKill = isKillstreakKill[0] != '0',
-                AdsPercent = float.Parse(Ads)
+                AdsPercent = float.Parse(Ads),
+                AnglesList = snapshotAngles
             };
 
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
@@ -280,7 +310,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
 
                 statsSvc.ClientStatSvc.Update(clientStats);
-                await statsSvc.ClientStatSvc.SaveChangesAsync();
+               // await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
             //statsSvc.KillStatsSvc.Insert(kill);
@@ -290,6 +320,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
+                    // prevent multiple bans from occuring
+                    if (attacker.Level == Player.Permission.Banned)
+                    {
+                        return;
+                    }
+
                     switch (penalty.ClientPenalty)
                     {
                         case Penalty.PenaltyType.Ban:
@@ -312,6 +348,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 await executePenalty(clientDetection.ProcessKill(kill));
                 await executePenalty(clientDetection.ProcessTotalRatio(clientStats));
+
+#if DEBUG
+                statsSvc.ClientStatSvc.Update(clientStats);
+                await statsSvc.ClientStatSvc.SaveChangesAsync();
+#endif
             }
         }
 
@@ -326,7 +367,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (KeyNotFoundException)
             {
-                Log.WriteError($"[Stats::AddStandardKill] kill attacker ClientId is invalid {attacker.ClientId}-{attacker}");
+                // happens when the client has disconnected before the last status update
+                Log.WriteWarning($"[Stats::AddStandardKill] kill attacker ClientId is invalid {attacker.ClientId}-{attacker}");
                 return;
             }
 
@@ -338,7 +380,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (KeyNotFoundException)
             {
-                Log.WriteError($"[Stats::AddStandardKill] kill victim ClientId is invalid {victim.ClientId}-{victim}");
+                Log.WriteWarning($"[Stats::AddStandardKill] kill victim ClientId is invalid {victim.ClientId}-{victim}");
                 return;
             }
 
@@ -393,7 +435,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var statsSvc = ContextThreads[serverId];
             statsSvc.ClientStatSvc.Update(attackerStats);
             statsSvc.ClientStatSvc.Update(victimStats);
-            await statsSvc.ClientStatSvc.SaveChangesAsync();
+            //await statsSvc.ClientStatSvc.SaveChangesAsync();
         }
 
         /// <summary>
@@ -451,6 +493,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate the players Score Per Minute for the current session
             int scoreDifference = clientStats.RoundScore - clientStats.LastScore;
+
+            // todo: fix the SPM for TEAMDAMAGE
+            if (scoreDifference < 0)
+                scoreDifference = clientStats.RoundScore;
+
             double killSPM = scoreDifference / timeSinceLastCalc;
 
             // calculate how much the KDR should weigh

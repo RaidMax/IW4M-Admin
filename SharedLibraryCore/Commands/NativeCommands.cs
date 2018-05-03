@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
@@ -36,6 +35,8 @@ namespace SharedLibraryCore.Commands
             {
                 E.Origin.Level = Player.Permission.Owner;
                 await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_SUCCESS"]);
+                // so setpassword/login works
+                E.Owner.Manager.GetPrivilegedClients().Add(E.Origin.ClientId, E.Origin);
                 await E.Owner.Manager.GetClientService().Update(E.Origin);
             }
             else

@@ -27,7 +27,8 @@ namespace IW4MAdmin.Application
 #endif
             // we need this to keep accurate track of the score
             if (gameEvent.Type == GameEvent.EventType.Script ||
-                gameEvent.Type == GameEvent.EventType.Kill)
+                gameEvent.Type == GameEvent.EventType.Kill ||
+                gameEvent.Type == GameEvent.EventType.MapChange)
             {
 #if DEBUG
                 Manager.GetLogger().WriteDebug($"Added sensitive event to queue");

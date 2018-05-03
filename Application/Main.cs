@@ -117,9 +117,12 @@ namespace IW4MAdmin.Application
                             continue;
                         }
 
-                        Origin.CurrentServer = ServerManager.Servers[0];
-                        GameEvent E = new GameEvent(GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
-                        ServerManager.GetEventHandler().AddEvent(E);
+                        if (userInput?.Length > 0)
+                        {
+                            Origin.CurrentServer = ServerManager.Servers[0];
+                            GameEvent E = new GameEvent(GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
+                            ServerManager.GetEventHandler().AddEvent(E);
+                        }
                         Console.Write('>');
 
                     } while (ServerManager.Running);

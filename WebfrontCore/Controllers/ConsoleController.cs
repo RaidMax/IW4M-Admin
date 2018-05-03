@@ -28,7 +28,6 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> ExecuteAsync(int serverId, string command)
         {
-
             var server = Manager.GetServers().First(s => s.GetHashCode() == serverId);
             var client = new Player()
             {
@@ -50,7 +49,7 @@ namespace WebfrontCore.Controllers
             Manager.GetEventHandler().AddEvent(remoteEvent);
             // wait for the event to process
 
-            await Task.Run(() => remoteEvent.OnProcessed.Wait());
+            await Task.Run(() => remoteEvent.OnProcessed.WaitHandle.WaitOne(5000));
             var response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
             // remove the added command response

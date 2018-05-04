@@ -40,7 +40,16 @@ namespace SharedLibraryCore.Objects
 
         public async Task Tell(String Message)
         {
-            await CurrentServer.Tell(Message, this);
+            var e = new GameEvent()
+            {
+                Message = Message,
+                Target = this,
+                Owner = CurrentServer,
+                Type = GameEvent.EventType.Tell,
+                Data = Message
+            };
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
         }
 
         public async Task Kick(String Message, Player Sender)

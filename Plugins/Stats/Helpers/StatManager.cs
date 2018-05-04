@@ -619,6 +619,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             Log.WriteDebug("Syncing servers");
             await statsSvc.ServerSvc.SaveChangesAsync();
+
+            statsSvc = null;
+            // this should prevent the gunk for having a long lasting context.
+            ContextThreads[serverId] = new ThreadSafeStatsService();
         }
     }
 }

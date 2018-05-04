@@ -98,13 +98,14 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IList<EFPenalty>> GetRecentPenalties(int count, int offset)
+        public async Task<IList<EFPenalty>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
         {
             using (var context = new DatabaseContext())
                 return await context.Penalties
                     .AsNoTracking()
                    .Include(p => p.Offender.CurrentAlias)
                    .Include(p => p.Punisher.CurrentAlias)
+                   .Where(p => showOnly == Penalty.PenaltyType.Any ? p.Type != Penalty.PenaltyType.Any : p.Type == showOnly)
                    .Where(p => p.Active)
                    .OrderByDescending(p => p.When)
                    .Skip(offset)

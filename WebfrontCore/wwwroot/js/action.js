@@ -5,11 +5,16 @@
 function showLoader() {
     $('.layout-loading-icon').attr('style', 'visibility:visible');
     $('.layout-loading-icon').removeClass('text-danger');
+    $('.layout-loading-icon').removeClass('text-muted');
     $('.layout-loading-icon').fadeIn();
 }
 
 function errorLoader() {
     $('.layout-loading-icon').addClass('text-danger');
+}
+
+function staleLoader() {
+    $('.layout-loading-icon').addClass('text-muted');
 }
 
 $(document).ready(function () {

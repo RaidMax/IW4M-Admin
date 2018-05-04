@@ -75,22 +75,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Kills++;
             AverageKillTime = (AverageKillTime + (DateTime.UtcNow - LastKill).TotalSeconds) / Kills;
 
-            #region SNAPSHOTS
-
-
-
-            #endregion
-
-            #region VIEWANGLES
-            /*double distance = Vector3.Distance(kill.KillOrigin, kill.DeathOrigin);
-            double x = kill.KillOrigin.X + distance * Math.Cos(kill.ViewAngles.X.ToRadians()) * Math.Cos(kill.ViewAngles.Y.ToRadians());
-            double y = kill.KillOrigin.Y + (distance * Math.Sin(kill.ViewAngles.X.ToRadians()) * Math.Cos(kill.ViewAngles.Y.ToRadians()));
-            double z = kill.KillOrigin.Z + distance * Math.Sin((360.0f - kill.ViewAngles.Y).ToRadians());
-            var trueVector = Vector3.Subtract(kill.KillOrigin, kill.DeathOrigin);
-            var calculatedVector = Vector3.Subtract(kill.KillOrigin, new Vector3((float)x, (float)y, (float)z));
-            double angle = trueVector.AngleBetween(calculatedVector);*/
-
-
+            #region VIEWANGLES   
             // make sure it's divisible by 2
             if (kill.AnglesList.Count % 2 == 0)
             {
@@ -127,6 +112,22 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     hitLoc.HitOffsetAverage = 0f;
                 }
 
+                var hitlocations = ClientStats.HitLocations
+                                        .Where(hl => new List<int>() { 4, 5, 2, 3, }.Contains((int)hl.Location))
+                                        .Where(hl => ClientStats.SessionKills > Thresholds.MediumSampleMinKills + 30);
+
+                double banAverage = hitlocations.Count() > 0 ? hitlocations.Average(c =>c.HitOffsetAverage) : 0;
+
+                if (banAverage > Thresholds.MaxOffset)
+                {
+                    return new DetectionPenaltyResult()
+                    {
+                        ClientPenalty = Penalty.PenaltyType.Ban,
+                        RatioAmount = banAverage,
+                        KillCount = ClientStats.SessionKills,
+                    };
+                }
+
 #if DEBUG
                 Log.WriteDebug($"MaxDistance={maxDistance}, PredictVsReal={realAgainstPredict}");
 #endif
@@ -137,28 +138,21 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             if (currentStrain > ClientStats.MaxStrain)
             {
                 ClientStats.MaxStrain = currentStrain;
+
+                if (ClientStats.MaxStrain > Thresholds.MaxStrain)
+                {
+                    return new DetectionPenaltyResult()
+                    {
+                        ClientPenalty = Penalty.PenaltyType.Ban,
+                        RatioAmount = ClientStats.MaxStrain,
+                        KillCount = ClientStats.SessionKills,
+                    };
+                }
             }
 
 #if DEBUG
             Log.WriteDebug($"Current Strain: {currentStrain}");
 #endif
-
-            /*if (kill.AdsPercent > 0.5 && kill.Distance > 3)
-            {
-                var hitLoc = ClientStats.HitLocations
-                    .First(hl => hl.Location == kill.HitLoc);
-                float previousAverage = hitLoc.HitOffsetAverage;
-                double newAverage = (previousAverage * (hitLoc.HitCount - 1) + angle) / hitLoc.HitCount;
-                hitLoc.HitOffsetAverage = (float)newAverage;
-
-                if (double.IsNaN(hitLoc.HitOffsetAverage))
-                {
-                    Log.WriteWarning("[Detection::ProcessKill] HitOffsetAvgerage NaN");
-                    Log.WriteDebug($"{previousAverage}-{hitLoc.HitCount}-{hitLoc}-{newAverage}");
-                    hitLoc.HitOffsetAverage = 0f;
-                }
-            }*/
-
             LastKill = kill.When;
 
             #endregion

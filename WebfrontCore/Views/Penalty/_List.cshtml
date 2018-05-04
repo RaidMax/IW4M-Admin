@@ -2,6 +2,6 @@
     Layout = null;
 }
 
-@model int
+@model WebfrontCore.ViewModels.PenaltyFilterInfo
 
-@await Component.InvokeAsync("PenaltyList", new { offset = Model })
+@await Component.InvokeAsync("PenaltyList", new { offset = Model.Offset, showOnly = Model.ShowOnly })

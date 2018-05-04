@@ -127,6 +127,16 @@ namespace SharedLibraryCore
         {
 #if !DEBUG
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, Message);
+
+              var e = new GameEvent()
+            {
+                Message = formattedMessage,
+                Data = formattedMessage,
+                Owner = this,
+                Type = GameEvent.EventType.Broadcast,
+            };
+
+            Manager.GetEventHandler().AddEvent(e);
             await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose(Message.StripColors());
@@ -141,7 +151,6 @@ namespace SharedLibraryCore
         /// <param name="Target">Player to send message to</param>
         public async Task Tell(String Message, Player Target)
         {
-
 #if !DEBUG
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Tell, Target.ClientNumber, Message);
             if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)

@@ -10,9 +10,9 @@ namespace WebfrontCore.ViewComponents
 {
     public class PenaltyListViewComponent : ViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(int offset)
+        public async Task<IViewComponentResult> InvokeAsync(int offset, Penalty.PenaltyType showOnly)
         {
-            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(12, offset);
+            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(12, offset, showOnly);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
                 OffenderId = p.OffenderId,

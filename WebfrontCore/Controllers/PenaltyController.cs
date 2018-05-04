@@ -13,18 +13,22 @@ namespace WebfrontCore.Controllers
 {
     public class PenaltyController : BaseController
     {
-        public IActionResult List()
+        public IActionResult List(int showOnly = (int)SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
         {
             ViewBag.Description = "List of all the recent penalties (bans, kicks, warnings) on IW4MAdmin";
             ViewBag.Title = "Client Penalties";
             ViewBag.Keywords = "IW4MAdmin, penalties, ban, kick, warns";
 
-            return View();
+            return View((SharedLibraryCore.Objects.Penalty.PenaltyType)showOnly);
         }
 
-        public async Task<IActionResult> ListAsync(int offset = 0)
+        public async Task<IActionResult> ListAsync(int offset = 0, int showOnly = (int)SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
         {
-            return await Task.FromResult(View("_List", offset));
+            return await Task.FromResult(View("_List", new ViewModels.PenaltyFilterInfo()
+            {
+                Offset = offset,
+                ShowOnly = (SharedLibraryCore.Objects.Penalty.PenaltyType)showOnly
+            }));
         }
 
         public async Task<IActionResult> PublicAsync()

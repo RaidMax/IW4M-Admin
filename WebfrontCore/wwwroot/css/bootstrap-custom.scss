@@ -1,4 +1,32 @@
-﻿@import '../lib/bootstrap/scss/bootstrap.scss';
+﻿$white: #fff !default;
+$blue: #007ACC !default;
+$red: rgba(255, 69, 69, 0.85) !default;
+$green: rgba(116,147,99, 1) !default;
+$orange: #fd7e14 !default;
+$primary: $blue !default;
+$secondary: $orange !default;
+$light: rgb(204, 204, 204) !default;
+$dark: rgb(24, 24, 24) !default;
+$body-bg: rgb(34,34,34) !default;
+$body-color: $white !default;
+$link-color: $white !default;
+$link-decoration: none !default;
+$link-hover-color: $primary !default;
+$link-hover-decoration: none !default;
+$font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+
+$navbar-padding-y: 0 !default;
+$navbar-nav-link-padding-x: 2rem !default;
+$font-size-base: 1rem !default; // Assumes the browser default, typically `16px`
+$h5-font-size: $font-size-base * 1.25 !default;
+$h1-font-size: $font-size-base * 2.5 !default;
+$navbar-brand-font-size: $h1-font-size !default;
+$navbar-toggler-font-size: $h5-font-size !default;
+
+$navbar-dark-hover-color: $primary !default;
+
+@import '../lib/bootstrap/scss/bootstrap.scss';
+
 
 /*custom variables*/
 
@@ -83,8 +111,15 @@ a.link-inverse:hover {
     border-bottom-color: $orange;
 }
 
-form * {
+form *, select {
     border-radius: 0 !important;
+}
+
+select {
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    border-top: 2px solid rgba(0, 122, 204, 0.5) !important;
 }
 
 .oi-fix-navbar {

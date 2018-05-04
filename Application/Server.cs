@@ -559,6 +559,17 @@ namespace IW4MAdmin
                 Logger.WriteInfo("Game ending...");
             }
 
+            if (E.Type == GameEvent.EventType.Tell)
+            {
+                await Tell(E.Message, E.Target);
+            }
+
+            if (E.Type == GameEvent.EventType.Broadcast)
+            {
+                // this is a little ugly but I don't want to change the abstract class
+                await E.Owner.ExecuteCommandAsync(E.Message);
+            }
+
             //todo: move
             while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
                 ChatHistory.RemoveAt(0);

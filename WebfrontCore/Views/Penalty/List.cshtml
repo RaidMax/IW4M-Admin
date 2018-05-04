@@ -1,4 +1,37 @@
-﻿<h4 class="pb-2 text-center ">@ViewBag.Title</h4>
+﻿@model SharedLibraryCore.Objects.Penalty.PenaltyType
+
+<h4 class="pb-2 text-center ">@ViewBag.Title</h4>
+<div class="row">
+    <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
+        @{
+            foreach (var penaltyType in Enum.GetValues(typeof(SharedLibraryCore.Objects.Penalty.PenaltyType)))
+            {
+                if ((SharedLibraryCore.Objects.Penalty.PenaltyType)penaltyType == SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
+                {
+                    if (Model == SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
+                    {
+                        <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>Show  @penaltyType.ToString()</option>
+                    }
+                    else
+                    {
+                        <option value="@Convert.ToInt32(penaltyType)" )>Show  @penaltyType.ToString()</option>
+                    }
+                }
+                else
+                {
+                    if ((SharedLibraryCore.Objects.Penalty.PenaltyType)penaltyType == Model)
+                    {
+                        <option value="@Convert.ToInt32(penaltyType)" selected="selected">Show only @penaltyType.ToString()s</option>
+                    }
+                    else
+                    {
+                        <option value="@Convert.ToInt32(penaltyType)" )>Show only @penaltyType.ToString()s</option>
+                    }
+                }
+            }
+        }
+    </select>
+</div>
 <div class="row">
     <table class="table table-striped">
         <thead class="d-none d-md-table-header-group">
@@ -11,7 +44,11 @@
             </tr>
         </thead>
         <tbody id="penalty_table" class="border-bottom bg-dark">
-            @await Component.InvokeAsync("PenaltyList", new { offset = 0 })
+            @await Component.InvokeAsync("PenaltyList", new WebfrontCore.ViewModels.PenaltyFilterInfo()
+            {
+                Offset = 0,
+                ShowOnly = Model
+            })
         </tbody>
     </table>
     <table class="table d-table d-md-none">

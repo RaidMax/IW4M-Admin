@@ -8,9 +8,12 @@ function loadMorePenalties() {
 
     showLoader();
     isLoading = true;
-    $.get('/Penalty/ListAsync', { offset: offset })
+    $.get('/Penalty/ListAsync', { offset: offset, showOnly : $('#penalty_filter_selection').val() })
         .done(function (response) {
             $('#penalty_table').append(response);
+            if (response.trim().length === 0) {
+                staleLoader();
+            }
             hideLoader();
             isLoading = false;
         })
@@ -22,7 +25,13 @@ function loadMorePenalties() {
 }
 
 if ($('#penalty_table').length === 1) {
-    /*
+    
+    $('#penalty_filter_selection').change(function() {
+       // if (offset === 0) {
+            location = location.href.split('?')[0] + "?showOnly=" + $('#penalty_filter_selection').val();
+       // }
+    });
+/*
     https://stackoverflow.com/questions/19731730/jquery-js-detect-users-scroll-attempt-without-any-window-overflow-to-scroll
     */
 

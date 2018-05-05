@@ -8,6 +8,8 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.Database;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
+using SharedLibraryCore.Localization;
 
 namespace IW4MAdmin.Application
 {
@@ -21,8 +23,7 @@ namespace IW4MAdmin.Application
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
             //System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
-            Localization.Configure.Initialize();
-            var loc = Utilities.CurrentLocalization.LocalizationSet;
+
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 
@@ -35,11 +36,15 @@ namespace IW4MAdmin.Application
             Console.WriteLine($" Version {Version.ToString("0.0")}");
             Console.WriteLine("=====================================================");
 
+            Index loc = null;
+
             try
             {
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
+                Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
+                loc = Utilities.CurrentLocalization.LocalizationIndex;
 
                 using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration()?.ConnectionString))
                     new ContextSeed(db).Seed().Wait();

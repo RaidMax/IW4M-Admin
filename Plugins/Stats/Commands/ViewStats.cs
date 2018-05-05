@@ -12,7 +12,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class CViewStats : Command
     {
-        public CViewStats() : base("stats", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_VIEW_DESC"], "xlrstats", Player.Permission.User, false, new CommandArgument[]
+        public CViewStats() : base("stats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_VIEW_DESC"], "xlrstats", Player.Permission.User, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -24,7 +24,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var loc = Utilities.CurrentLocalization.LocalizationSet;
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
             if (E.Target?.ClientNumber < 0)
             {

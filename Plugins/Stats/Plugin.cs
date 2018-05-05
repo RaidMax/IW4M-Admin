@@ -170,7 +170,8 @@ namespace IW4MAdmin.Plugins.Stats
                          (double)clientStats.Where(c => c.HitLocations.Count > 0)
                             .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount)), 2);
 
-                    hitOffsetAverage = clientStats.Sum(c => c.AverageHitOffset) / Math.Max(1, clientStats.Where(c => c.AverageHitOffset > 0).Count());
+                    var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0).SelectMany(hl => hl.HitLocations);
+                    hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
                 }
 
                 return new List<ProfileMeta>()
@@ -248,22 +249,28 @@ namespace IW4MAdmin.Plugins.Stats
 
             MetaService.AddMeta(getMessages);
 
-            string totalKills()
+            string totalKills(Server server)
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();
                 return serverStats.Find(s => s.Active)
                     .Sum(c => c.TotalKills).ToString("#,##0");
             }
 
-            string totalPlayTime()
+            string totalPlayTime(Server server)
             {
                 var serverStats = new GenericRepository<EFServerStatistics>();
                 return Math.Ceiling((serverStats.GetQuery(s => s.Active)
                     .Sum(c => c.TotalPlayTime) / 3600.0)).ToString("#,##0");
             }
 
+            string topStats(Server s)
+            {
+                return String.Join(Environment.NewLine, Commands.TopStats.GetTopStats(s).Result);
+            }
+
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
             manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
+            manager.GetMessageTokens().Add(new MessageToken("TOPSTATS", topStats));
 
             ServerManager = manager;
 

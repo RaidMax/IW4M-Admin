@@ -18,6 +18,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         Dictionary<IW4Info.HitLocation, int> HitLocationCount;
         EFClientStatistics ClientStats;
         DateTime LastKill;
+        long LastOffset;
         ILogger Log;
         Strain Strain;
 
@@ -65,7 +66,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 return new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Any,
-                    RatioAmount = 0
                 };
 
             if (LastKill == DateTime.MinValue)
@@ -79,6 +79,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             // make sure it's divisible by 2
             if (kill.AnglesList.Count % 2 == 0)
             {
+                /*
                 double maxDistance = 0;
                 for (int i = 0; i < kill.AnglesList.Count - 1; i += 1)
                 {
@@ -92,7 +93,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     {
                         maxDistance = currDistance;
                     }
-                }
+                                   if (maxDistance > hitLoc.MaxAngleDistance)
+                    hitLoc.MaxAngleDistance = (float)maxDistance;
+                }*/
 
                 double realAgainstPredict = Vector3.AbsoluteDistance(kill.ViewAngles, kill.AnglesList[10]);
 
@@ -101,9 +104,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 float previousAverage = hitLoc.HitOffsetAverage;
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
-
-                if (maxDistance > hitLoc.MaxAngleDistance)
-                    hitLoc.MaxAngleDistance = (float)maxDistance;
 
                 if (double.IsNaN(hitLoc.HitOffsetAverage))
                 {
@@ -116,38 +116,40 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                                         .Where(hl => new List<int>() { 4, 5, 2, 3, }.Contains((int)hl.Location))
                                         .Where(hl => ClientStats.SessionKills > Thresholds.MediumSampleMinKills + 30);
 
-                double banAverage = hitlocations.Count() > 0 ? hitlocations.Average(c =>c.HitOffsetAverage) : 0;
+                var validOffsets = ClientStats.HitLocations.Where(hl => hl.HitCount > 0);
+                double hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
 
-                if (banAverage > Thresholds.MaxOffset)
+                if (hitOffsetAverage > Thresholds.MaxOffset)
                 {
                     return new DetectionPenaltyResult()
                     {
                         ClientPenalty = Penalty.PenaltyType.Ban,
-                        RatioAmount = banAverage,
+                        RatioAmount = hitOffsetAverage,
                         KillCount = ClientStats.SessionKills,
                     };
                 }
 
 #if DEBUG
-                Log.WriteDebug($"MaxDistance={maxDistance}, PredictVsReal={realAgainstPredict}");
+                Log.WriteDebug($"PredictVsReal={realAgainstPredict}");
 #endif
             }
 
-            var currentStrain = Strain.GetStrain(kill.ViewAngles, (kill.When - LastKill).TotalMilliseconds);
+            var currentStrain = Strain.GetStrain(kill.ViewAngles, kill.TimeOffset - LastOffset);
+            LastOffset = kill.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)
             {
                 ClientStats.MaxStrain = currentStrain;
+            }
 
-                if (ClientStats.MaxStrain > Thresholds.MaxStrain)
+            if (Strain.TimesReachedMaxStrain >= 3)
+            {
+                return new DetectionPenaltyResult()
                 {
-                    return new DetectionPenaltyResult()
-                    {
-                        ClientPenalty = Penalty.PenaltyType.Ban,
-                        RatioAmount = ClientStats.MaxStrain,
-                        KillCount = ClientStats.SessionKills,
-                    };
-                }
+                    ClientPenalty = Penalty.PenaltyType.Ban,
+                    RatioAmount = ClientStats.MaxStrain,
+                    KillCount = ClientStats.SessionKills,
+                };
             }
 
 #if DEBUG

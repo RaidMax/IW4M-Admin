@@ -8,7 +8,7 @@ namespace IW4MAdmin.Application
     class Logger : SharedLibraryCore.Interfaces.ILogger
     {
         enum LogType
-        { 
+        {
             Verbose,
             Info,
             Debug,
@@ -30,8 +30,14 @@ namespace IW4MAdmin.Application
 
         void Write(string msg, LogType type)
         {
-            if (!Utilities.CurrentLocalization.LocalizationSet.TryGetValue($"GLOBAL_{type.ToString().ToUpper()}", out string stringType))
-                stringType = type.ToString();
+            string stringType = type.ToString();
+
+            try
+            {
+                stringType = Utilities.CurrentLocalization.LocalizationIndex[$"GLOBAL_{type.ToString().ToUpper()}"];
+            }
+
+            catch (Exception) { }
 
             string LogLine = $"[{DateTime.Now.ToString("HH:mm:ss")}] - {stringType}: {msg}";
             lock (ThreadLock)

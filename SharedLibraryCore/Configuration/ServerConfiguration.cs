@@ -17,7 +17,7 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
-            var loc = Utilities.CurrentLocalization.LocalizationSet;
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
             while (string.IsNullOrEmpty(IPAddress))
             {

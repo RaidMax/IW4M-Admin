@@ -10,6 +10,7 @@ using System.Reflection;
 using System.IO;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Diagnostics;
 
 namespace SharedLibraryCore
 {
@@ -101,7 +102,7 @@ namespace SharedLibraryCore
             }
         }
 
-        public static String ProcessMessageToken(IList<Helpers.MessageToken> tokens, String str)
+        public static String ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
         {
             MatchCollection RegexMatches = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
             foreach (Match M in RegexMatches)
@@ -112,7 +113,7 @@ namespace SharedLibraryCore
                 var found = tokens.FirstOrDefault(t => t.Name.ToLower() == Identifier.ToLower());
 
                 if (found != null)
-                    str = str.Replace(Match, found.ToString());
+                    str = str.Replace(Match, found.Process(server));
             }
 
             return str;
@@ -185,7 +186,7 @@ namespace SharedLibraryCore
                 return id;
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
             if (!string.IsNullOrEmpty(bot))
-                return -Convert.ToInt64(bot.Substring(3));
+                return -Convert.ToInt64(bot.Substring(3)) + 1;
             return 0;
         }
 
@@ -377,6 +378,30 @@ namespace SharedLibraryCore
 
             return dict;
         }
+
+        /* https://loune.net/2017/06/running-shell-bash-commands-in-net-core/ */
+        public static string GetCommandLine(int pId)
+        {
+            var cmdProcess = new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c wmic process where processid={pId} get CommandLine",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+
+            cmdProcess.Start();
+            cmdProcess.WaitForExit();
+
+            string[] cmdLine = cmdProcess.StandardOutput.ReadToEnd().Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+            return cmdLine.Length > 1 ? cmdLine[1] : cmdLine[0];
+        }
+
 
         public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
 

@@ -11,7 +11,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
-        public ResetStats() : base("resetstats", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_RESET_DESC"], "rs", Player.Permission.User, false) { }
+        public ResetStats() : base("resetstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_DESC"], "rs", Player.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
@@ -32,12 +32,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 // fixme: this doesn't work properly when another context exists
                 await svc.SaveChangesAsync();
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 
             else
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
             }
         }
     }

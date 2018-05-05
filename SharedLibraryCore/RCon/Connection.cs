@@ -144,7 +144,7 @@ namespace SharedLibraryCore.RCon
                     if (!connectionState.Buffer.Take(4).ToArray().SequenceEqual(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }))
                         throw new NetworkException("Unexpected packet received");
 
-                    if (serverConnection.Available > 0)
+                    if (FailedReceives == 0 && serverConnection.Available > 0)
                     {
                         serverConnection.BeginReceive(connectionState.Buffer, 0, connectionState.Buffer.Length, 0,
                             new AsyncCallback(OnReceivedCallback), connectionState);
@@ -276,7 +276,7 @@ namespace SharedLibraryCore.RCon
 
                         if (FailedReceives >= 4)
                         {
-                            throw new NetworkException($"Could not receive data from {socketConnection.RemoteEndPoint}");
+                            throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} {socketConnection.RemoteEndPoint}");
                         }
                     }
 

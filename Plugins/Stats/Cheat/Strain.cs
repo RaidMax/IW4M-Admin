@@ -11,6 +11,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         private double CurrentStrain;
         private Vector3 LastAngle;
 
+        public int TimesReachedMaxStrain { get; private set; }
+
         public double GetStrain(Vector3 newAngle, double deltaTime)
         {
             if (LastAngle == null)
@@ -30,15 +32,12 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             double newStrain = Math.Pow(distance[0] + distance[1], 0.99) / deltaTime;
-
-            if (newStrain + CurrentStrain > 0.25)
-            {
-                Console.WriteLine($"{LastAngle}-{newAngle}-{decayFactor}-{CurrentStrain}-{newStrain}-{distance[0]}-{distance[1]}-{deltaTime}");
-            }
-
             CurrentStrain += newStrain;
+
+            if (CurrentStrain > Thresholds.MaxStrain)
+                TimesReachedMaxStrain++;
+
             LastAngle = newAngle;
-         
             return CurrentStrain;
         }
         

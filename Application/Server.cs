@@ -19,13 +19,14 @@ using Application.Misc;
 using Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
+using SharedLibraryCore.Localization;
 
 namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
         private CancellationToken cts;
-        private static Dictionary<string, string> loc = Utilities.CurrentLocalization.LocalizationSet;
+        private static Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEvent LogEvent;
 
 
@@ -203,7 +204,7 @@ namespace IW4MAdmin
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
                 {
-                    await player.Kick(Utilities.CurrentLocalization.LocalizationSet["SERVER_KICK_VPNS_NOTALLOWED"], new Player() { ClientId = 1 });
+                    await player.Kick(Utilities.CurrentLocalization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], new Player() { ClientId = 1 });
                 }
 
                 return true;
@@ -709,7 +710,11 @@ namespace IW4MAdmin
                     && BroadcastMessages.Count > 0
                     && ClientNum > 0)
                 {
-                    await Broadcast(Utilities.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]));
+                    string[] messages = this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]).Split(Environment.NewLine);
+
+                    foreach(string message in messages)
+                        await Broadcast(message);
+
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
                     start = DateTime.Now;
                 }
@@ -821,7 +826,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\mw2";
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath;
             if (GameName == Game.IW5)
@@ -1051,8 +1056,8 @@ namespace IW4MAdmin
 
         override public void InitializeTokens()
         {
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", Manager.GetClientService().GetTotalClientsAsync().Result.ToString));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", Application.Program.Version.ToString));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Manager.GetClientService().GetTotalClientsAsync().Result.ToString()));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Application.Program.Version.ToString()));
         }
     }
 }

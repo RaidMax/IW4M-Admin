@@ -8,7 +8,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
 {
     public class CLogin : Command
     {
-        public CLogin() : base("login", Utilities.CurrentLocalization.LocalizationSet["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"], "li", Player.Permission.Trusted, false, new CommandArgument[]
+        public CLogin() : base("login", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"], "li", Player.Permission.Trusted, false, new CommandArgument[]
         {
             new CommandArgument()
             {
@@ -25,12 +25,12 @@ namespace IW4MAdmin.Plugins.Login.Commands
             if (hashedPassword[0] == client.Password)
             {
                 Plugin.AuthorizedClients[E.Origin.ClientId] = true;
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]);
             }
 
             else
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
             }
         }
     }

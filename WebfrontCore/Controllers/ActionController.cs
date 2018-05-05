@@ -14,15 +14,14 @@ namespace WebfrontCore.Controllers
         {
             var info = new ActionInfo()
             {
-                ActionButtonLabel = "Ban",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_BAN_NAME"],
                 Name = "Ban",
                 Inputs = new List<InputInfo>()
                 {
                     new InputInfo()
                     {
                       Name = "Reason",
-                      Label = "Reason",
-                      Placeholder = ""
+                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     }
                 },
                 Action = "BanAsync"
@@ -46,15 +45,14 @@ namespace WebfrontCore.Controllers
         {
             var info = new ActionInfo()
             {
-                ActionButtonLabel = "Unban",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_UNBAN_NAME"],
                 Name = "Unban",
                 Inputs = new List<InputInfo>()
                 {
                     new InputInfo()
                     {
                       Name = "Reason",
-                      Label = "Reason",
-                      Placeholder = ""
+                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     }
                 },
                 Action = "UnbanAsync"
@@ -78,7 +76,7 @@ namespace WebfrontCore.Controllers
         {
             var login = new ActionInfo()
             {
-                ActionButtonLabel = "Login",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_LOGIN_NAME"],
                 Name = "Login",
                 Inputs = new List<InputInfo>()
                 {

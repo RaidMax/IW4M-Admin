@@ -29,7 +29,7 @@ namespace SharedLibraryCore.Configuration
 
         public IBaseConfiguration Generate()
         {
-            var loc = Utilities.CurrentLocalization.LocalizationSet;
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
             Id = Guid.NewGuid().ToString();
             
             EnableWebFront = Utilities.PromptBool(loc["SETUP_ENABLE_WEBFRONT"]);

@@ -137,7 +137,6 @@ namespace SharedLibraryCore
             };
 
             Manager.GetEventHandler().AddEvent(e);
-            await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose(Message.StripColors());
             await Task.CompletedTask;

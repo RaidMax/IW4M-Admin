@@ -9,33 +9,51 @@ namespace IW4MAdmin.Application.Localization
 {
     public class Configure
     {
-        public static void Initialize()
+        public static void Initialize(string customLocale)
         {
-            string currentLocale = Program.ServerManager.GetApplicationSettings().Configuration()?.CustomLocale ?? 
-                CultureInfo.CurrentCulture?.Name?.Substring(0, 2);
+            string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
+            string[] localizationFiles = Directory.GetFiles("Localization", $"*.{currentLocale}.json");
 
-            if (currentLocale == null)
-                throw new Exception("Computer CurrentCulture does not exist");
-#if DEBUG
- //           currentLocal = "ru-RU";
-#endif
+            // culture doesn't exist so we just want language
+            if (localizationFiles.Length == 0)
+            {
+                localizationFiles = Directory.GetFiles("Localization", $"*.{currentLocale.Substring(0, 2)}*.json");
+            }
+
+            // language doesn't exist either so defaulting to english
+            if (localizationFiles.Length == 0)
+            {
+                localizationFiles = Directory.GetFiles("Localization", "*.en-US.json");
+            }
+
+            // this should never happen unless the localization folder is empty
+            if (localizationFiles.Length == 0)
+            {
+                throw new Exception("No localization files were found");
+            }
+
+            var localizationDict = new Dictionary<string, string>();
+
+            foreach (string filePath in localizationFiles)
+            {
+                var localizationContents = File.ReadAllText(filePath, Encoding.UTF8);
+                var eachLocalizationFile = Newtonsoft.Json.JsonConvert.DeserializeObject<SharedLibraryCore.Localization.Layout>(localizationContents);
+
+                foreach (var item in eachLocalizationFile.LocalizationIndex.Set)
+                {
+                    if (!localizationDict.TryAdd(item.Key, item.Value))
+                    {
+                        Program.ServerManager.GetLogger().WriteError($"Could not add locale string {item.Key} to localization");
+                    }
+                }
+            }
+
             string localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocale}-{currentLocale.ToUpper()}.json";
-            string localizationContents;
 
-            if (File.Exists(localizationFile))
+            Utilities.CurrentLocalization = new SharedLibraryCore.Localization.Layout(localizationDict)
             {
-                localizationContents = File.ReadAllText(localizationFile, Encoding.UTF8);
-            }
-
-            else
-            {
-                localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.en-EN.json";
-                localizationContents = File.ReadAllText(localizationFile, Encoding.UTF8);
-            }
-
-            if (localizationContents.Length < 1)
-                throw new Exception($"Localization file {localizationFile} does not exist");
-            Utilities.CurrentLocalization = Newtonsoft.Json.JsonConvert.DeserializeObject<SharedLibraryCore.Localization.Layout>(localizationContents);
+                LocalizationName = currentLocale,
+            };
         }
     }
 }

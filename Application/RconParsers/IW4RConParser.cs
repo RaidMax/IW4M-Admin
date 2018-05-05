@@ -23,7 +23,7 @@ namespace Application.RconParsers
             TempBan = "tempbanclient {0} \"{1}\""
         };
 
-        private static string StatusRegex = @"^( *[0-9]+) +([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|bot[0-9]+) +(.{0,20}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}) +(-*[0-9]+) +([0-9]+) *$";
+        private static string StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|bot[0-9]+) +(.{0,20}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}) +(-*[0-9]+) +([0-9]+) *$";
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
@@ -118,7 +118,6 @@ namespace Application.RconParsers
 
                     if (P.IsBot)
                     {
-                        P.NetworkId = -(P.ClientNumber + 1);
                         P.IPAddress = P.ClientNumber + 1;
                     }
 
@@ -126,6 +125,11 @@ namespace Application.RconParsers
                 }
             }
 
+            // this happens if status is requested while map is rotating
+            if (Status[1] == "Rotating map...")
+            {
+                throw new ServerException("Server is rotating map");
+            }
 
             if (Status.Length > 5 && validMatches == 0)
             {

@@ -320,6 +320,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
+#if DEBUG
+                     Log.WriteVerbose("Player Banned");
+                    return;
+#endif
                     // prevent multiple bans from occuring
                     if (attacker.Level == Player.Permission.Banned)
                     {

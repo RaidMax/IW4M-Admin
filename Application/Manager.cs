@@ -132,7 +132,7 @@ namespace IW4MAdmin.Application
 
                     catch (Exception E)
                     {
-                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {sensitiveEvent.Owner}");
+                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {sensitiveEvent.Owner}");
                         Logger.WriteDebug("Error Message: " + E.Message);
                         Logger.WriteDebug("Error Trace: " + E.StackTrace);
                         sensitiveEvent.OnProcessed.Set();
@@ -203,7 +203,7 @@ namespace IW4MAdmin.Application
                     do
                     {
                         newConfig.Servers.Add((ServerConfiguration)new ServerConfiguration().Generate());
-                    } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationSet["SETUP_SERVER_SAVE"]));
+                    } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["SETUP_SERVER_SAVE"]));
 
                     config = newConfig;
                     await ConfigHandler.Save();
@@ -244,7 +244,7 @@ namespace IW4MAdmin.Application
 
                 catch (Exception e)
                 {
-                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
+                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
                     Logger.WriteDebug($"Exception: {e.Message}");
                     Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
                 }
@@ -286,7 +286,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CIP());
             Commands.Add(new CMask());
             Commands.Add(new CPruneAdmins());
-            //Commands.Add(new CKillServer());
+            Commands.Add(new CKillServer());
             Commands.Add(new CSetPassword());
             Commands.Add(new CPing());
 
@@ -307,16 +307,16 @@ namespace IW4MAdmin.Application
                         _servers.Add(ServerInstance);
                     }
 
-                    Logger.WriteVerbose($"{Utilities.CurrentLocalization.LocalizationSet["MANAGER_MONITORING_TEXT"]} {ServerInstance.Hostname}");
+                    Logger.WriteVerbose($"{Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"]} {ServerInstance.Hostname}");
                     // add the start event for this server
                     Handler.AddEvent(new GameEvent(GameEvent.EventType.Start, "Server started", null, null, ServerInstance));
                 }
 
                 catch (ServerException e)
                 {
-                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_UNFIXABLE"]} [{Conf.IPAddress}:{Conf.Port}]");
+                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"]} [{Conf.IPAddress}:{Conf.Port}]");
                     if (e.GetType() == typeof(DvarException))
-                        Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_DVAR"]} {(e as DvarException).Data["dvar_name"]} ({Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_DVAR_HELP"]})");
+                        Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"]} {(e as DvarException).Data["dvar_name"]} ({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})");
                     else if (e.GetType() == typeof(NetworkException))
                     {
                         Logger.WriteDebug(e.Message);
@@ -418,7 +418,7 @@ namespace IW4MAdmin.Application
 
                     catch (Exception E)
                     {
-                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationSet["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
+                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
                         Logger.WriteDebug("Error Message: " + E.Message);
                         Logger.WriteDebug("Error Trace: " + E.StackTrace);
                         newEvent.OnProcessed.Set();
@@ -435,7 +435,7 @@ namespace IW4MAdmin.Application
             HeartbeatTimer.Change(0, Timeout.Infinite);
 
             foreach (var S in Servers)
-                S.Broadcast(Utilities.CurrentLocalization.LocalizationSet["BROADCAST_OFFLINE"]).Wait();
+                S.Broadcast("^1" + Utilities.CurrentLocalization.LocalizationIndex["BROADCAST_OFFLINE"]).Wait();
 #endif
             _servers.Clear();
         }

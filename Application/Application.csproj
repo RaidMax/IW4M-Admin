@@ -60,13 +60,13 @@
     <None Update="DefaultSettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Localization\IW4MAdmin.en-EN.json">
+    <None Update="Localization\IW4MAdmin.en-US.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Localization\IW4MAdmin.es-ES.json">
+    <None Update="Localization\IW4MAdmin.es-EC.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Localization\IW4MAdmin.pt-PT.json">
+    <None Update="Localization\IW4MAdmin.pt-BR.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Localization\IW4MAdmin.ru-RU.json">

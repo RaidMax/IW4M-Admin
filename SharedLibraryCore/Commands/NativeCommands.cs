@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Commands
@@ -14,7 +15,7 @@ namespace SharedLibraryCore.Commands
     public class CQuit : Command
     {
         public CQuit() :
-            base("quit", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_QUIT_DESC"], "q", Player.Permission.Owner, false)
+            base("quit", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_QUIT_DESC"], "q", Player.Permission.Owner, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -26,7 +27,7 @@ namespace SharedLibraryCore.Commands
     public class COwner : Command
     {
         public COwner() :
-            base("owner", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_DESC"], "iamgod", Player.Permission.User, false)
+            base("owner", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_DESC"], "iamgod", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -34,29 +35,29 @@ namespace SharedLibraryCore.Commands
             if ((await (E.Owner.Manager.GetClientService() as ClientService).GetOwners()).Count == 0)
             {
                 E.Origin.Level = Player.Permission.Owner;
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_SUCCESS"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_SUCCESS"]);
                 // so setpassword/login works
                 E.Owner.Manager.GetPrivilegedClients().Add(E.Origin.ClientId, E.Origin);
                 await E.Owner.Manager.GetClientService().Update(E.Origin);
             }
             else
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_OWNER_FAIL"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_FAIL"]);
         }
     }
 
     public class CWarn : Command
     {
         public CWarn() :
-            base("warn", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARN_DESC"], "w", Player.Permission.Trusted, true, new CommandArgument[]
+            base("warn", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_DESC"], "w", Player.Permission.Trusted, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -65,7 +66,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             if (E.Origin.Level <= E.Target.Level)
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARN_FAIL"]} {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_FAIL"]} {E.Target.Name}");
             else
                 await E.Target.Warn(E.Data, E.Origin);
         }
@@ -74,11 +75,11 @@ namespace SharedLibraryCore.Commands
     public class CWarnClear : Command
     {
         public CWarnClear() :
-            base("warnclear", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARNCLEAR_DESC"], "wc", Player.Permission.Trusted, true, new CommandArgument[]
+            base("warnclear", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_DESC"], "wc", Player.Permission.Trusted, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     }
                 })
@@ -87,7 +88,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             E.Target.Warnings = 0;
-            String Message = $"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WARNCLEAR_SUCCESS"]} {E.Target.Name}";
+            String Message = $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_SUCCESS"]} {E.Target.Name}";
             await E.Owner.Broadcast(Message);
         }
     }
@@ -95,16 +96,16 @@ namespace SharedLibraryCore.Commands
     public class CKick : Command
     {
         public CKick() :
-            base("kick", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_DESC"], "k", Player.Permission.Moderator, true, new CommandArgument[]
+            base("kick", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_DESC"], "k", Player.Permission.Moderator, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                    Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
                 new CommandArgument()
                 {
-                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                    Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                     Required = true
                 }
             })
@@ -116,21 +117,21 @@ namespace SharedLibraryCore.Commands
             {
                 E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Kick, E.Data, E.Origin, E.Target, E.Owner));
                 await E.Target.Kick(E.Data, E.Origin);
-                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_SUCCESS"]}");
+                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_SUCCESS"]}");
             }
             else
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_KICK_FAIL"]} {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_FAIL"]} {E.Target.Name}");
         }
     }
 
     public class CSay : Command
     {
         public CSay() :
-            base("say", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SAY_DESC"], "s", Player.Permission.Moderator, false, new CommandArgument[]
+            base("say", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SAY_DESC"], "s", Player.Permission.Moderator, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_MESSAGE"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_MESSAGE"],
                         Required = true
                     }
                 })
@@ -145,21 +146,21 @@ namespace SharedLibraryCore.Commands
     public class CTempBan : Command
     {
         public CTempBan() :
-            base("tempban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_DESC"], "tb", Player.Permission.Administrator, true, new CommandArgument[]
+            base("tempban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_DESC"], "tb", Player.Permission.Administrator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_DURATION"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_DURATION"],
                         Required = true,
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -175,26 +176,26 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Target.TempBan(Message, length, E.Origin);
-                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}");
+                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}");
             }
             else
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
         }
     }
 
     public class CBan : Command
     {
         public CBan() :
-            base("ban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BAN_DESC"], "b", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("ban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_DESC"], "b", Player.Permission.SeniorAdmin, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                    Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
                 new CommandArgument()
                 {
-                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                    Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                     Required = true
                 }
             })
@@ -205,26 +206,26 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Level > E.Target.Level)
             {
                 await E.Target.Ban(E.Data, E.Origin);
-                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BAN_SUCCESS"]}");
+                await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_SUCCESS"]}");
             }
             else
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BAN_FAIL"]} {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_FAIL"]} {E.Target.Name}");
         }
     }
 
     public class CUnban : Command
     {
         public CUnban() :
-            base("unban", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UNBAN_DESC"], "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("unban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_DESC"], "ub", Player.Permission.SeniorAdmin, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_CLIENTID"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_CLIENTID"],
                         Required = true,
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                         Required  = true
                     }
                 })
@@ -236,11 +237,11 @@ namespace SharedLibraryCore.Commands
             if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan).FirstOrDefault() != null)
             {
                 await E.Owner.Unban(E.Data, E.Target, E.Origin);
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UNBAN_SUCCESS"]} {E.Target}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_SUCCESS"]} {E.Target}");
             }
             else
             {
-                await E.Origin.Tell($"{E.Target} {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UNBAN_FAIL"]}");
+                await E.Origin.Tell($"{E.Target} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_FAIL"]}");
             }
         }
     }
@@ -248,7 +249,7 @@ namespace SharedLibraryCore.Commands
     public class CWhoAmI : Command
     {
         public CWhoAmI() :
-            base("whoami", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_WHO_DESC"], "who", Player.Permission.User, false)
+            base("whoami", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WHO_DESC"], "who", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -261,7 +262,7 @@ namespace SharedLibraryCore.Commands
     public class CList : Command
     {
         public CList() :
-            base("list", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_LIST_DESC"], "l", Player.Permission.Moderator, false)
+            base("list", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_LIST_DESC"], "l", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -296,11 +297,11 @@ namespace SharedLibraryCore.Commands
     public class CHelp : Command
     {
         public CHelp() :
-            base("help", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_HELP_DESC"], "h", Player.Permission.User, false, new CommandArgument[]
+            base("help", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_HELP_DESC"], "h", Player.Permission.User, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_COMMANDS"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_COMMANDS"],
                         Required = false
                     }
                 })
@@ -325,7 +326,7 @@ namespace SharedLibraryCore.Commands
                 }
 
                 if (!found)
-                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_HELP_NOTFOUND"]);
+                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_HELP_NOTFOUND"]);
             }
 
             else
@@ -352,7 +353,7 @@ namespace SharedLibraryCore.Commands
                     }
                 }
                 await E.Origin.Tell(helpResponse.ToString());
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_HELP_MOREINFO"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_HELP_MOREINFO"]);
             }
         }
     }
@@ -360,7 +361,7 @@ namespace SharedLibraryCore.Commands
     public class CFastRestart : Command
     {
         public CFastRestart() :
-            base("fastrestart", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FASTRESTART_DESC"], "fr", Player.Permission.Moderator, false)
+            base("fastrestart", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FASTRESTART_DESC"], "fr", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -368,24 +369,24 @@ namespace SharedLibraryCore.Commands
             await E.Owner.ExecuteCommandAsync("fast_restart");
 
             if (!E.Origin.Masked)
-                await E.Owner.Broadcast($"^5{E.Origin.Name} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FASTRESTART_UNMASKED"]}");
+                await E.Owner.Broadcast($"^5{E.Origin.Name} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FASTRESTART_UNMASKED"]}");
             else
-                await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FASTRESTART_MASKED"]);
+                await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FASTRESTART_MASKED"]);
         }
     }
 
     public class CMapRotate : Command
     {
         public CMapRotate() :
-            base("maprotate", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAPROTATE_DESC"], "mr", Player.Permission.Administrator, false)
+            base("maprotate", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE_DESC"], "mr", Player.Permission.Administrator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             if (!E.Origin.Masked)
-                await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAPROTATE"]} [^5{E.Origin.Name}^7]");
+                await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE"]} [^5{E.Origin.Name}^7]");
             else
-                await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAPROTATE"]);
+                await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE"]);
             Task.Delay(5000).Wait();
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }
@@ -394,16 +395,16 @@ namespace SharedLibraryCore.Commands
     public class CSetLevel : Command
     {
         public CSetLevel() :
-            base("setlevel", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_DESC"], "sl", Player.Permission.Moderator, true, new CommandArgument[]
+            base("setlevel", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DESC"], "sl", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                      new CommandArgument()
                      {
-                         Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                         Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                          Required = true
                      },
                      new CommandArgument()
                      {
-                         Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_LEVEL"],
+                         Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_LEVEL"],
                          Required = true
                      }
                 })
@@ -413,7 +414,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_SELF"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SELF"]);
                 return;
             }
 
@@ -422,14 +423,14 @@ namespace SharedLibraryCore.Commands
             if (newPerm == Player.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_OWNER"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_OWNER"]);
                 return;
             }
 
             if (E.Origin.Level < Player.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy)
             {
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{E.Target.Name}");
                 return;
             }
 
@@ -437,7 +438,7 @@ namespace SharedLibraryCore.Commands
             {
                 if (E.Origin.Level < Player.Permission.Owner)
                 {
-                    await E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
+                    await E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
                     return;
                 }
             }
@@ -450,7 +451,7 @@ namespace SharedLibraryCore.Commands
                 if (ActiveClient != null)
                 {
                     ActiveClient.Level = newPerm;
-                    await ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
+                    await ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
                 }
 
                 else
@@ -470,36 +471,36 @@ namespace SharedLibraryCore.Commands
                     E.Owner.Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
 
-                await E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_SUCCESS"]}");
+                await E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"]}");
             }
 
             else
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETLEVEL_FAIL"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_FAIL"]);
         }
     }
 
     public class CUsage : Command
     {
         public CUsage() :
-            base("usage", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_USAGE_DESC"], "us", Player.Permission.Moderator, false)
+            base("usage", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_USAGE_DESC"], "us", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell($"IW4MAdmin {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_USAGE_TEXT"]}" + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
+            await E.Origin.Tell($"IW4MAdmin {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_USAGE_TEXT"]}" + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
         }
     }
 
     public class CUptime : Command
     {
         public CUptime() :
-            base("uptime", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_UPTIME_DESC"], "up", Player.Permission.Moderator, false)
+            base("uptime", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UPTIME_DESC"], "up", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
-            var loc = Utilities.CurrentLocalization.LocalizationSet;
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
             await E.Origin.Tell($"IW4M Admin {loc["COMMANDS_UPTIME_TEXT"]} {uptime.Days} {loc["GLOBAL_DAYS"]}, {uptime.Hours} {loc["GLOBAL_HOURS"]}, {uptime.Minutes} {loc["GLOBAL_MINUTES"]}");
         }
     }
@@ -507,7 +508,7 @@ namespace SharedLibraryCore.Commands
     public class CListAdmins : Command
     {
         public CListAdmins() :
-            base("admins", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ADMINS_DESC"], "a", Player.Permission.User, false)
+            base("admins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_DESC"], "a", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -527,18 +528,18 @@ namespace SharedLibraryCore.Commands
             }
 
             if (numOnline == 0)
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ADMINS_NONE"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_NONE"]);
         }
     }
 
     public class CLoadMap : Command
     {
         public CLoadMap() :
-            base("map", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAP_DESC"], "m", Player.Permission.Administrator, false, new CommandArgument[]
+            base("map", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_DESC"], "m", Player.Permission.Administrator, false, new CommandArgument[]
             {
                  new CommandArgument()
                  {
-                     Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_MAP"],
+                     Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_MAP"],
                      Required = true
                  }
             })
@@ -551,14 +552,14 @@ namespace SharedLibraryCore.Commands
             {
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
-                    await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAP_SUCCESS"]} ^5{m.Alias}");
+                    await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_SUCCESS"]} ^5{m.Alias}");
                     Task.Delay(5000).Wait();
                     await E.Owner.LoadMap(m.Name);
                     return;
                 }
             }
 
-            await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MAP_UKN"]} ^5{newMap}");
+            await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_UKN"]} ^5{newMap}");
             Task.Delay(5000).Wait();
             await E.Owner.LoadMap(newMap);
         }
@@ -567,11 +568,11 @@ namespace SharedLibraryCore.Commands
     public class CFindPlayer : Command
     {
         public CFindPlayer() :
-            base("find", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FIND_DESC"], "f", Player.Permission.Administrator, false, new CommandArgument[]
+            base("find", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FIND_DESC"], "f", Player.Permission.Administrator, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                    Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 }
             })
@@ -581,7 +582,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Data.Length < 3)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FIND_MIN"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FIND_MIN"]);
                 return;
             }
 
@@ -592,7 +593,7 @@ namespace SharedLibraryCore.Commands
 
             if (db_players.Count == 0)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FIND_EMPTY"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FIND_EMPTY"]);
                 return;
             }
 
@@ -610,7 +611,7 @@ namespace SharedLibraryCore.Commands
     public class CListRules : Command
     {
         public CListRules() :
-            base("rules", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RULES_DESC"], "r", Player.Permission.User, false)
+            base("rules", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RULES_DESC"], "r", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -619,9 +620,9 @@ namespace SharedLibraryCore.Commands
                 E.Owner.ServerConfig.Rules?.Count < 1)
             {
                 if (E.Message.IsBroadcastCommand())
-                    await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RULES_NONE"]);
+                    await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RULES_NONE"]);
                 else
-                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RULES_NONE"]);
+                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RULES_NONE"]);
             }
 
             else
@@ -645,16 +646,16 @@ namespace SharedLibraryCore.Commands
     public class CPrivateMessage : Command
     {
         public CPrivateMessage() :
-            base("privatemessage", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PM_DESC"], "pm", Player.Permission.User, true, new CommandArgument[]
+            base("privatemessage", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PM_DESC"], "pm", Player.Permission.User, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_MESSAGE"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_MESSAGE"],
                         Required = true
                     }
                 })
@@ -670,16 +671,16 @@ namespace SharedLibraryCore.Commands
     public class CFlag : Command
     {
         public CFlag() :
-            base("flag", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_DESC"], "fp", Player.Permission.Moderator, true, new CommandArgument[]
+            base("flag", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_DESC"], "fp", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -690,7 +691,7 @@ namespace SharedLibraryCore.Commands
             // todo: move unflag to seperate command
             if (E.Target.Level >= E.Origin.Level)
             {
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_FAIL"]} ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_FAIL"]} ^5{E.Target.Name}");
                 return;
             }
 
@@ -698,7 +699,7 @@ namespace SharedLibraryCore.Commands
             {
                 E.Target.Level = Player.Permission.User;
                 await E.Owner.Manager.GetClientService().Update(E.Target);
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
             }
 
             else
@@ -719,7 +720,7 @@ namespace SharedLibraryCore.Commands
 
                 await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
                 E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Flag, E.Data, E.Origin, E.Target, E.Owner));
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
             }
 
         }
@@ -728,16 +729,16 @@ namespace SharedLibraryCore.Commands
     public class CReport : Command
     {
         public CReport() :
-            base("report", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_DESC"], "rep", Player.Permission.User, true, new CommandArgument[]
+            base("report", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_DESC"], "rep", Player.Permission.User, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     },
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_REASON"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_REASON"],
                         Required = true
                     }
                 })
@@ -747,31 +748,31 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Data.ToLower().Contains("camp"))
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL_CAMP"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL_CAMP"]);
                 return;
             }
 
             if (E.Owner.Reports.Find(x => (x.Origin == E.Origin && x.Target.NetworkId == E.Target.NetworkId)) != null)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL_DUPLICATE"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL_DUPLICATE"]);
                 return;
             }
 
             if (E.Target == E.Origin)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL_SELF"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL_SELF"]);
                 return;
             }
 
             if (E.Target.Level > E.Origin.Level)
             {
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_FAIL"]} {E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL"]} {E.Target.Name}");
                 return;
             }
 
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
 
-            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORT_SUCCESS"]);
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_SUCCESS"]);
             E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
@@ -780,11 +781,11 @@ namespace SharedLibraryCore.Commands
     public class CListReports : Command
     {
         public CListReports() :
-            base("reports", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_DESC"], "reps", Player.Permission.Moderator, false, new CommandArgument[]
+            base("reports", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORTS_DESC"], "reps", Player.Permission.Moderator, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_CLEAR"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_CLEAR"],
                         Required = false
                     }
                 })
@@ -792,16 +793,16 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            if (E.Data != null && E.Data.ToLower().Contains(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_CLEAR"]))
+            if (E.Data != null && E.Data.ToLower().Contains(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_CLEAR"]))
             {
                 E.Owner.Reports = new List<Report>();
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_CLEAR_SUCCESS"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORTS_CLEAR_SUCCESS"]);
                 return;
             }
 
             if (E.Owner.Reports.Count < 1)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_REPORTS_NONE"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORTS_NONE"]);
                 return;
             }
 
@@ -813,7 +814,7 @@ namespace SharedLibraryCore.Commands
     public class CMask : Command
     {
         public CMask() :
-            base("mask", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MASK_DESC"], "hide", Player.Permission.Moderator, false)
+            base("mask", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MASK_DESC"], "hide", Player.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -821,12 +822,12 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Masked)
             {
                 E.Origin.Masked = false;
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MASK_OFF"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MASK_OFF"]);
             }
             else
             {
                 E.Origin.Masked = true;
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_MASK_ON"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MASK_ON"]);
             }
 
             await E.Owner.Manager.GetClientService().Update(E.Origin);
@@ -836,11 +837,11 @@ namespace SharedLibraryCore.Commands
     public class CListBanInfo : Command
     {
         public CListBanInfo() :
-            base("baninfo", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BANINFO_DESC"], "bi", Player.Permission.Moderator, true, new CommandArgument[]
+            base("baninfo", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_DESC"], "bi", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true
                     }
                 })
@@ -854,12 +855,12 @@ namespace SharedLibraryCore.Commands
 
             if (penalty == null)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BANINFO_NONE"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_NONE"]);
                 return;
             }
 
             string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
-            string success = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_BANINO_SUCCESS"];
+            string success = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINO_SUCCESS"];
 
             await E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, penalty.Punisher.Name)} {penalty.Punisher.Name} {timeRemaining}");
         }
@@ -869,11 +870,11 @@ namespace SharedLibraryCore.Commands
     public class CListAlias : Command
     {
         public CListAlias() :
-            base("alias", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ALIAS_DESC"], "known", Player.Permission.Moderator, true, new CommandArgument[]
+            base("alias", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ALIAS_DESC"], "known", Player.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                         Required = true,
                     }
                 })
@@ -887,12 +888,12 @@ namespace SharedLibraryCore.Commands
 
             await E.Target.Tell($"[^3{E.Target}^7]");
 
-            message.Append($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ALIAS_ALIASES"]}: ");
+            message.Append($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ALIAS_ALIASES"]}: ");
             message.Append(String.Join(" | ", names));
             await E.Origin.Tell(message.ToString());
 
             message.Clear();
-            message.Append($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ALIAS_IPS"]}: ");
+            message.Append($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ALIAS_IPS"]}: ");
             message.Append(String.Join(" | ", IPs));
             await E.Origin.Tell(message.ToString());
         }
@@ -901,11 +902,11 @@ namespace SharedLibraryCore.Commands
     public class CExecuteRCON : Command
     {
         public CExecuteRCON() :
-            base("rcon", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RCON_DESC"], "rcon", Player.Permission.Owner, false, new CommandArgument[]
+            base("rcon", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RCON_DESC"], "rcon", Player.Permission.Owner, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
-                        Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_COMMANDS"],
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_COMMANDS"],
                         Required = true
                     }
                 })
@@ -917,19 +918,19 @@ namespace SharedLibraryCore.Commands
             foreach (string S in Response)
                 await E.Origin.Tell(S.StripColors());
             if (Response.Length == 0)
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_RCON_SUCCESS"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RCON_SUCCESS"]);
         }
     }
 
     public class CPlugins : Command
     {
         public CPlugins() :
-            base("plugins", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PLUGINS_DESC"], "p", Player.Permission.Administrator, false)
+            base("plugins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PLUGINS_DESC"], "p", Player.Permission.Administrator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PLUGINS_LOADED"]);
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PLUGINS_LOADED"]);
             foreach (var P in Plugins.PluginImporter.ActivePlugins)
             {
                 await E.Origin.Tell(String.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
@@ -940,22 +941,22 @@ namespace SharedLibraryCore.Commands
     public class CIP : Command
     {
         public CIP() :
-            base("getexternalip", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_IP_DESC"], "ip", Player.Permission.User, false)
+            base("getexternalip", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_IP_DESC"], "ip", Player.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_IP_SUCCESS"]} ^5{E.Origin.IPAddressString}");
+            await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_IP_SUCCESS"]} ^5{E.Origin.IPAddressString}");
         }
     }
 
     public class CPruneAdmins : Command
     {
-        public CPruneAdmins() : base("prune", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PRUNE_DESC"], "pa", Player.Permission.Owner, false, new CommandArgument[]
+        public CPruneAdmins() : base("prune", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_DESC"], "pa", Player.Permission.Owner, false, new CommandArgument[]
         {
             new CommandArgument()
             {
-                Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_INACTIVE"],
+                Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_INACTIVE"],
                 Required = false
             }
         })
@@ -977,7 +978,7 @@ namespace SharedLibraryCore.Commands
 
             catch (FormatException)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PRUNE_FAIL"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_FAIL"]);
                 return;
             }
 
@@ -994,18 +995,18 @@ namespace SharedLibraryCore.Commands
                 inactiveUsers.ForEach(c => c.Level = Player.Permission.User);
                 await context.SaveChangesAsync();
             }
-            await E.Origin.Tell($"^5{inactiveUsers.Count} ^7{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PRUNE_SUCCESS"]}");
+            await E.Origin.Tell($"^5{inactiveUsers.Count} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_SUCCESS"]}");
 
         }
     }
 
     public class CSetPassword : Command
     {
-        public CSetPassword() : base("setpassword", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_SETPASSWORD_DESC"], "sp", Player.Permission.Moderator, false, new CommandArgument[]
+        public CSetPassword() : base("setpassword", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETPASSWORD_DESC"], "sp", Player.Permission.Moderator, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
-                    Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PASSWORD"],
+                    Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PASSWORD"],
                     Required = true
                 }
             })
@@ -1015,7 +1016,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Data.Length < 5)
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PASSWORD_FAIL"]);
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PASSWORD_FAIL"]);
                 return;
             }
 
@@ -1029,11 +1030,10 @@ namespace SharedLibraryCore.Commands
             E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId].PasswordSalt = hashedPassword[1];
 
             await E.Owner.Manager.GetClientService().Update(E.Origin);
-            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PASSWORD_SUCCESS"]);
+            await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PASSWORD_SUCCESS"]);
         }
     }
 
-    /*
     public class CKillServer : Command
     {
         public CKillServer() : base("killserver", "kill the game server", "kill", Player.Permission.Administrator, false)
@@ -1043,7 +1043,21 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var gameserverProcesses = System.Diagnostics.Process.GetProcessesByName("iw4x");
-            var currentProcess = gameserverProcesses.FirstOrDefault(g => g.MainWindowTitle.Contains(E.Owner.Hostname));
+
+            System.Diagnostics.Process currentProcess = null;
+
+            foreach (var p in gameserverProcesses)
+            {
+                string cmdLine = Utilities.GetCommandLine(p.Id);
+
+                var regex = Regex.Match(cmdLine, @".*((?:\+set|\+) net_port) +([0-9]+).*");
+
+                if (regex.Success && Int32.Parse(regex.Groups[2].Value) == E.Owner.GetPort())
+                {
+                    currentProcess = p;
+                }
+            }
+
 
             if (currentProcess == null)
             {
@@ -1063,7 +1077,7 @@ namespace SharedLibraryCore.Commands
                     }
                 }
 
-                catch (NetworkException)
+                catch (Exceptions.NetworkException)
                 {
                     await E.Origin.Tell("Unable to cleanly shutdown server, forcing");
                 }
@@ -1085,16 +1099,16 @@ namespace SharedLibraryCore.Commands
                 }
             }
         }
-    }*/
+    }
 
 
     public class CPing : Command
     {
-        public CPing() : base("ping", Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_DESC"], "pi", Player.Permission.User, false, new CommandArgument[]
+        public CPing() : base("ping", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_DESC"], "pi", Player.Permission.User, false, new CommandArgument[]
         {
             new CommandArgument()
             {
-                Name = Utilities.CurrentLocalization.LocalizationSet["COMMANDS_ARGS_PLAYER"],
+                Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
                 Required = false
             }
         })
@@ -1105,16 +1119,16 @@ namespace SharedLibraryCore.Commands
             if (E.Message.IsBroadcastCommand())
             {
                 if (E.Target == null)
-                    await E.Owner.Broadcast($"{E.Origin.Name}'s {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_TARGET"]} ^5{E.Origin.Ping}^7ms");
+                    await E.Owner.Broadcast($"{E.Origin.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Origin.Ping}^7ms");
                 else
-                    await E.Owner.Broadcast($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
+                    await E.Owner.Broadcast($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
             }
             else
             {
                 if (E.Target == null)
-                    await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_SELF"]} ^5{E.Origin.Ping}^7ms");
+                    await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_SELF"]} ^5{E.Origin.Ping}^7ms");
                 else
-                    await E.Origin.Tell($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationSet["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
+                    await E.Origin.Tell($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
             }
         }
     }

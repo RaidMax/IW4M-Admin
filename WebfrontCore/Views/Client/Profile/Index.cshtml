@@ -2,6 +2,7 @@
 @{
     string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
     string shortCode = match == string.Empty ? "?" : match;
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
@@ -30,13 +31,13 @@
                         <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-              (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
+             (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
                         }
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-             (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
+            (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                         }
@@ -44,6 +45,7 @@
 
                     <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted order-0">
                         @{
+                            @Model.NetworkId.ToString("X") <br/>
                             foreach (string alias in Model.Aliases)
                             {
                                 @alias <br />
@@ -65,13 +67,13 @@
             <h5><span class="level-color-@Model.Level.ToLower()"><strong>@Model.Level</strong></span></h5>
         </div>
         <div id="profile_time_played" class="text-muted">
-            Played <span class="text-primary">@Model.TimePlayed</span> hours
+           @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_HOURS"]
         </div>
         <div id="profile_first_seen" class="text-muted">
-            First seen <span class="text-primary">@Model.FirstSeen</span> ago
+           @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
         </div>
         <div id="profile_last_seen" class="text-muted">
-            Last seen <span class="text-primary">@Model.LastSeen</span> ago
+            @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
         </div>
     </div>
     <div id="profile_meta" class="text-center text-sm-right pt-2 mt-md-4 pt-md-3 mr-4 pr-4 mr-md-0 ml-4 pl-4 ml-md-0 pr-md-0 pl-md-0">
@@ -81,12 +83,6 @@
 
 <div class="row d-md-flex pt-2">
     <div id="profile_events" class="text-muted text-left ml-sm-0">
-        @{
-            if (Model.Meta.Count == 0)
-            {
-                <span> No recent events</span>
-            }
-        }
     </div>
 </div>
 

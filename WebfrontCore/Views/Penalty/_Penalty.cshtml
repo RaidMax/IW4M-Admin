@@ -1,48 +1,49 @@
 ﻿@{
     Layout = null;
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
 
 @model SharedLibraryCore.Dtos.PenaltyInfo
 
 <tr class="d-table-row d-md-none bg-dark">
-    <th scope="row" class="bg-primary">Name</th>
+    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
     <td>
         @Html.ActionLink(Model.OffenderName, "ProfileAsync", "Client", new { id = Model.OffenderId }, new { @class = "link-inverse" })
     </td>
 </tr>
 
 <tr class="d-table-row d-md-none bg-dark">
-    <th scope="row" class="bg-primary">Type</th>
+    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
     <td class="penalties-color-@Model.Type.ToLower()">
         @Model.Type
     </td>
 </tr>
 
 <tr class="d-table-row d-md-none bg-dark">
-    <th scope="row" class="bg-primary">Offense</th>
+    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
     <td class="text-light">
         @Model.Offense
     </td>
 </tr>
 
 <tr class="d-table-row d-md-none bg-dark">
-    <th scope="row" class="bg-primary">Admin</th>
+    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
     <td>
         @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevel.ToLower() })
     </td>
 </tr>
 
 <tr class="d-table-row d-md-none bg-dark">
-    <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">Time/Left</th>
+    <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</th>
     <td class="text-light mb-2 border-bottom">
         @{
             if (Model.TimeRemaining == string.Empty)
             {
-                <span>@Model.TimePunished ago</span>
+                <span>@Model.TimePunished @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
             }
             else
             {
-                <span> @Model.TimeRemaining left</span>
+                <span> @Model.TimeRemaining @loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]</span>
             }
         }
     </td>
@@ -65,11 +66,11 @@
         @{
             if (Model.TimeRemaining == string.Empty)
             {
-                <span>@Model.TimePunished ago</span>
+                <span>@Model.TimePunished  @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
             }
             else
             {
-                <span> @Model.TimeRemaining left</span>
+                <span> @Model.TimeRemaining  @loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]</span>
             }
         }
     </td>

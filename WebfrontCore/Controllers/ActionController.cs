@@ -83,12 +83,12 @@ namespace WebfrontCore.Controllers
                     new InputInfo()
                     {
                         Name = "clientId",
-                        Label = "Client ID"
+                        Label = Localization["WEBFRONT_ACTION_LABEL_ID"]
                     },
                     new InputInfo()
                     {
                         Name = "Password",
-                        Label ="Password",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_PASSWORD"],
                         Type = "password",
                     }
                 },

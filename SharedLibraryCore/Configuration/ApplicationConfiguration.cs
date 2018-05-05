@@ -15,6 +15,7 @@ namespace SharedLibraryCore.Configuration
         public bool EnableCustomSayName { get; set; }
         public string CustomSayName { get; set; }
         public string DiscordInviteCode { get; set; }
+        public string SocialLinkTitle { get; set; }
         public string IPHubAPIKey { get; set; }
         public string WebfrontBindUrl { get; set; }
         public string CustomParserEncoding { get; set; }
@@ -51,10 +52,13 @@ namespace SharedLibraryCore.Configuration
             if (!EnableClientVPNs)
                 IPHubAPIKey = Utilities.PromptString(loc["SETUP_IPHUB_KEY"]);
 
-            EnableDiscordLink = Utilities.PromptBool(loc["SETUP_DISPLAY_DISCORD"]);
+            EnableDiscordLink = Utilities.PromptBool(loc["SETUP_DISPLAY_SOCIAL"]);
 
             if (EnableDiscordLink)
-                DiscordInviteCode = Utilities.PromptString(loc["SETUP_DISCORD_INVITE"]);
+            {
+                SocialLinkTitle = Utilities.PromptString(loc["SETUP_SOCIAL_TITLE"]);
+                DiscordInviteCode = Utilities.PromptString(loc["SETUP_SOCIAL_LINK"]);
+            }
 
             return this;
         }

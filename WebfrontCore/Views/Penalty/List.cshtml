@@ -1,5 +1,7 @@
 ﻿@model SharedLibraryCore.Objects.Penalty.PenaltyType
-
+@{
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+}
 <h4 class="pb-2 text-center ">@ViewBag.Title</h4>
 <div class="row">
     <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
@@ -10,22 +12,22 @@
                 {
                     if (Model == SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
                     {
-                        <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>Show  @penaltyType.ToString()</option>
+                        <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"] @penaltyType.ToString()</option>
                     }
                     else
                     {
-                        <option value="@Convert.ToInt32(penaltyType)" )>Show  @penaltyType.ToString()</option>
+                        <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"]  @penaltyType.ToString()</option>
                     }
                 }
                 else
                 {
                     if ((SharedLibraryCore.Objects.Penalty.PenaltyType)penaltyType == Model)
                     {
-                        <option value="@Convert.ToInt32(penaltyType)" selected="selected">Show only @penaltyType.ToString()s</option>
+                        <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
                     }
                     else
                     {
-                        <option value="@Convert.ToInt32(penaltyType)" )>Show only @penaltyType.ToString()s</option>
+                        <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
                     }
                 }
             }
@@ -36,11 +38,11 @@
     <table class="table table-striped">
         <thead class="d-none d-md-table-header-group">
             <tr class="bg-primary pt-2 pb-2">
-                <th scope="col">Name</th>
-                <th scope="col">Type</th>
-                <th scope="col">Offense</th>
-                <th scope="col">Admin</th>
-                <th scope="col" class="text-right">Time/Left</th>
+                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
+                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
+                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
+                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
+                <th scope="col" class="text-right">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</th>
             </tr>
         </thead>
         <tbody id="penalty_table" class="border-bottom bg-dark">

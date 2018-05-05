@@ -53,8 +53,8 @@ namespace WebfrontCore.Controllers
             if (Authorized && client.Level > SharedLibraryCore.Objects.Player.Permission.Trusted)
                 clientDto.Meta.Add(new ProfileMeta()
                 {
-                    Key = "Masked",
-                    Value = client.Masked ? "Is" : "Is not",
+                    Key = Localization["WEBFRONT_CLIENT_META_MASKED"],
+                    Value = client.Masked ? Localization["WEBFRONT_CLIENT_META_TRUE"]: Localization["WEBFRONT_CLIENT_META_FALSE"],
                     Sensitive = true,
                     When = DateTime.MinValue
                 });
@@ -67,7 +67,7 @@ namespace WebfrontCore.Controllers
                     .Select(a => new ProfileMeta()
                     {
                         Key = "AliasEvent",
-                        Value = $"Joined with alias {a.Name}",
+                        Value = $"{Localization["WEBFRONT_CLIENT_META_JOINED"]} {a.Name}",
                         Sensitive = true,
                         When = a.DateAdded
                     }));
@@ -83,7 +83,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Title = clientDto.Name.Substring(clientDto.Name.Length - 1).ToLower()[0] == 's' ?
                 clientDto.Name + "'" :
                 clientDto.Name + "'s";
-            ViewBag.Title += " Profile";
+            ViewBag.Title += " " + Localization["WEBFRONT_CLIENT_PROFILE_TITLE"];
             ViewBag.Description = $"Client information for {clientDto.Name}";
             ViewBag.Keywords = $"IW4MAdmin, client, profile, {clientDto.Name}";
 
@@ -109,7 +109,7 @@ namespace WebfrontCore.Controllers
                 });
             }
 
-            ViewBag.Title = "Privileged Clients";
+            ViewBag.Title = Localization["WEBFRONT_CLIENT_PRIVILEGED_TITLE"];
             ViewBag.Description = "List of all privileged clients on IW4MAdmin";
             ViewBag.Keywords = "IW4MAdmin, privileged, admins, clients, administrators";
 
@@ -131,7 +131,7 @@ namespace WebfrontCore.Controllers
             })
             .ToList();
 
-            ViewBag.Title = $"{clientsDto.Count} Clients Matching \"{clientName}\"";
+            ViewBag.Title = $"{clientsDto.Count} {Localization["WEBFRONT_CLIENT_SEARCH_MATCHING"]} \"{clientName}\"";
             return View("Find/Index", clientsDto);
         }
     }

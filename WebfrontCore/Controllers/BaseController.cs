@@ -20,18 +20,21 @@ namespace WebfrontCore.Controllers
         protected SharedLibraryCore.Localization.Index Localization { get; private set; }
         protected EFClient Client { get; private set; }
         private static byte[] LocalHost = { 127, 0, 0, 1 };
-        private static string DiscordLink;
+        private static string SocialLink;
+        private static string SocialTitle;
 
         public BaseController()
         {
-            Manager = Program.Manager;
-            if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink)
+            if (Manager == null)
+                Manager = Program.Manager;
+
+            if (Localization == null)
+                Localization = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+
+            if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink && SocialLink == null)
             {
-                string inviteLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
-                if (inviteLink != null)
-                    DiscordLink = inviteLink.Contains("https") ? inviteLink : $"https://discordapp.com/invite/{inviteLink}";
-                else
-                    DiscordLink = "";
+                SocialLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
+                SocialTitle = Manager.GetApplicationSettings().Configuration().SocialLinkTitle;
             }
         }
 
@@ -83,7 +86,8 @@ namespace WebfrontCore.Controllers
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontBindUrl;
             ViewBag.User = Client;
-            ViewBag.DiscordLink = DiscordLink ?? "";
+            ViewBag.SocialLink = SocialLink ?? "";
+            ViewBag.SocialTitle = SocialTitle;
 
             base.OnActionExecuting(context);
         }

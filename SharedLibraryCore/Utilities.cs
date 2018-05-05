@@ -210,27 +210,27 @@ namespace SharedLibraryCore
         public static String GetTimePassed(DateTime start, bool includeAgo)
         {
             TimeSpan Elapsed = DateTime.UtcNow - start;
-            string ago = includeAgo ? " ago" : "";
+            string ago = includeAgo ? " " + CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_AGO"] : "";
 
             if (Elapsed.TotalSeconds < 30 && includeAgo)
                 return "just now";
             if (Elapsed.TotalMinutes < 120)
             {
                 if (Elapsed.TotalMinutes < 1.5)
-                    return $"1 minute{ago}";
-                return Math.Round(Elapsed.TotalMinutes, 0) + $" minutes{ago}";
+                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}{ago}";
+                return Math.Round(Elapsed.TotalMinutes, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}{ago}";
             }
             if (Elapsed.TotalHours <= 24)
             {
                 if (Elapsed.TotalHours < 1.5)
-                    return $"1 hour{ago}";
-                return Math.Round(Elapsed.TotalHours, 0) + $" hours{ago}";
+                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_HOURS"]}{ago}";
+                return Math.Round(Elapsed.TotalHours, 0) + $" { CurrentLocalization.LocalizationIndex["GLOBAL_HOURS"]}{ago}";
             }
             if (Elapsed.TotalDays <= 365)
             {
                 if (Elapsed.TotalDays < 1.5)
-                    return $"1 day{ago}";
-                return Math.Round(Elapsed.TotalDays, 0) + $" days{ago}";
+                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_DAYS"]}{ago}";
+                return Math.Round(Elapsed.TotalDays, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_DAYS"]}{ago}";
             }
             else
                 return $"a very long time{ago}";

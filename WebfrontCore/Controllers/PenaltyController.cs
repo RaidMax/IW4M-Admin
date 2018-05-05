@@ -16,7 +16,7 @@ namespace WebfrontCore.Controllers
         public IActionResult List(int showOnly = (int)SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
         {
             ViewBag.Description = "List of all the recent penalties (bans, kicks, warnings) on IW4MAdmin";
-            ViewBag.Title = "Client Penalties";
+            ViewBag.Title = Localization["WEBFRONT_PENALTY_TITLE"];
             ViewBag.Keywords = "IW4MAdmin, penalties, ban, kick, warns";
 
             return View((SharedLibraryCore.Objects.Penalty.PenaltyType)showOnly);

@@ -20,7 +20,7 @@ namespace WebfrontCore.Controllers
             });
 
             ViewBag.Description = "Use the IW4MAdmin web console to execute commands";
-            ViewBag.Title = "Web Console";
+            ViewBag.Title = Localization["WEBFRONT_CONSOLE_TITLE"];
             ViewBag.Keywords = "IW4MAdmin, console, execute, commands";
 
             return View(activeServers);

@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+}
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -32,13 +35,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item text-center text-md-left">@Html.ActionLink("Home", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-md-left">@Html.ActionLink("Penalties", "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-md-left">@Html.ActionLink("Admins", "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_HOME"], "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left"></li>
-                    @if (!string.IsNullOrEmpty(ViewBag.DiscordLink))
+                    @if (!string.IsNullOrEmpty(ViewBag.SocialLink))
                     {
-                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.DiscordLink" class="nav-link" target="_blank">Discord</a></li>
+                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.SocialLink" class="nav-link" target="_blank">@ViewBag.SocialTitle</a></li>
                     }
                     @if (ViewBag.Authorized)
                     {
@@ -46,17 +49,17 @@
                             <a href="#" class="nav-link oi oi-person dropdown-toggle oi-fix-navbar w-100" id="account_dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
 
                             <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
-                                @Html.ActionLink("Console", "Index", "Console", new { area = "" }, new
+                                @Html.ActionLink(loc["WEBFRONT_NAV_CONSOLE"], "Index", "Console", new { area = "" }, new
                                 {
                                     @class = "dropdown-item bg-dark text-muted text-center text-md-left",
                                     title = "Web Console"
                                 })
-                                @Html.ActionLink("Profile", "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new
+                                @Html.ActionLink(loc["WEBFRONT_NAV_PROFILE"], "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new
                                 {
                                     @class = "dropdown-item bg-dark text-muted text-center text-md-left",
                                     title = "Client Profile",
                                 })
-                                @Html.ActionLink("Logout", "LogoutAsync", "Account", new { area = "" }, new
+                                @Html.ActionLink(loc["WEBFRONT_NAV_LOGOUT"], "LogoutAsync", "Account", new { area = "" }, new
                                 {
                                     @class = "dropdown-item bg-dark text-muted text-center text-md-left",
                                     title = "Logout of account"
@@ -74,7 +77,7 @@
                     }
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
-                    <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="Find Player" />
+                    <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="@loc["WEBFRONT_NAV_SEARCH"]" />
                 </form>
             </div>
         </nav>

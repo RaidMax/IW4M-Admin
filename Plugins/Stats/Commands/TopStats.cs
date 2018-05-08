@@ -40,14 +40,14 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                where client.Level != Player.Permission.Banned
                                where client.LastConnection >= thirtyDaysAgo
                                orderby stats.Skill descending
-                               select $"^3{client.Name}^7 - ^5{stats.KDR} ^7KDR | ^5{stats.Skill} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_SKILL"]}")
+                               select $"^3{alias.Name}^7 - ^5{stats.KDR} ^7KDR | ^5{stats.Skill} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_SKILL"]}")
                               .Take(5);
 
                 topStatsText.AddRange(await iqStats.ToListAsync());
             }
 
             // no one qualified
-            if (topStatsText.Count == 0)
+            if (topStatsText.Count == 1)
             {
                 topStatsText = new List<string>()
                 {

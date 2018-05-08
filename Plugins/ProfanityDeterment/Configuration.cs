@@ -21,9 +21,11 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                 "fuck"
             };
 
-            EnableProfanityDeterment = Utilities.PromptBool("Enable profanity deterring");
-            ProfanityWarningMessage = "Please do not use profanity on this server";
-            ProfanityKickMessage = "Excessive use of profanity";
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+
+            EnableProfanityDeterment = Utilities.PromptBool(loc["PLUGINS_PROFANITY_SETUP_ENABLE"]);
+            ProfanityWarningMessage = loc["PLUGINS_PROFANITY_WARNMSG"];
+            ProfanityKickMessage = loc["PLUGINS_PROFANITY_KICKMSG"];
             KickAfterInfringementCount = 2;
 
             return this;

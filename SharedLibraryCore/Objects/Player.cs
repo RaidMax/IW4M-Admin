@@ -40,6 +40,8 @@ namespace SharedLibraryCore.Objects
 
         public async Task Tell(String Message)
         {
+
+           // await CurrentServer.Tell(Message, this);
             var e = new GameEvent()
             {
                 Message = Message,
@@ -50,6 +52,8 @@ namespace SharedLibraryCore.Objects
             };
 
             CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            // this ensures the output it sent before returning
+            await Task.Run(() => e.OnProcessed.Wait());
         }
 
         public async Task Kick(String Message, Player Sender)

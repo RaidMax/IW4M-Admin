@@ -1,10 +1,6 @@
-﻿using SharedLibraryCore.Configuration;
+﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IW4MAdmin.Plugins.Stats.Config
 {
@@ -16,12 +12,8 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public string Name() => "Stats";
         public IBaseConfiguration Generate()
         {
-            var config = new StatsConfiguration();
-
-            Console.Write("Enable server-side anti-cheat? [y/n]: ");
-            config.EnableAntiCheat = (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
-
-            config.KillstreakMessages = new List<StreakMessageConfiguration>()
+            EnableAntiCheat = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_SETUP_ENABLEAC"]);
+            KillstreakMessages = new List<StreakMessageConfiguration>()
             {
                 new StreakMessageConfiguration(){
                     Count = -1,
@@ -42,7 +34,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
                  }
             };
 
-            config.DeathstreakMessages = new List<StreakMessageConfiguration>()
+            DeathstreakMessages = new List<StreakMessageConfiguration>()
             {
                  new StreakMessageConfiguration()
                  {
@@ -55,7 +47,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
                  },
             };
 
-            return config;
+            return this;
         }
     }
 }

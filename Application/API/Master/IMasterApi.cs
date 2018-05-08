@@ -60,5 +60,8 @@ namespace IW4MAdmin.Application.API.Master
 
         [Get("version")]
         Task<VersionInfo> GetVersion();
+
+        [Get("localization")]
+       Task<List<SharedLibraryCore.Localization.Layout>> GetLocalization();
     }
 }

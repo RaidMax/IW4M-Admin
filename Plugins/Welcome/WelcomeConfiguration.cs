@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.Welcome
 {
@@ -10,9 +11,9 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public IBaseConfiguration Generate()
         {
-            UserAnnouncementMessage = "^5{{ClientName}} ^7hails from ^5{{ClientLocation}}";
-            UserWelcomeMessage = "Welcome ^5{{ClientName}}^7, this is your ^5{{TimesConnected}} ^7time connecting!";
-            PrivilegedAnnouncementMessage = "{{ClientLevel}} {{ClientName}} has joined the server";
+            UserAnnouncementMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_USERANNOUNCE"];
+            UserWelcomeMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_USERWELCOME"];
+            PrivilegedAnnouncementMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_PRIVANNOUNCE"];
             return this;
         }
 

@@ -3,6 +3,7 @@
   "AutoMessages": [
     "This server uses ^5IW4M Admin v{{VERSION}} ^7get it at ^5raidmax.org/IW4MAdmin",
     "^5IW4M Admin ^7sees ^5YOU!",
+    "{{TOPSTATS}}",
     "This server has seen a total of ^5{{TOTALPLAYERS}} ^7players!",
     "Cheaters are ^1unwelcome ^7 on this server",
     "Did you know 8/10 people agree with unverified statistics?"

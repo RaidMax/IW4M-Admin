@@ -54,6 +54,18 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
+            if (cleanedEventLine.Contains("ScriptDamage"))
+            {
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.ScriptDamage,
+                    Data = logLine,
+                    Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                    Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong()),
+                    Owner = server
+                };
+            }
+
             if (cleanedEventLine[0] == 'D')
             {
                 return new GameEvent()

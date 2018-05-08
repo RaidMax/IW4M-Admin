@@ -36,7 +36,7 @@
         $.get('/history/' + zoomLevel)
             .done(function (content) {
                 $('#history_graph').html(content.message);
-                maxPoints = Math.min(maxPoints, dataPoints);
+                //maxPoints = Math.min(maxPoints, dataPoints);
                 perfomingZoom = false;
             });
     }

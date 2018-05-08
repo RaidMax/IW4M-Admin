@@ -165,6 +165,7 @@ namespace SharedLibraryCore
                 Console.WriteLine(Utilities.StripColors(Message));
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
+
             if (CommandResult.Count > 15)
                 CommandResult.RemoveAt(0);
 

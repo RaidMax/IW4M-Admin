@@ -34,6 +34,7 @@ namespace SharedLibraryCore
 
             // FROM GAME
             Script,
+            ScriptDamage,
             Kill,
             Damage,
             Death,

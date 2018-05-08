@@ -668,6 +668,7 @@ namespace SharedLibraryCore.Commands
         }
     }
 
+
     public class CFlag : Command
     {
         public CFlag() :
@@ -697,9 +698,7 @@ namespace SharedLibraryCore.Commands
 
             if (E.Target.Level == Player.Permission.Flagged)
             {
-                E.Target.Level = Player.Permission.User;
-                await E.Owner.Manager.GetClientService().Update(E.Target);
-                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_ALREADYFLAGGED"]}");
             }
 
             else
@@ -725,6 +724,42 @@ namespace SharedLibraryCore.Commands
 
         }
     }
+
+    public class CUnflag : Command
+    {
+        public CUnflag() :
+            base("unflag", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_DESC"], "uf", Player.Permission.Moderator, true, new CommandArgument[]
+                {
+                    new CommandArgument()
+                    {
+                        Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PLAYER"],
+                        Required = true
+                    }
+                })
+        { }
+
+        public override async Task ExecuteAsync(GameEvent E)
+        {
+            if (E.Target.Level >= E.Origin.Level)
+            {
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_FAIL"]} ^5{E.Target.Name}");
+                return;
+            }
+
+            if (E.Target.Level == Player.Permission.Flagged)
+            {
+                E.Target.Level = Player.Permission.User;
+                await E.Owner.Manager.GetClientService().Update(E.Target);
+                await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
+            }
+
+            else
+            {
+                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_NOTFLAGGED"]);
+            }
+        }
+    }
+
 
     public class CReport : Command
     {
@@ -860,7 +895,7 @@ namespace SharedLibraryCore.Commands
             }
 
             string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
-            string success = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINO_SUCCESS"];
+            string success = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_SUCCESS"];
 
             await E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, penalty.Punisher.Name)} {penalty.Punisher.Name} {timeRemaining}");
         }

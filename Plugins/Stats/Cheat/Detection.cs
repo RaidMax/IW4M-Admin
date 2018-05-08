@@ -16,6 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         int AboveThresholdCount;
         double AverageKillTime;
         Dictionary<IW4Info.HitLocation, int> HitLocationCount;
+        double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
         DateTime LastKill;
         long LastOffset;
@@ -30,6 +31,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 HitLocationCount.Add((IW4Info.HitLocation)loc, 0);
             ClientStats = clientStats;
             Strain = new Strain();
+        }
+
+        public void ProcessScriptDamage(string damageLine)
+        {
+
         }
 
         public void ProcessDamage(string damageLine)
@@ -57,7 +63,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         /// </summary>
         /// <param name="kill">kill performed by the player</param>
         /// <returns>true if detection reached thresholds, false otherwise</returns>
-        public DetectionPenaltyResult ProcessKill(EFClientKill kill)
+        public DetectionPenaltyResult ProcessKill(EFClientKill kill, bool isDamage)
         {
             if ((kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
                 kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
@@ -72,59 +78,49 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 LastKill = DateTime.UtcNow;
 
             HitLocationCount[kill.HitLoc]++;
-            Kills++;
-            AverageKillTime = (AverageKillTime + (DateTime.UtcNow - LastKill).TotalSeconds) / Kills;
+            if (!isDamage)
+            {
+                Kills++;
+                AverageKillTime = (AverageKillTime + (DateTime.UtcNow - LastKill).TotalSeconds) / Kills;
+            }
 
             #region VIEWANGLES   
-            // make sure it's divisible by 2
-            if (kill.AnglesList.Count % 2 == 0)
+            if (kill.AnglesList.Count >= 2)
             {
-                /*
-                double maxDistance = 0;
-                for (int i = 0; i < kill.AnglesList.Count - 1; i += 1)
-                {
-                    // Log.WriteDebug($"Fixed 1 {kill.AnglesList[i]}");
-                    // Log.WriteDebug($"Fixed 2 {kill.AnglesList[i + 1]}");
+                double realAgainstPredict = Math.Abs(Vector3.AbsoluteDistance(kill.AnglesList[0], kill.AnglesList[1]) -
+                    (Vector3.AbsoluteDistance(kill.AnglesList[0], kill.ViewAngles) +
+                    Vector3.AbsoluteDistance(kill.AnglesList[1], kill.ViewAngles)));
 
-                    // fix max distance
-                    double currDistance = Vector3.AbsoluteDistance(kill.AnglesList[i], kill.AnglesList[i + 1]);
-                    //Log.WriteDebug($"Distance {currDistance}");
-                    if (currDistance > maxDistance)
-                    {
-                        maxDistance = currDistance;
-                    }
-                                   if (maxDistance > hitLoc.MaxAngleDistance)
-                    hitLoc.MaxAngleDistance = (float)maxDistance;
-                }*/
-
-                double realAgainstPredict = Vector3.AbsoluteDistance(kill.ViewAngles, kill.AnglesList[10]);
-
+                // LIFETIME
                 var hitLoc = ClientStats.HitLocations
                     .First(hl => hl.Location == kill.HitLoc);
+
                 float previousAverage = hitLoc.HitOffsetAverage;
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
 
-                if (double.IsNaN(hitLoc.HitOffsetAverage))
-                {
-                    Log.WriteWarning("[Detection::ProcessKill] HitOffsetAvgerage NaN");
-                    Log.WriteDebug($"{previousAverage}-{hitLoc.HitCount}-{hitLoc}-{newAverage}");
-                    hitLoc.HitOffsetAverage = 0f;
-                }
 
-                var hitlocations = ClientStats.HitLocations
-                                        .Where(hl => new List<int>() { 4, 5, 2, 3, }.Contains((int)hl.Location))
-                                        .Where(hl => ClientStats.SessionKills > Thresholds.MediumSampleMinKills + 30);
-
-                var validOffsets = ClientStats.HitLocations.Where(hl => hl.HitCount > 0);
-                double hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
-
-                if (hitOffsetAverage > Thresholds.MaxOffset)
+                if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset)
                 {
                     return new DetectionPenaltyResult()
                     {
                         ClientPenalty = Penalty.PenaltyType.Ban,
-                        RatioAmount = hitOffsetAverage,
+                        RatioAmount = hitLoc.HitOffsetAverage,
+                        KillCount = ClientStats.SessionKills,
+                    };
+                }
+
+                // SESSION
+                int sessHitLocCount = HitLocationCount[kill.HitLoc];
+                double sessAverage = (AngleDifferenceAverage * (sessHitLocCount - 1)) + realAgainstPredict / sessHitLocCount;
+                AngleDifferenceAverage = sessAverage;
+
+                if (sessAverage > Thresholds.MaxOffset)
+                {
+                    return new DetectionPenaltyResult()
+                    {
+                        ClientPenalty = Penalty.PenaltyType.Ban,
+                        RatioAmount = sessHitLocCount,
                         KillCount = ClientStats.SessionKills,
                     };
                 }

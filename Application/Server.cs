@@ -499,8 +499,6 @@ namespace IW4MAdmin
 
                         E.Extra = C;
 
-
-
                         // reprocess event as a command
                         Manager.GetEventHandler().AddEvent(GameEvent.TransferWaiter(GameEvent.EventType.Command, E));
                     }
@@ -826,7 +824,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            basepath.Value = @"\\192.168.88.253\mw2";
 #endif
             string logPath;
             if (GameName == Game.IW5)
@@ -860,7 +858,7 @@ namespace IW4MAdmin
             }
 
             Logger.WriteInfo($"Log file is {logPath}");
-#if DEBUG
+#if !DEBUG
             await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
         }

@@ -19,10 +19,12 @@
     <RootNamespace>Master</RootNamespace>
     <InterpreterId>MSBuild|dev_env|$(MSBuildProjectFullPath)</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
-    <PythonRunWebServerCommand>master\runserver</PythonRunWebServerCommand>
-    <PythonDebugWebServerCommand>master\runserver</PythonDebugWebServerCommand>
-    <PythonRunWebServerCommandType>module</PythonRunWebServerCommandType>
-    <PythonDebugWebServerCommandType>module</PythonDebugWebServerCommandType>
+    <PythonRunWebServerCommand>
+    </PythonRunWebServerCommand>
+    <PythonDebugWebServerCommand>
+    </PythonDebugWebServerCommand>
+    <PythonRunWebServerCommandType>script</PythonRunWebServerCommandType>
+    <PythonDebugWebServerCommandType>script</PythonDebugWebServerCommandType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -63,6 +65,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Master\resources\instance.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Master\resources\localization.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Master\resources\null.py">

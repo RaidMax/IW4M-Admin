@@ -12,7 +12,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
         {
             new CommandArgument()
             {
-                Name = "password",
+                Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PASSWORD"],
                 Required = true
             }
         }){ }

@@ -11,10 +11,10 @@ namespace SharedLibraryCore.Configuration
         public bool EnableMultipleOwners { get; set; }
         public bool EnableSteppedHierarchy { get; set; }
         public bool EnableClientVPNs { get; set; }
-        public bool EnableDiscordLink { get; set; }
+        public bool EnableSocialLink { get; set; }
         public bool EnableCustomSayName { get; set; }
         public string CustomSayName { get; set; }
-        public string DiscordInviteCode { get; set; }
+        public string SocialLinkAddress { get; set; }
         public string SocialLinkTitle { get; set; }
         public string IPHubAPIKey { get; set; }
         public string WebfrontBindUrl { get; set; }
@@ -41,7 +41,6 @@ namespace SharedLibraryCore.Configuration
             bool useCustomParserEncoding = Utilities.PromptBool(loc["SETUP_USE_CUSTOMENCODING"]);
             CustomParserEncoding = useCustomParserEncoding ? Utilities.PromptString(loc["SETUP_ENCODING_STRING"]) : "windows-1252";
 
-
             WebfrontBindUrl = "http://127.0.0.1:1624";
 
             if (EnableCustomSayName)
@@ -52,12 +51,12 @@ namespace SharedLibraryCore.Configuration
             if (!EnableClientVPNs)
                 IPHubAPIKey = Utilities.PromptString(loc["SETUP_IPHUB_KEY"]);
 
-            EnableDiscordLink = Utilities.PromptBool(loc["SETUP_DISPLAY_SOCIAL"]);
+            EnableSocialLink = Utilities.PromptBool(loc["SETUP_DISPLAY_SOCIAL"]);
 
-            if (EnableDiscordLink)
+            if (EnableSocialLink)
             {
                 SocialLinkTitle = Utilities.PromptString(loc["SETUP_SOCIAL_TITLE"]);
-                DiscordInviteCode = Utilities.PromptString(loc["SETUP_SOCIAL_LINK"]);
+                SocialLinkAddress = Utilities.PromptString(loc["SETUP_SOCIAL_LINK"]);
             }
 
             return this;

@@ -74,15 +74,19 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Kill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
-                        await Manager.AddScriptKill(E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                        await Manager.AddScriptKill(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     else if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case GameEvent.EventType.Death:
                     break;
-                case GameEvent.EventType.Damage:
-                    Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Owner.GetHashCode());
+                //case GameEvent.EventType.Damage:
+                case GameEvent.EventType.ScriptDamage:
+                    killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
+                    if (killInfo.Length >= 9 && E.Owner.CustomCallback)
+                        await Manager.AddScriptKill(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     break;
             }
         }
@@ -113,27 +117,27 @@ namespace IW4MAdmin.Plugins.Stats
                 {
                     new ProfileMeta()
                     {
-                           Key = "Kills",
+                           Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"],
                            Value = kills
                     },
                     new ProfileMeta()
                     {
-                        Key = "Deaths",
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"],
                         Value = deaths
                     },
                     new ProfileMeta()
                     {
-                        Key = "KDR",
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"],
                         Value = kdr
                     },
                     new ProfileMeta()
                     {
-                        Key = "Skill",
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_SKILL"],
                         Value = skill
                     },
                     new ProfileMeta()
                     {
-                        Key = "Score Per Minute",
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_META_SPM"],
                         Value = spm
                     }
                 };

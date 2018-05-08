@@ -1,8 +1,10 @@
-﻿using SharedLibraryCore;
+﻿using IW4MAdmin.Application.API.Master;
+using SharedLibraryCore;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace IW4MAdmin.Application.Localization
@@ -13,6 +15,24 @@ namespace IW4MAdmin.Application.Localization
         {
             string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
             string[] localizationFiles = Directory.GetFiles("Localization", $"*.{currentLocale}.json");
+
+            try
+            {
+                var api = Endpoint.Get();
+                var localizations = api.GetLocalization().Result;
+
+                var usingLocale = localizations.FirstOrDefault(l => l.LocalizationName == currentLocale
+                || l.LocalizationName.Substring(0, 2) == currentLocale.Substring(0, 2)) ??
+                localizations.First();
+
+                Utilities.CurrentLocalization = usingLocale;
+                return;
+            }
+
+            catch (Exception)
+            {
+                // the online localization failed so will default to local files
+            }
 
             // culture doesn't exist so we just want language
             if (localizationFiles.Length == 0)

@@ -73,7 +73,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception e)
             {
-                Log.WriteError($"Could not add server to ServerStats - {e.Message}");
+                Log.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]} - {e.Message}");
             }
         }
 
@@ -217,7 +217,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (Plugin.Config.Configuration().EnableAntiCheat)
             {
                 var clientDetection = Servers[serverId].PlayerDetections[clientId];
-                clientDetection.ProcessDamage(eventLine);
+                clientDetection.ProcessScriptDamage(eventLine);
             }
         }
 
@@ -225,7 +225,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// Process stats for kill event
         /// </summary>
         /// <returns></returns>
-        public async Task AddScriptKill(DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
+        public async Task AddScriptKill(bool isDamage, DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads, string snapAngles)
         {
             var statsSvc = ContextThreads[serverId];
@@ -252,18 +252,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             try
             {
-                foreach(string angle in snapAngles.Split(':', StringSplitOptions.RemoveEmptyEntries))
+                foreach (string angle in snapAngles.Split(':', StringSplitOptions.RemoveEmptyEntries))
                 {
                     snapshotAngles.Add(Vector3.Parse(angle).FixIW4Angles());
                 }
             }
-            
+
             catch (FormatException)
             {
                 Log.WriteWarning("Could not parse snapshot angles");
                 return;
             }
-            
+
             var kill = new EFClientKill()
             {
                 Active = true,
@@ -292,7 +292,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            await AddStandardKill(attacker, victim);
+            if (!isDamage)
+            {
+                await AddStandardKill(attacker, victim);
+            }
 
             if (kill.IsKillstreakKill)
             {
@@ -310,7 +313,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
 
                 statsSvc.ClientStatSvc.Update(clientStats);
-               // await statsSvc.ClientStatSvc.SaveChangesAsync();
+                // await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
             //statsSvc.KillStatsSvc.Insert(kill);
@@ -320,10 +323,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
-#if DEBUG
-                     Log.WriteVerbose("Player Banned");
-                    return;
-#endif
                     // prevent multiple bans from occuring
                     if (attacker.Level == Player.Permission.Banned)
                     {
@@ -333,7 +332,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     switch (penalty.ClientPenalty)
                     {
                         case Penalty.PenaltyType.Ban:
-                            await attacker.Ban("You appear to be cheating", new Player() { ClientId = 1 });
+                            await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player() { ClientId = 1 });
                             break;
                         case Penalty.PenaltyType.Flag:
                             if (attacker.Level != Player.Permission.User)
@@ -350,7 +349,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                await executePenalty(clientDetection.ProcessKill(kill));
+                await executePenalty(clientDetection.ProcessKill(kill, isDamage));
                 await executePenalty(clientDetection.ProcessTotalRatio(clientStats));
 
 #if DEBUG
@@ -495,12 +494,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             double timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
             double timeSinceLastActive = (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0;
 
-            // calculate the players Score Per Minute for the current session
-            int scoreDifference = clientStats.RoundScore - clientStats.LastScore;
-
-            // todo: fix the SPM for TEAMDAMAGE
-            if (scoreDifference < 0)
-                scoreDifference = clientStats.RoundScore;
+            int scoreDifference = 0;
+            // this means they've been tking or suicide and is the only time they can have a negative SPM
+            if (clientStats.RoundScore < 0)
+            {
+                scoreDifference = clientStats.RoundScore + clientStats.LastScore;
+            }
+            else
+            {
+                scoreDifference = clientStats.RoundScore - clientStats.LastScore;
+            }
 
             double killSPM = scoreDifference / timeSinceLastCalc;
 
@@ -564,7 +567,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var ieClientStats = statsSvc.ClientStatSvc.Find(cs => cs.ServerId == serverId);
 
-                // set these incase they've we've imported settings 
+                // set these incase we've imported settings 
                 serverStats.TotalKills = ieClientStats.Sum(cs => cs.Kills);
                 serverStats.TotalPlayTime = Manager.GetClientService().GetTotalPlayTime().Result;
 
@@ -612,16 +615,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int serverId = sv.GetHashCode();
             var statsSvc = ContextThreads[serverId];
 
-            Log.WriteDebug("Syncing server stats");
+            Log.WriteDebug("Syncing stats contexts");
             await statsSvc.ServerStatsSvc.SaveChangesAsync();
-
-            Log.WriteDebug("Syncing client stats");
             await statsSvc.ClientStatSvc.SaveChangesAsync();
-
-            Log.WriteDebug("Syncing kill stats");
             await statsSvc.KillStatsSvc.SaveChangesAsync();
-
-            Log.WriteDebug("Syncing servers");
             await statsSvc.ServerSvc.SaveChangesAsync();
 
             statsSvc = null;

@@ -51,7 +51,7 @@ namespace IW4MAdmin.Plugins.Login
                     return Task.CompletedTask;
 
                 if (!AuthorizedClients[E.Origin.ClientId])
-                    throw new AuthorizationException("not logged in");
+                    throw new AuthorizationException(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_AUTH"]);
             }
 
             return Task.CompletedTask;

@@ -48,13 +48,14 @@ namespace SharedLibraryCore.Helpers
         {
             double deltaX = Math.Abs(b.X -a.X);
             double deltaY = Math.Abs(b.Y - a.Y);
-            double deltaZ = Math.Abs(b.Z - a.Z);
+           // double deltaZ = Math.Abs(b.Z - a.Z);
 
+            // this 'fixes' the roll-over angles
             double dx = deltaX < 360.0 / 2 ? deltaX : 360.0 - deltaX;
             double dy = deltaY < 360.0 / 2 ? deltaY : 360.0 - deltaY;
-            double dz = deltaZ < 360.0 / 2 ? deltaZ : 360.0 - deltaZ;
+           // double dz = deltaZ < 360.0 / 2 ? deltaZ : 360.0 - deltaZ;
 
-            return Math.Sqrt((dx * dx) + (dy * dy) + (dz * dx));
+            return Math.Sqrt((dx * dx) + (dy * dy) /*+ (dz * dz)*/);
         }
 
         public static Vector3 Subtract(Vector3 a, Vector3 b) => new Vector3(b.X - a.X, b.Y - a.Y, b.Z - a.Z);
@@ -64,6 +65,5 @@ namespace SharedLibraryCore.Helpers
         public double Magnitude() => Math.Sqrt((X * X) + (Y * Y) + (Z * Z));
 
         public double AngleBetween(Vector3 a) => Math.Acos(this.DotProduct(a) / (a.Magnitude() * this.Magnitude()));
-
     }
 }

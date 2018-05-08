@@ -130,6 +130,12 @@ namespace IW4MAdmin.Application
 #endif
                     }
 
+                    catch (NetworkException e)
+                    {
+                        Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]);
+                        Logger.WriteDebug(e.Message);
+                    }
+
                     catch (Exception E)
                     {
                         Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {sensitiveEvent.Owner}");
@@ -277,6 +283,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CListRules());
             Commands.Add(new CPrivateMessage());
             Commands.Add(new CFlag());
+            Commands.Add(new CUnflag());
             Commands.Add(new CReport());
             Commands.Add(new CListReports());
             Commands.Add(new CListBanInfo());
@@ -396,9 +403,39 @@ namespace IW4MAdmin.Application
             HeartbeatTimer = new Timer(SendHeartbeat, new HeartbeatState(), 0, 30000);
 #endif
             // this needs to be run seperately from the main thread
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             Task.Run(() => UpdateStatus(null));
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
-            GameEvent newEvent;
+            var eventList = new List<Task>();
+
+            async Task processEvent(GameEvent newEvent)
+            {
+                try
+                {
+                    await newEvent.Owner.ExecuteEvent(newEvent);
+#if DEBUG
+                    Logger.WriteDebug("Processed Event");
+#endif
+                }
+
+                catch (NetworkException e)
+                {
+                    Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]);
+                    Logger.WriteDebug(e.Message);
+                }
+
+                catch (Exception E)
+                {
+                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
+                    Logger.WriteDebug("Error Message: " + E.Message);
+                    Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                }
+                // tell anyone waiting for the output that we're done
+                newEvent.OnProcessed.Set();
+            };
+
+            GameEvent queuedEvent = null;
 
             while (Running)
             {
@@ -406,27 +443,15 @@ namespace IW4MAdmin.Application
                 OnEvent.Wait();
 
                 // todo: sequencially or parallelize?
-                while ((newEvent = Handler.GetNextEvent()) != null)
+                while ((queuedEvent = Handler.GetNextEvent()) != null)
                 {
-                    try
-                    {
-                        await newEvent.Owner.ExecuteEvent(newEvent);
-#if DEBUG
-                        Logger.WriteDebug("Processed Event");
-#endif
-                    }
-
-                    catch (Exception E)
-                    {
-                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
-                        Logger.WriteDebug("Error Message: " + E.Message);
-                        Logger.WriteDebug("Error Trace: " + E.StackTrace);
-                        newEvent.OnProcessed.Set();
-                        continue;
-                    }
-                    // tell anyone waiting for the output that we're done
-                    newEvent.OnProcessed.Set();
+                    eventList.Add(processEvent(queuedEvent));
                 }
+
+                // this should allow parallel processing of events
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                Task.WhenAll(eventList);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
                 // signal that all events have been processed
                 OnEvent.Reset();

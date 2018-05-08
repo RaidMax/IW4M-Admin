@@ -50,6 +50,7 @@ namespace IW4MAdmin.Application
                     new ContextSeed(db).Seed().Wait();
 
                 var api = API.Master.Endpoint.Get();
+
                 var version = new API.Master.VersionInfo()
                 {
                     CurrentVersionStable = 99.99f

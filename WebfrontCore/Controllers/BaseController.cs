@@ -31,9 +31,9 @@ namespace WebfrontCore.Controllers
             if (Localization == null)
                 Localization = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 
-            if (Manager.GetApplicationSettings().Configuration().EnableDiscordLink && SocialLink == null)
+            if (Manager.GetApplicationSettings().Configuration().EnableSocialLink && SocialLink == null)
             {
-                SocialLink = Manager.GetApplicationSettings().Configuration().DiscordInviteCode;
+                SocialLink = Manager.GetApplicationSettings().Configuration().SocialLinkAddress;
                 SocialTitle = Manager.GetApplicationSettings().Configuration().SocialLinkTitle;
             }
         }

@@ -60,16 +60,9 @@ namespace IW4MAdmin.Application
             Api = new EventApi();
             ServerEventOccurred += Api.OnServerEvent;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
-            Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
             StartTime = DateTime.UtcNow;
             OnEvent = new ManualResetEventSlim();
         }
-
-        private void OnCancelKey(object sender, ConsoleCancelEventArgs args)
-        {
-            Stop();
-        }
-
 
         public IList<Server> GetServers()
         {
@@ -141,9 +134,9 @@ namespace IW4MAdmin.Application
                         Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {sensitiveEvent.Owner}");
                         Logger.WriteDebug("Error Message: " + E.Message);
                         Logger.WriteDebug("Error Trace: " + E.StackTrace);
-                        sensitiveEvent.OnProcessed.Set();
-                        continue;
                     }
+
+                    sensitiveEvent.OnProcessed.Set();
                 }
 
                 await Task.Delay(5000);
@@ -152,8 +145,8 @@ namespace IW4MAdmin.Application
 
         public async Task Init()
         {
-            // setup the event handler after the class is initialized
-            Handler = new GameEventHandler(this);
+            Running = true;
+
             #region DATABASE
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
@@ -304,6 +297,8 @@ namespace IW4MAdmin.Application
             #region INIT
             async Task Init(ServerConfiguration Conf)
             {
+                // setup the event handler after the class is initialized
+                Handler = new GameEventHandler(this);
                 try
                 {
                     var ServerInstance = new IW4MServer(this, Conf);
@@ -336,8 +331,6 @@ namespace IW4MAdmin.Application
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
             #endregion
-
-            Running = true;
         }
 
         private void SendHeartbeat(object state)
@@ -419,6 +412,12 @@ namespace IW4MAdmin.Application
 #endif
                 }
 
+                // this happens if a plugin requires login
+                catch (AuthorizationException e)
+                {
+                    await newEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
+                }
+
                 catch (NetworkException e)
                 {
                     Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]);
@@ -449,9 +448,7 @@ namespace IW4MAdmin.Application
                 }
 
                 // this should allow parallel processing of events
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                Task.WhenAll(eventList);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                await Task.WhenAll(eventList);
 
                 // signal that all events have been processed
                 OnEvent.Reset();
@@ -459,8 +456,8 @@ namespace IW4MAdmin.Application
 #if !DEBUG
             HeartbeatTimer.Change(0, Timeout.Infinite);
 
-            foreach (var S in Servers)
-                S.Broadcast("^1" + Utilities.CurrentLocalization.LocalizationIndex["BROADCAST_OFFLINE"]).Wait();
+            foreach (var S in _servers)
+                await S.Broadcast("^1" + Utilities.CurrentLocalization.LocalizationIndex["BROADCAST_OFFLINE"]);
 #endif
             _servers.Clear();
         }

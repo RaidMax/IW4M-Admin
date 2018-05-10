@@ -40,20 +40,25 @@ namespace SharedLibraryCore.Objects
 
         public async Task Tell(String Message)
         {
-
-           // await CurrentServer.Tell(Message, this);
-            var e = new GameEvent()
+            // this is console or remote so send immediately
+            if (ClientNumber < 0)
             {
-                Message = Message,
-                Target = this,
-                Owner = CurrentServer,
-                Type = GameEvent.EventType.Tell,
-                Data = Message
-            };
+                await CurrentServer.Tell(Message, this);
+            }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
-            // this ensures the output it sent before returning
-            await Task.Run(() => e.OnProcessed.Wait());
+            else
+            {
+                var e = new GameEvent()
+                {
+                    Message = Message,
+                    Target = this,
+                    Owner = CurrentServer,
+                    Type = GameEvent.EventType.Tell,
+                    Data = Message
+                };
+
+                CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            }
         }
 
         public async Task Kick(String Message, Player Sender)

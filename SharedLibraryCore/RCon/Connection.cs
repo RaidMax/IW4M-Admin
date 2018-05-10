@@ -56,8 +56,6 @@ namespace SharedLibraryCore.RCon
     {
         public IPEndPoint Endpoint { get; private set; }
         public string RConPassword { get; private set; }
-        public ConcurrentQueue<ManualResetEventSlim> ResponseQueue;
-        //Socket ServerConnection;
         ILogger Log;
         int FailedSends;
         int FailedReceives;
@@ -77,13 +75,6 @@ namespace SharedLibraryCore.RCon
             OnConnected = new ManualResetEvent(false);
             OnSent = new ManualResetEvent(false);
             OnReceived = new ManualResetEvent(false);
-        }
-
-        ~Connection()
-        {
-            /*ServerConnection.Shutdown(SocketShutdown.Both);
-            ServerConnection.Close();
-            ServerConnection.Dispose();*/
         }
 
         private void OnConnectedCallback(IAsyncResult ar)
@@ -144,12 +135,12 @@ namespace SharedLibraryCore.RCon
                     if (!connectionState.Buffer.Take(4).ToArray().SequenceEqual(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }))
                         throw new NetworkException("Unexpected packet received");
 
-                    if (FailedReceives == 0 && serverConnection.Available > 0)
-                    {
-                        serverConnection.BeginReceive(connectionState.Buffer, 0, connectionState.Buffer.Length, 0,
-                            new AsyncCallback(OnReceivedCallback), connectionState);
-                    }
-                    else
+                    /* if (FailedReceives == 0 && serverConnection.Available > 0)
+                     {
+                         serverConnection.BeginReceive(connectionState.Buffer, 0, connectionState.Buffer.Length, 0,
+                             new AsyncCallback(OnReceivedCallback), connectionState);
+                     }
+                     else*/
                     {
                         response = connectionState.ResponseString.ToString();
                         OnReceived.Set();
@@ -169,7 +160,7 @@ namespace SharedLibraryCore.RCon
 
             catch (ObjectDisposedException)
             {
-                Log.WriteWarning($"Tried to check for more available bytes for disposed socket on {Endpoint}");
+                // Log.WriteWarning($"Tried to check for more available bytes for disposed socket on {Endpoint}");
             }
         }
 
@@ -211,7 +202,9 @@ namespace SharedLibraryCore.RCon
                 retrySend:
                 try
                 {
-                    
+#if DEBUG
+                    Console.WriteLine($"Sending Command {parameters}");
+#endif
                     if (!OnConnected.WaitOne(StaticHelpers.SocketTimeout))
                         throw new SocketException((int)SocketError.TimedOut);
 

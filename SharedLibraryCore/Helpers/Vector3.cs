@@ -48,14 +48,39 @@ namespace SharedLibraryCore.Helpers
         {
             double deltaX = Math.Abs(b.X -a.X);
             double deltaY = Math.Abs(b.Y - a.Y);
-           // double deltaZ = Math.Abs(b.Z - a.Z);
+           double deltaZ = Math.Abs(b.Z - a.Z);
 
             // this 'fixes' the roll-over angles
             double dx = deltaX < 360.0 / 2 ? deltaX : 360.0 - deltaX;
             double dy = deltaY < 360.0 / 2 ? deltaY : 360.0 - deltaY;
-           // double dz = deltaZ < 360.0 / 2 ? deltaZ : 360.0 - deltaZ;
+            double dz = deltaZ < 360.0 / 2 ? deltaZ : 360.0 - deltaZ;
 
             return Math.Sqrt((dx * dx) + (dy * dy) /*+ (dz * dz)*/);
+        }
+
+        public static double ViewAngleDistance(Vector3 a, Vector3 b, Vector3 c)
+        {
+            double dabX = Math.Abs(a.X - b.X);
+            dabX = dabX < 360.0 / 2 ? dabX : 360.0 - dabX;
+            double dabY = Math.Abs(a.Y - b.Y);
+            dabY = dabY < 360.0 / 2 ? dabY : 360.0 - dabY;
+
+            double dacX = Math.Abs(a.X - c.X);
+            dacX = dacX < 360.0 / 2 ? dacX : 360.0 - dacX;
+            double dacY = Math.Abs(a.Y - c.Y);
+            dacY = dacY < 360.0 / 2 ? dacY : 360.0 - dacY;
+
+            double dbcX = Math.Abs(b.X - c.X);
+            dbcX = dbcX < 360.0 / 2 ? dbcX : 360.0 - dbcX;
+            double dbcY = Math.Abs(b.Y - c.Y);
+            dbcY = dbcY < 360.0 / 2 ? dbcY : 360.0 - dbcY;
+
+            double deltaX = (dabX - dacX - dbcX) / 2.0;
+            deltaX = deltaX < 360.0 / 2 ? deltaX : 360.0 - deltaX;
+            double deltaY = (dabY - dacY - dbcY) / 2.0;
+            deltaY = deltaY < 360.0 / 2 ? deltaY : 360.0 - deltaY;
+
+            return Math.Round(Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY)), 4);
         }
 
         public static Vector3 Subtract(Vector3 a, Vector3 b) => new Vector3(b.X - a.X, b.Y - a.Y, b.Z - a.Z);

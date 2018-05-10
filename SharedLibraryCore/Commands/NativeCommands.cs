@@ -689,7 +689,6 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            // todo: move unflag to seperate command
             if (E.Target.Level >= E.Origin.Level)
             {
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_FAIL"]} ^5{E.Target.Name}");

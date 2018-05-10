@@ -18,6 +18,7 @@ namespace IW4MAdmin.Application
         static public double Version { get; private set; }
         static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+        private static ManualResetEventSlim OnShutdownComplete = new ManualResetEventSlim();
 
         public static void Main(string[] args)
         {
@@ -43,6 +44,7 @@ namespace IW4MAdmin.Application
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
+                Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
                 Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
 
@@ -126,30 +128,21 @@ namespace IW4MAdmin.Application
                         if (userInput?.Length > 0)
                         {
                             Origin.CurrentServer = ServerManager.Servers[0];
-                            GameEvent E = new GameEvent(GameEvent.EventType.Say, userInput, Origin, null, ServerManager.Servers[0]);
+                            GameEvent E = new GameEvent()
+                            {
+                                Type = GameEvent.EventType.Command,
+                                Data = userInput,
+                                Origin = Origin,
+                                Owner = ServerManager.Servers[0]
+                            };
+
                             ServerManager.GetEventHandler().AddEvent(E);
+                            E.OnProcessed.Wait();
                         }
                         Console.Write('>');
 
                     } while (ServerManager.Running);
                 });
-
-                if (ServerManager.GetApplicationSettings().Configuration().EnableWebFront)
-                {
-                    Task.Run(() =>
-                    {
-                        try
-                        {
-                            WebfrontCore.Program.Init(ServerManager);
-                        }
-
-                        catch (Exception e)
-                        {
-                            ServerManager.Logger.WriteWarning("Webfront had unhandled exception");
-                            ServerManager.Logger.WriteDebug(e.Message);
-                        }
-                    });
-                }
             }
 
             catch (Exception e)
@@ -164,9 +157,21 @@ namespace IW4MAdmin.Application
                 Console.ReadKey();
             }
 
+            if (ServerManager.GetApplicationSettings().Configuration().EnableWebFront)
+            {
+                Task.Run(() => WebfrontCore.Program.Init(ServerManager));
+            }
 
+            OnShutdownComplete.Reset();
             ServerManager.Start().Wait();
             ServerManager.Logger.WriteVerbose(loc["MANAGER_SHUTDOWN_SUCCESS"]);
+            OnShutdownComplete.Set();
+        }
+
+        private static void OnCancelKey(object sender, ConsoleCancelEventArgs e)
+        {
+            ServerManager.Stop();
+            OnShutdownComplete.Wait();
         }
 
         static void CheckDirectories()

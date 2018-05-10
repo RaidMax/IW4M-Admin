@@ -31,13 +31,13 @@
                         <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-             (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
+           (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
                         }
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-            (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
+          (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                         }
@@ -45,7 +45,7 @@
 
                     <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted order-0">
                         @{
-                            @Model.NetworkId.ToString("X") <br/>
+                            <span class="text-secondary">@Model.NetworkId.ToString("X")</span> <br />
                             foreach (string alias in Model.Aliases)
                             {
                                 @alias <br />
@@ -67,10 +67,10 @@
             <h5><span class="level-color-@Model.Level.ToLower()"><strong>@Model.Level</strong></span></h5>
         </div>
         <div id="profile_time_played" class="text-muted">
-           @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_HOURS"]
+            @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_HOURS"]
         </div>
         <div id="profile_first_seen" class="text-muted">
-           @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+            @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
         </div>
         <div id="profile_last_seen" class="text-muted">
             @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]

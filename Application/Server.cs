@@ -25,10 +25,8 @@ namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
-        private CancellationToken cts;
         private static Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEvent LogEvent;
-
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
 
@@ -196,16 +194,21 @@ namespace IW4MAdmin
 
                 Logger.WriteInfo($"Client {player} connecting...");
 
-                var e = new GameEvent(GameEvent.EventType.Connect, "", player, null, this);
-                Manager.GetEventHandler().AddEvent(e);
-
-                e.OnProcessed.WaitHandle.WaitOne(5000);
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
                 {
                     await player.Kick(Utilities.CurrentLocalization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], new Player() { ClientId = 1 });
+                    return true;
                 }
+
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Connect,
+                    Origin = player,
+                    Owner = this
+                };
+                Manager.GetEventHandler().AddEvent(e);
 
                 return true;
             }
@@ -375,14 +378,31 @@ namespace IW4MAdmin
             await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
 
+
+            Command C = null;
+            if (E.Type == GameEvent.EventType.Command)
+            {
+                try
+                {
+                    C = await ValidateCommand(E);
+                }
+
+                catch (CommandException e)
+                {
+                    Logger.WriteInfo(e.Message);
+                }
+
+                if (C != null)
+                {
+                    E.Extra = C;
+                }
+            }
+
             // this allows us to catch exceptions but still run it parallel
             async Task pluginHandlingAsync(Task onEvent, string pluginName)
             {
                 try
                 {
-                    if (cts.IsCancellationRequested)
-                        return;
-
                     await onEvent;
                 }
 
@@ -467,54 +487,16 @@ namespace IW4MAdmin
                 });
             }
 
-            else if (E.Type == GameEvent.EventType.Script)
-            {
-                Manager.GetEventHandler().AddEvent(GameEvent.TransferWaiter(GameEvent.EventType.Kill, E));
-            }
-
             if (E.Type == GameEvent.EventType.Say && E.Data?.Length >= 2)
             {
-                if (E.Data.Substring(0, 1) == "!" ||
-                    E.Data.Substring(0, 1) == "@" ||
-                    E.Origin.Level == Player.Permission.Console)
+                E.Data = E.Data.StripColors();
+
+                ChatHistory.Add(new ChatInfo()
                 {
-                    Command C = null;
-
-                    try
-                    {
-                        C = await ValidateCommand(E);
-                    }
-
-                    catch (CommandException e)
-                    {
-                        Logger.WriteInfo(e.Message);
-                    }
-
-                    if (C != null)
-                    {
-                        if (C.RequiresTarget && E.Target == null)
-                        {
-                            Logger.WriteWarning("Requested event (command) requiring target does not have a target!");
-                        }
-
-                        E.Extra = C;
-
-                        // reprocess event as a command
-                        Manager.GetEventHandler().AddEvent(GameEvent.TransferWaiter(GameEvent.EventType.Command, E));
-                    }
-                }
-
-                else // Not a command
-                {
-                    E.Data = E.Data.StripColors();
-
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin.Name,
-                        Message = E.Data,
-                        Time = DateTime.UtcNow
-                    });
-                }
+                    Name = E.Origin.Name,
+                    Message = E.Data,
+                    Time = DateTime.UtcNow
+                });
             }
 
             if (E.Type == GameEvent.EventType.MapChange)
@@ -533,7 +515,6 @@ namespace IW4MAdmin
 
                     else
                     {
-
                         Gametype = dict["gametype"].StripColors();
                         Hostname = dict["hostname"]?.StripColors();
 
@@ -549,7 +530,11 @@ namespace IW4MAdmin
                     Hostname = dict["sv_hostname"].StripColors();
 
                     string mapname = dict["mapname"].StripColors();
-                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
+                    {
+                        Alias = mapname,
+                        Name = mapname
+                    };
                 }
             }
 
@@ -569,7 +554,6 @@ namespace IW4MAdmin
                 await E.Owner.ExecuteCommandAsync(E.Message);
             }
 
-            //todo: move
             while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
                 ChatHistory.RemoveAt(0);
 
@@ -634,18 +618,15 @@ namespace IW4MAdmin
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
-            // this isn't really used anymore
-            this.cts = cts;
-
             try
             {
                 if (Manager.ShutdownRequested())
                 {
-                    foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
-                        await plugin.OnUnloadAsync();
-
                     for (int i = 0; i < Players.Count; i++)
                         await RemovePlayer(i);
+
+                    foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+                        await plugin.OnUnloadAsync();
                 }
 
                 // only check every 2 minutes if the server doesn't seem to be responding
@@ -710,7 +691,7 @@ namespace IW4MAdmin
                 {
                     string[] messages = this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]).Split(Environment.NewLine);
 
-                    foreach(string message in messages)
+                    foreach (string message in messages)
                         await Broadcast(message);
 
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
@@ -745,7 +726,6 @@ namespace IW4MAdmin
             RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW4RConParser();
             if (ServerConfig.UseIW5MParser)
                 RconParser = new IW5MRConParser();
-
 
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
@@ -837,7 +817,6 @@ namespace IW4MAdmin
                     $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                     $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
             }
-
 
             // hopefully fix wine drive name mangling
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

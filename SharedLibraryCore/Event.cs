@@ -33,8 +33,8 @@ namespace SharedLibraryCore
             Command,
 
             // FROM GAME
-            Script,
             ScriptDamage,
+            ScriptKill,
             Kill,
             Damage,
             Death,
@@ -49,35 +49,19 @@ namespace SharedLibraryCore
             Owner = S;
             OnProcessed = new ManualResetEventSlim();
             Time = DateTime.UtcNow;
+            CurrentEventId++;
+            Id = CurrentEventId;
         }
 
         public GameEvent()
         {
             OnProcessed = new ManualResetEventSlim();
             Time = DateTime.UtcNow;
+            CurrentEventId++;
+            Id = CurrentEventId;
         }
 
-        public static GameEvent TransferWaiter(EventType newType, GameEvent e)
-        {
-            var newEvent = new GameEvent()
-            {
-                Data = e.Data,
-                Extra = e.Extra,
-                Message = e.Message,
-                OnProcessed = e.OnProcessed,
-                Origin = e.Origin,
-                Owner = e.Owner,
-                Remote = e.Remote,
-                Target = e.Target,
-                Type = newType, 
-            };
-
-            // hack: prevent the previous event from completing until this one is done
-            e.OnProcessed = new ManualResetEventSlim();
-            newEvent.Time = e.Time;
-
-            return newEvent;
-        }
+        private static long CurrentEventId;
 
         public EventType Type;
         public string Data; // Data is usually the message sent by player
@@ -89,5 +73,6 @@ namespace SharedLibraryCore
         public object Extra { get; set; }
         public ManualResetEventSlim OnProcessed { get; set; }
         public DateTime Time { get; private set; }
+        public long Id { get; private set; }
     }
 }

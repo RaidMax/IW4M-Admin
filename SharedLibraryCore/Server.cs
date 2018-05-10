@@ -41,7 +41,6 @@ namespace SharedLibraryCore
             PlayerHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();
             NextMessage = 0;
-            OnEvent = new ManualResetEventSlim();
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
             CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
             InitializeTokens();
@@ -128,7 +127,7 @@ namespace SharedLibraryCore
 #if !DEBUG
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, Message);
 
-              var e = new GameEvent()
+            var e = new GameEvent()
             {
                 Message = formattedMessage,
                 Data = formattedMessage,
@@ -139,8 +138,8 @@ namespace SharedLibraryCore
             Manager.GetEventHandler().AddEvent(e);
 #else
             Logger.WriteVerbose(Message.StripColors());
-            await Task.CompletedTask;
 #endif
+            await Task.CompletedTask;
         }
 
         /// <summary>
@@ -162,18 +161,21 @@ namespace SharedLibraryCore
             if (Target.Level == Player.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine(Utilities.StripColors(Message));
+                Console.WriteLine(Message.StripColors());
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
 
             if (CommandResult.Count > 15)
                 CommandResult.RemoveAt(0);
 
-            CommandResult.Add(new CommandResponseInfo()
+            if (Target.ClientNumber < 0)
             {
-                Response = Utilities.StripColors(Message),
-                ClientId = Target.ClientId
-            });
+                CommandResult.Add(new CommandResponseInfo()
+                {
+                    Response = Message.StripColors(),
+                    ClientId = Target.ClientId
+                });
+            }
         }
 
         /// <summary>
@@ -261,7 +263,7 @@ namespace SharedLibraryCore
         {
             BroadcastMessages = new List<String>();
 
-            if(ServerConfig.AutoMessages != null)
+            if (ServerConfig.AutoMessages != null)
                 BroadcastMessages.AddRange(ServerConfig.AutoMessages);
             BroadcastMessages.AddRange(Manager.GetApplicationSettings().Configuration().AutoMessages);
         }
@@ -315,7 +317,6 @@ namespace SharedLibraryCore
         public RCon.Connection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; protected set; }
         public IEventParser EventParser { get; set; }
-        public ManualResetEventSlim OnEvent { get; private set; }
 
         // Internal
         protected string IP;
@@ -327,6 +328,7 @@ namespace SharedLibraryCore
         protected TimeSpan LastMessage;
         protected IFile LogFile;
         protected DateTime LastPoll;
+        protected ManualResetEventSlim OnRemoteCommandResponse;
 
         // only here for performance
         private bool CustomSayEnabled;

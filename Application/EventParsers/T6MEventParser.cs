@@ -20,7 +20,7 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 return new GameEvent()
                 {
-                    Type = GameEvent.EventType.Script,
+                    Type = GameEvent.EventType.Kill,
                     Data = cleanedEventLine,
                     Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
                     Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),

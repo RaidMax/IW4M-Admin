@@ -132,7 +132,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             else
             {
-                // todo: look at this more
                 statsSvc.ClientStatSvc.Update(clientStats);
             }
 
@@ -201,10 +200,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
-            /* // sync their stats before they leave
-             clientStats = UpdateStats(clientStats);*/
+            // sync their stats before they leave
+            //clientStats = UpdateStats(clientStats);
 
-            // todo: should this be saved every disconnect?
             statsSvc.ClientStatSvc.Update(clientStats);
             await statsSvc.ClientStatSvc.SaveChangesAsync();
             // increment the total play time
@@ -225,7 +223,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// Process stats for kill event
         /// </summary>
         /// <returns></returns>
-        public async Task AddScriptKill(bool isDamage, DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
+        public async Task AddScriptHit(bool isDamage, DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads, string snapAngles)
         {
             var statsSvc = ContextThreads[serverId];
@@ -312,7 +310,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
 
-                statsSvc.ClientStatSvc.Update(clientStats);
+                //statsSvc.ClientStatSvc.Update(clientStats);
                 // await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
@@ -500,7 +498,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 scoreDifference = clientStats.RoundScore + clientStats.LastScore;
             }
-            else
+            else if (clientStats.RoundScore > 0 && clientStats.LastScore < clientStats.RoundScore)
             {
                 scoreDifference = clientStats.RoundScore - clientStats.LastScore;
             }

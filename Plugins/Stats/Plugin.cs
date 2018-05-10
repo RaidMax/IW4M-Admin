@@ -44,7 +44,8 @@ namespace IW4MAdmin.Plugins.Stats
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case GameEvent.EventType.Say:
-                    if (E.Data != string.Empty && E.Data.Trim().Length > 0 && E.Message.Trim()[0] != '!' && E.Origin.ClientId > 1)
+                    if (!string.IsNullOrEmpty(E.Data) && 
+                        E.Origin.ClientId > 1)
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case GameEvent.EventType.MapChange:
@@ -69,23 +70,26 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Flag:
                     break;
-                case GameEvent.EventType.Script:
+                case GameEvent.EventType.ScriptKill:
+                    string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
+                    if (killInfo.Length >= 13)
+                        await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     break;
                 case GameEvent.EventType.Kill:
-                    string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 9 && killInfo[0].Contains("ScriptKill") && E.Owner.CustomCallback)
-                        await Manager.AddScriptKill(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
-                    else if (!E.Owner.CustomCallback)
+                    if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case GameEvent.EventType.Death:
                     break;
-                //case GameEvent.EventType.Damage:
+                case GameEvent.EventType.Damage:
+                    if (!E.Owner.CustomCallback)
+                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Owner.GetHashCode());
+                    break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 9 && E.Owner.CustomCallback)
-                        await Manager.AddScriptKill(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                    if (killInfo.Length >= 13)
+                        await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     break;
             }
@@ -153,7 +157,7 @@ namespace IW4MAdmin.Plugins.Stats
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
-                double maxStrain = clientStats.Count(c=> c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
+                double maxStrain = clientStats.Count(c => c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
                 //double maxAngle = clientStats.Max(cs => cs.HitLocations.Max(hl => hl.MaxAngleDistance));
 
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)

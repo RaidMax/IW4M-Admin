@@ -21,7 +21,7 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     return new GameEvent()
                     {
-                        Type = GameEvent.EventType.Script,
+                        Type = GameEvent.EventType.Kill,
                         Data = logLine,
                         Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
                         Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
@@ -32,13 +32,27 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (cleanedEventLine == "say" || cleanedEventLine == "sayteam")
             {
+                string message = lineSplit[4].Replace("\x15", "");
+
+                if (message[0] == '!' || message[1] == '@')
+                {
+                    return new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Command,
+                        Data = message,
+                        Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
+                        Owner = server,
+                        Message = message
+                    };
+                }
+
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.Say,
-                    Data = lineSplit[4].Replace("\x15", ""),
+                    Data = message,
                     Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
                     Owner = server,
-                    Message = lineSplit[4].Replace("\x15", "")
+                    Message = message
                 };
             }
 
@@ -46,7 +60,7 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 return new GameEvent()
                 {
-                    Type = GameEvent.EventType.Script,
+                    Type = GameEvent.EventType.ScriptKill,
                     Data = logLine,
                     Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
                     Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong()),

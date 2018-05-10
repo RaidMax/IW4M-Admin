@@ -32,7 +32,7 @@ namespace IW4MAdmin.Application.IO
                 string newLine;
                 while (!String.IsNullOrEmpty(newLine = rd.ReadLine()))
                 {
-                    logLines.Add(newLine.Replace("\r\n", ""));
+                    logLines.Add(newLine);
                 }
             }
 
@@ -49,7 +49,7 @@ namespace IW4MAdmin.Application.IO
                         events.Add(Parser.GetEvent(server, eventLine));
                     }
                     
-                    catch (Exception e)
+                    catch (Exception)
                     {
                     }
                 }

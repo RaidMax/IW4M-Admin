@@ -407,15 +407,15 @@ namespace SharedLibraryCore
 
         public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
 
-        public static Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
-
+        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
+        
         public static Task<List<Player>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
 
         public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)
         {
             var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
             return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
-        } 
+        }
 
     }
 }

@@ -1,10 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
@@ -14,7 +11,6 @@ namespace IW4MAdmin.Application.IO
         Server Server;
         long PreviousFileSize;
         GameLogReader Reader;
-        Timer RefreshInfoTimer;
         string GameLogFile;
 
         class EventState
@@ -28,17 +24,25 @@ namespace IW4MAdmin.Application.IO
             GameLogFile = gameLogPath;
             Reader = new GameLogReader(gameLogPath, server.EventParser);
             Server = server;
-            RefreshInfoTimer = new Timer(OnEvent, new EventState()
-            {
-                Log = server.Manager.GetLogger(),
-                ServerId = server.ToString()
-            }, 0, 100);
+
+            Task.Run(async () =>
+           {
+               while (!server.Manager.ShutdownRequested())
+               {
+                   OnEvent(new EventState()
+                   {
+                       Log = server.Manager.GetLogger(),
+                       ServerId = server.ToString()
+                   });
+                   await Task.Delay(100);
+               }
+           });
         }
 
         private void OnEvent(object state)
         {
             long newLength = new FileInfo(GameLogFile).Length;
-
+ 
             try
             {
                 UpdateLogEvents(newLength);

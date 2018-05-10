@@ -3,20 +3,23 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace IW4MAdmin.Application
 {
     class GameEventHandler : IEventHandler
     {
         private ConcurrentQueue<GameEvent> EventQueue;
-        private ConcurrentQueue<GameEvent> StatusSensitiveQueue;
+        private Queue<GameEvent> StatusSensitiveQueue;
         private IManager Manager;
 
         public GameEventHandler(IManager mgr)
         {
             EventQueue = new ConcurrentQueue<GameEvent>();
-            StatusSensitiveQueue = new ConcurrentQueue<GameEvent>();
+            StatusSensitiveQueue = new Queue<GameEvent>();
+
             Manager = mgr;
         }
 
@@ -26,25 +29,30 @@ namespace IW4MAdmin.Application
             Manager.GetLogger().WriteDebug($"Got new event of type {gameEvent.Type} for {gameEvent.Owner}");
 #endif
             // we need this to keep accurate track of the score
-            if (gameEvent.Type == GameEvent.EventType.Script ||
-                gameEvent.Type == GameEvent.EventType.Kill ||
+            if (gameEvent.Type == GameEvent.EventType.Kill ||
+                gameEvent.Type == GameEvent.EventType.Damage ||
+                gameEvent.Type == GameEvent.EventType.ScriptDamage ||
+                gameEvent.Type == GameEvent.EventType.ScriptKill ||
                 gameEvent.Type == GameEvent.EventType.MapChange)
             {
 #if DEBUG
                 Manager.GetLogger().WriteDebug($"Added sensitive event to queue");
 #endif
-                StatusSensitiveQueue.Enqueue(gameEvent);
+                lock (StatusSensitiveQueue)
+                {
+                    StatusSensitiveQueue.Enqueue(gameEvent);
+                }
                 return;
             }
 
             else
             {
                 EventQueue.Enqueue(gameEvent);
+                Manager.SetHasEvent();
             }
 #if DEBUG
             Manager.GetLogger().WriteDebug($"There are now {EventQueue.Count} events in queue");
 #endif
-            Manager.SetHasEvent();
         }
 
         public string[] GetEventOutput()
@@ -56,14 +64,17 @@ namespace IW4MAdmin.Application
         {
             if (StatusSensitiveQueue.Count > 0)
             {
-                if (!StatusSensitiveQueue.TryDequeue(out GameEvent newEvent))
+                lock (StatusSensitiveQueue)
                 {
-                    Manager.GetLogger().WriteWarning("Could not dequeue time sensitive event for processing");
-                }
+                    if (!StatusSensitiveQueue.TryDequeue(out GameEvent newEvent))
+                    {
+                        Manager.GetLogger().WriteWarning("Could not dequeue time sensitive event for processing");
+                    }
 
-                else
-                {
-                    return newEvent;
+                    else
+                    {
+                        return newEvent;
+                    }
                 }
             }
 

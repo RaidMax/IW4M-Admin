@@ -242,7 +242,7 @@ namespace SharedLibraryCore
                 return Game.IW4;
             if (gameName.Contains("CoD4"))
                 return Game.IW3;
-            if (gameName.Contains("WaW"))
+            if (gameName.Contains("COD_WaW"))
                 return Game.T4;
             if (gameName.Contains("COD_T5_S"))
                 return Game.T5;

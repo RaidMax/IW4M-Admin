@@ -23,7 +23,7 @@ namespace Application.RconParsers
             TempBan = "tempbanclient {0} \"{1}\""
         };
 
-        private static string StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|bot[0-9]+|(?:[0-9]+)) +(.{0,20}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}) +(-*[0-9]+) +([0-9]+) *$";
+        private static string StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|bot[0-9]+|(?:[0-9]+)) +(.{0,20}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
@@ -72,7 +72,7 @@ namespace Application.RconParsers
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, $"set {dvarName} {dvarValue}")).Length > 0;
         }
 
-        public CommandPrefix GetCommandPrefixes() => Prefixes;
+        public virtual CommandPrefix GetCommandPrefixes() => Prefixes;
 
         private List<Player> ClientsFromStatus(string[] Status)
         {

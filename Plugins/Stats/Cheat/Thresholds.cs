@@ -27,8 +27,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public const int HighSampleMinKills = 100;
         public const double KillTimeThreshold = 0.2;
 
-        public const double MaxStrain = 0.4399;
+        public const double MaxStrainBan = 0.4399;
         public const double MaxOffset = 4.789;
+        public const double MaxStrainFlag = 0.2;
 
         public static double GetMarginOfError(int numKills) => 1.6455 / Math.Sqrt(numKills);
 

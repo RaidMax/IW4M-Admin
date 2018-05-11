@@ -126,13 +126,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .ToList()
                 };
 
-                clientStats = statsSvc.ClientStatSvc.Insert(clientStats);
-                await statsSvc.ClientStatSvc.SaveChangesAsync();
-            }
-
-            else
-            {
-                statsSvc.ClientStatSvc.Update(clientStats);
+                // insert if they've not been added
+                var clientStatsSvc = statsSvc.ClientStatSvc;
+                clientStats = clientStatsSvc.Insert(clientStats);
+                await clientStatsSvc.SaveChangesAsync();
             }
 
             // migration for previous existing stats
@@ -160,9 +157,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
                 Log.WriteDebug("Could not add client to detection");
-
-            /*
-            await statsSvc.ClientStatSvc.SaveChangesAsync();*/
 
             return clientStats;
         }
@@ -193,30 +187,39 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
-            /*// sync their score
-            clientStats.SessionScore += pl.Score;*/
 
             // remove the client from the stats dictionary as they're leaving
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
             // sync their stats before they leave
-            //clientStats = UpdateStats(clientStats);
+           // clientStats = UpdateStats(clientStats);
+           // var clientStatsSvc = statsSvc.ClientStatSvc;
+           // clientStatsSvc.Update(clientStats);
+         //   await clientStatsSvc.SaveChangesAsync();
 
-            statsSvc.ClientStatSvc.Update(clientStats);
-            await statsSvc.ClientStatSvc.SaveChangesAsync();
             // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
-            //await statsSvc.ServerStatsSvc.SaveChangesAsync();
         }
 
         public void AddDamageEvent(string eventLine, int clientId, int serverId)
         {
-            if (Plugin.Config.Configuration().EnableAntiCheat)
-            {
-                var clientDetection = Servers[serverId].PlayerDetections[clientId];
-                clientDetection.ProcessScriptDamage(eventLine);
-            }
+            /*   string regex = @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+
+              var match = Regex.Match(damageLine, regex, RegexOptions.IgnoreCase);
+
+              if (match.Success)
+              {
+                  var meansOfDeath = ParseEnum<IW4Info.MeansOfDeath>.Get(match.Groups[12].Value, typeof(IW4Info.MeansOfDeath));
+                  var hitLocation = ParseEnum<IW4Info.HitLocation>.Get(match.Groups[13].Value, typeof(IW4Info.HitLocation));
+
+                  if (meansOfDeath == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
+                  meansOfDeath == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
+                  meansOfDeath == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
+                  {
+                      ClientStats.HitLocations.First(hl => hl.Location == hitLocation).HitCount += 1;
+                  }
+              }*/
         }
 
         /// <summary>
@@ -310,7 +313,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
 
-                //statsSvc.ClientStatSvc.Update(clientStats);
+                statsSvc.ClientStatSvc.Update(clientStats);
                 // await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
@@ -330,19 +333,31 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     switch (penalty.ClientPenalty)
                     {
                         case Penalty.PenaltyType.Ban:
-                            await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player() { ClientId = 1 });
+                            await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
+                            {
+                                ClientId = 1
+                            });
                             break;
                         case Penalty.PenaltyType.Flag:
                             if (attacker.Level != Player.Permission.User)
                                 break;
-                            var flagCmd = new CFlag();
-                            await flagCmd.ExecuteAsync(new GameEvent(GameEvent.EventType.Flag, $"{(int)penalty.Bone}-{Math.Round(penalty.RatioAmount, 2).ToString()}@{penalty.KillCount}", new Player()
+                            var e = new GameEvent()
                             {
-                                ClientId = 1,
-                                Level = Player.Permission.Console,
-                                ClientNumber = -1,
-                                CurrentServer = attacker.CurrentServer
-                            }, attacker, attacker.CurrentServer));
+                                Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?
+                                    $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
+                                    $"{penalty.Type} -{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
+                                Origin = new Player()
+                                {
+                                    ClientId = 1,
+                                    Level = Player.Permission.Console,
+                                    ClientNumber = -1,
+                                    CurrentServer = attacker.CurrentServer
+                                },
+                                Target = attacker,
+                                Owner = attacker.CurrentServer,
+                                Type = GameEvent.EventType.Flag
+                            };
+                            await new CFlag().ExecuteAsync(e);
                             break;
                     }
                 }
@@ -433,10 +448,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // todo: do we want to save this immediately?
-            var statsSvc = ContextThreads[serverId];
-            statsSvc.ClientStatSvc.Update(attackerStats);
-            statsSvc.ClientStatSvc.Update(victimStats);
-            //await statsSvc.ClientStatSvc.SaveChangesAsync();
+            var statsSvc = ContextThreads[serverId].ClientStatSvc;
+            statsSvc.Update(attackerStats);
+            statsSvc.Update(victimStats);
+            await statsSvc.SaveChangesAsync();
         }
 
         /// <summary>
@@ -463,7 +478,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.KillStreak = 0;
 
             // process the attacker's stats after the kills
-            attackerStats = UpdateStats(attackerStats);
+            //attackerStats = UpdateStats(attackerStats);
 
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;

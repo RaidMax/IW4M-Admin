@@ -13,7 +13,7 @@ namespace IW4MAdmin.Application.EventParsers
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
             string[] lineSplit = logLine.Split(';');
-            string cleanedEventLine = Regex.Replace(lineSplit[0], @"[0-9]+:[0-9]+\ ", "").Trim();
+            string cleanedEventLine = Regex.Replace(lineSplit[0], @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();
 
             if (cleanedEventLine[0] == 'K')
             {

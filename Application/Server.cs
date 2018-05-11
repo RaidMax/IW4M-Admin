@@ -723,7 +723,7 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
-            RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW4RConParser();
+            RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW3RConParser();
             if (ServerConfig.UseIW5MParser)
                 RconParser = new IW5MRConParser();
 

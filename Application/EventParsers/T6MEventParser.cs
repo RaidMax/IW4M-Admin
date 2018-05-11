@@ -9,9 +9,9 @@ using SharedLibraryCore.Objects;
 
 namespace IW4MAdmin.Application.EventParsers
 {
-    class T6MEventParser : IEventParser
+    class T6MEventParser : IW4EventParser
     {
-        public GameEvent GetEvent(Server server, string logLine)
+        /*public GameEvent GetEvent(Server server, string logLine)
         {
             string cleanedEventLine = Regex.Replace(logLine, @"^ *[0-9]+:[0-9]+ *", "").Trim();
             string[] lineSplit = cleanedEventLine.Split(';');
@@ -104,8 +104,8 @@ namespace IW4MAdmin.Application.EventParsers
                 },
                 Owner = server
             };
-        }
+        }*/
 
-        public string GetGameDir() => $"t6r{Path.DirectorySeparatorChar}data";
+        public override string GetGameDir() => $"t6r{Path.DirectorySeparatorChar}data";
     }
 }

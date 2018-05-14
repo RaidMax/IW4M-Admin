@@ -104,7 +104,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // get the client's stats from the database if it exists, otherwise create and attach a new one
             // if this fails we want to throw an exception
-            var clientStats = statsSvc.ClientStatSvc.Find(c => c.ClientId == pl.ClientId && c.ServerId == serverId).FirstOrDefault();
+            var clientStatsSvc = statsSvc.ClientStatSvc;
+            var clientStats = clientStatsSvc.Find(c => c.ClientId == pl.ClientId && c.ServerId == serverId).FirstOrDefault();
 
             if (clientStats == null)
             {
@@ -127,7 +128,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 };
 
                 // insert if they've not been added
-                var clientStatsSvc = statsSvc.ClientStatSvc;
                 clientStats = clientStatsSvc.Insert(clientStats);
                 await clientStatsSvc.SaveChangesAsync();
             }
@@ -193,10 +193,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
             // sync their stats before they leave
-           // clientStats = UpdateStats(clientStats);
-           // var clientStatsSvc = statsSvc.ClientStatSvc;
-           // clientStatsSvc.Update(clientStats);
-         //   await clientStatsSvc.SaveChangesAsync();
+            var clientStatsSvc = statsSvc.ClientStatSvc;
+            clientStats = UpdateStats(clientStats);
+            clientStatsSvc.Update(clientStats);
+            await clientStatsSvc.SaveChangesAsync();
 
             // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
@@ -305,6 +305,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var clientDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
             var clientStats = Servers[serverId].PlayerStats[attacker.ClientId];
+            var clientStatsSvc = statsSvc.ClientStatSvc;
+            clientStatsSvc.Update(clientStats);
 
             // increment their hit count
             if (kill.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
@@ -313,7 +315,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
 
-                statsSvc.ClientStatSvc.Update(clientStats);
+                //statsSvc.ClientStatSvc.Update(clientStats);
                 // await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
@@ -345,7 +347,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             {
                                 Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?
                                     $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
-                                    $"{penalty.Type} -{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
+                                    $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
                                 Origin = new Player()
                                 {
                                     ClientId = 1,
@@ -365,10 +367,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await executePenalty(clientDetection.ProcessKill(kill, isDamage));
                 await executePenalty(clientDetection.ProcessTotalRatio(clientStats));
 
-#if DEBUG
-                statsSvc.ClientStatSvc.Update(clientStats);
-                await statsSvc.ClientStatSvc.SaveChangesAsync();
-#endif
+                await clientStatsSvc.SaveChangesAsync();
             }
         }
 
@@ -448,10 +447,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // todo: do we want to save this immediately?
-            var statsSvc = ContextThreads[serverId].ClientStatSvc;
-            statsSvc.Update(attackerStats);
-            statsSvc.Update(victimStats);
-            await statsSvc.SaveChangesAsync();
+            var clientStatsSvc = ContextThreads[serverId].ClientStatSvc;
+            clientStatsSvc.Update(attackerStats);
+            clientStatsSvc.Update(victimStats);
+            await clientStatsSvc.SaveChangesAsync();
         }
 
         /// <summary>
@@ -478,7 +477,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.KillStreak = 0;
 
             // process the attacker's stats after the kills
-            //attackerStats = UpdateStats(attackerStats);
+            attackerStats = UpdateStats(attackerStats);
 
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
@@ -630,7 +629,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             Log.WriteDebug("Syncing stats contexts");
             await statsSvc.ServerStatsSvc.SaveChangesAsync();
-            await statsSvc.ClientStatSvc.SaveChangesAsync();
+            //await statsSvc.ClientStatSvc.SaveChangesAsync();
             await statsSvc.KillStatsSvc.SaveChangesAsync();
             await statsSvc.ServerSvc.SaveChangesAsync();
 

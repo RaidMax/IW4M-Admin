@@ -12,7 +12,7 @@ namespace SharedLibraryCore.Services
     // https://stackoverflow.com/questions/43677906/crud-operations-with-entityframework-using-generic-type
     public class GenericRepository<TEntity> where TEntity : class
     {
-        private dynamic _context;
+        private DatabaseContext _context;
         private DbSet<TEntity> _dbSet;
 
         protected DbContext Context
@@ -101,7 +101,6 @@ namespace SharedLibraryCore.Services
                 dbSet.Attach(entity);
 
             dbSet.Remove(entity);
-
         }
 
         public virtual void Delete(TEntity entity)
@@ -119,7 +118,6 @@ namespace SharedLibraryCore.Services
             T entity = dbSet.Find(id);
             dbSet.Attach(entity);
             dbSet.Remove(entity);
-
         }
 
         public virtual void Delete(object id)

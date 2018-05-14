@@ -82,14 +82,17 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (cleanedEventLine[0] == 'D')
             {
-                return new GameEvent()
+                if (Regex.Match(cleanedEventLine, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
                 {
-                    Type = GameEvent.EventType.Damage,
-                    Data = Regex.Replace(logLine, @"[0-9]+:[0-9]+\ ", "").Trim(),
-                    Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong()),
-                    Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
-                    Owner = server
-                };
+                    return new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Damage,
+                        Data = cleanedEventLine,
+                        Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong()),
+                        Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                        Owner = server
+                    };
+                }
             }
 
             if (cleanedEventLine.Contains("ExitLevel"))

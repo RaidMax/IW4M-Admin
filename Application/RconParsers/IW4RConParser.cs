@@ -23,7 +23,7 @@ namespace Application.RconParsers
             TempBan = "tempbanclient {0} \"{1}\""
         };
 
-        private static string StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|bot[0-9]+|(?:[0-9]+)) +(.{0,20}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
+        private static string StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {

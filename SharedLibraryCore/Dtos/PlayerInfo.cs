@@ -24,5 +24,6 @@ namespace SharedLibraryCore.Dtos
         public List<ProfileMeta> Meta { get; set; }
         public bool Online { get; set; }
         public string TimeOnline { get; set; }
+        public IDictionary<int, long> LinkedAccounts { get; set; }
     }
 }

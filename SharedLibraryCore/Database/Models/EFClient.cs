@@ -50,6 +50,8 @@ namespace SharedLibraryCore.Database.Models
 
         [NotMapped]
         public string IPAddressString => new System.Net.IPAddress(BitConverter.GetBytes(IPAddress)).ToString();
+        [NotMapped]
+        public virtual IDictionary<int, long> LinkedAccounts { get; set; }
 
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }

@@ -387,7 +387,7 @@ namespace SharedLibraryCore.Commands
                 await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE"]} [^5{E.Origin.Name}^7]");
             else
                 await E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE"]);
-            Task.Delay(5000).Wait();
+            await Task.Delay(5000);
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }
     }
@@ -553,14 +553,14 @@ namespace SharedLibraryCore.Commands
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
                     await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_SUCCESS"]} ^5{m.Alias}");
-                    Task.Delay(5000).Wait();
+                    await Task.Delay(5000);
                     await E.Owner.LoadMap(m.Name);
                     return;
                 }
             }
 
             await E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_UKN"]} ^5{newMap}");
-            Task.Delay(5000).Wait();
+            await Task.Delay(5000);
             await E.Owner.LoadMap(newMap);
         }
     }

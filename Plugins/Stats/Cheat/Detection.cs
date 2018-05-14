@@ -81,8 +81,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
 
-
-                if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset)
+                if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset &&
+                    hitLoc.HitCount > 15)
                 {
                     Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
                     Log.WriteDebug($"Lifetime Average = {newAverage}");
@@ -92,9 +92,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     return new DetectionPenaltyResult()
                     {
-                        ClientPenalty = Penalty.PenaltyType.Flag,
+                        ClientPenalty = Penalty.PenaltyType.Ban,
                         Value = hitLoc.HitOffsetAverage,
                         HitCount = hitLoc.HitCount,
+                        Type = DetectionType.Offset
                     };
                 }
 
@@ -102,7 +103,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double sessAverage = (AngleDifferenceAverage * (HitCount - 1) + realAgainstPredict) / HitCount;
                 AngleDifferenceAverage = sessAverage;
 
-                if (sessAverage > Thresholds.MaxOffset)
+                if (sessAverage > Thresholds.MaxOffset &&
+                    HitCount > 15)
                 {
                     Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
                     Log.WriteDebug($"Session Average = {sessAverage}");
@@ -124,7 +126,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 #endif
             }
             var currentStrain = Strain.GetStrain(kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
-
             LastOffset = kill.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)

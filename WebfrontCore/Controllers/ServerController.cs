@@ -13,7 +13,6 @@ namespace WebfrontCore.Controllers
         [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult  ClientActivity(int id)
         {
-
             var s = Manager.GetServers().FirstOrDefault(s2 => s2.GetHashCode() == id);
             if (s == null)
                 return View("Error", "Invalid server!");
@@ -27,14 +26,15 @@ namespace WebfrontCore.Controllers
                 ClientCount = s.ClientNum,
                 MaxClients = s.MaxClients,
                 GameType = s.Gametype,
-                Players = s.Players.Where(p => p != null).Select(p => new PlayerInfo
+                Players = s.GetPlayersAsList()
+                .Select(p => new PlayerInfo
                 {
                     Name = p.Name,
                     ClientId = p.ClientId,
                     Level = p.Level.ToString(),
                     LevelInt = (int)p.Level
                 }).ToList(),
-                ChatHistory = s.ChatHistory.OrderBy(c => c.Time).Take((int)Math.Ceiling(s.ClientNum / 2.0)).ToArray(),
+                ChatHistory = s.ChatHistory,
                 PlayerHistory = s.PlayerHistory.ToArray(),
             };
             return PartialView("_ClientActivity", serverInfo);

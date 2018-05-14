@@ -107,11 +107,33 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                return await context.Clients
-                    .AsNoTracking()
-                    .Include(c => c.CurrentAlias)
-                    .Include(c => c.AliasLink.Children)
-                    .SingleOrDefaultAsync(e => e.ClientId == entityID);
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                var iqClient = from client in context.Clients
+                               .Include(c => c.CurrentAlias)
+                               .Include(c => c.AliasLink.Children)
+                               where client.ClientId == entityID
+                               select new
+                               {
+                                   Client = client,
+                                   LinkedAccounts = (from linkedClient in context.Clients
+                                                    where client.AliasLinkId == linkedClient.AliasLinkId
+                                                    select new
+                                                    {
+                                                        linkedClient.ClientId,
+                                                        linkedClient.NetworkId
+                                                    })
+                               };
+                var foundClient = await iqClient.FirstOrDefaultAsync();
+
+                foundClient.Client.LinkedAccounts = new Dictionary<int, long>();
+                // todo: find out the best way to do this
+                // I'm doing this here because I don't know the best way to have multiple awaits in the query
+                foreach (var linked in foundClient.LinkedAccounts)
+                    foundClient.Client.LinkedAccounts.Add(linked.ClientId, linked.NetworkId);
+
+                return foundClient.Client;
             }
         }
 
@@ -216,11 +238,15 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                return await context.Clients
-                    .AsNoTracking()
-                    .Include(c => c.CurrentAlias)
-                    .Where(c => c.Level >= Player.Permission.Trusted)
-                    .ToListAsync();
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                var iqClients = from client in context.Clients
+                                .Include(c => c.CurrentAlias)
+                                where client.Level >= Player.Permission.Trusted
+                                select client;
+
+                return await iqClients.ToListAsync();
             }
         }
 
@@ -233,14 +259,14 @@ namespace SharedLibraryCore.Services
             {
                 var iqClients = (from alias in context.Aliases
                        .AsNoTracking()
-                    where alias.Name.ToLower()
-                        .Contains(name.ToLower())
-                    join link in context.AliasLinks
-                    on alias.LinkId equals link.AliasLinkId
-                    join client in context.Clients
-                        .AsNoTracking()
-                    on alias.LinkId equals client.AliasLinkId
-                    select client)
+                                 where alias.Name.ToLower()
+                                     .Contains(name.ToLower())
+                                 join link in context.AliasLinks
+                                 on alias.LinkId equals link.AliasLinkId
+                                 join client in context.Clients
+                                     .AsNoTracking()
+                                 on alias.LinkId equals client.AliasLinkId
+                                 select client)
                        .Distinct()
                        .Include(c => c.CurrentAlias)
                        .Include(c => c.AliasLink.Children);
@@ -255,13 +281,13 @@ namespace SharedLibraryCore.Services
             {
                 var iqClients = (from alias in context.Aliases
                        .AsNoTracking()
-                    where alias.IPAddress == ipAddress
-                    join link in context.AliasLinks
-                    on alias.LinkId equals link.AliasLinkId
-                    join client in context.Clients
-                        .AsNoTracking()
-                    on alias.LinkId equals client.AliasLinkId
-                    select client)
+                                 where alias.IPAddress == ipAddress
+                                 join link in context.AliasLinks
+                                 on alias.LinkId equals link.AliasLinkId
+                                 join client in context.Clients
+                                     .AsNoTracking()
+                                 on alias.LinkId equals client.AliasLinkId
+                                 select client)
                        .Distinct()
                        .Include(c => c.CurrentAlias)
                        .Include(c => c.AliasLink.Children);

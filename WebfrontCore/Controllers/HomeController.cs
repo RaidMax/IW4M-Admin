@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Dtos;
 
@@ -21,6 +22,11 @@ namespace WebfrontCore.Controllers
 
         public IActionResult Error()
         {
+            var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            Manager.GetLogger().WriteError($"[Webfront] {exceptionFeature.Error.Message}");
+            Manager.GetLogger().WriteDebug(exceptionFeature.Path);
+            Manager.GetLogger().WriteDebug(exceptionFeature.Error.StackTrace);
+
             ViewBag.Description = Localization["WEBFRONT_ERROR_DESC"];
             ViewBag.Title = Localization["WEBFRONT_ERROR_TITLE"];
             return View();

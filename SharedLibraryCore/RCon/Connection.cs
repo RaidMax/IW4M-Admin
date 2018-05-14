@@ -33,25 +33,6 @@ namespace SharedLibraryCore.RCon
         }
     }
 
-    class ResponseEvent
-    {
-        public int Id { get; set; }
-        public string[] Response { get; set; }
-        public Task Awaiter
-        {
-            get
-            {
-                return Task.Run(() => FinishedEvent.Wait());
-            }
-        }
-        private ManualResetEventSlim FinishedEvent;
-
-        public ResponseEvent()
-        {
-            FinishedEvent = new ManualResetEventSlim();
-        }
-    }
-
     public class Connection
     {
         public IPEndPoint Endpoint { get; private set; }
@@ -110,7 +91,7 @@ namespace SharedLibraryCore.RCon
                 OnSent.Set();
             }
 
-            catch (SocketException)
+            catch (Exception)
             {
             }
         }
@@ -167,9 +148,9 @@ namespace SharedLibraryCore.RCon
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", bool waitForResponse = true)
         {
             // will this really prevent flooding?
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 250)
+            if ((DateTime.Now - LastQuery).TotalMilliseconds < 350)
             {
-                await Task.Delay(250);
+                await Task.Delay(350);
             }
 
             LastQuery = DateTime.Now;

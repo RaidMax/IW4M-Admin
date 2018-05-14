@@ -20,7 +20,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public GenericRepository<EFServer> ServerSvc { get; private set; }
         public GenericRepository<EFClientKill> KillStatsSvc { get; private set; }
         public GenericRepository<EFServerStatistics> ServerStatsSvc { get; private set; }
-        public GenericRepository<EFClientMessage> MessageSvc { get; private set; }
+        public GenericRepository<EFClientMessage> MessageSvc
+        {
+            get
+            {
+                return new GenericRepository<EFClientMessage>();
+            }
+        }
 
         public ThreadSafeStatsService()
         {
@@ -28,7 +34,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             ServerSvc = new GenericRepository<EFServer>();
             KillStatsSvc = new GenericRepository<EFClientKill>();
             ServerStatsSvc = new GenericRepository<EFServerStatistics>();
-            MessageSvc = new GenericRepository<EFClientMessage>();
+            //MessageSvc = new GenericRepository<EFClientMessage>();
         }
     }
 }

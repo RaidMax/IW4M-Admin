@@ -19,7 +19,7 @@ namespace WebfrontCore.ViewComponents
                 MaxClients = s.MaxClients,
                 GameType = s.Gametype,
                 PlayerHistory = s.PlayerHistory.ToArray(),
-                Players = s.Players.Where(p => p != null)
+                Players = s.GetPlayersAsList()
                 .Select(p => new PlayerInfo()
                 {
                     Name = p.Name,
@@ -27,7 +27,7 @@ namespace WebfrontCore.ViewComponents
                     Level = p.Level.ToString(),
                     LevelInt = (int)p.Level
                 }).ToList(),
-                ChatHistory = s.ChatHistory.ToArray(),
+                ChatHistory = s.ChatHistory,
                 Online = !s.Throttled
             }).ToList();
             return View("_List", serverInfo);

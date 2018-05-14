@@ -208,7 +208,8 @@ namespace SharedLibraryCore.Services
                                               Offense = penalty.Offense,
                                               Type = penalty.Type.ToString()
                                           },
-                                          When = penalty.When
+                                          When = penalty.When,
+                                          Sensitive = penalty.Type == Penalty.PenaltyType.Flag
                                       };
                     // fixme: is this good and fast?
                     var list = await iqPenalties.ToListAsync();

@@ -41,7 +41,8 @@ namespace WebfrontCore.Controllers
                     .OrderBy(i => i)
                     .ToList(),
                 Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
-                TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText()
+                TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText(),
+                LinkedAccounts = client.LinkedAccounts
             };
 
             var meta = await MetaService.GetMeta(client.ClientId);
@@ -54,7 +55,7 @@ namespace WebfrontCore.Controllers
                 clientDto.Meta.Add(new ProfileMeta()
                 {
                     Key = Localization["WEBFRONT_CLIENT_META_MASKED"],
-                    Value = client.Masked ? Localization["WEBFRONT_CLIENT_META_TRUE"]: Localization["WEBFRONT_CLIENT_META_FALSE"],
+                    Value = client.Masked ? Localization["WEBFRONT_CLIENT_META_TRUE"] : Localization["WEBFRONT_CLIENT_META_FALSE"],
                     Sensitive = true,
                     When = DateTime.MinValue
                 });
@@ -94,7 +95,9 @@ namespace WebfrontCore.Controllers
         {
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
                 .Where(a => a.Active)
-                .OrderByDescending(a => a.Level);
+                .OrderByDescending(a => a.Level).ThenByDescending(a => a.LastConnection)
+                .GroupBy(a => a.AliasLinkId).Select(a => a.First());
+
             var adminsDict = new Dictionary<SharedLibraryCore.Objects.Player.Permission, IList<ClientInfo>>();
 
             foreach (var admin in admins)

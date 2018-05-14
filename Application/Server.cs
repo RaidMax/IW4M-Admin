@@ -51,7 +51,6 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
-
             if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
                 polledPlayer.Ping < 1 ||
                 polledPlayer.ClientNumber < 0)
@@ -451,12 +450,16 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.Connect)
             {
-                ChatHistory.Add(new ChatInfo()
+                // this may be a fix for a hard to reproduce null exception error
+                lock (ChatHistory)
                 {
-                    Name = E.Origin.Name,
-                    Message = "CONNECTED",
-                    Time = DateTime.UtcNow
-                });
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin?.Name ?? "ERROR!",
+                        Message = "CONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+                }
 
                 if (E.Origin.Level > Player.Permission.Moderator)
                     await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
@@ -479,24 +482,35 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Disconnect)
             {
-                ChatHistory.Add(new ChatInfo()
+                // this may be a fix for a hard to reproduce null exception error
+                lock (ChatHistory)
                 {
-                    Name = E.Origin.Name,
-                    Message = "DISCONNECTED",
-                    Time = DateTime.UtcNow
-                });
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin?.Name ?? "ERROR!",
+                        Message = "DISCONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+                }
             }
 
-            if (E.Type == GameEvent.EventType.Say && E.Data?.Length >= 2)
+            if (E.Type == GameEvent.EventType.Say)
             {
                 E.Data = E.Data.StripColors();
 
-                ChatHistory.Add(new ChatInfo()
+                if (E.Data.Length > 0)
                 {
-                    Name = E.Origin.Name,
-                    Message = E.Data,
-                    Time = DateTime.UtcNow
-                });
+                    // this may be a fix for a hard to reproduce null exception error
+                    lock (ChatHistory)
+                    {
+                        ChatHistory.Add(new ChatInfo()
+                        {
+                            Name = E.Origin?.Name ?? "ERROR!",
+                            Message = E.Data,
+                            Time = DateTime.UtcNow
+                        });
+                    }
+                }
             }
 
             if (E.Type == GameEvent.EventType.MapChange)
@@ -731,7 +745,10 @@ namespace IW4MAdmin
             GameName = Utilities.GetGame(version.Value);
 
             if (GameName == Game.IW4)
+            {
                 EventParser = new IW4EventParser();
+                RconParser = new IW4RConParser();
+            }
             else if (GameName == Game.IW5)
                 EventParser = new IW5EventParser();
             else if (GameName == Game.T5M)

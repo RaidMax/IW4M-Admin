@@ -71,7 +71,7 @@ namespace WebfrontCore.Controllers
                 catch (System.Collections.Generic.KeyNotFoundException)
                 {
                     // force the "banned" client to be signed out
-                    HttpContext.SignOutAsync().Wait();
+                    HttpContext.SignOutAsync().Wait(5000);
                 }
             }
 

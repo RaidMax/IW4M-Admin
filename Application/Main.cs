@@ -137,7 +137,7 @@ namespace IW4MAdmin.Application
                             };
 
                             ServerManager.GetEventHandler().AddEvent(E);
-                            E.OnProcessed.Wait();
+                            E.OnProcessed.Wait(5000);
                         }
                         Console.Write('>');
 
@@ -155,6 +155,7 @@ namespace IW4MAdmin.Application
                 Console.WriteLine($"Exception: {e.Message}");
                 Console.WriteLine(loc["MANAGER_EXIT"]);
                 Console.ReadKey();
+                return;
             }
 
             if (ServerManager.GetApplicationSettings().Configuration().EnableWebFront)
@@ -171,7 +172,7 @@ namespace IW4MAdmin.Application
         private static void OnCancelKey(object sender, ConsoleCancelEventArgs e)
         {
             ServerManager.Stop();
-            OnShutdownComplete.Wait();
+            OnShutdownComplete.Wait(5000);
         }
 
         static void CheckDirectories()

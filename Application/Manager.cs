@@ -341,7 +341,7 @@ namespace IW4MAdmin.Application
             {
                 try
                 {
-                    Heartbeat.Send(this, true).Wait();
+                    Heartbeat.Send(this, true).Wait(5000);
                     heartbeatState.Connected = true;
                 }
 
@@ -356,7 +356,7 @@ namespace IW4MAdmin.Application
             {
                 try
                 {
-                    Heartbeat.Send(this).Wait();
+                    Heartbeat.Send(this).Wait(5000);
                 }
                 catch (System.Net.Http.HttpRequestException e)
                 {

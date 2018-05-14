@@ -182,6 +182,7 @@ namespace SharedLibraryCore
 
         public static long ConvertLong(this string str)
         {
+            str = str.Substring(0, Math.Min(str.Length, 16));
             if (Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
                 return id;
             var bot = Regex.Match(str, @"bot[0-9]+").Value;

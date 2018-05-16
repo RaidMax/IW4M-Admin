@@ -46,7 +46,7 @@ namespace IW4MAdmin.Application.API
 
                     FlaggedMessageCount = 0;
 
-                    E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_REPORT"]).Wait();
+                    E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_REPORT"]).Wait(5000);
                     Events.Enqueue(new EventInfo(
                         EventInfo.EventType.ALERT,
                         EventInfo.EventVersion.IW4MAdmin,

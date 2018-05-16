@@ -22,9 +22,8 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int Kills { get; set; }
         [Required]
         public int Deaths { get; set; }
-
+        public double EloRating { get; set; }
         public virtual ICollection<EFHitLocationCount> HitLocations { get; set; }
-
         [NotMapped]
         public double KDR
         {

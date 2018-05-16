@@ -53,13 +53,13 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             if (E.Target != null)
             {
                 pStats = clientStats.Find(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId).First();
-                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Skill} ^7{loc["PLUGINS_STATS_TEXT_SKILL"]}";
+                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Skill} ^7{loc["PLUGINS_STATS_TEXT_SKILL"]} | ^5{pStats.EloRating} ^7{loc["PLUGINS_STATS_COMMANDS_TOPSTATS_RATING"].ToUpper()}";
             }
 
             else
             {
                 pStats = pStats = clientStats.Find(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId).First();
-                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Skill} ^7{loc["PLUGINS_STATS_TEXT_SKILL"]}";
+                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Skill} ^7{loc["PLUGINS_STATS_TEXT_SKILL"]} | ^5{pStats.EloRating} ^7{loc["PLUGINS_STATS_COMMANDS_TOPSTATS_RATING"].ToUpper()}";
             }
 
             if (E.Message.IsBroadcastCommand())

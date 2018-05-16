@@ -8,7 +8,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 {
     class Strain : ITrackable
     {
-        private static double StrainDecayBase = 0.15;
+        private const  double StrainDecayBase = 0.9;
         private double CurrentStrain;
         private Vector3 LastAngle;
         private double LastDeltaTime;
@@ -16,7 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
         public int TimesReachedMaxStrain { get; private set; }
 
-        public double GetStrain(Vector3 newAngle, double deltaTime)
+        public double GetStrain(bool isDamage, int damage, Vector3 newAngle, double deltaTime)
         {
             if (LastAngle == null)
                 LastAngle = newAngle;
@@ -26,21 +26,36 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             double decayFactor = GetDecay(deltaTime);
             CurrentStrain *= decayFactor;
 
+#if DEBUG
+            Console.WriteLine($"Decay Factor = {decayFactor} ");
+#endif
+
             double[] distance = Helpers.Extensions.AngleStuff(newAngle, LastAngle);
             LastDistance = distance[0] + distance[1];
 
             // this happens on first kill
             if ((distance[0] == 0 && distance[1] == 0) ||
-                deltaTime == 0 || 
+                deltaTime == 0 ||
                 double.IsNaN(CurrentStrain))
             {
                 return CurrentStrain;
             }
 
             double newStrain = Math.Pow(distance[0] + distance[1], 0.99) / deltaTime;
+
+            if (damage < 100 && isDamage)
+            {
+                newStrain *= Math.Pow(damage, 2) / 10000.0;
+            }
+
+            else if (damage > 100)
+            {
+                newStrain *= damage / 100.0;
+            }
+
             CurrentStrain += newStrain;
 
-            if (CurrentStrain > Thresholds.MaxStrainFlag)
+            if (CurrentStrain > Thresholds.MaxStrainBan)
                 TimesReachedMaxStrain++;
 
             LastAngle = newAngle;
@@ -52,6 +67,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             return $"Strain - {CurrentStrain}, Angle - {LastAngle}, Delta Time - {LastDeltaTime}, Distance - {LastDistance}";
         }
 
-        private double GetDecay(double deltaTime) => Math.Pow(StrainDecayBase, deltaTime / 1000.0);
+        private double GetDecay(double deltaTime) => Math.Pow(StrainDecayBase, Math.Pow(2.0, deltaTime / 250.0) / 1000.0);
     }
 }

@@ -230,7 +230,9 @@ namespace IW4MAdmin
 
                 var e = new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this);
                 Manager.GetEventHandler().AddEvent(e);
-                e.OnProcessed.WaitHandle.WaitOne(5000);
+
+                // wait until the disconnect event is complete
+                e.OnProcessed.Wait();
 
                 Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                 Leaving.LastConnection = DateTime.UtcNow;
@@ -487,7 +489,7 @@ namespace IW4MAdmin
                 {
                     ChatHistory.Add(new ChatInfo()
                     {
-                        Name = E.Origin?.Name ?? "ERROR!",
+                        Name = E.Origin.Name,
                         Message = "DISCONNECTED",
                         Time = DateTime.UtcNow
                     });
@@ -505,8 +507,8 @@ namespace IW4MAdmin
                     {
                         ChatHistory.Add(new ChatInfo()
                         {
-                            Name = E.Origin?.Name ?? "ERROR!",
-                            Message = E.Data,
+                            Name = E.Origin.Name,
+                            Message = E.Data ?? "NULL",
                             Time = DateTime.UtcNow
                         });
                     }

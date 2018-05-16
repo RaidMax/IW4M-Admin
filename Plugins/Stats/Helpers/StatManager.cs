@@ -118,6 +118,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ServerId = serverId,
                     Skill = 0.0,
                     SPM = 0.0,
+                    EloRating = 200.0,
                     HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
                     {
                         Active = true,
@@ -143,6 +144,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 })
                 .ToList();
                 //await statsSvc.ClientStatSvc.SaveChangesAsync();
+            }
+
+            if (clientStats.EloRating == 0.0)
+            {
+                clientStats.EloRating = clientStats.Skill;
             }
 
             // set these on connecting
@@ -478,6 +484,30 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // process the attacker's stats after the kills
             attackerStats = UpdateStats(attackerStats);
+
+            // calulate elo
+            if (Servers[attackerStats.ServerId].PlayerStats.Count > 1)
+            {
+                double attackerLobbyRating = Servers[attackerStats.ServerId].PlayerStats
+                    .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
+                    .Average(cs => cs.Value.EloRating);
+
+                double victimLobbyRating = Servers[attackerStats.ServerId].PlayerStats
+                    .Where(cs => cs.Value.ClientId != victimStats.ClientId)
+                    .Average(cs => cs.Value.EloRating);
+
+                double attackerEloDifference = Math.Log(attackerLobbyRating) - Math.Log(attackerStats.EloRating);
+                double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / 3.0));
+
+                double victimEloDifference = Math.Log(victimLobbyRating) - Math.Log(victimStats.EloRating);
+                double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference / 3.0));
+
+                attackerStats.EloRating += 24.0 * (1 - winPercentage);
+                victimStats.EloRating -= 24.0 * winPercentage;
+
+                attackerStats.EloRating = Math.Max(0, Math.Round(attackerStats.EloRating, 2));
+                victimStats.EloRating = Math.Max(0, Math.Round(victimStats.EloRating, 2));
+            }
 
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;

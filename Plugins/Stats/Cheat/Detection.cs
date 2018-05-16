@@ -82,7 +82,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 hitLoc.HitOffsetAverage = (float)newAverage;
 
                 if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset &&
-                    hitLoc.HitCount > 15)
+                    hitLoc.HitCount > 100)
                 {
                     Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
                     Log.WriteDebug($"Lifetime Average = {newAverage}");
@@ -104,7 +104,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 AngleDifferenceAverage = sessAverage;
 
                 if (sessAverage > Thresholds.MaxOffset &&
-                    HitCount > 15)
+                    HitCount > 30)
                 {
                     Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
                     Log.WriteDebug($"Session Average = {sessAverage}");
@@ -125,7 +125,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Log.WriteDebug($"PredictVsReal={realAgainstPredict}");
 #endif
             }
-            var currentStrain = Strain.GetStrain(kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
+            double currentStrain = Strain.GetStrain(isDamage, kill.Damage, kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
+            currentStrain *= ClientStats.SPM / 179.0;
             LastOffset = kill.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)
@@ -149,12 +150,26 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Tracker.ClearChanges();
             }
 
-            if (Strain.TimesReachedMaxStrain >= 3)
+            // flag
+            if (currentStrain > Thresholds.MaxStrainFlag)
             {
                 return new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Flag,
-                    Value = ClientStats.MaxStrain,
+                    Value = currentStrain,
+                    HitCount = HitCount,
+                    Type = DetectionType.Strain
+                };
+            }
+
+            // ban
+            if (currentStrain > Thresholds.MaxStrainBan
+                && Kills > Thresholds.LowSampleMinKills)
+            {
+                return new DetectionPenaltyResult()
+                {
+                    ClientPenalty = Penalty.PenaltyType.Flag,
+                    Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
                 };

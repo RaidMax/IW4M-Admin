@@ -114,7 +114,9 @@ namespace IW4MAdmin.Plugins.Stats
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
                 double kdr = Math.Round(kills / (double)deaths, 2);
-                double skill = Math.Round(clientStats.Sum(c => c.Skill) / clientStats.Where(c => c.Skill > 0).Count(), 2);
+                var validSkillValues = clientStats.Where(c => c.Skill > 0);
+                int skillPlayTime = validSkillValues.Sum(s => s.TimePlayed);
+                double skill = Math.Round(validSkillValues.Sum(c => c.Skill * c.TimePlayed / skillPlayTime), 2);
                 double spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Where(c => c.SPM > 0).Count(), 1);
 
                 return new List<ProfileMeta>()
@@ -241,7 +243,7 @@ namespace IW4MAdmin.Plugins.Stats
                 }).ToList();
                 messageMeta.Add(new ProfileMeta()
                 {
-                    Key = "Messages",
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
                     Value = messages.Count
                 });
 

@@ -5,22 +5,20 @@ using System.Threading.Tasks;
 
 using SharedLibraryCore;
 using SharedLibraryCore.Objects;
-using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Database;
 using System.Collections.Generic;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
-    class TopStats : Command
+    class MostPlayed : Command
     {
-
-        public static async Task<List<string>> GetTopStats(Server s)
+        public static async Task<List<string>> GetMostPlayed(Server s)
         {
             int serverId = s.GetHashCode();
-            List<string> topStatsText = new List<string>()
+            List<string> mostPlayed = new List<string>()
             {
-                $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"
+                $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
             };
 
             using (var db = new DatabaseContext())
@@ -36,42 +34,32 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                join alias in db.Aliases
                                on client.CurrentAliasId equals alias.AliasId
                                where stats.ServerId == serverId
-                               where stats.TimePlayed >= 3600
                                where client.Level != Player.Permission.Banned
                                where client.LastConnection >= thirtyDaysAgo
-                               orderby stats.Skill descending
+                               orderby stats.Kills descending
                                select new
                                {
-                                   stats.KDR,
-                                   stats.Skill,
-                                   stats.EloRating,
-                                   alias.Name
+                                   alias.Name,
+                                   client.TotalConnectionTime,
+                                   stats.Kills
                                })
-                              .Take(5);
+                                .Take(5);
 
-                var statsList = (await iqStats.ToListAsync())
-                    .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Skill} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_SKILL"]} | ^5{stats.EloRating} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOPSTATS_RATING"]}");
+                var iqList = await iqStats.ToListAsync();
 
-                topStatsText.AddRange(statsList);
+                mostPlayed.AddRange(iqList.Select(stats =>
+                $"^3{stats.Name}^7 - ^5{stats.Kills} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]} | ^5{Utilities.GetTimePassed(DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime), false)} ^7{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"].ToLower()}"));
             }
 
-            // no one qualified
-            if (topStatsText.Count == 1)
-            {
-                topStatsText = new List<string>()
-                {
-                    Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_NOQUALIFY"]
-                };
-            }
 
-            return topStatsText;
+            return mostPlayed;
         }
 
-        public TopStats() : base("topstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_DESC"], "ts", Player.Permission.User, false) { }
+        public MostPlayed() : base("mostplayed", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_DESC"], "mp", Player.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var topStats = await GetTopStats(E.Owner);
+            var topStats = await GetMostPlayed(E.Owner);
             if (!E.Message.IsBroadcastCommand())
             {
                 foreach (var stat in topStats)

@@ -1,13 +1,6 @@
-﻿using SharedLibraryCore;
-using IW4MAdmin.Plugins.Stats.Cheat;
+﻿using IW4MAdmin.Plugins.Stats.Cheat;
 using IW4MAdmin.Plugins.Stats.Models;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SharedLibraryCore.Services;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {

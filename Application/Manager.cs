@@ -44,7 +44,6 @@ namespace IW4MAdmin.Application
         EventApi Api;
         GameEventHandler Handler;
         ManualResetEventSlim OnEvent;
-        Timer HeartbeatTimer;
 
         private ApplicationManager()
         {
@@ -337,66 +336,75 @@ namespace IW4MAdmin.Application
         {
             var heartbeatState = (HeartbeatState)state;
 
-            if (!heartbeatState.Connected)
+            while (Running)
             {
-                try
+                if (!heartbeatState.Connected)
                 {
-                    Heartbeat.Send(this, true).Wait(5000);
-                    heartbeatState.Connected = true;
-                }
-
-                catch (Exception e)
-                {
-                    heartbeatState.Connected = false;
-                    Logger.WriteWarning($"Could not connect to heartbeat server - {e.Message}");
-                }
-            }
-
-            else
-            {
-                try
-                {
-                    Heartbeat.Send(this).Wait(5000);
-                }
-                catch (System.Net.Http.HttpRequestException e)
-                {
-                    Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
-                }
-
-                catch (AggregateException e)
-                {
-                    Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
-                    var exceptions = e.InnerExceptions.Where(ex => ex.GetType() == typeof(RestEase.ApiException));
-
-                    foreach (var ex in exceptions)
+                    try
                     {
-                        if (((RestEase.ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        Heartbeat.Send(this, true).Wait(5000);
+                        heartbeatState.Connected = true;
+                    }
+
+                    catch (Exception e)
+                    {
+                        heartbeatState.Connected = false;
+                        Logger.WriteWarning($"Could not connect to heartbeat server - {e.Message}");
+                    }
+                }
+
+                else
+                {
+                    try
+                    {
+                        Heartbeat.Send(this).Wait(5000);
+                    }
+
+                    catch (System.Net.Http.HttpRequestException e)
+                    {
+                        Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    }
+
+                    catch (AggregateException e)
+                    {
+                        Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                        var exceptions = e.InnerExceptions.Where(ex => ex.GetType() == typeof(RestEase.ApiException));
+
+                        foreach (var ex in exceptions)
+                        {
+                            if (((RestEase.ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                            {
+                                heartbeatState.Connected = false;
+                            }
+                        }
+                    }
+
+                    catch (RestEase.ApiException e)
+                    {
+                        Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                        if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         {
                             heartbeatState.Connected = false;
                         }
                     }
-                }
-
-                catch (RestEase.ApiException e)
-                {
-                    Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
-                    if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    catch (Exception e)
                     {
-                        heartbeatState.Connected = false;
+                        Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
                     }
-                }
 
+                }
+                Task.Delay(30000).Wait();
             }
         }
 
         public async Task Start()
         {
-#if !DEBUG
-            // start heartbeat
-            HeartbeatTimer = new Timer(SendHeartbeat, new HeartbeatState(), 0, 30000);
-#endif
             // this needs to be run seperately from the main thread
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#if !DEBUG
+            // start heartbeat
+            Task.Run(() => SendHeartbeat(new HeartbeatState()));
+#endif
             Task.Run(() => UpdateStatus(null));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
@@ -439,7 +447,7 @@ namespace IW4MAdmin.Application
             while (Running)
             {
                 // wait for new event to be added
-                OnEvent.Wait();
+                OnEvent.Wait(5000);
 
                 // todo: sequencially or parallelize?
                 while ((queuedEvent = Handler.GetNextEvent()) != null)
@@ -454,8 +462,6 @@ namespace IW4MAdmin.Application
                 OnEvent.Reset();
             }
 #if !DEBUG
-            HeartbeatTimer.Change(0, Timeout.Infinite);
-
             foreach (var S in _servers)
                 await S.Broadcast("^1" + Utilities.CurrentLocalization.LocalizationIndex["BROADCAST_OFFLINE"]);
 #endif

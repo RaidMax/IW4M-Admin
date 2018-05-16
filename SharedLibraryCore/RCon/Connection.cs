@@ -250,7 +250,7 @@ namespace SharedLibraryCore.RCon
 
                         if (FailedReceives >= 4)
                         {
-                            throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} {socketConnection.RemoteEndPoint}");
+                            throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} {socketConnection.RemoteEndPoint.ToString()}");
                         }
                     }
 
@@ -258,7 +258,7 @@ namespace SharedLibraryCore.RCon
                     {
                         if (FailedReceives >= 4)
                         {
-                            Log.WriteVerbose($"Resumed receive RCon connection from {socketConnection.RemoteEndPoint}");
+                            Log.WriteVerbose($"Resumed receive RCon connection from {socketConnection.RemoteEndPoint.ToString()}");
                             FailedReceives = 0;
                         }
                     }

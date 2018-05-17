@@ -114,9 +114,9 @@ namespace IW4MAdmin.Plugins.Stats
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
                 double kdr = Math.Round(kills / (double)deaths, 2);
-                var validSkillValues = clientStats.Where(c => c.Skill > 0);
-                int skillPlayTime = validSkillValues.Sum(s => s.TimePlayed);
-                double skill = Math.Round(validSkillValues.Sum(c => c.Skill * c.TimePlayed / skillPlayTime), 2);
+                var validPerformanceValues = clientStats.Where(c => c.Performance > 0);
+                int performancePlayTime = validPerformanceValues.Sum(s => s.TimePlayed);
+                double performance = Math.Round(validPerformanceValues.Sum(c => c.Performance * c.TimePlayed / performancePlayTime), 2);
                 double spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Where(c => c.SPM > 0).Count(), 1);
 
                 return new List<ProfileMeta>()
@@ -138,8 +138,8 @@ namespace IW4MAdmin.Plugins.Stats
                     },
                     new ProfileMeta()
                     {
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_SKILL"],
-                        Value = skill
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
+                        Value = performance
                     },
                     new ProfileMeta()
                     {

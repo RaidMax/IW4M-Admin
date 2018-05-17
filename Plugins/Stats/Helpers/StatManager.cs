@@ -146,9 +146,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 //await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
+            // for stats before rating
             if (clientStats.EloRating == 0.0)
             {
                 clientStats.EloRating = clientStats.Skill;
+            }
+
+            if (clientStats.RollingWeightedKDR == 0)
+            {
+                clientStats.RollingWeightedKDR = clientStats.KDR;
             }
 
             // set these on connecting
@@ -497,10 +503,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .Average(cs => cs.Value.EloRating);
 
                 double attackerEloDifference = Math.Log(attackerLobbyRating) - Math.Log(attackerStats.EloRating);
-                double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / 3.0));
+                double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / 0.5));
 
                 double victimEloDifference = Math.Log(victimLobbyRating) - Math.Log(victimStats.EloRating);
-                double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference / 3.0));
+                double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference / 0.5));
 
                 attackerStats.EloRating += 24.0 * (1 - winPercentage);
                 victimStats.EloRating -= 24.0 * winPercentage;
@@ -551,8 +557,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
-            double kdr = clientStats.Deaths == 0 ? clientStats.Kills : clientStats.KDR;
-            double KDRWeight = Math.Round(Math.Pow(kdr, 1.637 / Math.E), 3);
+            double currentKDR = clientStats.SessionDeaths == 0 ? clientStats.SessionKills : clientStats.SessionKills / clientStats.SessionDeaths;
+            double alpha = Math.Sqrt(2) / Math.Min(600, clientStats.Kills + clientStats.Deaths);
+            clientStats.RollingWeightedKDR = (alpha * currentKDR) + (1.0 - alpha) * currentKDR;
+            double KDRWeight = Math.Round(Math.Pow(clientStats.RollingWeightedKDR, 1.637 / Math.E), 3);
 
             // calculate the weight of the new play time against last 10 hours of gameplay
             int totalPlayTime = (clientStats.TimePlayed == 0) ?
@@ -632,6 +640,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             stats.SPM = 0;
             stats.Skill = 0;
             stats.TimePlayed = 0;
+            stats.EloRating = 200;
         }
 
         public async Task AddMessageAsync(int clientId, int serverId, string message)

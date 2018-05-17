@@ -332,7 +332,7 @@ namespace IW4MAdmin.Application
             #endregion
         }
 
-        private void SendHeartbeat(object state)
+        private async Task SendHeartbeat(object state)
         {
             var heartbeatState = (HeartbeatState)state;
 
@@ -342,7 +342,7 @@ namespace IW4MAdmin.Application
                 {
                     try
                     {
-                        Heartbeat.Send(this, true).Wait(5000);
+                        await Heartbeat.Send(this, true);
                         heartbeatState.Connected = true;
                     }
 
@@ -357,7 +357,7 @@ namespace IW4MAdmin.Application
                 {
                     try
                     {
-                        Heartbeat.Send(this).Wait(5000);
+                        await Heartbeat.Send(this);
                     }
 
                     catch (System.Net.Http.HttpRequestException e)
@@ -393,7 +393,7 @@ namespace IW4MAdmin.Application
                     }
 
                 }
-                Task.Delay(30000).Wait();
+                await Task.Delay(30000);
             }
         }
 
@@ -447,16 +447,16 @@ namespace IW4MAdmin.Application
             while (Running)
             {
                 // wait for new event to be added
-                OnEvent.Wait(5000);
+                OnEvent.Wait();
 
                 // todo: sequencially or parallelize?
                 while ((queuedEvent = Handler.GetNextEvent()) != null)
                 {
-                    eventList.Add(processEvent(queuedEvent));
+                    await processEvent(queuedEvent);
                 }
 
                 // this should allow parallel processing of events
-                await Task.WhenAll(eventList);
+                // await Task.WhenAll(eventList);
 
                 // signal that all events have been processed
                 OnEvent.Reset();

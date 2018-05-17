@@ -127,7 +127,7 @@ namespace Application.RconParsers
             }
 
             // this happens if status is requested while map is rotating
-            if (Status[1] == "Rotating map...")
+            if (Status[1] == "Server Initialization")
             {
                 throw new ServerException("Server is rotating map");
             }

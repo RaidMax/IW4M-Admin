@@ -24,6 +24,12 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int Deaths { get; set; }
         public double EloRating { get; set; }
         public virtual ICollection<EFHitLocationCount> HitLocations { get; set; }
+        public double RollingWeightedKDR { get; set; }
+        [NotMapped]
+        public double Performance
+        {
+            get => Math.Round((EloRating + Skill) / 2.0, 2);
+        }
         [NotMapped]
         public double KDR
         {
@@ -57,6 +63,8 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int LastScore { get; set; }
         [NotMapped]
         public DateTime LastActive { get; set; }
+        [NotMapped]
+        public double MaxSessionStrain { get; set; }
         public void StartNewSession()
         {
             KillStreak = 0;

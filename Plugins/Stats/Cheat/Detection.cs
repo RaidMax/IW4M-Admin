@@ -126,7 +126,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 #endif
             }
             double currentStrain = Strain.GetStrain(isDamage, kill.Damage, kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
-            currentStrain *= ClientStats.SPM / 179.0;
+            double currentWeightedStrain = (currentStrain * ClientStats.SPM) / 170.0;
             LastOffset = kill.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)
@@ -134,7 +134,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 ClientStats.MaxStrain = currentStrain;
             }
 
-            if (currentStrain > Thresholds.MaxStrainFlag)
+            if (currentWeightedStrain > Thresholds.MaxStrainFlag)
             {
                 Tracker.OnChange(Strain);
 
@@ -151,25 +151,25 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             // flag
-            if (currentStrain > Thresholds.MaxStrainFlag)
+            if (currentWeightedStrain > Thresholds.MaxStrainFlag)
             {
                 return new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Flag,
-                    Value = currentStrain,
+                    Value = currentWeightedStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
                 };
             }
 
             // ban
-            if (currentStrain > Thresholds.MaxStrainBan
+            if (currentWeightedStrain > Thresholds.MaxStrainBan
                 && Kills > Thresholds.LowSampleMinKills)
             {
                 return new DetectionPenaltyResult()
                 {
-                    ClientPenalty = Penalty.PenaltyType.Flag,
-                    Value = currentStrain,
+                    ClientPenalty = Penalty.PenaltyType.Ban,
+                    Value = currentWeightedStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
                 };

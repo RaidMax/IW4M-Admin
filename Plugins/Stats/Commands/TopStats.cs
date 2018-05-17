@@ -39,18 +39,17 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                where stats.TimePlayed >= 3600
                                where client.Level != Player.Permission.Banned
                                where client.LastConnection >= thirtyDaysAgo
-                               orderby stats.Skill descending
+                               orderby stats.Performance descending
                                select new
                                {
                                    stats.KDR,
-                                   stats.Skill,
-                                   stats.EloRating,
+                                   stats.Performance,
                                    alias.Name
                                })
                               .Take(5);
 
                 var statsList = (await iqStats.ToListAsync())
-                    .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Skill} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_SKILL"]} | ^5{stats.EloRating} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOPSTATS_RATING"]}");
+                    .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
 
                 topStatsText.AddRange(statsList);
             }

@@ -37,6 +37,7 @@ class Base():
             client_num += server.clientnum
         self.history.add_client_history(client_num)
         self.history.add_instance_history(len(self.instance_list))
+        self.history.add_server_history(len(servers))
 
     def _remove_staleinstances(self):
         for key, value in list(self.instance_list.items()):

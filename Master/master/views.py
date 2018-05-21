@@ -9,7 +9,7 @@ from master.resources.history_graph import HistoryGraph
 
 @app.route('/')
 def home():
-    _history_graph = HistoryGraph().get(500)
+    _history_graph = HistoryGraph().get(2880)
     return render_template(
         'index.html',
         title='API Overview',
@@ -17,5 +17,5 @@ def home():
         data_points = _history_graph[0]['data_points'],
         instance_count = _history_graph[0]['instance_count'],
         client_count = _history_graph[0]['client_count'],
-        max_data_points = 1440
+        server_count = _history_graph[0]['server_count']
     )

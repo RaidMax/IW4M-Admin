@@ -278,9 +278,15 @@ namespace IW4MAdmin.Plugins.Stats
                 return String.Join(Environment.NewLine, Commands.TopStats.GetTopStats(s).Result);
             }
 
+            string mostPlayed(Server s)
+            {
+                return String.Join(Environment.NewLine, Commands.MostPlayed.GetMostPlayed(s).Result);
+            }
+
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
             manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
             manager.GetMessageTokens().Add(new MessageToken("TOPSTATS", topStats));
+            manager.GetMessageTokens().Add(new MessageToken("MOSTPLAYED", mostPlayed));
 
             ServerManager = manager;
 

@@ -245,7 +245,7 @@ namespace SharedLibraryCore.RCon
                             goto retrySend;
                         else if (FailedReceives == 4)
                         {
-                            Log.WriteError($"Failed to receive data from {socketConnection.RemoteEndPoint} after {FailedReceives} tries");
+                          //  Log.WriteError($"Failed to receive data from {socketConnection.RemoteEndPoint} after {FailedReceives} tries");
                         }
 
                         if (FailedReceives >= 4)
@@ -277,7 +277,7 @@ namespace SharedLibraryCore.RCon
 
                     else if (FailedReceives == 4)
                     {
-                        Log.WriteError($"Failed to receive data from {socketConnection.RemoteEndPoint} after {FailedReceives} tries");
+                       // Log.WriteError($"Failed to receive data from {socketConnection.RemoteEndPoint} after {FailedReceives} tries");
                     }
 
                     if (FailedReceives >= 4)

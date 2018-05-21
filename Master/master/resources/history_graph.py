@@ -35,13 +35,15 @@ class HistoryGraph(Resource):
 
             instance_counts = [history['count'] for history in ctx.history.instance_history][-history_count:]
             client_counts = [history['count'] for history in ctx.history.client_history][-history_count:]
+            server_counts = [history['count'] for history in ctx.history.server_history][-history_count:]
 
             graph.add('Client Count', client_counts)
             graph.add('Instance Count', instance_counts)
             return { 'message' :  graph.render().replace("<title>Pygal</title>", ""), 
                      'data_points' : len(instance_count),
                      'instance_count' : 0 if len(instance_counts) is 0 else instance_counts[-1],
-                     'client_count' : 0 if len(client_counts) is 0 else client_counts[-1]
+                     'client_count' : 0 if len(client_counts) is 0 else client_counts[-1],
+                     'server_count' : 0 if len(server_counts) is 0 else server_counts[-1]
                    }, 200
         except Exception as e:
             return { 'message' : str(e) }, 500

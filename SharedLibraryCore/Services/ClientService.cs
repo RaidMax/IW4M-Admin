@@ -168,7 +168,7 @@ namespace SharedLibraryCore.Services
                         .ToListAsync();
 
                     // update all related clients level
-                    matchingClients.ForEach(c => c.Level = (client.Level == Objects.Player.Permission.Banned) ?
+                    matchingClients.ForEach(c => c.Level = (client.Level == Player.Permission.Banned) ?
                         client.Level : entity.Level);
                 }
 

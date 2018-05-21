@@ -12,6 +12,7 @@
             <figcaption class="float-left">
                 <span class="h4 text-muted">{{instance_count}} instances</span>
                 <span class="h4 text-muted">&mdash; {{client_count}} clients</span>
+                <span class="h4 text-muted">&mdash; {{server_count}} servers</span>
             </figcaption>
         </figure>
 
@@ -26,7 +27,7 @@
 <script type="text/javascript" src="http://kozea.github.com/pygal.js/latest/pygal-tooltips.min.js"></script>
 <script>
     let dataPoints = {{data_points}};
-    let maxPoints = {{ max_data_points }};
+    let maxPoints = 2880;
     maxPoints = Math.min(maxPoints, dataPoints);
     let zoomLevel = Math.floor(maxPoints);
     let performingZoom = false;

@@ -5,8 +5,22 @@
 init()
 {
 	SetDvarIfUninitialized("sv_customcallbacks", true);
+	SetDvarIfUninitialized("sv_framewaittime", 0.05);
+	SetDvarIfUninitialized("sv_additionalwaittime", 0.05);
+	SetDvarIfUninitialized("sv_maxstoredframes", 3);
+	level thread onPlayerConnect();
 	level waittill("prematch_over");
 	level.callbackPlayerKilled = ::Callback_PlayerKilled;
+	level.callbackPlayerDamage = ::Callback_PlayerDamage;
+}
+
+onPlayerConnect(player)
+{
+	for(;;)
+	{
+		level waittill( "connected", player );	
+		player thread waitForFrameThread();
+	}
 }
 
 hitLocationToBone(hitloc)
@@ -52,15 +66,52 @@ hitLocationToBone(hitloc)
 	}
 }
 
-VectorScale(vector)
+waitForFrameThread()
 {
-	vector[0] = vector[0]*100000;
-	vector[1] = vector[1]*100000;
-	vector[2] = vector[2]*100000;
-	return vector;
+	self endon("disconnect");
+	
+	self.currentAnglePosition = 0;
+	self.anglePositions = [];
+		
+	for(;;)
+	{
+		self.anglePositions[self.currentAnglePosition] = self getPlayerAngles();
+		wait(getDvarFloat("sv_framewaittime"));	
+		self.currentAnglePosition = (self.currentAnglePosition + 1) % getDvarInt("sv_maxstoredframes");
+	}
 }
 
-Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration )
+waitForAdditionalAngles(logString)
+{
+	wait(getDvarFloat("sv_additionalwaittime"));
+	
+	self.angleSnapshot = [];
+	
+	for(i = 0; i < getDvarInt("sv_maxstoredframes"); i++)
+	{
+		self.angleSnapshot[i] = self.anglePositions[i];
+	}
+
+	currentPos = self.currentAnglePosition;
+	anglesStr = "";
+	
+	i = 0;
+	
+	if (currentPos < getDvarInt("sv_maxstoredframes") - 1)
+	{
+		i = currentPos + 1;
+	}
+	
+	while(i != currentPos)
+	{
+		anglesStr += self.angleSnapshot[i] + ":";
+		i = (i + 1) % getDvarInt("sv_maxstoredframes");
+	}
+	
+	logPrint(logString + ";" + anglesStr + "\n"); 
+}
+
+Process_Hit(type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon)
 {
 	victim = self;
 	_attacker = attacker;
@@ -68,12 +119,28 @@ Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vD
 		_attacker = attacker.owner;
 	else if(!isPlayer(attacker) && sMeansOfDeath == "MOD_FALLING")
 		_attacker = victim;
-
 	
 	location = victim GetTagOrigin(hitLocationToBone(sHitLoc));
 	isKillstreakKill = !isPlayer(attacker) || isKillstreakWeapon(sWeapon);
 
-	/*BulletTrace(_attacker GetTagOrigin("tag_eye"), VectorScale(anglesToForward(attacker getPlayerAngles())), true, attacker)["entity"]*/
-	logPrint("ScriptKill;" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() +  "\n");
+	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS();
+	attacker thread waitForAdditionalAngles(logLine);
+}
+
+Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime )
+{
+	if (level.teamBased && isDefined( attacker ) && ( self != attacker ) && isDefined( attacker.team ) && ( self.pers[ "team" ] == attacker.team ))
+		return;
+		
+		if (self.health - iDamage > 0)
+		{
+			self Process_Hit("Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon);
+		}
+	self maps\mp\gametypes\_damage::Callback_PlayerDamage(eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
+}
+
+Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration )
+{
+	Process_Hit("Kill", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon);
 	self maps\mp\gametypes\_damage::Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }

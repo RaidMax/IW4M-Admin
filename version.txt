@@ -8,11 +8,11 @@ CHANGELOG:
 -added unflag command to more intuitively unflag a client
 -added multi-line tokens: {{TOPSTATS}} {{MOSTPLAYED}}
 -able to view linked accounts on webfront via dropdown (privileged only)
--multiple privileged accouns are consolidated in the admin list
+-multiple privileged accounts are consolidated in the admin list
 -Added IW5m/Pluto IW5, T5m/V2, CoD4, and WaW support
 -changed event system to use a better pipeline
 -IW4x anti-cheat further refined
--kick and temban required privileges adjusted
+-kick and tempban required privileges adjusted
 -fixed issues with RCon responding improperly
 -improved IW4x frequency of IW4x servers going offline
 -profanity plugin now kicks players with offensive names (if enabled)

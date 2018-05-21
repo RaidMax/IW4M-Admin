@@ -502,11 +502,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .Where(cs => cs.Value.ClientId != victimStats.ClientId)
                     .Average(cs => cs.Value.EloRating);
 
-                double attackerEloDifference = Math.Log(attackerLobbyRating) - Math.Log(attackerStats.EloRating);
-                double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / 0.5));
+                double attackerEloDifference = Math.Log(attackerLobbyRating <= 0 ? 1 : attackerLobbyRating) - Math.Log(attackerStats.EloRating <= 0 ? 1 : attackerStats.EloRating);
+                double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
 
-                double victimEloDifference = Math.Log(victimLobbyRating) - Math.Log(victimStats.EloRating);
-                double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference / 0.5));
+                double victimEloDifference = Math.Log(victimLobbyRating <= 0 ? 1 : victimLobbyRating) - Math.Log(victimStats.EloRating <= 0 ? 1 : victimStats.EloRating);
+                double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference / Math.E));
 
                 attackerStats.EloRating += 24.0 * (1 - winPercentage);
                 victimStats.EloRating -= 24.0 * winPercentage;
@@ -559,7 +559,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
             double currentKDR = clientStats.SessionDeaths == 0 ? clientStats.SessionKills : clientStats.SessionKills / clientStats.SessionDeaths;
             double alpha = Math.Sqrt(2) / Math.Min(600, clientStats.Kills + clientStats.Deaths);
-            clientStats.RollingWeightedKDR = (alpha * currentKDR) + (1.0 - alpha) * currentKDR;
+            clientStats.RollingWeightedKDR = (alpha * currentKDR) + (1.0 - alpha) * clientStats.KDR;
             double KDRWeight = Math.Round(Math.Pow(clientStats.RollingWeightedKDR, 1.637 / Math.E), 3);
 
             // calculate the weight of the new play time against last 10 hours of gameplay

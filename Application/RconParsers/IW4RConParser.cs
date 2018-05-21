@@ -127,7 +127,7 @@ namespace Application.RconParsers
             }
 
             // this happens if status is requested while map is rotating
-            if (Status[1] == "Server Initialization")
+            if (Status.Contains("Server Initialization"))
             {
                 throw new ServerException("Server is rotating map");
             }
@@ -139,6 +139,7 @@ namespace Application.RconParsers
                 {
                     IW4MAdmin.Application.Program.ServerManager.Logger.WriteDebug(s);
                 }
+                throw new ServerException("Bad status received");
             }
 
             return StatusPlayers;

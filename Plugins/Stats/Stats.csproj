@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Cheat\Strain.cs~RF16f7b3.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
   </ItemGroup>
 

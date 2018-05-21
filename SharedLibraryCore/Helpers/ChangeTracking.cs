@@ -16,7 +16,9 @@ namespace SharedLibraryCore.Helpers
 
         public void OnChange(ITrackable value)
         {
-            Values.Add(value.GetTrackableValue());
+            if (Values.Count > 30)
+                Values.RemoveAt(0);
+            Values.Add($"{DateTime.Now.ToString("HH:mm:ss.fff")} {value.GetTrackableValue()}");
         }
 
         public void ClearChanges()
@@ -24,18 +26,6 @@ namespace SharedLibraryCore.Helpers
             Values.Clear();
         }
 
-        public string[] GetChanges()
-        {
-            List<string> values = new List<string>();
-
-            int number = 1;
-            foreach (string change in Values)
-            {
-                values.Add($"{number} {change}");
-                number++;
-            }
-
-            return values.ToArray();
-        }
+        public string[] GetChanges() => Values.ToArray();
     }
 }

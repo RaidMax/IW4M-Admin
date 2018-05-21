@@ -16,7 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
         public int TimesReachedMaxStrain { get; private set; }
 
-        public double GetStrain(bool isDamage, int damage, Vector3 newAngle, double deltaTime)
+        public double GetStrain(bool isDamage, int damage, double killDistance, Vector3 newAngle, double deltaTime)
         {
             if (LastAngle == null)
                 LastAngle = newAngle;
@@ -42,16 +42,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             double newStrain = Math.Pow(distance[0] + distance[1], 0.99) / deltaTime;
-
-            if (damage < 100 && isDamage)
-            {
-                newStrain *= Math.Pow(damage, 2) / 10000.0;
-            }
-
-            else if (damage > 100)
-            {
-                newStrain *= damage / 100.0;
-            }
+            newStrain *= killDistance / 1000.0;
 
             CurrentStrain += newStrain;
 
@@ -64,7 +55,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
         public string GetTrackableValue()
         {
-            return $"Strain - {CurrentStrain}, Angle - {LastAngle}, Delta Time - {LastDeltaTime}, Distance - {LastDistance}";
+            return $"Strain =  {CurrentStrain}\r\n, Angle = {LastAngle}\r\n, Delta Time = {LastDeltaTime}\r\n, Angle Between = {LastDistance}";
         }
 
         private double GetDecay(double deltaTime) => Math.Pow(StrainDecayBase, Math.Pow(2.0, deltaTime / 250.0) / 1000.0);

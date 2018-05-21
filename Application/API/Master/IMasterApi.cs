@@ -8,7 +8,7 @@ using RestEase;
 namespace IW4MAdmin.Application.API.Master
 {
     public class AuthenticationId
-    { 
+    {
         [JsonProperty("id")]
         public string Id { get; set; }
     }
@@ -62,6 +62,9 @@ namespace IW4MAdmin.Application.API.Master
         Task<VersionInfo> GetVersion();
 
         [Get("localization")]
-       Task<List<SharedLibraryCore.Localization.Layout>> GetLocalization();
+        Task<List<SharedLibraryCore.Localization.Layout>> GetLocalization();
+
+        [Get("localization/{languageTag}")]
+        Task<SharedLibraryCore.Localization.Layout> GetLocalization([Path("languageTag")] string languageTag);
     }
 }

@@ -1,9 +1,26 @@
 Version 2.1:
 CHANGELOG:
--add support for localization
+-add support for localization (Russian, Spanish, and Portuguese)
 -upgraded projects to .NET Core 2.0.7
--redid the event system to haev a single line of execution
--added support for MySQL provider via "ConnectrionString"
+-added support for MySQL provider via "ConnectionString" in IW4MAdminSettings.json
+-refactored some stats code to provide a better representation of player skill as "performance"
+-added most played command which shows players who have played the most
+-added unflag command to more intuitively unflag a client
+-added multi-line tokens: {{TOPSTATS}} {{MOSTPLAYED}}
+-able to view linked accounts on webfront via dropdown (privileged only)
+-multiple privileged accouns are consolidated in the admin list
+-Added IW5m/Pluto IW5, T5m/V2, CoD4, and WaW support
+-changed event system to use a better pipeline
+-IW4x anti-cheat further refined
+-kick and temban required privileges adjusted
+-fixed issues with RCon responding improperly
+-improved IW4x frequency of IW4x servers going offline
+-profanity plugin now kicks players with offensive names (if enabled)
+-fixed critical bug with CPU usage over time
+-discord link has been generalized into a "social link" (website/facebook/vk etc...)
+-untold bug fixes
+-introduced new bugs to fix in the next version
+
 
 Version 2.0:
 CHANGELOG:

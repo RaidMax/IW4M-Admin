@@ -19,13 +19,8 @@ namespace IW4MAdmin.Application.Localization
             try
             {
                 var api = Endpoint.Get();
-                var localizations = api.GetLocalization().Result;
-
-                var usingLocale = localizations.FirstOrDefault(l => l.LocalizationName == currentLocale
-                || l.LocalizationName.Substring(0, 2) == currentLocale.Substring(0, 2)) ??
-                localizations.First();
-
-                Utilities.CurrentLocalization = usingLocale;
+                var localization = api.GetLocalization(currentLocale).Result;
+                Utilities.CurrentLocalization = localization;
                 return;
             }
 

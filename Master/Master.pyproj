@@ -58,25 +58,25 @@
     <Compile Include="master\models\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Master\resources\authenticate.py">
+    <Compile Include="master\resources\authenticate.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="master\resources\history_graph.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Master\resources\instance.py">
+    <Compile Include="master\resources\instance.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Master\resources\localization.py">
+    <Compile Include="master\resources\localization.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Master\resources\null.py">
+    <Compile Include="master\resources\null.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Master\resources\version.py">
+    <Compile Include="master\resources\version.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Master\resources\__init__.py">
+    <Compile Include="master\resources\__init__.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="master\routes.py">
@@ -98,22 +98,21 @@
     <Compile Include="master\views.py" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="C:\Projects\IW4M-Admin\Master\master\" />
     <Folder Include="master\" />
     <Folder Include="master\context\" />
     <Folder Include="master\models\" />
     <Folder Include="master\config\" />
     <Folder Include="master\schema\" />
     <Folder Include="Master\resources\" />
-    <Folder Include="Master\static\" />
-    <Folder Include="Master\templates\" />
+    <Folder Include="master\static\" />
+    <Folder Include="master\templates\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FolderProfile.pubxml" />
     <Content Include="master\config\master.json" />
     <Content Include="requirements.txt" />
-    <Content Include="Master\templates\index.html" />
-    <Content Include="Master\templates\layout.html" />
+    <Content Include="master\templates\index.html" />
+    <Content Include="master\templates\layout.html" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="dev_env\">

@@ -57,6 +57,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     ClientPenalty = Penalty.PenaltyType.Any,
                 };
 
+            DetectionPenaltyResult result = null;
+
             if (LastHit == DateTime.MinValue)
                 LastHit = DateTime.UtcNow;
 
@@ -90,7 +92,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
                     Log.WriteDebug($"ID = {kill.AttackerId}");
 
-                    return new DetectionPenaltyResult()
+                    result = new DetectionPenaltyResult()
                     {
                         ClientPenalty = Penalty.PenaltyType.Ban,
                         Value = hitLoc.HitOffsetAverage,
@@ -111,7 +113,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     Log.WriteDebug($"HitCount = {HitCount}");
                     Log.WriteDebug($"ID = {kill.AttackerId}");
 
-                    return new DetectionPenaltyResult()
+                    result = new DetectionPenaltyResult()
                     {
                         ClientPenalty = Penalty.PenaltyType.Ban,
                         Value = sessAverage,
@@ -125,8 +127,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Log.WriteDebug($"PredictVsReal={realAgainstPredict}");
 #endif
             }
-            double currentStrain = Strain.GetStrain(isDamage, kill.Damage, kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
-            double currentWeightedStrain = (currentStrain * ClientStats.SPM) / 170.0;
+
+            double currentStrain = Strain.GetStrain(isDamage, kill.Damage, kill.Distance / 0.0254, kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
+            //double currentWeightedStrain = (currentStrain * ClientStats.SPM) / 170.0;
             LastOffset = kill.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)
@@ -134,42 +137,25 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 ClientStats.MaxStrain = currentStrain;
             }
 
-            if (currentWeightedStrain > Thresholds.MaxStrainFlag)
-            {
-                Tracker.OnChange(Strain);
-
-                foreach (string change in Tracker.GetChanges())
-                {
-                    Log.WriteDebug(change);
-                }
-                Log.WriteDebug(ClientStats.RoundScore.ToString());
-            }
-
-            else
-            {
-                Tracker.ClearChanges();
-            }
-
             // flag
-            if (currentWeightedStrain > Thresholds.MaxStrainFlag)
+            if (currentStrain > Thresholds.MaxStrainFlag)
             {
-                return new DetectionPenaltyResult()
+                result = new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Flag,
-                    Value = currentWeightedStrain,
+                    Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
                 };
             }
 
             // ban
-            if (currentWeightedStrain > Thresholds.MaxStrainBan
-                && Kills > Thresholds.LowSampleMinKills)
+            if (currentStrain > Thresholds.MaxStrainBan)
             {
-                return new DetectionPenaltyResult()
+                result = new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Ban,
-                    Value = currentWeightedStrain,
+                    Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
                 };
@@ -217,7 +203,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                             sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         Log.WriteDebug(sb.ToString());
 
-                        return new DetectionPenaltyResult()
+                        result = new DetectionPenaltyResult()
                         {
                             ClientPenalty = Penalty.PenaltyType.Ban,
                             Value = currentHeadshotRatio,
@@ -238,7 +224,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                             sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         Log.WriteDebug(sb.ToString());
 
-                        return new DetectionPenaltyResult()
+                        result = new DetectionPenaltyResult()
                         {
                             ClientPenalty = Penalty.PenaltyType.Flag,
                             Value = currentHeadshotRatio,
@@ -267,7 +253,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                             sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         Log.WriteDebug(sb.ToString());
 
-                        return new DetectionPenaltyResult()
+                        result = new DetectionPenaltyResult()
                         {
                             ClientPenalty = Penalty.PenaltyType.Ban,
                             Value = currentMaxBoneRatio,
@@ -288,7 +274,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                             sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         Log.WriteDebug(sb.ToString());
 
-                        return new DetectionPenaltyResult()
+                        result = new DetectionPenaltyResult()
                         {
                             ClientPenalty = Penalty.PenaltyType.Flag,
                             Value = currentMaxBoneRatio,
@@ -329,7 +315,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                             sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         Log.WriteDebug(sb.ToString());
 
-                        return new DetectionPenaltyResult()
+                        result = new DetectionPenaltyResult()
                         {
                             ClientPenalty = Penalty.PenaltyType.Ban,
                             Value = currentChestAbdomenRatio,
@@ -351,7 +337,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                         Log.WriteDebug(sb.ToString());
                         // Log.WriteDebug($"ThresholdReached: {AboveThresholdCount}");
 
-                        return new DetectionPenaltyResult()
+                        result = new DetectionPenaltyResult()
                         {
                             ClientPenalty = Penalty.PenaltyType.Flag,
                             Value = currentChestAbdomenRatio,
@@ -364,7 +350,19 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
             #endregion
             #endregion
-            return new DetectionPenaltyResult()
+
+            Tracker.OnChange(new DetectionTracking(ClientStats, kill, Strain));
+
+            if (result != null)
+            {
+                foreach (string change in Tracker.GetChanges())
+                {
+                    Log.WriteDebug(change);
+                    Log.WriteDebug("--------------SNAPSHOT END-----------");
+                }
+            }
+
+            return result ?? new DetectionPenaltyResult()
             {
                 ClientPenalty = Penalty.PenaltyType.Any,
             };

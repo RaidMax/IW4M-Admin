@@ -49,6 +49,7 @@ namespace IW4MAdmin.Plugins.Stats
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
                 case GameEvent.EventType.MapChange:
+                    Manager.SetTeamBased(E.Owner.GetHashCode(), E.Owner.Gametype != "dm");
                     Manager.ResetKillstreaks(S.GetHashCode());
                     await Manager.Sync(S);
                     break;
@@ -83,8 +84,8 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Death:
                     break;
                 case GameEvent.EventType.Damage:
-                    if (!E.Owner.CustomCallback)
-                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Owner.GetHashCode());
+                   // if (!E.Owner.CustomCallback)
+                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];

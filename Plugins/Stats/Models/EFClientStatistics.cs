@@ -94,5 +94,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         }
         [NotMapped]
         private List<int> SessionScores = new List<int>() { 0 };
+        [NotMapped]
+        public IW4Info.Team Team { get; set; }
     }
 }

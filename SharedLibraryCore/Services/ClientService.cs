@@ -127,6 +127,9 @@ namespace SharedLibraryCore.Services
                                };
                 var foundClient = await iqClient.FirstOrDefaultAsync();
 
+                if (foundClient == null)
+                    return null;
+
                 foundClient.Client.LinkedAccounts = new Dictionary<int, long>();
                 // todo: find out the best way to do this
                 // I'm doing this here because I don't know the best way to have multiple awaits in the query
@@ -163,12 +166,11 @@ namespace SharedLibraryCore.Services
                 if (entity.Level != client.Level)
                 {
                     // get all clients that use the same aliasId
-                    var matchingClients = await context.Clients
-                        .Where(c => c.CurrentAliasId == client.CurrentAliasId)
-                        .ToListAsync();
+                    var matchingClients = context.Clients
+                        .Where(c => c.CurrentAliasId == client.CurrentAliasId);
 
                     // update all related clients level
-                    matchingClients.ForEach(c => c.Level = (client.Level == Player.Permission.Banned) ?
+                    await matchingClients.ForEachAsync(c => c.Level = (client.Level == Player.Permission.Banned) ?
                         client.Level : entity.Level);
                 }
 

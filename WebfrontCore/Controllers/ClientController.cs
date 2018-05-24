@@ -15,6 +15,10 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> ProfileAsync(int id)
         {
             var client = await Manager.GetClientService().Get(id);
+            if (client == null)
+            {
+                return NotFound();
+            }
 
             var clientDto = new PlayerInfo()
             {

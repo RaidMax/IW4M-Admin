@@ -451,6 +451,7 @@ namespace SharedLibraryCore.Commands
                 if (ActiveClient != null)
                 {
                     ActiveClient.Level = newPerm;
+                    await E.Owner.Manager.GetClientService().Update(ActiveClient);
                     await ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
                 }
 
@@ -805,6 +806,20 @@ namespace SharedLibraryCore.Commands
             }
 
             E.Owner.Reports.Add(new Report(E.Target, E.Origin, E.Data));
+
+            Penalty newReport = new Penalty()
+            {
+                Type = Penalty.PenaltyType.Report,
+                Expires = DateTime.UtcNow,
+                Offender = E.Target,
+                Offense = E.Data,
+                Punisher = E.Origin,
+                Active = true,
+                When = DateTime.UtcNow,
+                Link = E.Target.AliasLink
+            };
+
+            await E.Owner.Manager.GetPenaltyService().Create(newReport);
 
             await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_SUCCESS"]);
             E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));

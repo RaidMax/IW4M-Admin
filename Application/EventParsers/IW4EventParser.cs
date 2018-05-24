@@ -34,7 +34,7 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 string message = lineSplit[4].Replace("\x15", "");
 
-                if (message[0] == '!' || message[1] == '@')
+                if (message[0] == '!' || message[0] == '@')
                 {
                     return new GameEvent()
                     {

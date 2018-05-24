@@ -10,6 +10,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Commands;
 using IW4MAdmin.Plugins.Stats.Models;
+using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -68,7 +69,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 statsSvc.ServerStatsSvc.SaveChanges();
 
                 var serverStats = statsSvc.ServerStatsSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
-                Servers.TryAdd(serverId, new ServerStats(server, serverStats));
+                Servers.TryAdd(serverId, new ServerStats(server, serverStats)
+                {
+                    IsTeamBased = sv.Gametype != "dm"
+                });
             }
 
             catch (Exception e)
@@ -214,24 +218,21 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
         }
 
-        public void AddDamageEvent(string eventLine, int clientId, int serverId)
+        public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, int serverId)
         {
-            /*   string regex = @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            string regex = @"^(D);(.+);([0-9]+);(allies|axis);(.+);([0-9]+);(allies|axis);(.+);(.+);([0-9]+);(.+);(.+)$";
+            var match = Regex.Match(eventLine, regex, RegexOptions.IgnoreCase);
 
-              var match = Regex.Match(damageLine, regex, RegexOptions.IgnoreCase);
-
-              if (match.Success)
-              {
-                  var meansOfDeath = ParseEnum<IW4Info.MeansOfDeath>.Get(match.Groups[12].Value, typeof(IW4Info.MeansOfDeath));
-                  var hitLocation = ParseEnum<IW4Info.HitLocation>.Get(match.Groups[13].Value, typeof(IW4Info.HitLocation));
-
-                  if (meansOfDeath == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
-                  meansOfDeath == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
-                  meansOfDeath == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
-                  {
-                      ClientStats.HitLocations.First(hl => hl.Location == hitLocation).HitCount += 1;
-                  }
-              }*/
+            if (match.Success)
+            {
+                // this gives us what time the player is on
+                var attackerStats = Servers[serverId].PlayerStats[attackerClientId];
+                var victimStats = Servers[serverId].PlayerStats[victimClientId];
+                IW4Info.Team victimTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[4].ToString());
+                IW4Info.Team attackerTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[7].ToString());
+                attackerStats.Team = attackerTeam;
+                victimStats.Team = victimTeam;
+            }
         }
 
         /// <summary>
@@ -494,22 +495,38 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // calulate elo
             if (Servers[attackerStats.ServerId].PlayerStats.Count > 1)
             {
-                double attackerLobbyRating = Servers[attackerStats.ServerId].PlayerStats
+               /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
                     .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
-                    .Average(cs => cs.Value.EloRating);
+                    .Where(cs =>
+                        Servers[attackerStats.ServerId].IsTeamBased ?
+                        cs.Value.Team != attackerStats.Team :
+                        cs.Value.Team != IW4Info.Team.Spectator)
+                    .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
 
-                double victimLobbyRating = Servers[attackerStats.ServerId].PlayerStats
+                double attackerLobbyRating = validAttackerLobbyRatings.Count() > 0 ?
+                    validAttackerLobbyRatings.Average(cs => cs.Value.EloRating) :
+                    attackerStats.EloRating;
+
+                var validVictimLobbyRatings = Servers[victimStats.ServerId].PlayerStats
                     .Where(cs => cs.Value.ClientId != victimStats.ClientId)
-                    .Average(cs => cs.Value.EloRating);
+                    .Where(cs =>
+                        Servers[attackerStats.ServerId].IsTeamBased ?
+                        cs.Value.Team != victimStats.Team :
+                        cs.Value.Team != IW4Info.Team.Spectator)
+                     .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
 
-                double attackerEloDifference = Math.Log(attackerLobbyRating <= 0 ? 1 : attackerLobbyRating) - Math.Log(attackerStats.EloRating <= 0 ? 1 : attackerStats.EloRating);
+                double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
+                    validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
+                    victimStats.EloRating;*/
+
+                double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
                 double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
 
-                double victimEloDifference = Math.Log(victimLobbyRating <= 0 ? 1 : victimLobbyRating) - Math.Log(victimStats.EloRating <= 0 ? 1 : victimStats.EloRating);
-                double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference / Math.E));
+               // double victimEloDifference = Math.Log(Math.Max(1, attackerStats.EloRating)) - Math.Log(Math.Max(1, victimStats.EloRating));
+               // double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference/ Math.E));
 
-                attackerStats.EloRating += 24.0 * (1 - winPercentage);
-                victimStats.EloRating -= 24.0 * winPercentage;
+                attackerStats.EloRating += 6.0 * (1 - winPercentage);
+                victimStats.EloRating -= 6.0 * (1 - winPercentage);
 
                 attackerStats.EloRating = Math.Max(0, Math.Round(attackerStats.EloRating, 2));
                 victimStats.EloRating = Math.Max(0, Math.Round(victimStats.EloRating, 2));
@@ -548,12 +565,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 scoreDifference = clientStats.RoundScore + clientStats.LastScore;
             }
+
             else if (clientStats.RoundScore > 0 && clientStats.LastScore < clientStats.RoundScore)
             {
                 scoreDifference = clientStats.RoundScore - clientStats.LastScore;
             }
 
             double killSPM = scoreDifference / timeSinceLastCalc;
+            double spmMultiplier = 2.934 * Math.Pow(Servers[clientStats.ServerId].TeamCount(clientStats.Team == IW4Info.Team.Allies ? IW4Info.Team.Axis : IW4Info.Team.Allies), -0.454);
+            killSPM *= Math.Max(1, spmMultiplier);
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
@@ -675,6 +695,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             statsSvc = null;
             // this should prevent the gunk for having a long lasting context.
             ContextThreads[serverId] = new ThreadSafeStatsService();
+        }
+
+        public void SetTeamBased(int serverId, bool isTeamBased)
+        {
+            Servers[serverId].IsTeamBased = isTeamBased;
         }
     }
 }

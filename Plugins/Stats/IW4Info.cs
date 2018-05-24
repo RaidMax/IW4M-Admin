@@ -8,6 +8,13 @@ namespace IW4MAdmin.Plugins.Stats
 {
     public class IW4Info
     {
+        public enum Team
+        {
+            Spectator,
+            Axis,
+            Allies
+        }
+
         public enum MeansOfDeath
         {
             NONE,

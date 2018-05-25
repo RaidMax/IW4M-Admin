@@ -12,8 +12,7 @@ _______
 * [.NET Core 2.0.7 Runtime](https://www.microsoft.com/net/download/dotnet-core/runtime-2.0.7) *or newer*  
 
 1. Extract `IW4MAdmin-<version>.zip`  
-2. Open command prompt or terminal in the extracted folder
-3. Run `dotnet IW4MAdmin.dll`
+2. Run `StartIW4MAdmin.cmd`
 ___
 
 ### Configuration
@@ -37,9 +36,8 @@ When **IW4MAdmin** is launched for the _first time_, you will be prompted to set
 * Allow clients to use a [VPN](https://en.wikipedia.org/wiki/Virtual_private_network) 
 * _This feature requires an active api key on [iphub.info](https://iphub.info/)_
 
-`Enable discord link`
-* Shows a link to your server's discord on the webfront
-* _This feature requires an invite link to your discord server_
+`Enable social link`
+* Shows a link to your community's social media/website on the webfront
 
 `Use Custom Encoding Parser`
 * Allows alternative encodings to be used for parsing game information and events
@@ -54,6 +52,13 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 `WebfrontBindUrl`
 * Specifies the address and port the webfront will listen on.
 * The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port
+
+`CustomLocale`
+* Specifies a [locale name](https://msdn.microsoft.com/en-us/library/39cwe7zf.aspx) to use instead of system default
+* Locale must be from the `Equivalent Locale Name` column
+
+`ConnectionString`
+* Specifies the [connection string](https://www.connectionstrings.com/mysql/) to a MySQL server to be used instead of SQLite
 
 `Servers`
 * Specifies the list of servers **IW4MAdmin** will monitor
@@ -73,6 +78,12 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 
 `AutoMessages`
 * Specifies the list of messages that are broadcasted to **all** servers
+* Specially formatted tokens can be used to broadcast dynamic information  
+* `{{TOTALPLAYERS}}` &mdash; displays how many players have connected
+* `{{TOPSTATS}}` &mdash; displays the top 5 players on the server based on performance
+* `{{MOSTPLAYED}}` &mdash; displays the top 5 players based on number of kills
+* `{{TOTALPLAYTIME}}` &mdash; displays the cumulative play time (in man-hours) on all monitored servers
+* `{{VERSION}}` &mdash; displays the version of **IW4MAdmin**
 
 `GlobalRules`
 * Specifies the list of rules that apply to **all** servers`
@@ -88,44 +99,48 @@ ___
 ### Commands
 |Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
 |--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
-|prune|pa|demote any admins that have not connected recently (defaults to 30 days)|False|!pa \<optional inactive days\>|Owner|
+|prune|pa|demote any privileged clients that have not connected recently (defaults to 30 days)|False|!pa \<optional inactive days\>|Owner|
 |quit|q|quit IW4MAdmin|False|!q |Owner|
-|rcon|rcon|send rcon command to server|False|!rcon \<command\>|Owner|
-|ban|b|permanently ban a player from the server|True|!b \<player\> \<reason\>|SeniorAdmin|
-|unban|ub|unban player by database id|True|!ub \<databaseID\> \<reason\>|SeniorAdmin|
-|find|f|find player in database|False|!f \<player\>|Administrator|
+|rcon|rcon|send rcon command to server|False|!rcon \<commands\>|Owner|
+|ban|b|permanently ban a client from the server|True|!b \<player\> \<reason\>|SeniorAdmin|
+|unban|ub|unban client by client id|True|!ub \<client id\> \<reason\>|SeniorAdmin|
+|find|f|find client in database|False|!f \<player\>|Administrator|
 |killserver|kill|kill the game server|False|!kill |Administrator|
 |map|m|change to specified map|False|!m \<map\>|Administrator|
 |maprotate|mr|cycle to the next map in rotation|False|!mr |Administrator|
 |plugins|p|view all loaded plugins|False|!p |Administrator|
-|alias|known|get past aliases and ips of a player|True|!known \<player\>|Moderator|
-|baninfo|bi|get information about a ban for a player|True|!bi \<player\>|Moderator|
+|tempban|tb|temporarily ban a client for specified time (defaults to 1 hour)|True|!tb \<player\> \<duration (m\|h\|d\|w\|y)\> \<reason\>|Administrator|
+|alias|known|get past aliases and ips of a client|True|!known \<player\>|Moderator|
+|baninfo|bi|get information about a ban for a client|True|!bi \<player\>|Moderator|
 |fastrestart|fr|fast restart current map|False|!fr |Moderator|
-|flag|fp|flag a suspicious player and announce to admins on join|True|!fp \<player\> \<reason\>|Moderator|
+|flag|fp|flag a suspicious client and announce to admins on join|True|!fp \<player\> \<reason\>|Moderator|
+|kick|k|kick a client by name|True|!k \<player\> \<reason\>|Moderator|
 |list|l|list active clients|False|!l |Moderator|
-|mask|hide|hide your presence as an administrator|False|!hide |Moderator|
+|mask|hide|hide your presence as a privileged client|False|!hide |Moderator|
 |reports|reps|get or clear recent reports|False|!reps \<optional clear\>|Moderator|
-|say|s|broadcast message to all players|False|!s \<message\>|Moderator|
-|setlevel|sl|set player to specified administration level|True|!sl \<player\> \<level\>|Moderator|
+|say|s|broadcast message to all clients|False|!s \<message\>|Moderator|
+|setlevel|sl|set client to specified privilege level|True|!sl \<player\> \<level\>|Moderator|
 |setpassword|sp|set your authentication password|False|!sp \<password\>|Moderator|
-|tempban|tb|temporarily ban a player for specified time (defaults to 1 hour)|True|!tb \<player\> \<duration (m\|h\|d\|w\|y)\> \<reason\>|Moderator|
+|unflag|uf|Remove flag for client|True|!uf \<player\>|Moderator|
 |uptime|up|get current application running time|False|!up |Moderator|
-|usage|us|get current application memory usage|False|!us |Moderator|
-|kick|k|kick a player by name|True|!k \<player\> \<reason\>|Trusted|
-|login|l|login using password|False|!l \<password\>|Trusted|
-|warn|w|warn player for infringing rules|True|!w \<player\> \<reason\>|Trusted|
-|warnclear|wc|remove all warning for a player|True|!wc \<player\>|Trusted|
-|admins|a|list currently connected admins|False|!a |User|
+|usage|us|get application memory usage|False|!us |Moderator|
+|balance|bal|balance teams|False|!bal |Trusted|
+|login|li|login using password|False|!li \<password\>|Trusted|
+|warn|w|warn client for infringing rules|True|!w \<player\> \<reason\>|Trusted|
+|warnclear|wc|remove all warnings for a client|True|!wc \<player\>|Trusted|
+|admins|a|list currently connected privileged clients|False|!a |User|
 |getexternalip|ip|view your external IP address|False|!ip |User|
-|help|h|list all available commands|False|!h \<optional command\>|User|
-|ping|pi|get client's ping|False|!pi \<optional client\>|User|
-|privatemessage|pm|send message to other player|True|!pm \<player\> \<message\>|User|
-|report|rep|report a player for suspicious behavior|True|!rep \<player\> \<reason\>|User|
+|help|h|list all available commands|False|!h \<optional commands\>|User|
+|mostplayed|mp|view the top 5 dedicated players on the server|False|!mp |User|
+|owner|iamgod|claim ownership of the server|False|!iamgod |User|
+|ping|pi|get client's latency|False|!pi \<optional player\>|User|
+|privatemessage|pm|send message to other client|True|!pm \<player\> \<message\>|User|
+|report|rep|report a client for suspicious behavior|True|!rep \<player\> \<reason\>|User|
 |resetstats|rs|reset your stats to factory-new|False|!rs |User|
 |rules|r|list server rules|False|!r |User|
 |stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
-|topstats|ts|view the top 5 players on this server|False|!ts |User|
-|whoami|who|give information about yourself.|False|!who |User|
+|topstats|ts|view the top 5 players in this server|False|!ts |User|
+|whoami|who|give information about yourself|False|!who |User|
 
 _These commands include all shipped plugin commands._
 
@@ -192,6 +207,7 @@ ___
 |resetstats|rs|reset your stats to factory-new|False|!rs |User|
 |stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
 |topstats|ts|view the top 5 players on this server|False|!ts |User|
+|mostplayed|mp|view the top 5 dedicated players on the server|False|!mp |User|
 
 - To qualify for top stats, a client must have played for at least `1 hour` and connected within the past `30 days`.
 
@@ -208,6 +224,7 @@ ___
 #### Profanity Determent
 - This plugin warns and kicks players for using profanity
 - Profane words and warning message can be specified in `ProfanityDetermentSettings.json`
+- If a client's name contains a word listed in the settings, they will immediately be kicked
 ___
 ### Webfront
 `Home`
@@ -221,6 +238,7 @@ ___
 
 `Login`
 * Allows privileged users to login using their `Client ID` and password set via `setpassword`
+* `ClientID` is a number that can be found by using `!find <client name>` or find the client on the webfront and copy the ID following `ProfileAsync/`
 
 `Profile`
 * Shows a client's information and history 
@@ -231,5 +249,10 @@ ___
 ---
 
 ### Misc
+#### Anti-cheat
+This is an [IW4x](https://iw4xcachep26muba.onion.link/) only feature (wider game support planned), that uses analytics to detect aimbots and aim-assist tools.  
+To utilize anti-cheat, enable it during setup **and** copy `_customcallbacks.gsc` from `userraw` into your `IW4x Server\userraw\scripts` folder.  
+The anti-cheat feature is a work in progress and as such will be constantly tweaked and may not be 100% accurate, however the goal is to deter as many cheaters as possible from IW4x.
 #### Database Storage
-All **IW4MAdmin** information is stored in `Database.db`. Should you need to reset your database, this file can simply be deleted. Additionally, this file should be preserved during updates to retain client information.
+By default, all **IW4MAdmin** information is stored in `Database.db`. Should you need to reset your database, this file can simply be deleted. Additionally, this file should be preserved during updates to retain client information.  
+Setting the `ConnectionString` property in `IW4MAdminSettings.json` will cause **IW4MAdmin** to attempt to use a MySQL connection for database storage. 

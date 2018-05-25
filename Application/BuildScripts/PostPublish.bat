@@ -56,3 +56,4 @@ del "%SolutionDir%Publish\WindowsPrerelease\*pdb"
 
 echo making start script
 @echo dotnet IW4MAdmin.dll > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
+@echo dotnet IW4MAdmin.dll > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"

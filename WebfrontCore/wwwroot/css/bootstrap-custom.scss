@@ -67,6 +67,10 @@ a.nav-link {
     border-bottom: 2px solid $primary !important;
 }
 
+.border-top {
+    border-top: 1px solid $primary !important;
+}
+
 #client_search {
     background-color: #222222 !important;
     border-radius: 0;
@@ -173,4 +177,9 @@ select {
 .dropdown-item {
     border-bottom: 1px solid $secondary;
     margin-top: -3px;
+}
+
+.stats-ranking-icon {
+    width: 32px;
+    height: 32px;
 }

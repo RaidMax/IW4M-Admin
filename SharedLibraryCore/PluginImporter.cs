@@ -10,6 +10,7 @@ namespace SharedLibraryCore.Plugins
     {
         public static List<Command> ActiveCommands = new List<Command>();
         public static List<IPlugin> ActivePlugins = new List<IPlugin>();
+        public static List<Assembly> PluginAssemblies = new List<Assembly>();
 
         public static bool Load(IManager Manager)
         {
@@ -24,7 +25,7 @@ namespace SharedLibraryCore.Plugins
             ICollection<Assembly> assemblies = new List<Assembly>(dllFileNames.Length);
             foreach (string dllFile in dllFileNames)
             {
-               // byte[] rawDLL = File.ReadAllBytes(dllFile);
+                // byte[] rawDLL = File.ReadAllBytes(dllFile);
                 //Assembly assembly = Assembly.Load(rawDLL);
                 assemblies.Add(Assembly.LoadFrom(dllFile));
             }
@@ -58,6 +59,7 @@ namespace SharedLibraryCore.Plugins
                             if (ActivePlugins.Find(x => x.Name == newNotify.Name) == null)
                             {
                                 ActivePlugins.Add(newNotify);
+                                PluginAssemblies.Add(Plugin);
                                 Manager.GetLogger().WriteDebug($"Loaded plugin \"{ newNotify.Name }\" [{newNotify.Version}]");
                                 LoadedPlugins++;
                             }

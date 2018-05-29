@@ -27,7 +27,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public const int HighSampleMinKills = 100;
         public const double KillTimeThreshold = 0.2;
 
-        public const double MaxStrainBan = 0.4;
+        public const double MaxStrainBan = 1.12;
         public const double MaxOffset = 1.2;
         public const double MaxStrainFlag = 0.36;
 

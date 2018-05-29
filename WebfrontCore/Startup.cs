@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database;
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace WebfrontCore
 {
@@ -31,7 +33,16 @@ namespace WebfrontCore
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
-            services.AddMvc();
+            var mvcBulder = services.AddMvc();
+
+            foreach (var asm in Program.Manager.GetPluginAssemblies())
+                mvcBulder.AddApplicationPart(asm);
+
+            services.Configure<RazorViewEngineOptions>(o =>
+            {
+                o.ViewLocationFormats.Add("/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
+            });
+
             services.AddEntityFrameworkSqlite()
                 .AddDbContext<DatabaseContext>();
 

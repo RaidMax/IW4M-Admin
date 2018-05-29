@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace IW4MAdmin.Plugins.Stats.Config
 {
-    class StatsConfiguration : IBaseConfiguration
+    public class StatsConfiguration : IBaseConfiguration
     {
         public bool EnableAntiCheat { get; set; }
         public List<StreakMessageConfiguration> KillstreakMessages { get; set; }

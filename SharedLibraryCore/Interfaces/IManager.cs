@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using SharedLibraryCore.Configuration;
+using System.Reflection;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -33,5 +34,6 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         void SetHasEvent();
         bool ShutdownRequested();
+        IList<Assembly> GetPluginAssemblies();
     }
 }

@@ -308,7 +308,7 @@ namespace IW4MAdmin
 
                 List<Player> matchingPlayers;
 
-                if (E.Target == null) // Find active player including quotes (multiple words)
+                if (E.Target == null && C.RequiresTarget) // Find active player including quotes (multiple words)
                 {
                     matchingPlayers = GetClientByName(E.Data.Trim());
                     if (matchingPlayers.Count > 1)
@@ -333,7 +333,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                if (E.Target == null) // Find active player as single word
+                if (E.Target == null && C.RequiresTarget) // Find active player as single word
                 {
                     matchingPlayers = GetClientByName(Args[0]);
                     if (matchingPlayers.Count > 1)

@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using IW4MAdmin.Application.API.Master;
+using System.Reflection;
 
 namespace IW4MAdmin.Application
 {
@@ -510,5 +511,7 @@ namespace IW4MAdmin.Application
         {
             OnEvent.Set();
         }
+
+        public IList<Assembly> GetPluginAssemblies() => SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies;
     }
 }

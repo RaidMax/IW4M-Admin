@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+    <ProjectReference Include="..\Stats\Stats.csproj" />
   </ItemGroup>
 
   <ItemGroup>

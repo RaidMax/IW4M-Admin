@@ -1,0 +1,13 @@
+﻿@model List<IW4MAdmin.Plugins.Stats.Web.Dtos.TopStatsInfo>
+    <h4 class="pb-2 text-center ">@ViewBag.Title</h4>
+
+    <div id="stats_top_players" class="row border-top border-bottom">
+        @await Html.PartialAsync("_List", Model)
+    </div>
+
+    @section scripts {
+        <environment include="Development">
+            <script type="text/javascript" src="~/js/loader.js"></script>
+        </environment>
+        <script>initLoader('/Stats/GetTopPlayersAsync', '#stats_top_players');</script>
+    }

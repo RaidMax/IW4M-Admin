@@ -16,7 +16,7 @@ using IW4MAdmin.Plugins.Stats.Models;
 
 namespace IW4MAdmin.Plugins.Stats
 {
-    class Plugin : IPlugin
+    public class Plugin : IPlugin
     {
         public string Name => "Simple Stats";
 

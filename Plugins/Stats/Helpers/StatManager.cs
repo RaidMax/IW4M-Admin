@@ -11,6 +11,9 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.Commands;
 using IW4MAdmin.Plugins.Stats.Models;
 using System.Text.RegularExpressions;
+using IW4MAdmin.Plugins.Stats.Web.Dtos;
+using SharedLibraryCore.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -34,6 +37,90 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             Servers.Clear();
             Log = null;
             Servers = null;
+        }
+
+        public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
+
+        public async Task<List<TopStatsInfo>> GetTopStats(int start, int count)
+        {
+            using (var context = new DatabaseContext())
+            {
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
+                var iqClientIds = (from stat in context.Set<EFClientStatistics>()
+                                   join client in context.Clients
+                                   on stat.ClientId equals client.ClientId
+#if !DEBUG
+                                   where stat.TimePlayed >= 3600
+                                   where client.Level != Player.Permission.Banned
+                                   where client.LastConnection >= thirtyDaysAgo
+                                   where stat.Performance > 60
+#endif
+                                   group stat by stat.ClientId into s
+                                   orderby s.Average(cs => cs.Performance) descending
+                                   select s.First().ClientId)
+                              .Skip(start)
+                              .Take(count);
+
+                var clientIds = await iqClientIds.ToListAsync();
+
+                var iqStats = (from stat in context.Set<EFClientStatistics>()
+                               join client in context.Clients
+                               on stat.ClientId equals client.ClientId
+                               where clientIds.Contains(client.ClientId)
+                               select new
+                               {
+                                   client.CurrentAlias.Name,
+                                   client.ClientId,
+                                   stat.Kills,
+                                   stat.Deaths,
+                                   stat.EloRating,
+                                   stat.Skill,
+                                   stat.TimePlayed,
+                                   client.LastConnection,
+                                   client.TotalConnectionTime
+                               });
+
+                var stats = await iqStats.ToListAsync();
+
+                var groupedSelection = stats.GroupBy(s => s.ClientId).Select(s =>
+                new TopStatsInfo()
+                {
+                    Name = s.Select(c => c.Name).FirstOrDefault(),
+                    // weighted based on time played
+                    Performance = Math.Round
+                                   (s
+                                        .Where(c => (c.Skill + c.EloRating) / 2.0 > 0)
+                                        .Sum(c => (c.Skill + c.EloRating) / 2.0 * c.TimePlayed) /
+                                    s.Where(c => (c.Skill + c.EloRating) / 2.0 > 0)
+                                        .Sum(c => c.TimePlayed), 2),
+                    // ditto
+                    KDR = Math.Round(s
+                                        .Where(c => c.Deaths > 0)
+                                        .Sum(c => ((c.Kills / (double)c.Deaths) * c.TimePlayed) /
+                                   s.Where(d => d.Deaths > 0)
+                                        .Sum(d => d.TimePlayed)), 2),
+                    ClientId = s.Select(c => c.ClientId).FirstOrDefault(),
+                    Deaths = s.Sum(cs => cs.Deaths),
+                    Kills = s.Sum(cs => cs.Kills),
+                    LastSeen = Utilities.GetTimePassed(s.First().LastConnection, false),
+                    TimePlayed = Math.Round(s.First().TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
+                });
+
+                var statList = groupedSelection.OrderByDescending(s => s.Performance).ToList();
+
+                // set the ranking numerically
+                int i = start + 1;
+                foreach (var stat in statList)
+                {
+                    stat.Ranking = i;
+                    i++;
+                }
+
+                return statList;
+            }
         }
 
         /// <summary>
@@ -495,35 +582,35 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // calulate elo
             if (Servers[attackerStats.ServerId].PlayerStats.Count > 1)
             {
-               /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
-                    .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
-                    .Where(cs =>
-                        Servers[attackerStats.ServerId].IsTeamBased ?
-                        cs.Value.Team != attackerStats.Team :
-                        cs.Value.Team != IW4Info.Team.Spectator)
-                    .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
-
-                double attackerLobbyRating = validAttackerLobbyRatings.Count() > 0 ?
-                    validAttackerLobbyRatings.Average(cs => cs.Value.EloRating) :
-                    attackerStats.EloRating;
-
-                var validVictimLobbyRatings = Servers[victimStats.ServerId].PlayerStats
-                    .Where(cs => cs.Value.ClientId != victimStats.ClientId)
-                    .Where(cs =>
-                        Servers[attackerStats.ServerId].IsTeamBased ?
-                        cs.Value.Team != victimStats.Team :
-                        cs.Value.Team != IW4Info.Team.Spectator)
+                /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
+                     .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
+                     .Where(cs =>
+                         Servers[attackerStats.ServerId].IsTeamBased ?
+                         cs.Value.Team != attackerStats.Team :
+                         cs.Value.Team != IW4Info.Team.Spectator)
                      .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
 
-                double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
-                    validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
-                    victimStats.EloRating;*/
+                 double attackerLobbyRating = validAttackerLobbyRatings.Count() > 0 ?
+                     validAttackerLobbyRatings.Average(cs => cs.Value.EloRating) :
+                     attackerStats.EloRating;
+
+                 var validVictimLobbyRatings = Servers[victimStats.ServerId].PlayerStats
+                     .Where(cs => cs.Value.ClientId != victimStats.ClientId)
+                     .Where(cs =>
+                         Servers[attackerStats.ServerId].IsTeamBased ?
+                         cs.Value.Team != victimStats.Team :
+                         cs.Value.Team != IW4Info.Team.Spectator)
+                      .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
+
+                 double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
+                     validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
+                     victimStats.EloRating;*/
 
                 double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
                 double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
 
-               // double victimEloDifference = Math.Log(Math.Max(1, attackerStats.EloRating)) - Math.Log(Math.Max(1, victimStats.EloRating));
-               // double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference/ Math.E));
+                // double victimEloDifference = Math.Log(Math.Max(1, attackerStats.EloRating)) - Math.Log(Math.Max(1, victimStats.EloRating));
+                // double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference/ Math.E));
 
                 attackerStats.EloRating += 6.0 * (1 - winPercentage);
                 victimStats.EloRating -= 6.0 * (1 - winPercentage);

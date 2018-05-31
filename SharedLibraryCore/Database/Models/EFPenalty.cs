@@ -30,6 +30,7 @@ namespace SharedLibraryCore.Database.Models
         public DateTime Expires { get; set; }
         [Required]
         public string Offense { get; set; }
+        public string AutomatedOffense { get; set; }
         public Objects.Penalty.PenaltyType Type { get; set; }
     }
 }

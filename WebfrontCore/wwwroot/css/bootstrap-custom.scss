@@ -179,7 +179,18 @@ select {
     margin-top: -3px;
 }
 
-.stats-ranking-icon {
-    width: 32px;
-    height: 32px;
+.striped > div:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.125);
+}
+
+.striped > div:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.client-rating-graph {
+    min-height: 100px;
+}
+
+.client-rating-icon {
+
 }

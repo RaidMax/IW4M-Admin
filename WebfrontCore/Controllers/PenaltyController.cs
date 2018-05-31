@@ -43,7 +43,8 @@ namespace WebfrontCore.Controllers
                 PunisherId = p.PunisherId,
                 Type = p.Type.ToString(),
                 TimePunished = p.When.ToString(),
-                TimeRemaining = p.Expires.ToString()
+                TimeRemaining = p.Expires.ToString(),
+                AutomatedOffense = p.AutomatedOffense
             }).ToList();
 
             return Json(penaltiesDto);

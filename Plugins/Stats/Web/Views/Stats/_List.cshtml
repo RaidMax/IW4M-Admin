@@ -25,26 +25,25 @@
         return "0_no-place/menu_div_no_place.png";
     }
 }
-<table class="table table-striped mb-0" style="background-color:rgba(0, 0, 0, 0.1)">
-    @foreach (var stat in Model)
-    {
-        <tr>
-            <td style="vertical-align: middle">
-                <div class="">
-                    <h2 class="text-muted">#@stat.Ranking &mdash; @Html.ActionLink(stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })</h2>
-                    <span class="text-primary">@stat.Performance</span><span class="text-muted"> @loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"]</span><br />
-                    <span class="text-primary">@stat.KDR</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KDR"]</span>
-                    <span class="text-primary">@stat.Kills</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KILLS"]</span>
-                    <span class="text-primary">@stat.Deaths</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_DEATHS"]</span><br />
-                    <span class="text-muted">@loc["WEBFRONT_PROFILE_PLAYER"]</span> <span class="text-primary"> @stat.TimePlayed </span><span class="text-muted">@loc["GLOBAL_HOURS"]</span><br />
-                    <span class="text-muted">@loc["WEBFRONT_PROFILE_LSEEN"]</span><span class="text-primary"> @stat.LastSeen </span><span class="text-muted">@loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
-                </div>
-            </td>
-            <td class="text-right ml-0 pl-0" style="vertical-align: middle">
-                <div>
-                    <img src="/images/icons/@rankIcon(stat.Performance)" />
-                </div>
-            </td>
-        </tr>
-    }
-</table>
+@foreach (var stat in Model)
+{
+    <div class="row ml-0 mr-0 pt-2 pb-2">
+        <div class="col-md-4  text-md-left text-center">
+            <h2 class="text-muted">#@stat.Ranking &mdash; @Html.ActionLink(stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })</h2>
+            <span class="text-primary">@stat.Performance</span><span class="text-muted"> @loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"]</span><br />
+            <span class="text-primary">@stat.KDR</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KDR"]</span>
+            <span class="text-primary">@stat.Kills</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KILLS"]</span>
+            <span class="text-primary">@stat.Deaths</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_DEATHS"]</span><br />
+            <span class="text-muted">@loc["WEBFRONT_PROFILE_PLAYER"]</span> <span class="text-primary"> @stat.TimePlayed </span><span class="text-muted">@loc["GLOBAL_HOURS"]</span><br />
+            <span class="text-muted">@loc["WEBFRONT_PROFILE_LSEEN"]</span><span class="text-primary"> @stat.LastSeen </span><span class="text-muted">@loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
+        </div>
+
+        <div class="col-md-6 client-rating-graph" id="rating_history_@stat.ClientId" data-history="@Html.Raw(Json.Serialize(stat.PerformanceHistory))">
+
+        </div>
+
+        <div class="col-md-2 client-rating-icon text-md-right text-center align-items-center d-flex justify-content-center">
+            <img src="/images/icons/@rankIcon(stat.Performance)" />
+        </div>
+    </div>
+}

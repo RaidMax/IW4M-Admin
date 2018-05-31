@@ -20,11 +20,12 @@ namespace WebfrontCore.ViewComponents
                 PunisherId = p.PunisherId,
                 PunisherName = p.Punisher.Name,
                 PunisherLevel = p.Punisher.Level.ToString(),
-                Offense = p.Offense,
+                Offense = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
                 TimeRemaining = DateTime.UtcNow > p.Expires ? "" : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow),
-                Sensitive = p.Type == Penalty.PenaltyType.Flag
+                Sensitive = p.Type == Penalty.PenaltyType.Flag,
+                AutomatedOffense = p.AutomatedOffense
             });
 
             penaltiesDto = User.Identity.IsAuthenticated ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();

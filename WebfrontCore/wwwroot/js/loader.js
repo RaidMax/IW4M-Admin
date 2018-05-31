@@ -1,6 +1,6 @@
-﻿let offset = 15;
-let loadCount = 15;
-let isLoading = false;
+﻿let loaderOffset = 25;
+let loadCount = 25;
+let isLoaderLoading = false;
 let loadUri = '';
 let loaderResponseId = '';
 
@@ -11,26 +11,26 @@ function initLoader(location, loaderId) {
 }
 
 function loadMoreItems() {
-    if (isLoading) {
+    if (isLoaderLoading) {
         return false;
     }
 
     showLoader();
-    isLoading = true;
-    $.get(loadUri, { offset: offset, count : loadCount })
+    isLoaderLoading = true;
+    $.get(loadUri, { offset: loaderOffset, count : loadCount })
         .done(function (response) {
             $(loaderResponseId).append(response);
             if (response.trim().length === 0) {
                 staleLoader();
             }
             hideLoader();
-            isLoading = false;
+            isLoaderLoading = false;
         })
         .fail(function (jqxhr, statis, error) {
             errorLoader();
-            isLoading = false;
+            isLoaderLoading = false;
         });
-    offset += loadCount;
+    loaderOffset += loadCount;
 }
 
 function setupListeners() {

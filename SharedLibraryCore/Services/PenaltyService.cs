@@ -28,6 +28,7 @@ namespace SharedLibraryCore.Services
                     Expires = newEntity.Expires,
                     Offense = newEntity.Offense,
                     When = newEntity.When,
+                    AutomatedOffense = newEntity.AutomatedOffense
                 };
 
                 if (addedEntity.Expires == DateTime.MaxValue)
@@ -162,7 +163,8 @@ namespace SharedLibraryCore.Services
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
                                               Type = penalty.Type.ToString(),
-                                              TimeRemaining = now > penalty.Expires ? "" : penalty.Expires.ToString()
+                                              TimeRemaining = now > penalty.Expires ? "" : penalty.Expires.ToString(),
+                                              AutomatedOffense = penalty.AutomatedOffense
                                           },
                                           When = penalty.When,
                                           Sensitive = penalty.Type == Penalty.PenaltyType.Flag
@@ -206,7 +208,8 @@ namespace SharedLibraryCore.Services
                                               PunisherName = punisherAlias.Name,
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
-                                              Type = penalty.Type.ToString()
+                                              Type = penalty.Type.ToString(),
+                                              AutomatedOffense = penalty.AutomatedOffense
                                           },
                                           When = penalty.When,
                                           Sensitive = penalty.Type == Penalty.PenaltyType.Flag

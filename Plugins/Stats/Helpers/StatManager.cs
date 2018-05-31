@@ -14,6 +14,8 @@ using System.Text.RegularExpressions;
 using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using SharedLibraryCore.Database;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Services;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -50,64 +52,70 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
                 var iqClientIds = (from stat in context.Set<EFClientStatistics>()
-                                   join client in context.Clients
-                                   on stat.ClientId equals client.ClientId
 #if !DEBUG
-                                   where stat.TimePlayed >= 3600
-                                   where client.Level != Player.Permission.Banned
-                                   where client.LastConnection >= thirtyDaysAgo
-                                   where stat.Performance > 60
+                                   .Where(s => s.TimePlayed > 3600)
+                                   .Where(s => s.EloRating > 60.0)
 #endif
-                                   group stat by stat.ClientId into s
-                                   orderby s.Average(cs => cs.Performance) descending
-                                   select s.First().ClientId)
+                                   where stat.Client.Level != Player.Permission.Banned
+                                   where stat.Client.LastConnection >= thirtyDaysAgo
+
+                                   group stat by stat.ClientId into sj
+                                   let performance = sj.Sum(s => (s.EloRating + s.Skill) * s.TimePlayed) / sj.Sum(st => st.TimePlayed)
+                                   orderby performance
+                                   select new
+                                   {
+                                    //   sj.First().Client.CurrentAlias.Name,
+                                       sj.First().Client.ClientId,
+                                       Skill = sj.Select(s => s.Skill)
+                                   })
+                              /*
+                              join averageStats in context.Set<EFClientAverageStatHistory>().Include(c => c.Ratings)
+                              on stat.ClientId equals averageStats.ClientId
+                              where averageStats.Ratings.Count > 0
+                              group new { stat, averageStats } by averageStats.ClientId into avg
+                              orderby avg.Select(c => c.averageStats.Ratings.OrderByDescending(r => r.RatingId).First().Performance).First()
+                              select new
+                              {
+                                  avg.First().stat.Client.CurrentAlias.Name,//sj.Select(c => c.Client.CurrentAlias.Name),
+                                  avg.First().stat.ClientId,//sj.First().ClientId,
+                                  avg.First().stat.Kills,//Kills = sj.Select(s => s.Kills),
+                                  avg.First().stat.Deaths,//Deaths = sj.Select(s => s.Deaths),
+                                  avg.First().stat.Performance,//Performance = sj.Select(c => new { c.Performance, c.TimePlayed }),
+                                                               // KDR = stat.Kills / stat.Deaths,//KDR = sj.Select(c => new { KDR = c.Kills / (double)c.Deaths, c.TimePlayed }),
+                                                               //TotalPlayTime = sj.Select(c => c.TimePlayed),
+                                  avg.First().stat.Client.LastConnection,//sj.First().Client.LastConnection,
+                                  avg.First().stat.Client.TotalConnectionTime,//sj.First().Client.TotalConnectionTime,
+                                  avg.First().stat.TimePlayed,
+                                  RatingId = 0
+                                  // todo: eventually replace this in favor of joining
+                                  //AverageHistory = context.Set<EFClientAverageStatHistory>().SingleOrDefault(r => r.ClientId == stat.ClientId)
+                              })*/
                               .Skip(start)
                               .Take(count);
 
-                var clientIds = await iqClientIds.ToListAsync();
+                var stats = await iqClientIds.ToListAsync();
 
-                var iqStats = (from stat in context.Set<EFClientStatistics>()
-                               join client in context.Clients
-                               on stat.ClientId equals client.ClientId
-                               where clientIds.Contains(client.ClientId)
-                               select new
+                var groupedSelection = stats.GroupBy(c => c.ClientId).Select(s =>
+                    new TopStatsInfo()
+                    {
+                    /*  Name = s.First().Name,
+                        // weighted based on time played
+                        Performance = s.OrderByDescending(r => r.RatingId).First().Performance,
+                        // ditto
+                        KDR = s.First().Deaths == 0 ? s.First().Kills : (double)s.First().Kills / s.First().Deaths,
+                        ClientId = s.First().ClientId,
+                        Deaths = s.First().Deaths,
+                        Kills = s.First().Kills,
+                        LastSeen = Utilities.GetTimePassed(s.First().LastConnection, false),
+                        TimePlayed = Math.Round(s.First().TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
+                        /  PerformanceHistory = s.AverageHistory == null || s.AverageHistory?.Ratings.Count < 2 ?
+                               new List<double>()
                                {
-                                   client.CurrentAlias.Name,
-                                   client.ClientId,
-                                   stat.Kills,
-                                   stat.Deaths,
-                                   stat.EloRating,
-                                   stat.Skill,
-                                   stat.TimePlayed,
-                                   client.LastConnection,
-                                   client.TotalConnectionTime
-                               });
-
-                var stats = await iqStats.ToListAsync();
-
-                var groupedSelection = stats.GroupBy(s => s.ClientId).Select(s =>
-                new TopStatsInfo()
-                {
-                    Name = s.Select(c => c.Name).FirstOrDefault(),
-                    // weighted based on time played
-                    Performance = Math.Round
-                                   (s
-                                        .Where(c => (c.Skill + c.EloRating) / 2.0 > 0)
-                                        .Sum(c => (c.Skill + c.EloRating) / 2.0 * c.TimePlayed) /
-                                    s.Where(c => (c.Skill + c.EloRating) / 2.0 > 0)
-                                        .Sum(c => c.TimePlayed), 2),
-                    // ditto
-                    KDR = Math.Round(s
-                                        .Where(c => c.Deaths > 0)
-                                        .Sum(c => ((c.Kills / (double)c.Deaths) * c.TimePlayed) /
-                                   s.Where(d => d.Deaths > 0)
-                                        .Sum(d => d.TimePlayed)), 2),
-                    ClientId = s.Select(c => c.ClientId).FirstOrDefault(),
-                    Deaths = s.Sum(cs => cs.Deaths),
-                    Kills = s.Sum(cs => cs.Kills),
-                    LastSeen = Utilities.GetTimePassed(s.First().LastConnection, false),
-                    TimePlayed = Math.Round(s.First().TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
-                });
+                                   s.Performance,
+                                  s.Performance
+                               } :
+                               s.AverageHistory.Ratings.Select(r => Math.Round(r.Performance, 1)).ToList()*/
+                    });
 
                 var statList = groupedSelection.OrderByDescending(s => s.Performance).ToList();
 
@@ -215,8 +223,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         Active = true,
                         HitCount = 0,
                         Location = hl
-                    })
-                    .ToList()
+                    }).ToList()
                 };
 
                 // insert if they've not been added
@@ -437,7 +444,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         case Penalty.PenaltyType.Ban:
                             await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
                             {
-                                ClientId = 1
+                                ClientId = 1,
+                                AdministeredPenalties = new List<EFPenalty>()
+                                {
+                                    new EFPenalty()
+                                    {
+                                        AutomatedOffense = penalty.Type == Cheat.Detection.DetectionType.Bone ?
+                                    $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
+                                    $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
+                                    }
+                                }
                             });
                             break;
                         case Penalty.PenaltyType.Flag:
@@ -546,11 +562,146 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 attackerStats.Skill = 0.0;
             }
 
+            // update their performance 
+#if !DEBUG
+            if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 10)
+#endif
+            {
+                await UpdateStatHistory(attacker, attackerStats);
+                attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
+            }
+
             // todo: do we want to save this immediately?
             var clientStatsSvc = ContextThreads[serverId].ClientStatSvc;
             clientStatsSvc.Update(attackerStats);
             clientStatsSvc.Update(victimStats);
             await clientStatsSvc.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Update the invidual and average stat history for a client
+        /// </summary>
+        /// <param name="client">client to update</param>
+        /// <param name="clientStats">stats of client that is being updated</param>
+        /// <returns></returns>
+        private async Task UpdateStatHistory(Player client, EFClientStatistics clientStats)
+        {
+            int currentServerTotalPlaytime = clientStats.TimePlayed + (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
+
+            using (var ctx = new DatabaseContext())
+            {
+                // select the individual history for current server
+                var iqIndividualStatHistory = from statHistory in ctx.Set<EFClientStatHistory>()
+                                              where statHistory.ClientId == client.ClientId
+                                              where statHistory.ServerId == clientStats.ServerId
+                                              select statHistory;
+
+                // select the average history for current client
+                var iqAverageHistory = from stat in ctx.Set<EFClientAverageStatHistory>()
+                                       where stat.ClientId == client.ClientId
+                                       select stat;
+
+                // select all stats for current client
+                var iqClientStats = from stats in ctx.Set<EFClientStatistics>()
+                                    where stats.ClientId == client.ClientId
+                                    where stats.ServerId != clientStats.ServerId
+                                    select new
+                                    {
+                                        stats.Performance,
+                                        stats.TimePlayed
+                                    };
+
+                // get the client ranking for the current server
+                int individualClientRanking = await ctx.Set<EFClientStatHistory>()
+                    .Where(c => c.ClientId != client.ClientId)
+                    .Where(c => c.ServerId == clientStats.ServerId)
+                    .Where(c => c.Ratings.OrderByDescending(r => r.RatingId).FirstOrDefault().Performance > clientStats.Performance)
+                    .CountAsync() + 1;
+
+                var currentServerHistory = await iqIndividualStatHistory
+                    .Include(r => r.Ratings)
+                    .FirstOrDefaultAsync() ?? new EFClientStatHistory()
+                    {
+                        Active = true,
+                        ClientId = client.ClientId,
+                        Ratings = new List<EFRating>(),
+                        ServerId = clientStats.ServerId
+                    };
+
+                var averageHistory = await iqAverageHistory
+                    .Include(r => r.Ratings)
+                    .FirstOrDefaultAsync() ?? new EFClientAverageStatHistory()
+                    {
+                        ClientId = client.ClientId,
+                        Ratings = new List<EFRating>(),
+                        Active = true,
+                    };
+
+                if (currentServerHistory.StatHistoryId == 0)
+                {
+                    ctx.Add(currentServerHistory);
+                }
+
+                else
+                {
+                    ctx.Update(currentServerHistory);
+                }
+
+                if (averageHistory.Ratings.Count == 0)
+                {
+                    ctx.Add(averageHistory);
+                }
+
+                else
+                {
+                    ctx.Update(averageHistory);
+                }
+
+                if (currentServerHistory.Ratings.Count > 30)
+                {
+                    ctx.Entry(currentServerHistory.Ratings.First()).State = EntityState.Deleted;
+                    currentServerHistory.Ratings.Remove(currentServerHistory.Ratings.First());
+                }
+
+                currentServerHistory.Ratings.Add(new EFRating()
+                {
+                    Performance = clientStats.Performance,
+                    Ranking = individualClientRanking,
+                    Active = true,
+                    ClientId = client.ClientId,
+                });
+
+                var clientStatsList = await iqClientStats.ToListAsync();
+                clientStatsList.Add(new
+                {
+                    clientStats.Performance,
+                    TimePlayed = currentServerTotalPlaytime
+                });
+
+                // weight the performance based on play time
+                var performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
+
+                int overallClientRanking = await ctx.Set<EFClientAverageStatHistory>()
+                    .Where(c => c.ClientId != client.ClientId)
+                    .Where(c => c.Ratings.OrderByDescending(r => r.RatingId).FirstOrDefault().Performance > performanceAverage)
+                    .CountAsync() + 1;
+
+                if (averageHistory.Ratings.Count > 30)
+                {
+                    ctx.Entry(averageHistory.Ratings.First()).State = EntityState.Deleted;
+                    averageHistory.Ratings.Remove(averageHistory.Ratings.First());
+                }
+
+                averageHistory.Ratings.Add(new EFRating()
+                {
+                    Performance = performanceAverage,
+                    Ranking = overallClientRanking,
+                    Active = true,
+                    ClientId = client.ClientId,
+                });
+
+                await ctx.SaveChangesAsync();
+            }
         }
 
         /// <summary>

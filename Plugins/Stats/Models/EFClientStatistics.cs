@@ -96,5 +96,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         private List<int> SessionScores = new List<int>() { 0 };
         [NotMapped]
         public IW4Info.Team Team { get; set; }
+        [NotMapped]
+        public DateTime LastStatHistoryUpdate { get; set; } = DateTime.UtcNow;
     }
 }

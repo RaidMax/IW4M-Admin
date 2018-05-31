@@ -1024,7 +1024,8 @@ namespace IW4MAdmin
                 Punisher = Origin,
                 Active = true,
                 When = DateTime.UtcNow,
-                Link = Target.AliasLink
+                Link = Target.AliasLink,
+                AutomatedOffense = Origin.AdministeredPenalties.FirstOrDefault()?.AutomatedOffense
             };
 
             await Manager.GetPenaltyService().Create(newPenalty);

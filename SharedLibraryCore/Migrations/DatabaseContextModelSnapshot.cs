@@ -20,17 +20,6 @@ namespace SharedLibraryCore.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.0.2-rtm-10011");
 
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientAverageStatHistory", b =>
-                {
-                    b.Property<int>("ClientId");
-
-                    b.Property<bool>("Active");
-
-                    b.HasKey("ClientId");
-
-                    b.ToTable("EFClientAverageStatHistory");
-                });
-
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientKill", b =>
                 {
                     b.Property<long>("KillId")
@@ -103,24 +92,20 @@ namespace SharedLibraryCore.Migrations
                     b.ToTable("EFClientMessages");
                 });
 
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientStatHistory", b =>
+            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientRatingHistory", b =>
                 {
-                    b.Property<int>("StatHistoryId")
+                    b.Property<int>("RatingHistoryId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<bool>("Active");
 
                     b.Property<int>("ClientId");
 
-                    b.Property<int>("ServerId");
-
-                    b.HasKey("StatHistoryId");
+                    b.HasKey("RatingHistoryId");
 
                     b.HasIndex("ClientId");
 
-                    b.HasIndex("ServerId");
-
-                    b.ToTable("EFClientStatHistory");
+                    b.ToTable("EFClientRatingHistory");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientStatistics", b =>
@@ -191,23 +176,21 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<bool>("Active");
 
-                    b.Property<int>("ClientId");
-
-                    b.Property<int?>("EFClientAverageStatHistoryClientId");
-
-                    b.Property<int?>("EFClientStatHistoryStatHistoryId");
+                    b.Property<bool>("Newest");
 
                     b.Property<double>("Performance");
 
                     b.Property<int>("Ranking");
 
+                    b.Property<int>("RatingHistoryId");
+
+                    b.Property<int?>("ServerId");
+
                     b.HasKey("RatingId");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("RatingHistoryId");
 
-                    b.HasIndex("EFClientAverageStatHistoryClientId");
-
-                    b.HasIndex("EFClientStatHistoryStatHistoryId");
+                    b.HasIndex("ServerId");
 
                     b.ToTable("EFRating");
                 });
@@ -372,14 +355,6 @@ namespace SharedLibraryCore.Migrations
                     b.ToTable("Vector3");
                 });
 
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientAverageStatHistory", b =>
-                {
-                    b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientKill", b =>
                 {
                     b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Attacker")
@@ -423,16 +398,11 @@ namespace SharedLibraryCore.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientStatHistory", b =>
+            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientRatingHistory", b =>
                 {
                     b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
                         .WithMany()
                         .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFServer", "Server")
-                        .WithMany()
-                        .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -469,18 +439,14 @@ namespace SharedLibraryCore.Migrations
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFRating", b =>
                 {
-                    b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId")
+                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFClientRatingHistory", "RatingHistory")
+                        .WithMany("Ratings")
+                        .HasForeignKey("RatingHistoryId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFClientAverageStatHistory")
-                        .WithMany("Ratings")
-                        .HasForeignKey("EFClientAverageStatHistoryClientId");
-
-                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFClientStatHistory")
-                        .WithMany("Ratings")
-                        .HasForeignKey("EFClientStatHistoryStatHistoryId");
+                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFServerStatistics", b =>

@@ -27,8 +27,8 @@
             gridThickness: 0,
             lineThickness: 0,
             tickThickness: 0,
-            minimum: Math.min(...data) - 15,
-            maximum: Math.max(...data) + 15,
+            minimum: Math.min(...data) - Math.min(...data) * 0.075,
+            maximum: Math.max(...data) + Math.max(...data) * 0.075,
             margin: 0,
             valueFormatString: " ",
             labelMaxWidth: 0
@@ -57,5 +57,12 @@ $(document).ready(function () {
         $('.client-rating-graph').each(function (index, element) {
             getStatsChart($(element).attr('id'), $(element).width(), $(element).height()).render();
         });
+    });
+});
+
+$(document).on("loaderFinished", function (event, response) {
+    const ids = $.map($(response).find('.client-rating-graph'), function (elem) { return $(elem).attr('id'); });
+    ids.forEach(function (item, index) {
+        getStatsChart(item, $(item).width(), $(item).height()).render();
     });
 });

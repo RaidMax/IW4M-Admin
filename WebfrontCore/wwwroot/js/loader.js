@@ -23,6 +23,7 @@ function loadMoreItems() {
             if (response.trim().length === 0) {
                 staleLoader();
             }
+            $(document).trigger("loaderFinished", response);
             hideLoader();
             isLoaderLoading = false;
         })

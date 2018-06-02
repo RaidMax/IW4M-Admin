@@ -289,6 +289,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CKillServer());
             Commands.Add(new CSetPassword());
             Commands.Add(new CPing());
+            Commands.Add(new CSetGravatar());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

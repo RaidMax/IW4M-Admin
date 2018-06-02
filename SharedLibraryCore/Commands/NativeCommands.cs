@@ -6,6 +6,8 @@ using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -1178,6 +1180,67 @@ namespace SharedLibraryCore.Commands
                     await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_SELF"]} ^5{E.Origin.Ping}^7ms");
                 else
                     await E.Origin.Tell($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
+            }
+        }
+    }
+
+    public class CSetGravatar : Command
+    {
+        public CSetGravatar() : base("setgravatar", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_DESC"], "sg", Player.Permission.User, false, new CommandArgument[]
+        {
+            new CommandArgument()
+            {
+                Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_GRAVATAR"],
+                Required = true
+            }
+        })
+        { }
+
+        public override async Task ExecuteAsync(GameEvent E)
+        {
+            using (var ctx = new DatabaseContext())
+            {
+                var iqMeta = from meta in ctx.EFMeta
+                             where meta.ClientId == E.Origin.ClientId
+                             where meta.Key == "GravatarEmail"
+                             select meta;
+
+                var gravatarMeta = await iqMeta.FirstOrDefaultAsync();
+
+                // gravatar meta has never been added
+                if (gravatarMeta == null)
+                {
+                    using (var md5 = MD5.Create())
+                    {
+                        gravatarMeta = new EFMeta()
+                        {
+                            Active = true,
+                            ClientId = E.Origin.ClientId,
+                            Key = "GravatarEmail",
+                            Value = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
+                                .Select(h => h.ToString("x2"))),
+                        };
+
+                        ctx.EFMeta.Add(gravatarMeta);
+                        await ctx.SaveChangesAsync();
+                        await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_SUCCESS_NEW"]);
+                        return;
+                    }
+                }
+
+                else
+                {
+                    ctx.EFMeta.Update(gravatarMeta);
+                    using (var md5 = MD5.Create())
+                    {
+                        gravatarMeta.Value = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
+                                .Select(h => h.ToString("x2")));
+                        gravatarMeta.Updated = DateTime.UtcNow;
+                    }
+
+                    await ctx.SaveChangesAsync();
+                    await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_SUCCESS_UPDATE"]);
+                }
             }
         }
     }

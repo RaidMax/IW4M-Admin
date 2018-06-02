@@ -81,6 +81,13 @@ namespace WebfrontCore.Controllers
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
             clientDto.Meta.AddRange(Authorized ? penaltyMeta : penaltyMeta.Where(m => !m.Sensitive));
             clientDto.Meta.AddRange(Authorized ? administeredPenaltiesMeta : administeredPenaltiesMeta.Where(m => !m.Sensitive));
+            clientDto.Meta.AddRange(client.Meta.Select(m => new ProfileMeta()
+            {
+                When = m.Created,
+                Key = m.Key,
+                Value = m.Value,
+                Show = false,
+            }));
             clientDto.Meta = clientDto.Meta
                 .OrderByDescending(m => m.When)
                 .ToList();

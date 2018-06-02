@@ -3,11 +3,15 @@
     string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
     string shortCode = match == string.Empty ? "?" : match;
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+    string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
 }
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
-        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.Level.ToLower()">
-            <span class="profile-shortcode">@shortCode</span>
+        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.Level.ToLower()" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)">
+            @if (string.IsNullOrEmpty(gravatarUrl))
+            {
+                <span class="profile-shortcode">@shortCode</span>
+            }
         </div>
     </div>
     <div id="profile_info" class="text-center text-sm-left pr-3 pl-3">
@@ -31,7 +35,7 @@
                         <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level &&
-         (SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
+(SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
                         {
                             <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
                         }
@@ -47,7 +51,7 @@
                         @{
                             foreach (var linked in Model.LinkedAccounts)
                             {
-                                @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new { id = linked.Key}, new { @class = "link-inverse" })<br/>
+                                @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new { id = linked.Key }, new { @class = "link-inverse" })<br />
                             }
                             foreach (string alias in Model.Aliases)
                             {
@@ -100,7 +104,7 @@
     <script>
         const clientInfo = {};
         clientInfo.clientId = @Model.ClientId;
-        clientInfo.Meta =@Html.Raw(Json.Serialize(@Model.Meta));
+        clientInfo.Meta =@Html.Raw(Json.Serialize(@Model.Meta.Where(m => m.Show)));
     </script>
     <environment include="Development">
         <script type="text/javascript" src="~/js/profile.js"></script>

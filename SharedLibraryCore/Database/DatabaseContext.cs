@@ -16,6 +16,7 @@ namespace SharedLibraryCore.Database
         public DbSet<EFAlias> Aliases { get; set; }
         public DbSet<EFAliasLink> AliasLinks { get; set; }
         public DbSet<EFPenalty> Penalties { get; set; }
+        public DbSet<EFMeta> EFMeta { get; set; }
 
         private static string _ConnectionString;
 

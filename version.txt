@@ -1,3 +1,6 @@
+Version 2.2:
+-added top player stats page
+
 Version 2.1:
 CHANGELOG:
 -add support for localization (Russian, Spanish, and Portuguese)

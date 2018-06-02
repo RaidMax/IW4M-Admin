@@ -113,6 +113,7 @@ namespace SharedLibraryCore.Services
                 var iqClient = from client in context.Clients
                                .Include(c => c.CurrentAlias)
                                .Include(c => c.AliasLink.Children)
+                               .Include(c => c.Meta)
                                where client.ClientId == entityID
                                select new
                                {

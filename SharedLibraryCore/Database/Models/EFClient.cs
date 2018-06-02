@@ -34,6 +34,8 @@ namespace SharedLibraryCore.Database.Models
 
         public string Password { get; set; }
         public string PasswordSalt { get; set; }
+        // list of meta for the client
+        public virtual ICollection<EFMeta> Meta { get; set; } 
 
         [NotMapped]
         public virtual string Name

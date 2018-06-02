@@ -192,5 +192,12 @@ select {
 }
 
 .client-rating-icon {
+}
 
+.client-rating-change-up, .client-rating-change-down {
+    font-size: 0.75rem;
+}
+
+.client-rating-change-amount {
+    font-size: 1rem;
 }

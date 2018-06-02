@@ -29,7 +29,26 @@
 {
     <div class="row ml-0 mr-0 pt-2 pb-2">
         <div class="col-md-4  text-md-left text-center">
-            <h2 class="text-muted">#@stat.Ranking &mdash; @Html.ActionLink(stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })</h2>
+            <div class="h2 d-flex flex-row justify-content-center justify-content-md-start align-items-center">
+                <div class="text-muted pr-1">#@stat.Ranking</div>
+                @if (stat.RatingChange > 0)
+                {
+                    <div class="d-flex flex-column text-center">
+                        <div class="oi oi-caret-top text-success client-rating-change-up"></div>
+                        <div class="client-rating-change-amount text-success">@stat.RatingChange</div>
+                    </div>
+                }
+                @if (stat.RatingChange < 0)
+                {
+                    <div class="d-flex flex-column text-center">
+                        <div class="client-rating-change-amount client-rating-change-amount-down text-danger">@Math.Abs(stat.RatingChange)</div>
+                        <div class="oi oi-caret-bottom text-danger client-rating-change-down"></div>
+                    </div>
+                }
+                <span class="text-muted pl-1 pr-1" style="font-size: 1.25rem;">&mdash;</span>
+                @Html.ActionLink(stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })
+            </div>
+
             <span class="text-primary">@stat.Performance</span><span class="text-muted"> @loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"]</span><br />
             <span class="text-primary">@stat.KDR</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KDR"]</span>
             <span class="text-primary">@stat.Kills</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KILLS"]</span>

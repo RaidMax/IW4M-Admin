@@ -16,7 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex.Set["WEBFRONT_STATS_INDEX_TITLE"];
             ViewBag.Description = Utilities.CurrentLocalization.LocalizationIndex.Set["WEBFRONT_STATS_INDEX_DESC"];
 
-            return View("Index", await Plugin.Manager.GetTopStats(0, 25));
+            return View("Index", await Plugin.Manager.GetTopStats(0, 10));
         }
 
         [HttpGet]

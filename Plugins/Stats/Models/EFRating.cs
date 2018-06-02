@@ -25,5 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         [Required]
         // indicates if the rating is the latest
         public bool Newest { get; set; }
+        [Required]
+        public int ActivityAmount { get; set; }
     }
 }

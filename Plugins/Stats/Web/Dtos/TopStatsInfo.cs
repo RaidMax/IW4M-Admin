@@ -16,6 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Dtos
         public string LastSeen { get; set; }
         public int Kills { get; set; }
         public int Deaths { get; set; }
+        public int RatingChange { get; set; }
         public List<double> PerformanceHistory { get; set; }
     }
 }

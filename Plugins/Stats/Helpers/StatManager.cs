@@ -53,7 +53,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
                 var iqClientRatings = (from rating in context.Set<EFRating>()
 #if !DEBUG
-                                       where rating.RatingHistory.Client.TotalConnectionTime > 3600
+                                       where rating.ActivityAmount > 3600
 #endif
                                        where rating.RatingHistory.Client.Level != Player.Permission.Banned
                                        where rating.RatingHistory.Client.LastConnection > thirtyDaysAgo
@@ -106,6 +106,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     LastSeen = Utilities.GetTimePassed(clientRatingsDict[s.ClientId].LastConnection, false),
                     Name = clientRatingsDict[s.ClientId].Name,
                     Performance = Math.Round(clientRatingsDict[s.ClientId].Performance, 2),
+                    RatingChange = clientRatingsDict[s.ClientId].Ratings.First().Ranking  - clientRatingsDict[s.ClientId].Ratings.Last().Ranking,
                     PerformanceHistory = clientRatingsDict[s.ClientId].Ratings.Count() > 1 ?
                     clientRatingsDict[s.ClientId].Ratings.Select(r => r.Performance).ToList() :
                     new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
@@ -559,7 +560,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update their performance 
 #if !DEBUG
-            if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 10)
+            if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
 #endif
             {
                 await UpdateStatHistory(attacker, attackerStats);
@@ -620,16 +621,20 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ctx.Update(clientHistory);
                 }
 
+                var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
                 // get the client ranking for the current server
                 int individualClientRanking = await ctx.Set<EFRating>()
                     .Where(c => c.ServerId == clientStats.ServerId)
+                    .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
+                    .Where(r => r.ActivityAmount > 3600)
+                    .Where(r => r.RatingHistory.Client.LastConnection > thirtyDaysAgo)
                     .Where(c => c.RatingHistory.ClientId != client.ClientId)
                     .Where(r => r.Newest)
                     .Where(c => c.Performance > clientStats.Performance)
                     .CountAsync() + 1;
 
-                // limit max history per server to 30
-                if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 30)
+                // limit max history per server to 40
+                if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 40)
                 {
                     var ratingToRemove = clientHistory.Ratings.First(r => r.ServerId == clientStats.ServerId);
                     ctx.Entry(ratingToRemove).State = EntityState.Deleted;
@@ -653,6 +658,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Newest = true,
                     ServerId = clientStats.ServerId,
                     RatingHistoryId = clientHistory.RatingHistoryId,
+                    ActivityAmount = currentServerTotalPlaytime
                 });
 
                 // get other server stats
@@ -667,18 +673,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // weight the overall performance based on play time
                 var performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
 
-                var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
                 int overallClientRanking = await ctx.Set<EFRating>()
                     .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
-                    .Where(r => r.RatingHistory.Client.TotalConnectionTime > 3600)
+                    .Where(r => r.ActivityAmount > 3600)
                     .Where(r => r.RatingHistory.Client.LastConnection > thirtyDaysAgo)
                     .Where(r => r.RatingHistory.ClientId != client.ClientId)
                     .Where(r => r.ServerId == null)
                     .Where(r => r.Newest)
+                    .Where(r => r.Performance > performanceAverage)
                     .CountAsync() + 1;
 
-                // limit max average history to 30
-                if (clientHistory.Ratings.Count(r => r.ServerId == null) >= 30)
+                // limit max average history to 40
+                if (clientHistory.Ratings.Count(r => r.ServerId == null) >= 40)
                 {
                     var ratingToRemove = clientHistory.Ratings.First(r => r.ServerId == null);
                     ctx.Entry(ratingToRemove).State = EntityState.Deleted;
@@ -701,7 +707,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Performance = performanceAverage,
                     Ranking = overallClientRanking,
                     ServerId = null,
-                    RatingHistoryId = clientHistory.RatingHistoryId
+                    RatingHistoryId = clientHistory.RatingHistoryId,
+                    ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
                 });
 
                 await ctx.SaveChangesAsync();

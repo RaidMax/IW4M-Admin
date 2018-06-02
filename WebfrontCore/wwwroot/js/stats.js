@@ -2,8 +2,23 @@
     const data = $('#' + id).data('history');
     let fixedData = [];
     data.forEach(function (item, i) {
-        fixedData[i] = { x: i, y: item };
+        fixedData[i] = { x: i, y: Math.floor(item) };
     });
+
+    let dataMin = Math.min(...data);
+    const dataMax = Math.max(...data);
+
+    if (dataMax - dataMin === 0) {
+        dataMin = 0;
+    }
+
+    const padding = (dataMax - dataMin) * 0.075;
+    const min = Math.max(0, dataMin - padding);
+    const max = dataMax + padding;
+    let interval = Math.floor((max - min) / 2);
+
+    if (interval < 1)
+        interval = 1;
 
     return new CanvasJS.Chart(id, {
         backgroundColor: 'transparent',
@@ -12,37 +27,36 @@
         animationEnabled: false,
         toolTip: {
             contentFormatter: function (e) {
-                return e.entries[0].dataPoint.y;
+                return Math.round(e.entries[0].dataPoint.y, 1);
             }
         },
-        axisX: {
-            interval: 1,
-            gridThickness: 0,
-            lineThickness: 0,
-            tickThickness: 0,
-            margin: 0,
-            valueFormatString: " "
+        title: {
+            text: "Performance History",
+            fontSize: 14
         },
-        axisY: {
+        axisX: {
             gridThickness: 0,
             lineThickness: 0,
             tickThickness: 0,
-            minimum: Math.min(...data) - Math.min(...data) * 0.075,
-            maximum: Math.max(...data) + Math.max(...data) * 0.075,
             margin: 0,
             valueFormatString: " ",
-            labelMaxWidth: 0
+        },
+        axisY: {
+            labelFontSize: 12,
+            interval: interval,
+            gridThickness: 0,
+            lineThickness: 0.5,
+            valueFormatString: "#,##0",
+            minimum: min,
+            maximum: max
         },
         legend: {
-            maxWidth: 0,
-            maxHeight: 0,
             dockInsidePlotArea: true
         },
         data: [{
-            showInLegend: false,
             type: "splineArea",
             color: 'rgba(0, 122, 204, 0.25)',
-            markerSize: 0,
+            markerSize: 3.5,
             dataPoints: fixedData
         }]
     });

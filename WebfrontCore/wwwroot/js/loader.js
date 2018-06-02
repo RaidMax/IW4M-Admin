@@ -1,12 +1,14 @@
-﻿let loaderOffset = 25;
-let loadCount = 25;
+﻿let loaderOffset = 10;
+let loadCount = 10;
 let isLoaderLoading = false;
 let loadUri = '';
 let loaderResponseId = '';
 
-function initLoader(location, loaderId) {
+function initLoader(location, loaderId, count = 10) {
     loadUri = location;
     loaderResponseId = loaderId;
+    loadCount = count;
+    loaderOffset = count;
     setupListeners();
 }
 

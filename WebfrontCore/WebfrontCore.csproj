@@ -30,6 +30,7 @@
     <Content Remove="bower.json" />
     <Content Remove="bundleconfig.json" />
     <Content Remove="compilerconfig.json" />
+    <Content Remove="Views\Plugins\Stats\_RatingHistory.cshtml" />
   </ItemGroup>
 
   <ItemGroup>

@@ -290,6 +290,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CSetPassword());
             Commands.Add(new CPing());
             Commands.Add(new CSetGravatar());
+            Commands.Add(new CNextMap());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);

@@ -1055,6 +1055,7 @@ namespace IW4MAdmin
         {
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Manager.GetClientService().GetTotalClientsAsync().Result.ToString()));
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Application.Program.Version.ToString()));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s).Result));
         }
     }
 }

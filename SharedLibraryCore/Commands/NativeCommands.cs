@@ -1244,4 +1244,62 @@ namespace SharedLibraryCore.Commands
             }
         }
     }
+
+    /// <summary>
+    /// Retrieves the next map in rotation
+    /// </summary>
+    public class CNextMap : Command
+    {
+        public CNextMap() : base("nextmap", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_DESC"], "nm", Player.Permission.User, false) { }
+        public static async Task<string> GetNextMap(Server s)
+        {
+            string mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value.ToLower();
+            var regexMatches = Regex.Matches(mapRotation, @"(gametype +([a-z]{1,4}))? *map ([a-z|_]+)", RegexOptions.IgnoreCase).ToList();
+            // find the current map in the rotation
+            var currentMap = regexMatches.Where(m => m.Groups[3].ToString() == s.CurrentMap.Name);
+            var lastMap = regexMatches.LastOrDefault();
+            Map nextMap = null;
+
+            // the current map is not in rotation
+            if (currentMap.Count() == 0)
+            {
+                nextMap = new Map()
+                {
+                    // this happens if it's an unknown custom or DLC map
+                    Alias = "Unknown"
+                };
+            }
+
+            // there's duplicate maps in rotation
+            else if (currentMap.Count() > 1)
+            {
+                // gametype has been manually specified
+                var duplicateMaps = currentMap.Where(m => !string.IsNullOrEmpty(m.Groups[1].ToString()));
+
+                // more than one instance of map in rotation
+                if (duplicateMaps.Count() > 0)
+                {
+                    currentMap = duplicateMaps.Where(m => m.Groups[2].ToString() == s.Gametype);
+                }
+
+                // else we just have to assume it's the first one
+            }
+
+            // if the current map is the last map, the next map is the first map
+            var nextMapMatch = currentMap.First().Index != lastMap.Index ?
+               regexMatches[regexMatches.IndexOf(currentMap.First()) + 1] :
+               regexMatches.First();
+            nextMap = s.Maps.FirstOrDefault(m => m.Name == nextMapMatch.Groups[3].ToString()) ?? nextMap;
+            string nextGametype = nextMapMatch.Groups[2].ToString().Length == 0 ?
+                Utilities.GetLocalizedGametype(s.Gametype) :
+                Utilities.GetLocalizedGametype(nextMapMatch.Groups[2].ToString());
+
+            return $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"]} ^5{nextMap.Alias}/{nextGametype}";
+        }
+
+        public override async Task ExecuteAsync(GameEvent E)
+        {
+            await E.Origin.Tell(await GetNextMap(E.Owner));
+        }
+    }
 }

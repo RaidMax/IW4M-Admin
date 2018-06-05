@@ -157,6 +157,7 @@ namespace SharedLibraryCore.Services
                                           Key = "Event.Penalty",
                                           Value = new PenaltyInfo
                                           {
+                                              Id = penalty.PenaltyId,
                                               OffenderName = victimAlias.Name,
                                               OffenderId = victimClient.ClientId,
                                               PunisherName = punisherAlias.Name,
@@ -203,6 +204,7 @@ namespace SharedLibraryCore.Services
                                           Key = "Event.Penalty",
                                           Value = new PenaltyInfo
                                           {
+                                              Id = penalty.PenaltyId,
                                               OffenderName = victimAlias.Name,
                                               OffenderId = victimClient.ClientId,
                                               PunisherName = punisherAlias.Name,

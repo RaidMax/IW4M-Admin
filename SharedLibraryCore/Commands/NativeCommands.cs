@@ -1255,10 +1255,17 @@ namespace SharedLibraryCore.Commands
         {
             string mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value.ToLower();
             var regexMatches = Regex.Matches(mapRotation, @"(gametype +([a-z]{1,4}))? *map ([a-z|_]+)", RegexOptions.IgnoreCase).ToList();
+
             // find the current map in the rotation
             var currentMap = regexMatches.Where(m => m.Groups[3].ToString() == s.CurrentMap.Name);
             var lastMap = regexMatches.LastOrDefault();
             Map nextMap = null;
+
+            // no maprotation at all
+            if (regexMatches.Count() == 0)
+            {
+                return $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"]} ^5{s.CurrentMap.Alias}/{Utilities.GetLocalizedGametype(s.Gametype)}";
+            }
 
             // the current map is not in rotation
             if (currentMap.Count() == 0)

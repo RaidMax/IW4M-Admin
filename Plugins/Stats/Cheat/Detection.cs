@@ -19,16 +19,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Strain
         };
 
+        public ChangeTracking<EFACSnapshot> Tracker { get; private set; }
+
         int Kills;
         int HitCount;
         Dictionary<IW4Info.HitLocation, int> HitLocationCount;
-        ChangeTracking Tracker;
         double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
         DateTime LastHit;
         long LastOffset;
         ILogger Log;
         Strain Strain;
+        DateTime ConnectionTime = DateTime.UtcNow;
 
         public Detection(ILogger log, EFClientStatistics clientStats)
         {
@@ -38,7 +40,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 HitLocationCount.Add((IW4Info.HitLocation)loc, 0);
             ClientStats = clientStats;
             Strain = new Strain();
-            Tracker = new ChangeTracking();
+            Tracker = new ChangeTracking<EFACSnapshot>();
         }
 
         /// <summary>
@@ -351,16 +353,33 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #endregion
             #endregion
 
-            Tracker.OnChange(new DetectionTracking(ClientStats, kill, Strain));
-
-            if (result != null)
+            Tracker.OnChange(new EFACSnapshot()
             {
-                foreach (string change in Tracker.GetChanges())
-                {
-                    Log.WriteDebug(change);
-                    Log.WriteDebug("--------------SNAPSHOT END-----------");
-                }
-            }
+                Active = true,
+                When = kill.When,
+                ClientId = ClientStats.ClientId,
+                SessionAngleOffset = AngleDifferenceAverage,
+                CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds,
+                CurrentStrain = currentStrain,
+                CurrentViewAngle = kill.ViewAngles,
+                Hits = HitCount,
+                Kills = Kills,
+                Deaths = ClientStats.SessionDeaths,
+                HitDestination = kill.DeathOrigin,
+                HitOrigin = kill.KillOrigin,
+                EloRating = ClientStats.EloRating,
+                HitLocation = kill.HitLoc,
+                LastStrainAngle = Strain.LastAngle,
+                PredictedViewAngles = kill.AnglesList,
+                // this is in "meters"
+                Distance = kill.Distance,
+                SessionScore = ClientStats.SessionScore,
+                HitType = kill.DeathType,
+                SessionSPM = ClientStats.SessionSPM,
+                StrainAngleBetween = Strain.LastDistance,
+                TimeSinceLastEvent = (int)Strain.LastDeltaTime,
+                WeaponId = kill.Weapon
+            });
 
             return result ?? new DetectionPenaltyResult()
             {

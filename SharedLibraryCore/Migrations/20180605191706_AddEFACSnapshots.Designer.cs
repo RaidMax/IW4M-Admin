@@ -12,9 +12,10 @@ using System;
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20180605191706_AddEFACSnapshots")]
+    partial class AddEFACSnapshots
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -448,7 +449,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasKey("Vector3Id");
 
-                    //b.HasIndex("EFACSnapshotSnapshotId");
+                    b.HasIndex("EFACSnapshotSnapshotId");
 
                     b.ToTable("Vector3");
                 });

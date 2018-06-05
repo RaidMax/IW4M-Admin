@@ -33,7 +33,8 @@ namespace IW4MAdmin.Application
                 gameEvent.Type == GameEvent.EventType.Damage ||
                 gameEvent.Type == GameEvent.EventType.ScriptDamage ||
                 gameEvent.Type == GameEvent.EventType.ScriptKill ||
-                gameEvent.Type == GameEvent.EventType.MapChange)
+                gameEvent.Type == GameEvent.EventType.MapChange ||
+                gameEvent.Type == GameEvent.EventType.JoinTeam)
             {
 #if DEBUG
                 Manager.GetLogger().WriteDebug($"Added sensitive event to queue");

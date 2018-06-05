@@ -55,6 +55,8 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.MapEnd:
                     break;
+                case GameEvent.EventType.JoinTeam:
+                    break;
                 case GameEvent.EventType.Broadcast:
                     break;
                 case GameEvent.EventType.Tell:
@@ -240,7 +242,8 @@ namespace IW4MAdmin.Plugins.Stats
                 {
                     Key = "EventMessage",
                     Value = m.Message,
-                    When = m.TimeSent
+                    When = m.TimeSent,
+                    Extra = m.ServerId.ToString()
                 }).ToList();
                 messageMeta.Add(new ProfileMeta()
                 {

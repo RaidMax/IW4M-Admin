@@ -56,6 +56,44 @@ $(document).ready(function () {
     });
 
     /*
+     * load context of chat 
+     */
+    $(document).on('click', '.client-message', function (e) {
+        showLoader();
+        const location = $(this);
+        $.get('/Stats/GetMessageAsync', {
+            'serverId': $(this).data('serverid'),
+            'when': $(this).data('when')
+        })
+            .done(function (response) {
+                $('.client-message-context').remove();
+                location.after(response);
+                hideLoader();
+            })
+            .fail(function (jqxhr, textStatus, error) {
+                errorLoader();
+            });
+    });
+
+    /*
+ * load info on ban/flag
+ */
+    $(document).on('click', '.automated-penalty-info-detailed', function (e) {
+        showLoader();
+        const location = $(this).parent();
+        $.get('/Stats/GetAutomatedPenaltyInfoAsync', {
+            'clientId': $(this).data('clientid'),
+        })
+            .done(function (response) {
+                location.after(response);
+                hideLoader();
+            })
+            .fail(function (jqxhr, textStatus, error) {
+                errorLoader();
+            });
+    });
+
+    /*
      get ip geolocation info into modal
      */
     $('.ip-locate-link').click(function (e) {
@@ -97,7 +135,7 @@ $(document).ready(function () {
             })
             .fail(function (jqxhr, textStatus, error) {
                 $('#mainModal .modal-title').text("Error");
-                $('#mainModal .modal-body').html('<span class="text-danger">&mdash;'+ error + '</span>');
+                $('#mainModal .modal-body').html('<span class="text-danger">&mdash;' + error + '</span>');
                 $('#mainModal').modal();
             });
     });
@@ -171,10 +209,10 @@ function loadMeta(meta) {
             const timeRemaining = meta.value.type === 'TempBan' && meta.value.timeRemaining.length > 0 ?
                 `(${meta.value.timeRemaining} remaining)` :
                 '';
-            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)}</span> by <span class="text-highlight"> <a class="link-inverse"  href="${meta.value.punisherId}">${meta.value.punisherName}</a></span > for <span style="color: white; ">${meta.value.offense}</span><span class="text-muted"> ${timeRemaining}</span></div>`;
+            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)}</span> by <span class="text-highlight"> <a class="link-inverse"  href="${meta.value.punisherId}">${meta.value.punisherName}</a></span > for <span style="color: white; " class="automated-penalty-info-detailed" data-clientid="${meta.value.offenderId}">${meta.value.offense}</span><span class="text-muted"> ${timeRemaining}</span></div>`;
         }
         else {
-            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)} </span> <span class="text-highlight"><a class="link-inverse" href="${meta.value.offenderId}"> ${meta.value.offenderName}</a></span > for <span style="color: white; ">${meta.value.offense}</span></div>`;
+            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)} </span> <span class="text-highlight"><a class="link-inverse" href="${meta.value.offenderId}"> ${meta.value.offenderName}</a></span > for <span style="color: white;" class="automated-penalty-info-detailed" data-clientid="${meta.value.offenderId}">${meta.value.offense}</span></div>`;
         }
     }
     else if (meta.key.includes("Alias")) {
@@ -182,7 +220,7 @@ function loadMeta(meta) {
     }
     // it's a message
     else if (meta.key.includes("Event")) {
-        eventString = `<div><span style="color:white;">></span><span class="text-muted"> ${meta.value}</span></div>`;
+        eventString = `<div><span style="color:white;">></span><span class="client-message text-muted" data-serverid="${meta.extra}" data-when="${meta.when}"> ${meta.value}</span></div>`;
     }
     $('#profile_events').append(eventString);
 }

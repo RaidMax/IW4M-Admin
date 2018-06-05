@@ -228,16 +228,16 @@ namespace IW4MAdmin
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
 
+                Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
+                Leaving.LastConnection = DateTime.UtcNow;
+                await Manager.GetClientService().Update(Leaving);
+                Players[cNum] = null;
+
                 var e = new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this);
                 Manager.GetEventHandler().AddEvent(e);
 
                 // wait until the disconnect event is complete
                 e.OnProcessed.Wait();
-
-                Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
-                Leaving.LastConnection = DateTime.UtcNow;
-                await Manager.GetClientService().Update(Leaving);
-                Players[cNum] = null;
             }
         }
 
@@ -739,7 +739,10 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
-            RconParser = ServerConfig.UseT6MParser ? (IRConParser)new T6MRConParser() : new IW3RConParser();
+            RconParser = ServerConfig.UseT6MParser ?
+                (IRConParser)new T6MRConParser() :
+                new IW3RConParser();
+
             if (ServerConfig.UseIW5MParser)
                 RconParser = new IW5MRConParser();
 

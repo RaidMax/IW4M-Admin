@@ -38,6 +38,7 @@ namespace SharedLibraryCore
             Kill,
             Damage,
             Death,
+            JoinTeam,
         }
 
         public GameEvent(EventType t, string d, Player O, Player T, Server S)

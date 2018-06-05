@@ -10,9 +10,10 @@ namespace IW4MAdmin.Plugins.Stats
     {
         public enum Team
         {
+            None,
             Spectator,
-            Axis,
-            Allies
+            Allies,
+            Axis
         }
 
         public enum MeansOfDeath

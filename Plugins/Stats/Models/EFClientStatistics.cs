@@ -71,6 +71,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
             DeathStreak = 0;
             LastScore = 0;
             SessionScores.Add(0);
+            Team = IW4Info.Team.None;
         }
         [NotMapped]
         public int SessionScore
@@ -98,5 +99,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public IW4Info.Team Team { get; set; }
         [NotMapped]
         public DateTime LastStatHistoryUpdate { get; set; } = DateTime.UtcNow;
+        [NotMapped]
+        public double SessionSPM { get; set; }
     }
 }

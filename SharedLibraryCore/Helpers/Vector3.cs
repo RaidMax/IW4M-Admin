@@ -16,6 +16,11 @@ namespace SharedLibraryCore.Helpers
         public  float Y { get; protected set; }
         public float Z { get; protected set; }
 
+        // this is for EF and really should be somewhere else
+        public Vector3()
+        {
+
+        }
         public Vector3(float x, float y, float z)
         {
             X = x;

@@ -26,29 +26,23 @@ namespace IW4MAdmin.Plugins.Stats.Commands
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
-            /*if (E.Target?.ClientNumber < 0)
-            {
-                await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL_INGAME"]);
-                return;
-            }
-
-            if (E.Origin.ClientNumber < 0 && E.Target == null)
-            {
-                await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL_INGAME_SELF"]);
-                return;
-            }*/
-
             String statLine;
             EFClientStatistics pStats;
 
             if (E.Data.Length > 0 && E.Target == null)
             {
-                await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL"]);
-                return;
+                E.Target = E.Owner.GetClientByName(E.Data).FirstOrDefault();
+
+                if (E.Target == null)
+                {
+                    await E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_FAIL"]);
+                    return;
+                }
             }
 
             var clientStats = new GenericRepository<EFClientStatistics>();
             int serverId = E.Owner.GetHashCode();
+
 
             if (E.Target != null)
             {

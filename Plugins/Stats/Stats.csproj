@@ -15,6 +15,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Web\Views\_MessageContext.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Web\Views\Stats\_MessageContext.cshtml">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
     <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj" />
   </ItemGroup>

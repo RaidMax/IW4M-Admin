@@ -5,27 +5,27 @@ using System.Text;
 
 namespace SharedLibraryCore.Helpers
 {
-    public class ChangeTracking
+    /// <summary>
+    /// This class provides a way to keep track of changes to an entity
+    /// </summary>
+    /// <typeparam name="T">Type of entity to keep track of changes to</typeparam>
+    public class ChangeTracking<T>
     {
-        List<string> Values;
+        List<T> Values;
 
         public ChangeTracking()
         {
-            Values = new List<string>();
+            Values = new List<T>();
         }
 
-        public void OnChange(ITrackable value)
+        public void OnChange(T value)
         {
+            // clear the first value when count max count reached
             if (Values.Count > 30)
                 Values.RemoveAt(0);
-            Values.Add($"{DateTime.Now.ToString("HH:mm:ss.fff")} {value.GetTrackableValue()}");
+            Values.Add(value);
         }
 
-        public void ClearChanges()
-        {
-            Values.Clear();
-        }
-
-        public string[] GetChanges() => Values.ToArray();
+        public List<T> GetChanges() => Values;
     }
 }

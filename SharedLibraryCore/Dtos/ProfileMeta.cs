@@ -12,6 +12,7 @@ namespace SharedLibraryCore.Dtos
         public string WhenString => Utilities.GetTimePassed(When, false);
         public string Key { get; set; }
         public dynamic Value { get; set; }
+        public string Extra { get; set; }
         public virtual string Class => Value.GetType().ToString();
     }
 }

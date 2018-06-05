@@ -106,7 +106,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     LastSeen = Utilities.GetTimePassed(clientRatingsDict[s.ClientId].LastConnection, false),
                     Name = clientRatingsDict[s.ClientId].Name,
                     Performance = Math.Round(clientRatingsDict[s.ClientId].Performance, 2),
-                    RatingChange = clientRatingsDict[s.ClientId].Ratings.First().Ranking  - clientRatingsDict[s.ClientId].Ratings.Last().Ranking,
+                    RatingChange = clientRatingsDict[s.ClientId].Ratings.First().Ranking - clientRatingsDict[s.ClientId].Ratings.Last().Ranking,
                     PerformanceHistory = clientRatingsDict[s.ClientId].Ratings.Count() > 1 ?
                     clientRatingsDict[s.ClientId].Ratings.Select(r => r.Performance).ToList() :
                     new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
@@ -429,10 +429,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
-                    // prevent multiple bans from occuring
-                    if (attacker.Level == Player.Permission.Banned)
+                    // prevent multiple bans/flags from occuring
+                    if (attacker.Level != Player.Permission.User)
                     {
                         return;
+                    }
+
+                    // this happens when a client is detected as cheating
+                    if (penalty.ClientPenalty != Penalty.PenaltyType.Any)
+                    {
+                        using (var ctx = new DatabaseContext())
+                        {
+                            foreach (var change in clientDetection.Tracker.GetChanges())
+                            {
+                                ctx.Add(change);
+                            }
+                            await ctx.SaveChangesAsync();
+                        }
                     }
 
                     switch (penalty.ClientPenalty)
@@ -453,8 +466,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             });
                             break;
                         case Penalty.PenaltyType.Flag:
-                            if (attacker.Level != Player.Permission.User)
-                                break;
                             var e = new GameEvent()
                             {
                                 Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?
@@ -823,6 +834,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             double killSPM = scoreDifference / timeSinceLastCalc;
             double spmMultiplier = 2.934 * Math.Pow(Servers[clientStats.ServerId].TeamCount(clientStats.Team == IW4Info.Team.Allies ? IW4Info.Team.Axis : IW4Info.Team.Allies), -0.454);
             killSPM *= Math.Max(1, spmMultiplier);
+
+            // update this for ac tracking
+            clientStats.SessionSPM = killSPM;
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely

@@ -5,5 +5,6 @@ namespace SharedLibraryCore.Dtos
     {
         public bool Sensitive { get; set; }
         public bool Show { get; set; } = true;
-    }
+        public int Id {get;set;}
+}
 }

@@ -6,13 +6,13 @@ using System.Text;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
-    class Strain : ITrackable
+    class Strain
     {
-        private const  double StrainDecayBase = 0.9;
+        private const double StrainDecayBase = 0.9;
         private double CurrentStrain;
-        private Vector3 LastAngle;
-        private double LastDeltaTime;
-        private double LastDistance;
+        public double LastDistance { get; private set; }
+        public Vector3 LastAngle { get; private set; }
+        public double LastDeltaTime { get; private set; }
 
         public int TimesReachedMaxStrain { get; private set; }
 
@@ -51,11 +51,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             LastAngle = newAngle;
             return CurrentStrain;
-        }
-
-        public string GetTrackableValue()
-        {
-            return $"Strain =  {CurrentStrain}\r\n, Angle = {LastAngle}\r\n, Delta Time = {LastDeltaTime}\r\n, Angle Between = {LastDistance}";
         }
 
         private double GetDecay(double deltaTime) => Math.Pow(StrainDecayBase, Math.Pow(2.0, deltaTime / 250.0) / 1000.0);

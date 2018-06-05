@@ -30,6 +30,17 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
+           if(cleanedEventLine.Contains("JoinTeam"))
+            {
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.JoinTeam,
+                    Data = cleanedEventLine,
+                    //Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                    Owner = server
+                };
+            }
+
             if (cleanedEventLine == "say" || cleanedEventLine == "sayteam")
             {
                 string message = lineSplit[4].Replace("\x15", "");

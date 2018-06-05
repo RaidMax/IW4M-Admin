@@ -15,7 +15,20 @@ namespace IW4ScriptCommands
 
         public string Author => "RaidMax";
 
-        public Task OnEventAsync(GameEvent E, Server S) => Task.CompletedTask;
+        public Task OnEventAsync(GameEvent E, Server S)
+        {
+            if (E.Type == GameEvent.EventType.JoinTeam || E.Type == GameEvent.EventType.Disconnect)
+            {
+                E.Origin = new SharedLibraryCore.Objects.Player()
+                {
+                    ClientId = 1,
+                    CurrentServer = E.Owner
+                };
+                return new Commands.Balance().ExecuteAsync(E);
+            }
+
+            return Task.CompletedTask;
+        }
 
         public Task OnLoadAsync(IManager manager) => Task.CompletedTask;
 

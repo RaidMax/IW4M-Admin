@@ -38,6 +38,7 @@ namespace WebfrontCore.Controllers
 
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
+                Id = p.PenaltyId,
                 OffenderId = p.OffenderId,
                 Offense = p.Offense,
                 PunisherId = p.PunisherId,

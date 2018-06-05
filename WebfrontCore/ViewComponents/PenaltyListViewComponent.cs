@@ -15,6 +15,7 @@ namespace WebfrontCore.ViewComponents
             var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(12, offset, showOnly);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
+                Id = p.PenaltyId,
                 OffenderId = p.OffenderId,
                 OffenderName = p.Offender.Name,
                 PunisherId = p.PunisherId,

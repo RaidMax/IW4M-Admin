@@ -36,11 +36,18 @@ BalanceTeams(commandArgs)
 
 		for (i = 0; i < commandArgs.size; i+= 2)
 		{
-			newTeam = i + 1 = "1" ? axis : allies;
-			player = level.players[i];
+			teamNum = commandArgs[i+1];
+			clientNum = commandArgs[i];
+			if (teamNum == "0")
+				newTeam = "allies";
+			else
+				newTeam = "axis";
+			player = level.players[clientNum];
 
 			if (!isPlayer(player))
 				continue;
+
+			iPrintLnBold(player.name + " " + teamNum);
 
 			switch (newTeam)
 			{

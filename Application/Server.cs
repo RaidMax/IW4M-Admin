@@ -480,6 +480,11 @@ namespace IW4MAdmin
 
                     await AddPlayer(client);
                 }
+
+                /*else
+                {
+                    await AddPlayer(E.Origin);
+                }*/
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)

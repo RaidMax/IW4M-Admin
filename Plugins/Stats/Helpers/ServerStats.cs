@@ -23,7 +23,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public int TeamCount(IW4Info.Team teamName)
         {
-            if (PlayerStats.Count(p => p.Value.Team == IW4Info.Team.Spectator) / (double)PlayerStats.Count <= 0.25)
+            if (PlayerStats.Count(p => p.Value.Team == IW4Info.Team.None) / (double)PlayerStats.Count <= 0.25)
             {
                 return IsTeamBased ? Math.Max(PlayerStats.Count(p => p.Value.Team == teamName), 1) : Math.Max(PlayerStats.Count - 1, 1);
             }

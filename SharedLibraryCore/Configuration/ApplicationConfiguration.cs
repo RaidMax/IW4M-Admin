@@ -21,6 +21,7 @@ namespace SharedLibraryCore.Configuration
         public string CustomParserEncoding { get; set; }
         public string CustomLocale { get; set; }
         public string ConnectionString { get; set; }
+        public int RConPollRate { get; set; } = 5000;
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }
@@ -58,6 +59,8 @@ namespace SharedLibraryCore.Configuration
                 SocialLinkTitle = Utilities.PromptString(loc["SETUP_SOCIAL_TITLE"]);
                 SocialLinkAddress = Utilities.PromptString(loc["SETUP_SOCIAL_LINK"]);
             }
+
+            RConPollRate = 5000;
 
             return this;
         }

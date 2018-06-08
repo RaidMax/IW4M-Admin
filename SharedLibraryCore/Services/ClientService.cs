@@ -57,7 +57,9 @@ namespace SharedLibraryCore.Services
                     // set the level to the level of the existing client if they have the same IP + Name but new NetworkId
                     // fixme: issues?
                     Level = hasExistingAlias ?
-                        context.Clients.First(c => c.AliasLinkId == existingAlias.LinkId).Level :
+                        (await context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
+                        .OrderByDescending(c => c.Level)
+                        .FirstAsync()).Level :
                         Player.Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,
@@ -119,12 +121,12 @@ namespace SharedLibraryCore.Services
                                {
                                    Client = client,
                                    LinkedAccounts = (from linkedClient in context.Clients
-                                                    where client.AliasLinkId == linkedClient.AliasLinkId
-                                                    select new
-                                                    {
-                                                        linkedClient.ClientId,
-                                                        linkedClient.NetworkId
-                                                    })
+                                                     where client.AliasLinkId == linkedClient.AliasLinkId
+                                                     select new
+                                                     {
+                                                         linkedClient.ClientId,
+                                                         linkedClient.NetworkId
+                                                     })
                                };
                 var foundClient = await iqClient.FirstOrDefaultAsync();
 
@@ -260,10 +262,18 @@ namespace SharedLibraryCore.Services
 
             using (var context = new DatabaseContext())
             {
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                int asIP = name.ConvertToIP();
+                // hack: so IW4MAdmin doesn't show up in search results
+                asIP = asIP == 0 ? int.MinValue : asIP;
+
                 var iqClients = (from alias in context.Aliases
                        .AsNoTracking()
                                  where alias.Name.ToLower()
-                                     .Contains(name.ToLower())
+                                     .Contains(name.ToLower()) ||
+                                     alias.IPAddress == asIP
                                  join link in context.AliasLinks
                                  on alias.LinkId equals link.AliasLinkId
                                  join client in context.Clients

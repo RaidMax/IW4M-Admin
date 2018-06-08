@@ -139,7 +139,7 @@ namespace IW4MAdmin.Application
                     sensitiveEvent.OnProcessed.Set();
                 }
 
-                await Task.Delay(2500);
+                await Task.Delay(ConfigHandler.Configuration().RConPollRate);
             }
         }
 

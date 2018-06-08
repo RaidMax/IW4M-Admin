@@ -53,7 +53,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
                 var iqClientRatings = (from rating in context.Set<EFRating>()
 #if !DEBUG
-                                       where rating.ActivityAmount > 3600
+                                       where rating.ActivityAmount > 10800
 #endif
                                        where rating.RatingHistory.Client.Level != Player.Permission.Banned
                                        where rating.RatingHistory.Client.LastConnection > thirtyDaysAgo
@@ -255,6 +255,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             clientStats.LastActive = DateTime.UtcNow;
             clientStats.LastStatCalculation = DateTime.UtcNow;
             clientStats.SessionScore = pl.Score;
+            clientStats.LastScore = pl.Score;
 
             Log.WriteInfo($"Adding {pl} to stats");
 
@@ -429,14 +430,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 async Task executePenalty(Cheat.DetectionPenaltyResult penalty)
                 {
-                    // prevent multiple bans/flags from occuring
-                    if (attacker.Level != Player.Permission.User)
-                    {
-                        return;
-                    }
-
-                    // this happens when a client is detected as cheating
-                    if (penalty.ClientPenalty != Penalty.PenaltyType.Any)
+                    async Task saveLog()
                     {
                         using (var ctx = new DatabaseContext())
                         {
@@ -451,6 +445,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     switch (penalty.ClientPenalty)
                     {
                         case Penalty.PenaltyType.Ban:
+                            await saveLog();
                             await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
                             {
                                 ClientId = 1,
@@ -466,6 +461,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             });
                             break;
                         case Penalty.PenaltyType.Flag:
+                            if (attacker.Level == Player.Permission.Flagged)
+                                break;
+                            await saveLog();
                             var e = new GameEvent()
                             {
                                 Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?

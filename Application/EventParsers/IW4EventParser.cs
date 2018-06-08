@@ -15,6 +15,7 @@ namespace IW4MAdmin.Application.EventParsers
             string[] lineSplit = logLine.Split(';');
             string cleanedEventLine = Regex.Replace(lineSplit[0], @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();
 
+            // kill
             if (cleanedEventLine[0] == 'K')
             {
                 if (!server.CustomCallback)
@@ -30,7 +31,7 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-           if(cleanedEventLine.Contains("JoinTeam"))
+            if (cleanedEventLine.Contains("JoinTeam"))
             {
                 return new GameEvent()
                 {
@@ -91,6 +92,7 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
+            // damage
             if (cleanedEventLine[0] == 'D')
             {
                 if (Regex.Match(cleanedEventLine, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
@@ -102,6 +104,27 @@ namespace IW4MAdmin.Application.EventParsers
                         Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong()),
                         Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
                         Owner = server
+                    };
+                }
+            }
+
+            // join
+            if (cleanedEventLine[0] == 'J')
+            {
+                var regexMatch = Regex.Match(cleanedEventLine, @"^(J;)(.{4,32});([0-9]+);(.*)$");
+                if (regexMatch.Success)
+                {
+                    return new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Join,
+                        Data = cleanedEventLine,
+                        Owner = server,
+                        Origin = new Player()
+                        {
+                            Name = regexMatch.Groups[4].ToString(),
+                            NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
+                            ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString())
+                        }
                     };
                 }
             }

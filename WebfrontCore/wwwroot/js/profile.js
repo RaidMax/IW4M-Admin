@@ -85,6 +85,7 @@ $(document).ready(function () {
             'clientId': $(this).data('clientid'),
         })
             .done(function (response) {
+                $('.penalty-info-context').remove();
                 location.after(response);
                 hideLoader();
             })

@@ -65,8 +65,6 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Ban:
                     break;
-                case GameEvent.EventType.Remote:
-                    break;
                 case GameEvent.EventType.Unknown:
                     break;
                 case GameEvent.EventType.Report:
@@ -82,8 +80,6 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Kill:
                     if (!E.Owner.CustomCallback)
                         await Manager.AddStandardKill(E.Origin, E.Target);
-                    break;
-                case GameEvent.EventType.Death:
                     break;
                 case GameEvent.EventType.Damage:
                    // if (!E.Owner.CustomCallback)

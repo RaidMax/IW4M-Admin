@@ -10,66 +10,69 @@ namespace IW4MAdmin.Application.API
 {
     class EventApi : IEventApi
     {
-        Queue<EventInfo> Events = new Queue<EventInfo>();
-        DateTime LastFlagEvent;
-        static string[] FlaggedMessageContains =
-        {
-            " wh ",
-            "hax",
-            "cheat",
-            " hack ",
-            "aim",
-            "wall",
-            "cheto",
-            "hak",
-            "bot"
-        };
-        int FlaggedMessageCount;
+        private const int MaxEvents = 32;
+        private Queue<EventInfo> RecentEvents = new Queue<EventInfo>();
 
-        public Queue<EventInfo> GetEvents() => Events;
+        public IEnumerable<EventInfo> GetEvents(bool shouldConsume)
+        {
+            var eventList = RecentEvents.ToArray();
+
+            // clear queue if events should be consumed
+            if (shouldConsume)
+            {
+                RecentEvents.Clear();
+            }
+
+            return eventList;
+        }
 
         public void OnServerEvent(object sender, GameEvent E)
         {
-            if (E.Type == GameEvent.EventType.Say && E.Origin.Level < Player.Permission.Trusted)
+            // don't want to clog up the api with unknown events
+            if (E.Type == GameEvent.EventType.Unknown)
+                return;
+
+            var apiEvent = new EventInfo()
             {
-                bool flaggedMessage = false;
-                foreach (string msg in FlaggedMessageContains)
-                    flaggedMessage = flaggedMessage ? flaggedMessage : E.Data.ToLower().Contains(msg);
-
-                if (flaggedMessage)
-                    FlaggedMessageCount++;
-
-                if (FlaggedMessageCount > 3)
+                ExtraInfo = E.Extra?.ToString() ?? E.Data,
+                OwnerEntity = new EntityInfo()
                 {
-                    if (Events.Count > 20)
-                        Events.Dequeue();
-
-                    FlaggedMessageCount = 0;
-
-                    E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_REPORT"]).Wait(5000);
-                    Events.Enqueue(new EventInfo(
-                        EventInfo.EventType.ALERT,
-                        EventInfo.EventVersion.IW4MAdmin,
-                        "Chat indicates there may be a cheater",
-                        "Alert",
-                        E.Owner.Hostname, ""));
-                }
-
-                if ((DateTime.UtcNow - LastFlagEvent).Minutes >= 3)
+                    Name = E.Owner.Hostname,
+                    Id = E.Owner.GetHashCode()
+                },
+                OriginEntity = E.Origin == null ? null : new EntityInfo()
                 {
-                    FlaggedMessageCount = 0;
-                    LastFlagEvent = DateTime.Now;
-                }
-            }
+                    Id = E.Origin.ClientId,
+                    Name = E.Origin.Name
+                },
+                TargetEntity = E.Target == null ? null : new EntityInfo()
+                {
+                    Id = E.Target.ClientId,
+                    Name = E.Target.Name
+                },
+                EventType = new EntityInfo()
+                {
+                    Id = (int)E.Type,
+                    Name = E.Type.ToString()
+                },
+                EventTime = E.Time
+            };
 
-            if (E.Type == GameEvent.EventType.Report)
-            {
-                Events.Enqueue(new EventInfo(
-                    EventInfo.EventType.ALERT,
-                    EventInfo.EventVersion.IW4MAdmin,
-                    $"**{E.Origin.Name}** has reported **{E.Target.Name}** for: {E.Data.Trim()}",
-                    E.Target.Name, E.Origin.Name, ""));
-            }
+            // add the new event to the list
+            AddNewEvent(apiEvent);
+        }
+
+        /// <summary>
+        /// Adds event to the list and removes first added if reached max capacity
+        /// </summary>
+        /// <param name="info">EventInfo to add</param>
+        private void AddNewEvent(EventInfo info)
+        {
+            // remove the first added event
+            if (RecentEvents.Count >= MaxEvents)
+                RecentEvents.Dequeue();
+
+            RecentEvents.Enqueue(info);
         }
     }
 }

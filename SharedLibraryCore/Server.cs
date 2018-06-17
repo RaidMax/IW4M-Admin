@@ -139,6 +139,13 @@ namespace SharedLibraryCore
 #else
             Logger.WriteVerbose(Message.StripColors());
 #endif
+            Manager.GetEventHandler().AddEvent(new GameEvent()
+            {
+                Type = GameEvent.EventType.Broadcast,
+                Data = Message,
+                Owner = this
+            });
+
             await Task.CompletedTask;
         }
 

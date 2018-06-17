@@ -17,6 +17,7 @@ namespace SharedLibraryCore.Database
         public DbSet<EFAliasLink> AliasLinks { get; set; }
         public DbSet<EFPenalty> Penalties { get; set; }
         public DbSet<EFMeta> EFMeta { get; set; }
+        public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
         private static string _ConnectionString;
 
@@ -77,6 +78,11 @@ namespace SharedLibraryCore.Database
                 .WithOne(a => a.Link)
                 .HasForeignKey(k => k.LinkId)
                 .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<EFAlias>(ent =>
+            {
+                ent.HasIndex(a => a.IPAddress);
             });
 
             // force full name for database conversion

@@ -8,36 +8,37 @@ namespace SharedLibraryCore
     {
         public enum EventType
         {
-            //FROM SERVER
+            Unknown,
+           
+            // events "generated" by the server
             Start,
             Stop,
             Connect,
-            // this is for IW5 compatibility
             Join,
+            Quit,
             Disconnect,
-            Say,
-            MapChange,
             MapEnd,
+            MapChange,
 
-            //FROM ADMIN
-            Broadcast,
-            Tell,
-            Kick,
-            Ban,
-            Remote,
-            Unknown,
-
-            //FROM PLAYER
+            // events "generated" by clients    
+            Say,
             Report,
             Flag,
+            Unflag,
+            Kick,
+            TempBan,
+            Ban,
             Command,
 
-            // FROM GAME
+            // events "generated" by IW4MAdmin
+            Broadcast,
+            Tell,
+
+            // events "generated" by script/log
             ScriptDamage,
             ScriptKill,
-            Kill,
             Damage,
-            Death,
+            Kill,
             JoinTeam,
         }
 

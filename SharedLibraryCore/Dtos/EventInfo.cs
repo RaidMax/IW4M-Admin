@@ -1,39 +1,19 @@
 ﻿using System;
+using static SharedLibraryCore.GameEvent;
 
 namespace SharedLibraryCore.Dtos
 {
+    /// <summary>
+    /// This class wraps the information related to a generated event for the API
+    /// </summary>
     public class EventInfo
     {
-        public EventInfo(EventType Ty, EventVersion V, string M, string T, string O, string Ta)
-        {
-            Type = Ty;
-            Version = V;
-            Message = System.Web.HttpUtility.HtmlEncode(M);
-            Title = T;
-            Origin = System.Web.HttpUtility.HtmlEncode(O);
-            Target = System.Web.HttpUtility.HtmlEncode(Ta);
-
-            ID = Math.Abs(DateTime.Now.GetHashCode());
-        }
-
-        public enum EventType
-        {
-            NOTIFICATION,
-            STATUS,
-            ALERT,
-        }
-
-        public enum EventVersion
-        {
-            IW4MAdmin
-        }
-
-        public EventType Type;
-        public EventVersion Version;
-        public string Message;
-        public string Title;
-        public string Origin;
-        public string Target;
-        public int ID;
+        public EntityInfo OriginEntity { get; set; }
+        public EntityInfo TargetEntity { get; set; }
+        public EntityInfo EventType { get; set; }
+        public EntityInfo OwnerEntity { get; set; }
+        public DateTime EventTime { get; set; }
+        public string ExtraInfo { get; set; }
+        public string Id { get; private set; } = Guid.NewGuid().ToString();
     }
 }

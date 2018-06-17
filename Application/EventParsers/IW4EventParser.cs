@@ -37,7 +37,7 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.JoinTeam,
                     Data = cleanedEventLine,
-                    //Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                    Origin = server.GetPlayersAsList().FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertLong()),
                     Owner = server
                 };
             }

@@ -24,7 +24,8 @@ namespace WebfrontCore.ViewComponents
                 Offense = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
-                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow),
+                // show time passed if ban
+                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : $"{(p.Expires.Year == DateTime.MaxValue.Year ? Utilities.GetTimePassed(p.When, true) : Utilities.TimeSpanText(p.Expires - DateTime.UtcNow))}",
                 Sensitive = p.Type == Penalty.PenaltyType.Flag,
                 AutomatedOffense = p.AutomatedOffense
             });

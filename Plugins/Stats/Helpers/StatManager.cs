@@ -34,13 +34,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             Manager = mgr;
         }
 
-        ~StatManager()
-        {
-            Servers.Clear();
-            Log = null;
-            Servers = null;
-        }
-
         public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count)
@@ -445,6 +438,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     switch (penalty.ClientPenalty)
                     {
                         case Penalty.PenaltyType.Ban:
+                            if (attacker.Level == Player.Permission.Banned)
+                                break;
                             await saveLog();
                             await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
                             {
@@ -461,7 +456,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             });
                             break;
                         case Penalty.PenaltyType.Flag:
-                            if (attacker.Level == Player.Permission.Flagged)
+                            if (attacker.Level != Player.Permission.User)
                                 break;
                             await saveLog();
                             var e = new GameEvent()

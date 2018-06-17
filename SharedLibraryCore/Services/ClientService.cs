@@ -59,7 +59,7 @@ namespace SharedLibraryCore.Services
                     Level = hasExistingAlias ?
                         (await context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
                         .OrderByDescending(c => c.Level)
-                        .FirstAsync()).Level :
+                        .FirstOrDefaultAsync())?.Level ?? Player.Permission.User :
                         Player.Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,
@@ -170,11 +170,16 @@ namespace SharedLibraryCore.Services
                 {
                     // get all clients that use the same aliasId
                     var matchingClients = context.Clients
-                        .Where(c => c.CurrentAliasId == client.CurrentAliasId);
+                        .Where(c => c.CurrentAliasId == client.CurrentAliasId)
+                        // make sure we don't select ourselves twice
+                        .Where(c => c.ClientId != entity.ClientId);
 
                     // update all related clients level
-                    await matchingClients.ForEachAsync(c => c.Level = (client.Level == Player.Permission.Banned) ?
-                        client.Level : entity.Level);
+                    await matchingClients.ForEachAsync(c =>
+                    {
+                        c.Level = (client.Level == Player.Permission.Banned) ? client.Level : entity.Level;
+
+                    });
                 }
 
                 // their alias has been updated and not yet saved

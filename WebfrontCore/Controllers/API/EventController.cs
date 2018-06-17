@@ -9,13 +9,10 @@ namespace WebfrontCore.Controllers.API
     {
         [HttpGet]
         [Route("event")]
-        public ActionResult Index()
+        public ActionResult Index(bool shouldConsume = true)
         {
-            var events = Manager.GetEventApi().GetEvents();
-            var eventsDto = new List<EventInfo>();
-            while (events.Count > 0)
-                eventsDto.Add(events.Dequeue());
-            return Json(eventsDto);
+            var events = Manager.GetEventApi().GetEvents(shouldConsume);
+            return Json(events);
         }
     }
 }

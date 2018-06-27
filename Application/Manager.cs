@@ -81,14 +81,18 @@ namespace IW4MAdmin.Application
 
         public async Task UpdateStatus(object state)
         {
-            var taskList = new List<Task>();
+            var taskList = new Dictionary<int, Task>();
 
             while (Running)
             {
-                taskList.Clear();
+                var tasksToRemove = taskList.Where(t => t.Value.Status == TaskStatus.RanToCompletion)
+                    .Select(t => t.Key).ToList();
+
+                tasksToRemove.ForEach(t => taskList.Remove(t));
+
                 foreach (var server in Servers)
                 {
-                    taskList.Add(Task.Run(async () =>
+                    var newTask = Task.Run(async () =>
                     {
                         try
                         {
@@ -101,7 +105,12 @@ namespace IW4MAdmin.Application
                             Logger.WriteDebug($"Exception: {e.Message}");
                             Logger.WriteDebug($"StackTrace: {e.StackTrace}");
                         }
-                    }));
+                    });
+
+                    if (!taskList.ContainsKey(server.GetHashCode()))
+                    {
+                        taskList.Add(server.GetHashCode(), newTask);
+                    }
                 }
 #if DEBUG
                 Logger.WriteDebug($"{taskList.Count} servers queued for stats updates");
@@ -110,7 +119,7 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 #endif
 
-                await Task.WhenAll(taskList.ToArray());
+                await Task.WhenAny(taskList.Values.ToArray());
 
                 GameEvent sensitiveEvent;
                 while ((sensitiveEvent = Handler.GetNextSensitiveEvent()) != null)

@@ -151,7 +151,7 @@ namespace SharedLibraryCore.Services
                     .AsNoTracking()
                     .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children)
-                    .SingleOrDefaultAsync(c => c.NetworkId == (long)entityAttribute);
+                    .SingleOrDefaultAsync(c => c.NetworkId == entityAttribute);
             }
         }
 
@@ -164,7 +164,7 @@ namespace SharedLibraryCore.Services
                     .Include(c => c.AliasLink)
                     .Include(c => c.CurrentAlias)
                     .Single(e => e.ClientId == entity.ClientId);
-
+               
                 // if their level has been changed
                 if (entity.Level != client.Level)
                 {
@@ -177,8 +177,7 @@ namespace SharedLibraryCore.Services
                     // update all related clients level
                     await matchingClients.ForEachAsync(c =>
                     {
-                        c.Level = (client.Level == Player.Permission.Banned) ? client.Level : entity.Level;
-
+                        c.Level = entity.Level;
                     });
                 }
 

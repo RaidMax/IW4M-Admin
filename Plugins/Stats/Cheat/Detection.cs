@@ -85,7 +85,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
 
-                if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset &&
+                if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset(hitLoc.HitCount) &&
                     hitLoc.HitCount > 100)
                 {
                     Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
@@ -107,7 +107,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double sessAverage = (AngleDifferenceAverage * (HitCount - 1) + realAgainstPredict) / HitCount;
                 AngleDifferenceAverage = sessAverage;
 
-                if (sessAverage > Thresholds.MaxOffset &&
+                if (sessAverage > Thresholds.MaxOffset(HitCount) &&
                     HitCount > 30)
                 {
                     Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");

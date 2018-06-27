@@ -16,7 +16,7 @@ namespace WebfrontCore.Controllers
     {
         protected IManager Manager;
         protected readonly DatabaseContext Context;
-        protected bool Authorized { get; private set; }
+        protected bool Authorized { get; set; }
         protected SharedLibraryCore.Localization.Index Localization { get; private set; }
         protected EFClient Client { get; private set; }
         private static byte[] LocalHost = { 127, 0, 0, 1 };

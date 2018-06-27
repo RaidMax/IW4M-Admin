@@ -942,7 +942,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int serverId = sv.GetHashCode();
             var statsSvc = ContextThreads[serverId];
 
-            Log.WriteDebug("Syncing stats contexts");
+           // Log.WriteDebug("Syncing stats contexts");
             await statsSvc.ServerStatsSvc.SaveChangesAsync();
             //await statsSvc.ClientStatSvc.SaveChangesAsync();
             await statsSvc.KillStatsSvc.SaveChangesAsync();

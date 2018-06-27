@@ -28,8 +28,10 @@ namespace IW4MAdmin.Application
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 
-            Version = Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
-            Version = Math.Round(Version, 2);
+            Version = Assembly.GetExecutingAssembly().GetName().Version.Major +
+                Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f +
+                Assembly.GetExecutingAssembly().GetName().Version.Build / 100.0f;
+            Version = Math.Round(Version, 3);
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");

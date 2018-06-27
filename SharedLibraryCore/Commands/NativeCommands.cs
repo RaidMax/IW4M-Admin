@@ -531,24 +531,27 @@ namespace SharedLibraryCore.Commands
             base("admins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_DESC"], "a", Player.Permission.User, false)
         { }
 
+        public static string OnlineAdmins(Server S)
+        {
+            var onlineAdmins = S.GetPlayersAsList()
+                .Where(p => p.Level > Player.Permission.Flagged)
+                .Where(p => !p.Masked)
+                .Select(p => $"[^3{Utilities.ConvertLevelToColor(p.Level)}^7] {p.Name}");
+
+            return onlineAdmins.Count() > 0 ?
+                string.Join(Environment.NewLine, onlineAdmins) :
+                Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_NONE"];
+        }
+
         public override async Task ExecuteAsync(GameEvent E)
         {
-            int numOnline = 0;
-            for (int i = 0; i < E.Owner.Players.Count; i++)
+            foreach (string line in OnlineAdmins(E.Owner).Split(Environment.NewLine))
             {
-                var P = E.Owner.Players[i];
-                if (P != null && P.Level > Player.Permission.Flagged && !P.Masked)
-                {
-                    numOnline++;
-                    if (E.Message[0] == '@')
-                        await E.Owner.Broadcast(String.Format("[^3{0}^7] {1}", Utilities.ConvertLevelToColor(P.Level), P.Name));
-                    else
-                        await E.Origin.Tell(String.Format("[^3{0}^7] {1}", Utilities.ConvertLevelToColor(P.Level), P.Name));
-                }
+                if (E.Message[0] == '@')
+                    await E.Owner.Broadcast(line);
+                else
+                    await E.Origin.Tell(line);
             }
-
-            if (numOnline == 0)
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_NONE"]);
         }
     }
 

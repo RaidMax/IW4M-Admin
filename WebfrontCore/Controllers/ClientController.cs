@@ -20,6 +20,10 @@ namespace WebfrontCore.Controllers
                 return NotFound();
             }
 
+#if DEBUG
+            Authorized = true;
+#endif
+
             var clientDto = new PlayerInfo()
             {
                 Name = client.Name,
@@ -76,6 +80,12 @@ namespace WebfrontCore.Controllers
                         Sensitive = true,
                         When = a.DateAdded
                     }));
+            }
+
+            if (Authorized)
+            {
+                penaltyMeta.ForEach(p => p.Value.Offense = p.Value.AutomatedOffense ?? p.Value.Offense);
+                administeredPenaltiesMeta.ForEach(p => p.Value.Offense = p.Value.AutomatedOffense ?? p.Value.Offense);
             }
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));

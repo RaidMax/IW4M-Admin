@@ -21,7 +21,11 @@ namespace WebfrontCore.ViewComponents
                 PunisherId = p.PunisherId,
                 PunisherName = p.Punisher.Name,
                 PunisherLevel = p.Punisher.Level.ToString(),
+#if DEBUG
+                Offense = !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
+#else
                 Offense = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
+#endif
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
                 // show time passed if ban
@@ -30,7 +34,11 @@ namespace WebfrontCore.ViewComponents
                 AutomatedOffense = p.AutomatedOffense
             });
 
+#if DEBUG
+            penaltiesDto = penaltiesDto.ToList();
+#else
             penaltiesDto = User.Identity.IsAuthenticated ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
+#endif
 
             return View("_List", penaltiesDto);
         }

@@ -145,7 +145,7 @@ namespace IW4MAdmin
                     {
                         client.CurrentAlias = existingAlias;
                         client.CurrentAliasId = existingAlias.AliasId;
-                        await Manager.GetClientService().Update(client);
+                        client = await Manager.GetClientService().Update(client);
                     }
                     player = client.AsPlayer();
                 }
@@ -160,11 +160,14 @@ namespace IW4MAdmin
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
                 var currentBan = activePenalties.FirstOrDefault(b => b.Expires > DateTime.UtcNow);
                 var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
+                    .Where(p => p.Active)
                     .OrderByDescending(p => p.When)
                     .FirstOrDefault();
 
                 // remove their auto flag status after a week
-                if (currentAutoFlag != null && (DateTime.Now - currentAutoFlag.When).TotalDays > 7)
+                if (player.Level == Player.Permission.Flagged &&
+                    currentAutoFlag != null &&
+                    (DateTime.Now - currentAutoFlag.When).TotalDays > 7)
                 {
                     player.Level = Player.Permission.User;
                 }
@@ -192,7 +195,6 @@ namespace IW4MAdmin
                 }
 
                 Logger.WriteInfo($"Client {player} connecting...");
-
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
@@ -831,7 +833,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\mw2";
+            basepath.Value = @"\\192.168.88.253\logs\games_mp.log";
 #endif
             string logPath;
             if (GameName == Game.IW5)
@@ -1064,6 +1066,7 @@ namespace IW4MAdmin
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Manager.GetClientService().GetTotalClientsAsync().Result.ToString()));
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Application.Program.Version.ToString()));
             Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s).Result));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("ADMINS", (Server s) => SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s)));
         }
     }
 }

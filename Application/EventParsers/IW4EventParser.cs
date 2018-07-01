@@ -12,11 +12,12 @@ namespace IW4MAdmin.Application.EventParsers
     {
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
+            logLine = Regex.Replace(logLine, @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();
             string[] lineSplit = logLine.Split(';');
-            string cleanedEventLine = Regex.Replace(lineSplit[0], @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();
+            string eventType = lineSplit[0];
 
             // kill
-            if (cleanedEventLine[0] == 'K')
+            if (eventType == "K")
             {
                 if (!server.CustomCallback)
                 {
@@ -31,18 +32,18 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (cleanedEventLine.Contains("JoinTeam"))
+            if (eventType == "JoinTeam")
             {
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.JoinTeam,
-                    Data = cleanedEventLine,
+                    Data = eventType,
                     Origin = server.GetPlayersAsList().FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertLong()),
                     Owner = server
                 };
             }
 
-            if (cleanedEventLine == "say" || cleanedEventLine == "sayteam")
+            if (eventType == "say" || eventType == "sayteam")
             {
                 string message = lineSplit[4].Replace("\x15", "");
 
@@ -68,7 +69,7 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
-            if (cleanedEventLine.Contains("ScriptKill"))
+            if (eventType == "ScriptKill")
             {
                 return new GameEvent()
                 {
@@ -80,7 +81,7 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
-            if (cleanedEventLine.Contains("ScriptDamage"))
+            if (eventType == "ScriptDamage")
             {
                 return new GameEvent()
                 {
@@ -93,14 +94,14 @@ namespace IW4MAdmin.Application.EventParsers
             }
 
             // damage
-            if (cleanedEventLine[0] == 'D')
+            if (eventType == "D")
             {
-                if (Regex.Match(cleanedEventLine, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
+                if (Regex.Match(eventType, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
                 {
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.Damage,
-                        Data = cleanedEventLine,
+                        Data = eventType,
                         Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong()),
                         Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
                         Owner = server
@@ -109,19 +110,19 @@ namespace IW4MAdmin.Application.EventParsers
             }
 
             // join
-            if (cleanedEventLine[0] == 'J')
+            if (eventType == "J")
             {
-                var regexMatch = Regex.Match(cleanedEventLine, @"^(J;)(.{4,32});([0-9]+);(.*)$");
+                var regexMatch = Regex.Match(logLine, @"^(J;)(.{4,32});([0-9]+);(.*)$");
                 if (regexMatch.Success)
                 {
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.Join,
-                        Data = cleanedEventLine,
+                        Data = logLine,
                         Owner = server,
                         Origin = new Player()
                         {
-                            Name = regexMatch.Groups[4].ToString(),
+                            Name = regexMatch.Groups[4].ToString().StripColors(),
                             NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString())
                         }
@@ -129,7 +130,28 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (cleanedEventLine.Contains("ExitLevel"))
+            if (eventType == "Q")
+            {
+                var regexMatch = Regex.Match(logLine, @"^(Q;)(.{4,32});([0-9]+);(.*)$");
+                if (regexMatch.Success)
+                {
+                    return new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Quit,
+                        Data = logLine,
+                        Owner = server,
+                        Origin = new Player()
+                        {
+                            Name = regexMatch.Groups[4].ToString().StripColors(),
+                            NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
+                            ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
+                            State = Player.ClientState.Connecting
+                        }
+                    };
+                }
+            }
+
+            if (eventType.Contains("ExitLevel"))
             {
                 return new GameEvent()
                 {
@@ -147,9 +169,9 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
-            if (cleanedEventLine.Contains("InitGame"))
+            if (eventType.Contains("InitGame"))
             {
-                string dump = cleanedEventLine.Replace("InitGame: ", "");
+                string dump = eventType.Replace("InitGame: ", "");
 
                 return new GameEvent()
                 {

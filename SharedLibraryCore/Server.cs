@@ -100,14 +100,6 @@ namespace SharedLibraryCore
             return Players.Where(p => p != null && p.Name.ToLower().Contains(pName.ToLower())).ToList();
         }
 
-        /// <summary>
-        /// Process requested command correlating to an event
-        /// </summary>
-        /// <param name="E">Event parameter</param>
-        /// <param name="C">Command requested from the event</param>
-        /// <returns></returns>
-        abstract public Task<Command> ValidateCommand(GameEvent E);
-
         virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts) => (Task<bool>)Task.CompletedTask;
 
         /// <summary>

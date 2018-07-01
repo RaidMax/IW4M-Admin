@@ -8,6 +8,13 @@ namespace SharedLibraryCore.Objects
 {
     public class Player : Database.Models.EFClient
     {
+        public enum ClientState
+        {
+            Connecting,
+            Connected,
+            Disconnecting,
+        }
+
         public enum Permission
         {
             Banned = -1,
@@ -109,6 +116,10 @@ namespace SharedLibraryCore.Objects
             get { return _name; }
             set { _name = value;  }
         }
+        [NotMapped]
+        public bool IsAuthenticated { get; set; }
+        [NotMapped]
+        public ClientState State { get; set; }
 
         public override bool Equals(object obj)
         {

@@ -81,18 +81,14 @@ namespace IW4MAdmin.Application
 
         public async Task UpdateStatus(object state)
         {
-            var taskList = new Dictionary<int, Task>();
+            var taskList = new List<Task>();
 
             while (Running)
             {
-                var tasksToRemove = taskList.Where(t => t.Value.Status == TaskStatus.RanToCompletion)
-                    .Select(t => t.Key).ToList();
-
-                tasksToRemove.ForEach(t => taskList.Remove(t));
-
+                taskList.Clear();
                 foreach (var server in Servers)
                 {
-                    var newTask = Task.Run(async () =>
+                    taskList.Add(Task.Run(async () =>
                     {
                         try
                         {
@@ -105,12 +101,7 @@ namespace IW4MAdmin.Application
                             Logger.WriteDebug($"Exception: {e.Message}");
                             Logger.WriteDebug($"StackTrace: {e.StackTrace}");
                         }
-                    });
-
-                    if (!taskList.ContainsKey(server.GetHashCode()))
-                    {
-                        taskList.Add(server.GetHashCode(), newTask);
-                    }
+                    }));
                 }
 #if DEBUG
                 Logger.WriteDebug($"{taskList.Count} servers queued for stats updates");
@@ -119,35 +110,7 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 #endif
 
-                await Task.WhenAny(taskList.Values.ToArray());
-
-                GameEvent sensitiveEvent;
-                while ((sensitiveEvent = Handler.GetNextSensitiveEvent()) != null)
-                {
-                    try
-                    {
-                        await sensitiveEvent.Owner.ExecuteEvent(sensitiveEvent);
-#if DEBUG
-                        Logger.WriteDebug($"Processed Sensitive Event {sensitiveEvent.Type}");
-#endif
-                    }
-
-                    catch (NetworkException e)
-                    {
-                        Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]);
-                        Logger.WriteDebug(e.Message);
-                    }
-
-                    catch (Exception E)
-                    {
-                        Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {sensitiveEvent.Owner}");
-                        Logger.WriteDebug("Error Message: " + E.Message);
-                        Logger.WriteDebug("Error Trace: " + E.StackTrace);
-                    }
-
-                    sensitiveEvent.OnProcessed.Set();
-                }
-
+                await Task.WhenAny(taskList);
                 await Task.Delay(ConfigHandler.Configuration().RConPollRate);
             }
         }
@@ -460,15 +423,34 @@ namespace IW4MAdmin.Application
             {
                 // wait for new event to be added
                 OnEvent.Wait();
-
+                var taskList = new List<Task>();
                 // todo: sequencially or parallelize?
                 while ((queuedEvent = Handler.GetNextEvent()) != null)
                 {
+                    if (queuedEvent.Origin != null &&
+                        !queuedEvent.Origin.IsAuthenticated &&
+                        // we want to allow join events
+                        queuedEvent.Type != GameEvent.EventType.Join &&
+                        queuedEvent.Type != GameEvent.EventType.Quit &&
+                        // we don't care about unknown events
+                        queuedEvent.Origin.NetworkId != 0)
+                    {
+                        Logger.WriteDebug($"Delaying execution of event type {queuedEvent.Type} for {queuedEvent.Origin} because they are not authed");
+                        // update the event origin for possible authed client
+                        queuedEvent.Origin = queuedEvent.Owner.Players.FirstOrDefault(p => p != null && p.NetworkId == queuedEvent.Origin.NetworkId);
+                        queuedEvent.Target = queuedEvent.Target == null ? null : queuedEvent.Owner.Players.FirstOrDefault(p => p != null && p.NetworkId == queuedEvent.Target.NetworkId);
+                        // add it back to the queue for reprocessing
+                        Handler.AddEvent(queuedEvent, true);
+                        continue;
+                    }
                     await processEvent(queuedEvent);
                 }
 
-                // this should allow parallel processing of events
-                // await Task.WhenAll(eventList);
+                if (taskList.Count > 0)
+                {
+                    // this should allow parallel processing of events
+                    await Task.WhenAny(taskList);
+                }
 
                 // signal that all events have been processed
                 OnEvent.Reset();

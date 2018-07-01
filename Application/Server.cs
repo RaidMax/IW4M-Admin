@@ -20,6 +20,7 @@ using Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
 using SharedLibraryCore.Localization;
+using IW4MAdmin.Application.Core;
 
 namespace IW4MAdmin
 {
@@ -27,8 +28,12 @@ namespace IW4MAdmin
     {
         private static Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEvent LogEvent;
+        private ClientAuthentication AuthQueue;
 
-        public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg) { }
+        public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
+        {
+            AuthQueue = new ClientAuthentication();
+        }
 
         public override int GetHashCode()
         {
@@ -49,6 +54,17 @@ namespace IW4MAdmin
             return id;
         }
 
+        public async Task OnPlayerJoined(Player logClient)
+        {
+            Logger.WriteDebug($"Log detected {logClient} joining");
+            if (Players[logClient.ClientNumber] == null || Players[logClient.ClientNumber].NetworkId != logClient.NetworkId)
+            {
+                Players[logClient.ClientNumber] = logClient;
+            }
+
+            await Task.CompletedTask;
+        }
+
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
             if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
@@ -60,7 +76,9 @@ namespace IW4MAdmin
             }
 
             if (Players[polledPlayer.ClientNumber] != null &&
-                Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId)
+                Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId &&
+                // only update if they're unauthenticated
+                Players[polledPlayer.ClientNumber].IsAuthenticated)
             {
                 // update their ping & score 
                 Players[polledPlayer.ClientNumber].Ping = polledPlayer.Ping;
@@ -76,7 +94,7 @@ namespace IW4MAdmin
                 return false;
             }
 
-            if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name) != null)
+            if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name && p.NetworkId != polledPlayer.NetworkId) != null)
             {
                 Logger.WriteDebug($"Kicking {polledPlayer} because their name is already in use");
                 string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_NAME_INUSE"]);
@@ -154,7 +172,9 @@ namespace IW4MAdmin
                 player.ClientNumber = polledPlayer.ClientNumber;
                 player.IsBot = polledPlayer.IsBot;
                 player.Score = polledPlayer.Score;
+                player.IsAuthenticated = true;
                 player.CurrentServer = this;
+                player.State = Player.ClientState.Connected;
                 Players[player.ClientNumber] = player;
 
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
@@ -230,149 +250,19 @@ namespace IW4MAdmin
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
 
-                Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
-                Leaving.LastConnection = DateTime.UtcNow;
-                await Manager.GetClientService().Update(Leaving);
-                Players[cNum] = null;
-
-                var e = new GameEvent(GameEvent.EventType.Disconnect, "", Leaving, null, this);
-                Manager.GetEventHandler().AddEvent(e);
-
-                // wait until the disconnect event is complete
-                e.OnProcessed.Wait();
-            }
-        }
-
-        //Process requested command correlating to an event
-        // todo: this needs to be removed out of here
-        override public async Task<Command> ValidateCommand(GameEvent E)
-        {
-            string CommandString = E.Data.Substring(1, E.Data.Length - 1).Split(' ')[0];
-            E.Message = E.Data;
-
-            Command C = null;
-            foreach (Command cmd in Manager.GetCommands())
-            {
-                if (cmd.Name == CommandString.ToLower() || cmd.Alias == CommandString.ToLower())
-                    C = cmd;
-            }
-
-            if (C == null)
-            {
-                await E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
-                throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
-            }
-
-            E.Data = E.Data.RemoveWords(1);
-            String[] Args = E.Data.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (E.Origin.Level < C.Permission)
-            {
-                await E.Origin.Tell(loc["COMMAND_NOACCESS"]);
-                throw new CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
-            }
-
-            if (Args.Length < (C.RequiredArgumentCount))
-            {
-                await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                await E.Origin.Tell(C.Syntax);
-                throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
-            }
-
-            if (C.RequiresTarget || Args.Length > 0)
-            {
-                if (!Int32.TryParse(Args[0], out int cNum))
-                    cNum = -1;
-
-                if (Args[0][0] == '@') // user specifying target by database ID
+                if (!Leaving.IsAuthenticated)
                 {
-                    int dbID = -1;
-                    int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out dbID);
-
-                    var found = await Manager.GetClientService().Get(dbID);
-                    if (found != null)
-                    {
-                        E.Target = found.AsPlayer();
-                        E.Target.CurrentServer = this as IW4MServer;
-                        E.Owner = this as IW4MServer;
-                        E.Data = String.Join(" ", Args.Skip(1));
-                    }
+                    Players[cNum] = null;
                 }
 
-                else if (Args[0].Length < 3 && cNum > -1 && cNum < MaxClients) // user specifying target by client num
+                else
                 {
-                    if (Players[cNum] != null)
-                    {
-                        E.Target = Players[cNum];
-                        E.Data = String.Join(" ", Args.Skip(1));
-                    }
-                }
-
-                List<Player> matchingPlayers;
-
-                if (E.Target == null && C.RequiresTarget) // Find active player including quotes (multiple words)
-                {
-                    matchingPlayers = GetClientByName(E.Data.Trim());
-                    if (matchingPlayers.Count > 1)
-                    {
-                        await E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
-                        throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
-                    }
-                    else if (matchingPlayers.Count == 1)
-                    {
-                        E.Target = matchingPlayers.First();
-
-                        string escapedName = Regex.Escape(E.Target.Name);
-                        var reg = new Regex($"(\"{escapedName}\")|({escapedName})", RegexOptions.IgnoreCase);
-                        E.Data = reg.Replace(E.Data, "", 1).Trim();
-
-                        if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
-                        {
-                            await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                            await E.Origin.Tell(C.Syntax);
-                            throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
-                        }
-                    }
-                }
-
-                if (E.Target == null && C.RequiresTarget) // Find active player as single word
-                {
-                    matchingPlayers = GetClientByName(Args[0]);
-                    if (matchingPlayers.Count > 1)
-                    {
-                        await E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
-                        foreach (var p in matchingPlayers)
-                            await E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
-                        throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
-                    }
-                    else if (matchingPlayers.Count == 1)
-                    {
-                        E.Target = matchingPlayers.First();
-
-                        string escapedName = Regex.Escape(E.Target.Name);
-                        string escapedArg = Regex.Escape(Args[0]);
-                        var reg = new Regex($"({escapedName})|({escapedArg})", RegexOptions.IgnoreCase);
-                        E.Data = reg.Replace(E.Data, "", 1).Trim();
-
-                        if ((E.Data.Trim() == E.Target.Name.ToLower().Trim() ||
-                            E.Data == String.Empty) &&
-                            C.RequiresTarget)
-                        {
-                            await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                            await E.Origin.Tell(C.Syntax);
-                            throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
-                        }
-                    }
-                }
-
-                if (E.Target == null && C.RequiresTarget)
-                {
-                    await E.Origin.Tell(loc["COMMAND_TARGET_NOTFOUND"]);
-                    throw new CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
+                    Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
+                    Leaving.LastConnection = DateTime.UtcNow;
+                    await Manager.GetClientService().Update(Leaving);
+                    Players.RemoveAt(cNum);
                 }
             }
-            E.Data = E.Data.Trim();
-            return C;
         }
 
         public override async Task ExecuteEvent(GameEvent E)
@@ -381,13 +271,12 @@ namespace IW4MAdmin
             await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
 
-
             Command C = null;
             if (E.Type == GameEvent.EventType.Command)
             {
                 try
                 {
-                    C = await ValidateCommand(E);
+                    C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E);
                 }
 
                 catch (CommandException e)
@@ -471,22 +360,21 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Join)
             {
-                // special case for IW5 when connect is from the log
-                if (E.Extra != null && GameName == Game.IW5)
-                {
-                    var logClient = (Player)E.Extra;
-                    var client = (await this.GetStatusAsync())
-                        .Single(c => c.ClientNumber == logClient.ClientNumber &&
-                        c.Name == logClient.Name);
-                    client.NetworkId = logClient.NetworkId;
+                await OnPlayerJoined(E.Origin);
+            }
 
-                    await AddPlayer(client);
-                }
-
-                /*else
+            else if (E.Type == GameEvent.EventType.Quit)
+            {
+                var e = new GameEvent()
                 {
-                    await AddPlayer(E.Origin);
-                }*/
+                    Type = GameEvent.EventType.Disconnect,
+                    Origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId),
+                    Owner = this
+                };
+
+                e.Origin.State = Player.ClientState.Disconnecting;
+
+                Manager.GetEventHandler().AddEvent(e);
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)
@@ -501,6 +389,8 @@ namespace IW4MAdmin
                         Time = DateTime.UtcNow
                     });
                 }
+
+                await RemovePlayer(E.Origin.ClientNumber);
             }
 
             if (E.Type == GameEvent.EventType.Say)
@@ -574,7 +464,10 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.Broadcast)
             {
                 // this is a little ugly but I don't want to change the abstract class
-                await E.Owner.ExecuteCommandAsync(E.Message);
+                if (E.Message != null)
+                {
+                    await E.Owner.ExecuteCommandAsync(E.Message);
+                }
             }
 
             while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
@@ -611,24 +504,33 @@ namespace IW4MAdmin
             var clients = GetPlayersAsList();
             foreach (var client in clients)
             {
-                if (GameName == Game.IW5)
+                // remove players that have disconnected
+                if (!CurrentPlayers.Select(c => c.NetworkId).Contains(client.NetworkId))
                 {
-                    if (!CurrentPlayers.Select(c => c.ClientNumber).Contains(client.ClientNumber))
-                        await RemovePlayer(client.ClientNumber);
-                }
+                    // the log should already have started a disconnect event
+                    if (client.State == Player.ClientState.Disconnecting)
+                        continue;
 
-                else
-                {
-                    if (!CurrentPlayers.Select(c => c.NetworkId).Contains(client.NetworkId))
-                        await RemovePlayer(client.ClientNumber);
+                    var e = new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Disconnect,
+                        Origin = client,
+                        Owner = this
+                    };
+
+                    Manager.GetEventHandler().AddEvent(e);
+                    // todo: needed?
+                    // wait until the disconnect event is complete
+                    e.OnProcessed.Wait();
                 }
             }
 
-            for (int i = 0; i < CurrentPlayers.Count; i++)
+            AuthQueue.AuthenticateClients(CurrentPlayers);
+
+            // all polled players should be authenticated
+            foreach (var client in AuthQueue.GetAuthenticatedClients())
             {
-                // todo: wait til GUID is included in status to fix this
-                if (GameName != Game.IW5)
-                    await AddPlayer(CurrentPlayers[i]);
+                await AddPlayer(client);
             }
 
             return CurrentPlayers.Count;
@@ -645,8 +547,9 @@ namespace IW4MAdmin
             {
                 if (Manager.ShutdownRequested())
                 {
-                    for (int i = 0; i < Players.Count; i++)
-                        await RemovePlayer(i);
+                    // todo: fix up disconnect
+                    //for (int i = 0; i < Players.Count; i++)
+                     //   await RemovePlayer(i);
 
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                         await plugin.OnUnloadAsync();
@@ -816,9 +719,6 @@ namespace IW4MAdmin
             this.MaxClients = maxplayers;
             this.FSGame = game;
             this.Gametype = gametype;
-
-            //wait this.SetDvarAsync("sv_kickbantime", 60);
-
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
                 // this DVAR isn't set until the a map is loaded
@@ -833,7 +733,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\logs\games_mp.log";
+            basepath.Value = @"D:\";
 #endif
             string logPath;
             if (GameName == Game.IW5)

@@ -12,40 +12,28 @@ namespace IW4MAdmin.Application
     class GameEventHandler : IEventHandler
     {
         private ConcurrentQueue<GameEvent> EventQueue;
-        private Queue<GameEvent> StatusSensitiveQueue;
+        private Queue<GameEvent> DelayedEventQueue;
         private IManager Manager;
+        private const int DelayAmount = 5000;
+        private DateTime LastDelayedEvent;
 
         public GameEventHandler(IManager mgr)
         {
             EventQueue = new ConcurrentQueue<GameEvent>();
-            StatusSensitiveQueue = new Queue<GameEvent>();
+            DelayedEventQueue = new Queue<GameEvent>();
 
             Manager = mgr;
         }
 
-        public void AddEvent(GameEvent gameEvent)
+        public void AddEvent(GameEvent gameEvent, bool delayedExecution = false)
         {
 #if DEBUG
             Manager.GetLogger().WriteDebug($"Got new event of type {gameEvent.Type} for {gameEvent.Owner}");
 #endif
-            // we need this to keep accurate track of the score
-            if (gameEvent.Type == GameEvent.EventType.Kill ||
-                gameEvent.Type == GameEvent.EventType.Damage ||
-                gameEvent.Type == GameEvent.EventType.ScriptDamage ||
-                gameEvent.Type == GameEvent.EventType.ScriptKill ||
-                gameEvent.Type == GameEvent.EventType.MapChange ||
-                gameEvent.Type == GameEvent.EventType.JoinTeam)
+            if (delayedExecution)
             {
-#if DEBUG
-                Manager.GetLogger().WriteDebug($"Added sensitive event to queue");
-#endif
-                lock (StatusSensitiveQueue)
-                {
-                    StatusSensitiveQueue.Enqueue(gameEvent);
-                }
-                return;
+                DelayedEventQueue.Enqueue(gameEvent);
             }
-
             else
             {
                 EventQueue.Enqueue(gameEvent);
@@ -61,27 +49,6 @@ namespace IW4MAdmin.Application
             throw new NotImplementedException();
         }
 
-        public GameEvent GetNextSensitiveEvent()
-        {
-            if (StatusSensitiveQueue.Count > 0)
-            {
-                lock (StatusSensitiveQueue)
-                {
-                    if (!StatusSensitiveQueue.TryDequeue(out GameEvent newEvent))
-                    {
-                        Manager.GetLogger().WriteWarning("Could not dequeue time sensitive event for processing");
-                    }
-
-                    else
-                    {
-                        return newEvent;
-                    }
-                }
-            }
-
-            return null;
-        }
-
         public GameEvent GetNextEvent()
         {
             if (EventQueue.Count > 0)
@@ -92,6 +59,24 @@ namespace IW4MAdmin.Application
                 if (!EventQueue.TryDequeue(out GameEvent newEvent))
                 {
                     Manager.GetLogger().WriteWarning("Could not dequeue event for processing");
+                }
+
+                else
+                {
+                    return newEvent;
+                }
+            }
+
+            if (DelayedEventQueue.Count > 0 &&
+               (DateTime.Now - LastDelayedEvent).TotalMilliseconds > DelayAmount)
+            {
+                LastDelayedEvent = DateTime.Now;
+#if DEBUG
+                Manager.GetLogger().WriteDebug("Getting next delayed event to be processed");
+#endif
+                if (!DelayedEventQueue.TryDequeue(out GameEvent newEvent))
+                {
+                    Manager.GetLogger().WriteWarning("Could not dequeue delayed event for processing");
                 }
 
                 else

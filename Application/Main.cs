@@ -36,7 +36,7 @@ namespace IW4MAdmin.Application
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
-            Console.WriteLine($" Version {Version.ToString("0.0")}");
+            Console.WriteLine($" Version {Version.ToString("0.00")}");
             Console.WriteLine("=====================================================");
 
             Index loc = null;

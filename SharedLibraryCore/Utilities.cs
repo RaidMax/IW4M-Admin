@@ -187,7 +187,7 @@ namespace SharedLibraryCore
                 return id;
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
             if (!string.IsNullOrEmpty(bot))
-                return -Convert.ToInt64(bot.Substring(3)) + 1;
+                return -1;//Convert.ToInt64(bot.Substring(3)) + 1;
             return 0;
         }
 

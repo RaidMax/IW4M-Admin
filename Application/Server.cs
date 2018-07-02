@@ -56,9 +56,11 @@ namespace IW4MAdmin
 
         public async Task OnPlayerJoined(Player logClient)
         {
-            Logger.WriteDebug($"Log detected {logClient} joining");
-            if (Players[logClient.ClientNumber] == null || Players[logClient.ClientNumber].NetworkId != logClient.NetworkId)
+
+            if (Players[logClient.ClientNumber] == null ||
+                Players[logClient.ClientNumber].NetworkId != logClient.NetworkId)
             {
+                Logger.WriteDebug($"Log detected {logClient} joining");
                 Players[logClient.ClientNumber] = logClient;
             }
 
@@ -78,12 +80,26 @@ namespace IW4MAdmin
             if (Players[polledPlayer.ClientNumber] != null &&
                 Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId &&
                 // only update if they're unauthenticated
-                Players[polledPlayer.ClientNumber].IsAuthenticated)
+                Players[polledPlayer.ClientNumber].IsAuthenticated &&
+                Players[polledPlayer.ClientNumber].State == Player.ClientState.Connected)
             {
                 // update their ping & score 
                 Players[polledPlayer.ClientNumber].Ping = polledPlayer.Ping;
                 Players[polledPlayer.ClientNumber].Score = polledPlayer.Score;
                 return true;
+            }
+
+            if (Players[polledPlayer.ClientNumber] != null &&
+                Players[polledPlayer.ClientNumber].State == Player.ClientState.Connected)
+            {
+                return true;
+            }
+
+            if (Players[polledPlayer.ClientNumber] == null)
+            {
+                //prevent duplicates from being added
+                polledPlayer.State = Player.ClientState.Connecting;
+                Players[polledPlayer.ClientNumber] = polledPlayer;
             }
 #if !DEBUG
             if (polledPlayer.Name.Length < 3)
@@ -260,7 +276,7 @@ namespace IW4MAdmin
                     Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                     Leaving.LastConnection = DateTime.UtcNow;
                     await Manager.GetClientService().Update(Leaving);
-                    Players.RemoveAt(cNum);
+                    Players[cNum] = null;
                 }
             }
         }
@@ -372,7 +388,10 @@ namespace IW4MAdmin
                     Owner = this
                 };
 
-                e.Origin.State = Player.ClientState.Disconnecting;
+                if (e.Origin != null)
+                {
+                    e.Origin.State = Player.ClientState.Disconnecting;
+                }
 
                 Manager.GetEventHandler().AddEvent(e);
             }
@@ -530,7 +549,10 @@ namespace IW4MAdmin
             // all polled players should be authenticated
             foreach (var client in AuthQueue.GetAuthenticatedClients())
             {
-                await AddPlayer(client);
+                if (Players[client.ClientNumber] == null || Players[client.ClientNumber].State == Player.ClientState.Connecting)
+                {
+                    await AddPlayer(client);
+                }
             }
 
             return CurrentPlayers.Count;
@@ -549,7 +571,7 @@ namespace IW4MAdmin
                 {
                     // todo: fix up disconnect
                     //for (int i = 0; i < Players.Count; i++)
-                     //   await RemovePlayer(i);
+                    //   await RemovePlayer(i);
 
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                         await plugin.OnUnloadAsync();

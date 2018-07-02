@@ -51,24 +51,8 @@ namespace IW4MAdmin.Application
 
         public GameEvent GetNextEvent()
         {
-            if (EventQueue.Count > 0)
-            {
-#if DEBUG
-                Manager.GetLogger().WriteDebug("Getting next event to be processed");
-#endif
-                if (!EventQueue.TryDequeue(out GameEvent newEvent))
-                {
-                    Manager.GetLogger().WriteWarning("Could not dequeue event for processing");
-                }
-
-                else
-                {
-                    return newEvent;
-                }
-            }
-
             if (DelayedEventQueue.Count > 0 &&
-               (DateTime.Now - LastDelayedEvent).TotalMilliseconds > DelayAmount)
+           (DateTime.Now - LastDelayedEvent).TotalMilliseconds > DelayAmount)
             {
                 LastDelayedEvent = DateTime.Now;
 #if DEBUG
@@ -77,6 +61,22 @@ namespace IW4MAdmin.Application
                 if (!DelayedEventQueue.TryDequeue(out GameEvent newEvent))
                 {
                     Manager.GetLogger().WriteWarning("Could not dequeue delayed event for processing");
+                }
+
+                else
+                {
+                    return newEvent;
+                }
+            }
+
+            if (EventQueue.Count > 0)
+            {
+#if DEBUG
+                Manager.GetLogger().WriteDebug("Getting next event to be processed");
+#endif
+                if (!EventQueue.TryDequeue(out GameEvent newEvent))
+                {
+                    Manager.GetLogger().WriteWarning("Could not dequeue event for processing");
                 }
 
                 else

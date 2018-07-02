@@ -79,16 +79,29 @@ namespace IW4MAdmin.Application
             return Instance ?? (Instance = new ApplicationManager());
         }
 
-        public async Task UpdateStatus(object state)
+        public async Task UpdateServerStates()
         {
-            var taskList = new List<Task>();
+            // store the server hash code and task for it
+            var runningUpdateTasks = new Dictionary<int, Task>();
 
             while (Running)
             {
-                taskList.Clear();
-                foreach (var server in Servers)
+                // select the server ids that have completed the update task
+                var serverTasksToRemove = runningUpdateTasks
+                    .Where(ut => ut.Value.Status != TaskStatus.Running)
+                    .Select(ut => ut.Key)
+                    .ToList();
+
+                // remove the update tasks as they have completd
+                foreach (int serverId in serverTasksToRemove)
                 {
-                    taskList.Add(Task.Run(async () =>
+                    runningUpdateTasks.Remove(serverId);
+                }
+
+                // select the servers where the tasks have completed
+                foreach (var server in Servers.Where(s => serverTasksToRemove.Count == 0 ? true : serverTasksToRemove.Contains(GetHashCode())))
+                {
+                    runningUpdateTasks.Add(server.GetHashCode(), Task.Run(async () =>
                     {
                         try
                         {
@@ -104,13 +117,11 @@ namespace IW4MAdmin.Application
                     }));
                 }
 #if DEBUG
-                Logger.WriteDebug($"{taskList.Count} servers queued for stats updates");
+                Logger.WriteDebug($"{runningUpdateTasks.Count} servers queued for stats updates");
                 ThreadPool.GetMaxThreads(out int workerThreads, out int n);
                 ThreadPool.GetAvailableThreads(out int availableThreads, out int m);
                 Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 #endif
-
-                await Task.WhenAny(taskList);
                 await Task.Delay(ConfigHandler.Configuration().RConPollRate);
             }
         }
@@ -380,7 +391,7 @@ namespace IW4MAdmin.Application
             // start heartbeat
             Task.Run(() => SendHeartbeat(new HeartbeatState()));
 #endif
-            Task.Run(() => UpdateStatus(null));
+            Task.Run(() => UpdateServerStates());
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             var eventList = new List<Task>();
@@ -446,12 +457,6 @@ namespace IW4MAdmin.Application
                     await processEvent(queuedEvent);
                 }
 
-                if (taskList.Count > 0)
-                {
-                    // this should allow parallel processing of events
-                    await Task.WhenAny(taskList);
-                }
-
                 // signal that all events have been processed
                 OnEvent.Reset();
             }
@@ -461,7 +466,6 @@ namespace IW4MAdmin.Application
 #endif
             _servers.Clear();
         }
-
 
         public void Stop()
         {

@@ -119,7 +119,8 @@ namespace Application.RconParsers
 
                     if (P.IsBot)
                     {
-                        P.IPAddress = P.ClientNumber + 1;
+                        // set it to 127.0.0.2
+                        P.IPAddress = 33554559;
                     }
 
                     StatusPlayers.Add(P);

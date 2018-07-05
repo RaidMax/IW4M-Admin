@@ -33,6 +33,7 @@ namespace SharedLibraryCore.Objects
         {
             ConnectionTime = DateTime.UtcNow;
             ClientNumber = -1;
+            DelayedEvents = new Queue<GameEvent>();
         }
 
         public override string ToString()
@@ -120,6 +121,8 @@ namespace SharedLibraryCore.Objects
         public bool IsAuthenticated { get; set; }
         [NotMapped]
         public ClientState State { get; set; }
+        [NotMapped]
+        public Queue<GameEvent> DelayedEvents { get; set; }
 
         public override bool Equals(object obj)
         {

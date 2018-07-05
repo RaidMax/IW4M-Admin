@@ -3,9 +3,6 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace IW4MAdmin.Application
 {
@@ -14,8 +11,6 @@ namespace IW4MAdmin.Application
         private ConcurrentQueue<GameEvent> EventQueue;
         private Queue<GameEvent> DelayedEventQueue;
         private IManager Manager;
-        private const int DelayAmount = 5000;
-        private DateTime LastDelayedEvent;
 
         public GameEventHandler(IManager mgr)
         {
@@ -50,25 +45,7 @@ namespace IW4MAdmin.Application
         }
 
         public GameEvent GetNextEvent()
-        {
-            if (DelayedEventQueue.Count > 0 &&
-           (DateTime.Now - LastDelayedEvent).TotalMilliseconds > DelayAmount)
-            {
-                LastDelayedEvent = DateTime.Now;
-#if DEBUG
-                Manager.GetLogger().WriteDebug("Getting next delayed event to be processed");
-#endif
-                if (!DelayedEventQueue.TryDequeue(out GameEvent newEvent))
-                {
-                    Manager.GetLogger().WriteWarning("Could not dequeue delayed event for processing");
-                }
-
-                else
-                {
-                    return newEvent;
-                }
-            }
-
+        {    
             if (EventQueue.Count > 0)
             {
 #if DEBUG
@@ -76,7 +53,7 @@ namespace IW4MAdmin.Application
 #endif
                 if (!EventQueue.TryDequeue(out GameEvent newEvent))
                 {
-                    Manager.GetLogger().WriteWarning("Could not dequeue event for processing");
+                    Manager.GetLogger().WriteError("Could not dequeue event for processing");
                 }
 
                 else

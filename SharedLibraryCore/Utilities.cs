@@ -327,6 +327,7 @@ namespace SharedLibraryCore
                 LastConnection = client.LastConnection == DateTime.MinValue ? DateTime.UtcNow : client.LastConnection,
                 CurrentAlias = client.CurrentAlias,
                 CurrentAliasId = client.CurrentAlias.AliasId,
+                // todo: make sure this is up to date
                 IsBot = client.NetworkId == -1,
                 Password = client.Password,
                 PasswordSalt = client.PasswordSalt

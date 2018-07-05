@@ -79,9 +79,7 @@ namespace IW4MAdmin
 
             if (Players[polledPlayer.ClientNumber] != null &&
                 Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId &&
-                // only update if they're unauthenticated
-                Players[polledPlayer.ClientNumber].IsAuthenticated &&
-                Players[polledPlayer.ClientNumber].State == Player.ClientState.Connected)
+                 Players[polledPlayer.ClientNumber].State == Player.ClientState.Connected)
             {
                 // update their ping & score 
                 Players[polledPlayer.ClientNumber].Ping = polledPlayer.Ping;
@@ -89,18 +87,19 @@ namespace IW4MAdmin
                 return true;
             }
 
-            if (Players[polledPlayer.ClientNumber] != null &&
-                Players[polledPlayer.ClientNumber].State == Player.ClientState.Connected)
+            if (Players[polledPlayer.ClientNumber] == null)
+            {
+                Players[polledPlayer.ClientNumber] = polledPlayer;
+            }
+
+            if (!polledPlayer.IsAuthenticated)
             {
                 return true;
             }
+            // if they're authenticated but haven't been added yet
+            // we want to set their delayed events
+            var delayedEventQueue = Players[polledPlayer.ClientNumber].DelayedEvents;
 
-            if (Players[polledPlayer.ClientNumber] == null)
-            {
-                //prevent duplicates from being added
-                polledPlayer.State = Player.ClientState.Connecting;
-                Players[polledPlayer.ClientNumber] = polledPlayer;
-            }
 #if !DEBUG
             if (polledPlayer.Name.Length < 3)
             {
@@ -175,14 +174,19 @@ namespace IW4MAdmin
                         await Manager.GetClientService().Update(client);
                     }
 
-                    else if (existingAlias.Name == polledPlayer.Name)
+                    else if (existingAlias.Name == polledPlayer.Name ||
+                        // fixme: why would this be null?
+                        client.CurrentAlias == null)
                     {
                         client.CurrentAlias = existingAlias;
                         client.CurrentAliasId = existingAlias.AliasId;
                         client = await Manager.GetClientService().Update(client);
                     }
+
                     player = client.AsPlayer();
                 }
+
+                Logger.WriteInfo($"Client {player} connected...");
 
                 // Do the player specific stuff
                 player.ClientNumber = polledPlayer.ClientNumber;
@@ -230,8 +234,6 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                Logger.WriteInfo($"Client {player} connecting...");
-
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
                 {
@@ -247,12 +249,33 @@ namespace IW4MAdmin
                 };
                 Manager.GetEventHandler().AddEvent(e);
 
+                // add the delayed event to the queue 
+                while (delayedEventQueue?.Count > 0)
+                {
+                    e = delayedEventQueue.Dequeue();
+                    e.Origin = player;
+                    // check if the target was assigned
+                    if (e.Target != null)
+                    {
+                        // update the target incase they left or have newer info
+                        e.Target = GetPlayersAsList().FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
+                        // we have to throw out the event because they left
+                        if (e.Target == null)
+                        {
+                            Logger.WriteWarning($"Delayed event for {e.Origin} was removed because the target has left");
+                            continue;
+                        }
+                    }
+                    Manager.GetEventHandler().AddEvent(e);
+                }
+
                 return true;
             }
 
             catch (Exception E)
             {
                 Manager.GetLogger().WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {polledPlayer.Name}::{polledPlayer.NetworkId}");
+                Manager.GetLogger().WriteDebug(E.Message);
                 Manager.GetLogger().WriteDebug(E.StackTrace);
                 return false;
             }
@@ -381,33 +404,42 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Quit)
             {
-                var e = new GameEvent()
-                {
-                    Type = GameEvent.EventType.Disconnect,
-                    Origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId),
-                    Owner = this
-                };
+                var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
 
-                if (e.Origin != null)
+                if (origin != null &&
+                    // we only want to forward the event if they are connected. 
+                    origin.State == Player.ClientState.Connected)
                 {
-                    e.Origin.State = Player.ClientState.Disconnecting;
+                    var e = new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Disconnect,
+                        Origin = origin,
+                        Owner = this
+                    };
+
+                    if (e.Origin != null)
+                    {
+                        e.Origin.State = Player.ClientState.Disconnecting;
+                    }
+
+                    Manager.GetEventHandler().AddEvent(e);
                 }
 
-                Manager.GetEventHandler().AddEvent(e);
+                else if (origin != null &&
+                    origin.State == Player.ClientState.Connecting)
+                {
+                    await RemovePlayer(origin.ClientNumber);
+                }
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)
             {
-                // this may be a fix for a hard to reproduce null exception error
-                lock (ChatHistory)
+                ChatHistory.Add(new ChatInfo()
                 {
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin.Name,
-                        Message = "DISCONNECTED",
-                        Time = DateTime.UtcNow
-                    });
-                }
+                    Name = E.Origin.Name,
+                    Message = "DISCONNECTED",
+                    Time = DateTime.UtcNow
+                });
 
                 await RemovePlayer(E.Origin.ClientNumber);
             }
@@ -498,7 +530,6 @@ namespace IW4MAdmin
                 ChatHistory.Clear();
         }
 
-
         async Task<int> PollPlayersAsync()
         {
             var now = DateTime.Now;
@@ -546,14 +577,14 @@ namespace IW4MAdmin
 
             AuthQueue.AuthenticateClients(CurrentPlayers);
 
+
             // all polled players should be authenticated
-            foreach (var client in AuthQueue.GetAuthenticatedClients())
-            {
-                if (Players[client.ClientNumber] == null || Players[client.ClientNumber].State == Player.ClientState.Connecting)
-                {
-                    await AddPlayer(client);
-                }
-            }
+            var addPlayerTasks = AuthQueue.GetAuthenticatedClients()
+                .Where(client => Players[client.ClientNumber] == null ||
+                Players[client.ClientNumber].State == Player.ClientState.Connecting)
+                .Select(client => AddPlayer(client));
+
+            await Task.WhenAll(addPlayerTasks);
 
             return CurrentPlayers.Count;
         }

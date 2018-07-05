@@ -10,6 +10,8 @@ namespace IW4MAdmin.Application.EventParsers
 {
     class IW4EventParser : IEventParser
     {
+        private const string SayRegex = @"(say|sayteam);(.{16,32});([0-9]+)(.*);(.*)";
+
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
             logLine = Regex.Replace(logLine, @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();
@@ -45,28 +47,35 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "say" || eventType == "sayteam")
             {
-                string message = lineSplit[4].Replace("\x15", "");
+                var matchResult = Regex.Match(logLine, SayRegex);
 
-                if (message[0] == '!' || message[0] == '@')
+                if (matchResult.Success)
                 {
+                    string message = matchResult.Groups[5].ToString()
+                        .Replace("\x15", "")
+                        .Trim();
+
+                    if (message[0] == '!' || message[0] == '@')
+                    {
+                        return new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Command,
+                            Data = message,
+                            Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
+                            Owner = server,
+                            Message = message
+                        };
+                    }
+
                     return new GameEvent()
                     {
-                        Type = GameEvent.EventType.Command,
+                        Type = GameEvent.EventType.Say,
                         Data = message,
                         Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
                         Owner = server,
                         Message = message
                     };
                 }
-
-                return new GameEvent()
-                {
-                    Type = GameEvent.EventType.Say,
-                    Data = message,
-                    Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
-                    Owner = server,
-                    Message = message
-                };
             }
 
             if (eventType == "ScriptKill")

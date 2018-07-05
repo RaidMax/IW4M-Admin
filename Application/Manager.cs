@@ -31,6 +31,7 @@ namespace IW4MAdmin.Application
         public Dictionary<int, Player> PrivilegedClients { get; set; }
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
+        public bool IsInitialized { get; private set; }
         public EventHandler<GameEvent> ServerEventOccurred { get; private set; }
         public DateTime StartTime { get; private set; }
 
@@ -92,6 +93,13 @@ namespace IW4MAdmin.Application
                     .Select(ut => ut.Key)
                     .ToList();
 
+                // this is to prevent the log reader from starting before the initial
+               // query of players on the server
+                if (serverTasksToRemove.Count > 0)
+                {
+                    IsInitialized = true;
+                }
+
                 // remove the update tasks as they have completd
                 foreach (int serverId in serverTasksToRemove)
                 {
@@ -122,7 +130,11 @@ namespace IW4MAdmin.Application
                 ThreadPool.GetAvailableThreads(out int availableThreads, out int m);
                 Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 #endif
+#if DEBUG
+                await Task.Delay(30000);
+#else
                 await Task.Delay(ConfigHandler.Configuration().RConPollRate);
+#endif
             }
         }
 
@@ -130,7 +142,7 @@ namespace IW4MAdmin.Application
         {
             Running = true;
 
-            #region DATABASE
+#region DATABASE
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
                 {
@@ -160,9 +172,9 @@ namespace IW4MAdmin.Application
                     continue;
                 }
             }
-            #endregion
+#endregion
 
-            #region CONFIG
+#region CONFIG
             var config = ConfigHandler.Configuration();
 
             // copy over default config if it doesn't exist
@@ -213,8 +225,8 @@ namespace IW4MAdmin.Application
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(config.CustomParserEncoding) ? config.CustomParserEncoding : "windows-1252");
 
-            #endregion
-            #region PLUGINS
+#endregion
+#region PLUGINS
             SharedLibraryCore.Plugins.PluginImporter.Load(this);
 
             foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
@@ -231,9 +243,9 @@ namespace IW4MAdmin.Application
                     Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
                 }
             }
-            #endregion
+#endregion
 
-            #region COMMANDS
+#region COMMANDS
             if (ClientSvc.GetOwners().Result.Count == 0)
                 Commands.Add(new COwner());
 
@@ -277,9 +289,9 @@ namespace IW4MAdmin.Application
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
                 Commands.Add(C);
-            #endregion
+#endregion
 
-            #region INIT
+#region INIT
             async Task Init(ServerConfiguration Conf)
             {
                 // setup the event handler after the class is initialized
@@ -315,7 +327,7 @@ namespace IW4MAdmin.Application
             }
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
-            #endregion
+#endregion
         }
 
         private async Task SendHeartbeat(object state)
@@ -414,8 +426,7 @@ namespace IW4MAdmin.Application
 
                 catch (NetworkException e)
                 {
-                    Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]);
-                    Logger.WriteDebug(e.Message);
+                    Logger.WriteError(e.Message);
                 }
 
                 catch (Exception E)
@@ -434,24 +445,21 @@ namespace IW4MAdmin.Application
             {
                 // wait for new event to be added
                 OnEvent.Wait();
-                var taskList = new List<Task>();
-                // todo: sequencially or parallelize?
-                while ((queuedEvent = Handler.GetNextEvent()) != null)
+                while((queuedEvent = Handler.GetNextEvent()) != null)
                 {
-                    if (queuedEvent.Origin != null &&
-                        !queuedEvent.Origin.IsAuthenticated &&
-                        // we want to allow join events
-                        queuedEvent.Type != GameEvent.EventType.Join &&
-                        queuedEvent.Type != GameEvent.EventType.Quit &&
-                        // we don't care about unknown events
-                        queuedEvent.Origin.NetworkId != 0)
+                    if (GameEvent.ShouldOriginEventBeDelayed(queuedEvent))
                     {
-                        Logger.WriteDebug($"Delaying execution of event type {queuedEvent.Type} for {queuedEvent.Origin} because they are not authed");
-                        // update the event origin for possible authed client
-                        queuedEvent.Origin = queuedEvent.Owner.Players.FirstOrDefault(p => p != null && p.NetworkId == queuedEvent.Origin.NetworkId);
-                        queuedEvent.Target = queuedEvent.Target == null ? null : queuedEvent.Owner.Players.FirstOrDefault(p => p != null && p.NetworkId == queuedEvent.Target.NetworkId);
-                        // add it back to the queue for reprocessing
-                        Handler.AddEvent(queuedEvent, true);
+                        Logger.WriteDebug($"Delaying origin execution of event type {queuedEvent.Type} for {queuedEvent.Origin} because they are not authed");
+                        // offload it to the player to keep
+                        queuedEvent.Origin.DelayedEvents.Enqueue(queuedEvent);
+                        continue;
+                    }
+
+                    if (GameEvent.ShouldTargetEventBeDelayed(queuedEvent))
+                    {
+                        Logger.WriteDebug($"Delaying target execution of event type {queuedEvent.Type} for {queuedEvent.Target} because they are not authed");
+                        // offload it to the player to keep
+                        queuedEvent.Target.DelayedEvents.Enqueue(queuedEvent);
                         continue;
                     }
                     await processEvent(queuedEvent);

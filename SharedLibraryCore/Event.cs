@@ -9,7 +9,7 @@ namespace SharedLibraryCore
         public enum EventType
         {
             Unknown,
-           
+
             // events "generated" by the server
             Start,
             Stop,
@@ -76,5 +76,35 @@ namespace SharedLibraryCore
         public ManualResetEventSlim OnProcessed { get; set; }
         public DateTime Time { get; private set; }
         public long Id { get; private set; }
+
+        /// <summary>
+        /// determine whether an event should be delayed or not
+        /// applies only to the origin entity
+        /// </summary>
+        /// <param name="queuedEvent">event to determine status for</param>
+        /// <returns>true if event should be delayed, false otherwise</returns>
+        public static bool ShouldOriginEventBeDelayed(GameEvent queuedEvent)
+        {
+            return queuedEvent.Origin != null &&
+                                    !queuedEvent.Origin.IsAuthenticated &&
+                                    // we want to allow join and quit events
+                                    queuedEvent.Type != EventType.Join &&
+                                    queuedEvent.Type != EventType.Quit &&
+                                    // we don't care about unknown events
+                                    queuedEvent.Origin.NetworkId != 0;
+        }
+
+        /// <summary>
+        /// determine whether an event should be delayed or not
+        /// applies only to the target entity
+        /// </summary>
+        /// <param name="queuedEvent">event to determine status for</param>
+        /// <returns>true if event should be delayed, false otherwise</returns>
+        public static bool ShouldTargetEventBeDelayed(GameEvent queuedEvent)
+        {
+            return queuedEvent.Target != null &&
+                                    !queuedEvent.Target.IsAuthenticated &&
+                                    queuedEvent.Target.NetworkId != 0;
+        }
     }
 }

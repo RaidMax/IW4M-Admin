@@ -29,11 +29,14 @@ namespace IW4MAdmin.Application.IO
            {
                while (!server.Manager.ShutdownRequested())
                {
-                   OnEvent(new EventState()
+                   if ((server.Manager as ApplicationManager).IsInitialized)
                    {
-                       Log = server.Manager.GetLogger(),
-                       ServerId = server.ToString()
-                   });
+                       OnEvent(new EventState()
+                       {
+                           Log = server.Manager.GetLogger(),
+                           ServerId = server.ToString()
+                       });
+                   }
                    await Task.Delay(100);
                }
            });
@@ -42,7 +45,7 @@ namespace IW4MAdmin.Application.IO
         private void OnEvent(object state)
         {
             long newLength = new FileInfo(GameLogFile).Length;
- 
+
             try
             {
                 UpdateLogEvents(newLength);

@@ -152,7 +152,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             // ban
-            if (currentStrain > Thresholds.MaxStrainBan)
+            if (currentStrain > Thresholds.MaxStrainBan &&
+                HitCount > 15)
             {
                 result = new DetectionPenaltyResult()
                 {

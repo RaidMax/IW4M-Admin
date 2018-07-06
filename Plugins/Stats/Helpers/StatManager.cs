@@ -427,7 +427,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         using (var ctx = new DatabaseContext())
                         {
-                            foreach (var change in clientDetection.Tracker.GetChanges())
+                            // todo: why does this cause duplicate primary key
+                            foreach (var change in clientDetection.Tracker.GetChanges().Distinct())
                             {
                                 ctx.Add(change);
                             }
@@ -440,7 +441,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         case Penalty.PenaltyType.Ban:
                             if (attacker.Level == Player.Permission.Banned)
                                 break;
-                            await saveLog();
                             await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
                             {
                                 ClientId = 1,
@@ -454,6 +454,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                     }
                                 }
                             });
+                                                        await saveLog();
                             break;
                         case Penalty.PenaltyType.Flag:
                             if (attacker.Level != Player.Permission.User)

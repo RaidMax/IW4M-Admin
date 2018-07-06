@@ -180,6 +180,10 @@ namespace IW4MAdmin
                     {
                         client.CurrentAlias = existingAlias;
                         client.CurrentAliasId = existingAlias.AliasId;
+                        // we need to update their new ip and name to the virtual property
+                        client.Name = polledPlayer.Name;
+                        client.IPAddress = polledPlayer.IPAddress;
+
                         client = await Manager.GetClientService().Update(client);
                     }
 

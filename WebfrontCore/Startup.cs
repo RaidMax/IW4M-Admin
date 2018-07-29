@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -63,7 +62,6 @@ namespace WebfrontCore
             {
                 loggerFactory.AddDebug();
                 app.UseDeveloperExceptionPage();
-                app.UseBrowserLink();
             }
             else
             {

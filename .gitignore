@@ -220,9 +220,9 @@ Thumbs.db
 DEPLOY
 global.min.css
 global.min.js
-bootstrap-custom.css
 bootstrap-custom.min.css
 **/Master/static
 **/Master/dev_env
 /WebfrontCore/Views/Plugins/Stats
-/WebfrontCore/wwwroot/images/icons
+/WebfrontCore/wwwroot/**/dds
+

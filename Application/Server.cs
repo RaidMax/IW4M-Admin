@@ -174,19 +174,13 @@ namespace IW4MAdmin
                         await Manager.GetClientService().Update(client);
                     }
 
-                    else if (existingAlias.Name == polledPlayer.Name ||
-                        // fixme: why would this be null?
-                        client.CurrentAlias == null)
+                    else
                     {
                         client.CurrentAlias = existingAlias;
                         client.CurrentAliasId = existingAlias.AliasId;
-                        // we need to update their new ip and name to the virtual property
-                        client.Name = polledPlayer.Name;
-                        client.IPAddress = polledPlayer.IPAddress;
-
-                        client = await Manager.GetClientService().Update(client);
+                        client.Name = existingAlias.Name;
+                        client.IPAddress = existingAlias.IPAddress;
                     }
-
                     player = client.AsPlayer();
                 }
 
@@ -198,7 +192,6 @@ namespace IW4MAdmin
                 player.Score = polledPlayer.Score;
                 player.IsAuthenticated = true;
                 player.CurrentServer = this;
-                player.State = Player.ClientState.Connected;
                 Players[player.ClientNumber] = player;
 
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
@@ -251,7 +244,12 @@ namespace IW4MAdmin
                     Origin = player,
                     Owner = this
                 };
+
                 Manager.GetEventHandler().AddEvent(e);
+
+                // let all the plugins get the event 
+                // this is only beause the connect event executes 
+                e.OnProcessed.Wait();
 
                 // add the delayed event to the queue 
                 while (delayedEventQueue?.Count > 0)
@@ -262,7 +260,8 @@ namespace IW4MAdmin
                     if (e.Target != null)
                     {
                         // update the target incase they left or have newer info
-                        e.Target = GetPlayersAsList().FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
+                        e.Target = GetPlayersAsList()
+                            .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
                         // we have to throw out the event because they left
                         if (e.Target == null)
                         {
@@ -293,7 +292,7 @@ namespace IW4MAdmin
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving} disconnecting...");
 
-                if (!Leaving.IsAuthenticated)
+                if (!Leaving.IsAuthenticated || Leaving.State != Player.ClientState.Connected)
                 {
                     Players[cNum] = null;
                 }

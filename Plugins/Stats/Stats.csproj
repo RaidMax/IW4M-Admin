@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.Plugins.Stats</PackageId>
@@ -13,10 +13,6 @@
     <Copyright>2018</Copyright>
     <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Web\Views\_MessageContext.cshtml" />
-  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Web\Views\Stats\_MessageContext.cshtml">
@@ -30,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.NETCore.App" Version="2.0.7" />
+    <PackageReference Update="Microsoft.NETCore.App" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -140,7 +140,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             // flag
-            if (currentStrain > Thresholds.MaxStrainFlag)
+            if (currentStrain > Thresholds.MaxStrainFlag
+                && HitCount >= 10)
             {
                 result = new DetectionPenaltyResult()
                 {
@@ -153,7 +154,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             // ban
             if (currentStrain > Thresholds.MaxStrainBan &&
-                HitCount > 15)
+                HitCount >= 15)
             {
                 result = new DetectionPenaltyResult()
                 {

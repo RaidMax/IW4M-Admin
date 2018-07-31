@@ -8,6 +8,7 @@ namespace SharedLibraryCore.Dtos
     /// </summary>
     public class EventInfo
     {
+        public EntityInfo GameInfo { get; set; }
         public EntityInfo OriginEntity { get; set; }
         public EntityInfo TargetEntity { get; set; }
         public EntityInfo EventType { get; set; }

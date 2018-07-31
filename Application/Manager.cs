@@ -462,17 +462,8 @@ namespace IW4MAdmin.Application
                         queuedEvent.Target.DelayedEvents.Enqueue(queuedEvent);
                         continue;
                     }
-
-                    if (queuedEvent.Type == GameEvent.EventType.Connect)
-                    {
-                        // we don't want to block here to due to needing event completion in the addplayer method
-                        processEvent(queuedEvent);
-                    }
-
-                    else
-                    {
-                        await processEvent(queuedEvent);
-                    }
+                    // for delayed events, they're added after the connect event so it should work out
+                    await processEvent(queuedEvent);
                 }
 
                 // signal that all events have been processed

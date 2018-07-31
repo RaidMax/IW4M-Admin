@@ -247,9 +247,7 @@ namespace IW4MAdmin
 
                 Manager.GetEventHandler().AddEvent(e);
 
-                // let all the plugins get the event 
-                // this is only beause the connect event executes 
-                e.OnProcessed.Wait();
+                player.State = Player.ClientState.Connected;
 
                 // add the delayed event to the queue 
                 while (delayedEventQueue?.Count > 0)
@@ -583,8 +581,6 @@ namespace IW4MAdmin
 
             // all polled players should be authenticated
             var addPlayerTasks = AuthQueue.GetAuthenticatedClients()
-                .Where(client => Players[client.ClientNumber] == null ||
-                Players[client.ClientNumber].State == Player.ClientState.Connecting)
                 .Select(client => AddPlayer(client));
 
             await Task.WhenAll(addPlayerTasks);

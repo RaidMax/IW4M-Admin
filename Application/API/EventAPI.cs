@@ -10,7 +10,7 @@ namespace IW4MAdmin.Application.API
 {
     class EventApi : IEventApi
     {
-        private const int MaxEvents = 32;
+        private const int MaxEvents = 100;
         private Queue<EventInfo> RecentEvents = new Queue<EventInfo>();
 
         public IEnumerable<EventInfo> GetEvents(bool shouldConsume)
@@ -35,6 +35,11 @@ namespace IW4MAdmin.Application.API
             var apiEvent = new EventInfo()
             {
                 ExtraInfo = E.Extra?.ToString() ?? E.Data,
+                GameInfo = new EntityInfo()
+                {
+                    Name = E.Owner.GameName.ToString(),
+                    Id = (int)E.Owner.GameName
+                },
                 OwnerEntity = new EntityInfo()
                 {
                     Name = E.Owner.Hostname,

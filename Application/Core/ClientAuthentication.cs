@@ -42,7 +42,9 @@ namespace IW4MAdmin.Application.Core
                 else
                 {
                     // this update their ping
+                    // todo: this seems kinda hacky
                     value.Ping = client.Ping;
+                    value.Score = client.Score;
                 }
             }
 

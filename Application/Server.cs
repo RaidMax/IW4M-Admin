@@ -802,7 +802,7 @@ namespace IW4MAdmin
             // hopefully fix wine drive name mangling
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logPath = Regex.Replace(logPath, @"[A-Z]:", "");
+                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{logPath}", @"[A-Z]:", "");
             }
 
             if (!File.Exists(logPath))

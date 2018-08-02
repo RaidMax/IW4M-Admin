@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Data.Sqlite;
 using SharedLibraryCore.Interfaces;
+using System.Runtime.InteropServices;
 
 namespace SharedLibraryCore.Database
 {
@@ -37,6 +38,10 @@ namespace SharedLibraryCore.Database
             if (string.IsNullOrEmpty(_ConnectionString))
             {
                 string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase);
+                // allows the application to find the database file
+                currentPath = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+                    $"{Path.DirectorySeparatorChar}{currentPath}" :
+                    currentPath;
                 var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);

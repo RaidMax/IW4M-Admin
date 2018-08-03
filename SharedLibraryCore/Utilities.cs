@@ -211,30 +211,38 @@ namespace SharedLibraryCore
         public static String GetTimePassed(DateTime start, bool includeAgo)
         {
             TimeSpan Elapsed = DateTime.UtcNow - start;
-            string ago = includeAgo ? " " + CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_AGO"] : "";
+            string ago = includeAgo ? $" {CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_AGO"]}" : "";
 
-            if (Elapsed.TotalSeconds < 30 && includeAgo)
-                return "just now";
+            if (Elapsed.TotalSeconds < 30)
+            {
+                return CurrentLocalization.LocalizationIndex["GLOBAL_TIME_JUSTNOW"];
+            }
             if (Elapsed.TotalMinutes < 120)
             {
                 if (Elapsed.TotalMinutes < 1.5)
-                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}{ago}";
-                return Math.Round(Elapsed.TotalMinutes, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}{ago}";
+                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MINUTES"]}{ago}";
+                return Math.Round(Elapsed.TotalMinutes, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MINUTES"]}{ago}";
             }
             if (Elapsed.TotalHours <= 24)
             {
                 if (Elapsed.TotalHours < 1.5)
-                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_HOURS"]}{ago}";
-                return Math.Round(Elapsed.TotalHours, 0) + $" { CurrentLocalization.LocalizationIndex["GLOBAL_HOURS"]}{ago}";
+                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]}{ago}";
+                return Math.Round(Elapsed.TotalHours, 0) + $" { CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]}{ago}";
+            }
+            if (Elapsed.TotalDays <= 90)
+            {
+                if (Elapsed.TotalDays < 1.5)
+                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_DAYS"]}{ago}";
+                return Math.Round(Elapsed.TotalDays, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_DAYS"]}{ago}";
             }
             if (Elapsed.TotalDays <= 365)
             {
-                if (Elapsed.TotalDays < 1.5)
-                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_DAYS"]}{ago}";
-                return Math.Round(Elapsed.TotalDays, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_DAYS"]}{ago}";
+                return $"{Math.Round(Elapsed.TotalDays / 7)} {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_WEEKS"]}{ago}";
             }
             else
-                return $"a very long time{ago}";
+            {
+                return $"{Math.Round(Elapsed.TotalDays / 30, 0)} {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MONTHS"]}{ago}";
+            }
         }
 
         public static Game GetGame(string gameName)
@@ -269,42 +277,59 @@ namespace SharedLibraryCore
             if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
                 return new TimeSpan(1, 0, 0);
 
-            char lengthDenote = expressionMatch.Value[expressionMatch.Value.Length - 1];
+            char lengthDenote = expressionMatch.Value.ToLower()[expressionMatch.Value.Length - 1];
             int length = Int32.Parse(expressionMatch.Value.Substring(0, expressionMatch.Value.Length - 1));
 
-            switch (lengthDenote)
+            var loc = CurrentLocalization.LocalizationIndex;
+
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_MINUTES"][0]))
             {
-                case 'm':
-                    return new TimeSpan(0, length, 0);
-                case 'h':
-                    return new TimeSpan(length, 0, 0);
-                case 'd':
-                    return new TimeSpan(length, 0, 0, 0);
-                case 'w':
-                    return new TimeSpan(length * 7, 0, 0, 0);
-                case 'y':
-                    return new TimeSpan(length * 365, 0, 0, 0);
-                default:
-                    return new TimeSpan(1, 0, 0);
+                return new TimeSpan(0, length, 0);
             }
+
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_HOURS"].First()))
+            {
+                return new TimeSpan(length, 0, 0);
+            }
+
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_DAYS"].First()))
+            {
+                return new TimeSpan(length, 0, 0, 0);
+            }
+
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_WEEKS"].First()))
+            {
+                return new TimeSpan(length * 7, 0, 0, 0);
+            }
+
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_YEARS"].First()))
+            {
+                return new TimeSpan(length * 365, 0, 0, 0);
+            }
+
+            return new TimeSpan(1, 0, 0);
         }
 
         public static string TimeSpanText(this TimeSpan span)
         {
-            if (span.TotalMinutes < 60)
-                return $"{span.Minutes} minute(s)";
-            else if (span.Hours >= 1 && span.TotalHours < 24)
-                return $"{span.Hours} hour(s)";
-            else if (span.TotalDays >= 1 && span.TotalDays < 7)
-                return $"{span.Days} day(s)";
-            else if (span.TotalDays >= 7 && span.TotalDays < 365)
-                return $"{Math.Ceiling(span.Days / 7.0)} week(s)";
-            else if (span.TotalDays >= 365 && span.TotalDays < 36500)
-                return $"{Math.Ceiling(span.Days / 365.0)} year(s)";
-            else if (span.TotalDays >= 36500)
-                return "Forever";
+            var loc = CurrentLocalization.LocalizationIndex;
 
-            return "1 hour";
+            if (span.TotalMinutes < 60)
+                return $"{span.Minutes} {loc["GLOBAL_TIME_MINUTES"]}";
+            else if (span.Hours >= 1 && span.TotalHours < 24)
+                return $"{span.Hours} {loc["GLOBAL_TIME_HOURS"]}";
+            else if (span.TotalDays >= 1 && span.TotalDays < 7)
+                return $"{span.Days} {loc["GLOBAL_TIME_DAYS"]}";
+            else if (span.TotalDays >= 7 && span.TotalDays < 90)
+                return $"{Math.Round(span.Days / 7.0, 0)} {loc["GLOBAL_TIME_WEEKS"]}";
+            else if (span.TotalDays >= 90 && span.TotalDays < 365)
+                return $"{Math.Round(span.Days / 30.0, 0)} {loc["GLOBAL_TIME_MONTHS"]}";
+            else if (span.TotalDays >= 365 && span.TotalDays < 36500)
+                return $"{Math.Round(span.Days / 365.0, 0)} {loc["GLOBAL_TIME_YEARS"]}";
+            else if (span.TotalDays >= 36500)
+                return loc["GLOBAL_TIME_FOREVER"];
+
+            return "unknown";
         }
 
         public static Player AsPlayer(this Database.Models.EFClient client)
@@ -410,7 +435,7 @@ namespace SharedLibraryCore
         public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
 
         public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
-        
+
         public static Task<List<Player>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
 
         public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)

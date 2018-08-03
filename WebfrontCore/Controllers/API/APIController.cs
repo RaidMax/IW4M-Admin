@@ -6,8 +6,50 @@ using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers.API
 {
-    [Route("api")]
-    public class APIController : BaseController
+    public class ApiController : BaseController
     {
+        public IActionResult Index() => Ok($"IW4MAdmin API");
+
+        [HttpGet]
+        public IActionResult Event(bool shouldConsume = true)
+        {
+            var events = Manager.GetEventApi().GetEvents(shouldConsume);
+            return Json(events);
+        }
+
+        [HttpGet]
+        public IActionResult Status(int id)
+        {
+            var serverInfo = Manager.GetServers()
+                .Select(server => new
+                {
+                    Id = server.GetHashCode(),
+                    Name = server.Hostname,
+                    MaxPlayers = server.MaxClients,
+                    CurrentPlayers = server.GetPlayersAsList().Count,
+                    Map = server.CurrentMap,
+                    GameMode = server.Gametype,
+                    Port = server.GetPort(),
+                    Game = server.GameName.ToString(),
+                    Players = server.GetPlayersAsList()
+                        .Select(player => new
+                        {
+                            player.Name,
+                            player.Score,
+                            player.Ping,
+                            player.State,
+                            player.ClientNumber,
+                            player.ConnectionTime,
+                            player.Level,
+                        })
+                });
+
+            if (id != 0)
+            {
+                serverInfo = serverInfo.Where(server => server.Id == id);
+            }
+
+            return Json(serverInfo);
+        }
     }
 }

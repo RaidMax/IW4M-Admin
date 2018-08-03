@@ -521,7 +521,7 @@ namespace SharedLibraryCore.Commands
         {
             TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            await E.Origin.Tell($"IW4M Admin {loc["COMMANDS_UPTIME_TEXT"]} {uptime.Days} {loc["GLOBAL_DAYS"]}, {uptime.Hours} {loc["GLOBAL_HOURS"]}, {uptime.Minutes} {loc["GLOBAL_MINUTES"]}");
+            await E.Origin.Tell($"IW4M Admin {loc["COMMANDS_UPTIME_TEXT"]} {uptime.Days} {loc["GLOBAL_TIME_DAYS"]}, {uptime.Hours} {loc["GLOBAL_TIME_HOURS"]}, {uptime.Minutes} {loc["GLOBAL_TIME_MINUTES"]}");
         }
     }
 

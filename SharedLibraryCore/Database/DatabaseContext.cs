@@ -20,6 +20,9 @@ namespace SharedLibraryCore.Database
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
+        /// <summary>
+        /// this only works if there's one connection string
+        /// </summary>
         private static string _ConnectionString;
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
@@ -27,10 +30,6 @@ namespace SharedLibraryCore.Database
         public DatabaseContext(string connStr)
         {
             _ConnectionString = connStr;
-        }
-
-        public DatabaseContext()
-        {
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -54,7 +53,6 @@ namespace SharedLibraryCore.Database
                 optionsBuilder.UseMySql(_ConnectionString);
             }
         }
-
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -96,6 +94,7 @@ namespace SharedLibraryCore.Database
             modelBuilder.Entity<EFAliasLink>().ToTable("EFAliasLinks");
             modelBuilder.Entity<EFPenalty>().ToTable("EFPenalties");
 
+            // adapted from
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
 #if !DEBUG
             foreach (string dllPath in Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))

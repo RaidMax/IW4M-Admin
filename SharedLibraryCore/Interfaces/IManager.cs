@@ -35,5 +35,10 @@ namespace SharedLibraryCore.Interfaces
         void SetHasEvent();
         bool ShutdownRequested();
         IList<Assembly> GetPluginAssemblies();
+        /// <summary>
+        /// provides a page list to add and remove from
+        /// </summary>
+        /// <returns></returns>
+        IPageList GetPageList();
     }
 }

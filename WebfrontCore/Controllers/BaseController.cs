@@ -9,6 +9,7 @@ using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
+using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
 {
@@ -19,7 +20,7 @@ namespace WebfrontCore.Controllers
         protected bool Authorized { get; set; }
         protected SharedLibraryCore.Localization.Index Localization { get; private set; }
         protected EFClient Client { get; private set; }
-        private static byte[] LocalHost = { 127, 0, 0, 1 };
+        private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
         private static string SocialLink;
         private static string SocialTitle;
 
@@ -88,6 +89,14 @@ namespace WebfrontCore.Controllers
             ViewBag.User = Client;
             ViewBag.SocialLink = SocialLink ?? "";
             ViewBag.SocialTitle = SocialTitle;
+
+            // grab the pages from plugins
+            ViewBag.Pages = Manager.GetPageList().Pages
+                .Select(page => new Page
+                {
+                    Name = page.Key,
+                    Location = page.Value
+                }).ToList();
 
             base.OnActionExecuting(context);
         }

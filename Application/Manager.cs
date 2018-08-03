@@ -46,6 +46,7 @@ namespace IW4MAdmin.Application
         EventApi Api;
         GameEventHandler Handler;
         ManualResetEventSlim OnEvent;
+        readonly IPageList PageList;
 
         private ApplicationManager()
         {
@@ -63,6 +64,7 @@ namespace IW4MAdmin.Application
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             StartTime = DateTime.UtcNow;
             OnEvent = new ManualResetEventSlim();
+            PageList = new PageList();
         }
 
         public IList<Server> GetServers()
@@ -519,5 +521,7 @@ namespace IW4MAdmin.Application
         }
 
         public IList<Assembly> GetPluginAssemblies() => SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies;
+
+        public IPageList GetPageList() => PageList;
     }
 }

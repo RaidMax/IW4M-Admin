@@ -13,6 +13,8 @@ using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using IW4MAdmin.Plugins.Stats.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -103,6 +105,14 @@ namespace IW4MAdmin.Plugins.Stats
                 Config.Set((StatsConfiguration)new StatsConfiguration().Generate());
                 await Config.Save();
             }
+
+            // register the topstats page
+            // todo:generate the URL/Location instead of hardcoding
+            manager.GetPageList()
+                .Pages.Add(
+                    Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"],
+                   "/Stats/TopPlayersAsync");
+
 
             // meta data info
             async Task<List<ProfileMeta>> getStats(int clientId)

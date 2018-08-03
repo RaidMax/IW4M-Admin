@@ -26,7 +26,7 @@ namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
-        private static Index loc = Utilities.CurrentLocalization.LocalizationIndex;
+        private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEvent LogEvent;
         private ClientAuthentication AuthQueue;
 
@@ -170,8 +170,6 @@ namespace IW4MAdmin
                         // we need to update their new ip and name to the virtual property
                         client.Name = polledPlayer.Name;
                         client.IPAddress = polledPlayer.IPAddress;
-
-                        await Manager.GetClientService().Update(client);
                     }
 
                     else
@@ -181,6 +179,8 @@ namespace IW4MAdmin
                         client.Name = existingAlias.Name;
                         client.IPAddress = existingAlias.IPAddress;
                     }
+
+                    await Manager.GetClientService().Update(client);
                     player = client.AsPlayer();
                 }
 
@@ -288,7 +288,7 @@ namespace IW4MAdmin
             if (cNum >= 0 && Players[cNum] != null)
             {
                 Player Leaving = Players[cNum];
-                Logger.WriteInfo($"Client {Leaving} disconnecting...");
+                Logger.WriteInfo($"Client {Leaving}, state {Leaving.State.ToString()} disconnecting...");
 
                 if (!Leaving.IsAuthenticated || Leaving.State != Player.ClientState.Connected)
                 {

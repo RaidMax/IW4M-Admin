@@ -27,6 +27,8 @@ namespace SharedLibraryCore.Database
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
+        public DatabaseContext() { }
+
         public DatabaseContext(string connStr)
         {
             _ConnectionString = connStr;

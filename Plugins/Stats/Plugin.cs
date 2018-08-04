@@ -46,7 +46,7 @@ namespace IW4MAdmin.Plugins.Stats
                     await Manager.RemovePlayer(E.Origin);
                     break;
                 case GameEvent.EventType.Say:
-                    if (!string.IsNullOrEmpty(E.Data) && 
+                    if (!string.IsNullOrEmpty(E.Data) &&
                         E.Origin.ClientId > 1)
                         await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
                     break;
@@ -84,8 +84,8 @@ namespace IW4MAdmin.Plugins.Stats
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case GameEvent.EventType.Damage:
-                   // if (!E.Owner.CustomCallback)
-                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
+                    // if (!E.Owner.CustomCallback)
+                    Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
@@ -112,7 +112,6 @@ namespace IW4MAdmin.Plugins.Stats
                 .Pages.Add(
                     Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"],
                    "/Stats/TopPlayersAsync");
-
 
             // meta data info
             async Task<List<ProfileMeta>> getStats(int clientId)
@@ -169,7 +168,6 @@ namespace IW4MAdmin.Plugins.Stats
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
                 double maxStrain = clientStats.Count(c => c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
-                //double maxAngle = clientStats.Max(cs => cs.HitLocations.Max(hl => hl.MaxAngleDistance));
 
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
                 {
@@ -231,12 +229,6 @@ namespace IW4MAdmin.Plugins.Stats
                         Value = Math.Round(maxStrain, 3),
                         Sensitive = true
                     },
-                    /*new ProfileMeta()
-                    {
-                        Key = "Max Angle Distance",
-                        Value = Math.Round(maxAngle, 1),
-                        Sensitive = true
-                    }*/
                 };
             }
 

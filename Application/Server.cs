@@ -217,14 +217,17 @@ namespace IW4MAdmin
 
                     if (currentBan.Type == Penalty.PenaltyType.TempBan)
                     {
-                        string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} left)");
+                        string formattedKick = String.Format(
+                            RconParser.GetCommandPrefixes().Kick, 
+                            polledPlayer.ClientNumber, 
+                            $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
                         await this.ExecuteCommandAsync(formattedKick);
                     }
                     else
-                        await player.Kick($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense}", autoKickClient);
+                        await player.Kick($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {Website})", autoKickClient);
 
                     if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
-                        await player.Ban($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense}", autoKickClient);
+                        await player.Ban($"{currentBan.Offense}", autoKickClient);
 
                     // they didn't fully connect so empty their slot
                     Players[player.ClientNumber] = null;

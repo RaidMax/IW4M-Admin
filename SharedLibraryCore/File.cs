@@ -11,7 +11,7 @@ namespace SharedLibraryCore
 {
     public class RemoteFile : IFile
     {
-        string Location;
+        readonly string Location;
         string[] FileCache = new string[0];
 
         public RemoteFile(string location) : base(string.Empty)
@@ -101,7 +101,7 @@ namespace SharedLibraryCore
         //END
 
         private long sze;
-        private String Name;
+        private readonly String Name;
         private StreamReader Handle;
     }
 }

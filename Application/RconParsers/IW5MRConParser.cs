@@ -16,7 +16,7 @@ namespace Application.RconParsers
 {
     public class IW5MRConParser : IRConParser
     {
-        private static CommandPrefix Prefixes = new CommandPrefix()
+        private static readonly CommandPrefix Prefixes = new CommandPrefix()
         {
             Tell = "tell {0} {1}",
             Say = "say {0}",

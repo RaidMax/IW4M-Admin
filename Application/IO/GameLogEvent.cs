@@ -11,7 +11,7 @@ namespace IW4MAdmin.Application.IO
         Server Server;
         long PreviousFileSize;
         GameLogReader Reader;
-        string GameLogFile;
+        readonly string GameLogFile;
 
         class EventState
         {

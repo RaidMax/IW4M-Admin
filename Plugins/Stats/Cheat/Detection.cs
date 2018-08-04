@@ -30,7 +30,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         long LastOffset;
         ILogger Log;
         Strain Strain;
-        DateTime ConnectionTime = DateTime.UtcNow;
+        readonly DateTime ConnectionTime = DateTime.UtcNow;
 
         public Detection(ILogger log, EFClientStatistics clientStats)
         {

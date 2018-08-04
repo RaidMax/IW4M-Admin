@@ -37,9 +37,9 @@ namespace WebfrontCore.Controllers.API
                             player.Name,
                             player.Score,
                             player.Ping,
-                            player.State,
+                            State = player.State.ToString(),
                             player.ClientNumber,
-                            player.ConnectionTime,
+                            ConnectionTime = (DateTime.UtcNow - player.ConnectionTime).TotalSeconds,
                             player.Level,
                         })
                 });

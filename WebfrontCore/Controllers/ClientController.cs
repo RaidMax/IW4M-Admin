@@ -27,7 +27,7 @@ namespace WebfrontCore.Controllers
             var clientDto = new PlayerInfo()
             {
                 Name = client.Name,
-                Level = client.Level.ToString(),
+                Level = client.Level.ToLocalizedLevelName(),
                 LevelInt = (int)client.Level,
                 ClientId = client.ClientId,
                 IPAddress = client.IPAddressString,
@@ -148,7 +148,7 @@ namespace WebfrontCore.Controllers
             var clientsDto = clients.Select(c => new PlayerInfo()
             {
                 Name = c.Name,
-                Level = c.Level.ToString(),
+                Level = c.Level.ToLocalizedLevelName(),
                 LevelInt = (int)c.Level,
                 ClientId = c.ClientId,
                 LastSeen = Utilities.GetTimePassed(c.LastConnection, false)

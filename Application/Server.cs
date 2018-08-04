@@ -218,14 +218,23 @@ namespace IW4MAdmin
                     if (currentBan.Type == Penalty.PenaltyType.TempBan)
                     {
                         string formattedKick = String.Format(
-                            RconParser.GetCommandPrefixes().Kick, 
-                            polledPlayer.ClientNumber, 
+                            RconParser.GetCommandPrefixes().Kick,
+                            polledPlayer.ClientNumber,
                             $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
                         await this.ExecuteCommandAsync(formattedKick);
                     }
+                    // the player is permanently banned
                     else
-                        await player.Kick($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {Website})", autoKickClient);
+                    {
+                        // don't store the kick message
+                        string formattedKick = String.Format(
+                         RconParser.GetCommandPrefixes().Kick,
+                         polledPlayer.ClientNumber,
+                         $"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {Website})");
+                        await this.ExecuteCommandAsync(formattedKick);
+                    }
 
+                    // reban the "evading" guid
                     if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
                         await player.Ban($"{currentBan.Offense}", autoKickClient);
 
@@ -594,7 +603,6 @@ namespace IW4MAdmin
         DateTime start = DateTime.Now;
         DateTime playerCountStart = DateTime.Now;
         DateTime lastCount = DateTime.Now;
-        DateTime tickTime = DateTime.Now;
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {

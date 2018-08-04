@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
 
@@ -24,7 +25,7 @@ namespace WebfrontCore.ViewComponents
                 {
                     Name = p.Name,
                     ClientId = p.ClientId,
-                    Level = p.Level.ToString(),
+                    Level = p.Level.ToLocalizedLevelName(),
                     LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory,

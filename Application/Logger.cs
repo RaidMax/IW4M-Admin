@@ -17,8 +17,8 @@ namespace IW4MAdmin.Application
             Assert
         }
 
-        string FileName;
-        object ThreadLock;
+        readonly string FileName;
+        readonly object ThreadLock;
 
         public Logger(string fn)
         {

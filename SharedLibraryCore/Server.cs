@@ -330,8 +330,8 @@ namespace SharedLibraryCore
         protected ManualResetEventSlim OnRemoteCommandResponse;
 
         // only here for performance
-        private bool CustomSayEnabled;
-        private string CustomSayName;
+        private readonly bool CustomSayEnabled;
+        private readonly string CustomSayName;
 
         //Remote
         public IList<CommandResponseInfo> CommandResult = new List<CommandResponseInfo>();

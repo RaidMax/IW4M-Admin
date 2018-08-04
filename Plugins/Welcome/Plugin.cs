@@ -99,7 +99,7 @@ namespace IW4MAdmin.Plugins.Welcome
         private string ProcessAnnouncement(string msg, Player joining)
         {
             msg = msg.Replace("{{ClientName}}", joining.Name);
-            msg = msg.Replace("{{ClientLevel}}", Utilities.ConvertLevelToColor(joining.Level));
+            msg = msg.Replace("{{ClientLevel}}", Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name));
             try
             {
                 CountryLookupProj.CountryLookup CLT = new CountryLookupProj.CountryLookup($"{Utilities.OperatingDirectory}Plugins{System.IO.Path.DirectorySeparatorChar}GeoIP.dat");

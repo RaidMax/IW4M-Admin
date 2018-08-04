@@ -36,7 +36,7 @@ namespace IW4MAdmin.Application.API.Master
     public class Endpoint
     {
 #if !DEBUG
-        private static IMasterApi api = RestClient.For<IMasterApi>("http://api.raidmax.org:5000");
+        private static readonly IMasterApi api = RestClient.For<IMasterApi>("http://api.raidmax.org:5000");
 #else
         private static IMasterApi api = RestClient.For<IMasterApi>("http://127.0.0.1");
 #endif

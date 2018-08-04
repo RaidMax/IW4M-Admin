@@ -14,7 +14,7 @@ namespace WebfrontCore
 {
     public class Startup
     {
-        private IHostingEnvironment _appHost;
+        private readonly IHostingEnvironment _appHost;
         public static IConfigurationRoot Configuration { get; private set; }
 
         public Startup(IHostingEnvironment env)

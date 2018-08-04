@@ -36,12 +36,12 @@ namespace IW4MAdmin.Application
         public DateTime StartTime { get; private set; }
 
         static ApplicationManager Instance;
-        List<AsyncStatus> TaskStatuses;
+        readonly List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
-        List<MessageToken> MessageTokens;
+        readonly List<MessageToken> MessageTokens;
         ClientService ClientSvc;
-        AliasService AliasSvc;
-        PenaltyService PenaltySvc;
+        readonly AliasService AliasSvc;
+        readonly PenaltyService PenaltySvc;
         BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         EventApi Api;
         GameEventHandler Handler;

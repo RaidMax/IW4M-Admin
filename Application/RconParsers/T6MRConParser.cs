@@ -52,7 +52,7 @@ namespace Application.RconParsers
             public PInfo[] Players { get; set; }
         }
 
-        private static CommandPrefix Prefixes = new CommandPrefix()
+        private static readonly CommandPrefix Prefixes = new CommandPrefix()
         {
             Tell = "tell {0} {1}",
             Say = "say {0}",

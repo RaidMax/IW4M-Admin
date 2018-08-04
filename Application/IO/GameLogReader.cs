@@ -10,7 +10,7 @@ namespace IW4MAdmin.Application.IO
     class GameLogReader
     {
         IEventParser Parser;
-        string LogFile;
+        readonly string LogFile;
 
         public GameLogReader(string logFile, IEventParser parser)
         {

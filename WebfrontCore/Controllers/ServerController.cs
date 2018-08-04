@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,7 @@ namespace WebfrontCore.Controllers
                 {
                     Name = p.Name,
                     ClientId = p.ClientId,
-                    Level = p.Level.ToString(),
+                    Level = p.Level.ToLocalizedLevelName(),
                     LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory,

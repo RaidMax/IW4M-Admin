@@ -56,7 +56,8 @@ namespace SharedLibraryCore
             String lookingFor = str.ToLower();
 
             for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Console; Perm++)
-                if (lookingFor.Contains(Perm.ToString().ToLower()))
+                if (lookingFor.Contains(Perm.ToString().ToLower())
+                    || lookingFor.Contains(CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{Perm.ToString().ToUpper()}"].ToLower()))
                     return Perm;
 
             return Player.Permission.Banned;
@@ -83,24 +84,35 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="level">Specified player level</param>
         /// <returns></returns>
-        public static String ConvertLevelToColor(Player.Permission level)
+        public static String ConvertLevelToColor(Player.Permission level, string localizedLevel)
         {
+            char colorCode = '6';
+            // todo: maybe make this game independant?
             switch (level)
             {
                 case Player.Permission.Banned:
-                    return "^1" + Player.Permission.Banned;
+                    colorCode = '1';
+                    break;
                 case Player.Permission.Flagged:
-                    return "^9" + Player.Permission.Flagged;
+                    colorCode = '9';
+                    break;
                 case Player.Permission.Owner:
-                    return "^5" + Player.Permission.Owner;
+                    colorCode = '5';
+                    break;
                 case Player.Permission.User:
-                    return "^2" + Player.Permission.User;
+                    colorCode = '2';
+                    break;
                 case Player.Permission.Trusted:
-                    return "^3" + Player.Permission.Trusted;
+                    colorCode = '3';
+                    break;
                 default:
-                    return "^6" + level;
+                    break;
             }
+
+            return $"^{colorCode}{localizedLevel ?? level.ToString()}";
         }
+
+        public static string ToLocalizedLevelName(this Player.Permission perm) => CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
 
         public static String ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
         {

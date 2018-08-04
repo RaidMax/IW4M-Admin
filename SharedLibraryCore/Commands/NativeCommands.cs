@@ -273,7 +273,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level), E.Origin.IPAddressString);
+            String You = String.Format("{0} [^3#{1}^7] {2} [^3@{3}^7] [{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level, E.Origin.ClientPermission.Name), E.Origin.IPAddressString);
             await E.Origin.Tell(You);
         }
     }
@@ -294,11 +294,11 @@ namespace SharedLibraryCore.Commands
 
                 if (P == null)
                     continue;
-
+                // todo: fix spacing
                 if (P.Masked)
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
                 else
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
 
                 if (count == 2 || E.Owner.GetPlayersAsList().Count == 1)
                 {
@@ -536,7 +536,7 @@ namespace SharedLibraryCore.Commands
             var onlineAdmins = S.GetPlayersAsList()
                 .Where(p => p.Level > Player.Permission.Flagged)
                 .Where(p => !p.Masked)
-                .Select(p => $"[^3{Utilities.ConvertLevelToColor(p.Level)}^7] {p.Name}");
+                .Select(p => $"[^3{Utilities.ConvertLevelToColor(p.Level, p.ClientPermission.Name)}^7] {p.Name}");
 
             return onlineAdmins.Count() > 0 ?
                 string.Join(Environment.NewLine, onlineAdmins) :
@@ -622,10 +622,11 @@ namespace SharedLibraryCore.Commands
 
             foreach (var P in db_players)
             {
+                string localizedLevel = Utilities.CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{P.Level.ToString().ToUpper()}"];
                 // they're not going by another alias
                 string msg = P.Name.ToLower().Contains(E.Data.ToLower()) ?
-                    $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
-                    $"({P.AliasLink.Children.First(a => a.Name.ToLower().Contains(E.Data.ToLower())).Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
+                    $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
+                    $"({P.AliasLink.Children.First(a => a.Name.ToLower().Contains(E.Data.ToLower())).Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
                 await E.Origin.Tell(msg);
             }
         }

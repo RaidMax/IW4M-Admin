@@ -12,7 +12,7 @@ using System.Text;
 using System.Linq;
 using System.Net.Http;
 
-namespace Application.RconParsers
+namespace IW4MAdmin.Application.RconParsers
 {
     public class T6MRConParser : IRConParser
     {

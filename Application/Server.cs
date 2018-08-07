@@ -14,13 +14,14 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Localization;
 
-using Application.Misc;
-using Application.RconParsers;
+using IW4MAdmin.Application.Misc;
+using IW4MAdmin.Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
-using SharedLibraryCore.Localization;
 using IW4MAdmin.Application.Core;
+using IW4MAdmin.WApplication.RconParsers;
 
 namespace IW4MAdmin
 {
@@ -56,7 +57,6 @@ namespace IW4MAdmin
 
         public async Task OnPlayerJoined(Player logClient)
         {
-
             if (Players[logClient.ClientNumber] == null ||
                 Players[logClient.ClientNumber].NetworkId != logClient.NetworkId)
             {
@@ -182,6 +182,16 @@ namespace IW4MAdmin
 
                     await Manager.GetClientService().Update(client);
                     player = client.AsPlayer();
+                }
+
+                // reserved slots stuff
+                if ((MaxClients - ClientNum) < ServerConfig.ReservedSlotNumber &&
+                   ! player.IsPrivileged())
+                {
+                    Logger.WriteDebug($"Kicking {polledPlayer} their spot is reserved");
+                    string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_SLOT_IS_RESERVED"]);
+                    await this.ExecuteCommandAsync(formattedKick);
+                    return false;
                 }
 
                 Logger.WriteInfo($"Client {player} connected...");
@@ -590,7 +600,6 @@ namespace IW4MAdmin
 
             AuthQueue.AuthenticateClients(CurrentPlayers);
 
-
             // all polled players should be authenticated
             var addPlayerTasks = AuthQueue.GetAuthenticatedClients()
                 .Select(client => AddPlayer(client));
@@ -796,7 +805,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"D:\";
+            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
 #endif
             string logPath;
             if (GameName == Game.IW5)

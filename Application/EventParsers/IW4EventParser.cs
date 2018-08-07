@@ -10,7 +10,7 @@ namespace IW4MAdmin.Application.EventParsers
 {
     class IW4EventParser : IEventParser
     {
-        private const string SayRegex = @"(say|sayteam);(.{16,32});([0-9]+)(.*);(.*)";
+        private const string SayRegex = @"(say|sayteam);(.{1,32});([0-9]+)(.*);(.*)";
 
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
@@ -121,7 +121,7 @@ namespace IW4MAdmin.Application.EventParsers
             // join
             if (eventType == "J")
             {
-                var regexMatch = Regex.Match(logLine, @"^(J;)(.{4,32});([0-9]+);(.*)$");
+                var regexMatch = Regex.Match(logLine, @"^(J;)(.{1,32});([0-9]+);(.*)$");
                 if (regexMatch.Success)
                 {
                     return new GameEvent()
@@ -141,7 +141,7 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "Q")
             {
-                var regexMatch = Regex.Match(logLine, @"^(Q;)(.{4,32});([0-9]+);(.*)$");
+                var regexMatch = Regex.Match(logLine, @"^(Q;)(.{1,32});([0-9]+);(.*)$");
                 if (regexMatch.Success)
                 {
                     return new GameEvent()

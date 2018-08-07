@@ -14,6 +14,7 @@ namespace SharedLibraryCore.Configuration
         public bool UseT6MParser { get; set; }
         public bool UseIW5MParser { get; set; }
         public string ManualLogPath { get; set; }
+        public int ReservedSlotNumber { get; set; }
 
         public IBaseConfiguration Generate()
         {
@@ -45,6 +46,8 @@ namespace SharedLibraryCore.Configuration
                 UseIW5MParser = Utilities.PromptBool(loc["SETUP_SERVER_USEIW5M"]);
             if (UseIW5MParser)
                 ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_MANUALLOG"]);
+
+            ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(0, 32);
 
             return this;
         }

@@ -199,7 +199,8 @@ namespace SharedLibraryCore
                 return id;
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
             if (!string.IsNullOrEmpty(bot))
-                return -1;//Convert.ToInt64(bot.Substring(3)) + 1;
+                // should set their GUID to the negation of their 1 based index  (-1 - -18)
+                return -(Convert.ToInt64(bot.Substring(3)) + 1);
             return 0;
         }
 
@@ -365,7 +366,7 @@ namespace SharedLibraryCore
                 CurrentAlias = client.CurrentAlias,
                 CurrentAliasId = client.CurrentAlias.AliasId,
                 // todo: make sure this is up to date
-                IsBot = client.NetworkId == -1,
+                IsBot = client.IPAddress == int.MinValue,
                 Password = client.Password,
                 PasswordSalt = client.PasswordSalt
             };
@@ -377,6 +378,33 @@ namespace SharedLibraryCore
         {
             Console.Write($"{question}? [y/n]: ");
             return (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+        }
+
+        /// <summary>
+        /// prompt user to enter a number
+        /// </summary>
+        /// <param name="question">question to prompt with</param>
+        /// <param name="maxValue">maximum value to allow</param>
+        /// <param name="minValue">minimum value to allow</param>
+        /// <returns>integer from user's input</returns>
+        public static int PromptInt(this string question, int minValue = 0, int maxValue = int.MaxValue)
+        {
+            Console.Write($"{question}: ");
+            int response;
+
+            while (!int.TryParse(Console.ReadLine(), out response) ||
+                response < minValue ||
+                response > maxValue)
+            {
+                string range = "";
+                if (minValue != 0 || maxValue != int.MaxValue)
+                {
+                    range = $" [{minValue}-{maxValue}]";
+                }
+                Console.Write($"Please enter a valid number{range}: ");
+            }
+
+            return response;
         }
 
         public static string PromptString(string question)
@@ -455,6 +483,5 @@ namespace SharedLibraryCore
             var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
             return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
         }
-
     }
 }

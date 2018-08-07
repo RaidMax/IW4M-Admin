@@ -2,81 +2,81 @@
     background-color: grey;
 }
 
-.level-color-user, .level-color-guest {
+.level-color-user, .level-color-guest, .level-color-0 {
     color: #6c757d;
     color: rgba(255, 255, 255, 0.68);
 }
 
-.level-bgcolor-user, .level-bgcolor-guest {
+.level-bgcolor-user, .level-bgcolor-guest, .level-bgcolor-0 {
     background-color: #6c757d;
     background-color: rgba(255, 255, 255, 0.68);
 }
 
-.level-color-trusted {
+.level-color-trusted, .level-color-2 {
     color: #749363;
     color: rgba(116,147,99,1);
 }
 
-.level-bgcolor-trusted {
+.level-bgcolor-trusted, .level-bgcolor-2 {
     background-color: #749363;
     background-color: rgba(116,147,99,1);
 }
 
-.level-color-flagged {
+.level-color-flagged, .level-color-1 {
     color: #fd9c38;
     color: rgba(253, 139, 22, 0.85);
 }
 
-.level-bgcolor-flagged {
+.level-bgcolor-flagged, .level-bgcolor-1 {
     background-color: #fd9c38;
     background-color: rgba(253, 139, 22, 0.85);
 }
 
-.level-color-banned, .level-color-console {
+.level-color-banned, .level-color-console, .level-color--1 {
     color: #ff6060;
     color: rgba(255, 69, 69, 0.85);
 }
 
-.level-bgcolor-banned {
+.level-bgcolor-banned, .level-bgcolor--1 {
     background-color: #ff6060;
     background-color: rgba(255, 69, 69, 0.85);
 }
 
-.level-color-moderator {
+.level-color-moderator, .level-color-3 {
     color: #f0de8b;
     color: rgba(235, 211, 101, 0.75);
 }
 
-.level-bgcolor-moderator {
+.level-bgcolor-moderator,  .level-bgcolor-3 {
     background-color: #f0de8b;
     background-color: rgba(235, 211, 101, 0.75);
 }
 
-.level-color-administrator {
+.level-color-administrator, .level-color-4 {
     color: #f1a8e8;
     color: rgba(236, 130, 222, 0.69);
 }
 
-.level-bgcolor-administrator {
+.level-bgcolor-administrator, .level.bgcolor-4 {
     background-color: #f1a8e8;
     background-color: rgba(236, 130, 222, 0.69);
 }
 
-.level-color-senioradmin {
+.level-color-senioradmin, .level-color-5 {
     color: #50bcc3;
     color: rgba(50, 177, 185, 0.85);
 }
 
-.level-bgcolor-senioradmin {
+.level-bgcolor-senioradmin, .level-bgcolor-5 {
     background-color: #50bcc3;
     background-color: rgba(50, 177, 185, 0.85);
 }
 
-.level-color-owner {
+.level-color-owner, .level-color-6 {
     color: rgb(0, 122, 204);
 }
 
-.level-bgcolor-owner {
+.level-bgcolor-owner, .level-bgcolor-6 {
     background-color: rgb(0, 122, 204);
 }
 

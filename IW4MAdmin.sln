@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Plugins\Tests\Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IW4ScriptCommands", "Plugins\IW4ScriptCommands\IW4ScriptCommands.csproj", "{6C706CE5-A206-4E46-8712-F8C48D526091}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DiscordWebhook", "DiscordWebhook\DiscordWebhook.pyproj", "{15A81D6E-7502-46CE-8530-0647A380B5F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -287,6 +289,18 @@ Global
 		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x64.Build.0 = Release|Any CPU
 		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x86.ActiveCfg = Release|Any CPU
 		{6C706CE5-A206-4E46-8712-F8C48D526091}.Release|x86.Build.0 = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Prerelease|Any CPU.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Prerelease|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Prerelease|x64.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Prerelease|x86.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Release|x64.ActiveCfg = Release|Any CPU
+		{15A81D6E-7502-46CE-8530-0647A380B5F4}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

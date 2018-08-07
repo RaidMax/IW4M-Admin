@@ -2,17 +2,15 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Text;
 
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.RCon;
 using SharedLibraryCore.Exceptions;
-using System.Text;
-using System.Linq;
-using System.Net.Http;
 
-namespace Application.RconParsers
+namespace IW4MAdmin.WApplication.RconParsers
 {
     public class IW5MRConParser : IRConParser
     {

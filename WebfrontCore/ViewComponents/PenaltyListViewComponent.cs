@@ -21,6 +21,7 @@ namespace WebfrontCore.ViewComponents
                 PunisherId = p.PunisherId,
                 PunisherName = p.Punisher.Name,
                 PunisherLevel = p.Punisher.Level.ToLocalizedLevelName(),
+                PunisherLevelId = (int)p.Punisher.Level,
 #if DEBUG
                 Offense = !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
 #else

@@ -13,6 +13,7 @@ namespace SharedLibraryCore.Dtos
         public string PunisherName { get; set; }
         public int PunisherId { get; set; }
         public string PunisherLevel { get; set; }
+        public int PunisherLevelId { get; set; }
         public string Offense { get; set; }
         public string AutomatedOffense { get; set; }
         public string Type { get; set; }

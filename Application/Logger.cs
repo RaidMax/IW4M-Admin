@@ -39,7 +39,7 @@ namespace IW4MAdmin.Application
 
             catch (Exception) { }
 
-            string LogLine = $"[{DateTime.Now.ToString("HH:mm:ss")}] - {stringType}: {msg}";
+            string LogLine = $"[{DateTime.Now.ToString("MM.dd.yyy HH:mm:ss.fff")}] - {stringType}: {msg}";
             lock (ThreadLock)
             {
 #if DEBUG

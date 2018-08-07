@@ -411,13 +411,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 kill.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
             {
                 clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
-
-                //statsSvc.ClientStatSvc.Update(clientStats);
-                // await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
-
-            //statsSvc.KillStatsSvc.Insert(kill);
-            //await statsSvc.KillStatsSvc.SaveChangesAsync();
 
             if (Plugin.Config.Configuration().EnableAntiCheat)
             {

@@ -1,14 +1,13 @@
-﻿using Application.RconParsers;
-using SharedLibraryCore.RCon;
+﻿using SharedLibraryCore.RCon;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Application.RconParsers
+namespace IW4MAdmin.Application.RconParsers
 {
     class IW3RConParser : IW4RConParser
     {
-        private static CommandPrefix Prefixes = new CommandPrefix()
+        private static readonly CommandPrefix Prefixes = new CommandPrefix()
         {
             Tell = "tell {0} {1}",
             Say = "say {0}",

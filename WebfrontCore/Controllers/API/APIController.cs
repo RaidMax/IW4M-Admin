@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,8 +40,8 @@ namespace WebfrontCore.Controllers.API
                             player.Ping,
                             State = player.State.ToString(),
                             player.ClientNumber,
-                            ConnectionTime = (DateTime.UtcNow - player.ConnectionTime).TotalSeconds,
-                            player.Level,
+                            ConnectionTime = Math.Round((DateTime.UtcNow - player.ConnectionTime).TotalSeconds, 0),
+                            Level = player.Level.ToLocalizedLevelName(),
                         })
                 });
 

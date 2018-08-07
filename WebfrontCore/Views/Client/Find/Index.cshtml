@@ -16,7 +16,7 @@
         {
             <div class="row pt-2 pb-2 bg-dark">
                 <div class="col-5">@Html.ActionLink(client.Name, "ProfileAsync", "Client", new { id = client.ClientId })</div>
-                <div class="col-4 level-color-@client.Level.ToLower()">@client.Level</div>
+                <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
                 <div class="col-3 text-right">@client.LastSeen @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</div>
             </div>
         }

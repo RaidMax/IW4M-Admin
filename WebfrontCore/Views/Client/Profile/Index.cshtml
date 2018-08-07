@@ -7,7 +7,7 @@
 }
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
-        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.Level.ToLower()" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)">
+        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.LevelInt" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)">
             @if (string.IsNullOrEmpty(gravatarUrl))
             {
                 <span class="profile-shortcode">@shortCode</span>
@@ -71,7 +71,7 @@
             }
         </div>
         <div id="profile_level" class="text-muted  mb-2">
-            <h5><span class="level-color-@Model.Level.ToLower()"><strong>@Model.Level</strong></span></h5>
+            <h5><span class="level-color-@Model.LevelInt"><strong>@Model.Level</strong></span></h5>
         </div>
         <div id="profile_time_played" class="text-muted">
             @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]

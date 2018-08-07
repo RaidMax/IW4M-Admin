@@ -10,7 +10,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.RCon;
 using SharedLibraryCore.Exceptions;
 
-namespace Application.RconParsers
+namespace IW4MAdmin.Application.RconParsers
 {
     class IW4RConParser : IRConParser
     {
@@ -111,17 +111,11 @@ namespace Application.RconParsers
                         Name = name,
                         NetworkId = networkId,
                         ClientNumber = clientNumber,
-                        IPAddress = ip,
+                        IPAddress = ip == 0 ? int.MinValue : ip,
                         Ping = ping,
                         Score = score,
                         IsBot = ip == 0
                     };
-
-                    if (P.IsBot)
-                    {
-                        // set it to 127.0.0.2
-                        P.IPAddress = 33554559;
-                    }
 
                     StatusPlayers.Add(P);
                 }

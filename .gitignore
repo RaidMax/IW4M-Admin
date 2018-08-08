@@ -227,3 +227,4 @@ bootstrap-custom.min.css
 /WebfrontCore/wwwroot/**/dds
 
 /DiscordWebhook/env
+/DiscordWebhook/config.dev.json

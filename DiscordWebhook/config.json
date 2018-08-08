@@ -1,5 +1,6 @@
 {
   "IW4MAdminUrl": "",
-  "DiscordWebhookUrl": "",
+  "DiscordWebhookNotificationUrl": "",
+  "DiscordWebhookInformationUrl": "",
   "NotifyRoleIds": []
 }

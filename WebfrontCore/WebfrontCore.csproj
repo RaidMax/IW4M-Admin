@@ -24,6 +24,7 @@
 
   <PropertyGroup>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,7 +45,7 @@
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\images\icon.png" CopyToPublishDirectory="Always" />
-    <None Include="wwwroot\images\icons\**\*.png" CopyToPublishDirectory="Always"/>
+    <None Include="wwwroot\images\icons\**\*.png" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.ttf" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.woff" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.otf" CopyToPublishDirectory="Always" />

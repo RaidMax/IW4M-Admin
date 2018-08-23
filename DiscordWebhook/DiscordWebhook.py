@@ -2,6 +2,7 @@ import requests
 import time
 import json
 import collections
+import os
 
 # the following classes model the discord webhook api parameters
 class WebhookAuthor():
@@ -45,13 +46,18 @@ class WebhookParams():
 
 # gets the relative link to a user's profile
 def get_client_profile(profile_id):
-    return '{}/Client/ProfileAsync/{}'.format(base_url, str(profile_id))
+    return u'{}/Client/ProfileAsync/{}'.format(base_url, profile_id)
 
 def get_client_profile_markdown(client_name, profile_id):
-    return '[{}]({})'.format(client_name, get_client_profile(profile_id))
+    return u'[{}]({})'.format(client_name, get_client_profile(profile_id))
 
 #todo: exception handling for opening the file
-with open('config.json') as json_config_file:
+if os.getenv("DEBUG"):
+    config_file_name = 'config.dev.json'
+else:
+    config_file_name = 'config.json'
+
+with open(config_file_name) as json_config_file:
     json_config = json.load(json_config_file)
 
 # this should be an URL to an IP or FQN to an IW4MAdmin instance
@@ -79,11 +85,11 @@ def get_new_events():
         server_name = event['ownerEntity']['name']
 
         if event['originEntity']:
-            origin_client_name = str(event['originEntity']['name'])
+            origin_client_name = event['originEntity']['name']
             origin_client_id = int(event['originEntity']['id'])
 
         if event['targetEntity']:
-            target_client_name = str(event['targetEntity']['name']) or ''
+            target_client_name = event['targetEntity']['name'] or ''
             target_client_id = int(event['targetEntity']['id']) or 0
 
         webhook_item = WebhookParams()
@@ -146,7 +152,7 @@ def get_new_events():
 
         elif event_type == 'Say':
             say_client_field = WebhookField('Player', get_client_profile_markdown(origin_client_name, origin_client_id))
-            message_field = WebhookField('Message', str(event['extraInfo']))
+            message_field = WebhookField('Message', event['extraInfo'])
 
             webhook_item_embed.title = 'Message From Player'
             webhook_item_embed.fields.append(say_client_field)
@@ -181,8 +187,9 @@ def execute_webhook(data):
 
         if event['notify']:
             url = discord_webhook_notification_url
-        elif len(discord_webhook_information_url)  > 0:
-            url = discord_webhook_information_url
+        else:
+            if len(discord_webhook_information_url)  > 0:
+                url = discord_webhook_information_url
 
         if url :
             response = requests.post(url,
@@ -197,8 +204,9 @@ def run():
         try:
             new_events = get_new_events()
             execute_webhook(new_events)
-        except:
+        except Exception as e:
             print('failed to get new events ({})'.format(failed_count))
+            print(e)
             failed_count += 1
         time.sleep(5)
 

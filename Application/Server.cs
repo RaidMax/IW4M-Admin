@@ -186,7 +186,7 @@ namespace IW4MAdmin
 
                 // reserved slots stuff
                 if ((MaxClients - ClientNum) < ServerConfig.ReservedSlotNumber &&
-                   ! player.IsPrivileged())
+                   !player.IsPrivileged())
                 {
                     Logger.WriteDebug($"Kicking {polledPlayer} their spot is reserved");
                     string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_SLOT_IS_RESERVED"]);
@@ -254,6 +254,7 @@ namespace IW4MAdmin
                 }
 
                 if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
+                    Manager.GetApplicationSettings().Configuration().VpnExceptionIds?.FirstOrDefault(i => i == player.ClientId) != null &&
                     await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
                 {
                     await player.Kick(Utilities.CurrentLocalization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], new Player() { ClientId = 1 });
@@ -330,8 +331,8 @@ namespace IW4MAdmin
         public override async Task ExecuteEvent(GameEvent E)
         {
             bool canExecuteCommand = true;
-            await ProcessEvent(E);
             Manager.GetEventApi().OnServerEvent(this, E);
+            await ProcessEvent(E);
 
             Command C = null;
             if (E.Type == GameEvent.EventType.Command)
@@ -989,6 +990,17 @@ namespace IW4MAdmin
             {
                 // this is set only because they're still in the server.
                 Target.Level = Player.Permission.Banned;
+
+                // let the api know that a ban occured
+                Manager.GetEventHandler().AddEvent(new GameEvent()
+                {
+                    Type = GameEvent.EventType.Ban,
+                    Data = Message,
+                    Origin = Origin,
+                    Target = Target,
+                    Owner = this
+                });
+
 #if !DEBUG
                 string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedString);

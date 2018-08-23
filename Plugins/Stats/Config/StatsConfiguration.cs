@@ -9,6 +9,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public bool EnableAntiCheat { get; set; }
         public List<StreakMessageConfiguration> KillstreakMessages { get; set; }
         public List<StreakMessageConfiguration> DeathstreakMessages { get; set; }
+        public int TopPlayersMinPlayTime { get; set; }
         public string Name() => "Stats";
         public IBaseConfiguration Generate()
         {
@@ -46,6 +47,8 @@ namespace IW4MAdmin.Plugins.Stats.Config
                      Message = "Seriously? ^510 deaths ^7without getting a kill?"
                  },
             };
+
+            TopPlayersMinPlayTime = 3600 * 3;
 
             return this;
         }

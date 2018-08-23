@@ -217,15 +217,6 @@ namespace SharedLibraryCore.Commands
             {
                 await E.Target.Ban(E.Data, E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_SUCCESS"]}");
-
-                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent()
-                {
-                    Type = GameEvent.EventType.Ban,
-                    Data = E.Data,
-                    Origin = E.Origin,
-                    Target = E.Target,
-                    Owner = E.Owner
-                });
             }
             else
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_FAIL"]} {E.Target.Name}");

@@ -28,12 +28,13 @@ namespace SharedLibraryCore.Configuration
         public List<string> AutoMessages { get; set; }
         public List<string> GlobalRules { get; set; }
         public List<MapConfiguration> Maps { get; set; }
+        public List<int> VpnExceptionIds { get; set; }
 
         public IBaseConfiguration Generate()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             Id = Guid.NewGuid().ToString();
-            
+
             EnableWebFront = Utilities.PromptBool(loc["SETUP_ENABLE_WEBFRONT"]);
             EnableMultipleOwners = Utilities.PromptBool(loc["SETUP_ENABLE_MULTIOWN"]);
             EnableSteppedHierarchy = Utilities.PromptBool(loc["SETUP_ENABLE_STEPPEDPRIV"]);
@@ -59,7 +60,7 @@ namespace SharedLibraryCore.Configuration
                 SocialLinkTitle = Utilities.PromptString(loc["SETUP_SOCIAL_TITLE"]);
                 SocialLinkAddress = Utilities.PromptString(loc["SETUP_SOCIAL_LINK"]);
             }
-
+            VpnExceptionIds = new List<int>();
             RConPollRate = 5000;
 
             return this;

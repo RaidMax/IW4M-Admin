@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using SharedLibraryCore.Interfaces;
+using System.Linq;
 
 namespace SharedLibraryCore.Plugins
 {
@@ -11,6 +12,18 @@ namespace SharedLibraryCore.Plugins
         public static List<Command> ActiveCommands = new List<Command>();
         public static List<IPlugin> ActivePlugins = new List<IPlugin>();
         public static List<Assembly> PluginAssemblies = new List<Assembly>();
+
+        private static void LoadScriptPlugins(IManager mgr)
+        {
+            string[] scriptFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.js");
+
+            foreach(string fileName in scriptFileNames)
+            {
+                var plugin = new ScriptPlugin(fileName);
+                plugin.Initialize(mgr).Wait();
+                ActivePlugins.Add(plugin);
+            }
+        }
 
         public static bool Load(IManager Manager)
         {
@@ -72,7 +85,7 @@ namespace SharedLibraryCore.Plugins
                     }
                 }
             }
-
+            LoadScriptPlugins(Manager);
             Manager.GetLogger().WriteInfo($"Loaded {LoadedPlugins} plugins and registered {LoadedCommands} commands.");
             return true;
         }

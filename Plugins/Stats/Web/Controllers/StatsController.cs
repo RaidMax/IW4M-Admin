@@ -66,7 +66,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .Include(s => s.HitDestination)
                     .Include(s => s.CurrentViewAngle)
                     .Include(s => s.PredictedViewAngles)
-                    .OrderBy(s => s.When)
+                    .OrderBy(s => new { s.When, s.Hits })
                     .ToListAsync();
 
                 if (penaltyInfo != null)

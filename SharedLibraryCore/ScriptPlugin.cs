@@ -14,7 +14,7 @@ namespace SharedLibraryCore
 
         public float Version { get; set; }
 
-        public string Author  {get;set;}
+        public string Author { get; set; }
 
         private Jint.Engine ScriptEngine;
         private readonly string FileName;
@@ -49,15 +49,22 @@ namespace SharedLibraryCore
 
         public async Task Initialize(IManager mgr)
         {
+            bool firstRun = ScriptEngine == null;
             // it's been loaded before so we need to call the unload event
-            if (ScriptEngine != null)
+            if (!firstRun)
             {
                 await OnUnloadAsync();
             }
 
             Manager = mgr;
             string script = File.ReadAllText(FileName);
-            ScriptEngine = new Jint.Engine();
+            ScriptEngine = new Jint.Engine(cfg => 
+                cfg.AllowClr(new[] 
+                {
+                    typeof(System.Net.WebRequest).Assembly,
+                    typeof(Objects.Player).Assembly,
+                })
+                .CatchClrExceptions());
 
             ScriptEngine.Execute(script);
             ScriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
@@ -67,7 +74,7 @@ namespace SharedLibraryCore
             this.Name = pluginObject.name;
             this.Version = (float)pluginObject.version;
 
-            if (ScriptEngine != null)
+            if (!firstRun)
             {
                 await OnLoadAsync(mgr);
             }

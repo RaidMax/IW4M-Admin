@@ -1,5 +1,21 @@
 Version 2.2:
+-upgraded projects to .NET 2.1
 -added top player stats page
+-added JavaScript plugin support
+-added webhook script to send notifications to discord
+-added abillity to exempt specific clients from VPN check
+-added reserved slots for privileged users
+-added support for localized permission levels
+-added linux support!
+-added {{NEXTMAP}}, {{ADMINS}}, and {{MOSTPLAYED}} automessage tokens
+-updated event api
+-updated webfront tweak
+-update client search by IP
+-updated event management and client authentication
+-fixed some namespace discrepancies
+-fixed parsing of certain chat messages
+-fixed various bugs
+-introduced new bugs to fix in the next version
 
 Version 2.1:
 CHANGELOG:

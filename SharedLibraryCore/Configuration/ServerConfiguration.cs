@@ -9,8 +9,8 @@ namespace SharedLibraryCore.Configuration
         public string IPAddress { get; set; }
         public ushort Port { get; set; }
         public string Password { get; set; }
-        public List<string> Rules { get; set; }
-        public List<string> AutoMessages { get; set; }
+        public IList<string> Rules { get; set; }
+        public IList<string> AutoMessages { get; set; }
         public bool UseT6MParser { get; set; }
         public bool UseIW5MParser { get; set; }
         public string ManualLogPath { get; set; }

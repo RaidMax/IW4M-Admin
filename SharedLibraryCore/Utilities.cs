@@ -20,6 +20,16 @@ namespace SharedLibraryCore
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization;
 
+        public static string HttpRequest(string location, string header, string headerValue)
+        {
+            using (var RequestClient = new System.Net.Http.HttpClient())
+            {
+                RequestClient.DefaultRequestHeaders.Add(header, headerValue);
+                string response = RequestClient.GetStringAsync(location).Result;
+                return response;
+            }
+        }
+
         //Get string with specified number of spaces -- really only for visual output
         public static String GetSpaces(int Num)
         {

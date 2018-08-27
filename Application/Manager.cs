@@ -415,6 +415,34 @@ namespace IW4MAdmin.Application
                 try
                 {
                     await newEvent.Owner.ExecuteEvent(newEvent);
+
+                    // todo: this is a hacky mess
+                    if (newEvent.Origin?.DelayedEvents?.Count > 0 && 
+                        newEvent.Origin?.State == Player.ClientState.Connected)
+                    {
+                        var events = newEvent.Origin.DelayedEvents;
+
+                        // add the delayed event to the queue 
+                        while (events?.Count > 0)
+                        {
+                            var e = events.Dequeue();
+                            e.Origin = newEvent.Origin;
+                            // check if the target was assigned
+                            if (e.Target != null)
+                            {
+                                // update the target incase they left or have newer info
+                                e.Target = newEvent.Owner.GetPlayersAsList()
+                                    .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
+                                // we have to throw out the event because they left
+                                if (e.Target == null)
+                                {
+                                    Logger.WriteWarning($"Delayed event for {e.Origin} was removed because the target has left");
+                                    continue;
+                                }
+                            }
+                            this.GetEventHandler().AddEvent(e);
+                        }
+                    }
 #if DEBUG
                     Logger.WriteDebug("Processed Event");
 #endif

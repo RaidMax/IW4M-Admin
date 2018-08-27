@@ -47,7 +47,7 @@
     color: rgba(235, 211, 101, 0.75);
 }
 
-.level-bgcolor-moderator,  .level-bgcolor-3 {
+.level-bgcolor-moderator, .level-bgcolor-3 {
     background-color: #f0de8b;
     background-color: rgba(235, 211, 101, 0.75);
 }
@@ -57,7 +57,7 @@
     color: rgba(236, 130, 222, 0.69);
 }
 
-.level-bgcolor-administrator, .level.bgcolor-4 {
+.level-bgcolor-administrator, .level-bgcolor-4 {
     background-color: #f1a8e8;
     background-color: rgba(236, 130, 222, 0.69);
 }
@@ -78,6 +78,14 @@
 
 .level-bgcolor-owner, .level-bgcolor-6 {
     background-color: rgb(0, 122, 204);
+}
+
+.level-color-8 {
+    color: #de4423;
+}
+
+.level-bgcolor-8 {
+    background-color: #de4423;
 }
 
 .profile-meta-title {

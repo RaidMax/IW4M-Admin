@@ -108,7 +108,6 @@
     <Folder Include="master\templates\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="FolderProfile.pubxml" />
     <Content Include="master\config\master.json" />
     <Content Include="requirements.txt" />
     <Content Include="master\templates\index.html" />
@@ -125,7 +124,7 @@
       <Architecture>X64</Architecture>
     </Interpreter>
   </ItemGroup>
- <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
   <!-- Specify pre- and post-build commands in the BeforeBuild and 
        AfterBuild targets below. -->
   <Target Name="BeforeBuild">

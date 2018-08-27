@@ -15,9 +15,9 @@ class Base():
         self.scheduler.start()
         self.scheduler.add_job(
             func=self._remove_staleinstances,
-            trigger=IntervalTrigger(seconds=120),
+            trigger=IntervalTrigger(seconds=60),
             id='stale_instance_remover',
-            name='Remove stale instances if no heartbeat in 120 seconds',
+            name='Remove stale instances if no heartbeat in 60 seconds',
             replace_existing=True
         )
         self.scheduler.add_job(
@@ -41,7 +41,7 @@ class Base():
 
     def _remove_staleinstances(self):
         for key, value in list(self.instance_list.items()):
-            if int(time.time()) - value.last_heartbeat > 120:
+            if int(time.time()) - value.last_heartbeat > 60:
                 print('[_remove_staleinstances] removing stale instance {id}'.format(id=key))
                 del self.instance_list[key]
                 del self.token_list[key]

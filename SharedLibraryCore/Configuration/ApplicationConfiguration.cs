@@ -22,13 +22,13 @@ namespace SharedLibraryCore.Configuration
         public string CustomLocale { get; set; }
         public string ConnectionString { get; set; }
         public int RConPollRate { get; set; } = 5000;
+        public List<int> VpnExceptionIds { get; set; }
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }
         public List<string> AutoMessages { get; set; }
         public List<string> GlobalRules { get; set; }
         public List<MapConfiguration> Maps { get; set; }
-        public List<int> VpnExceptionIds { get; set; }
 
         public IBaseConfiguration Generate()
         {

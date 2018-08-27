@@ -435,6 +435,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         case Penalty.PenaltyType.Ban:
                             if (attacker.Level == Player.Permission.Banned)
                                 break;
+                            await saveLog();
                             await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
                             {
                                 ClientId = 1,
@@ -448,7 +449,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                     }
                                 }
                             });
-                                                        await saveLog();
                             break;
                         case Penalty.PenaltyType.Flag:
                             if (attacker.Level != Player.Permission.User)
@@ -937,7 +937,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int serverId = sv.GetHashCode();
             var statsSvc = ContextThreads[serverId];
 
-           // Log.WriteDebug("Syncing stats contexts");
+            // Log.WriteDebug("Syncing stats contexts");
             await statsSvc.ServerStatsSvc.SaveChangesAsync();
             //await statsSvc.ClientStatSvc.SaveChangesAsync();
             await statsSvc.KillStatsSvc.SaveChangesAsync();

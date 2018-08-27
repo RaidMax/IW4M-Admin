@@ -87,6 +87,7 @@ namespace SharedLibraryCore
         {
             return queuedEvent.Origin != null &&
                                     !queuedEvent.Origin.IsAuthenticated &&
+                                    queuedEvent.Origin.State != Player.ClientState.Connected &&
                                     // we want to allow join and quit events
                                     queuedEvent.Type != EventType.Join &&
                                     queuedEvent.Type != EventType.Quit &&
@@ -104,6 +105,7 @@ namespace SharedLibraryCore
         {
             return queuedEvent.Target != null &&
                                     !queuedEvent.Target.IsAuthenticated &&
+                                    queuedEvent.Target.State != Player.ClientState.Connected &&
                                     queuedEvent.Target.NetworkId != 0;
         }
     }

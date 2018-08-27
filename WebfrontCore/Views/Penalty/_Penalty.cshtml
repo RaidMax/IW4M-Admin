@@ -29,7 +29,7 @@
 <tr class="d-table-row d-md-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
     <td>
-        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevelId }) })
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevelId }) 
     </td>
 </tr>
 
@@ -43,7 +43,7 @@
             }
             else
             {
-                <span> @Model.TimeRemaining @loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]</span>
+                <span> @Model.TimeRemaining</span>
             }
         }
     </td>
@@ -60,7 +60,7 @@
         @Model.Offense
     </td>
     <td>
-        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevelId }) })
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevelId }) 
     </td>
     <td class="text-right text-light">
         @{
@@ -70,7 +70,7 @@
             }
             else
             {
-                <span> @Model.TimeRemaining  <!-- @loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"] --></span>
+                <span> @Model.TimeRemaining </span>
             }
         }
     </td>

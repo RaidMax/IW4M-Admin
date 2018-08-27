@@ -13,37 +13,33 @@ namespace SharedLibraryCore.Plugins
         public static List<IPlugin> ActivePlugins = new List<IPlugin>();
         public static List<Assembly> PluginAssemblies = new List<Assembly>();
 
-        private static void LoadScriptPlugins(IManager mgr)
-        {
-            string[] scriptFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.js");
-
-            foreach(string fileName in scriptFileNames)
-            {
-                var plugin = new ScriptPlugin(fileName);
-                plugin.Initialize(mgr).Wait();
-                ActivePlugins.Add(plugin);
-            }
-        }
-
         public static bool Load(IManager Manager)
         {
             string[] dllFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.dll");
+            string[] scriptFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.js");
 
-            if (dllFileNames.Length == 0)
+            if (dllFileNames.Length == 0 &&
+                scriptFileNames.Length == 0)
             {
                 Manager.GetLogger().WriteDebug(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_NOTFOUND"]);
                 return true;
             }
 
+            // load up the script plugins
+            foreach (string fileName in scriptFileNames)
+            {
+                var plugin = new ScriptPlugin(fileName);
+                plugin.Initialize(Manager).Wait();
+                Manager.GetLogger().WriteDebug($"Loaded script plugin \"{ plugin.Name }\" [{plugin.Version}]");
+                ActivePlugins.Add(plugin);
+            }
+
             ICollection<Assembly> assemblies = new List<Assembly>(dllFileNames.Length);
             foreach (string dllFile in dllFileNames)
             {
-                // byte[] rawDLL = File.ReadAllBytes(dllFile);
-                //Assembly assembly = Assembly.Load(rawDLL);
                 assemblies.Add(Assembly.LoadFrom(dllFile));
             }
 
-            int LoadedPlugins = 0;
             int LoadedCommands = 0;
             foreach (Assembly Plugin in assemblies)
             {
@@ -74,19 +70,17 @@ namespace SharedLibraryCore.Plugins
                                 ActivePlugins.Add(newNotify);
                                 PluginAssemblies.Add(Plugin);
                                 Manager.GetLogger().WriteDebug($"Loaded plugin \"{ newNotify.Name }\" [{newNotify.Version}]");
-                                LoadedPlugins++;
                             }
                         }
 
                         catch (Exception E)
                         {
-                            Manager.GetLogger().WriteWarning($"Could not load plugin {Plugin.Location} - {E.Message}");
+                            Manager.GetLogger().WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"]} {Plugin.Location} - {E.Message}");
                         }
                     }
                 }
             }
-            LoadScriptPlugins(Manager);
-            Manager.GetLogger().WriteInfo($"Loaded {LoadedPlugins} plugins and registered {LoadedCommands} commands.");
+            Manager.GetLogger().WriteInfo($"Loaded {ActivePlugins.Count} plugins and registered {LoadedCommands} commands.");
             return true;
         }
     }

@@ -16,7 +16,6 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Localization;
 
-using IW4MAdmin.Application.Misc;
 using IW4MAdmin.Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
@@ -96,9 +95,6 @@ namespace IW4MAdmin
             {
                 return true;
             }
-            // if they're authenticated but haven't been added yet
-            // we want to set their delayed events
-            var delayedEventQueue = Players[polledPlayer.ClientNumber].DelayedEvents;
 
 #if !DEBUG
             if (polledPlayer.Name.Length < 3)
@@ -253,14 +249,6 @@ namespace IW4MAdmin
                     return true;
                 }
 
-                if (!Manager.GetApplicationSettings().Configuration().EnableClientVPNs &&
-                    Manager.GetApplicationSettings().Configuration().VpnExceptionIds?.FirstOrDefault(i => i == player.ClientId) != null &&
-                    await VPNCheck.UsingVPN(player.IPAddressString, Manager.GetApplicationSettings().Configuration().IPHubAPIKey))
-                {
-                    await player.Kick(Utilities.CurrentLocalization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], new Player() { ClientId = 1 });
-                    return true;
-                }
-
                 var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.Connect,
@@ -271,28 +259,6 @@ namespace IW4MAdmin
                 Manager.GetEventHandler().AddEvent(e);
 
                 player.State = Player.ClientState.Connected;
-
-                // add the delayed event to the queue 
-                while (delayedEventQueue?.Count > 0)
-                {
-                    e = delayedEventQueue.Dequeue();
-                    e.Origin = player;
-                    // check if the target was assigned
-                    if (e.Target != null)
-                    {
-                        // update the target incase they left or have newer info
-                        e.Target = GetPlayersAsList()
-                            .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
-                        // we have to throw out the event because they left
-                        if (e.Target == null)
-                        {
-                            Logger.WriteWarning($"Delayed event for {e.Origin} was removed because the target has left");
-                            continue;
-                        }
-                    }
-                    Manager.GetEventHandler().AddEvent(e);
-                }
-
                 return true;
             }
 
@@ -353,24 +319,54 @@ namespace IW4MAdmin
                 }
             }
 
-            // this allows us to catch exceptions but still run it parallel
-            async Task pluginHandlingAsync(Task onEvent, string pluginName)
+            //// this allows us to catch exceptions but still run it parallel
+            //async Task pluginHandlingAsync(Task onEvent, string pluginName)
+            //{
+            //    try
+            //    {
+            //        await onEvent;
+            //    }
+
+            //    // this happens if a plugin (login) wants to stop commands from executing
+            //    catch (AuthorizationException e)
+            //    {
+            //        await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
+            //        canExecuteCommand = false;
+            //    }
+
+            //    catch (Exception Except)
+            //    {
+            //        Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{pluginName}]");
+            //        Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
+            //        Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
+            //        while (Except.InnerException != null)
+            //        {
+            //            Except = Except.InnerException;
+            //            Logger.WriteDebug($"Inner exception: {Except.Message}");
+            //        }
+            //    }
+            //}
+
+            //var pluginTasks = SharedLibraryCore.Plugins.PluginImporter.ActivePlugins.
+            //    Select(p => pluginHandlingAsync(p.OnEventAsync(E, this), p.Name));
+
+            //// execute all the plugin updates simultaneously
+            //await Task.WhenAll(pluginTasks);
+
+            foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
             {
                 try
                 {
-                    await onEvent;
+                    await plugin.OnEventAsync(E, this);
                 }
-
-                // this happens if a plugin (login) wants to stop commands from executing
                 catch (AuthorizationException e)
                 {
                     await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
                     canExecuteCommand = false;
                 }
-
                 catch (Exception Except)
                 {
-                    Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{pluginName}]");
+                    Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{plugin.Name}]");
                     Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
                     Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
                     while (Except.InnerException != null)
@@ -380,12 +376,6 @@ namespace IW4MAdmin
                     }
                 }
             }
-
-            var pluginTasks = SharedLibraryCore.Plugins.PluginImporter.ActivePlugins.
-                Select(p => pluginHandlingAsync(p.OnEventAsync(E, this), p.Name));
-
-            // execute all the plugin updates simultaneously
-            await Task.WhenAll(pluginTasks);
 
             // hack: this prevents commands from getting executing that 'shouldn't' be
             if (E.Type == GameEvent.EventType.Command &&
@@ -406,19 +396,15 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.Connect)
             {
-                // this may be a fix for a hard to reproduce null exception error
-                lock (ChatHistory)
+                ChatHistory.Add(new ChatInfo()
                 {
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin?.Name ?? "ERROR!",
-                        Message = "CONNECTED",
-                        Time = DateTime.UtcNow
-                    });
-                }
+                    Name = E.Origin?.Name ?? "ERROR!",
+                    Message = "CONNECTED",
+                    Time = DateTime.UtcNow
+                });
 
                 if (E.Origin.Level > Player.Permission.Moderator)
-                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count)); 
             }
 
             else if (E.Type == GameEvent.EventType.Join)
@@ -592,6 +578,8 @@ namespace IW4MAdmin
                         Owner = this
                     };
 
+                    client.State = Player.ClientState.Disconnecting;
+
                     Manager.GetEventHandler().AddEvent(e);
                     // todo: needed?
                     // wait until the disconnect event is complete
@@ -601,11 +589,10 @@ namespace IW4MAdmin
 
             AuthQueue.AuthenticateClients(CurrentPlayers);
 
-            // all polled players should be authenticated
-            var addPlayerTasks = AuthQueue.GetAuthenticatedClients()
-                .Select(client => AddPlayer(client));
-
-            await Task.WhenAll(addPlayerTasks);
+            foreach (var c in AuthQueue.GetAuthenticatedClients())
+            {
+                await AddPlayer(c);
+            }
 
             return CurrentPlayers.Count;
         }

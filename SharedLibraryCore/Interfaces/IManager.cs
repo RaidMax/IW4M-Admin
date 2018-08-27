@@ -11,7 +11,7 @@ namespace SharedLibraryCore.Interfaces
     public interface IManager
     {
         Task Init();
-        Task Start();
+        void Start();
         void Stop();
         ILogger GetLogger();
         IList<Server> GetServers();

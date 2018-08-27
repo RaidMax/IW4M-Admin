@@ -36,7 +36,7 @@ namespace IW4MAdmin.Application.Core
                 if (!AuthenticatedClients.TryGetValue(client.NetworkId, out Player value))
                 {
                     // authenticate them
-                    client.IsAuthenticated = true;
+                    client.State = Player.ClientState.Authenticated;
                     AuthenticatedClients.Add(client.NetworkId, client);
                 }
                 else
@@ -57,7 +57,7 @@ namespace IW4MAdmin.Application.Core
                 if (!AuthenticatedClients.TryGetValue(clientToAuthenticate.NetworkId, out Player value))
                 {
                     // authenticate them
-                    clientToAuthenticate.IsAuthenticated = true;
+                    clientToAuthenticate.State = Player.ClientState.Authenticated;
                     AuthenticatedClients.Add(clientToAuthenticate.NetworkId, clientToAuthenticate);
                 }
             }

@@ -153,7 +153,8 @@ namespace IW4MAdmin.WApplication.RconParsers
                         IPAddress = ipAddress,
                         Ping = Ping,
                         Score = score,
-                        IsBot = false
+                        IsBot = false,
+                        State = Player.ClientState.Connecting
                     };
 
                     StatusPlayers.Add(p);

@@ -13,5 +13,6 @@ namespace SharedLibraryCore.Interfaces
         void WriteDebug(string msg);
         void WriteWarning(string msg);
         void WriteError(string msg);
+        void WriteAssert(bool condition, string msg);
     }
 }

@@ -185,6 +185,7 @@ namespace IW4MAdmin.Application.RconParsers
                         IPAddress = ipAddress,
                         Ping = Ping,
                         Score = score,
+                        State = Player.ClientState.Connecting,
                         IsBot = networkId == 0
                     };
 

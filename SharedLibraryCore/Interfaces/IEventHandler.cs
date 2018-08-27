@@ -13,17 +13,6 @@ namespace SharedLibraryCore.Interfaces
         /// Add a game event event to the queue to be processed
         /// </summary>
         /// <param name="gameEvent">Game event</param>
-        /// <param name="delayedExecution">don't signal that an event has been aded</param>
-        void AddEvent(GameEvent gameEvent, bool delayedExecution = false);
-        /// <summary>
-        /// Get the next event to be processed
-        /// </summary>
-        /// <returns>Game event that needs to be processed</returns>
-        GameEvent GetNextEvent();
-        /// <summary>
-        /// If an event has output. Like executing a command wait until it's available
-        /// </summary>
-        /// <returns>List of output strings</returns>
-        string[] GetEventOutput();
+        void AddEvent(GameEvent gameEvent);
     }
 }

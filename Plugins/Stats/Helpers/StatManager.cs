@@ -831,7 +831,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             double currentKDR = clientStats.SessionDeaths == 0 ? clientStats.SessionKills : clientStats.SessionKills / clientStats.SessionDeaths;
             double alpha = Math.Sqrt(2) / Math.Min(600, clientStats.Kills + clientStats.Deaths);
             clientStats.RollingWeightedKDR = (alpha * currentKDR) + (1.0 - alpha) * clientStats.KDR;
-            double KDRWeight = Math.Round(Math.Pow(clientStats.RollingWeightedKDR, 1.637 / Math.E), 3);
+            double KDRWeight = clientStats.RollingWeightedKDR != 0 ?  Math.Round(Math.Pow(clientStats.RollingWeightedKDR, 1.637 / Math.E), 3) : 0;
 
             // calculate the weight of the new play time against last 10 hours of gameplay
             int totalPlayTime = (clientStats.TimePlayed == 0) ?

@@ -133,7 +133,8 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             Name = regexMatch.Groups[4].ToString().StripColors(),
                             NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
-                            ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString())
+                            ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
+                            State = Player.ClientState.Connecting
                         }
                     };
                 }

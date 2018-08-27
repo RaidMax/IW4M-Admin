@@ -68,32 +68,21 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
-            if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
-                polledPlayer.Ping < 1 ||
+            //if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
+            //    polledPlayer.Ping < 1 ||
+            if (
                 polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
-                return true;
+                return false;
             }
 
-            if (Players[polledPlayer.ClientNumber] != null &&
-                Players[polledPlayer.ClientNumber].NetworkId == polledPlayer.NetworkId &&
-                 Players[polledPlayer.ClientNumber].State == Player.ClientState.Connected)
-            {
-                // update their ping & score 
-                Players[polledPlayer.ClientNumber].Ping = polledPlayer.Ping;
-                Players[polledPlayer.ClientNumber].Score = polledPlayer.Score;
-                return true;
-            }
-
-            if (Players[polledPlayer.ClientNumber] == null)
+            // set this when they are waiting for authentication
+            if (Players[polledPlayer.ClientNumber] == null && 
+                polledPlayer.State == Player.ClientState.Connecting)
             {
                 Players[polledPlayer.ClientNumber] = polledPlayer;
-            }
-
-            if (!polledPlayer.IsAuthenticated)
-            {
-                return true;
+                return false;
             }
 
 #if !DEBUG
@@ -196,7 +185,6 @@ namespace IW4MAdmin
                 player.ClientNumber = polledPlayer.ClientNumber;
                 player.IsBot = polledPlayer.IsBot;
                 player.Score = polledPlayer.Score;
-                player.IsAuthenticated = true;
                 player.CurrentServer = this;
                 Players[player.ClientNumber] = player;
 
@@ -246,17 +234,8 @@ namespace IW4MAdmin
 
                     // they didn't fully connect so empty their slot
                     Players[player.ClientNumber] = null;
-                    return true;
+                    return false;
                 }
-
-                var e = new GameEvent()
-                {
-                    Type = GameEvent.EventType.Connect,
-                    Origin = player,
-                    Owner = this
-                };
-
-                Manager.GetEventHandler().AddEvent(e);
 
                 player.State = Player.ClientState.Connected;
                 return true;
@@ -278,8 +257,10 @@ namespace IW4MAdmin
             {
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving}, state {Leaving.State.ToString()} disconnecting...");
+                Leaving.State = Player.ClientState.Disconnecting;
 
-                if (!Leaving.IsAuthenticated || Leaving.State != Player.ClientState.Connected)
+                // occurs when the player disconnects via log before being authenticated by RCon
+                if (Leaving.State != Player.ClientState.Connected)
                 {
                     Players[cNum] = null;
                 }
@@ -394,8 +375,29 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task ProcessEvent(GameEvent E)
         {
+
+            if (E.Type == GameEvent.EventType.StatusUpdate)
+            {
+                // this event gets called before they're full connected
+                if (E.Origin != null)
+                {
+                    //var existingClient = Players[E.Origin.ClientNumber] ?? E.Origin;
+                    //existingClient.Ping = E.Origin.Ping;
+                    //existingClient.Score = E.Origin.Score;
+                }
+            }
+
             if (E.Type == GameEvent.EventType.Connect)
             {
+                E.Origin.State = Player.ClientState.Authenticated;
+                // add   them to the server 
+                if (!await AddPlayer(E.Origin))
+                {
+                    throw new ServerException("Player didn't pass authorization, so we are discontinuing event");
+                }
+                // hack makes the event propgate with the correct info
+                E.Origin = Players[E.Origin.ClientNumber];
+
                 ChatHistory.Add(new ChatInfo()
                 {
                     Name = E.Origin?.Name ?? "ERROR!",
@@ -404,7 +406,7 @@ namespace IW4MAdmin
                 });
 
                 if (E.Origin.Level > Player.Permission.Moderator)
-                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count)); 
+                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
             }
 
             else if (E.Type == GameEvent.EventType.Join)
@@ -427,16 +429,11 @@ namespace IW4MAdmin
                         Owner = this
                     };
 
-                    if (e.Origin != null)
-                    {
-                        e.Origin.State = Player.ClientState.Disconnecting;
-                    }
-
                     Manager.GetEventHandler().AddEvent(e);
                 }
 
                 else if (origin != null &&
-                    origin.State == Player.ClientState.Connecting)
+                    origin.State != Player.ClientState.Connected)
                 {
                     await RemovePlayer(origin.ClientNumber);
                 }
@@ -540,61 +537,36 @@ namespace IW4MAdmin
                 ChatHistory.Clear();
         }
 
-        async Task<int> PollPlayersAsync()
+        /// <summary>
+        /// lists the connecting and disconnecting clients via RCon response
+        /// array index 0 =  connecting clients
+        /// array index 1 = disconnecting clients
+        /// </summary>
+        /// <returns></returns>
+        async Task<IList<Player>[]> PollPlayersAsync()
         {
+#if DEBUG
             var now = DateTime.Now;
-
-            List<Player> CurrentPlayers = null;
-            try
-            {
-                CurrentPlayers = await this.GetStatusAsync();
-            }
-
-            // when the server has lost connection
-            catch (NetworkException)
-            {
-                Throttled = true;
-                return ClientNum;
-            }
+#endif
+            var currentClients = GetPlayersAsList();
+            var polledClients = await this.GetStatusAsync();
 #if DEBUG
             Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
 #endif
             Throttled = false;
 
-            var clients = GetPlayersAsList();
-            foreach (var client in clients)
+            foreach(var client in polledClients)
             {
-                // remove players that have disconnected
-                if (!CurrentPlayers.Select(c => c.NetworkId).Contains(client.NetworkId))
-                {
-                    // the log should already have started a disconnect event
-                    if (client.State == Player.ClientState.Disconnecting)
-                        continue;
-
-                    var e = new GameEvent()
-                    {
-                        Type = GameEvent.EventType.Disconnect,
-                        Origin = client,
-                        Owner = this
-                    };
-
-                    client.State = Player.ClientState.Disconnecting;
-
-                    Manager.GetEventHandler().AddEvent(e);
-                    // todo: needed?
-                    // wait until the disconnect event is complete
-                    e.OnProcessed.Wait();
-                }
+                // todo: move out somehwere
+                var existingClient = Players[client.ClientNumber] ?? client;
+                existingClient.Ping = client.Ping;
+                existingClient.Score = client.Score;
             }
 
-            AuthQueue.AuthenticateClients(CurrentPlayers);
+            var disconnectingClients = currentClients.Except(polledClients);
+            var connectingClients = polledClients.Except(currentClients);
 
-            foreach (var c in AuthQueue.GetAuthenticatedClients())
-            {
-                await AddPlayer(c);
-            }
-
-            return CurrentPlayers.Count;
+            return new List<Player>[] { connectingClients.ToList(), disconnectingClients.ToList() };
         }
 
         DateTime start = DateTime.Now;
@@ -621,8 +593,49 @@ namespace IW4MAdmin
 
                 try
                 {
-                    int polledPlayerCount = await PollPlayersAsync();
+                    var polledClients = await PollPlayersAsync();
+                    var waiterList = new List<ManualResetEventSlim>();
 
+                    foreach (var disconnectingClient in polledClients[1])
+                    {
+                        if (disconnectingClient.State == Player.ClientState.Disconnecting)
+                        {
+                            continue;
+                        }
+
+                        var e = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Disconnect,
+                            Origin = disconnectingClient,
+                            Owner = this
+                        };
+
+                        Manager.GetEventHandler().AddEvent(e);
+                        // wait until the disconnect event is complete
+                        // because we don't want to try to fill up a slot that's not empty yet
+                        waiterList.Add(e.OnProcessed);
+                    }
+                    // wait for all the disconnect tasks to finish
+                    await Task.WhenAll(waiterList.Select(t => Task.Run(() => t.Wait(5000))));
+
+                    waiterList.Clear();
+                    // this are our new connecting clients
+                    foreach (var client in polledClients[0])
+                    {
+                        var e = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Connect,
+                            Origin = client,
+                            Owner = this
+                        };
+
+                        Manager.GetEventHandler().AddEvent(e);
+                        waiterList.Add(e.OnProcessed);
+                    }
+
+                    // wait for all the connect tasks to finish
+                    await Task.WhenAll(waiterList.Select(t => Task.Run(() => t.Wait())));
+          
                     if (ConnectionErrors > 0)
                     {
                         Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
@@ -793,7 +806,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"\\192.168.88.253\Call of Duty Black Ops II";
+            basepath.Value = @"";
 #endif
             string logPath;
             if (GameName == Game.IW5)

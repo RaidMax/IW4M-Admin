@@ -11,8 +11,24 @@ namespace SharedLibraryCore.Objects
     {
         public enum ClientState
         {
+            /// <summary>
+            /// represents when the client has been detected as joining
+            /// by the log file, but has not be authenticated by RCon
+            /// </summary>
             Connecting,
+            /// <summary>
+            /// represents when the client has been parsed by RCon, 
+            /// but has not been validated against the database
+            /// </summary>
+            Authenticated,
+            /// <summary>
+            /// represents when the client has been authenticated by RCon
+            /// and validated by the database
+            /// </summary>
             Connected,
+            /// <summary>
+            /// represents when the client is leaving (either through RCon or log file)
+            /// </summary>
             Disconnecting,
         }
 
@@ -116,8 +132,6 @@ namespace SharedLibraryCore.Objects
             get { return _name; }
             set { _name = value; }
         }
-        [NotMapped]
-        public bool IsAuthenticated { get; set; }
         [NotMapped]
         public ClientState State { get; set; }
         [NotMapped]

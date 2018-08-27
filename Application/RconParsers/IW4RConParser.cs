@@ -114,7 +114,8 @@ namespace IW4MAdmin.Application.RconParsers
                         IPAddress = ip == 0 ? int.MinValue : ip,
                         Ping = ping,
                         Score = score,
-                        IsBot = ip == 0
+                        IsBot = ip == 0,
+                        State = Player.ClientState.Connecting
                     };
 
                     StatusPlayers.Add(P);

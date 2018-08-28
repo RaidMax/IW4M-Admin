@@ -27,7 +27,7 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
-           var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
+            var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
             return response.Skip(1).ToArray();
         }
 
@@ -117,7 +117,6 @@ namespace IW4MAdmin.Application.RconParsers
                         IsBot = ip == 0,
                         State = Player.ClientState.Connecting
                     };
-
                     StatusPlayers.Add(P);
                 }
             }

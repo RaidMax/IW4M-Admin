@@ -20,14 +20,13 @@ using IW4MAdmin.Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Core;
-using IW4MAdmin.WApplication.RconParsers;
 
 namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
-        private GameLogEvent LogEvent;
+        private GameLogEventDetection LogEvent;
         private ClientAuthentication AuthQueue;
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
@@ -56,8 +55,11 @@ namespace IW4MAdmin
 
         public async Task OnPlayerJoined(Player logClient)
         {
-            if (Players[logClient.ClientNumber] == null ||
-                Players[logClient.ClientNumber].NetworkId != logClient.NetworkId)
+            var existingClient = Players[logClient.ClientNumber];
+
+            if (existingClient == null ||
+                 (existingClient.NetworkId != logClient.NetworkId &&
+                 existingClient.State != Player.ClientState.Connected))
             {
                 Logger.WriteDebug($"Log detected {logClient} joining");
                 Players[logClient.ClientNumber] = logClient;
@@ -68,9 +70,8 @@ namespace IW4MAdmin
 
         override public async Task<bool> AddPlayer(Player polledPlayer)
         {
-            //if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
-            //    polledPlayer.Ping < 1 ||
-            if (
+            if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
+                polledPlayer.Ping < 1 ||
                 polledPlayer.ClientNumber < 0)
             {
                 //Logger.WriteDebug($"Skipping client not in connected state {P}");
@@ -78,7 +79,7 @@ namespace IW4MAdmin
             }
 
             // set this when they are waiting for authentication
-            if (Players[polledPlayer.ClientNumber] == null && 
+            if (Players[polledPlayer.ClientNumber] == null &&
                 polledPlayer.State == Player.ClientState.Connecting)
             {
                 Players[polledPlayer.ClientNumber] = polledPlayer;
@@ -186,6 +187,8 @@ namespace IW4MAdmin
                 player.IsBot = polledPlayer.IsBot;
                 player.Score = polledPlayer.Score;
                 player.CurrentServer = this;
+
+                player.DelayedEvents = (Players[player.ClientNumber]?.DelayedEvents) ?? new Queue<GameEvent>();
                 Players[player.ClientNumber] = player;
 
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
@@ -278,7 +281,6 @@ namespace IW4MAdmin
         public override async Task ExecuteEvent(GameEvent E)
         {
             bool canExecuteCommand = true;
-            Manager.GetEventApi().OnServerEvent(this, E);
             await ProcessEvent(E);
 
             Command C = null;
@@ -387,15 +389,16 @@ namespace IW4MAdmin
                 }
             }
 
-            if (E.Type == GameEvent.EventType.Connect)
+            else if (E.Type == GameEvent.EventType.Connect)
             {
                 E.Origin.State = Player.ClientState.Authenticated;
                 // add   them to the server 
                 if (!await AddPlayer(E.Origin))
                 {
-                    throw new ServerException("Player didn't pass authorization, so we are discontinuing event");
+                    E.Origin.State = Player.ClientState.Connecting;
+                    throw new ServerException("client didn't pass authorization, so we are discontinuing event");
                 }
-                // hack makes the event propgate with the correct info
+                // hack: makes the event propgate with the correct info
                 E.Origin = Players[E.Origin.ClientNumber];
 
                 ChatHistory.Add(new ChatInfo()
@@ -416,27 +419,27 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Quit)
             {
-                var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
+                //var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
 
-                if (origin != null &&
-                    // we only want to forward the event if they are connected. 
-                    origin.State == Player.ClientState.Connected)
-                {
-                    var e = new GameEvent()
-                    {
-                        Type = GameEvent.EventType.Disconnect,
-                        Origin = origin,
-                        Owner = this
-                    };
+                //if (origin != null &&
+                //    // we only want to forward the event if they are connected. 
+                //    origin.State == Player.ClientState.Connected)
+                //{
+                //    var e = new GameEvent()
+                //    {
+                //        Type = GameEvent.EventType.Disconnect,
+                //        Origin = origin,
+                //        Owner = this
+                //    };
 
-                    Manager.GetEventHandler().AddEvent(e);
-                }
+                //    Manager.GetEventHandler().AddEvent(e);
+                //}
 
-                else if (origin != null &&
-                    origin.State != Player.ClientState.Connected)
-                {
-                    await RemovePlayer(origin.ClientNumber);
-                }
+                //else if (origin != null &&
+                //    origin.State != Player.ClientState.Connected)
+                //{
+                //    await RemovePlayer(origin.ClientNumber);
+                //}
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)
@@ -448,7 +451,13 @@ namespace IW4MAdmin
                     Time = DateTime.UtcNow
                 });
 
+                var currentState = E.Origin.State;
                 await RemovePlayer(E.Origin.ClientNumber);
+
+                if (currentState != Player.ClientState.Connected)
+                {
+                    throw new ServerException("Disconnecting player was not in a connected state");
+                }
             }
 
             if (E.Type == GameEvent.EventType.Say)
@@ -555,7 +564,7 @@ namespace IW4MAdmin
 #endif
             Throttled = false;
 
-            foreach(var client in polledClients)
+            foreach (var client in polledClients)
             {
                 // todo: move out somehwere
                 var existingClient = Players[client.ClientNumber] ?? client;
@@ -564,7 +573,7 @@ namespace IW4MAdmin
             }
 
             var disconnectingClients = currentClients.Except(polledClients);
-            var connectingClients = polledClients.Except(currentClients);
+            var connectingClients = polledClients.Except(currentClients.Where(c => c.State == Player.ClientState.Connected));
 
             return new List<Player>[] { connectingClients.ToList(), disconnectingClients.ToList() };
         }
@@ -634,8 +643,8 @@ namespace IW4MAdmin
                     }
 
                     // wait for all the connect tasks to finish
-                    await Task.WhenAll(waiterList.Select(t => Task.Run(() => t.Wait())));
-          
+                    await Task.WhenAll(waiterList.Select(t => Task.Run(() => t.Wait(5000))));
+
                     if (ConnectionErrors > 0)
                     {
                         Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
@@ -806,10 +815,10 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"";
+            basepath.Value = @"D:\";
 #endif
             string logPath;
-            if (GameName == Game.IW5)
+            if (GameName == Game.IW5 || ServerConfig.ManualLogPath?.Length > 0)
             {
                 logPath = ServerConfig.ManualLogPath;
             }
@@ -831,11 +840,13 @@ namespace IW4MAdmin
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG
                 throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
+#else
+                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
 #endif
             }
             else
             {
-                LogEvent = new GameLogEvent(this, logPath, logfile.Value);
+                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
             }
 
             Logger.WriteInfo($"Log file is {logPath}");

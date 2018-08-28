@@ -18,7 +18,7 @@ namespace SharedLibraryCore
     {
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
         public static Encoding EncodingType;
-        public static Localization.Layout CurrentLocalization;
+        public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
 
         public static string HttpRequest(string location, string header, string headerValue)
         {

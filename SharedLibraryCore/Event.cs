@@ -93,6 +93,7 @@ namespace SharedLibraryCore
                                     queuedEvent.Type != EventType.Connect &&
                                     queuedEvent.Type != EventType.Join &&
                                     queuedEvent.Type != EventType.Quit &&
+                                    queuedEvent.Type != EventType.Disconnect &&
                                     // we don't care about unknown events
                                     queuedEvent.Origin.NetworkId != 0;
         }

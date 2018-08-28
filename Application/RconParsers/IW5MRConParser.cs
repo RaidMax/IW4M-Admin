@@ -10,7 +10,7 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.RCon;
 using SharedLibraryCore.Exceptions;
 
-namespace IW4MAdmin.WApplication.RconParsers
+namespace IW4MAdmin.Application.RconParsers
 {
     public class IW5MRConParser : IRConParser
     {

@@ -3,47 +3,63 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 
 namespace IW4MAdmin.Application.IO
 {
-    class GameLogReader : IGameLogReader
+    /// <summary>
+    /// provides capibility of reading log files over HTTP
+    /// </summary>
+    class GameLogReaderHttp : IGameLogReader
     {
-        IEventParser Parser;
+        readonly IEventParser Parser;
         readonly string LogFile;
 
-        public long Length => new FileInfo(LogFile).Length;
-
-        public int UpdateInterval => 100;
-
-        public GameLogReader(string logFile, IEventParser parser)
+        public GameLogReaderHttp(string logFile, IEventParser parser)
         {
             LogFile = logFile;
             Parser = parser;
         }
 
+        public long Length
+        {
+            get
+            {
+                using (var cl = new HttpClient())
+                {
+                    using (var re = cl.GetAsync($"{LogFile}?length=1").Result)
+                    {
+                        using (var content = re.Content)
+                        {
+                            return Convert.ToInt64(content.ReadAsStringAsync().Result ?? "0");
+                        }
+                    }
+                }
+            }
+        }
+
+        public int UpdateInterval => 1000;
+
         public ICollection<GameEvent> EventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
-            // allocate the bytes for the new log lines
-            List<string> logLines = new List<string>();
-
-            // open the file as a stream
-            using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
+            string log;
+            using (var cl = new HttpClient())
             {
-                // take the old start position and go back the number of new characters
-                rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
-                // the difference should be in the range of a int :P
-                string newLine;
-                while (!String.IsNullOrEmpty(newLine = rd.ReadLine()))
+                using (var re = cl.GetAsync($"{LogFile}?start={fileSizeDiff}").Result)
                 {
-                    logLines.Add(newLine);
+                    using (var content = re.Content)
+                    {
+                        log = content.ReadAsStringAsync().Result;
+                    }
                 }
             }
 
             List<GameEvent> events = new List<GameEvent>();
 
             // parse each line
-            foreach (string eventLine in logLines)
+            foreach (string eventLine in log.Split(Environment.NewLine))
             {
                 if (eventLine.Length > 0)
                 {
@@ -52,7 +68,7 @@ namespace IW4MAdmin.Application.IO
                         // todo: catch elsewhere
                         events.Add(Parser.GetEvent(server, eventLine));
                     }
-                    
+
                     catch (Exception e)
                     {
                         Program.ServerManager.GetLogger().WriteWarning("Could not properly parse event line");

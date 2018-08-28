@@ -625,7 +625,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 int individualClientRanking = await ctx.Set<EFRating>()
                     .Where(c => c.ServerId == clientStats.ServerId)
                     .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
-                    .Where(r => r.ActivityAmount > 3600)
+                    .Where(r => r.ActivityAmount > Plugin.Config.Configuration().TopPlayersMinPlayTime)
                     .Where(r => r.RatingHistory.Client.LastConnection > thirtyDaysAgo)
                     .Where(c => c.RatingHistory.ClientId != client.ClientId)
                     .Where(r => r.Newest)
@@ -670,11 +670,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 });
 
                 // weight the overall performance based on play time
-                var performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
+                double performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
+
+                if (double.IsNaN(performanceAverage))
+                {
+                    performanceAverage = clientStatsList.Average(p => p.Performance);
+                }
 
                 int overallClientRanking = await ctx.Set<EFRating>()
                     .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
-                    .Where(r => r.ActivityAmount > 3600)
+                    .Where(r => r.ActivityAmount > Plugin.Config.Configuration().TopPlayersMinPlayTime)
                     .Where(r => r.RatingHistory.Client.LastConnection > thirtyDaysAgo)
                     .Where(r => r.RatingHistory.ClientId != client.ClientId)
                     .Where(r => r.ServerId == null)

@@ -50,9 +50,6 @@ namespace IW4MAdmin.Application
                 Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
 
-                using (var db = new DatabaseContext(ServerManager.GetApplicationSettings().Configuration()?.ConnectionString))
-                    new ContextSeed(db).Seed().Wait();
-
                 var api = API.Master.Endpoint.Get();
 
                 var version = new API.Master.VersionInfo()

@@ -43,6 +43,8 @@ namespace SharedLibraryCore.Database
                 currentPath = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
                     $"{Path.DirectorySeparatorChar}{currentPath}" :
                     currentPath;
+                // todo: fix later
+
                 var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);
@@ -98,22 +100,28 @@ namespace SharedLibraryCore.Database
 
             // adapted from
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
-#if !DEBUG
-            foreach (string dllPath in Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
-#else
+//#if DEBUG == TRUE
+//           // foreach (string dllPath in Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
+//#else
+//todo: fix the debug thingie for entity scanning
             IEnumerable<string> directoryFiles;
-            try
+
+            string pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}netcoreapp2.0{Path.DirectorySeparatorChar}Plugins";
+
+            if (!Directory.Exists(pluginDir))
             {
-                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}netcoreapp2.0{Path.DirectorySeparatorChar}Plugins").Where(f => f.Contains(".dll"));
+                pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}Plugins";
+
+                if (!Directory.Exists(pluginDir))
+                {
+                    pluginDir = Utilities.OperatingDirectory;
+                }
             }
 
-            catch (Exception)
-            {
-                directoryFiles = Directory.GetFiles($@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}Plugins").Where(f => f.Contains(".dll"));
-            }
+            directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.Contains(".dll"));
 
             foreach (string dllPath in directoryFiles)
-#endif
+//#endif
             {
                 Assembly library;
                 try

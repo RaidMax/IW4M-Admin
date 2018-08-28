@@ -21,6 +21,7 @@ using Newtonsoft.Json.Linq;
 using System.Text;
 using IW4MAdmin.Application.API.Master;
 using System.Reflection;
+using SharedLibraryCore.Database;
 
 namespace IW4MAdmin.Application
 {
@@ -36,7 +37,7 @@ namespace IW4MAdmin.Application
         // define what the delagate function looks like
         public delegate void OnServerEventEventHandler(object sender, GameEventArgs e);
         // expose the event handler so we can execute the events
-        public OnServerEventEventHandler OnServerEvent { get; private set; }
+        public OnServerEventEventHandler OnServerEvent { get;  set; }
         public DateTime StartTime { get; private set; }
 
         static ApplicationManager Instance;
@@ -46,10 +47,10 @@ namespace IW4MAdmin.Application
         ClientService ClientSvc;
         readonly AliasService AliasSvc;
         readonly PenaltyService PenaltySvc;
-        BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
+        public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         EventApi Api;
         GameEventHandler Handler;
-        ManualResetEventSlim OnEvent;
+        ManualResetEventSlim OnQuit;
         readonly IPageList PageList;
 
         public class GameEventArgs : System.ComponentModel.AsyncCompletedEventArgs
@@ -78,7 +79,7 @@ namespace IW4MAdmin.Application
             //ServerEventOccurred += Api.OnServerEvent;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             StartTime = DateTime.UtcNow;
-            OnEvent = new ManualResetEventSlim();
+            OnQuit = new ManualResetEventSlim();
             PageList = new PageList();
             OnServerEvent += OnServerEventAsync;
         }
@@ -110,15 +111,16 @@ namespace IW4MAdmin.Application
                 await newEvent.Owner.ExecuteEvent(newEvent);
 
                 //// todo: this is a hacky mess
-                if (newEvent.Origin?.DelayedEvents?.Count > 0 &&
+                if (newEvent.Origin?.DelayedEvents.Count > 0 &&
                     newEvent.Origin?.State == Player.ClientState.Connected)
                 {
                     var events = newEvent.Origin.DelayedEvents;
 
                     // add the delayed event to the queue 
-                    while (events?.Count > 0)
+                    while(events.Count > 0)
                     {
                         var e = events.Dequeue();
+
                         e.Origin = newEvent.Origin;
                         // check if the target was assigned
                         if (e.Target != null)
@@ -133,9 +135,12 @@ namespace IW4MAdmin.Application
                                 continue;
                             }
                         }
+                        Logger.WriteDebug($"Adding delayed event of type {e.Type} for {e.Origin} back for processing");
                         this.GetEventHandler().AddEvent(e);
                     }
                 }
+
+                Api.OnServerEvent(this, newEvent);
 #if DEBUG
                     Logger.WriteDebug("Processed Event");
 #endif
@@ -248,6 +253,11 @@ namespace IW4MAdmin.Application
             Running = true;
 
             #region DATABASE
+            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString))
+            {
+                await new ContextSeed(db).Seed();
+            }
+
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
                 {
@@ -513,8 +523,8 @@ namespace IW4MAdmin.Application
 
             while (Running)
             {
-                OnEvent.Wait();
-                OnEvent.Reset();
+                OnQuit.Wait();
+                OnQuit.Reset();
             }
             _servers.Clear();
         }
@@ -558,7 +568,7 @@ namespace IW4MAdmin.Application
 
         public void SetHasEvent()
         {
-            OnEvent.Set();
+            OnQuit.Set();
         }
 
         public IList<Assembly> GetPluginAssemblies() => SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies;

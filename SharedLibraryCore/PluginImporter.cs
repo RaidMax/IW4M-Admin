@@ -15,8 +15,21 @@ namespace SharedLibraryCore.Plugins
 
         public static bool Load(IManager Manager)
         {
-            string[] dllFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.dll");
-            string[] scriptFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.js");
+            string pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
+            string[] dllFileNames = null;
+            string[] scriptFileNames = null;
+
+            if (Directory.Exists(pluginDir))
+            {
+                dllFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.dll");
+                scriptFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.js");
+            }
+
+            else
+            {
+                dllFileNames = new string[0];
+                scriptFileNames = new string[0];
+            }
 
             if (dllFileNames.Length == 0 &&
                 scriptFileNames.Length == 0)

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
 {
-    class GameLogEvent
+    class GameLogEventDetection
     {
         Server Server;
         long PreviousFileSize;
-        GameLogReader Reader;
+        IGameLogReader Reader;
         readonly string GameLogFile;
 
         class EventState
@@ -19,14 +19,22 @@ namespace IW4MAdmin.Application.IO
             public string ServerId { get; set; }
         }
 
-        public GameLogEvent(Server server, string gameLogPath, string gameLogName)
+        public GameLogEventDetection(Server server, string gameLogPath, string gameLogName)
         {
             GameLogFile = gameLogPath;
-            Reader = new GameLogReader(gameLogPath, server.EventParser);
+            // todo: abtract this more
+            if (gameLogPath.StartsWith("http"))
+            {
+                Reader = new GameLogReaderHttp(gameLogPath, server.EventParser);
+            }
+            else
+            {
+                Reader = new GameLogReader(gameLogPath, server.EventParser);
+            }
             Server = server;
 
             Task.Run(async () =>
-           {
+            {
                while (!server.Manager.ShutdownRequested())
                {
                    if ((server.Manager as ApplicationManager).IsInitialized)
@@ -44,7 +52,7 @@ namespace IW4MAdmin.Application.IO
 
         private void OnEvent(object state)
         {
-            long newLength = new FileInfo(GameLogFile).Length;
+            long newLength = Reader.Length;
 
             try
             {

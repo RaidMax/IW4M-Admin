@@ -40,7 +40,7 @@ namespace SharedLibraryCore.RCon
         ILogger Log;
         int FailedSends;
         int FailedReceives;
-        DateTime LastQuery;
+        static DateTime LastQuery;
         string response;
 
         ManualResetEvent OnConnected;

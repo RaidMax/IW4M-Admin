@@ -27,11 +27,9 @@ namespace IW4MAdmin
     {
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
-        private ClientAuthentication AuthQueue;
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
         {
-            AuthQueue = new ClientAuthentication();
         }
 
         public override int GetHashCode()
@@ -603,7 +601,7 @@ namespace IW4MAdmin
                 try
                 {
                     var polledClients = await PollPlayersAsync();
-                    var waiterList = new List<ManualResetEventSlim>();
+                    var waiterList = new List<SemaphoreSlim>();
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
@@ -625,7 +623,7 @@ namespace IW4MAdmin
                         waiterList.Add(e.OnProcessed);
                     }
                     // wait for all the disconnect tasks to finish
-                    await Task.WhenAll(waiterList.Select(t => Task.Run(() => t.Wait(5000))));
+                    await Task.WhenAll(waiterList.Select(t => t.WaitAsync()));
 
                     waiterList.Clear();
                     // this are our new connecting clients
@@ -643,7 +641,7 @@ namespace IW4MAdmin
                     }
 
                     // wait for all the connect tasks to finish
-                    await Task.WhenAll(waiterList.Select(t => Task.Run(() => t.Wait(5000))));
+                    await Task.WhenAll(waiterList.Select(t => t.WaitAsync()));
 
                     if (ConnectionErrors > 0)
                     {
@@ -835,7 +833,7 @@ namespace IW4MAdmin
                 logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{logPath}", @"[A-Z]:", "");
             }
 
-            if (!File.Exists(logPath))
+            if (!File.Exists(logPath) && !logPath.StartsWith("http"))
             {
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG
@@ -850,6 +848,8 @@ namespace IW4MAdmin
             }
 
             Logger.WriteInfo($"Log file is {logPath}");
+
+            Task.Run(() => LogEvent.PollForChanges());
 #if !DEBUG
             await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
@@ -1002,15 +1002,17 @@ namespace IW4MAdmin
                 // this is set only because they're still in the server.
                 Target.Level = Player.Permission.Banned;
 
-                // let the api know that a ban occured
-                Manager.GetEventHandler().AddEvent(new GameEvent()
+                var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.Ban,
                     Data = Message,
                     Origin = Origin,
                     Target = Target,
                     Owner = this
-                });
+                };
+
+                // let the api know that a ban occured
+                Manager.GetEventHandler().AddEvent(e);
 
 #if !DEBUG
                 string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");

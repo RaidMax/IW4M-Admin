@@ -23,7 +23,6 @@ namespace SharedLibraryCore.Interfaces
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
         IDictionary<int, Player> GetPrivilegedClients();
-        IEventApi GetEventApi();
         /// <summary>
         /// Get the event handlers
         /// </summary>

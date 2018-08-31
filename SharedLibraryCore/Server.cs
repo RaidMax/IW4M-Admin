@@ -118,25 +118,17 @@ namespace SharedLibraryCore
         {
 #if !DEBUG
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, Message);
-
-            var e = new GameEvent()
-            {
-                Message = formattedMessage,
-                Data = formattedMessage,
-                Owner = this,
-                Type = GameEvent.EventType.Broadcast,
-            };
-
-            Manager.GetEventHandler().AddEvent(e);
 #else
             Logger.WriteVerbose(Message.StripColors());
 #endif
-            Manager.GetEventHandler().AddEvent(new GameEvent()
+            var e = new GameEvent()
             {
                 Type = GameEvent.EventType.Broadcast,
                 Data = Message,
                 Owner = this
-            });
+            };
+
+            Manager.GetEventHandler().AddEvent(e);
 
             await Task.CompletedTask;
         }

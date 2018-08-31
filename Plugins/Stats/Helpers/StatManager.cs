@@ -470,6 +470,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 Owner = attacker.CurrentServer,
                                 Type = GameEvent.EventType.Flag
                             };
+                            // because we created an event it must be processed by the manager
+                            // even if it didn't really do anything
+                            Manager.GetEventHandler().AddEvent(e);
                             await new CFlag().ExecuteAsync(e);
                             break;
                     }
@@ -834,9 +837,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
             double currentKDR = clientStats.SessionDeaths == 0 ? clientStats.SessionKills : clientStats.SessionKills / clientStats.SessionDeaths;
-            double alpha = Math.Sqrt(2) / Math.Min(600, clientStats.Kills + clientStats.Deaths);
+            double alpha = Math.Sqrt(2) / Math.Min(600, Math.Max(clientStats.Kills + clientStats.Deaths, 1));
             clientStats.RollingWeightedKDR = (alpha * currentKDR) + (1.0 - alpha) * clientStats.KDR;
-            double KDRWeight = clientStats.RollingWeightedKDR != 0 ?  Math.Round(Math.Pow(clientStats.RollingWeightedKDR, 1.637 / Math.E), 3) : 0;
+            double KDRWeight = Math.Round(Math.Pow(clientStats.RollingWeightedKDR, 1.637 / Math.E), 3);
 
             // calculate the weight of the new play time against last 10 hours of gameplay
             int totalPlayTime = (clientStats.TimePlayed == 0) ?

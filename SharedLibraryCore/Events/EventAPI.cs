@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-
-using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 
-namespace IW4MAdmin.Application.API
+namespace SharedLibraryCore.Events
 {
-    class EventApi : IEventApi
+    public class EventApi
     {
-        private const int MaxEvents = 100;
-        private Queue<EventInfo> RecentEvents = new Queue<EventInfo>();
+        const int MaxEvents = 100;
+        static Queue<EventInfo> RecentEvents = new Queue<EventInfo>();
 
-        public IEnumerable<EventInfo> GetEvents(bool shouldConsume)
+        public static IEnumerable<EventInfo> GetEvents(bool shouldConsume)
         {
             var eventList = RecentEvents.ToArray();
 
@@ -26,8 +22,9 @@ namespace IW4MAdmin.Application.API
             return eventList;
         }
 
-        public void OnServerEvent(object sender, GameEvent E)
+        public static void OnGameEvent(object sender, GameEventArgs eventState)
         {
+            var E = eventState.Event;
             // don't want to clog up the api with unknown events
             if (E.Type == GameEvent.EventType.Unknown)
                 return;
@@ -71,7 +68,7 @@ namespace IW4MAdmin.Application.API
         /// Adds event to the list and removes first added if reached max capacity
         /// </summary>
         /// <param name="info">EventInfo to add</param>
-        private void AddNewEvent(EventInfo info)
+        private static void AddNewEvent(EventInfo info)
         {
             // remove the first added event
             if (RecentEvents.Count >= MaxEvents)

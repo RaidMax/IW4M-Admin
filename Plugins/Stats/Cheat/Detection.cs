@@ -53,7 +53,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             if ((kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
                 kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
                 kill.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
-                kill.HitLoc == IW4Info.HitLocation.none)
+                kill.HitLoc == IW4Info.HitLocation.none || kill.TimeOffset - LastOffset < 0)
                 return new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Any,
@@ -131,7 +131,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             double currentStrain = Strain.GetStrain(isDamage, kill.Damage, kill.Distance / 0.0254, kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
-            //double currentWeightedStrain = (currentStrain * ClientStats.SPM) / 170.0;
             LastOffset = kill.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)

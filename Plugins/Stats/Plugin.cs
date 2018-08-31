@@ -76,8 +76,12 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 13)
+                    {
+                        // todo: remove me
+                        E.Owner.Logger.WriteDebug($"Starting Add script hit (kill) for event with id {E.Id}");
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
+                    }
                     break;
                 case GameEvent.EventType.Kill:
                     if (!E.Owner.CustomCallback)
@@ -90,8 +94,12 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 13)
+                    {
+                        // todo: remove me
+                        E.Owner.Logger.WriteDebug($"Starting Add script hit (damage) for event with id {E.Id}");
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
+                    }
                     break;
             }
         }

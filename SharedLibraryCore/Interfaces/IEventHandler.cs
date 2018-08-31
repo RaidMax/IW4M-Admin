@@ -13,6 +13,6 @@ namespace SharedLibraryCore.Interfaces
         /// Add a game event event to the queue to be processed
         /// </summary>
         /// <param name="gameEvent">Game event</param>
-        void AddEvent(GameEvent gameEvent);
+        bool AddEvent(GameEvent gameEvent);
     }
 }

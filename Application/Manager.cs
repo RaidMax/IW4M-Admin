@@ -22,6 +22,7 @@ using System.Text;
 using IW4MAdmin.Application.API.Master;
 using System.Reflection;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Events;
 
 namespace IW4MAdmin.Application
 {
@@ -33,7 +34,6 @@ namespace IW4MAdmin.Application
         public ILogger Logger { get; private set; }
         public bool Running { get; private set; }
         public bool IsInitialized { get; private set; }
-        //public EventHandler<GameEvent> ServerEventOccurred { get; private set; }
         // define what the delagate function looks like
         public delegate void OnServerEventEventHandler(object sender, GameEventArgs e);
         // expose the event handler so we can execute the events
@@ -48,21 +48,9 @@ namespace IW4MAdmin.Application
         readonly AliasService AliasSvc;
         readonly PenaltyService PenaltySvc;
         public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
-        EventApi Api;
         GameEventHandler Handler;
         ManualResetEventSlim OnQuit;
         readonly IPageList PageList;
-
-        public class GameEventArgs : System.ComponentModel.AsyncCompletedEventArgs
-        {
-
-            public GameEventArgs(Exception error, bool cancelled, GameEvent userState) : base(error, cancelled, userState)
-            {
-                Event = userState;
-            }
-
-            public GameEvent Event { get; }
-        }
 
         private ApplicationManager()
         {
@@ -75,13 +63,12 @@ namespace IW4MAdmin.Application
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
             PrivilegedClients = new Dictionary<int, Player>();
-            Api = new EventApi();
-            //ServerEventOccurred += Api.OnServerEvent;
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             StartTime = DateTime.UtcNow;
             OnQuit = new ManualResetEventSlim();
             PageList = new PageList();
             OnServerEvent += OnServerEventAsync;
+            OnServerEvent += EventApi.OnGameEvent;
         }
 
         private async void OnServerEventAsync(object sender, GameEventArgs args)
@@ -108,7 +95,7 @@ namespace IW4MAdmin.Application
                     return;
                 }
 
-                await newEvent.Owner.ExecuteEvent(newEvent);
+          
 
                 //// todo: this is a hacky mess
                 if (newEvent.Origin?.DelayedEvents.Count > 0 &&
@@ -119,7 +106,20 @@ namespace IW4MAdmin.Application
                     // add the delayed event to the queue 
                     while(events.Count > 0)
                     {
-                        var e = events.Dequeue();
+                        var oldEvent = events.Dequeue();
+
+                        var e = new GameEvent()
+                        {
+                            Type = oldEvent.Type,
+                            Origin = newEvent.Origin,
+                            Data = oldEvent.Data,
+                            Extra = oldEvent.Extra,
+                            Owner = oldEvent.Owner,
+                            Message = oldEvent.Message,
+                            Target = oldEvent.Target,
+                            OnProcessed = oldEvent.OnProcessed,
+                            Remote = oldEvent.Remote
+                        };
 
                         e.Origin = newEvent.Origin;
                         // check if the target was assigned
@@ -140,9 +140,10 @@ namespace IW4MAdmin.Application
                     }
                 }
 
-                Api.OnServerEvent(this, newEvent);
+                await newEvent.Owner.ExecuteEvent(newEvent);
+
 #if DEBUG
-                    Logger.WriteDebug("Processed Event");
+                    Logger.WriteDebug($"Processed event with id {newEvent.Id}");
 #endif
             }
 
@@ -169,7 +170,7 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug("Error Trace: " + ex.StackTrace);
             }
             // tell anyone waiting for the output that we're done
-            newEvent.OnProcessed.Set();
+            newEvent.OnProcessed.Release();
         }
 
         public IList<Server> GetServers()
@@ -423,7 +424,15 @@ namespace IW4MAdmin.Application
 
                     Logger.WriteVerbose($"{Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"]} {ServerInstance.Hostname}");
                     // add the start event for this server
-                    Handler.AddEvent(new GameEvent(GameEvent.EventType.Start, "Server started", null, null, ServerInstance));
+
+                    var e = new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Start,
+                        Data = $"{ServerInstance.GameName} started",
+                        Owner = ServerInstance
+                    };
+
+                    Handler.AddEvent(e);
                 }
 
                 catch (ServerException e)
@@ -562,7 +571,6 @@ namespace IW4MAdmin.Application
         public PenaltyService GetPenaltyService() => PenaltySvc;
         public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
         public IDictionary<int, Player> GetPrivilegedClients() => PrivilegedClients;
-        public IEventApi GetEventApi() => Api;
         public bool ShutdownRequested() => !Running;
         public IEventHandler GetEventHandler() => Handler;
 

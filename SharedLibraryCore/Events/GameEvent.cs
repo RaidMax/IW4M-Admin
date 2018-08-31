@@ -44,28 +44,16 @@ namespace SharedLibraryCore
             StatusUpdate
         }
 
-        public GameEvent(EventType t, string d, Player O, Player T, Server S)
-        {
-            Type = t;
-            Data = d?.Trim();
-            Origin = O;
-            Target = T;
-            Owner = S;
-            OnProcessed = new ManualResetEventSlim();
-            Time = DateTime.UtcNow;
-            CurrentEventId++;
-            Id = CurrentEventId;
-        }
+        static long NextEventId;
+        static long GetNextEventId() => Interlocked.Increment(ref NextEventId);
 
         public GameEvent()
         {
-            OnProcessed = new ManualResetEventSlim();
+            OnProcessed = new SemaphoreSlim(0);
+            OnProcessed.Release();
             Time = DateTime.UtcNow;
-            CurrentEventId++;
-            Id = CurrentEventId;
+            Id = GetNextEventId();
         }
-
-        private static long CurrentEventId;
 
         public EventType Type;
         public string Data; // Data is usually the message sent by player
@@ -75,8 +63,8 @@ namespace SharedLibraryCore
         public Server Owner;
         public Boolean Remote = false;
         public object Extra { get; set; }
-        public ManualResetEventSlim OnProcessed { get; set; }
-        public DateTime Time { get; private set; }
+        public SemaphoreSlim OnProcessed { get; set; }
+        public DateTime Time { get; set; }
         public long Id { get; private set; }
 
         /// <summary>

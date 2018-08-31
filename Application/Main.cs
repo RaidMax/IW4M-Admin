@@ -106,7 +106,7 @@ namespace IW4MAdmin.Application
 
                 ServerManager.Init().Wait();
 
-                var consoleTask = Task.Run(() =>
+                var consoleTask = Task.Run(async () =>
                 {
                     String userInput;
                     Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
@@ -136,7 +136,7 @@ namespace IW4MAdmin.Application
                             };
 
                             ServerManager.GetEventHandler().AddEvent(E);
-                            E.OnProcessed.Wait(5000);
+                            await E.OnProcessed.WaitAsync(30 * 1000);
                         }
                         Console.Write('>');
 

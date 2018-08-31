@@ -1,7 +1,9 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
@@ -31,44 +33,36 @@ namespace IW4MAdmin.Application.IO
             {
                 Reader = new GameLogReader(gameLogPath, server.EventParser);
             }
+
             Server = server;
-
-            Task.Run(async () =>
-            {
-               while (!server.Manager.ShutdownRequested())
-               {
-                   if ((server.Manager as ApplicationManager).IsInitialized)
-                   {
-                       OnEvent(new EventState()
-                       {
-                           Log = server.Manager.GetLogger(),
-                           ServerId = server.ToString()
-                       });
-                   }
-                   await Task.Delay(100);
-               }
-           });
         }
 
-        private void OnEvent(object state)
+        public void PollForChanges()
         {
-            long newLength = Reader.Length;
-
-            try
+            while (!Server.Manager.ShutdownRequested())
             {
-                UpdateLogEvents(newLength);
-            }
+                if ((Server.Manager as ApplicationManager).IsInitialized)
+                {
+                    try
+                    {
+                        UpdateLogEvents();
+                    }
 
-            catch (Exception e)
-            {
-                ((EventState)state).Log.WriteWarning($"Failed to update log event for {((EventState)state).ServerId}");
-                ((EventState)state).Log.WriteDebug($"Exception: {e.Message}");
-                ((EventState)state).Log.WriteDebug($"StackTrace: {e.StackTrace}");
+                    catch (Exception e)
+                    {
+                        Server.Logger.WriteWarning($"Failed to update log event for {Server.GetHashCode()}");
+                        Server.Logger.WriteDebug($"Exception: {e.Message}");
+                        Server.Logger.WriteDebug($"StackTrace: {e.StackTrace}");
+                    }
+                }
+                Thread.Sleep(Reader.UpdateInterval);
             }
         }
 
-        private void UpdateLogEvents(long fileSize)
+        private void UpdateLogEvents()
         {
+            long fileSize = Reader.Length;
+
             if (PreviousFileSize == 0)
                 PreviousFileSize = fileSize;
 
@@ -79,9 +73,12 @@ namespace IW4MAdmin.Application.IO
 
             PreviousFileSize = fileSize;
 
-            var events = Reader.EventsFromLog(Server, fileDiff, 0);
+            var events = Reader.ReadEventsFromLog(Server, fileDiff, 0);
+
             foreach (var ev in events)
+            {
                 Server.Manager.GetEventHandler().AddEvent(ev);
+            }
 
             PreviousFileSize = fileSize;
         }

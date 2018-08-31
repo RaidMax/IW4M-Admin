@@ -43,7 +43,7 @@ namespace Tests
         public void AddAndRemoveClientsViaJoinShouldSucceed()
         {
             var server = Manager.GetServers().First();
-            var waiters = new Queue<ManualResetEventSlim>();
+            var waiters = new Queue<SemaphoreSlim>();
 
             int clientStartIndex = 4;
             int clientNum = 10;
@@ -103,7 +103,7 @@ namespace Tests
         public void AddAndRemoveClientsViaRconShouldSucceed()
         {
             var server = Manager.GetServers().First();
-            var waiters = new Queue<ManualResetEventSlim>();
+            var waiters = new Queue<SemaphoreSlim>();
 
             int clientIndexStart = 1;
             int clientNum = 8;
@@ -187,7 +187,6 @@ namespace Tests
 
 
             resetEvent.Wait(5000);
-
         }
     }
 }

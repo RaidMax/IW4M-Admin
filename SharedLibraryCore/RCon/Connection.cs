@@ -150,7 +150,8 @@ namespace SharedLibraryCore.RCon
             // will this really prevent flooding?
             if ((DateTime.Now - LastQuery).TotalMilliseconds < 350)
             {
-                await Task.Delay(350);
+                //await Task.Delay(350);
+                Thread.Sleep(350);
             }
 
             LastQuery = DateTime.Now;

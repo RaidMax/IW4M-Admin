@@ -16,7 +16,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="fileSizeDiff"></param>
         /// <param name="startPosition"></param>
         /// <returns></returns>
-        ICollection<GameEvent> EventsFromLog(Server server, long fileSizeDiff, long startPosition);
+        ICollection<GameEvent> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition);
         /// <summary>
         /// how long the log file is
         /// </summary>

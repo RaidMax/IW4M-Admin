@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace WebfrontCore.Controllers.API
         [HttpGet]
         public IActionResult Event(bool shouldConsume = true)
         {
-            var events = Manager.GetEventApi().GetEvents(shouldConsume);
+            var events = EventApi.GetEvents(shouldConsume);
             return Json(events);
         }
 

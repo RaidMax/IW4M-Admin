@@ -29,11 +29,12 @@ namespace IW4MAdmin.Application.IO
             {
                 using (var cl = new HttpClient())
                 {
-                    using (var re = cl.GetAsync($"{LogFile}?length=1").Result)
+                    using (var re = cl.GetAsync($"{LogFile}&length=1").Result)
                     {
                         using (var content = re.Content)
                         {
-                            return Convert.ToInt64(content.ReadAsStringAsync().Result ?? "0");
+                            string response = content.ReadAsStringAsync().Result ?? "0";
+                            return Convert.ToInt64(response);
                         }
                     }
                 }
@@ -42,12 +43,15 @@ namespace IW4MAdmin.Application.IO
 
         public int UpdateInterval => 1000;
 
-        public ICollection<GameEvent> EventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public ICollection<GameEvent> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
+#if DEBUG == true
+            server.Logger.WriteDebug($"Begin reading {fileSizeDiff} from http log");
+#endif
             string log;
             using (var cl = new HttpClient())
             {
-                using (var re = cl.GetAsync($"{LogFile}?start={fileSizeDiff}").Result)
+                using (var re = cl.GetAsync($"{LogFile}&start={fileSizeDiff}").Result)
                 {
                     using (var content = re.Content)
                     {
@@ -55,18 +59,29 @@ namespace IW4MAdmin.Application.IO
                     }
                 }
             }
-
+#if DEBUG == true
+            server.Logger.WriteDebug($"retrieved events from http log");
+#endif
             List<GameEvent> events = new List<GameEvent>();
+            string[] lines = log.Split(Environment.NewLine);
+
+#if DEBUG == true
+            server.Logger.WriteDebug($"Begin parse of {lines.Length} lines from http log");
+#endif
 
             // parse each line
-            foreach (string eventLine in log.Split(Environment.NewLine))
+            foreach (string eventLine in lines)
             {
                 if (eventLine.Length > 0)
                 {
                     try
                     {
                         // todo: catch elsewhere
-                        events.Add(Parser.GetEvent(server, eventLine));
+                        var e = Parser.GetEvent(server, eventLine);
+#if DEBUG == true
+                        server.Logger.WriteDebug($"Parsed event with id {e.Id}  from http");
+#endif
+                        events.Add(e);
                     }
 
                     catch (Exception e)

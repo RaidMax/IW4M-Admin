@@ -119,7 +119,17 @@ namespace SharedLibraryCore.Commands
             {
                 await E.Target.Kick(E.Data, E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_SUCCESS"]}");
-                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Kick, E.Data, E.Origin, E.Target, E.Owner));
+
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Kick,
+                    Data = E.Data,
+                    Origin = E.Origin,
+                    Target = E.Target,
+                    Owner = E.Owner
+                };
+
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
             }
             else
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_FAIL"]} {E.Target.Name}");
@@ -179,14 +189,17 @@ namespace SharedLibraryCore.Commands
             {
                 await E.Target.TempBan(Message, length, E.Origin);
                 await E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}");
-                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent()
+
+                var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.TempBan,
                     Data = E.Data,
                     Origin = E.Origin,
                     Target = E.Target,
                     Owner = E.Owner
-                });
+                };
+
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
             }
             else
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
@@ -732,7 +745,17 @@ namespace SharedLibraryCore.Commands
                 };
 
                 await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
-                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Flag, E.Data, E.Origin, E.Target, E.Owner));
+
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Flag,
+                    Data = E.Data,
+                    Origin = E.Origin,
+                    Target = E.Target,
+                    Owner = E.Owner
+                };
+
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
             }
 
@@ -766,15 +789,16 @@ namespace SharedLibraryCore.Commands
                 await E.Owner.Manager.GetClientService().Update(E.Target);
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
 
-                E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent()
+                var e = new GameEvent()
                 {
                     Data = E.Data,
                     Origin = E.Origin,
                     Target = E.Target,
                     Owner = E.Owner,
                     Type = GameEvent.EventType.Unflag
-                });
+                };
 
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
             }
 
             else
@@ -846,7 +870,17 @@ namespace SharedLibraryCore.Commands
             await E.Owner.Manager.GetPenaltyService().Create(newReport);
 
             await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_SUCCESS"]);
-            E.Owner.Manager.GetEventHandler().AddEvent(new GameEvent(GameEvent.EventType.Report, E.Data, E.Origin, E.Target, E.Owner));
+
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Report,
+                Data = E.Data,
+                Origin = E.Origin,
+                Target = E.Target,
+                Owner = E.Owner
+            };
+
+            E.Owner.Manager.GetEventHandler().AddEvent(e);
             await E.Owner.ToAdmins(String.Format("^5{0}^7->^1{1}^7: {2}", E.Origin.Name, E.Target.Name, E.Data));
         }
     }

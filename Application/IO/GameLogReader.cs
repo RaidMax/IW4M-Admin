@@ -14,7 +14,7 @@ namespace IW4MAdmin.Application.IO
 
         public long Length => new FileInfo(LogFile).Length;
 
-        public int UpdateInterval => 100;
+        public int UpdateInterval => 300;
 
         public GameLogReader(string logFile, IEventParser parser)
         {
@@ -22,7 +22,7 @@ namespace IW4MAdmin.Application.IO
             Parser = parser;
         }
 
-        public ICollection<GameEvent> EventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public ICollection<GameEvent> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();

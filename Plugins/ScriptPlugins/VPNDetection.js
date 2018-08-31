@@ -10,7 +10,7 @@ const plugin = {
     checkForVpn(origin) {
         let exempt = false;
         // prevent players that are exempt from being kicked
-        this.vpnExceptionIds.forEach(function(id) {
+        this.vpnExceptionIds.forEach(function (id) {
             if (id === origin.ClientId) {
                 exempt = true;
                 return false;
@@ -48,7 +48,7 @@ const plugin = {
     onEventAsync(gameEvent, server) {
         // connect event
         if (gameEvent.Type === 3) {
-            this.checkForVpn(gameEvent.Origin)
+            this.checkForVpn(gameEvent.Origin);
         }
     },
 
@@ -57,7 +57,7 @@ const plugin = {
         this.logger = manager.GetLogger();
     },
 
-    onUnloadAsync() {},
+    onUnloadAsync() { },
 
-    onTickAsync(server) {}
-}
+    onTickAsync(server) { }
+};

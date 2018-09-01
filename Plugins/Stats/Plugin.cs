@@ -13,8 +13,6 @@ using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using IW4MAdmin.Plugins.Stats.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -77,8 +75,6 @@ namespace IW4MAdmin.Plugins.Stats
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 13)
                     {
-                        // todo: remove me
-                        E.Owner.Logger.WriteDebug($"Starting Add script hit (kill) for event with id {E.Id}");
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     }
@@ -95,8 +91,6 @@ namespace IW4MAdmin.Plugins.Stats
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 13)
                     {
-                        // todo: remove me
-                        E.Owner.Logger.WriteDebug($"Starting Add script hit (damage) for event with id {E.Id}");
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
                     }

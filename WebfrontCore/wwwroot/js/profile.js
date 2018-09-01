@@ -65,14 +65,14 @@ $(document).ready(function () {
             'serverId': $(this).data('serverid'),
             'when': $(this).data('when')
         })
-            .done(function (response) {
-                $('.client-message-context').remove();
-                location.after(response);
-                hideLoader();
-            })
-            .fail(function (jqxhr, textStatus, error) {
-                errorLoader();
-            });
+        .done(function (response) {
+            $('.client-message-context').remove();
+            location.after(response);
+            hideLoader();
+        })
+        .fail(function (jqxhr, textStatus, error) {
+            errorLoader();
+        });
     });
 
     /*

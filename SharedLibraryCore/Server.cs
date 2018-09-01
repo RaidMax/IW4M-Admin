@@ -116,7 +116,7 @@ namespace SharedLibraryCore
         /// <param name="Message">Message to be sent to all players</param>
         public async Task Broadcast(String Message)
         {
-#if !DEBUG
+#if DEBUG == false
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, Message);
 #else
             Logger.WriteVerbose(Message.StripColors());
@@ -124,8 +124,12 @@ namespace SharedLibraryCore
             var e = new GameEvent()
             {
                 Type = GameEvent.EventType.Broadcast,
+#if DEBUG == true
                 Data = Message,
-                Owner = this
+#else
+                Data = formattedMessage,
+#endif
+                Owner = this,
             };
 
             Manager.GetEventHandler().AddEvent(e);

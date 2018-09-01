@@ -18,29 +18,15 @@ namespace IW4MAdmin.Application.EventParsers
             string[] lineSplit = logLine.Split(';');
             string eventType = lineSplit[0];
 
-            // kill
-            if (eventType == "K")
-            {
-                if (!server.CustomCallback)
-                {
-                    return new GameEvent()
-                    {
-                        Type = GameEvent.EventType.Kill,
-                        Data = logLine,
-                        Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6)),
-                        Target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
-                        Owner = server
-                    };
-                }
-            }
-
             if (eventType == "JoinTeam")
             {
+                var origin = server.GetPlayersAsList().FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertLong());
+
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.JoinTeam,
                     Data = eventType,
-                    Origin = server.GetPlayersAsList().FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                    Origin = origin,
                     Owner = server
                 };
             }
@@ -55,13 +41,15 @@ namespace IW4MAdmin.Application.EventParsers
                         .Replace("\x15", "")
                         .Trim();
 
+                    var origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2));
+
                     if (message[0] == '!' || message[0] == '@')
                     {
                         return new GameEvent()
                         {
                             Type = GameEvent.EventType.Command,
                             Data = message,
-                            Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
+                            Origin = origin,
                             Owner = server,
                             Message = message
                         };
@@ -71,33 +59,56 @@ namespace IW4MAdmin.Application.EventParsers
                     {
                         Type = GameEvent.EventType.Say,
                         Data = message,
-                        Origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2)),
+                        Origin = origin,
                         Owner = server,
                         Message = message
                     };
                 }
             }
 
+            if (eventType == "K")
+            {
+                if (!server.CustomCallback)
+                {
+                    var origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6));
+                    var target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2));
+
+                    return new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Kill,
+                        Data = logLine,
+                        Origin = origin,
+                        Owner = server
+                    };
+                }
+            }
+
+
             if (eventType == "ScriptKill")
             {
+                var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+                var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.ScriptKill,
                     Data = logLine,
-                    Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
-                    Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong()),
+                    Origin = origin,
+                    Target = target,
                     Owner = server
                 };
             }
 
             if (eventType == "ScriptDamage")
             {
+                var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+                var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
+
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.ScriptDamage,
                     Data = logLine,
-                    Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
-                    Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong()),
+                    Origin = origin,
+                    Target = target,
                     Owner = server
                 };
             }
@@ -107,12 +118,15 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 if (Regex.Match(eventType, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
                 {
+                    var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong());
+                    var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.Damage,
                         Data = eventType,
-                        Origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong()),
-                        Target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong()),
+                        Origin = origin,
+                        Target = target,
                         Owner = server
                     };
                 }

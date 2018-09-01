@@ -2,10 +2,7 @@
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
 using System.Net.Http;
-using System.Text;
 
 namespace IW4MAdmin.Application.IO
 {
@@ -76,7 +73,6 @@ namespace IW4MAdmin.Application.IO
                 {
                     try
                     {
-                        // todo: catch elsewhere
                         var e = Parser.GetEvent(server, eventLine);
 #if DEBUG == true
                         server.Logger.WriteDebug($"Parsed event with id {e.Id}  from http");

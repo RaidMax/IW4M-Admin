@@ -529,9 +529,9 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.Broadcast)
             {
                 // this is a little ugly but I don't want to change the abstract class
-                if (E.Message != null)
+                if (E.Data != null)
                 {
-                    await E.Owner.ExecuteCommandAsync(E.Message);
+                    await E.Owner.ExecuteCommandAsync(E.Data);
                 }
             }
 

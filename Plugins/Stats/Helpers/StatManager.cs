@@ -45,7 +45,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
                 var iqClientRatings = (from rating in context.Set<EFRating>()
-#if !DEBUG
+#if DEBUG == false
                                        where rating.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime
 #endif
                                        where rating.RatingHistory.Client.Level != Player.Permission.Banned
@@ -561,9 +561,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // update their performance 
-#if !DEBUG
+//#if !DEBUG
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
-#endif
+//#endif
             {
                 await UpdateStatHistory(attacker, attackerStats);
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
@@ -718,7 +718,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
                 });
 
-                await ctx.SaveChangesAsync();
+                try
+                {
+                    await ctx.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException e)
+                {
+                 
+                }
             }
         }
 

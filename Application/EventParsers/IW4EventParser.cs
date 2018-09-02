@@ -78,6 +78,7 @@ namespace IW4MAdmin.Application.EventParsers
                         Type = GameEvent.EventType.Kill,
                         Data = logLine,
                         Origin = origin,
+                        Target = target,
                         Owner = server
                     };
                 }
@@ -116,19 +117,22 @@ namespace IW4MAdmin.Application.EventParsers
             // damage
             if (eventType == "D")
             {
-                if (Regex.Match(eventType, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
+                if (!server.CustomCallback)
                 {
-                    var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong());
-                    var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
-
-                    return new GameEvent()
+                    if (Regex.Match(eventType, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
                     {
-                        Type = GameEvent.EventType.Damage,
-                        Data = eventType,
-                        Origin = origin,
-                        Target = target,
-                        Owner = server
-                    };
+                        var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong());
+                        var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+
+                        return new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Damage,
+                            Data = eventType,
+                            Origin = origin,
+                            Target = target,
+                            Owner = server
+                        };
+                    }
                 }
             }
 

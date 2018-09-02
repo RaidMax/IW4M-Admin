@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SharedLibraryCore.Database;
 
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20180902035612_AddFractionAndIsKill")]
+    partial class AddFractionAndIsKill
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -472,6 +474,8 @@ namespace SharedLibraryCore.Migrations
                     b.Property<float>("Z");
 
                     b.HasKey("Vector3Id");
+
+                    b.HasIndex("EFACSnapshotSnapshotId");
 
                     b.ToTable("Vector3");
                 });

@@ -14,7 +14,7 @@
     $.get('/Console/ExecuteAsync', { serverId: serverId, command: command })
         .done(function (response) {
             hideLoader();
-            $('#console_command_response').html(response);
+            $('#console_command_response').append(response);
             $('#console_command_value').val("");
         })
         .fail(function (jqxhr, textStatus, error) {

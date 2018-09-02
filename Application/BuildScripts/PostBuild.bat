@@ -18,3 +18,7 @@ echo Copying plugins for publish
 del %SolutionDir%BUILD\Plugins\Tests.dll
 xcopy /Y "%SolutionDir%BUILD\Plugins" "%SolutionDir%Publish\Windows\Plugins\"
 xcopy /Y "%SolutionDir%BUILD\Plugins" "%SolutionDir%Publish\WindowsPrerelease\Plugins\"
+
+echo Copying script plugins for publish
+xcopy /Y "%SolutionDir%Plugins\ScriptPlugins" "%SolutionDir%Publish\Windows\Plugins\"
+xcopy /Y "%SolutionDir%Plugins\ScriptPlugins" "%SolutionDir%Publish\WindowsPrerelease\Plugins\"

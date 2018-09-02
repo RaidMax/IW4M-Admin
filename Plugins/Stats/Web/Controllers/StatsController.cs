@@ -59,7 +59,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+      //  [Authorize]
         public async Task<IActionResult> GetAutomatedPenaltyInfoAsync(int clientId)
         {
             using (var ctx = new SharedLibraryCore.Database.DatabaseContext())

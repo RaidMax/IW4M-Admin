@@ -96,6 +96,10 @@ a.link-inverse:hover {
     min-height: 20rem;
 }
 
+#console_command_response hr {
+    border-color: #6c757d;
+}
+
 #console .form-control, #console button {
     border-radius: 0;
     border-color: $primary;
@@ -119,7 +123,7 @@ form *, select {
     border-radius: 0 !important;
 }
 
-select {
+#penalty_filter_selection {
     border-left: none !important;
     border-right: none !important;
     border-bottom: none !important;
@@ -205,4 +209,3 @@ select {
 .client-message, .automated-penalty-info-detailed {
     cursor: pointer;
 }
-

@@ -6321,6 +6321,9 @@ a.link-inverse:hover {
 #console_command_response {
   min-height: 20rem; }
 
+#console_command_response hr {
+  border-color: #6c757d; }
+
 #console .form-control, #console button {
   border-radius: 0;
   border-color: #007ACC;
@@ -6339,7 +6342,7 @@ a.link-inverse:hover {
 form *, select {
   border-radius: 0 !important; }
 
-select {
+#penalty_filter_selection {
   border-left: none !important;
   border-right: none !important;
   border-bottom: none !important;

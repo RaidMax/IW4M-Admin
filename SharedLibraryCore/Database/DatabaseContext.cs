@@ -43,7 +43,6 @@ namespace SharedLibraryCore.Database
                 currentPath = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
                     $"{Path.DirectorySeparatorChar}{currentPath}" :
                     currentPath;
-                // todo: fix later
 
                 var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
                 var connectionString = connectionStringBuilder.ToString();
@@ -100,10 +99,6 @@ namespace SharedLibraryCore.Database
 
             // adapted from
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
-//#if DEBUG == TRUE
-//           // foreach (string dllPath in Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins"))
-//#else
-//todo: fix the debug thingie for entity scanning
             IEnumerable<string> directoryFiles;
 
             string pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}netcoreapp2.0{Path.DirectorySeparatorChar}Plugins";
@@ -119,9 +114,11 @@ namespace SharedLibraryCore.Database
             }
 
             directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.Contains(".dll"));
-
-            foreach (string dllPath in directoryFiles)
-//#endif
+#if DEBUG == TRUE
+            foreach (string dllPath in Directory.GetFiles(@"C:\Projects\IW4M-Admin\Application\bin\Debug\netcoreapp2.1\Plugins"))
+#else
+                foreach (string dllPath in directoryFiles)
+#endif
             {
                 Assembly library;
                 try

@@ -24,7 +24,7 @@ $(document).ready(function () {
      * hide loader when clicking
      */
     $(document).click(function (e) {
-        hideLoader()
+        //hideLoader()
     });
 
     /*
@@ -39,7 +39,7 @@ $(document).ready(function () {
                 $('#actionModal').modal();
             })
             .fail(function (jqxhr, textStatus, error) {
-                $('#actionModal .modal-message').text('Error &mdash ' + error);
+                $('#actionModal .modal-message').text('Error 	— ' + error);
                 $('#actionModal').modal();
                 $('#actionModal .modal-message').fadeIn('fast');
             });

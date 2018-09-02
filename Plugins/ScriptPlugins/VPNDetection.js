@@ -24,20 +24,20 @@ const plugin = {
         let usingVPN = false;
 
         try {
-            let httpRequest = System.Net.WebRequest.Create('https://api.xdefcon.com/proxy/check/?ip=' + origin.IPAddressString);
-            let response = httpRequest.GetResponse();
-            let data = response.GetResponseStream();
-            let streamReader = new System.IO.StreamReader(data);
-            let jsonResponse = streamReader.ReadToEnd();
-            streamReader.Dispose();
-            response.Close();
-            let parsedJSON = JSON.parse(jsonResponse);
+            let cl = new System.Net.Http.HttpClient();
+            let re = cl.GetAsync('https://api.xdefcon.com/proxy/check/?ip=' + origin.IPAddressString).Result;
+            let co = re.Content;
+            let parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
+            //co.Dispose();
+            //re.Dispose();
+            //cl.Dispose();
             usingVPN = parsedJSON['success'] && parsedJSON['proxy'];
         } catch (e) {
             this.logger.WriteError(e.message);
         }
 
         if (usingVPN) {
+            this.logger.WriteInfo(origin + ' is using a VPN (' + origin.IPAddressString + ')');
             let library = importNamespace('SharedLibraryCore');
             let kickOrigin = new library.Objects.Player();
             kickOrigin.ClientId = 1;

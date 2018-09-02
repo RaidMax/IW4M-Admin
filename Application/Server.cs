@@ -19,7 +19,6 @@ using SharedLibraryCore.Localization;
 using IW4MAdmin.Application.RconParsers;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
-using IW4MAdmin.Application.Core;
 
 namespace IW4MAdmin
 {
@@ -299,40 +298,6 @@ namespace IW4MAdmin
                     E.Extra = C;
                 }
             }
-
-            //// this allows us to catch exceptions but still run it parallel
-            //async Task pluginHandlingAsync(Task onEvent, string pluginName)
-            //{
-            //    try
-            //    {
-            //        await onEvent;
-            //    }
-
-            //    // this happens if a plugin (login) wants to stop commands from executing
-            //    catch (AuthorizationException e)
-            //    {
-            //        await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
-            //        canExecuteCommand = false;
-            //    }
-
-            //    catch (Exception Except)
-            //    {
-            //        Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{pluginName}]");
-            //        Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
-            //        Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
-            //        while (Except.InnerException != null)
-            //        {
-            //            Except = Except.InnerException;
-            //            Logger.WriteDebug($"Inner exception: {Except.Message}");
-            //        }
-            //    }
-            //}
-
-            //var pluginTasks = SharedLibraryCore.Plugins.PluginImporter.ActivePlugins.
-            //    Select(p => pluginHandlingAsync(p.OnEventAsync(E, this), p.Name));
-
-            //// execute all the plugin updates simultaneously
-            //await Task.WhenAll(pluginTasks);
 
             foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
             {
@@ -629,6 +594,13 @@ namespace IW4MAdmin
                     // this are our new connecting clients
                     foreach (var client in polledClients[0])
                     {
+                        // this prevents duplicate events from being sent to the event api
+                        if (GetPlayersAsList().Count(c => c.NetworkId == client.NetworkId &&
+                            c.State == Player.ClientState.Connected) != 0)
+                        {
+                            continue;
+                        }
+
                         var e = new GameEvent()
                         {
                             Type = GameEvent.EventType.Connect,
@@ -810,7 +782,7 @@ namespace IW4MAdmin
                 logfile = await this.GetDvarAsync<string>("g_log");
             }
 
-            CustomCallback = await ScriptLoaded();
+            //CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
             basepath.Value = @"D:\";

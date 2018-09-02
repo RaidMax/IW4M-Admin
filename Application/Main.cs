@@ -50,6 +50,8 @@ namespace IW4MAdmin.Application
                 Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
 
+                ServerManager.Logger.WriteInfo($"Version is {Version}");
+
                 var api = API.Master.Endpoint.Get();
 
                 var version = new API.Master.VersionInfo()

@@ -14,6 +14,7 @@ init()
 	level.callbackPlayerDamage = ::Callback_PlayerDamage;
 }
 
+
 onPlayerConnect(player)
 {
 	for(;;)
@@ -111,6 +112,11 @@ waitForAdditionalAngles(logString)
 	logPrint(logString + ";" + anglesStr + "\n"); 
 }
 
+vectorScale(vector, scale)
+{
+	return (vector[0] * scale, vector[1] * scale, vector[2] * scale);
+}
+
 Process_Hit(type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon)
 {
 	victim = self;
@@ -123,7 +129,12 @@ Process_Hit(type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon)
 	location = victim GetTagOrigin(hitLocationToBone(sHitLoc));
 	isKillstreakKill = !isPlayer(attacker) || isKillstreakWeapon(sWeapon);
 
-	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS();
+	// do the tracing stuff
+	start = _attacker getTagOrigin("tag_eye");
+	end = location;
+	trace = bulletTrace(start, end, true, _attacker);
+
+	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";" + trace["fraction"];
 	attacker thread waitForAdditionalAngles(logLine);
 }
 

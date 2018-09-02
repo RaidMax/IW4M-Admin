@@ -73,10 +73,10 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 13)
+                    if (killInfo.Length >= 14)
                     {
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14]);
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -84,15 +84,15 @@ namespace IW4MAdmin.Plugins.Stats
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     break;
                 case GameEvent.EventType.Damage:
-                    // if (!E.Owner.CustomCallback)
-                    Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
+                    if (!E.Owner.CustomCallback)
+                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 13)
+                    if (killInfo.Length >= 14)
                     {
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14]);
                     }
                     break;
             }

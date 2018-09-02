@@ -181,7 +181,7 @@ namespace SharedLibraryCore.Services
                         var pi = ((PenaltyInfo)p.Value);
                         if (pi.TimeRemaining.Length > 0)
                             pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
-                       
+
                     });
                     return list;
                 }
@@ -235,6 +235,8 @@ namespace SharedLibraryCore.Services
 
         public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int aliasId, int ip = 0)
         {
+            var now = DateTime.UtcNow;
+
             using (var context = new DatabaseContext())
             {
                 var iqPenalties = await (from link in context.AliasLinks
@@ -242,6 +244,8 @@ namespace SharedLibraryCore.Services
                                          join penalty in context.Penalties
                                          on link.AliasLinkId equals penalty.LinkId
                                          where penalty.Active
+                                         where penalty.Expires > now
+                                         orderby penalty.When descending
                                          select penalty).ToListAsync();
                 if (ip != 0)
                 {
@@ -250,6 +254,8 @@ namespace SharedLibraryCore.Services
                                                 join penalty in context.Penalties
                                                 on alias.LinkId equals penalty.LinkId
                                                 where penalty.Active
+                                                where penalty.Expires > now
+                                                orderby penalty.When descending
                                                 select penalty).ToListAsync());
                 }
                 return iqPenalties;

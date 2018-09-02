@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Objects.Penalty;
 
 namespace WebfrontCore.Controllers
 {
@@ -19,6 +20,8 @@ namespace WebfrontCore.Controllers
             {
                 return NotFound();
             }
+
+            var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress);
 
 #if DEBUG
             Authorized = true;
@@ -48,6 +51,7 @@ namespace WebfrontCore.Controllers
                     .Distinct()
                     .OrderBy(i => i)
                     .ToList(),
+                HasActivePenalty = activePenalties.Count > 0,
                 Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
                 TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText(),
                 LinkedAccounts = client.LinkedAccounts

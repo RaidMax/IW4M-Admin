@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using WebfrontCore.ViewModels;
+using static SharedLibraryCore.Objects.Player;
 
 namespace WebfrontCore.Controllers
 {
@@ -22,6 +23,20 @@ namespace WebfrontCore.Controllers
                     {
                       Name = "Reason",
                       Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                    },
+                    new InputInfo()
+                    {
+                        Name ="Duration",
+                        Label=Localization["WEBFRONT_ACTION_LABEL_DURATION"],
+                        Type="select",
+                        Values = new Dictionary<string, string>()
+                        {
+                            {"1", $"1 {Localization["GLOBAL_TIME_HOUR"]}" },
+                            {"2", $"6  {Localization["GLOBAL_TIME_HOURS"]}" },
+                            {"3", $"1  {Localization["GLOBAL_TIME_DAY"]}" },
+                            {"4", $"1  {Localization["GLOBAL_TIME_WEEK"]}" },
+                            {"5", $"{Localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]}" },
+                        }
                     }
                 },
                 Action = "BanAsync"
@@ -30,14 +45,36 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
-        public async Task<IActionResult> BanAsync(int targetId, string Reason)
+        public async Task<IActionResult> BanAsync(int targetId, string Reason, int Duration)
         {
+            string duration = string.Empty;
+
+            switch (Duration)
+            {
+                case 1:
+                    duration = "1h";
+                    break;
+                case 2:
+                    duration = "6h";
+                    break;
+                case 3:
+                    duration = "1d";
+                    break;
+                case 4:
+                    duration = "1w";
+                    break;
+            }
+
+            string command = Duration == 5 ?
+                $"!ban @{targetId} {Reason}" :
+                $"!tempban @{targetId} {duration} {Reason}";
+
             var server = Manager.GetServers().First();
 
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.GetHashCode(),
-                command = $"!ban @{targetId} {Reason}"
+                command
             }));
         }
 
@@ -101,6 +138,43 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> LoginAsync(int clientId, string password)
         {
             return await Task.FromResult(RedirectToAction("LoginAsync", "Account", new { clientId, password }));
+        }
+
+        public IActionResult EditForm()
+        {
+            var info = new ActionInfo()
+            {
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_EDIT"],
+                Name = "Edit",
+                Inputs = new List<InputInfo>()
+                {
+                    new InputInfo()
+                    {
+                        Name ="level",
+                        Label=Localization["WEBFRONT_PROFILE_LEVEL"],
+                        Type="select",
+                        Values = Enum.GetValues(typeof(Permission)).OfType<Permission>()
+                            .Where(p => p <= Client.Level)
+                            .Where(p => p != Permission.Banned)
+                             .Where(p => p != Permission.Flagged)
+                            .ToDictionary(p => p.ToString(), p=> p.ToLocalizedLevelName())
+                    },
+                },
+                Action = "EditAsync"
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> EditAsync(int targetId, string level)
+        {
+            var server = Manager.GetServers().First();
+
+            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            {
+                serverId = server.GetHashCode(),
+                command = $"!setlevel @{targetId} {level}"
+            }));
         }
     }
 }

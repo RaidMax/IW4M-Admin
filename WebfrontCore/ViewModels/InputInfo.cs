@@ -12,5 +12,7 @@ namespace WebfrontCore.ViewModels
         public string Placeholder { get; set; }
         public string Type { get; set; }
         public string Value { get; set; }
+        public Dictionary<string, string> Values { get; set; } 
+        public bool Checked { get; set; }
     }
 }

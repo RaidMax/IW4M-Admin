@@ -37,7 +37,7 @@ namespace IW4MAdmin.Application
         // define what the delagate function looks like
         public delegate void OnServerEventEventHandler(object sender, GameEventArgs e);
         // expose the event handler so we can execute the events
-        public OnServerEventEventHandler OnServerEvent { get;  set; }
+        public OnServerEventEventHandler OnServerEvent { get; set; }
         public DateTime StartTime { get; private set; }
 
         static ApplicationManager Instance;
@@ -81,6 +81,11 @@ namespace IW4MAdmin.Application
                 if (GameEvent.ShouldOriginEventBeDelayed(newEvent))
                 {
                     Logger.WriteDebug($"Delaying origin execution of event type {newEvent.Type} for {newEvent.Origin} because they are not authed");
+                    if (newEvent.Type == GameEvent.EventType.Command)
+                    {
+                        await newEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["SERVER_DELAYED_EVENT_WAIT"]);
+                    }
+
                     // offload it to the player to keep
                     newEvent.Origin.DelayedEvents.Enqueue(newEvent);
                     return;
@@ -95,7 +100,7 @@ namespace IW4MAdmin.Application
                     return;
                 }
 
-          
+
 
                 //// todo: this is a hacky mess
                 if (newEvent.Origin?.DelayedEvents.Count > 0 &&
@@ -104,7 +109,7 @@ namespace IW4MAdmin.Application
                     var events = newEvent.Origin.DelayedEvents;
 
                     // add the delayed event to the queue 
-                    while(events.Count > 0)
+                    while (events.Count > 0)
                     {
                         var oldEvent = events.Dequeue();
 
@@ -143,7 +148,7 @@ namespace IW4MAdmin.Application
                 await newEvent.Owner.ExecuteEvent(newEvent);
 
 #if DEBUG
-                    Logger.WriteDebug($"Processed event with id {newEvent.Id}");
+                Logger.WriteDebug($"Processed event with id {newEvent.Id}");
 #endif
             }
 

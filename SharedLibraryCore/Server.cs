@@ -179,13 +179,9 @@ namespace SharedLibraryCore
         /// <param name="message">Message to send out</param>
         public async Task ToAdmins(String message)
         {
-            foreach (Player P in Players)
+            foreach (var client in GetPlayersAsList().Where(c => c.Level > Player.Permission.Flagged))
             {
-                if (P == null)
-                    continue;
-
-                if (P.Level > Player.Permission.Flagged)
-                    await P.Tell(message);
+                await client.Tell(message);
             }
         }
 

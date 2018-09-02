@@ -34,15 +34,45 @@ namespace SharedLibraryCore.Objects
 
         public enum Permission
         {
+            /// <summary>
+            /// client has been banned
+            /// </summary>
             Banned = -1,
+            /// <summary>
+            /// default client state upon first connect
+            /// </summary>
             User = 0,
+            /// <summary>
+            /// client has been flagged
+            /// </summary>
             Flagged = 1,
+            /// <summary>
+            /// client is trusted
+            /// </summary>
             Trusted = 2,
+            /// <summary>
+            /// client is a moderator
+            /// </summary>
             Moderator = 3,
+            /// <summary>
+            /// client is an administrator
+            /// </summary>
             Administrator = 4,
+            /// <summary>
+            /// client is a senior administrator
+            /// </summary>
             SeniorAdmin = 5,
+            /// <summary>
+            /// client is a owner
+            /// </summary>
             Owner = 6,
+            /// <summary>
+            /// not used
+            /// </summary>
             Creator = 7,
+            /// <summary>
+            /// reserved for default account
+            /// </summary>
             Console = 8
         }
 
@@ -51,12 +81,10 @@ namespace SharedLibraryCore.Objects
             ConnectionTime = DateTime.UtcNow;
             ClientNumber = -1;
             DelayedEvents = new Queue<GameEvent>();
+            _additionalProperties = new Dictionary<string, object>();
         }
 
-        public override string ToString()
-        {
-            return $"{Name}::{NetworkId}";
-        }
+        public override string ToString() => $"{Name}::{NetworkId}";
 
         public String GetLastConnection()
         {
@@ -105,7 +133,10 @@ namespace SharedLibraryCore.Objects
         {
             await CurrentServer.Ban(Message, this, Sender);
         }
-
+        [NotMapped]
+        Dictionary<string, object> _additionalProperties;
+        public T GetAdditionalProperty<T>(string name) => (T)_additionalProperties[name];
+        public void SetAdditionalProperty(string name, object value) => _additionalProperties.Add(name, value);
         [NotMapped]
         public int ClientNumber { get; set; }
         [NotMapped]
@@ -150,9 +181,6 @@ namespace SharedLibraryCore.Objects
             return ((Player)obj).NetworkId == NetworkId;
         }
 
-        public override int GetHashCode()
-        {
-            return NetworkId.GetHashCode();
-        }
+        public override int GetHashCode() => (int)NetworkId;
     }
 }

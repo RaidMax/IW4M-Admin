@@ -61,7 +61,7 @@ namespace SharedLibraryCore
             ScriptEngine = new Jint.Engine(cfg => 
                 cfg.AllowClr(new[] 
                 {
-                    typeof(System.Net.WebRequest).Assembly,
+                    typeof(System.Net.Http.HttpClient).Assembly,
                     typeof(Objects.Player).Assembly,
                 })
                 .CatchClrExceptions());

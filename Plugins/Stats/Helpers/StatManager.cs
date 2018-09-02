@@ -324,7 +324,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <returns></returns>
         public async Task AddScriptHit(bool isDamage, DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
-            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads, string snapAngles)
+            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads, string fraction, string snapAngles)
         {
             var statsSvc = ContextThreads[serverId];
             Vector3 vDeathOrigin = null;
@@ -362,7 +362,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            var kill = new EFClientKill()
+            var hit = new EFClientKill()
             {
                 Active = true,
                 AttackerId = attacker.ClientId,
@@ -380,11 +380,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 When = time,
                 IsKillstreakKill = isKillstreakKill[0] != '0',
                 AdsPercent = float.Parse(Ads),
+                Fraction = double.Parse(fraction),
+                IsKill = !isDamage,
                 AnglesList = snapshotAngles
             };
 
-            if (kill.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
-                kill.Damage == 100000)
+            if (hit.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
+                hit.Damage == 100000)
             {
                 // suicide by switching teams so let's not count it against them
                 return;
@@ -395,7 +397,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await AddStandardKill(attacker, victim);
             }
 
-            if (kill.IsKillstreakKill)
+            if (hit.IsKillstreakKill)
             {
                 return;
             }
@@ -406,11 +408,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             clientStatsSvc.Update(clientStats);
 
             // increment their hit count
-            if (kill.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
-                kill.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
-                kill.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
+            if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
+                hit.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
+                hit.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
             {
-                clientStats.HitLocations.Single(hl => hl.Location == kill.HitLoc).HitCount += 1;
+                clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
             }
 
             if (Plugin.Config.Configuration().EnableAntiCheat)
@@ -478,10 +480,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                await executePenalty(clientDetection.ProcessKill(kill, isDamage));
+                await executePenalty(clientDetection.ProcessKill(hit, isDamage));
                 await executePenalty(clientDetection.ProcessTotalRatio(clientStats));
 
                 await clientStatsSvc.SaveChangesAsync();
+            }
+
+            using (var ctx = new DatabaseContext())
+            {
+                ctx.Set<EFClientKill>().Add(hit);
+                await ctx.SaveChangesAsync();
             }
         }
 

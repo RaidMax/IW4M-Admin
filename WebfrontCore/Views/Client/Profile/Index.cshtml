@@ -33,18 +33,20 @@
                 {
                     <div class="d-flex d-md-inline-flex justify-content-center order-1">
                         <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
-
-                        @if (Model.LevelInt < (int)ViewBag.User.Level &&
-(SharedLibraryCore.Objects.Player.Permission)Model.LevelInt != SharedLibraryCore.Objects.Player.Permission.Banned)
+                        @if (Model.LevelInt != -1)
+                        {
+                            <div id="profile_action_edit_btn" class="profile-action oi oi-cog text-muted h3 ml-2" title="Client Options" data-action="edit" aria-hidden="true"></div>
+                        }
+                        @if (Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty)
                         {
                             <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
                         }
 
-                        @if (Model.LevelInt < (int)ViewBag.User.Level &&
-(SharedLibraryCore.Objects.Player.Permission)Model.LevelInt == SharedLibraryCore.Objects.Player.Permission.Banned)
+                        @if (Model.LevelInt < (int)ViewBag.User.Level && Model.HasActivePenalty)
                         {
                             <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                         }
+
                     </div>
 
                     <div id="profile_aliases" class="pr-0 pr-sm-4 pb-2 mb-2 text-muted order-0">

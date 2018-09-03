@@ -194,7 +194,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
                 {
                     // ban on headshot
-                    if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
+                    if (currentHeadshotRatio > maxHeadshotLerpValueForBan)
                     {
                         Log.WriteDebug("**Maximum Headshot Ratio Reached For Ban**");
                         Log.WriteDebug($"ClientId: {kill.AttackerId}");

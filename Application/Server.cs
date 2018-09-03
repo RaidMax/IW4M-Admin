@@ -209,22 +209,23 @@ namespace IW4MAdmin
                     var autoKickClient = (await Manager.GetClientService().Get(1)).AsPlayer();
                     autoKickClient.CurrentServer = this;
 
-                    if (currentBan.Type == Penalty.PenaltyType.TempBan)
-                    {
-                        string formattedKick = String.Format(
-                            RconParser.GetCommandPrefixes().Kick,
-                            polledPlayer.ClientNumber,
-                            $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
-                        await this.ExecuteCommandAsync(formattedKick);
-                    }
                     // the player is permanently banned
-                    else
+                    if (currentBan.Type == Penalty.PenaltyType.Ban)
                     {
                         // don't store the kick message
                         string formattedKick = String.Format(
                          RconParser.GetCommandPrefixes().Kick,
                          polledPlayer.ClientNumber,
                          $"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {Website})");
+                        await this.ExecuteCommandAsync(formattedKick);
+                    }
+
+                    else
+                    {
+                        string formattedKick = String.Format(
+                            RconParser.GetCommandPrefixes().Kick,
+                            polledPlayer.ClientNumber,
+                            $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
                         await this.ExecuteCommandAsync(formattedKick);
                     }
 

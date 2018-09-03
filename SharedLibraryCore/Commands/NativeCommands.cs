@@ -70,7 +70,20 @@ namespace SharedLibraryCore.Commands
             if (E.Origin.Level <= E.Target.Level)
                 await E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_FAIL"]} {E.Target.Name}");
             else
+            {
                 await E.Target.Warn(E.Data, E.Origin);
+
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Warn,
+                    Data = E.Data,
+                    Origin = E.Origin,
+                    Target = E.Target,
+                    Owner = E.Owner
+                };
+
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
+            }
         }
     }
 

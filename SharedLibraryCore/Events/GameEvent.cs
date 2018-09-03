@@ -22,6 +22,7 @@ namespace SharedLibraryCore
 
             // events "generated" by clients    
             Say,
+            Warn,
             Report,
             Flag,
             Unflag,

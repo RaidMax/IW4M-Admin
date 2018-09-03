@@ -17,14 +17,29 @@ namespace IW4ScriptCommands
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
-            if (E.Type == GameEvent.EventType.JoinTeam || E.Type == GameEvent.EventType.Disconnect)
+            //if (E.Type == GameEvent.EventType.JoinTeam || E.Type == GameEvent.EventType.Disconnect)
+            //{
+            //    E.Origin = new SharedLibraryCore.Objects.Player()
+            //    {
+            //        ClientId = 1,
+            //        CurrentServer = E.Owner
+            //    };
+            //    return new Commands.Balance().ExecuteAsync(E);
+            //}
+
+            if (E.Type == GameEvent.EventType.Warn)
             {
-                E.Origin = new SharedLibraryCore.Objects.Player()
+                return S.SetDvarAsync("sv_iw4madmin_command", new CommandInfo()
                 {
-                    ClientId = 1,
-                    CurrentServer = E.Owner
-                };
-                return new Commands.Balance().ExecuteAsync(E);
+                    ClientNumber = E.Target.ClientNumber,
+                    Command = "alert",
+                    CommandArguments = new List<string>()
+                    {
+                        "Warning",
+                        "ui_mp_nukebomb_timer",
+                        E.Data
+                    }
+                }.ToString());
             }
 
             return Task.CompletedTask;

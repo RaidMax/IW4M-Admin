@@ -11,21 +11,33 @@ WaitForCommand()
 {
 	for(;;)
 	{
-		command = getDvar("sv_iw4madmin_command");
-		commandArgs = strtok(getDvar("sv_iw4madmin_commandargs"), ",");
+		commandInfo = strtok(getDvar("sv_iw4madmin_command"), ";");
+		command = commandInfo[0];
+		commandArgs = strtok(commandInfo[1], ",");
 
 		switch(command)
 		{
 			case "balance":
 				BalanceTeams(commandArgs);
 				break;
+			case "alert":
+					//clientId        alertType       sound           message
+				SendAlert(commandArgs[0], commandArgs[1], commandArgs[2], commandArgs[3]);
+				break;
 		}
 
 		setDvar("sv_iw4madmin_command", "");
-		setDvar("sv_iw4madmin_commandargs", "");
-
 		wait(1);
 	}
+}
+
+SendAlert(clientId, alertType, sound, message)
+{
+	client = level.players[int(clientId)];
+
+	client thread playLeaderDialogOnPlayer(sound, client.team);
+	client playLocalSound(sound);
+	client iPrintLnBold("^1" + alertType + ": ^3" + message);
 }
 
 BalanceTeams(commandArgs)

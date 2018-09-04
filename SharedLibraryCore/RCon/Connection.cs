@@ -17,19 +17,14 @@ namespace SharedLibraryCore.RCon
         public int BufferSize { get; private set; }
         public byte[] Buffer { get; private set; }
 
-        private readonly StringBuilder sb;
-
-        public StringBuilder ResponseString
-        {
-            get => sb;
-        }
+        public StringBuilder ResponseString { get; }
 
         public ConnectionState(Socket cl)
         {
             BufferSize = 8192;
             Buffer = new byte[BufferSize];
             Client = cl;
-            sb = new StringBuilder();
+            ResponseString = new StringBuilder();
         }
     }
 

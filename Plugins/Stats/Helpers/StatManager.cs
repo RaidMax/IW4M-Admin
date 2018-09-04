@@ -43,15 +43,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 context.ChangeTracker.AutoDetectChangesEnabled = false;
                 context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-                var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
+                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
                 var iqClientRatings = (from rating in context.Set<EFRating>()
-#if DEBUG == false
-                                       where rating.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime
-#endif
-                                       where rating.RatingHistory.Client.Level != Player.Permission.Banned
-                                       where rating.RatingHistory.Client.LastConnection > thirtyDaysAgo
-                                       where rating.Newest
                                        where rating.ServerId == null
+                                       where rating.RatingHistory.Client.LastConnection > fifteenDaysAgo
+                                       where rating.RatingHistory.Client.Level != Player.Permission.Banned
+                                       where rating.Newest
+                                       where rating.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime
                                        orderby rating.Performance descending
                                        select new
                                        {
@@ -67,7 +65,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var clientRatings = await iqClientRatings.ToListAsync();
 
-                var clientIds = clientRatings.GroupBy(r => r.ClientId).Select(r => r.First().ClientId).ToList();
+                var clientIds = clientRatings
+                    .GroupBy(r => r.ClientId)
+                    .Select(r => r.First().ClientId)
+                    .ToList();
 
                 var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
                                    where clientIds.Contains(stat.ClientId)
@@ -101,8 +102,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Performance = Math.Round(clientRatingsDict[s.ClientId].Performance, 2),
                     RatingChange = clientRatingsDict[s.ClientId].Ratings.First().Ranking - clientRatingsDict[s.ClientId].Ratings.Last().Ranking,
                     PerformanceHistory = clientRatingsDict[s.ClientId].Ratings.Count() > 1 ?
-                    clientRatingsDict[s.ClientId].Ratings.Select(r => r.Performance).ToList() :
-                    new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
+                        clientRatingsDict[s.ClientId].Ratings.Select(r => r.Performance).ToList() :
+                        new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
                     TimePlayed = Math.Round(clientRatingsDict[s.ClientId].TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
                 })
                 .OrderByDescending(r => r.Performance)
@@ -324,7 +325,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <returns></returns>
         public async Task AddScriptHit(bool isDamage, DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
-            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads, string fraction, string snapAngles)
+            string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads,
+            string fraction, string visibilityPercentage, string snapAngles)
         {
             var statsSvc = ContextThreads[serverId];
             Vector3 vDeathOrigin = null;
@@ -381,6 +383,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 IsKillstreakKill = isKillstreakKill[0] != '0',
                 AdsPercent = float.Parse(Ads),
                 Fraction = double.Parse(fraction),
+                VisibilityPercentage = double.Parse(visibilityPercentage),
                 IsKill = !isDamage,
                 AnglesList = snapshotAngles
             };
@@ -569,9 +572,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // update their performance 
-//#if !DEBUG
+#if !DEBUG
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
-//#endif
+#endif
             {
                 await UpdateStatHistory(attacker, attackerStats);
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
@@ -631,13 +634,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ctx.Update(clientHistory);
                 }
 
-                var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
+                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
                 // get the client ranking for the current server
                 int individualClientRanking = await ctx.Set<EFRating>()
                     .Where(c => c.ServerId == clientStats.ServerId)
+                     .Where(r => r.RatingHistory.Client.LastConnection > fifteenDaysAgo)
                     .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
                     .Where(r => r.ActivityAmount > Plugin.Config.Configuration().TopPlayersMinPlayTime)
-                    .Where(r => r.RatingHistory.Client.LastConnection > thirtyDaysAgo)
                     .Where(c => c.RatingHistory.ClientId != client.ClientId)
                     .Where(r => r.Newest)
                     .Where(c => c.Performance > clientStats.Performance)
@@ -689,11 +692,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
 
                 int overallClientRanking = await ctx.Set<EFRating>()
-                    .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
+                     .Where(r => r.ServerId == null)
+                     .Where(r => r.RatingHistory.ClientId != client.ClientId)
+                     .Where(r => r.RatingHistory.Client.LastConnection > fifteenDaysAgo)
+                     .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
                     .Where(r => r.ActivityAmount > Plugin.Config.Configuration().TopPlayersMinPlayTime)
-                    .Where(r => r.RatingHistory.Client.LastConnection > thirtyDaysAgo)
-                    .Where(r => r.RatingHistory.ClientId != client.ClientId)
-                    .Where(r => r.ServerId == null)
                     .Where(r => r.Newest)
                     .Where(r => r.Performance > performanceAverage)
                     .CountAsync() + 1;
@@ -730,9 +733,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 {
                     await ctx.SaveChangesAsync();
                 }
-                catch (DbUpdateConcurrencyException e)
+                // this can happen when the client disconnects  without any stat changes
+                catch (DbUpdateConcurrencyException)
                 {
-                 
+
                 }
             }
         }

@@ -22,3 +22,10 @@ xcopy /Y "%SolutionDir%BUILD\Plugins" "%SolutionDir%Publish\WindowsPrerelease\Pl
 echo Copying script plugins for publish
 xcopy /Y "%SolutionDir%Plugins\ScriptPlugins" "%SolutionDir%Publish\Windows\Plugins\"
 xcopy /Y "%SolutionDir%Plugins\ScriptPlugins" "%SolutionDir%Publish\WindowsPrerelease\Plugins\"
+
+echo Copying GSC files for publish
+xcopy /Y  "%SolutionDir%_customcallbacks.gsc" "%SolutionDir%Publish\Windows\userraw\scripts\"
+xcopy /Y "%SolutionDir%_customcallbacks.gsc" "%SolutionDir%Publish\WindowsPrerelease\userraw\scripts\"
+
+xcopy /Y "%SolutionDir%_commands.gsc" "%SolutionDir%Publish\Windows\userraw\scripts\"
+xcopy /Y "%SolutionDir%_commands.gsc" "%SolutionDir%Publish\WindowsPrerelease\userraw\scripts\"

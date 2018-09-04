@@ -117,7 +117,7 @@ namespace SharedLibraryCore
         public async Task Broadcast(String Message)
         {
 #if DEBUG == false
-            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, Message);
+            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{Message}");
 #else
             Logger.WriteVerbose(Message.StripColors());
 #endif
@@ -145,7 +145,7 @@ namespace SharedLibraryCore
         public async Task Tell(String Message, Player Target)
         {
 #if !DEBUG
-            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Tell, Target.ClientNumber, Message);
+            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Tell, Target.ClientNumber, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{Message}");
             if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)
                 await this.ExecuteCommandAsync(formattedMessage);
 #else
@@ -160,9 +160,11 @@ namespace SharedLibraryCore
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
 
+            // prevent this from queueing up too many command responses
             if (CommandResult.Count > 15)
                 CommandResult.RemoveAt(0);
 
+            // it was a remote command so we need to add it to the command result queue
             if (Target.ClientNumber < 0)
             {
                 CommandResult.Add(new CommandResponseInfo()

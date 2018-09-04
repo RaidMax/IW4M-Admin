@@ -258,7 +258,6 @@ namespace IW4MAdmin
             {
                 Player Leaving = Players[cNum];
                 Logger.WriteInfo($"Client {Leaving}, state {Leaving.State.ToString()} disconnecting...");
-                Leaving.State = Player.ClientState.Disconnecting;
 
                 // occurs when the player disconnects via log before being authenticated by RCon
                 if (Leaving.State != Player.ClientState.Connected)
@@ -268,6 +267,7 @@ namespace IW4MAdmin
 
                 else
                 {
+                    Leaving.State = Player.ClientState.Disconnecting;
                     Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
                     Leaving.LastConnection = DateTime.UtcNow;
                     await Manager.GetClientService().Update(Leaving);
@@ -822,7 +822,7 @@ namespace IW4MAdmin
 
             Logger.WriteInfo($"Log file is {logPath}");
 
-            Task.Run(() => LogEvent.PollForChanges());
+            _ = Task.Run(() => LogEvent.PollForChanges());
 #if !DEBUG
             await Broadcast(loc["BROADCAST_ONLINE"]);
 #endif

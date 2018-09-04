@@ -31,6 +31,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public DateTime When { get; set; }
         public double Fraction { get; set; }
         public bool IsKill { get; set; }
+        public double VisibilityPercentage { get; set; }
         // http://wiki.modsrepository.com/index.php?title=Call_of_Duty_5:_Gameplay_standards for conversion to meters
         [NotMapped]
         public double Distance => Vector3.Distance(KillOrigin, DeathOrigin) * 0.0254;

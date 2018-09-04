@@ -12,6 +12,26 @@ init()
 	level waittill("prematch_over");
 	level.callbackPlayerKilled = ::Callback_PlayerKilled;
 	level.callbackPlayerDamage = ::Callback_PlayerDamage;
+	level.playerTags = [];
+	level.playerTags[0] = "j_head";
+	level.playerTags[1] = "j_neck";
+	level.playerTags[2] = "j_spineupper";
+	level.playerTags[3] = "j_spinelower";
+	level.playerTags[4] = "j_shoulder_ri";
+	level.playerTags[5] = "j_shoulder_le";
+	level.playerTags[6] = "j_elbow_ri";
+	level.playerTags[7] = "j_spineupper";
+	level.playerTags[8] = "j_spineupper";
+	level.playerTags[9] = "j_elbow_le";
+	level.playerTags[10] = "j_wrist_ri";
+	level.playerTags[11] = "j_wrist_le";
+	level.playerTags[12] = "j_hip_ri";
+	level.playerTags[13] = "j_hip_le";
+	level.playerTags[14] = "j_knee_ri";
+	level.playerTags[15] = "j_knee_le";
+	level.playerTags[16] = "j_ankle_ri";
+	level.playerTags[17] = "j_ankle_le";
+	level.playerTags[18] = "j_helmet";
 }
 
 
@@ -112,6 +132,21 @@ waitForAdditionalAngles(logString)
 	logPrint(logString + ";" + anglesStr + "\n"); 
 }
 
+runVisibilityCheck(attacker, victim)
+{
+	start = attacker getTagOrigin("tag_eye");
+	traceSucceedCount = 0;
+
+	for (i = 0; i < 19; i++)
+	{	
+		if (sightTracePassed(start, victim getTagOrigin(level.playerTags[i]), false, attacker))
+		{
+			traceSucceedCount += 1;
+		}
+	}
+	return traceSucceedCount / 20;
+}
+
 vectorScale(vector, scale)
 {
 	return (vector[0] * scale, vector[1] * scale, vector[2] * scale);
@@ -134,7 +169,9 @@ Process_Hit(type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon)
 	end = location;
 	trace = bulletTrace(start, end, true, _attacker);
 
-	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";" + trace["fraction"];
+	playerVisibilityPercentage = runVisibilityCheck(_attacker, victim);
+
+	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";" + trace["fraction"] + ";" + playerVisibilityPercentage;
 	attacker thread waitForAdditionalAngles(logLine);
 }
 

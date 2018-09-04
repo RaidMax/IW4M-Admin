@@ -11,6 +11,9 @@ Latest binary builds are always available at https://raidmax.org/IW4MAdmin
 * [.NET Core 2.1 Runtime](https://www.microsoft.com/net/download) *or newer*  
 1. Extract `IW4MAdmin-<version>.zip`  
 2. Run `StartIW4MAdmin.cmd`
+### Help
+Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)
+If you come across an issue,  bug, or feature request please post an [issue](https://github.com/RaidMax/IW4M-Admin/issues)
 ___
 
 ### Configuration
@@ -29,10 +32,6 @@ When **IW4MAdmin** is launched for the _first time_, you will be prompted to set
 `Enable custom say name`
 * Shows a prefix to every message send by **IW4MAdmin** -- `[Admin] message`
 * _This feature requires you specify a custom say name_
-
-`Enable client VPNs`
-* Allow clients to use a [VPN](https://en.wikipedia.org/wiki/Virtual_private_network) 
-* _This feature requires an active api key on [iphub.info](https://iphub.info/)_
 
 `Enable social link`
 * Shows a link to your community's social media/website on the webfront
@@ -81,9 +80,6 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
  
 `RConPollRate`
 * Specifies (in milliseconds) how often to poll each server for updates
-
-`VpnExceptionIds`
-* Specifies the list of `Client IDs` exempt from the VPN check (if enabled)
 
 `Servers`
 * Specifies the list of servers **IW4MAdmin** will monitor
@@ -228,6 +224,9 @@ ___
 
 #### Stats
 - This plugin calculates basic player performance, skill approximation, and kill/death ratio 
+- Skill is an number derived from an algorithmic processing of a player's Kill Death Ratio (KDR) and Score per Minute (SPM).
+- Elo Rating is based off of the number of encounters a player wins.
+- Performance is the average of Skill + Elo Rating
 
 **Commands added by this plugin** 
 
@@ -238,7 +237,7 @@ ___
 |topstats|ts|view the top 5 players on this server|False|!ts |User|
 |mostplayed|mp|view the top 5 dedicated players on the server|False|!mp |User|
 
-- To qualify for top stats, a client must have played for at least `1 hour` and connected within the past `30 days`.
+- To qualify for top stats, a client must have played for at least `3 hours` and connected within the past `15 days`.
 
 #### Login
 - This plugin deters GUID spoofing by requiring privileged users to login with their password before executing commands
@@ -254,6 +253,14 @@ ___
 - This plugin warns and kicks players for using profanity
 - Profane words and warning message can be specified in `ProfanityDetermentSettings.json`
 - If a client's name contains a word listed in the settings, they will immediately be kicked
+
+####IW4 Script Commands
+- This plugin provides additional integration to IW4x
+- In order to take advantage of it, copy the `userraw` folder into your IW4x server directory
+
+####VPN Detection [Script Plugin]
+- This plugin detects if a client is using a VPN and kicks them if they are
+- To disable this plugin, delete `Plugins\VPNDetection.js`
 ___
 ### Webfront
 `Home`
@@ -274,34 +281,35 @@ ___
 
 `Web Console`
 * Allows logged in privileged users to execute commands as if they are in-game
-
 ---
 ### Extending Plugins
 #### Code
-IW4Madmin functionality can be extended by writing additional plugins in C#.
+IW4Madmin functionality can be extended by writing additional plugins in C#.  
+Each class library must implement the `IPlugin` interface.   
+See the existing plugins for examples.
 #### JavaScript
 IW4MAdmin functionality can be extended using JavaScript.
-The JavaScript parser supports [some](https://github.com/sebastienros/jint/issues/343) of ECMAScript 6's new features.
+The JavaScript parser supports [ECMA 5.1](https://ecma-international.org/ecma-262/5.1/) standards.
 #### Plugin Object Template
 In order to be properly parsed by the JavaScript engine, every plugin must conform to the following template.
 ```js
-const plugin = {
+var plugin = {
     author: 'YourHandle',
     version: 1.0,
     name: 'Sample JavaScript Plugin',
 
-    onEventAsync(gameEvent, server) {
+    onEventAsync: function (gameEvent, server) {
     },
 
-    onLoadAsync(manager) {
+    onLoadAsync: function (manager) {
     },
 
-    onUnloadAsync() {
+    onUnloadAsync: function () {
     },
 
-    onTickAsync(server) {
+    onTickAsync: function (server) {
     }
-}
+};
 ```
 #### Required Properties
 - `author` &mdash; [string] Author of the plugin (usually your name or online name/alias)
@@ -333,9 +341,9 @@ setuptools>=39.0.1
 urllib3>=1.23
 ``` 
 #### Configuration Options
-- `IW4MAdminUrl` &mdash; Base url corresponding to your IW4MAdmin `WebfrontBindUrl`.
+- `IW4MAdminUrl` &mdash; Base url corresponding to your IW4MAdmin `WebfrontBindUrl`.  
 Example http://127.0.0.1
-- `DiscordWebhookNotificationUrl` &mdash; [required] Discord generated URL to send notifications/alerts to; this includes **Reports** and **Bans**
+- `DiscordWebhookNotificationUrl` &mdash; [required] Discord generated URL to send notifications/alerts to; this includes **Reports** and **Bans**  
 Example https://discordapp.com/api/webhooks/id/token
 - `DiscordWebhookInformationUrl` &mdash; [optional] Discord generated URL to send information to; this includes information such as player messages
 - `NotifyRoleIds` &mdash; [optional] List of [discord role ids](https://discordhelp.net/role-id) to mention when notification hook is sent

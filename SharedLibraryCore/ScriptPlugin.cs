@@ -58,8 +58,8 @@ namespace SharedLibraryCore
 
             Manager = mgr;
             string script = File.ReadAllText(FileName);
-            ScriptEngine = new Jint.Engine(cfg => 
-                cfg.AllowClr(new[] 
+            ScriptEngine = new Jint.Engine(cfg =>
+                cfg.AllowClr(new[]
                 {
                     typeof(System.Net.Http.HttpClient).Assembly,
                     typeof(Objects.Player).Assembly,
@@ -82,9 +82,12 @@ namespace SharedLibraryCore
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
-            ScriptEngine.SetValue("_gameEvent", E);
-            ScriptEngine.SetValue("_server", S);
-            return Task.FromResult(ScriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue());
+            lock (ScriptEngine)
+            {
+                ScriptEngine.SetValue("_gameEvent", E);
+                ScriptEngine.SetValue("_server", S);
+                return Task.FromResult(ScriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue());
+            }
         }
 
         public Task OnLoadAsync(IManager manager)

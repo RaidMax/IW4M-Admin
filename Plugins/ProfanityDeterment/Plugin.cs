@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -36,6 +37,15 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                 var objectionalWords = Settings.Configuration().OffensiveWords;
                 bool containsObjectionalWord = objectionalWords.FirstOrDefault(w => E.Origin.Name.ToLower().Contains(w)) != null;
 
+                // we want to run regex against it just incase
+                if (!containsObjectionalWord)
+                {
+                    foreach (string word in objectionalWords)
+                    {
+                        containsObjectionalWord |= Regex.IsMatch(E.Origin.Name.ToLower(), word);
+                    }
+                }
+
                 if (containsObjectionalWord)
                 {
                     await E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
@@ -56,7 +66,18 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
             if (E.Type == GameEvent.EventType.Say)
             {
                 var objectionalWords = Settings.Configuration().OffensiveWords;
-                bool containsObjectionalWord = objectionalWords.FirstOrDefault(w => E.Data.ToLower().Contains(w)) != null;
+                bool containsObjectionalWord = false;
+
+                foreach (string word in objectionalWords)
+                {
+                    containsObjectionalWord |= Regex.IsMatch(E.Origin.Name.ToLower(), word);
+
+                    // break out early because there's at least one objectional word
+                    if (containsObjectionalWord)
+                    {
+                        break;
+                    }
+                }
 
                 if (containsObjectionalWord)
                 {

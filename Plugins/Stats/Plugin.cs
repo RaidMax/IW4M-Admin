@@ -76,7 +76,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (killInfo.Length >= 14)
                     {
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -92,7 +92,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (killInfo.Length >= 14)
                     {
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
                     }
                     break;
             }

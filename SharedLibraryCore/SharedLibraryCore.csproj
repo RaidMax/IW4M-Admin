@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jint" Version="3.0.0-beta-1249" />
+    <PackageReference Include="Jint" Version="2.11.58" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.1.2" />

@@ -27,7 +27,15 @@ namespace SharedLibraryCore.Database
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
-        public DatabaseContext() { }
+        public DatabaseContext(bool disableTracking = false)
+        {
+            if (disableTracking)
+            {
+                this.ChangeTracker.AutoDetectChangesEnabled = false;
+                this.ChangeTracker.LazyLoadingEnabled = false;
+                this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            }
+        }
 
         public DatabaseContext(string connStr)
         {

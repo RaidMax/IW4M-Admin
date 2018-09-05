@@ -133,6 +133,11 @@ namespace IW4MAdmin.Plugins.Stats
                 {
                     new ProfileMeta()
                     {
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
+                        Value = "#" + await Manager.GetClientOverallRanking(clientId),
+                    },
+                    new ProfileMeta()
+                    {
                            Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"],
                            Value = kills
                     },

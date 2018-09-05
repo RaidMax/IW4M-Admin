@@ -38,7 +38,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
             var whenUpper = when.AddMinutes(5);
             var whenLower = when.AddMinutes(-5);
 
-            using (var ctx = new SharedLibraryCore.Database.DatabaseContext())
+            using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
             {
                 var iqMessages = from message in ctx.Set<Models.EFClientMessage>()
                                  where message.ServerId == serverId
@@ -52,17 +52,16 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                                  };
 
                 var messages = await iqMessages.ToListAsync();
-                string sql = iqMessages.ToSql();
 
                 return View("_MessageContext", messages);
             }
         }
 
         [HttpGet]
-      //  [Authorize]
+        [Authorize]
         public async Task<IActionResult> GetAutomatedPenaltyInfoAsync(int clientId)
         {
-            using (var ctx = new SharedLibraryCore.Database.DatabaseContext())
+            using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
             {
                 var penaltyInfo = await ctx.Set<Models.EFACSnapshot>()
                     .Where(s => s.ClientId == clientId)
@@ -71,19 +70,16 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .Include(s => s.HitDestination)
                     .Include(s => s.CurrentViewAngle)
                     .Include(s => s.PredictedViewAngles)
-                    .OrderBy(s => new { s.When, s.Hits })
+                    .OrderBy(s => s.When)
+                    .ThenBy(s => s.Hits)
                     .ToListAsync();
 
-                if (penaltyInfo != null)
-                {
-                    return View("_PenaltyInfo", penaltyInfo);
-                }
-
-                return NotFound();
+                return View("_PenaltyInfo", penaltyInfo);
             }
         }
     }
 
+#if DEBUG == true
     public static class IQueryableExtensions
     {
         private static readonly TypeInfo QueryCompilerTypeInfo = typeof(QueryCompiler).GetTypeInfo();
@@ -111,4 +107,5 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
             return sql;
         }
     }
+#endif
 }

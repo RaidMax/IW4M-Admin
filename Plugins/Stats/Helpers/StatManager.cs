@@ -36,13 +36,40 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
 
+        /// <summary>
+        /// gets a ranking across all servers for given client id
+        /// </summary>
+        /// <param name="clientId">client id of the player</param>
+        /// <returns></returns>
+        public async Task<int> GetClientOverallRanking(int clientId)
+        {
+            using (var context = new DatabaseContext(true))
+            {
+                var clientPerformance = await context.Set<EFRating>()
+                    .Where(r => r.RatingHistory.ClientId == clientId)
+                    .Where(r => r.ServerId == null)
+                    .Where(r => r.Newest)
+                    .Select(r => r.Performance)
+                    .FirstOrDefaultAsync();
+
+                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+                var iqClientRating = (from rating in context.Set<EFRating>()
+                                      where rating.RatingHistory.Client.ClientId != clientId
+                                      where rating.ServerId == null
+                                      where rating.RatingHistory.Client.LastConnection > fifteenDaysAgo
+                                      where rating.RatingHistory.Client.Level != Player.Permission.Banned
+                                      where rating.Newest
+                                      where rating.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime
+                                      where rating.Performance > clientPerformance
+                                      select rating.Ranking);
+                return await iqClientRating.CountAsync() + 1;
+            }
+        }
+
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
             {
-                context.ChangeTracker.AutoDetectChangesEnabled = false;
-                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-
                 var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
                 var iqClientRatings = (from rating in context.Set<EFRating>()
                                        where rating.ServerId == null

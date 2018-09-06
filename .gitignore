@@ -228,3 +228,4 @@ bootstrap-custom.min.css
 
 /DiscordWebhook/env
 /DiscordWebhook/config.dev.json
+/GameLogServer/env

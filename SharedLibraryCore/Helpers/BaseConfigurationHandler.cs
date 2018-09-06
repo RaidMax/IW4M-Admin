@@ -12,7 +12,7 @@ namespace SharedLibraryCore.Configuration
 {
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
-        string Filename;
+        readonly string Filename;
         IConfigurationRoot ConfigurationRoot { get; set; }
         T _configuration;
 

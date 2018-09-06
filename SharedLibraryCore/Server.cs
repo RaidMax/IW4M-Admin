@@ -310,6 +310,7 @@ namespace SharedLibraryCore
         public RCon.Connection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; protected set; }
         public IEventParser EventParser { get; set; }
+        public string LogPath { get; protected set; }
 
         // Internal
         protected string IP;

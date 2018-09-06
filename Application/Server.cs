@@ -567,7 +567,7 @@ namespace IW4MAdmin
                 try
                 {
                     var polledClients = await PollPlayersAsync();
-                    var waiterList = new List<SemaphoreSlim>();
+                    var waiterList = new List<GameEvent>();
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
@@ -586,10 +586,10 @@ namespace IW4MAdmin
                         Manager.GetEventHandler().AddEvent(e);
                         // wait until the disconnect event is complete
                         // because we don't want to try to fill up a slot that's not empty yet
-                        waiterList.Add(e.OnProcessed);
+                        waiterList.Add(e);
                     }
                     // wait for all the disconnect tasks to finish
-                    await Task.WhenAll(waiterList.Select(t => t.WaitAsync()));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync()));
 
                     waiterList.Clear();
                     // this are our new connecting clients
@@ -610,11 +610,11 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(e);
-                        waiterList.Add(e.OnProcessed);
+                        waiterList.Add(e);
                     }
 
                     // wait for all the connect tasks to finish
-                    await Task.WhenAll(waiterList.Select(t => t.WaitAsync()));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync()));
 
                     if (ConnectionErrors > 0)
                     {
@@ -788,25 +788,28 @@ namespace IW4MAdmin
 #if DEBUG
             basepath.Value = @"D:\";
 #endif
-            string logPath;
+            string logPath = string.Empty;
+
+            LogPath = game == string.Empty ?
+                   $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
+                   $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+
             if (GameName == Game.IW5 || ServerConfig.ManualLogPath?.Length > 0)
             {
                 logPath = ServerConfig.ManualLogPath;
             }
             else
             {
-                logPath = game == string.Empty ?
-                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
-                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+                logPath = LogPath;
             }
 
             // hopefully fix wine drive name mangling
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{logPath}", @"[A-Z]:", "");
+                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:", "");
             }
 
-            if (!File.Exists(logPath) && !logPath.StartsWith("http"))
+            if (!File.Exists(LogPath) && !logPath.StartsWith("http"))
             {
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore
@@ -50,8 +51,7 @@ namespace SharedLibraryCore
 
         public GameEvent()
         {
-            OnProcessed = new SemaphoreSlim(0);
-            OnProcessed.Release();
+            OnProcessed = new ManualResetEventSlim();
             Time = DateTime.UtcNow;
             Id = GetNextEventId();
         }
@@ -64,9 +64,15 @@ namespace SharedLibraryCore
         public Server Owner;
         public Boolean Remote = false;
         public object Extra { get; set; }
-        public SemaphoreSlim OnProcessed { get; set; }
+        public ManualResetEventSlim OnProcessed { get; set; }
         public DateTime Time { get; set; }
         public long Id { get; private set; }
+
+        /// <summary>
+        /// asynchronously wait for GameEvent to be processed
+        /// </summary>
+        /// <returns>waitable task </returns>
+        public Task<bool> WaitAsync(int timeOut = int.MaxValue) => Task.FromResult(OnProcessed.Wait(timeOut));
 
         /// <summary>
         /// determine whether an event should be delayed or not

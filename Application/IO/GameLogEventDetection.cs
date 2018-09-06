@@ -68,7 +68,8 @@ namespace IW4MAdmin.Application.IO
 
             long fileDiff = fileSize - PreviousFileSize;
 
-            if (fileDiff < 1)
+            // this makes the http log get pulled
+            if (fileDiff < 1 && fileSize != -1)
                 return;
 
             PreviousFileSize = fileSize;

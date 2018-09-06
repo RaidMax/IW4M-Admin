@@ -84,7 +84,6 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-
             if (eventType == "ScriptKill")
             {
                 var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
@@ -152,7 +151,8 @@ namespace IW4MAdmin.Application.EventParsers
                             Name = regexMatch.Groups[4].ToString().StripColors(),
                             NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
-                            State = Player.ClientState.Connecting
+                            State = Player.ClientState.Connecting,
+                            CurrentServer = server
                         }
                     };
                 }

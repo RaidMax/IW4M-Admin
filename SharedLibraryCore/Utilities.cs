@@ -479,6 +479,7 @@ namespace SharedLibraryCore
             return cmdLine.Length > 1 ? cmdLine[1] : cmdLine[0];
         }
 
+        public static string ToBase64UrlSafeString(this string src) => Convert.ToBase64String(src.Select(c => Convert.ToByte(c)).ToArray()).Replace('+', '-').Replace('/', '_');
 
         public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
 

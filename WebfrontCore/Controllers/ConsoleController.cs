@@ -47,13 +47,28 @@ namespace WebfrontCore.Controllers
             };
 
             Manager.GetEventHandler().AddEvent(remoteEvent);
+            List<CommandResponseInfo> response;
             // wait for the event to process
-            await remoteEvent.OnProcessed.WaitAsync(60*1000);
-            var response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
+            if (await remoteEvent.WaitAsync(60 * 1000))
+            {
+                response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
-            // remove the added command response
-            for (int i = 0; i < response.Count; i++)
-                server.CommandResult.Remove(response[i]);
+                // remove the added command response
+                for (int i = 0; i < response.Count; i++)
+                    server.CommandResult.Remove(response[i]);
+            }
+
+            else
+            {
+                response = new List<CommandResponseInfo>()
+                {
+                    new CommandResponseInfo()
+                    {
+                        ClientId = client.ClientId,
+                        Response = Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]
+                    }
+                };
+            }
 
             return View("_Response", response);
         }

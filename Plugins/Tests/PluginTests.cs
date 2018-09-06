@@ -1,9 +1,6 @@
 ﻿using IW4MAdmin.Application;
 using SharedLibraryCore;
 using SharedLibraryCore.Objects;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Tests
@@ -43,7 +40,7 @@ namespace Tests
                 Type = GameEvent.EventType.Say,
                 Origin = client,
                 Data = "nigger",
-                Owner = client.CurrentServer
+                Owner = e.Owner
             };
 
             Manager.GetEventHandler().AddEvent(e);

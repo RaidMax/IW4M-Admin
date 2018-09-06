@@ -1,8 +1,11 @@
-﻿using SharedLibraryCore;
+﻿using IW4MAdmin.Application.API.GameLogServer;
+using RestEase;
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using static SharedLibraryCore.Utilities;
 
 namespace IW4MAdmin.Application.IO
 {
@@ -12,31 +15,17 @@ namespace IW4MAdmin.Application.IO
     class GameLogReaderHttp : IGameLogReader
     {
         readonly IEventParser Parser;
+        readonly IGameLogServer Api;
         readonly string LogFile;
 
         public GameLogReaderHttp(string logFile, IEventParser parser)
         {
             LogFile = logFile;
             Parser = parser;
+            Api = RestClient.For<IGameLogServer>(logFile);
         }
 
-        public long Length
-        {
-            get
-            {
-                using (var cl = new HttpClient())
-                {
-                    using (var re = cl.GetAsync($"{LogFile}&length=1").Result)
-                    {
-                        using (var content = re.Content)
-                        {
-                            string response = content.ReadAsStringAsync().Result ?? "0";
-                            return Convert.ToInt64(response);
-                        }
-                    }
-                }
-            }
-        }
+        public long Length => -1;
 
         public int UpdateInterval => 1000;
 
@@ -45,29 +34,17 @@ namespace IW4MAdmin.Application.IO
 #if DEBUG == true
             server.Logger.WriteDebug($"Begin reading {fileSizeDiff} from http log");
 #endif
-            string log;
-            using (var cl = new HttpClient())
-            {
-                using (var re = cl.GetAsync($"{LogFile}&start={fileSizeDiff}").Result)
-                {
-                    using (var content = re.Content)
-                    {
-                        log = content.ReadAsStringAsync().Result;
-                    }
-                }
-            }
-#if DEBUG == true
-            server.Logger.WriteDebug($"retrieved events from http log");
-#endif
-            List<GameEvent> events = new List<GameEvent>();
-            string[] lines = log.Split(Environment.NewLine);
+            var events = new List<GameEvent>();
+            string b64Path = server.LogPath.ToBase64UrlSafeString();
+            var response = Api.Log(b64Path).Result;
 
-#if DEBUG == true
-            server.Logger.WriteDebug($"Begin parse of {lines.Length} lines from http log");
-#endif
+            if (!response.Success)
+            {
+                server.Logger.WriteError($"Could not get log server info of {LogFile}/{b64Path} ({server.LogPath})");
+            }
 
             // parse each line
-            foreach (string eventLine in lines)
+            foreach (string eventLine in response.Data.Split(Environment.NewLine))
             {
                 if (eventLine.Length > 0)
                 {

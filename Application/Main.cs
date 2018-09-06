@@ -138,7 +138,7 @@ namespace IW4MAdmin.Application
                             };
 
                             ServerManager.GetEventHandler().AddEvent(E);
-                            await E.OnProcessed.WaitAsync(30 * 1000);
+                            await E.WaitAsync(30 * 1000);
                         }
                         Console.Write('>');
 

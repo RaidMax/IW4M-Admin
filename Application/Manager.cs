@@ -100,9 +100,7 @@ namespace IW4MAdmin.Application
                     return;
                 }
 
-
-
-                //// todo: this is a hacky mess
+                // todo: this is a hacky mess
                 if (newEvent.Origin?.DelayedEvents.Count > 0 &&
                     newEvent.Origin?.State == Player.ClientState.Connected)
                 {
@@ -175,7 +173,7 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug("Error Trace: " + ex.StackTrace);
             }
             // tell anyone waiting for the output that we're done
-            newEvent.OnProcessed.Release();
+            newEvent.OnProcessed.Set();
         }
 
         public IList<Server> GetServers()

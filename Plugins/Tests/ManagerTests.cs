@@ -43,7 +43,7 @@ namespace Tests
         public void AddAndRemoveClientsViaJoinShouldSucceed()
         {
             var server = Manager.GetServers().First();
-            var waiters = new Queue<SemaphoreSlim>();
+            var waiters = new Queue<GameEvent>();
 
             int clientStartIndex = 4;
             int clientNum = 10;
@@ -63,12 +63,12 @@ namespace Tests
                 };
 
                 server.Manager.GetEventHandler().AddEvent(e);
-                waiters.Enqueue(e.OnProcessed);
+                waiters.Enqueue(e);
             }
 
             while (waiters.Count > 0)
             {
-                waiters.Dequeue().Wait();
+                waiters.Dequeue().OnProcessed.Wait();
             }
 
             Assert.True(server.ClientNum == clientNum, $"client num does not match added client num [{server.ClientNum}:{clientNum}]");
@@ -88,12 +88,12 @@ namespace Tests
                 };
 
                 server.Manager.GetEventHandler().AddEvent(e);
-                waiters.Enqueue(e.OnProcessed);
+                waiters.Enqueue(e);
             }
 
             while (waiters.Count > 0)
             {
-                waiters.Dequeue().Wait();
+                waiters.Dequeue().OnProcessed.Wait();
             }
 
             Assert.True(server.ClientNum == 0, "there are still clients connected");
@@ -103,7 +103,7 @@ namespace Tests
         public void AddAndRemoveClientsViaRconShouldSucceed()
         {
             var server = Manager.GetServers().First();
-            var waiters = new Queue<SemaphoreSlim>();
+            var waiters = new Queue<GameEvent>();
 
             int clientIndexStart = 1;
             int clientNum = 8;
@@ -126,12 +126,12 @@ namespace Tests
                 };
 
                 Manager.GetEventHandler().AddEvent(e);
-                waiters.Enqueue(e.OnProcessed);
+                waiters.Enqueue(e);
             }
 
             while (waiters.Count > 0)
             {
-                waiters.Dequeue().Wait();
+                waiters.Dequeue().OnProcessed.Wait();
             }
 
             int actualClientNum = server.GetPlayersAsList().Count(p => p.State == Player.ClientState.Connected);
@@ -155,12 +155,12 @@ namespace Tests
                 };
 
                 Manager.GetEventHandler().AddEvent(e);
-                waiters.Enqueue(e.OnProcessed);
+                waiters.Enqueue(e);
             }
 
             while (waiters.Count > 0)
             {
-                waiters.Dequeue().Wait();
+                waiters.Dequeue().OnProcessed.Wait();
             }
 
             actualClientNum = server.ClientNum;

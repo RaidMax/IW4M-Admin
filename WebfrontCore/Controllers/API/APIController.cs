@@ -41,7 +41,7 @@ namespace WebfrontCore.Controllers.API
                             player.Ping,
                             State = player.State.ToString(),
                             player.ClientNumber,
-                            ConnectionTime = Math.Round((DateTime.UtcNow - player.ConnectionTime).TotalSeconds, 0),
+                            ConnectionTime = player.ConnectionLength,
                             Level = player.Level.ToLocalizedLevelName(),
                         })
                 });

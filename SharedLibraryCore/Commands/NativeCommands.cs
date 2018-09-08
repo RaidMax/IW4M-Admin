@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static SharedLibraryCore.RCon.StaticHelpers;
 
 namespace SharedLibraryCore.Commands
 {
@@ -312,6 +313,7 @@ namespace SharedLibraryCore.Commands
                 if (P == null)
                     continue;
                 // todo: fix spacing
+                // todo: make this better :)
                 if (P.Masked)
                     playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(Player.Permission.User, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(Player.Permission.SeniorAdmin.ToString().Length - Player.Permission.User.ToString().Length));
                 else
@@ -320,12 +322,18 @@ namespace SharedLibraryCore.Commands
                 if (count == 2 || E.Owner.GetPlayersAsList().Count == 1)
                 {
                     await E.Origin.Tell(playerList.ToString());
+                    await Task.Delay(FloodProtectionInterval);
                     count = 0;
                     playerList = new StringBuilder();
                     continue;
                 }
 
                 count++;
+            }
+
+            if (playerList.Length > 0)
+            {
+                await E.Origin.Tell(playerList.ToString());
             }
         }
     }
@@ -357,6 +365,7 @@ namespace SharedLibraryCore.Commands
                     {
                         await E.Origin.Tell("[^3" + C.Name + "^7] " + C.Description);
                         await E.Origin.Tell(C.Syntax);
+                        await Task.Delay(FloodProtectionInterval);
                         found = true;
                     }
                 }
@@ -382,6 +391,7 @@ namespace SharedLibraryCore.Commands
                                 await E.Owner.Broadcast(helpResponse.ToString());
                             else
                                 await E.Origin.Tell(helpResponse.ToString());
+                            await Task.Delay(FloodProtectionInterval);
                             helpResponse = new StringBuilder();
                             count = 0;
                         }
@@ -564,10 +574,10 @@ namespace SharedLibraryCore.Commands
         {
             foreach (string line in OnlineAdmins(E.Owner).Split(Environment.NewLine))
             {
-                if (E.Message[0] == '@')
-                    await E.Owner.Broadcast(line);
-                else
-                    await E.Origin.Tell(line);
+                 var t  = E.Message.IsBroadcastCommand() ? E.Owner.Broadcast(line) :  E.Origin.Tell(line);
+                await t;
+
+                await Task.Delay(FloodProtectionInterval);
             }
         }
     }
@@ -645,6 +655,7 @@ namespace SharedLibraryCore.Commands
                     $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
                     $"({P.AliasLink.Children.First(a => a.Name.ToLower().Contains(E.Data.ToLower())).Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
                 await E.Origin.Tell(msg);
+                await Task.Delay(FloodProtectionInterval);
             }
         }
     }
@@ -675,10 +686,9 @@ namespace SharedLibraryCore.Commands
 
                 foreach (string r in rules)
                 {
-                    if (E.Message.IsBroadcastCommand())
-                        await E.Owner.Broadcast($"- {r}");
-                    else
-                        await E.Origin.Tell($"- {r}");
+                    var t = E.Message.IsBroadcastCommand() ? E.Owner.Broadcast($"- {r}") : E.Origin.Tell($"- {r}");
+                    await t;
+                    await Task.Delay(FloodProtectionInterval);
                 }
             }
         }
@@ -927,7 +937,10 @@ namespace SharedLibraryCore.Commands
             }
 
             foreach (Report R in E.Owner.Reports)
+            {
                 await E.Origin.Tell(String.Format("^5{0}^7->^1{1}^7: {2}", R.Origin.Name, R.Target.Name, R.Reason));
+                await Task.Delay(FloodProtectionInterval);
+            }
         }
     }
 
@@ -1054,6 +1067,7 @@ namespace SharedLibraryCore.Commands
             foreach (var P in Plugins.PluginImporter.ActivePlugins)
             {
                 await E.Origin.Tell(String.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
+                await Task.Delay(FloodProtectionInterval);
             }
         }
     }

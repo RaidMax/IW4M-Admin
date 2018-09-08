@@ -27,7 +27,9 @@ namespace SharedLibraryCore.Database
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
-        public DatabaseContext(bool disableTracking = false)
+        public DatabaseContext() { }
+
+        public DatabaseContext(bool disableTracking)
         {
             if (disableTracking)
             {

@@ -16,6 +16,7 @@ using SharedLibraryCore.Database;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Services;
+using System.Linq.Expressions;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -36,6 +37,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
 
+        public Expression<Func<EFRating, bool>> GetRankingFunc(int? serverId = null)
+        {
+            var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+            return (r) => r.ServerId == serverId &&
+                r.RatingHistory.Client.LastConnection > fifteenDaysAgo &&
+                r.RatingHistory.Client.Level != Player.Permission.Banned &&
+                r.Newest &&
+                r.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime;
+        }
+
+
         /// <summary>
         /// gets a ranking across all servers for given client id
         /// </summary>
@@ -52,17 +64,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .Select(r => r.Performance)
                     .FirstOrDefaultAsync();
 
-                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
-                var iqClientRating = (from rating in context.Set<EFRating>()
-                                      where rating.RatingHistory.Client.ClientId != clientId
-                                      where rating.ServerId == null
-                                      where rating.RatingHistory.Client.LastConnection > fifteenDaysAgo
-                                      where rating.RatingHistory.Client.Level != Player.Permission.Banned
-                                      where rating.Newest
-                                      where rating.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime
-                                      where rating.Performance > clientPerformance
-                                      select rating.Ranking);
-                return await iqClientRating.CountAsync() + 1;
+                var iqClientRanking = context.Set<EFRating>()
+                    .Where(r => r.RatingHistory.ClientId == clientId)
+                    .Where(GetRankingFunc());
+
+                return await iqClientRanking.CountAsync() + 1;
             }
         }
 
@@ -70,28 +76,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             using (var context = new DatabaseContext(true))
             {
-                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+                // setup the query for the clients within the given rating range
                 var iqClientRatings = (from rating in context.Set<EFRating>()
-                                       where rating.ServerId == null
-                                       where rating.RatingHistory.Client.LastConnection > fifteenDaysAgo
-                                       where rating.RatingHistory.Client.Level != Player.Permission.Banned
-                                       where rating.Newest
-                                       where rating.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime
-                                       orderby rating.Performance descending
+                    .Where(GetRankingFunc())
                                        select new
                                        {
                                            Ratings = rating.RatingHistory.Ratings.Where(r => r.ServerId == null),
                                            rating.RatingHistory.ClientId,
                                            rating.RatingHistory.Client.CurrentAlias.Name,
                                            rating.RatingHistory.Client.LastConnection,
-                                           rating.RatingHistory.Client.TotalConnectionTime,
                                            rating.Performance,
-                                       })
-                              .Skip(start)
-                              .Take(count);
-
+                                       }).OrderByDescending(c => c.Performance)
+                    .Skip(start)
+                    .Take(count);
+#if DEBUG == true
+                 var clientRatingsSql = iqClientRatings.ToSql();
+#endif
+                // materialized list
                 var clientRatings = await iqClientRatings.ToListAsync();
 
+                // get all the client ids that 
                 var clientIds = clientRatings
                     .GroupBy(r => r.ClientId)
                     .Select(r => r.First().ClientId)
@@ -99,23 +103,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
                                    where clientIds.Contains(stat.ClientId)
+                                   group stat by stat.ClientId into s
                                    select new
                                    {
-                                       stat.ClientId,
-                                       stat.Kills,
-                                       stat.Deaths,
-                                       stat.TimePlayed,
+                                       ClientId = s.Key,
+                                       Kills = s.Sum(c => c.Kills),
+                                       Deaths = s.Sum(c => c.Deaths),
+                                       KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) / s.Sum(c => c.TimePlayed),
+                                       TotalTimePlayed = s.Sum(c => c.TimePlayed)
                                    });
-
-                var statList = await iqStatsInfo.ToListAsync();
-                var topPlayers = statList.GroupBy(s => s.ClientId)
-                    .Select(s => new
-                    {
-                        s.First().ClientId,
-                        Kills = s.Sum(c => c.Kills),
-                        Deaths = s.Sum(c => c.Deaths),
-                        KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) / s.Sum(c => c.TimePlayed)
-                    });
+#if DEBUG == true
+                var statsInfoSql = iqStatsInfo.ToSql();
+#endif
+                var topPlayers = await iqStatsInfo.ToListAsync();
 
                 var clientRatingsDict = clientRatings.ToDictionary(r => r.ClientId);
                 var finished = topPlayers.Select(s => new TopStatsInfo()
@@ -131,7 +131,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     PerformanceHistory = clientRatingsDict[s.ClientId].Ratings.Count() > 1 ?
                         clientRatingsDict[s.ClientId].Ratings.Select(r => r.Performance).ToList() :
                         new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
-                    TimePlayed = Math.Round(clientRatingsDict[s.ClientId].TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
+                    TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
                 })
                 .OrderByDescending(r => r.Performance)
                 .ToList();
@@ -315,6 +315,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
+
+#if DEBUG == true
+            await UpdateStatHistory(pl, clientStats);
+#endif
 
             // remove the client from the stats dictionary as they're leaving
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
@@ -622,7 +626,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         private async Task UpdateStatHistory(Player client, EFClientStatistics clientStats)
         {
-            int currentServerTotalPlaytime = clientStats.TimePlayed + (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
+            int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
+
+            // don't update their stat history if they haven't played long
+            if (currentSessionTime < 60)
+            {
+                return;
+            }
+
+            int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
             using (var ctx = new DatabaseContext())
             {
@@ -651,25 +663,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         Ratings = new List<EFRating>()
                     };
 
-                if (clientHistory.RatingHistoryId == 0)
-                {
-                    ctx.Add(clientHistory);
-                }
-
-                else
-                {
-                    ctx.Update(clientHistory);
-                }
-
+                #region INDIVIDUAL_SERVER_PERFORMANCE
                 var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
                 // get the client ranking for the current server
                 int individualClientRanking = await ctx.Set<EFRating>()
-                    .Where(c => c.ServerId == clientStats.ServerId)
-                     .Where(r => r.RatingHistory.Client.LastConnection > fifteenDaysAgo)
-                    .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
-                    .Where(r => r.ActivityAmount > Plugin.Config.Configuration().TopPlayersMinPlayTime)
+                    .Where(GetRankingFunc(clientStats.ServerId))
                     .Where(c => c.RatingHistory.ClientId != client.ClientId)
-                    .Where(r => r.Newest)
                     .Where(c => c.Performance > clientStats.Performance)
                     .CountAsync() + 1;
 
@@ -682,10 +681,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
 
                 // set the previous newest to false
-                var ratingToUnsetNewest = clientHistory.Ratings.LastOrDefault(r => r.ServerId == clientStats.ServerId);
+                var ratingToUnsetNewest = clientHistory.Ratings.LastOrDefault(r => r.ServerId == clientStats.ServerId && r.Newest);
+
                 if (ratingToUnsetNewest != null)
                 {
                     ctx.Entry(ratingToUnsetNewest).State = EntityState.Modified;
+                    ctx.Entry(ratingToUnsetNewest).Property(p => p.Newest).IsModified = true;
                     ratingToUnsetNewest.Newest = false;
                 }
 
@@ -698,9 +699,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Newest = true,
                     ServerId = clientStats.ServerId,
                     RatingHistoryId = clientHistory.RatingHistoryId,
-                    ActivityAmount = currentServerTotalPlaytime
+                    ActivityAmount = currentServerTotalPlaytime,
                 });
 
+                #endregion
+                #region OVERALL_RATING
                 // get other server stats
                 var clientStatsList = await iqClientStats.ToListAsync();
 
@@ -719,28 +722,27 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
 
                 int overallClientRanking = await ctx.Set<EFRating>()
-                     .Where(r => r.ServerId == null)
+                     .Where(GetRankingFunc())
                      .Where(r => r.RatingHistory.ClientId != client.ClientId)
-                     .Where(r => r.RatingHistory.Client.LastConnection > fifteenDaysAgo)
-                     .Where(r => r.RatingHistory.Client.Level != Player.Permission.Banned)
-                    .Where(r => r.ActivityAmount > Plugin.Config.Configuration().TopPlayersMinPlayTime)
-                    .Where(r => r.Newest)
-                    .Where(r => r.Performance > performanceAverage)
-                    .CountAsync() + 1;
+                     .Where(r => r.Performance > performanceAverage)
+                     .CountAsync() + 1;
 
                 // limit max average history to 40
                 if (clientHistory.Ratings.Count(r => r.ServerId == null) >= 40)
                 {
                     var ratingToRemove = clientHistory.Ratings.First(r => r.ServerId == null);
+                    ctx.Attach(ratingToRemove);
                     ctx.Entry(ratingToRemove).State = EntityState.Deleted;
                     clientHistory.Ratings.Remove(ratingToRemove);
                 }
 
                 // set the previous average newest to false
-                ratingToUnsetNewest = clientHistory.Ratings.LastOrDefault(r => r.ServerId == null);
+                ratingToUnsetNewest = clientHistory.Ratings.LastOrDefault(r => r.ServerId == null && r.Newest);
                 if (ratingToUnsetNewest != null)
                 {
+                    ctx.Attach(ratingToUnsetNewest);
                     ctx.Entry(ratingToUnsetNewest).State = EntityState.Modified;
+                    ctx.Entry(ratingToUnsetNewest).Property(p => p.Newest).IsModified = true;
                     ratingToUnsetNewest.Newest = false;
                 }
 
@@ -755,16 +757,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     RatingHistoryId = clientHistory.RatingHistoryId,
                     ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
                 });
+                #endregion
 
-                try
+                if (clientHistory.RatingHistoryId == 0)
                 {
-                    await ctx.SaveChangesAsync();
+                    ctx.Add(clientHistory);
                 }
-                // this can happen when the client disconnects  without any stat changes
-                catch (DbUpdateConcurrencyException)
-                {
 
+                else
+                {
+                    ctx.Update(clientHistory);
                 }
+
+                await ctx.SaveChangesAsync();
             }
         }
 

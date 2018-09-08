@@ -257,8 +257,7 @@ namespace IW4MAdmin
             if (cNum >= 0 && Players[cNum] != null)
             {
                 Player Leaving = Players[cNum];
-                Logger.WriteInfo($"Client {Leaving}, state {Leaving.State.ToString()} disconnecting...");
-
+               
                 // occurs when the player disconnects via log before being authenticated by RCon
                 if (Leaving.State != Player.ClientState.Connected)
                 {
@@ -267,8 +266,9 @@ namespace IW4MAdmin
 
                 else
                 {
+                    Logger.WriteInfo($"Client {Leaving} [{Leaving.State.ToString().ToLower()}] disconnecting...");
                     Leaving.State = Player.ClientState.Disconnecting;
-                    Leaving.TotalConnectionTime += (int)(DateTime.UtcNow - Leaving.ConnectionTime).TotalSeconds;
+                    Leaving.TotalConnectionTime += Leaving.ConnectionLength;
                     Leaving.LastConnection = DateTime.UtcNow;
                     await Manager.GetClientService().Update(Leaving);
                     Players[cNum] = null;
@@ -383,27 +383,29 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Quit)
             {
-                //var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
+                var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
 
-                //if (origin != null &&
-                //    // we only want to forward the event if they are connected. 
-                //    origin.State == Player.ClientState.Connected)
-                //{
-                //    var e = new GameEvent()
-                //    {
-                //        Type = GameEvent.EventType.Disconnect,
-                //        Origin = origin,
-                //        Owner = this
-                //    };
+                if (origin != null &&
+                    // we only want to forward the event if they are connected. 
+                    origin.State == Player.ClientState.Connected &&
+                    // make sure we don't get the disconnect event from every time the game ends
+                    origin.ConnectionLength < Manager.GetApplicationSettings().Configuration().RConPollRate)
+                {
+                    var e = new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Disconnect,
+                        Origin = origin,
+                        Owner = this
+                    };
 
-                //    Manager.GetEventHandler().AddEvent(e);
-                //}
+                    Manager.GetEventHandler().AddEvent(e);
+                }
 
-                //else if (origin != null &&
-                //    origin.State != Player.ClientState.Connected)
-                //{
-                //    await RemovePlayer(origin.ClientNumber);
-                //}
+                else if (origin != null &&
+                    origin.State != Player.ClientState.Connected)
+                {
+                    await RemovePlayer(origin.ClientNumber);
+                }
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)
@@ -781,12 +783,12 @@ namespace IW4MAdmin
                 Logger.WriteWarning("Game log file not properly initialized, restarting map...");
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");
-            }
+            } 
 
             //CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-            basepath.Value = @"D:\";
+     //       basepath.Value = @"D:\";
 #endif
             string logPath = string.Empty;
 

@@ -7,7 +7,7 @@ class LogResource(Resource):
         path = urlsafe_b64decode(path).decode('utf-8')
         log_info = reader.read_file(path)
 
-        if not log_info:
+        if log_info is False:
             print('could not read log file ' + path)
         
         return {

@@ -35,7 +35,6 @@ namespace SharedLibraryCore.RCon
         ILogger Log;
         int FailedSends;
         int FailedReceives;
-        static DateTime LastQuery;
         string response;
 
         ManualResetEvent OnConnected;
@@ -142,14 +141,14 @@ namespace SharedLibraryCore.RCon
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", bool waitForResponse = true)
         {
-            // will this really prevent flooding?
-            if ((DateTime.Now - LastQuery).TotalMilliseconds < 350)
-            {
-                Thread.Sleep(350);
-                //await Task.Delay(350);
-            }
+            //// will this really prevent flooding?
+            //if ((DateTime.Now - LastQuery).TotalMilliseconds < 350)
+            //{
+            //    Thread.Sleep(350);
+            //    //await Task.Delay(350);
+            //}
 
-            LastQuery = DateTime.Now;
+           // LastQuery = DateTime.Now;
 
             OnSent.Reset();
             OnReceived.Reset();

@@ -51,7 +51,7 @@ namespace SharedLibraryCore
 
         public GameEvent()
         {
-            OnProcessed = new ManualResetEventSlim();
+            OnProcessed = new ManualResetEventSlim(false);
             Time = DateTime.UtcNow;
             Id = GetNextEventId();
         }
@@ -105,5 +105,7 @@ namespace SharedLibraryCore
                                     queuedEvent.Target.State != Player.ClientState.Connected &&
                                     queuedEvent.Target.NetworkId != 0;
         }
+
+        public static bool IsEventTimeSensitive(GameEvent gameEvent) => gameEvent.Type == EventType.Connect;
     }
 }

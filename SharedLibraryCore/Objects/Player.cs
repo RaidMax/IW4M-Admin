@@ -146,6 +146,8 @@ namespace SharedLibraryCore.Objects
         [NotMapped]
         public DateTime ConnectionTime { get; set; }
         [NotMapped]
+        public int ConnectionLength => (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds;
+        [NotMapped]
         public Server CurrentServer { get; set; }
         [NotMapped]
         public int Score { get; set; }

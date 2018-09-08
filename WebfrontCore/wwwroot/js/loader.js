@@ -43,7 +43,7 @@ if ($(loaderResponseId).length === 1) {
     */
 
     $('html').bind('mousewheel DOMMouseScroll', function (e) {
-        var delta = (e.originalEvent.wheelDelta || -e.originalEvent.detail);
+        var delta = e.originalEvent.wheelDelta || -e.originalEvent.detail;
 
         if (delta < 0 && !hasScrollBar) {
             loadMoreItems();

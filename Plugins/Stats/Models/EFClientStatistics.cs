@@ -25,6 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public double EloRating { get; set; }
         public virtual ICollection<EFHitLocationCount> HitLocations { get; set; }
         public double RollingWeightedKDR { get; set; }
+        public double VisionAverage { get; set; }
         [NotMapped]
         public double Performance
         {

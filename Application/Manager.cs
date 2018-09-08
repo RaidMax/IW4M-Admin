@@ -88,6 +88,7 @@ namespace IW4MAdmin.Application
 
                     // offload it to the player to keep
                     newEvent.Origin.DelayedEvents.Enqueue(newEvent);
+                    newEvent.OnProcessed.Set();
                     return;
                 }
 
@@ -97,6 +98,7 @@ namespace IW4MAdmin.Application
                     Logger.WriteDebug($"Delaying target execution of event type {newEvent.Type} for {newEvent.Target} because they are not authed");
                     // offload it to the player to keep
                     newEvent.Target.DelayedEvents.Enqueue(newEvent);
+                    newEvent.OnProcessed.Set();
                     return;
                 }
 
@@ -120,7 +122,6 @@ namespace IW4MAdmin.Application
                             Owner = oldEvent.Owner,
                             Message = oldEvent.Message,
                             Target = oldEvent.Target,
-                            OnProcessed = oldEvent.OnProcessed,
                             Remote = oldEvent.Remote
                         };
 

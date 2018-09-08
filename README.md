@@ -5,14 +5,26 @@ _______
 ### About
 **IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/5/plutonium-iw5), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
-Latest binary builds are always available at https://raidmax.org/IW4MAdmin
+Latest binary builds are always available at https://raidmax.org/IW4MAdmin  
+
+---
 ### Setup
-**IW4MAdmin** requires minimal configuration to run. There is only one prerequisite.  
+**IW4MAdmin** requires minimal effort to get up and running.
+#### Prerequisites
 * [.NET Core 2.1 Runtime](https://www.microsoft.com/net/download) *or newer*  
-1. Extract `IW4MAdmin-<version>.zip`  
-2. Run `StartIW4MAdmin.cmd`
+#### Installation
+1. Install .NET Core Runtime
+2.  Extract `IW4MAdmin-<version>.zip`  
+#### Launching
+1. Run `StartIW4MAdmin.cmd` (Windows)
+2. Run `StartIW4MAdmin.sh` (Linux)
+2. Configure **IW4MAdmin**
+### Updating
+1. Extract newer version of **IW4MAdmin** into pre-existing **IW4MAdmin** folder and overwrite existing files
+- _Your configuration and database will be saved_
+---
 ### Help
-Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)
+Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)  
 If you come across an issue,  bug, or feature request please post an [issue](https://github.com/RaidMax/IW4M-Admin/issues)
 ___
 
@@ -21,45 +33,58 @@ ___
 When **IW4MAdmin** is launched for the _first time_, you will be prompted to setup your configuration.
 
 `Enable webfront`
-* Enables you to monitor and control your server(s) through a web interface [defaults to `http://127.0.0.1:1624`]
+* Enables you to monitor and control your server(s) through a web interface
+* Default &mdash; `http://0.0.0.0:1624`
 
 `Enable multiple owners`
 * Enables more than one client to be promoted to level of `Owner`
+* Default &mdash; `false`
 
 `Enable stepped privilege hierarchy`
 * Allows privileged clients to promote other clients to the level below their current level
+* Default &mdash; `false`
 
 `Enable custom say name`
 * Shows a prefix to every message send by **IW4MAdmin** -- `[Admin] message`
 * _This feature requires you specify a custom say name_
+* Default &mdash; `false`
 
 `Enable social link`
 * Shows a link to your community's social media/website on the webfront
+* Default &mdash; `false`
 
 `Use Custom Encoding Parser`
 * Allows alternative encodings to be used for parsing game information and events
 * **Russian users should use this and then specify** `windows-1251` **as the encoding string**
+* Default &mdash; `false`
 
 #### Server Configuration
 After initial configuration is finished, you will be prompted to configure your servers for **IW4MAdmin**.
 
 `Enter server IP Address`
 * For almost all scenarios `127.0.0.1` is sufficient
+* Default &mdash; `n/a`
 
 `Enter server port`
 * The port that your server is listening on (can be obtained via `net_port`)
+* Default &mdash; `n/a`
 
 `Enter server RCon password`
 * The *\(R\)emote (Con)sole* password set in your server configuration (can be obtained via `rcon_password`)
+* Default &mdash; `n/a`
  
 `Use Pluto T6 parser`
 * Used if setting up a server for Plutonium T6 (BO2)
+* Default &mdash; `false`
  
 `Use Pluto IW5 parser`
 * Used if setting a server for Plutonium IW5 (MW3)
+* Default &mdash; `false`
  
 `Enter number of reserved slots`
 * The number of client slots reserver for privileged players (unavailable for regular users to occupy)
+* Default &mdash; `0`
+
 #### Advanced Configuration
 If you wish to further customize your experience of **IW4MAdmin**, the following configuration file(s) will allow you to changes core options using any text-editor.
 
@@ -70,34 +95,50 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 * Specifies the address and port the webfront will listen on.
 * The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port
 * Example http://gameserver.com:8080
+* Default &mdash; `http://0.0.0.0:1624`
 
 `CustomLocale`
 * Specifies a [locale name](https://msdn.microsoft.com/en-us/library/39cwe7zf.aspx) to use instead of system default
 * Locale must be from the `Equivalent Locale Name` column
+* Default &mdash; `windows-1252`
 
 `ConnectionString`
 * Specifies the [connection string](https://www.connectionstrings.com/mysql/) to a MySQL server that is used instead of SQLite
+* Default &mdash; `null`
  
 `RConPollRate`
 * Specifies (in milliseconds) how often to poll each server for updates
+* Default &mdash; `5000`
 
 `Servers`
 * Specifies the list of servers **IW4MAdmin** will monitor
+* Default &mdash; `[]`
 * `IPAddress`
 	* Specifies the IP Address of the particular server
+	* Default &mdash; `n/a`
 * `Port`
 	* Specifies the port of the particular server
+	* Default &mdash; `n/a`
 * `Password`
 	* Specifies the `rcon_password` of the particular server
+	* Default &mdash; `n/a`
+* `ManualLogPath`
+    * Specifies the log path to be used instead of the automatically generated one
+    * To use the `GameLogServer`, this should be set to the http address that the `GameLogServer` is listening on
+    * Example &mdash; http://gamelogserver.com/
 * `AutoMessages`
 	* Specifies the list of messages that are broadcasted to the particular server
+	* Default &mdash; `null`
 * `Rules`
 	* Specifies the list of rules that apply to the particular server
+	* Default &mdash; `null`
 * `ReservedSlotNumber`
     * Specifies the number of client slots to reserve for privileged users 
+    * Default &mdash; `0`
 
 `AutoMessagePeriod`
 * Specifies (in seconds) how often messages should be broadcasted to each server
+* Default &mdash; `60`
 
 `AutoMessages`
 * Specifies the list of messages that are broadcasted to **all** servers
@@ -254,11 +295,11 @@ ___
 - Profane words and warning message can be specified in `ProfanityDetermentSettings.json`
 - If a client's name contains a word listed in the settings, they will immediately be kicked
 
-####IW4 Script Commands
+#### IW4 Script Commands
 - This plugin provides additional integration to IW4x
 - In order to take advantage of it, copy the `userraw` folder into your IW4x server directory
 
-####VPN Detection [Script Plugin]
+#### VPN Detection [Script Plugin]
 - This plugin detects if a client is using a VPN and kicks them if they are
 - To disable this plugin, delete `Plugins\VPNDetection.js`
 ___
@@ -281,6 +322,39 @@ ___
 
 `Web Console`
 * Allows logged in privileged users to execute commands as if they are in-game
+---
+### Game Log Server
+The game log server provides a way to remotely host your server's log over a http rest api. 
+This server is useful if you plan on running IW4MAdmin on a different machine than the game server
+#### Requirements
+- [Python 3.6](https://www.python.org/downloads/) or newer
+- The following [PIP](https://pypi.org/project/pip/) packages (provided in `requirements.txt`)
+ ```Flask>=1.0.2
+aniso8601>=3.0.2
+click>=6.7
+Flask-RESTful>=0.3.6
+itsdangerous>=0.24
+Jinja2>=2.10
+MarkupSafe>=1.0
+pip>=9.0.3
+pytz>=2018.5
+setuptools>=39.0.1
+six>=1.11.0
+Werkzeug>=0.14.1
+``` 
+#### Installation
+1. With Python 3 installed, open up a terminal/command prompt window in the `GameLogServer` folder and execute:
+    ```console
+    pip install -r requirements.txt
+    ```
+2. Allow TCP port 1625 through firewall  
+    * [Windows Instructions](https://www.tomshardware.com/news/how-to-open-firewall-ports-in-windows-10,36451.html)
+    * [Linux Instructions (iptables)](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-basic-iptables-firewall-on-centos-6#open-up-ports-for-selected-services)
+#### Launching  
+With Python 3 installed, open a terminal/command prompt window open in the `GameServerLog`  folder and execute:
+```console
+python runserver.py
+```
 ---
 ### Extending Plugins
 #### Code
@@ -347,15 +421,20 @@ Example http://127.0.0.1
 Example https://discordapp.com/api/webhooks/id/token
 - `DiscordWebhookInformationUrl` &mdash; [optional] Discord generated URL to send information to; this includes information such as player messages
 - `NotifyRoleIds` &mdash; [optional] List of [discord role ids](https://discordhelp.net/role-id) to mention when notification hook is sent
-#### Launching 
-With Python installed, open a terminal/command prompt window open in the `Webhook`  folder and execute `python DiscordWebhook.py`
+#### Launching
+With Python installed, open a terminal/command prompt window open in the `Webhook`  folder and execute:
+```console
+python DiscordWebhook.py
+```
 
 ---
-## Misc
+### Misc
 #### Anti-cheat
 This is an [IW4x](https://iw4xcachep26muba.onion.link/) only feature (wider game support planned), that uses analytics to detect aimbots and aim-assist tools.  
 To utilize anti-cheat, enable it during setup **and** copy `_customcallbacks.gsc` from `userraw` into your `IW4x Server\userraw\scripts` folder.  
 The anti-cheat feature is a work in progress and as such will be constantly tweaked and may not be 100% accurate, however the goal is to deter as many cheaters as possible from IW4x.
 #### Database Storage
-By default, all **IW4MAdmin** information is stored in `Database.db`. Should you need to reset your database, this file can simply be deleted. Additionally, this file should be preserved during updates to retain client information.  
+By default, all **IW4MAdmin** information is stored in `Database.db`.  
+Should you need to reset your database, this file can simply be deleted.  
+Additionally, this file should be preserved during updates to retain client information.   
 Setting the `ConnectionString` property in `IW4MAdminSettings.json` will cause **IW4MAdmin** to attempt to use a MySQL connection for database storage. 

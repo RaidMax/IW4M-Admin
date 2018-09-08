@@ -785,7 +785,7 @@ namespace IW4MAdmin
                 logfile = await this.GetDvarAsync<string>("g_log");
             } 
 
-            //CustomCallback = await ScriptLoaded();
+            CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
      //       basepath.Value = @"D:\";

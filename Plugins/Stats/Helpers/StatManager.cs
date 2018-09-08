@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Services;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -26,6 +27,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private ConcurrentDictionary<int, ThreadSafeStatsService> ContextThreads;
         private ILogger Log;
         private IManager Manager;
+
+        static readonly object LockObj = new object();
 
         public StatManager(IManager mgr)
         {
@@ -64,11 +67,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .Select(r => r.Performance)
                     .FirstOrDefaultAsync();
 
-                var iqClientRanking = context.Set<EFRating>()
-                    .Where(r => r.RatingHistory.ClientId == clientId)
-                    .Where(GetRankingFunc());
+                if (clientPerformance != 0)
+                {
+                    var iqClientRanking = context.Set<EFRating>()
+                        .Where(r => r.RatingHistory.ClientId != clientId)
+                        .Where(r => r.Performance > clientPerformance)
+                        .Where(GetRankingFunc());
 
-                return await iqClientRanking.CountAsync() + 1;
+                    return await iqClientRanking.CountAsync() + 1;
+                }
+
+                return 0;
             }
         }
 
@@ -607,8 +616,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
 #endif
             {
-                await UpdateStatHistory(attacker, attackerStats);
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
+                await UpdateStatHistory(attacker, attackerStats);
             }
 
             // todo: do we want to save this immediately?
@@ -629,21 +638,105 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
 
             // don't update their stat history if they haven't played long
+#if DEBUG == false
             if (currentSessionTime < 60)
             {
                 return;
             }
+#endif
 
             int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
             using (var ctx = new DatabaseContext())
             {
                 // select the rating history for client
-                var iqClientHistory = from history in ctx.Set<EFClientRatingHistory>()
+                var iqHistoryLink = from history in ctx.Set<EFClientRatingHistory>()
                                      .Include(h => h.Ratings)
-                                      where history.ClientId == client.ClientId
-                                      select history;
+                                    where history.ClientId == client.ClientId
+                                    select history;
 
+                // get the client ratings
+                var clientHistory = await iqHistoryLink
+                    .FirstOrDefaultAsync() ?? new EFClientRatingHistory()
+                    {
+                        Active = true,
+                        ClientId = client.ClientId,
+                        Ratings = new List<EFRating>()
+                    };
+
+                // it's the first time they've played
+                if (clientHistory.RatingHistoryId == 0)
+                {
+                    ctx.Add(clientHistory);
+                    Log.WriteDebug($"adding first time client history  {client.ClientId}");
+                    await ctx.SaveChangesAsync();
+                }
+
+                else
+                {
+                    //ctx.Update(clientHistory);
+                }
+
+                #region INDIVIDUAL_SERVER_PERFORMANCE
+                // get the client ranking for the current server
+                int individualClientRanking = await ctx.Set<EFRating>()
+                    .Where(GetRankingFunc(clientStats.ServerId))
+                    // ignore themselves in the query
+                    .Where(c => c.RatingHistory.ClientId != client.ClientId)
+                    .Where(c => c.Performance > clientStats.Performance)
+                    .CountAsync() + 1;
+
+                // limit max history per server to 40
+                if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 40)
+                {
+                    // select the oldest one
+                    var ratingToRemove = clientHistory.Ratings
+                        .Where(r => r.ServerId == clientStats.ServerId)
+                        .OrderBy(r => r.When)
+                        .First();
+
+                    ctx.Remove(ratingToRemove);
+                    Log.WriteDebug($"remove oldest rating  {client.ClientId}");
+                    await ctx.SaveChangesAsync();
+                }
+
+                // set the previous newest to false
+                var ratingToUnsetNewest = clientHistory.Ratings
+                    .Where(r => r.ServerId == clientStats.ServerId)
+                    .OrderByDescending(r => r.When)
+                    .FirstOrDefault();
+
+                if (ratingToUnsetNewest != null)
+                {
+                    if (ratingToUnsetNewest.Newest)
+                    {
+                        ctx.Update(ratingToUnsetNewest);
+                        ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
+                        ratingToUnsetNewest.Newest = false;
+                        Log.WriteDebug($"unsetting previous newest flag {client.ClientId}");
+                        await ctx.SaveChangesAsync();
+                    }
+                }
+
+                var newServerRating = new EFRating()
+                {
+                    Performance = clientStats.Performance,
+                    Ranking = individualClientRanking,
+                    Active = true,
+                    Newest = true,
+                    ServerId = clientStats.ServerId,
+                    RatingHistoryId = clientHistory.RatingHistoryId,
+                    ActivityAmount = currentServerTotalPlaytime,
+                };
+
+                // add new rating for current server
+                ctx.Add(newServerRating);
+
+                Log.WriteDebug($"adding new server rating  {client.ClientId}");
+                await ctx.SaveChangesAsync();
+
+                #endregion
+                #region OVERALL_RATING
                 // select all performance & time played for current client
                 var iqClientStats = from stats in ctx.Set<EFClientStatistics>()
                                     where stats.ClientId == client.ClientId
@@ -654,59 +747,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                         stats.TimePlayed
                                     };
 
-                // get the client ratings
-                var clientHistory = await iqClientHistory
-                    .FirstOrDefaultAsync() ?? new EFClientRatingHistory()
-                    {
-                        Active = true,
-                        ClientId = client.ClientId,
-                        Ratings = new List<EFRating>()
-                    };
-
-                #region INDIVIDUAL_SERVER_PERFORMANCE
-                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
-                // get the client ranking for the current server
-                int individualClientRanking = await ctx.Set<EFRating>()
-                    .Where(GetRankingFunc(clientStats.ServerId))
-                    .Where(c => c.RatingHistory.ClientId != client.ClientId)
-                    .Where(c => c.Performance > clientStats.Performance)
-                    .CountAsync() + 1;
-
-                // limit max history per server to 40
-                if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 40)
-                {
-                    var ratingToRemove = clientHistory.Ratings.First(r => r.ServerId == clientStats.ServerId);
-                    ctx.Entry(ratingToRemove).State = EntityState.Deleted;
-                    clientHistory.Ratings.Remove(ratingToRemove);
-                }
-
-                // set the previous newest to false
-                var ratingToUnsetNewest = clientHistory.Ratings.LastOrDefault(r => r.ServerId == clientStats.ServerId && r.Newest);
-
-                if (ratingToUnsetNewest != null)
-                {
-                    ctx.Entry(ratingToUnsetNewest).State = EntityState.Modified;
-                    ctx.Entry(ratingToUnsetNewest).Property(p => p.Newest).IsModified = true;
-                    ratingToUnsetNewest.Newest = false;
-                }
-
-                // add new rating for current server
-                clientHistory.Ratings.Add(new EFRating()
-                {
-                    Performance = clientStats.Performance,
-                    Ranking = individualClientRanking,
-                    Active = true,
-                    Newest = true,
-                    ServerId = clientStats.ServerId,
-                    RatingHistoryId = clientHistory.RatingHistoryId,
-                    ActivityAmount = currentServerTotalPlaytime,
-                });
-
-                #endregion
-                #region OVERALL_RATING
-                // get other server stats
                 var clientStatsList = await iqClientStats.ToListAsync();
 
+                // add the current server's so we don't have to pull it frmo the database
                 clientStatsList.Add(new
                 {
                     clientStats.Performance,
@@ -716,6 +759,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // weight the overall performance based on play time
                 double performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
 
+                // shouldn't happen but just in case the sum of time played is 0
                 if (double.IsNaN(performanceAverage))
                 {
                     performanceAverage = clientStatsList.Average(p => p.Performance);
@@ -730,24 +774,36 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // limit max average history to 40
                 if (clientHistory.Ratings.Count(r => r.ServerId == null) >= 40)
                 {
-                    var ratingToRemove = clientHistory.Ratings.First(r => r.ServerId == null);
-                    ctx.Attach(ratingToRemove);
-                    ctx.Entry(ratingToRemove).State = EntityState.Deleted;
-                    clientHistory.Ratings.Remove(ratingToRemove);
+                    var ratingToRemove = clientHistory.Ratings
+                        .Where(r => r.ServerId == null)
+                        .OrderBy(r => r.When)
+                        .First();
+
+                    ctx.Remove(ratingToRemove);
+                    Log.WriteDebug($"remove oldest overall rating  {client.ClientId}");
+                    await ctx.SaveChangesAsync();
                 }
 
                 // set the previous average newest to false
-                ratingToUnsetNewest = clientHistory.Ratings.LastOrDefault(r => r.ServerId == null && r.Newest);
+                ratingToUnsetNewest = clientHistory.Ratings
+                    .Where(r => r.ServerId == null)
+                    .OrderByDescending(r => r.When)
+                    .FirstOrDefault();
+
                 if (ratingToUnsetNewest != null)
                 {
-                    ctx.Attach(ratingToUnsetNewest);
-                    ctx.Entry(ratingToUnsetNewest).State = EntityState.Modified;
-                    ctx.Entry(ratingToUnsetNewest).Property(p => p.Newest).IsModified = true;
-                    ratingToUnsetNewest.Newest = false;
+                    if (ratingToUnsetNewest.Newest)
+                    {
+                        ctx.Update(ratingToUnsetNewest);
+                        ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
+                        ratingToUnsetNewest.Newest = false;
+                        Log.WriteDebug($"unsetting overall newest rating {client.ClientId}");
+                        await ctx.SaveChangesAsync();
+                    }
                 }
 
                 // add new average rating
-                clientHistory.Ratings.Add(new EFRating()
+                var averageRating = new EFRating()
                 {
                     Active = true,
                     Newest = true,
@@ -756,19 +812,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ServerId = null,
                     RatingHistoryId = clientHistory.RatingHistoryId,
                     ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
-                });
+                };
+
+                ctx.Add(averageRating);
                 #endregion
-
-                if (clientHistory.RatingHistoryId == 0)
-                {
-                    ctx.Add(clientHistory);
-                }
-
-                else
-                {
-                    ctx.Update(clientHistory);
-                }
-
+                Log.WriteDebug($"adding new average rating {client.ClientId}");
                 await ctx.SaveChangesAsync();
             }
         }

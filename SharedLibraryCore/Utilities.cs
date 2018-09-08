@@ -23,6 +23,7 @@ namespace SharedLibraryCore
         public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
+        public static Player IW4MAdminClient = new Player() { ClientId = 1, Level = Player.Permission.Console };
 
         public static string HttpRequest(string location, string header, string headerValue)
         {

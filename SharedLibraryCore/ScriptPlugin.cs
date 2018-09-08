@@ -68,6 +68,7 @@ namespace SharedLibraryCore
 
             ScriptEngine.Execute(script);
             ScriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
+            ScriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient);
             dynamic pluginObject = ScriptEngine.GetValue("plugin").ToObject();
 
             this.Author = pluginObject.author;

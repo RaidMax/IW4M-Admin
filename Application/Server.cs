@@ -808,10 +808,10 @@ namespace IW4MAdmin
             // hopefully fix wine drive name mangling
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:", "");
+                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
             }
 
-            if (!File.Exists(LogPath) && !logPath.StartsWith("http"))
+            if (!File.Exists(logPath) && !logPath.StartsWith("http"))
             {
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG

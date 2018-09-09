@@ -54,6 +54,9 @@ del "%SolutionDir%Publish\Windows\*pdb"
 if exist "%SolutionDir%Publish\WindowsPrerelease\web.config" del "%SolutionDir%Publish\WindowsPrerelease\web.config"
 del "%SolutionDir%Publish\WindowsPrerelease\*pdb"
 
-echo making start script
+echo making start scripts
 @echo dotnet IW4MAdmin.dll > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
 @echo dotnet IW4MAdmin.dll > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"
+
+@(echo #!/bin/bash && echo dotnet IW4MAdmin.dll) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
+@(echo #!/bin/bash && echo dotnet IW4MAdmin.dll) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"

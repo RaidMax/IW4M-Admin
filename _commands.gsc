@@ -33,7 +33,7 @@ WaitForCommand()
 
 SendAlert(clientId, alertType, sound, message)
 {
-	client = level.players[int(clientId)];
+	client = playerForClientId(clientId);
 
 	client thread playLeaderDialogOnPlayer(sound, client.team);
 	client playLocalSound(sound);

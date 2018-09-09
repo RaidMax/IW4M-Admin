@@ -668,7 +668,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 if (clientHistory.RatingHistoryId == 0)
                 {
                     ctx.Add(clientHistory);
-                    Log.WriteDebug($"adding first time client history  {client.ClientId}");
+                   // Log.WriteDebug($"adding first time client history  {client.ClientId}");
                     await ctx.SaveChangesAsync();
                 }
 
@@ -696,7 +696,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         .First();
 
                     ctx.Remove(ratingToRemove);
-                    Log.WriteDebug($"remove oldest rating  {client.ClientId}");
+                    //Log.WriteDebug($"remove oldest rating  {client.ClientId}");
                     await ctx.SaveChangesAsync();
                 }
 
@@ -713,7 +713,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Update(ratingToUnsetNewest);
                         ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
                         ratingToUnsetNewest.Newest = false;
-                        Log.WriteDebug($"unsetting previous newest flag {client.ClientId}");
+                        //Log.WriteDebug($"unsetting previous newest flag {client.ClientId}");
                         await ctx.SaveChangesAsync();
                     }
                 }
@@ -732,7 +732,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // add new rating for current server
                 ctx.Add(newServerRating);
 
-                Log.WriteDebug($"adding new server rating  {client.ClientId}");
+                //Log.WriteDebug($"adding new server rating  {client.ClientId}");
                 await ctx.SaveChangesAsync();
 
                 #endregion
@@ -780,7 +780,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         .First();
 
                     ctx.Remove(ratingToRemove);
-                    Log.WriteDebug($"remove oldest overall rating  {client.ClientId}");
+                    //Log.WriteDebug($"remove oldest overall rating  {client.ClientId}");
                     await ctx.SaveChangesAsync();
                 }
 
@@ -797,7 +797,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Update(ratingToUnsetNewest);
                         ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
                         ratingToUnsetNewest.Newest = false;
-                        Log.WriteDebug($"unsetting overall newest rating {client.ClientId}");
+                        //Log.WriteDebug($"unsetting overall newest rating {client.ClientId}");
                         await ctx.SaveChangesAsync();
                     }
                 }
@@ -816,7 +816,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 ctx.Add(averageRating);
                 #endregion
-                Log.WriteDebug($"adding new average rating {client.ClientId}");
+                //Log.WriteDebug($"adding new average rating {client.ClientId}");
                 await ctx.SaveChangesAsync();
             }
         }

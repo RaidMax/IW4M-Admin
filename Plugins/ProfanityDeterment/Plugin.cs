@@ -70,7 +70,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                 foreach (string word in objectionalWords)
                 {
-                    containsObjectionalWord |= Regex.IsMatch(E.Origin.Name.ToLower(), word, RegexOptions.IgnoreCase);
+                    containsObjectionalWord |= Regex.IsMatch(E.Data.ToLower(), word, RegexOptions.IgnoreCase);
 
                     // break out early because there's at least one objectional word
                     if (containsObjectionalWord)

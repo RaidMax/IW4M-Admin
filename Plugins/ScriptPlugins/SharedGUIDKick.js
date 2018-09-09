@@ -8,7 +8,7 @@ var plugin = {
         if (gameEvent.Type === 3 ||
                gameEvent.Type === 4) {
             if (gameEvent.Origin.NetworkId === -805366929435212061) {
-                gameEvent.Origin.Kick('Your GUID is generic. Delete players/guids.dat and rejoin', _utilities.IW4MAdminClient);
+                gameEvent.Origin.Kick('Your GUID is generic. Delete players/guids.dat and rejoin', _IW4MAdminClient);
             }
         }
     },

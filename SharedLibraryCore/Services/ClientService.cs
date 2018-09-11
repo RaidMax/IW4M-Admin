@@ -164,7 +164,7 @@ namespace SharedLibraryCore.Services
                     .Include(c => c.AliasLink)
                     .Include(c => c.CurrentAlias)
                     .Single(e => e.ClientId == entity.ClientId);
-               
+
                 // if their level has been changed
                 if (entity.Level != client.Level)
                 {
@@ -264,29 +264,28 @@ namespace SharedLibraryCore.Services
             if (name.Length < 3)
                 return new List<EFClient>();
 
-            using (var context = new DatabaseContext())
+            name = name.ToLower();
+
+            using (var context = new DatabaseContext(true))
             {
-                context.ChangeTracker.AutoDetectChangesEnabled = false;
-                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-
                 int asIP = name.ConvertToIP();
-                // hack: so IW4MAdmin doesn't show up in search results
-                asIP = asIP == 0 ? int.MinValue : asIP;
+                // hack: so IW4MAdmin and bots don't show up in search results
+                asIP = asIP == 0 ? int.MaxValue : asIP;
 
-                var iqClients = (from alias in context.Aliases
-                       .AsNoTracking()
-                                 where alias.Name.ToLower()
-                                     .Contains(name.ToLower()) ||
-                                     alias.IPAddress == asIP
-                                 join link in context.AliasLinks
-                                 on alias.LinkId equals link.AliasLinkId
-                                 join client in context.Clients
-                                     .AsNoTracking()
-                                 on alias.LinkId equals client.AliasLinkId
-                                 select client)
-                       .Distinct()
-                       .Include(c => c.CurrentAlias)
-                       .Include(c => c.AliasLink.Children);
+                var iqLinkIds = (from alias in context.Aliases
+                                 where asIP != int.MaxValue ? alias.IPAddress == asIP : alias.Name.ToLower().Contains(name)
+                                 select alias.LinkId);
+
+                var linkIds = iqLinkIds.ToList();
+
+                var iqClients = context.Clients
+                    .Where(c => linkIds.Contains(c.AliasLinkId))
+                    .Include(c => c.CurrentAlias)
+                    .Include(c => c.AliasLink.Children);
+
+#if DEBUG == true
+                var iqClientsSql = iqClients.ToSql();
+#endif
 
                 return await iqClients.ToListAsync();
             }
@@ -294,7 +293,7 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<EFClient>> GetClientByIP(int ipAddress)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
             {
                 var iqClients = (from alias in context.Aliases
                        .AsNoTracking()

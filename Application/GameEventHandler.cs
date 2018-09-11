@@ -24,6 +24,16 @@ namespace IW4MAdmin.Application
 
         public void AddEvent(GameEvent gameEvent)
         {
+            ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
+            if (gameEvent.Type == GameEvent.EventType.Connect)
+            {
+                if (!gameEvent.OnProcessed.Wait(30 * 1000))
+                {
+                    Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
+                }
+            }
+
+            return;
 #if DEBUG
             Manager.GetLogger().WriteDebug($"Got new event of type {gameEvent.Type} for {gameEvent.Owner} with id {gameEvent.Id}");
 #endif
@@ -48,16 +58,16 @@ namespace IW4MAdmin.Application
             // event occurs
             if (gameEvent.Id == Interlocked.Read(ref NextEventId))
             {
-//#if DEBUG == true
-//                Manager.GetLogger().WriteDebug($"sent event with id {gameEvent.Id} to be processed");
-//                IsProcessingEvent.Wait();
-//#else
-//                if (GameEvent.IsEventTimeSensitive(gameEvent) &&
-//                    !IsProcessingEvent.Wait(30 * 1000))
-//                {
-//                    Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
-//                }
-//#endif
+                //#if DEBUG == true
+                //                Manager.GetLogger().WriteDebug($"sent event with id {gameEvent.Id} to be processed");
+                //                IsProcessingEvent.Wait();
+                //#else
+                //                if (GameEvent.IsEventTimeSensitive(gameEvent) &&
+                //                    !IsProcessingEvent.Wait(30 * 1000))
+                //                {
+                //                    Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
+                //                }
+                //#endif
                 ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
 
                 //if (GameEvent.IsEventTimeSensitive(gameEvent))

@@ -171,7 +171,7 @@ namespace SharedLibraryCore.RCon
                     break;
             }
 
-            using (var socketConnection = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp))
+            using (var socketConnection = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp) { ExclusiveAddressUse = true } )
             {
                 socketConnection.BeginConnect(Endpoint, new AsyncCallback(OnConnectedCallback), socketConnection);
 

@@ -99,6 +99,8 @@ namespace SharedLibraryCore.Database
             modelBuilder.Entity<EFAlias>(ent =>
             {
                 ent.HasIndex(a => a.IPAddress);
+                ent.Property(a => a.Name).HasMaxLength(24);
+                ent.HasIndex(a => a.Name);
             });
 
             // force full name for database conversion

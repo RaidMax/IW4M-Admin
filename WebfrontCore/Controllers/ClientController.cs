@@ -149,6 +149,7 @@ namespace WebfrontCore.Controllers
         {
             var clients = (await Manager.GetClientService().GetClientByName(clientName))
                             .OrderByDescending(c => c.LastConnection);
+
             var clientsDto = clients.Select(c => new PlayerInfo()
             {
                 Name = c.Name,

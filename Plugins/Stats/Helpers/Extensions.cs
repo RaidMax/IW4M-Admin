@@ -25,7 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public static double[] AngleStuff(Vector3 a, Vector3 b)
         {
-            double deltaX = 180.0 -Math.Abs(Math.Abs(a.X - b.X) - 180.0);
+            double deltaX = 180.0 - Math.Abs(Math.Abs(a.X - b.X) - 180.0);
             double deltaY = 180.0 - Math.Abs(Math.Abs(a.Y - b.Y) - 180.0);
 
             return new[] { deltaX, deltaY };

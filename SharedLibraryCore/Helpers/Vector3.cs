@@ -35,13 +35,13 @@ namespace SharedLibraryCore.Helpers
 
         public static Vector3 Parse(string s)
         {
-            bool valid = Regex.Match(s, @"\(-?[0-9]+.?[0-9]*,\ -?[0-9]+.?[0-9]*,\ -?[0-9]+.?[0-9]*\)").Success;
+            bool valid = Regex.Match(s, @"\((-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+),\ (-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+),\ (-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+)\)").Success;
             if (!valid)
                 throw new FormatException("Vector3 is not in correct format");
 
             string removeParenthesis = s.Substring(1, s.Length - 2);
             string[] eachPoint = removeParenthesis.Split(',');
-            return new Vector3(float.Parse(eachPoint[0]), float.Parse(eachPoint[1]), float.Parse(eachPoint[2]));
+            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any), float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any), float.Parse(eachPoint[2], System.Globalization.NumberStyles.Any));
         }
 
         public static double Distance(Vector3 a, Vector3 b)

@@ -496,7 +496,14 @@ namespace SharedLibraryCore
 
         public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)
         {
-            var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
+            string[] response = new string[0];
+            for (int i = 0; i < 4; i++)
+            {
+                response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
+                if (response.Length == 2)
+                    break;
+                await Task.Delay(RCon.StaticHelpers.FloodProtectionInterval);
+            }
             return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
         }
 

@@ -21,6 +21,15 @@ namespace Stats.Models
                 .Property(c => c.ServerId)
                 .HasColumnName("EFClientStatistics_ServerId");
 
+            builder.Entity<EFRating>()
+                .HasIndex(p => p.Performance);
+
+            builder.Entity<EFRating>()
+                .HasIndex(p => p.Ranking);
+
+            builder.Entity<EFRating>()
+                .HasIndex(p => p.When);
+
             // force pluralization
             builder.Entity<EFClientKill>().ToTable("EFClientKills");
             builder.Entity<EFClientMessage>().ToTable("EFClientMessages");

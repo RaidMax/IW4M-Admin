@@ -653,7 +653,7 @@ namespace SharedLibraryCore.Commands
                 // they're not going by another alias
                 string msg = P.Name.ToLower().Contains(E.Data.ToLower()) ?
                     $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
-                    $"({P.AliasLink.Children.First(a => a.Name.ToLower().Contains(E.Data.ToLower())).Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
+                    $"({P.AliasLink.Children.FirstOrDefault(a => a.Name.ToLower().Contains(E.Data.ToLower()))?.Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
                 await E.Origin.Tell(msg);
                 await Task.Delay(FloodProtectionInterval);
             }

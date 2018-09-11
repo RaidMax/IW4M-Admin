@@ -20,18 +20,16 @@ init()
 	level.playerTags[4] = "j_shoulder_ri";
 	level.playerTags[5] = "j_shoulder_le";
 	level.playerTags[6] = "j_elbow_ri";
-	level.playerTags[7] = "j_spineupper";
-	level.playerTags[8] = "j_spineupper";
-	level.playerTags[9] = "j_elbow_le";
-	level.playerTags[10] = "j_wrist_ri";
-	level.playerTags[11] = "j_wrist_le";
-	level.playerTags[12] = "j_hip_ri";
-	level.playerTags[13] = "j_hip_le";
-	level.playerTags[14] = "j_knee_ri";
-	level.playerTags[15] = "j_knee_le";
-	level.playerTags[16] = "j_ankle_ri";
-	level.playerTags[17] = "j_ankle_le";
-	level.playerTags[18] = "j_helmet";
+	level.playerTags[7] = "j_elbow_le";
+	level.playerTags[8] = "j_wrist_ri";
+	level.playerTags[9] = "j_wrist_le";
+	level.playerTags[10] = "j_hip_ri";
+	level.playerTags[11] = "j_hip_le";
+	level.playerTags[12] = "j_knee_ri";
+	level.playerTags[13] = "j_knee_le";
+	level.playerTags[14] = "j_ankle_ri";
+	level.playerTags[15] = "j_ankle_le";
+	level.playerTags[16] = "j_helmet";
 }
 
 
@@ -42,6 +40,58 @@ onPlayerConnect(player)
 		level waittill( "connected", player );	
 		player thread waitForFrameThread();
 	}
+}
+
+visibilityMultiplierForBone(bone)
+{
+	multiplier = 0;
+	
+	switch (bone)
+	{
+		case "none":
+			break;
+		case "j_helmet":
+		case "j_head":
+			multiplier = 0.0216;
+			break;
+		case "j_neck":
+			multiplier = 0.0236;
+			break;
+		case "j_spineupper":
+			multiplier = 0.1977;
+			break;
+		case "j_spinelower":
+			multiplier = 0.2202;
+			break;
+		case "j_shoulder_ri":
+		case "j_shoulder_le":
+			multiplier = 0.0344;
+			break;
+		case "j_elbow_ri":
+		case "j_elbow_le":
+			multiplier = 0.03394;
+			break;
+		case "j_wrist_ri":
+		case "j_wrist_le":
+			multiplier = 0.01296;
+			break;
+		case "j_hip_ri":
+		case "j_hip_le":
+			multiplier = 0.0860;
+			break;
+		case "j_knee_ri":
+		case "j_knee_le":
+			multiplier = 0.0782;
+			break;
+		case "j_ankle_ri":
+		case "j_ankle_le":
+			multiplier = 0.0118;
+			break;
+		case "gun":
+			break;
+	}
+
+	return multiplier;
 }
 
 hitLocationToBone(hitloc)
@@ -135,16 +185,16 @@ waitForAdditionalAngles(logString)
 runVisibilityCheck(attacker, victim)
 {
 	start = attacker getTagOrigin("tag_eye");
-	traceSucceedCount = 0;
+	traceVisibilityAmount = 0;
 
-	for (i = 0; i < 19; i++)
+	for (i = 0; i < 17; i++)
 	{	
 		if (sightTracePassed(start, victim getTagOrigin(level.playerTags[i]), false, attacker))
 		{
-			traceSucceedCount += 1;
+			traceVisibilityAmount += 1.0 * visibilityMultiplierForBone(level.playerTags[i]);
 		}
 	}
-	return traceSucceedCount / 20;
+	return traceVisibilityAmount;
 }
 
 vectorScale(vector, scale)
@@ -170,7 +220,6 @@ Process_Hit(type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon)
 	trace = bulletTrace(start, end, true, _attacker);
 
 	playerVisibilityPercentage = runVisibilityCheck(_attacker, victim);
-
 	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";" + trace["fraction"] + ";" + playerVisibilityPercentage;
 	attacker thread waitForAdditionalAngles(logLine);
 }

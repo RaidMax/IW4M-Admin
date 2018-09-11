@@ -341,26 +341,14 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task ProcessEvent(GameEvent E)
         {
-
-            if (E.Type == GameEvent.EventType.StatusUpdate)
-            {
-                // this event gets called before they're full connected
-                if (E.Origin != null)
-                {
-                    //var existingClient = Players[E.Origin.ClientNumber] ?? E.Origin;
-                    //existingClient.Ping = E.Origin.Ping;
-                    //existingClient.Score = E.Origin.Score;
-                }
-            }
-
-            else if (E.Type == GameEvent.EventType.Connect)
+             if (E.Type == GameEvent.EventType.Connect)
             {
                 E.Origin.State = Player.ClientState.Authenticated;
                 // add   them to the server 
                 if (!await AddPlayer(E.Origin))
                 {
                     E.Origin.State = Player.ClientState.Connecting;
-                    throw new ServerException("client didn't pass authorization, so we are discontinuing event");
+                    throw new ServerException("client didn't pass authentication, so we are discontinuing event");
                 }
                 // hack: makes the event propgate with the correct info
                 E.Origin = Players[E.Origin.ClientNumber];

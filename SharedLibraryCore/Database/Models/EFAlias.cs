@@ -13,6 +13,7 @@ namespace SharedLibraryCore.Database.Models
         [ForeignKey("LinkId")]
         public virtual EFAliasLink Link { get; set; }
         [Required]
+        [MaxLength(24)]
         public string Name { get; set; }
         [Required]
         public int IPAddress { get; set; }

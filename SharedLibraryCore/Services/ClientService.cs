@@ -9,6 +9,7 @@ using SharedLibraryCore.Database.Models;
 using System.Linq.Expressions;
 using SharedLibraryCore.Objects;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Dtos;
 
 namespace SharedLibraryCore.Services
 {
@@ -94,10 +95,9 @@ namespace SharedLibraryCore.Services
         {
             return await Task.Run(() =>
             {
-                using (var context = new DatabaseContext())
+                using (var context = new DatabaseContext(true))
                 {
                     return context.Clients
-                          .AsNoTracking()
                          .Include(c => c.CurrentAlias)
                          .Include(c => c.AliasLink.Children)
                          .Where(e).ToList();
@@ -107,11 +107,8 @@ namespace SharedLibraryCore.Services
 
         public async Task<EFClient> Get(int entityID)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
             {
-                context.ChangeTracker.AutoDetectChangesEnabled = false;
-                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-
                 var iqClient = from client in context.Clients
                                .Include(c => c.CurrentAlias)
                                .Include(c => c.AliasLink.Children)
@@ -128,6 +125,9 @@ namespace SharedLibraryCore.Services
                                                          linkedClient.NetworkId
                                                      })
                                };
+#if DEBUG == true
+                var clientSql = iqClient.ToSql();
+#endif
                 var foundClient = await iqClient.FirstOrDefaultAsync();
 
                 if (foundClient == null)
@@ -143,15 +143,19 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        private static readonly Func<DatabaseContext, long, Task<EFClient>> _getUniqueQuery =
+            EF.CompileAsyncQuery((DatabaseContext context, long networkId) =>
+                context.Clients
+                .Include(c => c.CurrentAlias)
+                .Include(c => c.AliasLink.Children)
+                .FirstOrDefault(c => c.NetworkId == networkId)
+        );
+
         public async Task<EFClient> GetUnique(long entityAttribute)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
             {
-                return await context.Clients
-                    .AsNoTracking()
-                    .Include(c => c.CurrentAlias)
-                    .Include(c => c.AliasLink.Children)
-                    .SingleOrDefaultAsync(c => c.NetworkId == entityAttribute);
+                return await _getUniqueQuery(context, entityAttribute);
             }
         }
 
@@ -219,7 +223,7 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        #region ServiceSpecific
+#region ServiceSpecific
         public async Task<IList<EFClient>> GetOwners()
         {
             using (var context = new DatabaseContext())
@@ -228,32 +232,24 @@ namespace SharedLibraryCore.Services
                     .ToListAsync();
         }
 
-        public async Task<bool> IsAuthenticated(int clientIP)
+        public async Task<IList<ClientInfo>> GetPrivilegedClients()
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(disableTracking: true))
             {
-                var iqMatching = from alias in context.Aliases
-                                 where alias.IPAddress == clientIP
-                                 join client in context.Clients
-                                 on alias.LinkId equals client.AliasLinkId
-                                 where client.Level > Player.Permission.Trusted
-                                 select client;
-
-                return (await iqMatching.CountAsync()) > 0;
-            }
-        }
-
-        public async Task<IList<EFClient>> GetPrivilegedClients()
-        {
-            using (var context = new DatabaseContext())
-            {
-                context.ChangeTracker.AutoDetectChangesEnabled = false;
-                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-
                 var iqClients = from client in context.Clients
-                                .Include(c => c.CurrentAlias)
                                 where client.Level >= Player.Permission.Trusted
-                                select client;
+                                where client.Active
+                                select new ClientInfo()
+                                {
+                                    ClientId = client.ClientId,
+                                    Name = client.CurrentAlias.Name,
+                                    LinkId = client.AliasLinkId,
+                                    Level = client.Level
+                                };
+
+#if DEBUG == true
+                var clientsSql = iqClients.ToSql();
+#endif
 
                 return await iqClients.ToListAsync();
             }
@@ -356,6 +352,6 @@ namespace SharedLibraryCore.Services
             using (var context = new DatabaseContext())
                 return await context.Clients.SumAsync(c => c.TotalConnectionTime);
         }
-        #endregion
+#endregion
     }
 }

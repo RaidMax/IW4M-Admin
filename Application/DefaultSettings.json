@@ -171,7 +171,7 @@
         },
 
         {
-          "Alias": "IW4 Credits",
+          "Alias": "Test map",
           "Name": "iw4_credits"
         },
 
@@ -188,6 +188,11 @@
         {
           "Alias": "Freighter",
           "Name": "mp_cargoship_sh"
+        },
+
+        {
+          "Alias": "Cargoship",
+          "Name": "mp_cargoship"
         },
 
         {
@@ -216,23 +221,43 @@
         },
 
         {
-          "Alias": "Favela - Tropical",
+          "Alias": "Tropical Favela",
           "Name": "mp_fav_tropical"
         },
 
         {
-          "Alias": "Estate - Tropical",
+          "Alias": "Tropical Estate",
           "Name": "mp_estate_tropical"
         },
 
         {
-          "Alias": "Crash - Tropical",
+          "Alias": "Tropical Crash",
           "Name": "mp_crash_tropical"
         },
 
         {
           "Alias": "Forgotten City",
           "Name": "mp_bloc_sh"
+        },
+
+        {
+          "Alias": "Crossfire",
+          "Name": "mp_cross_fire"
+        },
+
+        {
+          "Alias": "Bloc",
+          "Name": "mp_bloc"
+        },
+
+        {
+          "Alias": "Oilrig",
+          "Name": "oilrig"
+        },
+
+        {
+          "Name": "Village",
+          "Alias":  "co_hunted"
         }
       ]
     },

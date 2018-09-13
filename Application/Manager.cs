@@ -263,6 +263,7 @@ namespace IW4MAdmin.Application
                 await new ContextSeed(db).Seed();
             }
 
+            // todo: optimize this
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
                 {

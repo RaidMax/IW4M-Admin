@@ -507,6 +507,14 @@ namespace SharedLibraryCore
             return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
         }
 
+        public static double GetVersionAsDouble()
+        {
+            string version = Assembly.GetCallingAssembly().GetName().Version.ToString();
+            version = version.Replace(".", "");
+            return double.Parse(version) / 1000.0;
+        }
+
+        public static string GetVersionAsString() => Assembly.GetCallingAssembly().GetName().Version.ToString();
 
 #if DEBUG == true
 
@@ -530,7 +538,7 @@ namespace SharedLibraryCore
             var queryCompilationContext = databaseDependencies.QueryCompilationContextFactory.Create(false);
             var modelVisitor = (RelationalQueryModelVisitor)queryCompilationContext.CreateQueryModelVisitor();
             modelVisitor.CreateQueryExecutor<TEntity>(queryModel);
-            var sql = modelVisitor.Queries.First().ToString();
+            var sql = modelVisitor.Queries.First().ToString().Replace("\"", "`");
 
             return sql;
         }

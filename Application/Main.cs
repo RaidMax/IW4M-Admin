@@ -23,20 +23,16 @@ namespace IW4MAdmin.Application
         public static void Main(string[] args)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
-            //System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
 
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 
-            Version = Assembly.GetExecutingAssembly().GetName().Version.Major +
-                Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f +
-                Assembly.GetExecutingAssembly().GetName().Version.Build / 100.0f;
-            Version = Math.Round(Version, 3);
+            Version = Utilities.GetVersionAsDouble();
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4M ADMIN");
             Console.WriteLine(" by RaidMax ");
-            Console.WriteLine($" Version {Version.ToString("0.00")}");
+            Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
 
             Index loc = null;
@@ -111,7 +107,7 @@ namespace IW4MAdmin.Application
                 var consoleTask = Task.Run(async () =>
                 {
                     String userInput;
-                    Player Origin = ServerManager.GetClientService().Get(1).Result.AsPlayer();
+                    Player Origin = Utilities.IW4MAdminClient;
 
                     do
                     {

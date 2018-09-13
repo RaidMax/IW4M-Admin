@@ -119,9 +119,8 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> PrivilegedAsync()
         {
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
-                .Where(a => a.Active)
-                .OrderByDescending(a => a.Level).ThenByDescending(a => a.LastConnection)
-                .GroupBy(a => a.AliasLinkId).Select(a => a.First());
+                .OrderByDescending(a => a.Level)
+                .GroupBy(a => a.LinkId).Select(a => a.First());
 
             var adminsDict = new Dictionary<SharedLibraryCore.Objects.Player.Permission, IList<ClientInfo>>();
 

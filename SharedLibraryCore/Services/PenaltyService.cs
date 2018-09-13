@@ -101,9 +101,8 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<EFPenalty>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
                 return await context.Penalties
-                    .AsNoTracking()
                    .Include(p => p.Offender.CurrentAlias)
                    .Include(p => p.Punisher.CurrentAlias)
                    .Where(p => showOnly == Penalty.PenaltyType.Any ? p.Type != Penalty.PenaltyType.Any : p.Type == showOnly)
@@ -116,9 +115,8 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<EFPenalty>> GetClientPenaltiesAsync(int clientId)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
                 return await context.Penalties
-                    .AsNoTracking()
                     .Where(p => p.OffenderId == clientId)
                     .Where(p => p.Active)
                     .Include(p => p.Offender.CurrentAlias)
@@ -134,10 +132,9 @@ namespace SharedLibraryCore.Services
         /// <returns></returns>
         public async Task<List<ProfileMeta>> ReadGetClientPenaltiesAsync(int clientId, bool victim = true)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
             {
-                context.ChangeTracker.AutoDetectChangesEnabled = false;
-                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+                // todo: clean this up
                 if (victim)
                 {
                     var now = DateTime.UtcNow;
@@ -233,32 +230,26 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int aliasId, int ip = 0)
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int ip = 0)
         {
             var now = DateTime.UtcNow;
 
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
             {
-                var iqPenalties = await (from link in context.AliasLinks
-                                         where link.AliasLinkId == aliasId
-                                         join penalty in context.Penalties
-                                         on link.AliasLinkId equals penalty.LinkId
-                                         where penalty.Active
-                                         where penalty.Expires > now
-                                         orderby penalty.When descending
-                                         select penalty).ToListAsync();
-                if (ip != 0)
-                {
-                    iqPenalties.AddRange(await (from alias in context.Aliases
-                                                where alias.IPAddress == ip
-                                                join penalty in context.Penalties
-                                                on alias.LinkId equals penalty.LinkId
-                                                where penalty.Active
-                                                where penalty.Expires > now
-                                                orderby penalty.When descending
-                                                select penalty).ToListAsync());
-                }
-                return iqPenalties;
+                var iqPenalties = context.Penalties
+                    .Where(p => p.LinkId == linkId ||
+                         p.Link.Children.Any(a => a.IPAddress == ip))
+                    .Where(p => p.Active)
+                    .Where(p => p.Expires > now);
+                
+              
+#if DEBUG == true
+                var penaltiesSql = iqPenalties.ToSql();
+#endif
+
+                var activePenalties = await iqPenalties.ToListAsync();
+                // this is a bit more performant in memory (ordering)
+                return activePenalties.OrderByDescending(p =>p.When).ToList();
             }
         }
 
@@ -286,8 +277,6 @@ namespace SharedLibraryCore.Services
                                 .ForEachAsync(c => c.Level = Player.Permission.User);
                             await internalContext.SaveChangesAsync();
                         }
-
-
                     }
                 });
 

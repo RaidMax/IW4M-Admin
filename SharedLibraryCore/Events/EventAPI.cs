@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 
 namespace SharedLibraryCore.Events
@@ -22,7 +25,92 @@ namespace SharedLibraryCore.Events
             return eventList;
         }
 
-        public static void OnGameEvent(object sender, GameEventArgs eventState)
+        private static async Task SaveChangeHistory(GameEvent e)
+        {
+            EFChangeHistory change = null;
+
+            switch (e.Type)
+            {
+                case GameEvent.EventType.Unknown:
+                    break;
+                case GameEvent.EventType.Start:
+                    break;
+                case GameEvent.EventType.Stop:
+                    break;
+                case GameEvent.EventType.Connect:
+                    break;
+                case GameEvent.EventType.Join:
+                    break;
+                case GameEvent.EventType.Quit:
+                    break;
+                case GameEvent.EventType.Disconnect:
+                    break;
+                case GameEvent.EventType.MapEnd:
+                    break;
+                case GameEvent.EventType.MapChange:
+                    break;
+                case GameEvent.EventType.Say:
+                    break;
+                case GameEvent.EventType.Warn:
+                    break;
+                case GameEvent.EventType.Report:
+                    break;
+                case GameEvent.EventType.Flag:
+                    break;
+                case GameEvent.EventType.Unflag:
+                    break;
+                case GameEvent.EventType.Kick:
+                    break;
+                case GameEvent.EventType.TempBan:
+                    break;
+                case GameEvent.EventType.Ban:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        TargetEntityId = e.Target.ClientId,
+                        TypeOfChange = EFChangeHistory.ChangeType.Ban,
+                        Comment = e.Data
+                    };
+                    break;
+                case GameEvent.EventType.Command:
+                    break;
+                case GameEvent.EventType.ChangePermission:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        TargetEntityId = e.Target.ClientId,
+                        TypeOfChange = EFChangeHistory.ChangeType.Permission,
+                        PreviousValue = ((Change)e.Extra).PreviousValue,
+                        CurrentValue = ((Change)e.Extra).NewValue
+                    };
+                    break;
+                case GameEvent.EventType.Broadcast:
+                    break;
+                case GameEvent.EventType.Tell:
+                    break;
+                case GameEvent.EventType.ScriptDamage:
+                    break;
+                case GameEvent.EventType.ScriptKill:
+                    break;
+                case GameEvent.EventType.Damage:
+                    break;
+                case GameEvent.EventType.Kill:
+                    break;
+                case GameEvent.EventType.JoinTeam:
+                    break;
+            }
+
+            if (change != null)
+            {
+                using (var ctx = new DatabaseContext(true))
+                {
+                    ctx.EFChangeHistory.Add(change);
+                    await ctx.SaveChangesAsync();
+                }
+            }
+        }
+
+        public static async void OnGameEvent(object sender, GameEventArgs eventState)
         {
             var E = eventState.Event;
             // don't want to clog up the api with unknown events
@@ -62,6 +150,8 @@ namespace SharedLibraryCore.Events
 
             // add the new event to the list
             AddNewEvent(apiEvent);
+
+            await SaveChangeHistory(E);
         }
 
         /// <summary>

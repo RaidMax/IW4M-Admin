@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
@@ -464,6 +465,7 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
+            Player.Permission oldPerm = E.Target.Level;
             Player.Permission newPerm = Utilities.MatchPermission(E.Data);
 
             if (newPerm == Player.Permission.Owner &&
@@ -517,6 +519,21 @@ namespace SharedLibraryCore.Commands
                     // this updates their privilege level to the webfront claims
                     E.Owner.Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
+
+                var e = new GameEvent()
+                {
+                    Origin = E.Origin,
+                    Target = E.Target,
+                    Owner = E.Owner,
+                    Type = GameEvent.EventType.ChangePermission,
+                    Extra = new Change()
+                    {
+                        PreviousValue = oldPerm.ToString(),
+                        NewValue = newPerm.ToString()
+                    }
+                };
+
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
 
                 await E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"]}");
             }

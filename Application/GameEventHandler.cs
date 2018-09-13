@@ -18,20 +18,23 @@ namespace IW4MAdmin.Application
         {
             Manager = mgr;
             OutOfOrderEvents = new SortedList<long, GameEvent>();
-            IsProcessingEvent = new SemaphoreSlim(0);
-            IsProcessingEvent.Release();
+            IsProcessingEvent = new SemaphoreSlim(2, 2);
         }
 
         public void AddEvent(GameEvent gameEvent)
         {
+            IsProcessingEvent.Wait();
             ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
             if (gameEvent.Type == GameEvent.EventType.Connect)
             {
+                IsProcessingEvent.Wait();
                 if (!gameEvent.OnProcessed.Wait(30 * 1000))
                 {
                     Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
                 }
+                IsProcessingEvent.Release(1);
             }
+            IsProcessingEvent.Release(1);
 
             return;
 #if DEBUG

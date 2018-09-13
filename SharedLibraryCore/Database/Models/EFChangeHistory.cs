@@ -12,7 +12,8 @@ namespace SharedLibraryCore.Database.Models
     {
         public enum ChangeType
         {
-            Permission
+            Permission,
+            Ban
         }
         
         [Key]
@@ -23,5 +24,7 @@ namespace SharedLibraryCore.Database.Models
         public DateTime TimeChanged { get; set; } = DateTime.UtcNow;
         [MaxLength(128)]
         public string Comment { get; set; }
+        public string PreviousValue { get; set; }
+        public string CurrentValue { get; set; }
     }
 }

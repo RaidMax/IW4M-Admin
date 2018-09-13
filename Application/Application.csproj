@@ -5,7 +5,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
     <PackageId>RaidMax.IW4MAdmin.Application</PackageId>
-    <Version>2.1.8</Version>
+    <Version>2.1.9</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>IW4MAdmin</Product>
@@ -80,15 +80,17 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="call $(ProjectDir)BuildScripts\PreBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
+    <Exec Command="call $(ProjectDir)BuildScripts\PreBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="call $(ProjectDir)BuildScripts\PostBuild.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
+    <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
+      <Output TaskParameter="Assemblies" ItemName="CurrentAssembly" />
+    </GetAssemblyIdentity>
+    <Exec Command="call $(ProjectDir)BuildScripts\PostBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir) %(CurrentAssembly.Version)" />
   </Target>
 
   <Target Name="PostPublish" AfterTargets="Publish">
-    <Exec Command="call $(ProjectDir)BuildScripts\PostPublish.bat $(SolutionDir) $(ProjectDir) $(TargetDir) $(OutDir)" />
+    <Exec Command="call $(ProjectDir)BuildScripts\PostPublish.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>
-
 </Project>

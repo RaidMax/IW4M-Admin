@@ -231,7 +231,14 @@ namespace IW4MAdmin
 
                     // reban the "evading" guid
                     if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
+                    {
+                        // hack: re apply the automated offense to the reban
+                        if (currentBan.AutomatedOffense != null)
+                        {
+                            autoKickClient.AdministeredPenalties.Add(new EFPenalty() { AutomatedOffense = currentBan.AutomatedOffense });
+                        }
                         await player.Ban($"{currentBan.Offense}", autoKickClient);
+                    }
 
                     // they didn't fully connect so empty their slot
                     Players[player.ClientNumber] = null;

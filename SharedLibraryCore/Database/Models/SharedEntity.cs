@@ -8,6 +8,6 @@ namespace SharedLibraryCore.Database.Models
 {
     public class SharedEntity
     {
-        public bool Active { get; set; }
+        public bool Active { get; set; } = true;
     }
 }

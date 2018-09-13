@@ -2,6 +2,9 @@ set SolutionDir=%1
 set ProjectDir=%2
 set TargetDir=%3
 set OutDir=%4
+set Version=%5
+
+echo %Version% > "%SolutionDir%DEPLOY\version.txt"
 
 echo Copying dependency configs
 copy "%SolutionDir%WebfrontCore\%OutDir%*.deps.json" "%TargetDir%"

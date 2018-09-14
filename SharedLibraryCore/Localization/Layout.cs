@@ -29,8 +29,7 @@ namespace SharedLibraryCore.Localization
             {
                 if (!Set.TryGetValue(key, out string value))
                 {
-                   // throw new Exception($"Invalid locale key {key}");
-                   return $"unknown locale key {key}";
+                    return key;
                 }
                 return value;
             }

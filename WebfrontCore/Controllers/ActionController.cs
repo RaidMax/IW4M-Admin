@@ -34,8 +34,9 @@ namespace WebfrontCore.Controllers
                             {"1", $"1 {Localization["GLOBAL_TIME_HOUR"]}" },
                             {"2", $"6  {Localization["GLOBAL_TIME_HOURS"]}" },
                             {"3", $"1  {Localization["GLOBAL_TIME_DAY"]}" },
-                            {"4", $"1  {Localization["GLOBAL_TIME_WEEK"]}" },
-                            {"5", $"{Localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]}" },
+                            {"4", $"2  {Localization["GLOBAL_TIME_DAYS"]}" },
+                            {"5", $"1  {Localization["GLOBAL_TIME_WEEK"]}" },
+                            {"6", $"{Localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]}" },
                         }
                     }
                 },
@@ -61,11 +62,14 @@ namespace WebfrontCore.Controllers
                     duration = "1d";
                     break;
                 case 4:
+                    duration = "2d";
+                    break;
+                case 5:
                     duration = "1w";
                     break;
             }
 
-            string command = Duration == 5 ?
+            string command = Duration == 6 ?
                 $"!ban @{targetId} {Reason}" :
                 $"!tempban @{targetId} {duration} {Reason}";
 

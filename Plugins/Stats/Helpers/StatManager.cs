@@ -504,8 +504,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         async Task ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, Player attacker)
         {
-            await OnProcessingPenalty.WaitAsync();
-
             try
             {
                 switch (penalty.ClientPenalty)
@@ -564,22 +562,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         await new CFlag().ExecuteAsync(e);
                         break;
                 }
-                OnProcessingPenalty.Release(1);
             }
             catch
             {
-                OnProcessingPenalty.Release(1);
+
             }
         }
 
         async Task SaveTrackedSnapshots(Cheat.Detection clientDetection)
         {
+            await OnProcessingPenalty.WaitAsync();
+
             using (var ctx = new DatabaseContext(true))
             {
                 // todo: why does this cause duplicate primary key
-                foreach (var change in clientDetection.Tracker
-                    .GetChanges()
-                    .Where(c => c.SnapshotId == 0))
+                var change = clientDetection.Tracker.GetNextChange();
+                while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
                 {
                     ctx.Add(change);
                 }
@@ -587,7 +585,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 try
                 {
                     await ctx.SaveChangesAsync();
-                    clientDetection.Tracker.ClearChanges();
                 }
 
                 catch (Exception ex)
@@ -595,6 +592,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Log.WriteWarning(ex.GetExceptionInfo());
                 }
             }
+
+            OnProcessingPenalty.Release(1);
         }
 
         public async Task AddStandardKill(Player attacker, Player victim)

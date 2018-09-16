@@ -591,7 +591,7 @@ namespace SharedLibraryCore.Commands
         {
             foreach (string line in OnlineAdmins(E.Owner).Split(Environment.NewLine))
             {
-                 var t  = E.Message.IsBroadcastCommand() ? E.Owner.Broadcast(line) :  E.Origin.Tell(line);
+                var t = E.Message.IsBroadcastCommand() ? E.Owner.Broadcast(line) : E.Origin.Tell(line);
                 await t;
 
                 await Task.Delay(FloodProtectionInterval);
@@ -1370,11 +1370,7 @@ namespace SharedLibraryCore.Commands
             // the current map is not in rotation
             if (currentMap.Count() == 0)
             {
-                nextMap = new Map()
-                {
-                    // this happens if it's an unknown custom or DLC map
-                    Alias = "Unknown"
-                };
+                return Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_NOT_IN_ROTATION"];
             }
 
             // there's duplicate maps in rotation

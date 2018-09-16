@@ -1,5 +1,6 @@
 ﻿using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,32 +12,26 @@ namespace SharedLibraryCore.Helpers
     /// <typeparam name="T">Type of entity to keep track of changes to</typeparam>
     public class ChangeTracking<T>
     {
-        List<T> Values;
+        ConcurrentQueue<T> Values;
 
         public ChangeTracking()
         {
-            Values = new List<T>();
+            Values = new ConcurrentQueue<T>();
         }
 
         public void OnChange(T value)
         {
-            lock (value)
-            {
-                // clear the first value when count max count reached
-                if (Values.Count > 30)
-                    Values.RemoveAt(0);
-                Values.Add(value);
-            }
+            if (Values.Count > 30)
+                Values.TryDequeue(out T throwAway);
+            Values.Enqueue(value);
         }
 
-        public T[] GetChanges() => Values.ToArray();
+        public T GetNextChange()
+        {
+            bool itemDequeued = Values.TryDequeue(out T val);
+            return itemDequeued ? val : default(T);
+        }
 
         public bool HasChanges => Values.Count > 0;
-
-        public void ClearChanges()
-        {
-            lock (Values)
-                Values.Clear();
-        }
     }
 }

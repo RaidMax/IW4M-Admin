@@ -107,7 +107,7 @@ namespace IW4MAdmin.Application
 
                 // todo: this is a hacky mess
                 if (newEvent.Origin?.DelayedEvents.Count > 0 &&
-                    (newEvent.Origin?.State == Player.ClientState.Connected || 
+                    (//newEvent.Origin?.State == Player.ClientState.Connected || 
                     newEvent.Type == GameEvent.EventType.Connect))
                 {
                     var events = newEvent.Origin.DelayedEvents;

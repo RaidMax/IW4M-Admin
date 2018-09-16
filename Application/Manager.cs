@@ -39,6 +39,7 @@ namespace IW4MAdmin.Application
         // expose the event handler so we can execute the events
         public OnServerEventEventHandler OnServerEvent { get; set; }
         public DateTime StartTime { get; private set; }
+        public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
         static ApplicationManager Instance;
         readonly List<AsyncStatus> TaskStatuses;
@@ -102,9 +103,12 @@ namespace IW4MAdmin.Application
                     return;
                 }
 
+                await newEvent.Owner.ExecuteEvent(newEvent);
+
                 // todo: this is a hacky mess
                 if (newEvent.Origin?.DelayedEvents.Count > 0 &&
-                    newEvent.Origin?.State == Player.ClientState.Connected)
+                    (newEvent.Origin?.State == Player.ClientState.Connected || 
+                    newEvent.Type == GameEvent.EventType.Connect))
                 {
                     var events = newEvent.Origin.DelayedEvents;
 
@@ -144,8 +148,6 @@ namespace IW4MAdmin.Application
                     }
                 }
 
-                await newEvent.Owner.ExecuteEvent(newEvent);
-
 #if DEBUG
                 Logger.WriteDebug($"Processed event with id {newEvent.Id}");
 #endif
@@ -175,6 +177,9 @@ namespace IW4MAdmin.Application
             }
             // tell anyone waiting for the output that we're done
             newEvent.OnProcessed.Set();
+
+            var changeHistorySvc = new ChangeHistoryService();
+            await changeHistorySvc.Add(args.Event);
         }
 
         public IList<Server> GetServers()
@@ -263,7 +268,7 @@ namespace IW4MAdmin.Application
                 await new ContextSeed(db).Seed();
             }
 
-            // todo: optimize this
+            // todo: optimize this (or replace it)
             var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
                 .Select(c => new
                 {

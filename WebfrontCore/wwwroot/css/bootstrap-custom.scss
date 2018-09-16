@@ -209,3 +209,13 @@ form *, select {
 .client-message, .automated-penalty-info-detailed {
     cursor: pointer;
 }
+
+#footer_text {
+    font-size: 0.85rem;
+}
+
+.footer-mobile {
+    position: fixed;
+    bottom: 1em;
+    right: 1em;
+}

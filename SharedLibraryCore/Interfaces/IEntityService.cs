@@ -9,7 +9,6 @@ namespace SharedLibraryCore.Interfaces
 {
     public interface IEntityService<T>
     {
-        Task<T> CreateProxy();
         Task<T> Create(T entity);
         Task<T> Delete(T entity);
         Task<T> Update(T entity);

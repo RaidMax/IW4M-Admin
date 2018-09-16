@@ -10,6 +10,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public List<StreakMessageConfiguration> KillstreakMessages { get; set; }
         public List<StreakMessageConfiguration> DeathstreakMessages { get; set; }
         public int TopPlayersMinPlayTime { get; set; }
+        public bool StoreClientKills { get; set; }
         public string Name() => "Stats";
         public IBaseConfiguration Generate()
         {
@@ -49,6 +50,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
             };
 
             TopPlayersMinPlayTime = 3600 * 3;
+            StoreClientKills = false;
 
             return this;
         }

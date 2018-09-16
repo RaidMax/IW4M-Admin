@@ -40,10 +40,15 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                                  where message.TimeSent <= whenUpper
                                  select new SharedLibraryCore.Dtos.ChatInfo()
                                  {
+                                     ClientId = message.ClientId,
                                      Message = message.Message,
                                      Name = message.Client.CurrentAlias.Name,
                                      Time = message.TimeSent
                                  };
+
+#if DEBUG == true
+                var messagesSql = iqMessages.ToSql();
+#endif
 
                 var messages = await iqMessages.ToListAsync();
 

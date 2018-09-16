@@ -39,5 +39,6 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <returns></returns>
         IPageList GetPageList();
+        string Version { get;}
     }
 }

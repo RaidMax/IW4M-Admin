@@ -20,12 +20,23 @@ namespace SharedLibraryCore.Helpers
 
         public void OnChange(T value)
         {
-            // clear the first value when count max count reached
-            if (Values.Count > 30)
-                Values.RemoveAt(0);
-            Values.Add(value);
+            lock (value)
+            {
+                // clear the first value when count max count reached
+                if (Values.Count > 30)
+                    Values.RemoveAt(0);
+                Values.Add(value);
+            }
         }
 
-        public List<T> GetChanges() => Values;
+        public T[] GetChanges() => Values.ToArray();
+
+        public bool HasChanges => Values.Count > 0;
+
+        public void ClearChanges()
+        {
+            lock (Values)
+                Values.Clear();
+        }
     }
 }

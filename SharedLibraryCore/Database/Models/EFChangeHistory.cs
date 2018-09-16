@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace SharedLibraryCore.Database.Models
@@ -15,7 +16,7 @@ namespace SharedLibraryCore.Database.Models
             Permission,
             Ban
         }
-        
+
         [Key]
         public int ChangeHistoryId { get; set; }
         public int OriginEntityId { get; set; }

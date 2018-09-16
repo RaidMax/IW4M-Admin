@@ -7,6 +7,6 @@
     <h5>@Model.First().Time.ToString()</h5>
     @foreach (var message in Model)
     {
-        <span class="text-white">@message.Name</span><span> &mdash; @message.Message</span><br />
+        <span class="text-white">@Html.ActionLink(@message.Name, "ProfileAsync", "Client", new { id = message.ClientId})</span><span> &mdash; @message.Message</span><br />
     }
 </div>

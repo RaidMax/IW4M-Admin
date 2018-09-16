@@ -54,9 +54,10 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<EFAlias>> Find(Func<EFAlias, bool> expression)
         {
+            // todo: max better?
             return await Task.Run(() =>
            {
-               using (var context = new DatabaseContext())
+               using (var context = new DatabaseContext(true))
                    return context.Aliases
                    .AsNoTracking()
                    .Include(a => a.Link.Children)
@@ -67,10 +68,9 @@ namespace SharedLibraryCore.Services
 
         public async Task<EFAlias> Get(int entityID)
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
                 return await context.Aliases
-                    .AsNoTracking()
-                    .SingleOrDefaultAsync(e => e.AliasId == entityID);
+                    .FirstOrDefaultAsync(e => e.AliasId == entityID);
         }
 
         public Task<EFAlias> GetUnique(long entityProperty)
@@ -81,23 +81,6 @@ namespace SharedLibraryCore.Services
         public async Task<EFAlias> Update(EFAlias entity)
         {
             throw await Task.FromResult(new Exception());
-            /*using (var context = new DatabaseContext())
-            {
-                entity = context.Aliases.Attach(entity);
-                context.Entry(entity).State = EntityState.Modified;
-                await context.SaveChangesAsync();
-                return entity;
-            }*/
-        }
-
-        public async Task<EFAliasLink> CreateLink(EFAliasLink link)
-        {
-            using (var context = new DatabaseContext())
-            {
-                context.AliasLinks.Add(link);
-                await context.SaveChangesAsync();
-                return link;
-            }
         }
     }
 }

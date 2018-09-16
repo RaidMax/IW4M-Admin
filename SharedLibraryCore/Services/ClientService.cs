@@ -223,7 +223,7 @@ namespace SharedLibraryCore.Services
             }
         }
 
-#region ServiceSpecific
+        #region ServiceSpecific
         public async Task<IList<EFClient>> GetOwners()
         {
             using (var context = new DatabaseContext())
@@ -262,7 +262,7 @@ namespace SharedLibraryCore.Services
 
             name = name.ToLower();
 
-            using (var context = new DatabaseContext(true))
+            using (var context = new DatabaseContext(disableTracking: true))
             {
                 int asIP = name.ConvertToIP();
                 // hack: so IW4MAdmin and bots don't show up in search results
@@ -287,57 +287,9 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<IList<EFClient>> GetClientByIP(int ipAddress)
-        {
-            using (var context = new DatabaseContext(true))
-            {
-                var iqClients = (from alias in context.Aliases
-                       .AsNoTracking()
-                                 where alias.IPAddress == ipAddress
-                                 join link in context.AliasLinks
-                                 on alias.LinkId equals link.AliasLinkId
-                                 join client in context.Clients
-                                     .AsNoTracking()
-                                 on alias.LinkId equals client.AliasLinkId
-                                 select client)
-                       .Distinct()
-                       .Include(c => c.CurrentAlias)
-                       .Include(c => c.AliasLink.Children);
-
-                return await iqClients.ToListAsync();
-            }
-        }
-
-        public async Task<IList<EFClient>> GetRecentClients(int offset, int count)
-        {
-            using (var context = new DatabaseContext())
-                return await context.Clients
-                    .AsNoTracking()
-                    .Include(c => c.CurrentAlias)
-                    .Include(p => p.AliasLink)
-                    .OrderByDescending(p => p.ClientId)
-                    .Skip(offset)
-                    .Take(count)
-                    .ToListAsync();
-        }
-
-        public async Task<IList<EFClient>> PruneInactivePrivilegedClients(int inactiveDays)
-        {
-            using (var context = new DatabaseContext())
-            {
-                var inactive = await context.Clients.Where(c => c.Level > Objects.Player.Permission.Flagged)
-                    .AsNoTracking()
-                    .Where(c => (DateTime.UtcNow - c.LastConnection).TotalDays >= inactiveDays)
-                    .ToListAsync();
-                inactive.ForEach(c => c.Level = Player.Permission.User);
-                await context.SaveChangesAsync();
-                return inactive;
-            }
-        }
-
         public async Task<int> GetTotalClientsAsync()
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
                 return await context.Clients
                     .CountAsync();
         }
@@ -349,9 +301,9 @@ namespace SharedLibraryCore.Services
 
         public async Task<int> GetTotalPlayTime()
         {
-            using (var context = new DatabaseContext())
+            using (var context = new DatabaseContext(true))
                 return await context.Clients.SumAsync(c => c.TotalConnectionTime);
         }
-#endregion
+        #endregion
     }
 }

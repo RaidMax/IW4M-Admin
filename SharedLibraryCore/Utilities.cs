@@ -66,6 +66,28 @@ namespace SharedLibraryCore
             return newStr;
         }
 
+        /// <summary>
+        /// helper method to get the information about an exception and inner exceptions
+        /// </summary>
+        /// <param name="ex"></param>
+        /// <returns></returns>
+        public static string GetExceptionInfo(this Exception ex)
+        {
+            var sb = new StringBuilder();
+            int depth = 0;
+            while (ex != null)
+            {
+                sb.AppendLine($"Exception[{depth}] Name: {ex.GetType().FullName}");
+                sb.AppendLine($"Exception[{depth}] Message: {ex.Message}");
+                sb.AppendLine($"Exception[{depth}] Call Stack: {ex.StackTrace}");
+                sb.AppendLine($"Exception[{depth}] Source: {ex.Source}");
+                depth++;
+                ex = ex.InnerException;
+            }
+
+            return sb.ToString();
+        }
+
         public static Player.Permission MatchPermission(String str)
         {
             String lookingFor = str.ToLower();

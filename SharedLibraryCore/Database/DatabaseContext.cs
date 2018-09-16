@@ -8,6 +8,8 @@ using System.Linq;
 using Microsoft.Data.Sqlite;
 using SharedLibraryCore.Interfaces;
 using System.Runtime.InteropServices;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace SharedLibraryCore.Database
 {
@@ -101,6 +103,13 @@ namespace SharedLibraryCore.Database
                 ent.HasIndex(a => a.IPAddress);
                 ent.Property(a => a.Name).HasMaxLength(24);
                 ent.HasIndex(a => a.Name);
+            });
+
+            modelBuilder.Entity<EFChangeHistory>(ent =>
+            {
+                ent.Property(c => c.ChangeHistoryId)
+                    .ValueGeneratedOnAdd()
+                    .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
             });
 
             // force full name for database conversion

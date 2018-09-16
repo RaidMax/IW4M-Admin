@@ -38,7 +38,7 @@
                     <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_HOME"], "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
-                    @foreach (var  _page in ViewBag.Pages)
+                    @foreach (var _page in ViewBag.Pages)
                     {
                         <li class="nav-item text-center text-md-left">
                             <a class="nav-link" href="@_page.Location">@_page.Name</a>
@@ -56,20 +56,20 @@
 
                             <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
                                 @Html.ActionLink(loc["WEBFRONT_NAV_CONSOLE"], "Index", "Console", new { area = "" }, new
-                                {
-                                    @class = "dropdown-item bg-dark text-muted text-center text-md-left",
-                                    title = "Web Console"
-                                })
+                           {
+                               @class = "dropdown-item bg-dark text-muted text-center text-md-left",
+                               title = "Web Console"
+                           })
                                 @Html.ActionLink(loc["WEBFRONT_NAV_PROFILE"], "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new
-                                {
-                                    @class = "dropdown-item bg-dark text-muted text-center text-md-left",
-                                    title = "Client Profile",
-                                })
+                           {
+                               @class = "dropdown-item bg-dark text-muted text-center text-md-left",
+                               title = "Client Profile",
+                           })
                                 @Html.ActionLink(loc["WEBFRONT_NAV_LOGOUT"], "LogoutAsync", "Account", new { area = "" }, new
-                                {
-                                    @class = "dropdown-item bg-dark text-muted text-center text-md-left",
-                                    title = "Logout of account"
-                                })
+                           {
+                               @class = "dropdown-item bg-dark text-muted text-center text-md-left",
+                               title = "Logout of account"
+                           })
                             </div>
                         </li>
                         <li class="nav-item text-center text-md-left"></li>
@@ -135,7 +135,22 @@
 
     <div class="container p-4">
         @RenderBody()
-        <footer></footer>
+        <footer id="footer_text">
+            <div class="d-lg-none d-block text-center pt-4 pb-4">
+                <a href="https://github.com/RaidMax/IW4M-Admin/releases" target="_blank">
+                    @Program.Manager.Version
+                </a>
+                <br />
+                <span class="text-muted">Developed by RaidMax</span>
+            </div>
+            <div class="footer-mobile d-lg-block d-none text-center">
+                <a href="https://github.com/RaidMax/IW4M-Admin/releases" target="_blank">
+                    @Program.Manager.Version
+                </a>
+                <br />
+                <span class="text-muted">Developed by RaidMax</span>
+            </div>
+        </footer>
     </div>
     <environment include="Development">
         <script type="text/javascript" src="~/lib/jQuery/dist/jquery.js"></script>

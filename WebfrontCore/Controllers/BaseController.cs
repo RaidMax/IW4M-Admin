@@ -37,6 +37,8 @@ namespace WebfrontCore.Controllers
                 SocialLink = Manager.GetApplicationSettings().Configuration().SocialLinkAddress;
                 SocialTitle = Manager.GetApplicationSettings().Configuration().SocialLinkTitle;
             }
+
+            ViewBag.Version = Manager.Version;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)

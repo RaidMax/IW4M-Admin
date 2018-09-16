@@ -1,4 +1,4 @@
-﻿function getPlayerHistoryChart(playerHistory, i, width, color) {
+﻿function getPlayerHistoryChart(playerHistory, i, width, color, maxClients) {
     ///////////////////////////////////////
     // thanks to canvasjs :(
     playerHistory.forEach(function (item, i) {
@@ -29,6 +29,7 @@
             lineThickness: 0,
             tickThickness: 0,
             minimum: 0,
+            maximum: maxClients + 1,
             margin: 0,
             valueFormatString: " ",
             labelMaxWidth: 0
@@ -53,9 +54,10 @@ var charts = {};
 $('.server-history-row').each(function (index, element) {
     let clientHistory = $(this).data('clienthistory');
     let serverId = $(this).data('serverid');
+    let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
     let color = $(this).data('online') === 'True' ? 'rgba(0, 122, 204, 0.432)' : '#ff6060'
     let width = $('.server-header').first().width();
-    let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color);
+    let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color, maxClients);
     historyChart.render();
     charts[serverId] = historyChart;
 });
@@ -82,7 +84,7 @@ function refreshClientActivity() {
                 $('#server_clientactivity_' + serverId).html(response);
             })
             .fail(function (jqxhr, textStatus, error) {
-                $('#server_clientactivity_' + serverId).html("Could not load client activity -  " + error);
+                $('#server_clientactivity_' + serverId).html("  Could not load client activity -  " + error);
             });
     });
 }

@@ -23,9 +23,9 @@ namespace IW4MAdmin.Application
 
         public void AddEvent(GameEvent gameEvent)
         {
-           // IsProcessingEvent.Wait();
+            //IsProcessingEvent.Wait();
             ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
-          //  IsProcessingEvent.Release(1);
+            //IsProcessingEvent.Release(1);
             //if (gameEvent.Type == GameEvent.EventType.Connect)
             //{
             //    IsProcessingEvent.Wait();

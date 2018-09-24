@@ -42,7 +42,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
 
-        public Expression<Func<EFRating, bool>> GetRankingFunc(int? serverId = null)
+        public static Expression<Func<EFRating, bool>> GetRankingFunc(int? serverId = null)
         {
             var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
             return (r) => r.ServerId == serverId &&
@@ -51,7 +51,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 r.Newest &&
                 r.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime;
         }
-
 
         /// <summary>
         /// gets a ranking across all servers for given client id
@@ -293,7 +292,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Location = hl
                 })
                 .ToList();
-                //await statsSvc.ClientStatSvc.SaveChangesAsync();
+                await statsSvc.ClientStatSvc.SaveChangesAsync();
+            }
+
+            // adjusts for adding new hit location
+            if (clientStats.HitLocations.Count == 19)
+            {
+                clientStats.HitLocations.Add(new EFHitLocationCount()
+                {
+                    Location = IW4Info.HitLocation.shield
+                });
+
+                await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
             // for stats before rating
@@ -350,10 +360,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
-
-#if DEBUG == true
-        await UpdateStatHistory(pl, clientStats);
-#endif
 
             // remove the client from the stats dictionary as they're leaving
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
@@ -454,8 +460,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 AnglesList = snapshotAngles
             };
 
-            if (hit.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
-                hit.Damage == 100000)
+            if ((hit.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
+                hit.Damage == 100000) || hit.HitLoc == IW4Info.HitLocation.shield)
             {
                 // suicide by switching teams so let's not count it against them
                 return;
@@ -484,43 +490,49 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
             }
 
-            if (Plugin.Config.Configuration().EnableAntiCheat)
+            using (var ctx = new DatabaseContext())
             {
-                await ApplyPenalty(clientDetection.ProcessKill(hit, isDamage), clientDetection, attacker);
-                await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker);
+                await OnProcessingPenalty.WaitAsync();
 
-                await clientStatsSvc.SaveChangesAsync();
-            }
-
-            if (Plugin.Config.Configuration().StoreClientKills)
-            {
-                using (var ctx = new DatabaseContext())
+                try
                 {
-                    ctx.Set<EFClientKill>().Add(hit);
+                    if (Plugin.Config.Configuration().StoreClientKills)
+                    {
+                        ctx.Set<EFClientKill>().Add(hit);
+                    }
+
+                    if (Plugin.Config.Configuration().EnableAntiCheat)
+                    {
+                        await ApplyPenalty(clientDetection.ProcessKill(hit, isDamage), clientDetection, attacker, ctx);
+                        await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
+                    }
+
                     await ctx.SaveChangesAsync();
+                    await clientStatsSvc.SaveChangesAsync();
                 }
+
+                catch (Exception ex)
+                {
+
+                }
+
+                OnProcessingPenalty.Release(1);
             }
         }
 
-        async Task ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, Player attacker)
+        async Task ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, Player attacker, DatabaseContext ctx)
         {
-            try
+            switch (penalty.ClientPenalty)
             {
-                switch (penalty.ClientPenalty)
-                {
-                    case Penalty.PenaltyType.Ban:
-                        if (attacker.Level == Player.Permission.Banned)
-                        {
-                            break;
-                        }
-                        if (clientDetection.Tracker.HasChanges)
-                        {
-                            await SaveTrackedSnapshots(clientDetection);
-                        }
-                        await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
-                        {
-                            ClientId = 1,
-                            AdministeredPenalties = new List<EFPenalty>()
+                case Penalty.PenaltyType.Ban:
+                    if (attacker.Level == Player.Permission.Banned)
+                    {
+                        break;
+                    }
+                    await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
+                    {
+                        ClientId = 1,
+                        AdministeredPenalties = new List<EFPenalty>()
                                     {
                                         new EFPenalty()
                                         {
@@ -529,71 +541,96 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                                 $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
                                         }
                                     }
-                        });
+                    });
+                    if (clientDetection.Tracker.HasChanges)
+                    {
+                        SaveTrackedSnapshots(clientDetection, ctx);
+                    }
+                    break;
+                case Penalty.PenaltyType.Flag:
+                    if (attacker.Level != Player.Permission.User)
+                    {
                         break;
-                    case Penalty.PenaltyType.Flag:
-                        if (attacker.Level != Player.Permission.User)
+                    }
+                    var e = new GameEvent()
+                    {
+                        Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?
+                            $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
+                            $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
+                        Origin = new Player()
                         {
-                            break;
-                        }
-                        if (clientDetection.Tracker.HasChanges)
-                        {
-                            await SaveTrackedSnapshots(clientDetection);
-                        }
-                        var e = new GameEvent()
-                        {
-                            Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?
-                                $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
-                                $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
-                            Origin = new Player()
-                            {
-                                ClientId = 1,
-                                Level = Player.Permission.Console,
-                                ClientNumber = -1,
-                                CurrentServer = attacker.CurrentServer
-                            },
-                            Target = attacker,
-                            Owner = attacker.CurrentServer,
-                            Type = GameEvent.EventType.Flag
-                        };
-                        // because we created an event it must be processed by the manager
-                        // even if it didn't really do anything
-                        Manager.GetEventHandler().AddEvent(e);
-                        await new CFlag().ExecuteAsync(e);
-                        break;
-                }
-            }
-            catch
-            {
-
+                            ClientId = 1,
+                            Level = Player.Permission.Console,
+                            ClientNumber = -1,
+                            CurrentServer = attacker.CurrentServer
+                        },
+                        Target = attacker,
+                        Owner = attacker.CurrentServer,
+                        Type = GameEvent.EventType.Flag
+                    };
+                    // because we created an event it must be processed by the manager
+                    // even if it didn't really do anything
+                    Manager.GetEventHandler().AddEvent(e);
+                    await new CFlag().ExecuteAsync(e);
+                    if (clientDetection.Tracker.HasChanges)
+                    {
+                        SaveTrackedSnapshots(clientDetection, ctx);
+                    }
+                    break;
             }
         }
 
-        async Task SaveTrackedSnapshots(Cheat.Detection clientDetection)
+        void SaveTrackedSnapshots(Cheat.Detection clientDetection, DatabaseContext ctx)
         {
-            await OnProcessingPenalty.WaitAsync();
-
-            using (var ctx = new DatabaseContext(true))
+            // todo: why does this cause duplicate primary key
+            var change = clientDetection.Tracker.GetNextChange();
+            while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
             {
-                // todo: why does this cause duplicate primary key
-                var change = clientDetection.Tracker.GetNextChange();
-                while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
+
+                //if (change.HitOriginId == 0)
+                //{
+                //    change.HitOriginId = change.HitOrigin.Vector3Id;
+                //    change.HitOrigin = null;
+                //}
+
+                //if (change.HitDestinationId == 0)
+                //{
+                //    change.HitDestinationId = change.HitDestination.Vector3Id;
+                //    change.HitDestination = null;
+                //}
+
+                //if (change.CurrentViewAngleId == 0)
+                //{
+                //    change.CurrentViewAngleId = change.CurrentViewAngle.Vector3Id;
+                //    change.CurrentViewAngle = null;
+                //}
+
+                //if (change.LastStrainAngleId == 0)
+                //{
+                //    change.LastStrainAngleId = change.LastStrainAngle.Vector3Id;
+                //    change.LastStrainAngle = null;
+                //}
+
+                if (change.HitOrigin.Vector3Id > 0)
                 {
-                    ctx.Add(change);
+                    ctx.Attach(change.HitOrigin);
+                }
+                if (change.HitDestination.Vector3Id > 0)
+                {
+                    ctx.Attach(change.HitDestination);
+                }
+                if (change.CurrentViewAngle.Vector3Id > 0)
+                {
+                    ctx.Attach(change.CurrentViewAngle);
+                }
+                if (change.LastStrainAngle.Vector3Id > 0)
+                {
+                    ctx.Attach(change.LastStrainAngle);
                 }
 
-                try
-                {
-                    await ctx.SaveChangesAsync();
-                }
+                ctx.Add(change);
 
-                catch (Exception ex)
-                {
-                    Log.WriteWarning(ex.GetExceptionInfo());
-                }
             }
-
-            OnProcessingPenalty.Release(1);
         }
 
         public async Task AddStandardKill(Player attacker, Player victim)

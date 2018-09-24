@@ -139,8 +139,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             // flag
-            if (currentStrain > Thresholds.MaxStrainFlag
-                && HitCount >= 10)
+            if (
+#if DEBUG == false
+                currentStrain > Thresholds.MaxStrainFlag &&
+#endif
+                HitCount >= 10)
             {
                 result = new DetectionPenaltyResult()
                 {
@@ -356,7 +359,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             Tracker.OnChange(new EFACSnapshot()
             {
-                Active = true,
                 When = kill.When,
                 ClientId = ClientStats.ClientId,
                 SessionAngleOffset = AngleDifferenceAverage,
@@ -366,7 +368,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Hits = HitCount,
                 Kills = Kills,
                 Deaths = ClientStats.SessionDeaths,
+                HitDestinationId = kill.DeathOrigin.Vector3Id,
                 HitDestination = kill.DeathOrigin,
+                HitOriginId = kill.KillOrigin.Vector3Id,
                 HitOrigin = kill.KillOrigin,
                 EloRating = ClientStats.EloRating,
                 HitLocation = kill.HitLoc,

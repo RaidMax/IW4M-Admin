@@ -31,7 +31,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<double>("CurrentStrain");
 
-                    b.Property<int?>("CurrentViewAngleVector3Id");
+                    b.Property<int?>("CurrentViewAngleId");
 
                     b.Property<int>("Deaths");
 
@@ -71,7 +71,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.HasIndex("CurrentViewAngleVector3Id");
+                    b.HasIndex("CurrentViewAngleId");
 
                     b.HasIndex("HitDestinationVector3Id");
 
@@ -489,7 +489,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "CurrentViewAngle")
                         .WithMany()
-                        .HasForeignKey("CurrentViewAngleVector3Id");
+                        .HasForeignKey("CurrentViewAngleId");
 
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "HitDestination")
                         .WithMany()

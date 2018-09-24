@@ -9,78 +9,14 @@ using SharedLibraryCore.Database;
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20180911190418_AddEFAliasNameMaxLength")]
-    partial class AddEFAliasNameMaxLength
+    [Migration("20180922231310_RemoveACSnapShot")]
+    partial class RemoveACSnapShot
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.1.2-rtm-30932");
-
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot", b =>
-                {
-                    b.Property<int>("SnapshotId")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<bool>("Active");
-
-                    b.Property<int>("ClientId");
-
-                    b.Property<int>("CurrentSessionLength");
-
-                    b.Property<double>("CurrentStrain");
-
-                    b.Property<int?>("CurrentViewAngleVector3Id");
-
-                    b.Property<int>("Deaths");
-
-                    b.Property<double>("Distance");
-
-                    b.Property<double>("EloRating");
-
-                    b.Property<int?>("HitDestinationVector3Id");
-
-                    b.Property<int>("HitLocation");
-
-                    b.Property<int?>("HitOriginVector3Id");
-
-                    b.Property<int>("HitType");
-
-                    b.Property<int>("Hits");
-
-                    b.Property<int>("Kills");
-
-                    b.Property<int?>("LastStrainAngleVector3Id");
-
-                    b.Property<double>("SessionAngleOffset");
-
-                    b.Property<double>("SessionSPM");
-
-                    b.Property<int>("SessionScore");
-
-                    b.Property<double>("StrainAngleBetween");
-
-                    b.Property<int>("TimeSinceLastEvent");
-
-                    b.Property<int>("WeaponId");
-
-                    b.Property<DateTime>("When");
-
-                    b.HasKey("SnapshotId");
-
-                    b.HasIndex("ClientId");
-
-                    b.HasIndex("CurrentViewAngleVector3Id");
-
-                    b.HasIndex("HitDestinationVector3Id");
-
-                    b.HasIndex("HitOriginVector3Id");
-
-                    b.HasIndex("LastStrainAngleVector3Id");
-
-                    b.ToTable("EFACSnapshot");
-                });
+                .HasAnnotation("ProductVersion", "2.1.3-rtm-32065");
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientKill", b =>
                 {
@@ -156,6 +92,8 @@ namespace SharedLibraryCore.Migrations
                     b.HasIndex("ClientId");
 
                     b.HasIndex("ServerId");
+
+                    b.HasIndex("TimeSent");
 
                     b.ToTable("EFClientMessages");
                 });
@@ -358,7 +296,11 @@ namespace SharedLibraryCore.Migrations
                     b.Property<string>("Comment")
                         .HasMaxLength(128);
 
+                    b.Property<string>("CurrentValue");
+
                     b.Property<int>("OriginEntityId");
+
+                    b.Property<string>("PreviousValue");
 
                     b.Property<int>("TargetEntityId");
 
@@ -480,8 +422,6 @@ namespace SharedLibraryCore.Migrations
                     b.Property<int>("Vector3Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int?>("EFACSnapshotSnapshotId");
-
                     b.Property<float>("X");
 
                     b.Property<float>("Y");
@@ -490,33 +430,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasKey("Vector3Id");
 
-                    b.HasIndex("EFACSnapshotSnapshotId");
-
                     b.ToTable("Vector3");
-                });
-
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot", b =>
-                {
-                    b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SharedLibraryCore.Helpers.Vector3", "CurrentViewAngle")
-                        .WithMany()
-                        .HasForeignKey("CurrentViewAngleVector3Id");
-
-                    b.HasOne("SharedLibraryCore.Helpers.Vector3", "HitDestination")
-                        .WithMany()
-                        .HasForeignKey("HitDestinationVector3Id");
-
-                    b.HasOne("SharedLibraryCore.Helpers.Vector3", "HitOrigin")
-                        .WithMany()
-                        .HasForeignKey("HitOriginVector3Id");
-
-                    b.HasOne("SharedLibraryCore.Helpers.Vector3", "LastStrainAngle")
-                        .WithMany()
-                        .HasForeignKey("LastStrainAngleVector3Id");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientKill", b =>
@@ -666,13 +580,6 @@ namespace SharedLibraryCore.Migrations
                         .WithMany("AdministeredPenalties")
                         .HasForeignKey("PunisherId")
                         .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("SharedLibraryCore.Helpers.Vector3", b =>
-                {
-                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot")
-                        .WithMany("PredictedViewAngles")
-                        .HasForeignKey("EFACSnapshotSnapshotId");
                 });
 #pragma warning restore 612, 618
         }

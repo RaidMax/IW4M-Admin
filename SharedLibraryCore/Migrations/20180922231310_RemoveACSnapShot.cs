@@ -1,14 +1,30 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using System;
-using System.Collections.Generic;
 
 namespace SharedLibraryCore.Migrations
 {
-    public partial class AddEFACSnapshots : Migration
+    public partial class RemoveACSnapShot : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            if (migrationBuilder.ActiveProvider != "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                migrationBuilder.DropForeignKey(
+                name: "FK_Vector3_EFACSnapshot_EFACSnapshotSnapshotId",
+                table: "Vector3");
+
+                migrationBuilder.DropColumn(
+                    name: "EFACSnapshotSnapshotId",
+                    table: "Vector3");
+            }
+
+            migrationBuilder.DropTable(
+                name: "EFACSnapshot");
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
                 name: "EFACSnapshotSnapshotId",
@@ -111,34 +127,13 @@ namespace SharedLibraryCore.Migrations
                 table: "EFACSnapshot",
                 column: "LastStrainAngleVector3Id");
 
-            if (migrationBuilder.ActiveProvider != "Microsoft.EntityFrameworkCore.Sqlite")
-            {
-                migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKey(
                 name: "FK_Vector3_EFACSnapshot_EFACSnapshotSnapshotId",
                 table: "Vector3",
                 column: "EFACSnapshotSnapshotId",
                 principalTable: "EFACSnapshot",
                 principalColumn: "SnapshotId",
                 onDelete: ReferentialAction.Restrict);
-            }
-        }
-
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Vector3_EFACSnapshot_EFACSnapshotSnapshotId",
-                table: "Vector3");
-
-            migrationBuilder.DropTable(
-                name: "EFACSnapshot");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Vector3_EFACSnapshotSnapshotId",
-                table: "Vector3");
-
-            migrationBuilder.DropColumn(
-                name: "EFACSnapshotSnapshotId",
-                table: "Vector3");
         }
     }
 }

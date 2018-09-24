@@ -1,5 +1,7 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace SharedLibraryCore.Migrations
 {
@@ -23,9 +25,11 @@ namespace SharedLibraryCore.Migrations
                 name: "EFChangeHistory",
                 columns: table => new
                 {
-                    Active = table.Column<bool>(nullable: false),
                     ChangeHistoryId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Active = table.Column<bool>(nullable: false),
                     OriginEntityId = table.Column<int>(nullable: false),
                     TargetEntityId = table.Column<int>(nullable: false),
                     TypeOfChange = table.Column<int>(nullable: false),

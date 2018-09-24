@@ -16,9 +16,9 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
         {
             OffensiveWords = new List<string>()
             {
-                "nigger",
-                "nigga",
-                "fuck"
+                @"\s*n+.*i+.*g+.*e+.*r+\s*",
+                @"\s*n+.*i+.*g+.*a+\s*",
+                @"\s*f+u+.*c+.*k+.*\s*"
             };
 
             var loc = Utilities.CurrentLocalization.LocalizationIndex;

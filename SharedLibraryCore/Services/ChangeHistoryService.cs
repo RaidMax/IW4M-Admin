@@ -32,6 +32,15 @@ namespace SharedLibraryCore.Services
                     };
                     break;
                 case GameEvent.EventType.Command:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        TargetEntityId = e.Target?.ClientId ?? 0,
+                        Comment = "Executed command",
+                        PreviousValue = "",
+                        CurrentValue = e.Message,
+                        TypeOfChange = EFChangeHistory.ChangeType.Command
+                    };
                     break;
                 case GameEvent.EventType.ChangePermission:
                     change = new EFChangeHistory()
@@ -59,6 +68,7 @@ namespace SharedLibraryCore.Services
 
                     catch (Exception ex)
                     {
+                        e.Owner.Logger.WriteWarning(ex.Message);
                         e.Owner.Logger.WriteDebug(ex.GetExceptionInfo());
                     }
                 }

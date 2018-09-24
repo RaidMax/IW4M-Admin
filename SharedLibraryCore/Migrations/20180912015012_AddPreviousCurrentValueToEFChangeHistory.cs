@@ -12,6 +12,7 @@ namespace SharedLibraryCore.Migrations
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
+
                 name: "PreviousValue",
                 table: "EFChangeHistory",
                 nullable: true);

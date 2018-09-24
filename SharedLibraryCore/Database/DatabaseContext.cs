@@ -10,6 +10,8 @@ using SharedLibraryCore.Interfaces;
 using System.Runtime.InteropServices;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Npgsql;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace SharedLibraryCore.Database
 {
@@ -26,6 +28,7 @@ namespace SharedLibraryCore.Database
         /// this only works if there's one connection string
         /// </summary>
         private static string _ConnectionString;
+        private static string _provider;
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
@@ -41,9 +44,10 @@ namespace SharedLibraryCore.Database
             }
         }
 
-        public DatabaseContext(string connStr)
+        public DatabaseContext(string connStr, string provider)
         {
             _ConnectionString = connStr;
+            _provider = provider;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -59,13 +63,26 @@ namespace SharedLibraryCore.Database
                 var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);
-
+#if DEBUG == true
+                optionsBuilder.UseMySql("UserId=root;Password=dev;Host=127.0.0.1;port=3306;Database=IW4MAdmin");
+               // optionsBuilder.UseNpgsql("UserId=dev;Password=dev;Host=127.0.0.1;port=5432;Database=IW4MAdmin");
+#else
                 optionsBuilder.UseSqlite(connection);
+#endif
             }
 
             else
             {
-                optionsBuilder.UseMySql(_ConnectionString);
+                switch (_provider)
+                {
+                    default:
+                    case "mysql":
+                        optionsBuilder.UseMySql(_ConnectionString);
+                        break;
+                    case "postgresql":
+                        optionsBuilder.UseNpgsql(_ConnectionString);
+                        break;
+                }
             }
         }
 
@@ -105,13 +122,6 @@ namespace SharedLibraryCore.Database
                 ent.HasIndex(a => a.Name);
             });
 
-            modelBuilder.Entity<EFChangeHistory>(ent =>
-            {
-                ent.Property(c => c.ChangeHistoryId)
-                    .ValueGeneratedOnAdd()
-                    .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
-            });
-
             // force full name for database conversion
             modelBuilder.Entity<EFClient>().ToTable("EFClients");
             modelBuilder.Entity<EFAlias>().ToTable("EFAlias");
@@ -134,11 +144,11 @@ namespace SharedLibraryCore.Database
                 }
             }
 
-            directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.Contains(".dll"));
+            directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
 #if DEBUG == TRUE
-            foreach (string dllPath in Directory.GetFiles(@"C:\Projects\IW4M-Admin\Application\bin\Debug\netcoreapp2.1\Plugins"))
+            foreach (string dllPath in Directory.GetFiles(@"C:\Projects\IW4M-Admin\Application\bin\Debug\netcoreapp2.1\Plugins").Where(f => f.EndsWith(".dll")))
 #else
-                foreach (string dllPath in directoryFiles)
+            foreach (string dllPath in directoryFiles)
 #endif
             {
                 Assembly library;

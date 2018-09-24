@@ -65,6 +65,7 @@ namespace IW4MAdmin.Plugins.Stats
             right_foot,
             left_foot,
             gun,
+            shield
         }
 
         public enum WeaponName
@@ -1369,7 +1370,9 @@ namespace IW4MAdmin.Plugins.Stats
             dragunov_mp,
             cobra_player_minigun_mp,
             destructible_car,
-            sentry_minigun_mp
+            sentry_minigun_mp,
+            cobra_20mm_mp,
+            shield
         }
 
         public enum MapName

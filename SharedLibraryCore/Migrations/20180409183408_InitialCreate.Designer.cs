@@ -193,7 +193,8 @@ namespace SharedLibraryCore.Migrations
                     b.Property<int>("LinkId");
 
                     b.Property<string>("Name")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasMaxLength(24);
 
                     b.HasKey("AliasId");
 

@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using System;
 using System.Collections.Generic;
 
@@ -13,7 +15,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     AliasLinkId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
@@ -25,7 +29,10 @@ namespace SharedLibraryCore.Migrations
                 name: "EFServers",
                 columns: table => new
                 {
-                    ServerId = table.Column<int>(nullable: false),
+                    ServerId = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     Port = table.Column<int>(nullable: false)
                 },
@@ -39,7 +46,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     Vector3Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     X = table.Column<float>(nullable: false),
                     Y = table.Column<float>(nullable: false),
                     Z = table.Column<float>(nullable: false)
@@ -54,12 +63,14 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     AliasId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     DateAdded = table.Column<DateTime>(nullable: false),
                     IPAddress = table.Column<int>(nullable: false),
                     LinkId = table.Column<int>(nullable: false),
-                    Name = table.Column<string>(nullable: false)
+                    Name = table.Column<string>(maxLength: 128, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,7 +88,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     StatisticId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     ServerId = table.Column<int>(nullable: false),
                     TotalKills = table.Column<long>(nullable: false),
@@ -99,7 +112,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     ClientId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     AliasLinkId = table.Column<int>(nullable: false),
                     Connections = table.Column<int>(nullable: false),
@@ -135,7 +150,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     KillId = table.Column<long>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true).
+                        Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     AttackerId = table.Column<int>(nullable: false),
                     Damage = table.Column<int>(nullable: false),
@@ -196,7 +213,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     MessageId = table.Column<long>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     ClientId = table.Column<int>(nullable: false),
                     Message = table.Column<string>(nullable: true),
@@ -255,7 +274,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     PenaltyId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     Expires = table.Column<DateTime>(nullable: false),
                     LinkId = table.Column<int>(nullable: false),
@@ -293,7 +314,9 @@ namespace SharedLibraryCore.Migrations
                 columns: table => new
                 {
                     HitLocationCountId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("Sqlite:Autoincrement", true).
+                        Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn).
+                        Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Active = table.Column<bool>(nullable: false),
                     EFClientStatistics_ClientId = table.Column<int>(nullable: false),
                     HitCount = table.Column<int>(nullable: false),

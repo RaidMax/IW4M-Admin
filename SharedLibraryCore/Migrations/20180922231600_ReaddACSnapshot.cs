@@ -1,50 +1,45 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using System;
-using System.Collections.Generic;
 
 namespace SharedLibraryCore.Migrations
 {
-    public partial class AddEFACSnapshots : Migration
+    public partial class ReaddACSnapshot : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "EFACSnapshotSnapshotId",
-                table: "Vector3",
-                nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "EFACSnapshot",
                 columns: table => new
                 {
+                    Active = table.Column<bool>(nullable: false),
                     SnapshotId = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Active = table.Column<bool>(nullable: false),
                     ClientId = table.Column<int>(nullable: false),
+                    When = table.Column<DateTime>(nullable: false),
                     CurrentSessionLength = table.Column<int>(nullable: false),
-                    CurrentStrain = table.Column<double>(nullable: false),
-                    CurrentViewAngleId = table.Column<int>(nullable: true),
-                    Deaths = table.Column<int>(nullable: false),
-                    Distance = table.Column<double>(nullable: false),
+                    TimeSinceLastEvent = table.Column<int>(nullable: false),
                     EloRating = table.Column<double>(nullable: false),
-                    HitDestinationVector3Id = table.Column<int>(nullable: true),
-                    HitLocation = table.Column<int>(nullable: false),
-                    HitOriginVector3Id = table.Column<int>(nullable: true),
-                    HitType = table.Column<int>(nullable: false),
+                    SessionScore = table.Column<int>(nullable: false),
+                    SessionSPM = table.Column<double>(nullable: false),
                     Hits = table.Column<int>(nullable: false),
                     Kills = table.Column<int>(nullable: false),
-                    LastStrainAngleVector3Id = table.Column<int>(nullable: true),
-                    SessionAngleOffset = table.Column<double>(nullable: false),
-                    SessionSPM = table.Column<double>(nullable: false),
-                    SessionScore = table.Column<int>(nullable: false),
+                    Deaths = table.Column<int>(nullable: false),
+                    CurrentStrain = table.Column<double>(nullable: false),
                     StrainAngleBetween = table.Column<double>(nullable: false),
-                    TimeSinceLastEvent = table.Column<int>(nullable: false),
+                    SessionAngleOffset = table.Column<double>(nullable: false),
+                    LastStrainAngleId = table.Column<int>(nullable: false),
+                    HitOriginId = table.Column<int>(nullable: false),
+                    HitDestinationId = table.Column<int>(nullable: false),
+                    Distance = table.Column<double>(nullable: false),
+                    CurrentViewAngleId = table.Column<int>(nullable: true),
                     WeaponId = table.Column<int>(nullable: false),
-                    When = table.Column<DateTime>(nullable: false)
+                    HitLocation = table.Column<int>(nullable: false),
+                    HitType = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -62,24 +57,41 @@ namespace SharedLibraryCore.Migrations
                         principalColumn: "Vector3Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_EFACSnapshot_Vector3_HitDestinationVector3Id",
-                        column: x => x.HitDestinationVector3Id,
+                        name: "FK_EFACSnapshot_Vector3_HitDestinationId",
+                        column: x => x.HitDestinationId,
                         principalTable: "Vector3",
                         principalColumn: "Vector3Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFACSnapshot_Vector3_HitOriginVector3Id",
-                        column: x => x.HitOriginVector3Id,
+                        name: "FK_EFACSnapshot_Vector3_HitOriginId",
+                        column: x => x.HitOriginId,
                         principalTable: "Vector3",
                         principalColumn: "Vector3Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EFACSnapshot_Vector3_LastStrainAngleVector3Id",
-                        column: x => x.LastStrainAngleVector3Id,
+                        name: "FK_EFACSnapshot_Vector3_LastStrainAngleId",
+                        column: x => x.LastStrainAngleId,
                         principalTable: "Vector3",
                         principalColumn: "Vector3Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
+
+            if (migrationBuilder.ActiveProvider != "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                migrationBuilder.AddColumn<int>(
+                    name: "EFACSnapshotSnapshotId",
+                    table: "Vector3",
+                    nullable: true);
+
+                migrationBuilder.AddForeignKey(
+                name: "FK_Vector3_EFACSnapshot_EFACSnapshotSnapshotId",
+                table: "Vector3",
+                column: "EFACSnapshotSnapshotId",
+                principalTable: "EFACSnapshot",
+                principalColumn: "SnapshotId",
+                onDelete: ReferentialAction.Restrict);
+
+            }
 
             migrationBuilder.CreateIndex(
                 name: "IX_Vector3_EFACSnapshotSnapshotId",
@@ -97,30 +109,19 @@ namespace SharedLibraryCore.Migrations
                 column: "CurrentViewAngleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFACSnapshot_HitDestinationVector3Id",
+                name: "IX_EFACSnapshot_HitDestinationId",
                 table: "EFACSnapshot",
-                column: "HitDestinationVector3Id");
+                column: "HitDestinationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFACSnapshot_HitOriginVector3Id",
+                name: "IX_EFACSnapshot_HitOriginId",
                 table: "EFACSnapshot",
-                column: "HitOriginVector3Id");
+                column: "HitOriginId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFACSnapshot_LastStrainAngleVector3Id",
+                name: "IX_EFACSnapshot_LastStrainAngleId",
                 table: "EFACSnapshot",
-                column: "LastStrainAngleVector3Id");
-
-            if (migrationBuilder.ActiveProvider != "Microsoft.EntityFrameworkCore.Sqlite")
-            {
-                migrationBuilder.AddForeignKey(
-                name: "FK_Vector3_EFACSnapshot_EFACSnapshotSnapshotId",
-                table: "Vector3",
-                column: "EFACSnapshotSnapshotId",
-                principalTable: "EFACSnapshot",
-                principalColumn: "SnapshotId",
-                onDelete: ReferentialAction.Restrict);
-            }
+                column: "LastStrainAngleId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

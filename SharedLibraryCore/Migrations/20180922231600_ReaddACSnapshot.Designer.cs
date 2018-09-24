@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SharedLibraryCore.Database;
@@ -10,14 +9,14 @@ using SharedLibraryCore.Database;
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20180915164118_ForceAutoIncrementChangeHistory")]
-    partial class ForceAutoIncrementChangeHistory
+    [Migration("20180922231600_ReaddACSnapshot")]
+    partial class ReaddACSnapshot
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.1.2-rtm-30932");
+                .HasAnnotation("ProductVersion", "2.1.3-rtm-32065");
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot", b =>
                 {
@@ -32,7 +31,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<double>("CurrentStrain");
 
-                    b.Property<int?>("CurrentViewAngleVector3Id");
+                    b.Property<int?>("CurrentViewAngleId");
 
                     b.Property<int>("Deaths");
 
@@ -40,11 +39,11 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<double>("EloRating");
 
-                    b.Property<int?>("HitDestinationVector3Id");
+                    b.Property<int>("HitDestinationId");
 
                     b.Property<int>("HitLocation");
 
-                    b.Property<int?>("HitOriginVector3Id");
+                    b.Property<int>("HitOriginId");
 
                     b.Property<int>("HitType");
 
@@ -52,7 +51,7 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<int>("Kills");
 
-                    b.Property<int?>("LastStrainAngleVector3Id");
+                    b.Property<int>("LastStrainAngleId");
 
                     b.Property<double>("SessionAngleOffset");
 
@@ -72,13 +71,13 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.HasIndex("CurrentViewAngleVector3Id");
+                    b.HasIndex("CurrentViewAngleId");
 
-                    b.HasIndex("HitDestinationVector3Id");
+                    b.HasIndex("HitDestinationId");
 
-                    b.HasIndex("HitOriginVector3Id");
+                    b.HasIndex("HitOriginId");
 
-                    b.HasIndex("LastStrainAngleVector3Id");
+                    b.HasIndex("LastStrainAngleId");
 
                     b.ToTable("EFACSnapshot");
                 });
@@ -354,8 +353,7 @@ namespace SharedLibraryCore.Migrations
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFChangeHistory", b =>
                 {
                     b.Property<int>("ChangeHistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<bool>("Active");
 
@@ -512,19 +510,22 @@ namespace SharedLibraryCore.Migrations
 
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "CurrentViewAngle")
                         .WithMany()
-                        .HasForeignKey("CurrentViewAngleVector3Id");
+                        .HasForeignKey("CurrentViewAngleId");
 
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "HitDestination")
                         .WithMany()
-                        .HasForeignKey("HitDestinationVector3Id");
+                        .HasForeignKey("HitDestinationId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "HitOrigin")
                         .WithMany()
-                        .HasForeignKey("HitOriginVector3Id");
+                        .HasForeignKey("HitOriginId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "LastStrainAngle")
                         .WithMany()
-                        .HasForeignKey("LastStrainAngleVector3Id");
+                        .HasForeignKey("LastStrainAngleId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientKill", b =>

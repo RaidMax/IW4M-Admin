@@ -286,7 +286,10 @@ namespace IW4MAdmin
         public override async Task ExecuteEvent(GameEvent E)
         {
             bool canExecuteCommand = true;
-            await ProcessEvent(E);
+            if (!await ProcessEvent(E))
+            {
+                return;
+            }
 
             Command C = null;
             if (E.Type == GameEvent.EventType.Command)
@@ -321,13 +324,7 @@ namespace IW4MAdmin
                 catch (Exception Except)
                 {
                     Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{plugin.Name}]");
-                    Logger.WriteDebug(String.Format("Error Message: {0}", Except.Message));
-                    Logger.WriteDebug(String.Format("Error Trace: {0}", Except.StackTrace));
-                    while (Except.InnerException != null)
-                    {
-                        Except = Except.InnerException;
-                        Logger.WriteDebug($"Inner exception: {Except.Message}");
-                    }
+                    Logger.WriteDebug(Except.GetExceptionInfo());
                 }
             }
 
@@ -346,7 +343,7 @@ namespace IW4MAdmin
         /// </summary>
         /// <param name="E"></param>
         /// <returns></returns>
-        override protected async Task ProcessEvent(GameEvent E)
+        override protected async Task<bool> ProcessEvent(GameEvent E)
         {
              if (E.Type == GameEvent.EventType.Connect)
             {
@@ -355,7 +352,8 @@ namespace IW4MAdmin
                 if (!await AddPlayer(E.Origin))
                 {
                     E.Origin.State = Player.ClientState.Connecting;
-                    throw new ServerException("client didn't pass authentication, so we are discontinuing event");
+                    Logger.WriteDebug("client didn't pass authentication, so we are discontinuing event");
+                    return false;
                 }
                 // hack: makes the event propgate with the correct info
                 E.Origin = Players[E.Origin.ClientNumber];
@@ -505,6 +503,8 @@ namespace IW4MAdmin
             // so there will still be at least 1 client left
             if (ClientNum < 2)
                 ChatHistory.Clear();
+
+            return true;
         }
 
         /// <summary>
@@ -558,8 +558,8 @@ namespace IW4MAdmin
                 }
 
                 // only check every 2 minutes if the server doesn't seem to be responding
-                if ((DateTime.Now - LastPoll).TotalMinutes < 2 && ConnectionErrors >= 1)
-                    return true;
+              /*  if ((DateTime.Now - LastPoll).TotalMinutes < 0.5 && ConnectionErrors >= 1)
+                    return true;*/
 
                 try
                 {
@@ -683,6 +683,7 @@ namespace IW4MAdmin
                 if (e is NetworkException)
                 {
                     Logger.WriteError($"{loc["SERVER_ERROR_COMMUNICATION"]} {IP}:{Port}");
+                    Logger.WriteDebug(e.GetExceptionInfo());
                 }
 
                 return false;
@@ -691,8 +692,7 @@ namespace IW4MAdmin
             catch (Exception E)
             {
                 Logger.WriteError($"{loc["SERVER_ERROR_EXCEPTION"]} {IP}:{Port}");
-                Logger.WriteDebug("Error Message: " + E.Message);
-                Logger.WriteDebug("Error Trace: " + E.StackTrace);
+                Logger.WriteDebug(E.GetExceptionInfo());
                 return false;
             }
         }
@@ -811,7 +811,7 @@ namespace IW4MAdmin
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG
                 throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
-#else
+//#else
                 LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
 #endif
             }

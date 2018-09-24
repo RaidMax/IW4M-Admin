@@ -23,20 +23,6 @@ namespace IW4MAdmin.Application
 
         public void AddEvent(GameEvent gameEvent)
         {
-            //IsProcessingEvent.Wait();
-            ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
-            //IsProcessingEvent.Release(1);
-            //if (gameEvent.Type == GameEvent.EventType.Connect)
-            //{
-            //    IsProcessingEvent.Wait();
-            //    if (!gameEvent.OnProcessed.Wait(10 * 1000))
-            //    {
-            //        Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
-            //    }
-            //    IsProcessingEvent.Release(1);
-            //}
-
-            return;
 #if DEBUG
             Manager.GetLogger().WriteDebug($"Got new event of type {gameEvent.Type} for {gameEvent.Owner} with id {gameEvent.Id}");
 #endif
@@ -61,40 +47,11 @@ namespace IW4MAdmin.Application
             // event occurs
             if (gameEvent.Id == Interlocked.Read(ref NextEventId))
             {
-                //#if DEBUG == true
-                //                Manager.GetLogger().WriteDebug($"sent event with id {gameEvent.Id} to be processed");
-                //                IsProcessingEvent.Wait();
-                //#else
-                //                if (GameEvent.IsEventTimeSensitive(gameEvent) &&
-                //                    !IsProcessingEvent.Wait(30 * 1000))
-                //                {
-                //                    Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
-                //                }
-                //#endif
                 ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
-
-                //if (GameEvent.IsEventTimeSensitive(gameEvent))
-                //{
-                //   if( !gameEvent.OnProcessed.Wait(30 * 1000))
-                //    {
-                //        Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EVENT_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
-                //    }
-                //}
+#if DEBUG == true
+                Manager.GetLogger().WriteDebug($"notified event {gameEvent.Type} for {gameEvent.Owner} with id {gameEvent.Id}");
+#endif
                 Interlocked.Increment(ref NextEventId);
-                //#if DEBUG == true
-                //                gameEvent.OnProcessed.Wait();
-                //#else
-                //                if (GameEvent.IsEventTimeSensitive(gameEvent) &&
-                //                    !gameEvent.OnProcessed.Wait(30 * 1000))
-                //                {
-                //                    Manager.GetLogger().WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EVENT_TIMEOUT"]} [{gameEvent.Id}, {gameEvent.Type}]");
-                //                }
-                //#endif
-                //                Interlocked.Increment(ref NextEventId);
-                //                if (GameEvent.IsEventTimeSensitive(gameEvent))
-                //                {
-                //                    IsProcessingEvent.Release();
-                //                }
             }
 
             // a "newer" event has been added before and "older" one has been added (due to threads and context switching)

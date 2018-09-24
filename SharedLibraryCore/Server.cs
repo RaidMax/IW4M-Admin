@@ -107,7 +107,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="E">Event</param>
         /// <returns>True on sucess</returns>
-        abstract protected Task ProcessEvent(GameEvent E);
+        abstract protected Task<bool> ProcessEvent(GameEvent E);
         abstract public Task ExecuteEvent(GameEvent E);
 
         /// <summary>

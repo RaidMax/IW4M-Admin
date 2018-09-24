@@ -160,14 +160,14 @@ namespace SharedLibraryCore
         public static bool ShouldOriginEventBeDelayed(GameEvent queuedEvent)
         {
             return queuedEvent.Origin != null &&
-                                    queuedEvent.Origin.State != Player.ClientState.Connected &&
+                                    (queuedEvent.Origin.State != Player.ClientState.Connected &&
                                     // we want to allow join and quit events
                                     queuedEvent.Type != EventType.Connect &&
                                     queuedEvent.Type != EventType.Join &&
                                     queuedEvent.Type != EventType.Quit &&
                                     queuedEvent.Type != EventType.Disconnect &&
                                     // we don't care about unknown events
-                                    queuedEvent.Origin.NetworkId != 0;
+                                    queuedEvent.Origin.NetworkId != 0);
         }
 
         /// <summary>
@@ -179,10 +179,8 @@ namespace SharedLibraryCore
         public static bool ShouldTargetEventBeDelayed(GameEvent queuedEvent)
         {
             return queuedEvent.Target != null &&
-                                    queuedEvent.Target.State != Player.ClientState.Connected &&
-                                    queuedEvent.Target.NetworkId != 0;
+                                    (queuedEvent.Target.State != Player.ClientState.Connected &&
+                                    queuedEvent.Target.NetworkId != 0);
         }
-
-        public static bool IsEventTimeSensitive(GameEvent gameEvent) => gameEvent.Type == EventType.Connect;
     }
 }

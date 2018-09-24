@@ -14,7 +14,8 @@ namespace SharedLibraryCore.Database.Models
         public enum ChangeType
         {
             Permission,
-            Ban
+            Ban,
+            Command
         }
 
         [Key]

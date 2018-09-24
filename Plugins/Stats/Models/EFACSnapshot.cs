@@ -30,10 +30,18 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public double CurrentStrain { get; set; }
         public double StrainAngleBetween { get; set; }
         public double SessionAngleOffset { get; set; }
+        public int LastStrainAngleId { get; set; }
+        [ForeignKey("LastStrainAngleId")]
         public Vector3 LastStrainAngle { get; set; }
+        public int HitOriginId { get; set; }
+        [ForeignKey("HitOriginId")]
         public Vector3 HitOrigin { get; set; }
+        public int HitDestinationId { get; set; }
+        [ForeignKey("HitDestinationId")]
         public Vector3 HitDestination { get; set; }
         public double Distance { get; set; }
+        public int CurrentViewAngleId { get; set; }
+        [ForeignKey("CurrentViewAngleId")]
         public Vector3 CurrentViewAngle { get; set; }
         public IW4Info.WeaponName WeaponId { get; set; }
         public IW4Info.HitLocation HitLocation { get; set; }

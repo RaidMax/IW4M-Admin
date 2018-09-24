@@ -1,8 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 
 namespace SharedLibraryCore.Events
@@ -10,7 +8,7 @@ namespace SharedLibraryCore.Events
     public class EventApi
     {
         const int MaxEvents = 100;
-        static Queue<EventInfo> RecentEvents = new Queue<EventInfo>();
+        static ConcurrentQueue<EventInfo> RecentEvents = new ConcurrentQueue<EventInfo>();
 
         public static IEnumerable<EventInfo> GetEvents(bool shouldConsume)
         {
@@ -75,7 +73,7 @@ namespace SharedLibraryCore.Events
         {
             // remove the first added event
             if (RecentEvents.Count >= MaxEvents)
-                RecentEvents.Dequeue();
+                RecentEvents.TryDequeue(out _);
 
             RecentEvents.Enqueue(info);
         }

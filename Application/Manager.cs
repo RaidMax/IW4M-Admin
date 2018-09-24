@@ -52,6 +52,7 @@ namespace IW4MAdmin.Application
         GameEventHandler Handler;
         ManualResetEventSlim OnQuit;
         readonly IPageList PageList;
+        readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
 
         private ApplicationManager()
         {
@@ -74,6 +75,11 @@ namespace IW4MAdmin.Application
 
         private async void OnServerEventAsync(object sender, GameEventArgs args)
         {
+            //if (!await ProcessingEvent.WaitAsync(60000))
+            //{
+            //    Logger.WriteWarning(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EVENT_TIMEOUT"]);
+            //}
+
             var newEvent = args.Event;
 
             try
@@ -90,7 +96,7 @@ namespace IW4MAdmin.Application
                     // offload it to the player to keep
                     newEvent.Origin.DelayedEvents.Enqueue(newEvent);
                     newEvent.OnProcessed.Set();
-                    return;
+                    goto finish;
                 }
 
                 // if the target client is not in an authorized state (detected by RCon) don't execute the event
@@ -100,7 +106,7 @@ namespace IW4MAdmin.Application
                     // offload it to the player to keep
                     newEvent.Target.DelayedEvents.Enqueue(newEvent);
                     newEvent.OnProcessed.Set();
-                    return;
+                    goto finish;
                 }
 
                 await newEvent.Owner.ExecuteEvent(newEvent);
@@ -140,7 +146,8 @@ namespace IW4MAdmin.Application
                             if (e.Target == null)
                             {
                                 Logger.WriteWarning($"Delayed event for {e.Origin} was removed because the target has left");
-                                continue;
+                                // hack: don't do anything with the event because the target is invalid
+                                e.Type = GameEvent.EventType.Unknown;
                             }
                         }
                         Logger.WriteDebug($"Adding delayed event of type {e.Type} for {e.Origin} back for processing");
@@ -162,6 +169,7 @@ namespace IW4MAdmin.Application
             catch (NetworkException ex)
             {
                 Logger.WriteError(ex.Message);
+                Logger.WriteDebug(ex.GetExceptionInfo());
             }
 
             catch (ServerException ex)
@@ -172,9 +180,14 @@ namespace IW4MAdmin.Application
             catch (Exception ex)
             {
                 Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
-                Logger.WriteDebug("Error Message: " + ex.Message);
-                Logger.WriteDebug("Error Trace: " + ex.StackTrace);
+                Logger.WriteDebug(ex.GetExceptionInfo());
             }
+
+            finish:
+            //if (ProcessingEvent.CurrentCount < 1)
+            //{
+            //    ProcessingEvent.Release(1);
+            //}
             // tell anyone waiting for the output that we're done
             newEvent.OnProcessed.Set();
 
@@ -239,8 +252,7 @@ namespace IW4MAdmin.Application
                         catch (Exception e)
                         {
                             Logger.WriteWarning($"Failed to update status for {server}");
-                            Logger.WriteDebug($"Exception: {e.Message}");
-                            Logger.WriteDebug($"StackTrace: {e.StackTrace}");
+                            Logger.WriteDebug(e.GetExceptionInfo());
                         }
                     }));
                 }
@@ -256,6 +268,9 @@ namespace IW4MAdmin.Application
                 await Task.Delay(ConfigHandler.Configuration().RConPollRate);
 #endif
             }
+
+            // trigger the event processing loop to end
+            SetHasEvent();
         }
 
         public async Task Init()
@@ -263,7 +278,7 @@ namespace IW4MAdmin.Application
             Running = true;
 
             #region DATABASE
-            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString))
+            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString, GetApplicationSettings().Configuration().DatabaseProvider))
             {
                 await new ContextSeed(db).Seed();
             }
@@ -340,7 +355,7 @@ namespace IW4MAdmin.Application
 
                 if (string.IsNullOrEmpty(config.WebfrontBindUrl))
                 {
-                    config.WebfrontBindUrl = "http://127.0.0.1:1624";
+                    config.WebfrontBindUrl = "http://0.0.0.0:1624";
                     await ConfigHandler.Save();
                 }
             }
@@ -532,13 +547,11 @@ namespace IW4MAdmin.Application
         public void Start()
         {
             // this needs to be run seperately from the main thread
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 #if !DEBUG
             // start heartbeat
-            Task.Run(() => SendHeartbeat(new HeartbeatState()));
+            var _ = Task.Run(() => SendHeartbeat(new HeartbeatState()));
 #endif
-            Task.Run(() => UpdateServerStates());
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            _ = Task.Run(() => UpdateServerStates());
 
             while (Running)
             {
@@ -551,9 +564,6 @@ namespace IW4MAdmin.Application
         public void Stop()
         {
             Running = false;
-
-            // trigger the event processing loop to end
-            SetHasEvent();
         }
 
         public ILogger GetLogger()
@@ -566,15 +576,7 @@ namespace IW4MAdmin.Application
             return MessageTokens;
         }
 
-        public IList<Player> GetActiveClients()
-        {
-            var ActiveClients = new List<Player>();
-
-            foreach (var server in _servers)
-                ActiveClients.AddRange(server.Players.Where(p => p != null));
-
-            return ActiveClients;
-        }
+        public IList<Player> GetActiveClients() => _servers.SelectMany(s => s.Players).Where(p => p != null).ToList();
 
         public ClientService GetClientService() => ClientSvc;
         public AliasService GetAliasService() => AliasSvc;

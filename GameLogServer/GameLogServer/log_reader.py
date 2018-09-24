@@ -8,7 +8,7 @@ class LogReader(object):
         # (if the file changes more than this, ignore ) - 1 MB
         self.max_file_size_change = 1000000
         # (if the time between checks is greater, ignore ) - 5 minutes
-        self.max_file_time_change = 300
+        self.max_file_time_change = 1000
 
     def read_file(self, path):
         # prevent traversing directories

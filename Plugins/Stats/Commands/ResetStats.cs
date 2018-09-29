@@ -34,12 +34,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 // fixme: this doesn't work properly when another context exists
                 await svc.SaveChangesAsync();
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 
             else
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
             }
         }
     }

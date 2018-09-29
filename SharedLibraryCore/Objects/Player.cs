@@ -86,53 +86,302 @@ namespace SharedLibraryCore.Objects
 
         public override string ToString() => $"{Name}::{NetworkId}";
 
-        public String GetLastConnection()
+        /// <summary>
+        /// send a message directly to the connected client
+        /// </summary>
+        /// <param name="message">message content to send to client</param>
+        public GameEvent Tell(String message)
         {
-            return Utilities.GetTimePassed(LastConnection);
+            var e = new GameEvent()
+            {
+                Message = message,
+                Target = this,
+                Owner = CurrentServer,
+                Type = GameEvent.EventType.Tell,
+                Data = message
+            };
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
         }
 
-        public async Task Tell(String Message)
+        /// <summary>
+        /// warn a client with given reason
+        /// </summary>
+        /// <param name="warnReason">reason for warn</param>
+        /// <param name="sender">client performing the warn</param>
+        public GameEvent Warn(String warnReason, Player sender)
         {
-            // this is console or remote so send immediately
-            if (ClientNumber < 0)
+            var e = new GameEvent()
             {
-                await CurrentServer.Tell(Message, this);
+                Type = GameEvent.EventType.Warn,
+                Message = warnReason,
+                Origin = sender,
+                Target = this,
+                Owner = this.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
             }
 
-            else
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
+        }
+
+        /// <summary>
+        /// report a client for a given reason
+        /// </summary>
+        /// <param name="reportReason">reason for the report</param>
+        /// <param name="sender">client performing the report</param>
+        /// <returns></returns>
+        public GameEvent Report(string reportReason, Player sender)
+        {
+            var e = new GameEvent()
             {
-                var e = new GameEvent()
-                {
-                    Message = Message,
-                    Target = this,
-                    Owner = CurrentServer,
-                    Type = GameEvent.EventType.Tell,
-                    Data = Message
-                };
+                Type = GameEvent.EventType.Report,
+                Message = reportReason,
+                Data = reportReason,
+                Origin = sender,
+                Target = this,
+                Owner = this.CurrentServer
+            };
 
-                CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            if (this.Level < sender.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
             }
+
+            if (this == sender)
+            {
+                e.FailReason = GameEvent.EventFailReason.Invalid;
+                return e;
+            }
+
+            if (CurrentServer.Reports.Count(rep => (rep.Origin == sender &&
+                rep.Target.NetworkId == this.NetworkId)) > 0)
+            {
+                e.FailReason = GameEvent.EventFailReason.Exception;
+                return e;
+            }
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
         }
 
-        public async Task Kick(String Message, Player Sender)
+        /// <summary>
+        /// clear all warnings for a client
+        /// </summary>
+        /// <param name="sender">client performing the warn clear</param>
+        /// <returns></returns>
+        public GameEvent WarnClear(Player sender)
         {
-            await CurrentServer.Kick(Message, this, Sender);
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.WarnClear,
+                Origin = sender,
+                Target = this,
+                Owner = this.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            this.Warnings = 0;
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
         }
 
-        public async Task TempBan(String Message, TimeSpan Length, Player Sender)
+        /// <summary>
+        /// flag a client for a given reason
+        /// </summary>
+        /// <param name="flagReason">reason for flagging</param>
+        /// <param name="sender">client performing the flag</param>
+        /// <returns>game event for the flag</returns>
+        public GameEvent Flag(string flagReason, Player sender)
         {
-            await CurrentServer.TempBan(Message, Length, this, Sender);
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Flag,
+                Origin = sender,
+                Data = flagReason,
+                Message = flagReason,
+                Owner = this.CurrentServer
+            };
+
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            if (this.Level == Player.Permission.Flagged)
+            {
+                e.FailReason = GameEvent.EventFailReason.Invalid;
+                return e;
+            }
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
         }
 
-        public async Task Warn(String Message, Player Sender)
+        /// <summary>
+        /// unflag a client for a given reason
+        /// </summary>
+        /// <param name="unflagReason">reason to unflag a player for</param>
+        /// <param name="sender">client performing the unflag</param>
+        /// <returns>game event for the un flug</returns>
+        public GameEvent Unflag(string unflagReason, Player sender)
         {
-            await CurrentServer.Warn(Message, this, Sender);
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Unflag,
+                Origin = sender,
+                Data = unflagReason,
+                Message = unflagReason,
+                Owner = this.CurrentServer
+            };
+
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            if (this.Level != Player.Permission.Flagged)
+            {
+                e.FailReason = GameEvent.EventFailReason.Invalid;
+                return e;
+            }
+
+            this.Level = Permission.User;
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
         }
 
-        public async Task Ban(String Message, Player Sender)
+        /// <summary>
+        /// kick a client for the given reason
+        /// </summary>
+        /// <param name="kickReason">reason to kick for</param>
+        /// <param name="sender">client performing the kick</param>
+        public GameEvent Kick(String kickReason, Player sender)
         {
-            await CurrentServer.Ban(Message, this, Sender);
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Kick,
+                Message = kickReason,
+                Target = this,
+                Origin = sender,
+                Data = kickReason,
+                Owner = this.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
         }
+
+        /// <summary>
+        /// temporarily ban a client for the given time span
+        /// </summary>
+        /// <param name="tempbanReason">reason for the temp ban</param>
+        /// <param name="banLength">how long the temp ban lasts</param>
+        /// <param name="sender">client performing the tempban</param>
+        public GameEvent TempBan(String tempbanReason, TimeSpan banLength, Player sender)
+        {
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.TempBan,
+                Message = tempbanReason,
+                Origin = sender,
+                Target = this,
+                Extra = banLength,
+                Owner = this.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
+        }
+
+        /// <summary>
+        /// permanently ban a client
+        /// </summary>
+        /// <param name="banReason">reason for the ban</param>
+        /// <param name="sender">client performing the ban</param>
+        public GameEvent Ban(String banReason, Player sender)
+        {
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Ban,
+                Message = banReason,
+                Origin = sender,
+                Target = this,
+                Owner = this.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
+        }
+
+        /// <summary>
+        /// unban a client
+        /// </summary>
+        /// <param name="unbanReason">reason for the unban</param>
+        /// <param name="sender">client performing the unban</param>
+        /// <returns></returns>
+        public GameEvent Unban(String unbanReason, Player sender)
+        {
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Unban,
+                Message = unbanReason,
+                Data = unbanReason,
+                Origin = sender,
+                Target = this,
+                Owner = this.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
+        }
+
         [NotMapped]
         Dictionary<string, object> _additionalProperties;
         public T GetAdditionalProperty<T>(string name) => (T)_additionalProperties[name];

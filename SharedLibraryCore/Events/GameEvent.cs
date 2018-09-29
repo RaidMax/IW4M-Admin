@@ -7,6 +7,28 @@ namespace SharedLibraryCore
 {
     public class GameEvent
     {
+        public enum EventFailReason
+        {
+            /// <summary>
+            /// event execution did not fail
+            /// </summary>
+            None,
+            /// <summary>
+            /// an internal exception prevented the event
+            /// from executing
+            /// </summary>
+            Exception,
+            /// <summary>
+            /// event origin didn't have the necessary privileges
+            /// to execute the command
+            /// </summary>
+            Permission,
+            /// <summary>
+            /// executing the event would cause an invalid state
+            /// </summary>
+            Invalid
+        }
+
         public enum EventType
         {
             /// <summary>
@@ -52,75 +74,83 @@ namespace SharedLibraryCore
             /// <summary>
             /// a client sent a message
             /// </summary>
-            Say,
+            Say = 100,
             /// <summary>
             /// a client was warned
             /// </summary>
-            Warn,
+            Warn = 101,
+            /// <summary>
+            /// all warnings for a client were cleared
+            /// </summary>
+            WarnClear = 102,
             /// <summary>
             /// a client was reported
             /// </summary>
-            Report,
+            Report = 103,
             /// <summary>
             /// a client was flagged
             /// </summary>
-            Flag,
+            Flag = 104,
             /// <summary>
             /// a client was unflagged
             /// </summary>
-            Unflag,
+            Unflag = 105,
             /// <summary>
             /// a client was kicked
             /// </summary>
-            Kick,
+            Kick = 106,
             /// <summary>
             /// a client was tempbanned
             /// </summary>
-            TempBan,
+            TempBan = 107,
             /// <summary>
             /// a client was banned
             /// </summary>
-            Ban,
+            Ban = 108,
+            /// <summary>
+            /// a client was unbanned
+            /// </summary>
+            Unban = 109,
             /// <summary>
             /// a client entered a command
             /// </summary>
-            Command,
+            Command = 110,
             /// <summary>
             /// a client's permission was changed
             /// </summary>
-            ChangePermission,
+            ChangePermission = 111,
 
             // events "generated" by IW4MAdmin
             /// <summary>
             /// a message is sent to all clients
             /// </summary>
-            Broadcast,
+            Broadcast = 200,
             /// <summary>
             /// a message is sent to a specific client
             /// </summary>
-            Tell,
+            Tell = 201,
 
             // events "generated" by script/log
             /// <summary>
             /// AC Damage Log
             /// </summary>
-            ScriptDamage,
+            ScriptDamage = 300,
             /// <summary>
             /// AC Kill Log
             /// </summary>
-            ScriptKill,
+            ScriptKill = 301,
             /// <summary>
             /// damage info printed out by game script
             /// </summary>
-            Damage,
+            Damage = 302,
             /// <summary>
             /// kill info printed out by game script
             /// </summary>
-            Kill,
+            Kill = 303,
             /// <summary>
             /// team info printed out by game script
             /// </summary>
-            JoinTeam,
+            JoinTeam = 304,
         }
 
         static long NextEventId;
@@ -144,12 +174,18 @@ namespace SharedLibraryCore
         public ManualResetEventSlim OnProcessed { get; set; }
         public DateTime Time { get; set; }
         public long Id { get; private set; }
+        public EventFailReason FailReason { get; set; }
+        public bool Failed => FailReason != EventFailReason.None;
 
         /// <summary>
         /// asynchronously wait for GameEvent to be processed
         /// </summary>
         /// <returns>waitable task </returns>
-        public Task<bool> WaitAsync(int timeOut = int.MaxValue) => Task.FromResult(OnProcessed.Wait(timeOut));
+        public Task<bool> WaitAsync(int timeOut = int.MaxValue) => Task.Run(() =>
+        {
+            OnProcessed.Wait(timeOut);
+            return !Failed;
+        });
 
         /// <summary>
         /// determine whether an event should be delayed or not

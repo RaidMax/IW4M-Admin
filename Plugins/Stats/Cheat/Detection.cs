@@ -139,10 +139,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             // flag
-            if (
-#if DEBUG == false
-                currentStrain > Thresholds.MaxStrainFlag &&
-#endif
+            if (currentStrain > Thresholds.MaxStrainFlag &&
                 HitCount >= 10)
             {
                 result = new DetectionPenaltyResult()

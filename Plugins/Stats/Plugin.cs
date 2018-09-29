@@ -81,11 +81,15 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Kill:
                     if (!E.Owner.CustomCallback)
+                    {
                         await Manager.AddStandardKill(E.Origin, E.Target);
+                    }
                     break;
                 case GameEvent.EventType.Damage:
                     if (!E.Owner.CustomCallback)
+                    {
                         Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
+                    }
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];

@@ -6,17 +6,20 @@ class ServerSchema(Schema):
         required=True,
         validate=validate.Range(1, 2147483647, 'invalid id')
     )
+    ip = fields.Str(
+        required=True
+    )
     port = fields.Int(
         required=True,
-        validate=validate.Range(1, 665535, 'invalid port')
+        validate=validate.Range(1, 65535, 'invalid port')
     )
     game = fields.String(
         required=True,
-        validate=validate.Length(1, 8, 'invalid game name')
+        validate=validate.Length(1, 5, 'invalid game name')
     )
     hostname = fields.String(
         required=True,
-        validate=validate.Length(1, 48, 'invalid hostname')
+        validate=validate.Length(1, 64, 'invalid hostname')
     )
     clientnum = fields.Int(
         required=True,

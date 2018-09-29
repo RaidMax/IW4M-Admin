@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.IO;
 using System.Threading.Tasks;
+using System.Text;
+using System.Reflection;
 
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
@@ -12,17 +13,11 @@ using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
-using IW4MAdmin.Application.API;
-using Microsoft.Extensions.Configuration;
-using WebfrontCore;
 using SharedLibraryCore.Configuration;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Text;
-using IW4MAdmin.Application.API.Master;
-using System.Reflection;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Events;
+
+using IW4MAdmin.Application.API.Master;
 
 namespace IW4MAdmin.Application
 {
@@ -69,16 +64,15 @@ namespace IW4MAdmin.Application
             StartTime = DateTime.UtcNow;
             OnQuit = new ManualResetEventSlim();
             PageList = new PageList();
-            OnServerEvent += OnServerEventAsync;
+            OnServerEvent += OnGameEvent;
             OnServerEvent += EventApi.OnGameEvent;
         }
 
-        private async void OnServerEventAsync(object sender, GameEventArgs args)
+        private async void OnGameEvent(object sender, GameEventArgs args)
         {
-            //if (!await ProcessingEvent.WaitAsync(60000))
-            //{
-            //    Logger.WriteWarning(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EVENT_TIMEOUT"]);
-            //}
+#if DEBUG == true
+            Logger.WriteDebug($"Entering event process for {args.Event.Id}");
+#endif
 
             var newEvent = args.Event;
 
@@ -90,68 +84,72 @@ namespace IW4MAdmin.Application
                     Logger.WriteDebug($"Delaying origin execution of event type {newEvent.Type} for {newEvent.Origin} because they are not authed");
                     if (newEvent.Type == GameEvent.EventType.Command)
                     {
-                        await newEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["SERVER_DELAYED_EVENT_WAIT"]);
+                        newEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["SERVER_DELAYED_EVENT_WAIT"]);
                     }
 
                     // offload it to the player to keep
                     newEvent.Origin.DelayedEvents.Enqueue(newEvent);
-                    newEvent.OnProcessed.Set();
-                    goto finish;
                 }
 
                 // if the target client is not in an authorized state (detected by RCon) don't execute the event
-                if (GameEvent.ShouldTargetEventBeDelayed(newEvent))
+                else if (GameEvent.ShouldTargetEventBeDelayed(newEvent))
                 {
                     Logger.WriteDebug($"Delaying target execution of event type {newEvent.Type} for {newEvent.Target} because they are not authed");
                     // offload it to the player to keep
                     newEvent.Target.DelayedEvents.Enqueue(newEvent);
-                    newEvent.OnProcessed.Set();
-                    goto finish;
                 }
 
-                await newEvent.Owner.ExecuteEvent(newEvent);
-
-                // todo: this is a hacky mess
-                if (newEvent.Origin?.DelayedEvents.Count > 0 &&
-                    (//newEvent.Origin?.State == Player.ClientState.Connected || 
-                    newEvent.Type == GameEvent.EventType.Connect))
+                else
                 {
-                    var events = newEvent.Origin.DelayedEvents;
 
-                    // add the delayed event to the queue 
-                    while (events.Count > 0)
+                    await newEvent.Owner.ExecuteEvent(newEvent);
+
+                    // save the event info to the database
+                    var changeHistorySvc = new ChangeHistoryService();
+                    await changeHistorySvc.Add(args.Event);
+
+                    // todo: this is a hacky mess
+                    if (newEvent.Origin?.DelayedEvents.Count > 0 &&
+                        (//newEvent.Origin?.State == Player.ClientState.Connected || 
+                        newEvent.Type == GameEvent.EventType.Connect))
                     {
-                        var oldEvent = events.Dequeue();
+                        var events = newEvent.Origin.DelayedEvents;
 
-                        var e = new GameEvent()
+                        // add the delayed event to the queue 
+                        while (events.Count > 0)
                         {
-                            Type = oldEvent.Type,
-                            Origin = newEvent.Origin,
-                            Data = oldEvent.Data,
-                            Extra = oldEvent.Extra,
-                            Owner = oldEvent.Owner,
-                            Message = oldEvent.Message,
-                            Target = oldEvent.Target,
-                            Remote = oldEvent.Remote
-                        };
+                            var oldEvent = events.Dequeue();
 
-                        e.Origin = newEvent.Origin;
-                        // check if the target was assigned
-                        if (e.Target != null)
-                        {
-                            // update the target incase they left or have newer info
-                            e.Target = newEvent.Owner.GetPlayersAsList()
-                                .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
-                            // we have to throw out the event because they left
-                            if (e.Target == null)
+                            var e = new GameEvent()
                             {
-                                Logger.WriteWarning($"Delayed event for {e.Origin} was removed because the target has left");
-                                // hack: don't do anything with the event because the target is invalid
-                                e.Type = GameEvent.EventType.Unknown;
+                                Type = oldEvent.Type,
+                                Origin = newEvent.Origin,
+                                Data = oldEvent.Data,
+                                Extra = oldEvent.Extra,
+                                Owner = oldEvent.Owner,
+                                Message = oldEvent.Message,
+                                Target = oldEvent.Target,
+                                Remote = oldEvent.Remote
+                            };
+
+                            e.Origin = newEvent.Origin;
+                            // check if the target was assigned
+                            if (e.Target != null)
+                            {
+                                // update the target incase they left or have newer info
+                                e.Target = newEvent.Owner.GetPlayersAsList()
+                                    .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
+                                // we have to throw out the event because they left
+                                if (e.Target == null)
+                                {
+                                    Logger.WriteWarning($"Delayed event for {e.Origin} was ignored because the target has left");
+                                    // hack: don't do anything with the event because the target is invalid
+                                    e.Type = GameEvent.EventType.Unknown;
+                                }
                             }
+                            Logger.WriteDebug($"Adding delayed event of type {e.Type} for {e.Origin} back for processing");
+                            this.GetEventHandler().AddEvent(e);
                         }
-                        Logger.WriteDebug($"Adding delayed event of type {e.Type} for {e.Origin} back for processing");
-                        this.GetEventHandler().AddEvent(e);
                     }
                 }
 
@@ -163,7 +161,7 @@ namespace IW4MAdmin.Application
             // this happens if a plugin requires login
             catch (AuthorizationException ex)
             {
-                await newEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {ex.Message}");
+                newEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {ex.Message}");
             }
 
             catch (NetworkException ex)
@@ -183,16 +181,8 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
 
-            finish:
-            //if (ProcessingEvent.CurrentCount < 1)
-            //{
-            //    ProcessingEvent.Release(1);
-            //}
             // tell anyone waiting for the output that we're done
             newEvent.OnProcessed.Set();
-
-            var changeHistorySvc = new ChangeHistoryService();
-            await changeHistorySvc.Add(args.Event);
         }
 
         public IList<Server> GetServers()
@@ -547,10 +537,7 @@ namespace IW4MAdmin.Application
         public void Start()
         {
             // this needs to be run seperately from the main thread
-#if !DEBUG
-            // start heartbeat
             var _ = Task.Run(() => SendHeartbeat(new HeartbeatState()));
-#endif
             _ = Task.Run(() => UpdateServerStates());
 
             while (Running)

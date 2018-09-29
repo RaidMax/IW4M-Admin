@@ -71,7 +71,6 @@ namespace IW4MAdmin
                 polledPlayer.Ping < 1 ||
                 polledPlayer.ClientNumber < 0)
             {
-                //Logger.WriteDebug($"Skipping client not in connected state {P}");
                 return false;
             }
 
@@ -237,7 +236,7 @@ namespace IW4MAdmin
                         {
                             autoKickClient.AdministeredPenalties.Add(new EFPenalty() { AutomatedOffense = currentBan.AutomatedOffense });
                         }
-                        await player.Ban($"{currentBan.Offense}", autoKickClient);
+                        player.Ban($"{currentBan.Offense}", autoKickClient);
                     }
 
                     // they didn't fully connect so empty their slot
@@ -264,7 +263,7 @@ namespace IW4MAdmin
             if (cNum >= 0 && Players[cNum] != null)
             {
                 Player Leaving = Players[cNum];
-               
+
                 // occurs when the player disconnects via log before being authenticated by RCon
                 if (Leaving.State != Player.ClientState.Connected)
                 {
@@ -286,6 +285,7 @@ namespace IW4MAdmin
         public override async Task ExecuteEvent(GameEvent E)
         {
             bool canExecuteCommand = true;
+
             if (!await ProcessEvent(E))
             {
                 return;
@@ -318,7 +318,7 @@ namespace IW4MAdmin
                 }
                 catch (AuthorizationException e)
                 {
-                    await E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
+                    E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
                     canExecuteCommand = false;
                 }
                 catch (Exception Except)
@@ -334,7 +334,7 @@ namespace IW4MAdmin
                 (canExecuteCommand ||
                 E.Origin?.Level == Player.Permission.Console))
             {
-                await (((Command)E.Extra).ExecuteAsync(E));
+                var _ = (((Command)E.Extra).ExecuteAsync(E));
             }
         }
 
@@ -345,7 +345,7 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task<bool> ProcessEvent(GameEvent E)
         {
-             if (E.Type == GameEvent.EventType.Connect)
+            if (E.Type == GameEvent.EventType.Connect)
             {
                 E.Origin.State = Player.ClientState.Authenticated;
                 // add   them to the server 
@@ -366,7 +366,9 @@ namespace IW4MAdmin
                 });
 
                 if (E.Origin.Level > Player.Permission.Moderator)
-                    await E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                {
+                    E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                }
             }
 
             else if (E.Type == GameEvent.EventType.Join)
@@ -558,8 +560,8 @@ namespace IW4MAdmin
                 }
 
                 // only check every 2 minutes if the server doesn't seem to be responding
-              /*  if ((DateTime.Now - LastPoll).TotalMinutes < 0.5 && ConnectionErrors >= 1)
-                    return true;*/
+                /*  if ((DateTime.Now - LastPoll).TotalMinutes < 0.5 && ConnectionErrors >= 1)
+                      return true;*/
 
                 try
                 {
@@ -668,7 +670,9 @@ namespace IW4MAdmin
                     string[] messages = this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]).Split(Environment.NewLine);
 
                     foreach (string message in messages)
-                        await Broadcast(message);
+                    {
+                        Broadcast(message);
+                    }
 
                     NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
                     start = DateTime.Now;
@@ -778,7 +782,7 @@ namespace IW4MAdmin
                 Logger.WriteWarning("Game log file not properly initialized, restarting map...");
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");
-            } 
+            }
 
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
@@ -811,7 +815,7 @@ namespace IW4MAdmin
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG
                 throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
-//#else
+                //#else
                 LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
 #endif
             }
@@ -824,7 +828,7 @@ namespace IW4MAdmin
 
             _ = Task.Run(() => LogEvent.PollForChanges());
 #if !DEBUG
-            await Broadcast(loc["BROADCAST_ONLINE"]);
+            Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
         }
 
@@ -847,13 +851,13 @@ namespace IW4MAdmin
             {
                 if (Target.Warnings >= 4)
                 {
-                    await Target.Kick(loc["SERVER_WARNLIMT_REACHED"], Utilities.IW4MAdminClient);
+                    Target.Kick(loc["SERVER_WARNLIMT_REACHED"], Utilities.IW4MAdminClient);
                     return;
                 }
 
                 Target.Warnings++;
-                String Message = $"^1{loc["SERVER_WARNING"]} ^7[^3{Target.Warnings}^7]: ^3{Target.Name}^7, {Reason}";
-                await Target.CurrentServer.Broadcast(Message);
+                String message = $"^1{loc["SERVER_WARNING"]} ^7[^3{Target.Warnings}^7]: ^3{Target.Name}^7, {Reason}";
+                Target.CurrentServer.Broadcast(message);
             }
 
             Penalty newPenalty = new Penalty()

@@ -76,16 +76,15 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             {
                 foreach (var stat in topStats)
                 {
-                    await E.Origin.Tell(stat);
-                    await Task.Delay(SharedLibraryCore.RCon.StaticHelpers.FloodProtectionInterval);
+                    E.Origin.Tell(stat);
+
                 }
             }
             else
             {
                 foreach (var stat in topStats)
                 {
-                    await E.Owner.Broadcast(stat);
-                    await Task.Delay(SharedLibraryCore.RCon.StaticHelpers.FloodProtectionInterval);
+                    E.Owner.Broadcast(stat);
                 }
             }
         }

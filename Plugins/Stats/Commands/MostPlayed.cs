@@ -63,12 +63,16 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             if (!E.Message.IsBroadcastCommand())
             {
                 foreach (var stat in topStats)
-                    await E.Origin.Tell(stat);
+                {
+                    E.Origin.Tell(stat);
+                }
             }
             else
             {
                 foreach (var stat in topStats)
-                    await E.Owner.Broadcast(stat);
+                {
+                    E.Owner.Broadcast(stat);
+                }
             }
         }
     }

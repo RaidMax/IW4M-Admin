@@ -91,12 +91,12 @@ namespace SharedLibraryCore.Migrations
                 principalColumn: "SnapshotId",
                 onDelete: ReferentialAction.Restrict);
 
-            }
+                migrationBuilder.CreateIndex(
+                    name: "IX_Vector3_EFACSnapshotSnapshotId",
+                    table: "Vector3",
+                    column: "EFACSnapshotSnapshotId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Vector3_EFACSnapshotSnapshotId",
-                table: "Vector3",
-                column: "EFACSnapshotSnapshotId");
+            }
 
             migrationBuilder.CreateIndex(
                 name: "IX_EFACSnapshot_ClientId",

@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 from master.schema.instanceschema import InstanceSchema
 from master import ctx
+import json
 
 class Instance(Resource):
     def get(self, id=None):
@@ -21,6 +22,8 @@ class Instance(Resource):
     @jwt_required
     def put(self, id):
         try:
+            for server in request.json['servers']:
+                server['ip'] = request.remote_addr
             instance = InstanceSchema().load(request.json)
         except ValidationError as err:
             return {'message' : err.messages }, 400
@@ -30,6 +33,8 @@ class Instance(Resource):
     @jwt_required
     def post(self):
         try:
+            for server in request.json['servers']:
+                server['ip'] = request.remote_addr
             instance = InstanceSchema().load(request.json)
         except ValidationError as err:
             return {'message' : err.messages }, 400

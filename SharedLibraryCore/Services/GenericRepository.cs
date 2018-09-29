@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Services
@@ -14,6 +13,14 @@ namespace SharedLibraryCore.Services
     {
         private DatabaseContext _context;
         private DbSet<TEntity> _dbSet;
+        private readonly bool ShouldTrack;
+
+        public GenericRepository(bool shouldTrack)
+        {
+            this.ShouldTrack = shouldTrack;
+        }
+
+        public GenericRepository() { }
 
         protected DbContext Context
         {
@@ -21,7 +28,7 @@ namespace SharedLibraryCore.Services
             {
                 if (_context == null)
                 {
-                    _context = new DatabaseContext(true);
+                    _context = new DatabaseContext(ShouldTrack);
                 }
 
                 return _context;

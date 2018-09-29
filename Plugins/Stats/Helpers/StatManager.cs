@@ -243,8 +243,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             var playerStats = Servers[serverId].PlayerStats;
-            var statsSvc = ContextThreads[serverId];
             var detectionStats = Servers[serverId].PlayerDetections;
+            var statsSvc = ContextThreads[serverId];
 
             if (playerStats.ContainsKey(pl.ClientId))
             {
@@ -292,17 +292,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Location = hl
                 })
                 .ToList();
-                await statsSvc.ClientStatSvc.SaveChangesAsync();
-            }
-
-            // adjusts for adding new hit location
-            if (clientStats.HitLocations.Count == 19)
-            {
-                clientStats.HitLocations.Add(new EFHitLocationCount()
-                {
-                    Location = IW4Info.HitLocation.shield
-                });
-
                 await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
@@ -382,7 +371,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (match.Success)
             {
-                // this gives us what time the player is on
+                // this gives us what team the player is on
                 var attackerStats = Servers[serverId].PlayerStats[attackerClientId];
                 var victimStats = Servers[serverId].PlayerStats[victimClientId];
                 IW4Info.Team victimTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[4].ToString());
@@ -507,13 +496,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
                     }
 
-                    await ctx.SaveChangesAsync();
                     await clientStatsSvc.SaveChangesAsync();
+                    await ctx.SaveChangesAsync();
                 }
 
                 catch (Exception ex)
                 {
-
+                    Log.WriteError("AC ERROR");
+                    Log.WriteDebug(ex.GetExceptionInfo());
                 }
 
                 OnProcessingPenalty.Release(1);
@@ -529,7 +519,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         break;
                     }
-                    await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
+                    attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
                     {
                         ClientId = 1,
                         AdministeredPenalties = new List<EFPenalty>()
@@ -587,78 +577,78 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
             {
 
-                //if (change.HitOriginId == 0)
-                //{
-                //    change.HitOriginId = change.HitOrigin.Vector3Id;
-                //    change.HitOrigin = null;
-                //}
-
-                //if (change.HitDestinationId == 0)
-                //{
-                //    change.HitDestinationId = change.HitDestination.Vector3Id;
-                //    change.HitDestination = null;
-                //}
-
-                //if (change.CurrentViewAngleId == 0)
-                //{
-                //    change.CurrentViewAngleId = change.CurrentViewAngle.Vector3Id;
-                //    change.CurrentViewAngle = null;
-                //}
-
-                //if (change.LastStrainAngleId == 0)
-                //{
-                //    change.LastStrainAngleId = change.LastStrainAngle.Vector3Id;
-                //    change.LastStrainAngle = null;
-                //}
-
                 if (change.HitOrigin.Vector3Id > 0)
                 {
+                    change.HitOriginId = change.HitOrigin.Vector3Id;
                     ctx.Attach(change.HitOrigin);
                 }
+
+                else if (change.HitOrigin.Vector3Id == 0)
+                {
+                    ctx.Add(change.HitOrigin);
+                }
+
                 if (change.HitDestination.Vector3Id > 0)
                 {
+                    change.HitDestinationId = change.HitDestination.Vector3Id;
                     ctx.Attach(change.HitDestination);
                 }
+
+                else if (change.HitDestination.Vector3Id == 0)
+                {
+                    ctx.Add(change.HitOrigin);
+                }
+
                 if (change.CurrentViewAngle.Vector3Id > 0)
                 {
+                    change.CurrentViewAngleId = change.CurrentViewAngle.Vector3Id;
                     ctx.Attach(change.CurrentViewAngle);
                 }
+
+                else if (change.CurrentViewAngle.Vector3Id == 0)
+                {
+                    ctx.Add(change.HitOrigin);
+                }
+
                 if (change.LastStrainAngle.Vector3Id > 0)
                 {
+                    change.LastStrainAngleId = change.LastStrainAngle.Vector3Id;
                     ctx.Attach(change.LastStrainAngle);
                 }
 
-                ctx.Add(change);
+                else if (change.LastStrainAngle.Vector3Id == 0)
+                {
+                    ctx.Add(change.HitOrigin);
+                }
 
+                ctx.Add(change);
             }
         }
 
         public async Task AddStandardKill(Player attacker, Player victim)
         {
             int serverId = attacker.CurrentServer.GetHashCode();
+
             EFClientStatistics attackerStats = null;
-            try
+            if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
+            {
+                attackerStats = await AddPlayer(attacker);
+            }
+
+            else
             {
                 attackerStats = Servers[serverId].PlayerStats[attacker.ClientId];
             }
 
-            catch (KeyNotFoundException)
+            EFClientStatistics victimStats = null;
+            if (!Servers[serverId].PlayerStats.ContainsKey(victim.ClientId))
             {
-                // happens when the client has disconnected before the last status update
-                Log.WriteWarning($"[Stats::AddStandardKill] kill attacker ClientId is invalid {attacker.ClientId}-{attacker}");
-                return;
+                victimStats = await AddPlayer(victim);
             }
 
-            EFClientStatistics victimStats = null;
-            try
+            else
             {
                 victimStats = Servers[serverId].PlayerStats[victim.ClientId];
-            }
-
-            catch (KeyNotFoundException)
-            {
-                Log.WriteWarning($"[Stats::AddStandardKill] kill victim ClientId is invalid {victim.ClientId}-{victim}");
-                return;
             }
 
 #if DEBUG
@@ -691,7 +681,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 StreakMessage.MessageOnStreak(-1, -1);
 
             if (streakMessage != string.Empty)
-                await attacker.Tell(streakMessage);
+            {
+                attacker.Tell(streakMessage);
+            }
 
             // fixme: why?
             if (double.IsNaN(victimStats.SPM) || double.IsNaN(victimStats.Skill))
@@ -711,6 +703,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // update their performance 
 #if !DEBUG
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
+#else
+                if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 0.1)
 #endif
             {
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
@@ -765,13 +759,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 if (clientHistory.RatingHistoryId == 0)
                 {
                     ctx.Add(clientHistory);
-                    // Log.WriteDebug($"adding first time client history  {client.ClientId}");
-                    await ctx.SaveChangesAsync();
-                }
-
-                else
-                {
-                    //ctx.Update(clientHistory);
                 }
 
                 #region INDIVIDUAL_SERVER_PERFORMANCE
@@ -793,8 +780,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         .First();
 
                     ctx.Remove(ratingToRemove);
-                    //Log.WriteDebug($"remove oldest rating  {client.ClientId}");
-                    await ctx.SaveChangesAsync();
                 }
 
                 // set the previous newest to false
@@ -810,8 +795,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Update(ratingToUnsetNewest);
                         ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
                         ratingToUnsetNewest.Newest = false;
-                        //Log.WriteDebug($"unsetting previous newest flag {client.ClientId}");
-                        await ctx.SaveChangesAsync();
                     }
                 }
 
@@ -828,9 +811,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 // add new rating for current server
                 ctx.Add(newServerRating);
-
-                //Log.WriteDebug($"adding new server rating  {client.ClientId}");
-                await ctx.SaveChangesAsync();
 
                 #endregion
                 #region OVERALL_RATING
@@ -877,8 +857,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         .First();
 
                     ctx.Remove(ratingToRemove);
-                    //Log.WriteDebug($"remove oldest overall rating  {client.ClientId}");
-                    await ctx.SaveChangesAsync();
                 }
 
                 // set the previous average newest to false
@@ -894,8 +872,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Update(ratingToUnsetNewest);
                         ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
                         ratingToUnsetNewest.Newest = false;
-                        //Log.WriteDebug($"unsetting overall newest rating {client.ClientId}");
-                        await ctx.SaveChangesAsync();
                     }
                 }
 
@@ -913,7 +889,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 ctx.Add(averageRating);
                 #endregion
-                //Log.WriteDebug($"adding new average rating {client.ClientId}");
+
                 await ctx.SaveChangesAsync();
             }
         }
@@ -1148,7 +1124,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             await statsSvc.ServerSvc.SaveChangesAsync();
 
             statsSvc = null;
-            // this should prevent the gunk for having a long lasting context.
+            // this should prevent the gunk from having a long lasting context.
             ContextThreads[serverId] = new ThreadSafeStatsService();
         }
 

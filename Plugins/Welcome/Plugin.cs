@@ -82,17 +82,17 @@ namespace IW4MAdmin.Plugins.Welcome
             {
                 Player newPlayer = E.Origin;
                 if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
-                    await E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().PrivilegedAnnouncementMessage, newPlayer));
+                    E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().PrivilegedAnnouncementMessage, newPlayer));
 
-                await newPlayer.Tell(ProcessAnnouncement(Config.Configuration().UserWelcomeMessage, newPlayer));
+                newPlayer.Tell(ProcessAnnouncement(Config.Configuration().UserWelcomeMessage, newPlayer));
 
                 if (newPlayer.Level == Player.Permission.Flagged)
                 {
                     var penalty = await new GenericRepository<EFPenalty>().FindAsync(p => p.OffenderId == newPlayer.ClientId && p.Type == Penalty.PenaltyType.Flag);
-                    await E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penalty.FirstOrDefault()?.Offense}) has joined!");
+                    E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penalty.FirstOrDefault()?.Offense}) has joined!");
                 }
                 else
-                    await E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().UserAnnouncementMessage, newPlayer));
+                    E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().UserAnnouncementMessage, newPlayer));
             }
         }
 

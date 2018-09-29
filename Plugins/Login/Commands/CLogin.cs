@@ -15,7 +15,8 @@ namespace IW4MAdmin.Plugins.Login.Commands
                 Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PASSWORD"],
                 Required = true
             }
-        }){ }
+        })
+        { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
@@ -25,12 +26,12 @@ namespace IW4MAdmin.Plugins.Login.Commands
             if (hashedPassword[0] == client.Password)
             {
                 Plugin.AuthorizedClients[E.Origin.ClientId] = true;
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]);
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]);
             }
 
             else
             {
-                await E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
             }
         }
     }

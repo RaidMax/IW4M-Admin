@@ -22,10 +22,10 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
         ConcurrentDictionary<int, Tracking> ProfanityCounts;
         IManager Manager;
 
-        public async Task OnEventAsync(GameEvent E, Server S)
+        public Task OnEventAsync(GameEvent E, Server S)
         {
             if (!Settings.Configuration().EnableProfanityDeterment)
-                return;
+                return Task.CompletedTask; ;
 
             if (E.Type == GameEvent.EventType.Connect)
             {
@@ -48,7 +48,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                 if (containsObjectionalWord)
                 {
-                    await E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
+                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
                     {
                         ClientId = 1
                     });
@@ -84,7 +84,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     var clientProfanity = ProfanityCounts[E.Origin.ClientId];
                     if (clientProfanity.Infringements >= Settings.Configuration().KickAfterInfringementCount)
                     {
-                        await clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
+                        clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
                         {
                             ClientId = 1
                         });
@@ -94,13 +94,14 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     {
                         clientProfanity.Infringements++;
 
-                        await clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new Player()
+                        clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new Player()
                         {
                             ClientId = 1
                         });
                     }
                 }
             }
+            return Task.CompletedTask;
         }
 
         public async Task OnLoadAsync(IManager manager)

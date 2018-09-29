@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Commands
 {
     public class CommandProcessing
     {
-        public static  async Task<Command> ValidateCommand(GameEvent E)
+        public static async Task<Command> ValidateCommand(GameEvent E)
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var Manager = E.Owner.Manager;
@@ -27,7 +27,7 @@ namespace SharedLibraryCore.Commands
 
             if (C == null)
             {
-                await E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
+                E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
                 throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
             }
 
@@ -36,14 +36,14 @@ namespace SharedLibraryCore.Commands
 
             if (E.Origin.Level < C.Permission)
             {
-                await E.Origin.Tell(loc["COMMAND_NOACCESS"]);
+                E.Origin.Tell(loc["COMMAND_NOACCESS"]);
                 throw new CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
             if (Args.Length < (C.RequiredArgumentCount))
             {
-                await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                await E.Origin.Tell(C.Syntax);
+                E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
+                E.Origin.Tell(C.Syntax);
                 throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
             }
 
@@ -82,7 +82,7 @@ namespace SharedLibraryCore.Commands
                     matchingPlayers = E.Owner.GetClientByName(E.Data.Trim());
                     if (matchingPlayers.Count > 1)
                     {
-                        await E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
+                        E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
@@ -95,8 +95,8 @@ namespace SharedLibraryCore.Commands
 
                         if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
                         {
-                            await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                            await E.Origin.Tell(C.Syntax);
+                            E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
+                            E.Origin.Tell(C.Syntax);
                             throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
                     }
@@ -107,9 +107,11 @@ namespace SharedLibraryCore.Commands
                     matchingPlayers = E.Owner.GetClientByName(Args[0]);
                     if (matchingPlayers.Count > 1)
                     {
-                        await E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
+                        E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         foreach (var p in matchingPlayers)
-                            await E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
+                        {
+                            E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
+                        }
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
                     else if (matchingPlayers.Count == 1)
@@ -125,8 +127,8 @@ namespace SharedLibraryCore.Commands
                             E.Data == String.Empty) &&
                             C.RequiresTarget)
                         {
-                            await E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                            await E.Origin.Tell(C.Syntax);
+                            E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
+                            E.Origin.Tell(C.Syntax);
                             throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
                         }
                     }
@@ -134,7 +136,7 @@ namespace SharedLibraryCore.Commands
 
                 if (E.Target == null && C.RequiresTarget)
                 {
-                    await E.Origin.Tell(loc["COMMAND_TARGET_NOTFOUND"]);
+                    E.Origin.Tell(loc["COMMAND_TARGET_NOTFOUND"]);
                     throw new CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
                 }
             }

@@ -113,28 +113,28 @@ namespace SharedLibraryCore
         /// <summary>
         /// Send a message to all players
         /// </summary>
-        /// <param name="Message">Message to be sent to all players</param>
-        public async Task Broadcast(String Message)
+        /// <param name="message">Message to be sent to all players</param>
+        public GameEvent Broadcast(string message, Player sender = null)
         {
 #if DEBUG == false
-            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{Message}");
+            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
 #else
-            Logger.WriteVerbose(Message.StripColors());
+            Logger.WriteVerbose(message.StripColors());
 #endif
             var e = new GameEvent()
             {
                 Type = GameEvent.EventType.Broadcast,
 #if DEBUG == true
-                Data = Message,
+                Data = message,
 #else
                 Data = formattedMessage,
 #endif
                 Owner = this,
+                Origin = sender,
             };
 
             Manager.GetEventHandler().AddEvent(e);
-
-            await Task.CompletedTask;
+            return e;
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="Message">Message to send</param>
         /// <param name="Target">Player to send message to</param>
-        public async Task Tell(String Message, Player Target)
+        protected async Task Tell(String Message, Player Target)
         {
 #if !DEBUG
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Tell, Target.ClientNumber, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{Message}");
@@ -179,11 +179,11 @@ namespace SharedLibraryCore
         /// Send a message to all admins on the server
         /// </summary>
         /// <param name="message">Message to send out</param>
-        public async Task ToAdmins(String message)
+        public void ToAdmins(String message)
         {
             foreach (var client in GetPlayersAsList().Where(c => c.Level > Player.Permission.Flagged))
             {
-                await client.Tell(message);
+                client.Tell(message);
             }
         }
 

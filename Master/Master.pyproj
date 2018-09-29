@@ -73,6 +73,9 @@
     <Compile Include="master\resources\null.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Master\resources\server.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="master\resources\version.py">
       <SubType>Code</SubType>
     </Compile>
@@ -108,7 +111,9 @@
     <Folder Include="master\templates\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="FolderProfile.pubxml" />
     <Content Include="master\config\master.json" />
+    <Content Include="master\templates\serverlist.html" />
     <Content Include="requirements.txt" />
     <Content Include="master\templates\index.html" />
     <Content Include="master\templates\layout.html" />

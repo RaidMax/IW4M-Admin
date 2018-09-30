@@ -855,7 +855,6 @@ namespace IW4MAdmin
                     return;
                 }
 
-                Target.Warnings++;
                 String message = $"^1{loc["SERVER_WARNING"]} ^7[^3{Target.Warnings}^7]: ^3{Target.Name}^7, {Reason}";
                 Target.CurrentServer.Broadcast(message);
             }

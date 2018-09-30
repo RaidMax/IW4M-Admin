@@ -39,7 +39,7 @@ namespace SharedLibraryCore.RCon
         /// <summary>
         /// timeout in seconds to wait for a socket send or receive before giving up
         /// </summary>
-        public static readonly TimeSpan SocketTimeout = new TimeSpan(0, 0, 0, 0, 150);
+        public static readonly TimeSpan SocketTimeout = new TimeSpan(0, 0, 0, 0,150);
         /// <summary>
         /// interval in milliseconds to wait before sending the next RCon request
         /// </summary>

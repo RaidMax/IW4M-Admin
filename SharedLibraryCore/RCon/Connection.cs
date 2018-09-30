@@ -17,6 +17,7 @@ namespace SharedLibraryCore.RCon
         const int BufferSize = 4096;
         public readonly byte[] ReceiveBuffer = new byte[BufferSize];
         public readonly SemaphoreSlim OnComplete = new SemaphoreSlim(1, 1);
+        public DateTime LastQuery { get; set; } = DateTime.Now;
     }
 
     public class Connection
@@ -42,9 +43,19 @@ namespace SharedLibraryCore.RCon
 
             var connectionState = ActiveQueries[this.Endpoint];
 
+            var timeLeft = (DateTime.Now - connectionState.LastQuery).TotalMilliseconds;
+
+            if (timeLeft > 0)
+            {
+                await Task.Delay((int)timeLeft);
+            }
+
+            connectionState.LastQuery = DateTime.Now;
+
 #if DEBUG == true
             Log.WriteDebug($"Waiting for semaphore to be released [${this.Endpoint}]");
 #endif
+            // enter the semaphore so only one query is sent at a time per server.
             await connectionState.OnComplete.WaitAsync();
 
 #if DEBUG == true
@@ -73,40 +84,41 @@ namespace SharedLibraryCore.RCon
             byte[] response = null;
             retrySend:
 #if DEBUG == true
-            Log.WriteDebug($"Sending {payload.Length} bytes to [${this.Endpoint}] ({connectionState.ConnectionAttempts++}/{StaticHelpers.AllowedConnectionFails})");
+            Log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts++}/{StaticHelpers.AllowedConnectionFails})");
 #endif
             try
             {
                 response = await SendPayloadAsync(payload);
+                connectionState.OnComplete.Release(1);
             }
 
             catch (Exception ex)
             {
-                if(connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
+                if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
                 {
                     connectionState.ConnectionAttempts++;
                     Log.WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}] ({connectionState.ConnectionAttempts++}/{StaticHelpers.AllowedConnectionFails})");
-                    await Task.Delay(StaticHelpers.SocketTimeout.Milliseconds);
+                    await Task.Delay(StaticHelpers.FloodProtectionInterval);
                     goto retrySend;
                 }
-                ActiveQueries.TryRemove(this.Endpoint, out _);
+                // the next thread can go ahead and enter
+                connectionState.OnComplete.Release(1);
+
                 Log.WriteDebug(ex.GetExceptionInfo());
                 throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}]");
             }
 
-            ActiveQueries.TryRemove(this.Endpoint, out _);
-
+            connectionState.ConnectionAttempts = 0;
             string responseString = Utilities.EncodingType.GetString(response, 0, response.Length).TrimEnd('\0') + '\n';
 
             if (responseString.Contains("Invalid password"))
             {
-                // todo: localize this
-                throw new NetworkException("RCON password is invalid");
+                throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_INVALID"]);
             }
 
             if (responseString.ToString().Contains("rcon_password"))
             {
-                throw new NetworkException("RCON password has not been set");
+                throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
             }
 
             string[] splitResponse = responseString.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
@@ -147,6 +159,10 @@ namespace SharedLibraryCore.RCon
 
             if (!await connectionState.OnComplete.WaitAsync(StaticHelpers.SocketTimeout.Milliseconds))
             {
+                // we no longer care about the data because the server is being too slow
+                incomingDataArgs.Completed -= OnDataReceived;
+                // the next thread can go ahead and make a query
+                connectionState.OnComplete.Release(1);
                 throw new NetworkException("Timed out waiting for response", rconSocket);
             }
 
@@ -159,7 +175,10 @@ namespace SharedLibraryCore.RCon
 #if DEBUG == true
             Log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint.ToString()}");
 #endif
-            ActiveQueries[this.Endpoint].OnComplete.Release(1);
+            if (ActiveQueries[this.Endpoint].OnComplete.CurrentCount == 0)
+            {
+                ActiveQueries[this.Endpoint].OnComplete.Release(1);
+            }
         }
 
         private void OnDataSent(object sender, SocketAsyncEventArgs e)

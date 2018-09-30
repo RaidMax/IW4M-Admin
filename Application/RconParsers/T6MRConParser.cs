@@ -16,42 +16,6 @@ namespace IW4MAdmin.Application.RconParsers
 {
     public class T6MRConParser : IRConParser
     {
-        class T6MResponse
-        {
-            public class SInfo
-            {
-                public short Com_maxclients { get; set; }
-                public string Game { get; set; }
-                public string Gametype { get; set; }
-                public string Mapname { get; set; }
-                public short NumBots { get; set; }
-                public short NumClients { get; set; }
-                public short Round { get; set; }
-                public string Sv_hostname { get; set; }
-            }
-
-            public class PInfo
-            {
-                public short Assists { get; set; }
-                public string Clan { get; set; }
-                public short Deaths { get; set; }
-                public short Downs { get; set; }
-                public short Headshots { get; set; }
-                public short Id { get; set; }
-                public bool IsBot { get; set; }
-                public short Kills { get; set; }
-                public string Name { get; set; }
-                public short Ping { get; set; }
-                public short Revives { get; set; }
-                public int Score { get; set; }
-                public long Xuid { get; set; }
-                public string Ip { get; set; }
-            }
-
-            public SInfo Info { get; set; }
-            public PInfo[] Players { get; set; }
-        }
-
         private static readonly CommandPrefix Prefixes = new CommandPrefix()
         {
             Tell = "tell {0} {1}",
@@ -72,7 +36,6 @@ namespace IW4MAdmin.Application.RconParsers
         public async Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName)
         {
             string[] LineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, $"get {dvarName}");
-
 
             if (LineSplit.Length < 2)
             {
@@ -103,8 +66,6 @@ namespace IW4MAdmin.Application.RconParsers
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, "status");
             return ClientsFromStatus(response);
-
-            //return ClientsFromResponse(connection);
         }
 
         public async Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue)
@@ -112,41 +73,6 @@ namespace IW4MAdmin.Application.RconParsers
             // T6M doesn't respond with anything when a value is set, so we can only hope for the best :c
             await connection.SendQueryAsync(StaticHelpers.QueryType.DVAR, $"set {dvarName} {dvarValue}", false);
             return true;
-        }
-
-        private async Task<List<Player>> ClientsFromResponse(Connection conn)
-        {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri($"http://{conn.Endpoint.Address}:{conn.Endpoint.Port}/");
-
-                try
-                {
-                    var parameters = new FormUrlEncodedContent(new[]
-                    {
-                        new KeyValuePair<string, string>("rcon_password", conn.RConPassword)
-                    });
-
-                    var serverResponse = await client.PostAsync("/info", parameters);
-                    var serverResponseObject = Newtonsoft.Json.JsonConvert.DeserializeObject<T6MResponse>(await serverResponse.Content.ReadAsStringAsync());
-
-                    return serverResponseObject.Players.Select(p => new Player()
-                    {
-                        Name = p.Name,
-                        NetworkId = p.Xuid,
-                        ClientNumber = p.Id,
-                        IPAddress = p.Ip.Split(':')[0].ConvertToIP(),
-                        Ping = p.Ping,
-                        Score = p.Score,
-                        IsBot = p.IsBot,
-                    }).ToList();
-                }
-
-                catch (HttpRequestException e)
-                {
-                    throw new NetworkException(e.Message);
-                }
-            }
         }
 
         private List<Player> ClientsFromStatus(string[] status)
@@ -174,9 +100,6 @@ namespace IW4MAdmin.Application.RconParsers
 #endif
                     int ipAddress = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
-                    int score = 0;
-                    // todo: fix this when T6M score is valid ;)
-                    //int score = Int32.Parse(playerInfo[1]);
                     var p = new Player()
                     {
                         Name = name,
@@ -184,7 +107,7 @@ namespace IW4MAdmin.Application.RconParsers
                         ClientNumber = clientId,
                         IPAddress = ipAddress,
                         Ping = Ping,
-                        Score = score,
+                        Score = 0,
                         State = Player.ClientState.Connecting,
                         IsBot = networkId == 0
                     };

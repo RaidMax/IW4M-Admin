@@ -16,7 +16,6 @@ namespace Tests
 
         public ManagerFixture()
         {
-
             File.WriteAllText("test_mp.log", "TEST_LOG_FILE");
 
             Manager = Program.ServerManager;
@@ -32,7 +31,7 @@ namespace Tests
                         Password = "test",
                         Port = 28963,
                         Rules = new List<string>(),
-                        ManualLogPath = "https://raidmax.org/IW4MAdmin/getlog.php"
+                        ManualLogPath = "http://google.com"
                     }
                 },
                 AutoMessages = new List<string>(),

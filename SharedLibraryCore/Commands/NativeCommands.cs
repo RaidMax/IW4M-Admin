@@ -69,12 +69,14 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent E)
         {
-            if (!await E.Target.Warn(E.Data, E.Origin).WaitAsync())
+            if (E.Target.Warn(E.Data, E.Origin).Failed)
             {
                 E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_FAIL"]} {E.Target.Name}");
             }
+
+            return Task.CompletedTask;
         }
     }
 
@@ -91,12 +93,14 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent E)
         {
-            if (await E.Target.WarnClear(E.Origin).WaitAsync())
+            if (!E.Target.WarnClear(E.Origin).Failed)
             {
                 E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_SUCCESS"]} {E.Target.Name}");
             }
+
+            return Task.CompletedTask;
         }
     }
 
@@ -839,8 +843,6 @@ namespace SharedLibraryCore.Commands
 
             else
             {
-                commandEvent.Owner.Reports.Add(new Report(commandEvent.Target, commandEvent.Origin, commandEvent.Data));
-
                 Penalty newReport = new Penalty()
                 {
                     Type = Penalty.PenaltyType.Report,

@@ -128,6 +128,8 @@ namespace SharedLibraryCore.Objects
                 return e;
             }
 
+            this.Warnings++;
+
             CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
@@ -150,7 +152,7 @@ namespace SharedLibraryCore.Objects
                 Owner = this.CurrentServer
             };
 
-            if (this.Level < sender.Level)
+            if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
                 return e;
@@ -162,13 +164,14 @@ namespace SharedLibraryCore.Objects
                 return e;
             }
 
-            if (CurrentServer.Reports.Count(rep => (rep.Origin == sender &&
+            if (CurrentServer.Reports.Count(rep => (rep.Origin.NetworkId == sender.NetworkId &&
                 rep.Target.NetworkId == this.NetworkId)) > 0)
             {
                 e.FailReason = GameEvent.EventFailReason.Exception;
                 return e;
             }
 
+            CurrentServer.Reports.Add(new Report(this, sender, reportReason));
             CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }

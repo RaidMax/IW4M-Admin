@@ -50,22 +50,24 @@ namespace WebfrontCore.Controllers
         {
             string duration = string.Empty;
 
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+
             switch (Duration)
             {
                 case 1:
-                    duration = "1h";
+                    duration = $"1{loc["GLOBAL_TIME_HOURS"][0]}";
                     break;
                 case 2:
-                    duration = "6h";
+                    duration = $"6{loc["GLOBAL_TIME_HOURS"][0]}";
                     break;
                 case 3:
-                    duration = "1d";
+                    duration = $"1{loc["GLOBAL_TIME_DAYS"][0]}";
                     break;
                 case 4:
-                    duration = "2d";
+                    duration = $"2{loc["GLOBAL_TIME_DAYS"][0]}";
                     break;
                 case 5:
-                    duration = "1w";
+                    duration = $"1{loc["GLOBAL_TIME_WEEKS"][0]}";
                     break;
             }
 

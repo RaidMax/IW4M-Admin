@@ -192,14 +192,14 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="Reason">Reason for kicking</param>
         /// <param name="Target">Player to kick</param>
-        abstract public Task Kick(String Reason, Player Target, Player Origin);
+        abstract protected Task Kick(String Reason, Player Target, Player Origin);
 
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server
         /// </summary>
         /// <param name="Reason">Reason for banning the player</param>
         /// <param name="Target">The player to ban</param>
-        abstract public Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin);
+        abstract protected Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin);
 
         /// <summary>
         /// Perm ban a player from the server
@@ -207,7 +207,7 @@ namespace SharedLibraryCore
         /// <param name="Reason">The reason for the ban</param>
         /// <param name="Target">The person to ban</param>
         /// <param name="Origin">The person who banned the target</param>
-        abstract public Task Ban(String Reason, Player Target, Player Origin);
+        abstract protected Task Ban(String Reason, Player Target, Player Origin);
 
         abstract public Task Warn(String Reason, Player Target, Player Origin);
 

@@ -322,13 +322,13 @@ namespace SharedLibraryCore
 
         public static TimeSpan ParseTimespan(this string input)
         {
-            var expressionMatch = Regex.Match(input, @"[0-9]+.\b");
+            var expressionMatch = Regex.Match(input, @"([0-9]+)(\w+)");
 
             if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
                 return new TimeSpan(1, 0, 0);
 
-            char lengthDenote = expressionMatch.Value.ToLower()[expressionMatch.Value.Length - 1];
-            int length = Int32.Parse(expressionMatch.Value.Substring(0, expressionMatch.Value.Length - 1));
+            char lengthDenote = expressionMatch.Groups[2].ToString()[0];
+            int length = Int32.Parse(expressionMatch.Groups[1].ToString());
 
             var loc = CurrentLocalization.LocalizationIndex;
 
@@ -337,22 +337,22 @@ namespace SharedLibraryCore
                 return new TimeSpan(0, length, 0);
             }
 
-            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_HOURS"].First()))
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_HOURS"][0]))
             {
                 return new TimeSpan(length, 0, 0);
             }
 
-            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_DAYS"].First()))
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_DAYS"][0]))
             {
                 return new TimeSpan(length, 0, 0, 0);
             }
 
-            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_WEEKS"].First()))
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_WEEKS"][0]))
             {
                 return new TimeSpan(length * 7, 0, 0, 0);
             }
 
-            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_YEARS"].First()))
+            if (lengthDenote == char.ToLower(loc["GLOBAL_TIME_YEARS"][0]))
             {
                 return new TimeSpan(length * 365, 0, 0, 0);
             }

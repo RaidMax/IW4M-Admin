@@ -76,6 +76,12 @@ namespace IW4MAdmin.Application
 
             var newEvent = args.Event;
 
+            // the event has failed already
+            if (newEvent.Failed)
+            {
+                goto skip;
+            }
+
             try
             {
                 // if the origin client is not in an authorized state (detected by RCon) don't execute the event
@@ -161,25 +167,31 @@ namespace IW4MAdmin.Application
             // this happens if a plugin requires login
             catch (AuthorizationException ex)
             {
+                newEvent.FailReason = GameEvent.EventFailReason.Permission;
                 newEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {ex.Message}");
             }
 
             catch (NetworkException ex)
             {
+                newEvent.FailReason = GameEvent.EventFailReason.Exception;
                 Logger.WriteError(ex.Message);
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
 
             catch (ServerException ex)
             {
+                newEvent.FailReason = GameEvent.EventFailReason.Exception;
                 Logger.WriteWarning(ex.Message);
             }
 
             catch (Exception ex)
             {
+                newEvent.FailReason = GameEvent.EventFailReason.Exception;
                 Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
+
+            skip:
 
             // tell anyone waiting for the output that we're done
             newEvent.OnProcessed.Set();

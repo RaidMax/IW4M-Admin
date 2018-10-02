@@ -201,7 +201,7 @@ namespace IW4MAdmin
                 {
                     player.Level = Player.Permission.User;
                 }
-
+#if DEBUG == false
                 if (currentBan != null)
                 {
                     Logger.WriteInfo($"Banned client {player} trying to connect...");
@@ -243,16 +243,17 @@ namespace IW4MAdmin
                     Players[player.ClientNumber] = null;
                     return false;
                 }
+#endif
 
                 player.State = Player.ClientState.Connected;
                 return true;
             }
 
-            catch (Exception E)
+            catch (Exception ex)
             {
                 Manager.GetLogger().WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {polledPlayer.Name}::{polledPlayer.NetworkId}");
-                Manager.GetLogger().WriteDebug(E.Message);
-                Manager.GetLogger().WriteDebug(E.StackTrace);
+                Manager.GetLogger().WriteDebug(ex.Message);
+                Manager.GetLogger().WriteDebug(ex.StackTrace);
                 return false;
             }
         }
@@ -374,6 +375,61 @@ namespace IW4MAdmin
             else if (E.Type == GameEvent.EventType.Join)
             {
                 await OnPlayerJoined(E.Origin);
+            }
+
+            else if (E.Type == GameEvent.EventType.Flag)
+            {
+                Penalty newPenalty = new Penalty()
+                {
+                    Type = Penalty.PenaltyType.Flag,
+                    Expires = DateTime.UtcNow,
+                    Offender = E.Target,
+                    Offense = E.Data,
+                    Punisher = E.Origin,
+                    Active = true,
+                    When = DateTime.UtcNow,
+                    Link = E.Target.AliasLink
+                };
+
+                var addedPenalty = await Manager.GetPenaltyService().Create(newPenalty);
+                E.Target.ReceivedPenalties.Add(addedPenalty);
+
+                await Manager.GetClientService().Update(E.Target);
+            }
+
+            else if (E.Type == GameEvent.EventType.Unflag)
+            {
+                await Manager.GetClientService().Update(E.Target);
+            }
+
+            else if (E.Type == GameEvent.EventType.Report)
+            {
+                this.Reports.Add(new Report()
+                {
+                    Origin = E.Origin,
+                    Target = E.Target,
+                    Reason = E.Data
+                });
+            }
+
+            else if (E.Type == GameEvent.EventType.TempBan)
+            {
+                await TempBan(E.Data, (TimeSpan)E.Extra, E.Target, E.Origin); ;
+            }
+
+            else if (E.Type == GameEvent.EventType.Ban)
+            {
+                await Ban(E.Data, E.Target, E.Origin);
+            }
+
+            else if (E.Type == GameEvent.EventType.Unban)
+            {
+                await Unban(E.Data, E.Target, E.Origin);
+            }
+
+            else if (E.Type == GameEvent.EventType.Kick)
+            {
+                await Kick(E.Data, E.Target, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Quit)
@@ -874,7 +930,7 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        public override async Task Kick(String Reason, Player Target, Player Origin)
+        protected override async Task Kick(String Reason, Player Target, Player Origin)
         {
             // ensure player gets kicked if command not performed on them in game
             if (Target.ClientNumber < 0)
@@ -915,7 +971,7 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        public override async Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin)
+        protected override async Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin)
         {
             // ensure player gets banned if command not performed on them in game
             if (Target.ClientNumber < 0)
@@ -954,7 +1010,7 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        override public async Task Ban(String Message, Player Target, Player Origin)
+        override protected async Task Ban(String Message, Player Target, Player Origin)
         {
             // ensure player gets banned if command not performed on them in game
             if (Target.ClientNumber < 0)
@@ -977,18 +1033,6 @@ namespace IW4MAdmin
             {
                 // this is set only because they're still in the server.
                 Target.Level = Player.Permission.Banned;
-
-                var e = new GameEvent()
-                {
-                    Type = GameEvent.EventType.Ban,
-                    Data = Message,
-                    Origin = Origin,
-                    Target = Target,
-                    Owner = this
-                };
-
-                // let the api know that a ban occured
-                Manager.GetEventHandler().AddEvent(e);
 
 #if !DEBUG
                 string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");

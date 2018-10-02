@@ -124,7 +124,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var _ = await E.Target.Kick(E.Data, E.Origin).WaitAsync() ?
+            var _ = !(await E.Target.Kick(E.Data, E.Origin).WaitAsync()).Failed ?
                   E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_SUCCESS"]}") :
                   E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_FAIL"]} {E.Target.Name}");
         }
@@ -173,16 +173,20 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
+        private static readonly string TempBanRegex = @"([0-9]+\w+)\ (.+)";
+
         public override async Task ExecuteAsync(GameEvent E)
         {
-            String Message = Utilities.RemoveWords(E.Data, 1).Trim();
-            var length = E.Data.Split(' ')[0].ToLower().ParseTimespan();
-            if (length.TotalHours >= 1 && length.TotalHours < 2)
-                Message = E.Data.Replace("1h", "").Replace("1H", "");
+            var match = Regex.Match(E.Data, TempBanRegex);
+            if (match.Success)
+            {
+                string tempbanReason = match.Groups[2].ToString();
+                var length = match.Groups[1].ToString().ParseTimespan();
 
-            var _ = await E.Target.TempBan(Message, length, E.Origin).WaitAsync() ?
-                E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}") :
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
+                var _ = !(await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync()).Failed ?
+                    E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}") :
+                    E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
+            }
         }
     }
 
@@ -206,7 +210,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var _ = await E.Target.Ban(E.Data, E.Origin).WaitAsync() ?
+            var _ = !(await E.Target.Ban(E.Data, E.Origin).WaitAsync()).Failed ?
                     E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_SUCCESS"]}") :
                     E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_FAIL"]} {E.Target.Name}");
         }
@@ -721,10 +725,9 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent E)
         {
             var flagEvent = E.Target.Flag(E.Data, E.Origin);
-
 
             if (E.FailReason == GameEvent.EventFailReason.Permission)
             {
@@ -738,24 +741,10 @@ namespace SharedLibraryCore.Commands
 
             else
             {
-                E.Target.Level = Player.Permission.Flagged;
-
-                Penalty newPenalty = new Penalty()
-                {
-                    Type = Penalty.PenaltyType.Flag,
-                    Expires = DateTime.UtcNow,
-                    Offender = E.Target,
-                    Offense = E.Data,
-                    Punisher = E.Origin,
-                    Active = true,
-                    When = DateTime.UtcNow,
-                    Link = E.Target.AliasLink
-                };
-
-                await E.Owner.Manager.GetPenaltyService().Create(newPenalty);
-
                 E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
             }
+
+            return Task.CompletedTask;
 
         }
     }
@@ -843,6 +832,7 @@ namespace SharedLibraryCore.Commands
 
             else
             {
+                // todo: move into server
                 Penalty newReport = new Penalty()
                 {
                     Type = Penalty.PenaltyType.Report,

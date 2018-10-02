@@ -101,7 +101,7 @@ namespace SharedLibraryCore.Objects
                 Data = message
             };
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            this.CurrentServer?.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -118,7 +118,7 @@ namespace SharedLibraryCore.Objects
                 Message = warnReason,
                 Origin = sender,
                 Target = this,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             // enforce level restrictions
@@ -130,7 +130,36 @@ namespace SharedLibraryCore.Objects
 
             this.Warnings++;
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
+        }
+
+
+        /// <summary>
+        /// clear all warnings for a client
+        /// </summary>
+        /// <param name="sender">client performing the warn clear</param>
+        /// <returns></returns>
+        public GameEvent WarnClear(Player sender)
+        {
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.WarnClear,
+                Origin = sender,
+                Target = this,
+                Owner = sender.CurrentServer
+            };
+
+            // enforce level restrictions
+            if (sender.Level <= this.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+                return e;
+            }
+
+            this.Warnings = 0;
+
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -149,58 +178,26 @@ namespace SharedLibraryCore.Objects
                 Data = reportReason,
                 Origin = sender,
                 Target = this,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
-            if (this == sender)
+            else if (this.Equals(sender))
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
-                return e;
             }
 
-            if (CurrentServer.Reports.Count(rep => (rep.Origin.NetworkId == sender.NetworkId &&
-                rep.Target.NetworkId == this.NetworkId)) > 0)
+            else if (CurrentServer.Reports.Count(report => (report.Origin.NetworkId == sender.NetworkId &&
+                report.Target.NetworkId == this.NetworkId)) > 0)
             {
                 e.FailReason = GameEvent.EventFailReason.Exception;
-                return e;
             }
 
-            CurrentServer.Reports.Add(new Report(this, sender, reportReason));
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
-            return e;
-        }
-
-        /// <summary>
-        /// clear all warnings for a client
-        /// </summary>
-        /// <param name="sender">client performing the warn clear</param>
-        /// <returns></returns>
-        public GameEvent WarnClear(Player sender)
-        {
-            var e = new GameEvent()
-            {
-                Type = GameEvent.EventType.WarnClear,
-                Origin = sender,
-                Target = this,
-                Owner = this.CurrentServer
-            };
-
-            // enforce level restrictions
-            if (sender.Level <= this.Level)
-            {
-                e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
-            }
-
-            this.Warnings = 0;
-
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -218,22 +215,26 @@ namespace SharedLibraryCore.Objects
                 Origin = sender,
                 Data = flagReason,
                 Message = flagReason,
-                Owner = this.CurrentServer
+                Target = this,
+                Owner = sender.CurrentServer
             };
 
-            if (sender.Level <= this.Level)
+            if (this.Level >= sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
-            if (this.Level == Player.Permission.Flagged)
+            else if (this.Level == Player.Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
-                return e;
             }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            else
+            {
+                this.Level = Player.Permission.Flagged;
+            }
+
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -249,26 +250,28 @@ namespace SharedLibraryCore.Objects
             {
                 Type = GameEvent.EventType.Unflag,
                 Origin = sender,
+                Target = this,
                 Data = unflagReason,
                 Message = unflagReason,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             if (sender.Level <= this.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
-            if (this.Level != Player.Permission.Flagged)
+            else if (this.Level != Player.Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
-                return e;
             }
 
-            this.Level = Permission.User;
+            else
+            {
+                this.Level = Permission.User;
+            }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -286,17 +289,16 @@ namespace SharedLibraryCore.Objects
                 Target = this,
                 Origin = sender,
                 Data = kickReason,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             // enforce level restrictions
-            if (sender.Level <= this.Level)
+            if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -312,10 +314,11 @@ namespace SharedLibraryCore.Objects
             {
                 Type = GameEvent.EventType.TempBan,
                 Message = tempbanReason,
+                Data = tempbanReason,
                 Origin = sender,
                 Target = this,
                 Extra = banLength,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             // enforce level restrictions
@@ -325,7 +328,7 @@ namespace SharedLibraryCore.Objects
                 return e;
             }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -340,9 +343,10 @@ namespace SharedLibraryCore.Objects
             {
                 Type = GameEvent.EventType.Ban,
                 Message = banReason,
+                Data = banReason,
                 Origin = sender,
                 Target = this,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             // enforce level restrictions
@@ -352,7 +356,7 @@ namespace SharedLibraryCore.Objects
                 return e;
             }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -371,17 +375,16 @@ namespace SharedLibraryCore.Objects
                 Data = unbanReason,
                 Origin = sender,
                 Target = this,
-                Owner = this.CurrentServer
+                Owner = sender.CurrentServer
             };
 
             // enforce level restrictions
-            if (sender.Level <= this.Level)
+            if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
-            CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -432,7 +435,7 @@ namespace SharedLibraryCore.Objects
 
         public override bool Equals(object obj)
         {
-            return ((Player)obj).NetworkId == NetworkId;
+            return ((Player)obj).NetworkId == this.NetworkId;
         }
 
         public override int GetHashCode() => (int)NetworkId;

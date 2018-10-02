@@ -181,10 +181,10 @@ namespace SharedLibraryCore
         /// asynchronously wait for GameEvent to be processed
         /// </summary>
         /// <returns>waitable task </returns>
-        public Task<bool> WaitAsync(int timeOut = int.MaxValue) => Task.Run(() =>
+        public Task<GameEvent> WaitAsync(int timeOut = int.MaxValue) => Task.Run(() =>
         {
             OnProcessed.Wait(timeOut);
-            return !Failed;
+            return this;
         });
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace SharedLibraryCore
         /// <returns>true if event should be delayed, false otherwise</returns>
         public static bool ShouldTargetEventBeDelayed(GameEvent queuedEvent)
         {
-            return queuedEvent.Target != null &&
+            return (queuedEvent.Target != null && queuedEvent.Target.ClientNumber != -1) &&
                                     (queuedEvent.Target.State != Player.ClientState.Connected &&
                                     queuedEvent.Target.NetworkId != 0);
         }

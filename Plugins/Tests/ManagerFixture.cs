@@ -16,7 +16,7 @@ namespace Tests
 
         public ManagerFixture()
         {
-            File.WriteAllText("test_mp.log", "TEST_LOG_FILE");
+            File.WriteAllText("test_mp.log", "test_log_file");
 
             Manager = Program.ServerManager;
 
@@ -39,7 +39,7 @@ namespace Tests
                 Maps = new List<MapConfiguration>(),
                 RConPollRate = 10000
             };
-            Manager.ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("Test.json");
+            Manager.ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("test.json");
             Manager.ConfigHandler.Set(config);
 
             Manager.Init().Wait();

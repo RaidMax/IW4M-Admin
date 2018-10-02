@@ -24,11 +24,9 @@ namespace SharedLibraryCore.Database
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
-        /// <summary>
-        /// this only works if there's one connection string
-        /// </summary>
-        private static string _ConnectionString;
-        private static string _provider;
+
+        static string _ConnectionString;
+        static string _provider;
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
@@ -63,12 +61,12 @@ namespace SharedLibraryCore.Database
                 var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);
-#if DEBUG == true
-                optionsBuilder.UseMySql("UserId=root;Password=dev;Host=127.0.0.1;port=3306;Database=IW4MAdmin");
-               // optionsBuilder.UseNpgsql("UserId=dev;Password=dev;Host=127.0.0.1;port=5432;Database=IW4MAdmin");
-#else
+                //#if DEBUG == true
+                //optionsBuilder.UseMySql("UserId=root;Password=dev;Host=127.0.0.1;port=3306;Database=IW4MAdmin");
+                // optionsBuilder.UseNpgsql("UserId=dev;Password=dev;Host=127.0.0.1;port=5432;Database=IW4MAdmin");
+                //#else
                 optionsBuilder.UseSqlite(connection);
-#endif
+                //#endif
             }
 
             else

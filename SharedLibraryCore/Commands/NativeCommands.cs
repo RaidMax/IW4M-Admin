@@ -773,12 +773,12 @@ namespace SharedLibraryCore.Commands
 
             else if (unflagEvent.FailReason == GameEvent.EventFailReason.Invalid)
             {
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_NOTFLAGGED"]);
             }
 
             else
             {
-                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_NOTFLAGGED"]);
+                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
             }
 
             return Task.CompletedTask;
@@ -823,6 +823,11 @@ namespace SharedLibraryCore.Commands
             else if (reportEvent.FailReason == GameEvent.EventFailReason.Invalid)
             {
                 commandEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL_SELF"]);
+            }
+
+            else if (reportEvent.FailReason == GameEvent.EventFailReason.Throttle)
+            {
+                commandEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL_TOOMANY"]);
             }
 
             else if (reportEvent.Failed)
@@ -1324,6 +1329,7 @@ namespace SharedLibraryCore.Commands
             var nextMapMatch = currentMap.First().Index != lastMap.Index ?
                regexMatches[regexMatches.IndexOf(currentMap.First()) + 1] :
                regexMatches.First();
+
             nextMap = s.Maps.FirstOrDefault(m => m.Name == nextMapMatch.Groups[3].ToString()) ?? nextMap;
             string nextGametype = nextMapMatch.Groups[2].ToString().Length == 0 ?
                 Utilities.GetLocalizedGametype(s.Gametype) :

@@ -53,13 +53,15 @@ namespace Tests
             Assert.False(client == null, "no client found to warn");
 
             var warnEvent = client.Warn("test warn", new Player() { ClientId = 1, Level = Player.Permission.Console, CurrentServer = client.CurrentServer });
-            warnEvent.OnProcessed.Wait(TestTimeout);
+            warnEvent.OnProcessed.Wait();
 
-            Assert.True(client.Warnings == 1 ||
-                warnEvent.Failed, "warning did not get applied");
+            Assert.True((client.Warnings == 1 ||
+                warnEvent.Failed) &&
+                Manager.GetPenaltyService().GetClientPenaltiesAsync(client.ClientId).Result.Count(p => p.Type == Penalty.PenaltyType.Warning) == 1,
+                "warning did not get applied");
 
             warnEvent = client.Warn("test warn", new Player() { ClientId = 1, Level = Player.Permission.Banned, CurrentServer = client.CurrentServer });
-            warnEvent.OnProcessed.Wait(TestTimeout);
+            warnEvent.OnProcessed.Wait();
 
             Assert.True(warnEvent.FailReason == GameEvent.EventFailReason.Permission &&
                 client.Warnings == 1, "warning was applied without proper permissions");
@@ -86,8 +88,17 @@ namespace Tests
             var client = Manager.Servers.First().GetPlayersAsList().FirstOrDefault();
             Assert.False(client == null, "no client found to report");
 
+            // fail
+            var player = new Player() { ClientId = 1, Level = Player.Permission.Console, CurrentServer = client.CurrentServer };
+            player.SetAdditionalProperty("_reportCount", 3);
+            var reportEvent = client.Report("test report", player);
+            reportEvent.OnProcessed.Wait(TestTimeout);
+
+            Assert.True(reportEvent.FailReason == GameEvent.EventFailReason.Throttle &
+                client.CurrentServer.Reports.Count(r => r.Target.NetworkId == client.NetworkId) == 0, $"too many reports were applied [{reportEvent.FailReason.ToString()}]");
+
             // succeed
-            var reportEvent = client.Report("test report", new Player() { ClientId = 1, Level = Player.Permission.Console, CurrentServer = client.CurrentServer });
+            reportEvent = client.Report("test report", new Player() { ClientId = 1, Level = Player.Permission.Console, CurrentServer = client.CurrentServer });
             reportEvent.OnProcessed.Wait(TestTimeout);
 
             Assert.True(!reportEvent.Failed &&

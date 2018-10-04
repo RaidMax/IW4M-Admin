@@ -25,7 +25,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
         public Task OnEventAsync(GameEvent E, Server S)
         {
             if (!Settings.Configuration().EnableProfanityDeterment)
-                return Task.CompletedTask; ;
+                return Task.CompletedTask;
 
             if (E.Type == GameEvent.EventType.Connect)
             {
@@ -50,7 +50,8 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                 {
                     E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
                     {
-                        ClientId = 1
+                        ClientId = 1,
+                        CurrentServer = E.Owner
                     });
                 };
             }
@@ -86,7 +87,8 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     {
                         clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
                         {
-                            ClientId = 1
+                            ClientId = 1,
+                            CurrentServer = E.Owner
                         });
                     }
 
@@ -96,7 +98,8 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                         clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new Player()
                         {
-                            ClientId = 1
+                            ClientId = 1,
+                            CurrentServer = E.Owner
                         });
                     }
                 }

@@ -23,6 +23,5 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int ServerId { get; set; }
         [ForeignKey("ServerId"), Column(Order = 1)]
         public EFServer Server { get; set; }
-
     }
 }

@@ -30,6 +30,7 @@
   <PropertyGroup>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
+    <AssemblyVersion>2.1.9.3</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

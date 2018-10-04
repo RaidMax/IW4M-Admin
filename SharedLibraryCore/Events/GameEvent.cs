@@ -26,7 +26,11 @@ namespace SharedLibraryCore
             /// <summary>
             /// executing the event would cause an invalid state
             /// </summary>
-            Invalid
+            Invalid,
+            /// <summary>
+            /// client is doing too much of something
+            /// </summary>
+            Throttle
         }
 
         public enum EventType

@@ -28,7 +28,7 @@ namespace SharedLibraryCore.Services
             {
                 if (_context == null)
                 {
-                    _context = new DatabaseContext(ShouldTrack);
+                    _context = new DatabaseContext(!ShouldTrack);
                 }
 
                 return _context;

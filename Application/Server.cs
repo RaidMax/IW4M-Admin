@@ -432,6 +432,11 @@ namespace IW4MAdmin
                 await Kick(E.Data, E.Target, E.Origin);
             }
 
+            else if (E.Type == GameEvent.EventType.Warn)
+            {
+                await Warn(E.Data, E.Target, E.Origin);
+            }
+
             else if (E.Type == GameEvent.EventType.Quit)
             {
                 var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
@@ -888,7 +893,7 @@ namespace IW4MAdmin
 #endif
         }
 
-        public override async Task Warn(String Reason, Player Target, Player Origin)
+        protected override async Task Warn(String Reason, Player Target, Player Origin)
         {
             // ensure player gets warned if command not performed on them in game
             if (Target.ClientNumber < 0)

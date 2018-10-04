@@ -81,7 +81,10 @@ namespace SharedLibraryCore.Objects
             ConnectionTime = DateTime.UtcNow;
             ClientNumber = -1;
             DelayedEvents = new Queue<GameEvent>();
-            _additionalProperties = new Dictionary<string, object>();
+            _additionalProperties = new Dictionary<string, object>
+            {
+                { "_reportCount", 0 }
+            };
         }
 
         public override string ToString() => $"{Name}::{NetworkId}";
@@ -116,19 +119,22 @@ namespace SharedLibraryCore.Objects
             {
                 Type = GameEvent.EventType.Warn,
                 Message = warnReason,
+                Data = warnReason,
                 Origin = sender,
                 Target = this,
                 Owner = sender.CurrentServer
             };
 
             // enforce level restrictions
-            if (sender.Level <= this.Level)
+            if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
-            this.Warnings++;
+            else
+            {
+                this.Warnings++;
+            }
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
@@ -181,6 +187,8 @@ namespace SharedLibraryCore.Objects
                 Owner = sender.CurrentServer
             };
 
+            int reportCount = sender.GetAdditionalProperty<int>("_reportCount");
+
             if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
@@ -191,12 +199,18 @@ namespace SharedLibraryCore.Objects
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
 
+            else if (reportCount > 2)
+            {
+                e.FailReason = GameEvent.EventFailReason.Throttle;
+            }
+
             else if (CurrentServer.Reports.Count(report => (report.Origin.NetworkId == sender.NetworkId &&
                 report.Target.NetworkId == this.NetworkId)) > 0)
             {
                 e.FailReason = GameEvent.EventFailReason.Exception;
             }
 
+            sender.SetAdditionalProperty("_reportCount", reportCount + 1);
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
@@ -391,7 +405,18 @@ namespace SharedLibraryCore.Objects
         [NotMapped]
         Dictionary<string, object> _additionalProperties;
         public T GetAdditionalProperty<T>(string name) => (T)_additionalProperties[name];
-        public void SetAdditionalProperty(string name, object value) => _additionalProperties.Add(name, value);
+        public void SetAdditionalProperty(string name, object value)
+        {
+            if (_additionalProperties.ContainsKey(name))
+            {
+                _additionalProperties[name] = value;
+            }
+            else
+            {
+                _additionalProperties.Add(name, value);
+            }
+        }
+
         [NotMapped]
         public int ClientNumber { get; set; }
         [NotMapped]

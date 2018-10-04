@@ -194,8 +194,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var statsSvc = new ThreadSafeStatsService();
                 ContextThreads.TryAdd(serverId, statsSvc);
 
+                var serverSvc = statsSvc.ServerSvc;
+
                 // get the server from the database if it exists, otherwise create and insert a new one
                 var server = statsSvc.ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
+
                 if (server == null)
                 {
                     server = new EFServer()
@@ -205,11 +208,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ServerId = serverId
                     };
 
-                    statsSvc.ServerSvc.Insert(server);
+                    serverSvc.Insert(server);
                 }
 
                 // this doesn't need to be async as it's during initialization
-                statsSvc.ServerSvc.SaveChanges();
+                serverSvc.SaveChanges();
                 // check to see if the stats have ever been initialized
                 InitializeServerStats(sv);
                 statsSvc.ServerStatsSvc.SaveChanges();
@@ -278,7 +281,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 };
 
                 // insert if they've not been added
-                clientStats = clientStatsSvc.Insert(clientStats);
+                clientStatsSvc.Insert(clientStats);
                 await clientStatsSvc.SaveChangesAsync();
             }
 
@@ -470,6 +473,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var clientStats = Servers[serverId].PlayerStats[attacker.ClientId];
             var clientStatsSvc = statsSvc.ClientStatSvc;
             clientStatsSvc.Update(clientStats);
+            
 
             // increment their hit count
             if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
@@ -496,13 +500,25 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
                     }
 
-                    await clientStatsSvc.SaveChangesAsync();
+                    ctx.Set<EFHitLocationCount>().UpdateRange(clientStats.HitLocations);
+
                     await ctx.SaveChangesAsync();
                 }
 
                 catch (Exception ex)
                 {
-                    Log.WriteError("AC ERROR");
+                    Log.WriteError("Could not save hit or AC info");
+                    Log.WriteDebug(ex.GetExceptionInfo());
+                }
+
+                try
+                {
+                    await clientStatsSvc.SaveChangesAsync();
+                }
+
+                catch (Exception ex)
+                {
+                    Log.WriteError("Could save save client stats");
                     Log.WriteDebug(ex.GetExceptionInfo());
                 }
 
@@ -1116,10 +1132,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             int serverId = sv.GetHashCode();
             var statsSvc = ContextThreads[serverId];
+            var serverSvc = statsSvc.ServerSvc;
 
-            // Log.WriteDebug("Syncing stats contexts");
-            await statsSvc.ServerStatsSvc.SaveChangesAsync();
-            //await statsSvc.ClientStatSvc.SaveChangesAsync();
+            serverSvc.Update(Servers[serverId].Server);
+            await serverSvc.SaveChangesAsync();
+
             await statsSvc.KillStatsSvc.SaveChangesAsync();
             await statsSvc.ServerSvc.SaveChangesAsync();
 

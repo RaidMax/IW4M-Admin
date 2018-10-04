@@ -209,7 +209,7 @@ namespace SharedLibraryCore
         /// <param name="Origin">The person who banned the target</param>
         abstract protected Task Ban(String Reason, Player Target, Player Origin);
 
-        abstract public Task Warn(String Reason, Player Target, Player Origin);
+        abstract protected Task Warn(String Reason, Player Target, Player Origin);
 
         /// <summary>
         /// Unban a player by npID / GUID

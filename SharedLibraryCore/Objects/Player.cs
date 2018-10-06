@@ -339,7 +339,6 @@ namespace SharedLibraryCore.Objects
             if (sender.Level <= this.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
@@ -367,7 +366,6 @@ namespace SharedLibraryCore.Objects
             if (sender.Level <= this.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
-                return e;
             }
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);

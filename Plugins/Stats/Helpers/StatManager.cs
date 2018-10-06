@@ -35,7 +35,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             Servers = new ConcurrentDictionary<int, ServerStats>();
             ContextThreads = new ConcurrentDictionary<int, ThreadSafeStatsService>();
-            Log = mgr.GetLogger();
+            Log = mgr.GetLogger(0);
             Manager = mgr;
             OnProcessingPenalty = new SemaphoreSlim(1, 1);
         }

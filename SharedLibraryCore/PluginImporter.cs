@@ -34,7 +34,7 @@ namespace SharedLibraryCore.Plugins
             if (dllFileNames.Length == 0 &&
                 scriptFileNames.Length == 0)
             {
-                Manager.GetLogger().WriteDebug(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_NOTFOUND"]);
+                Manager.GetLogger(0).WriteDebug(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_NOTFOUND"]);
                 return true;
             }
 
@@ -43,7 +43,7 @@ namespace SharedLibraryCore.Plugins
             {
                 var plugin = new ScriptPlugin(fileName);
                 plugin.Initialize(Manager).Wait();
-                Manager.GetLogger().WriteDebug($"Loaded script plugin \"{ plugin.Name }\" [{plugin.Version}]");
+                Manager.GetLogger(0).WriteDebug($"Loaded script plugin \"{ plugin.Name }\" [{plugin.Version}]");
                 ActivePlugins.Add(plugin);
             }
 
@@ -66,7 +66,7 @@ namespace SharedLibraryCore.Plugins
                             Object commandObject = Activator.CreateInstance(assemblyType);
                             Command newCommand = (Command)commandObject;
                             ActiveCommands.Add(newCommand);
-                            Manager.GetLogger().WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_REGISTERCMD"]} \"{newCommand.Name}\"");
+                            Manager.GetLogger(0).WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_REGISTERCMD"]} \"{newCommand.Name}\"");
                             LoadedCommands++;
                             continue;
                         }
@@ -82,18 +82,18 @@ namespace SharedLibraryCore.Plugins
                             {
                                 ActivePlugins.Add(newNotify);
                                 PluginAssemblies.Add(Plugin);
-                                Manager.GetLogger().WriteDebug($"Loaded plugin \"{ newNotify.Name }\" [{newNotify.Version}]");
+                                Manager.GetLogger(0).WriteDebug($"Loaded plugin \"{ newNotify.Name }\" [{newNotify.Version}]");
                             }
                         }
 
                         catch (Exception E)
                         {
-                            Manager.GetLogger().WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"]} {Plugin.Location} - {E.Message}");
+                            Manager.GetLogger(0).WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"]} {Plugin.Location} - {E.Message}");
                         }
                     }
                 }
             }
-            Manager.GetLogger().WriteInfo($"Loaded {ActivePlugins.Count} plugins and registered {LoadedCommands} commands.");
+            Manager.GetLogger(0).WriteInfo($"Loaded {ActivePlugins.Count} plugins and registered {LoadedCommands} commands.");
             return true;
         }
     }

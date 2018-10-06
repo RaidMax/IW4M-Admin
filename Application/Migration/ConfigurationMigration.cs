@@ -47,6 +47,13 @@ namespace IW4MAdmin.Application.Migration
                         File.Move(configFile, destinationPath);
                     }
                 }
+
+                if (!File.Exists(Path.Join("Database", "Database.db")) &&
+                    File.Exists("Database.db"))
+                {
+                    log.WriteDebug("Moving database file");
+                    File.Move("Database.db", Path.Join("Database", "Database.db"));
+                }
             }
         }
     }

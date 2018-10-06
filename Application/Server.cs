@@ -201,7 +201,7 @@ namespace IW4MAdmin
                 {
                     player.Level = Player.Permission.User;
                 }
-#if DEBUG == false
+
                 if (currentBan != null)
                 {
                     Logger.WriteInfo($"Banned client {player} trying to connect...");
@@ -243,7 +243,6 @@ namespace IW4MAdmin
                     Players[player.ClientNumber] = null;
                     return false;
                 }
-#endif
 
                 player.State = Player.ClientState.Connected;
                 return true;
@@ -251,9 +250,9 @@ namespace IW4MAdmin
 
             catch (Exception ex)
             {
-                Manager.GetLogger().WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {polledPlayer.Name}::{polledPlayer.NetworkId}");
-                Manager.GetLogger().WriteDebug(ex.Message);
-                Manager.GetLogger().WriteDebug(ex.StackTrace);
+                Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {polledPlayer.Name}::{polledPlayer.NetworkId}");
+                Logger.WriteDebug(ex.Message);
+                Logger.WriteDebug(ex.StackTrace);
                 return false;
             }
         }
@@ -335,7 +334,7 @@ namespace IW4MAdmin
                 (canExecuteCommand ||
                 E.Origin?.Level == Player.Permission.Console))
             {
-                var _ = (((Command)E.Extra).ExecuteAsync(E));
+                await (((Command)E.Extra).ExecuteAsync(E));
             }
         }
 

@@ -55,9 +55,9 @@ namespace IW4MAdmin.Application.IO
                     
                     catch (Exception e)
                     {
-                        Program.ServerManager.GetLogger().WriteWarning("Could not properly parse event line");
-                        Program.ServerManager.GetLogger().WriteDebug(e.Message);
-                        Program.ServerManager.GetLogger().WriteDebug(eventLine);
+                        server.Logger.WriteWarning("Could not properly parse event line");
+                        server.Logger.WriteDebug(e.Message);
+                        server.Logger.WriteDebug(eventLine);
                     }
                 }
             }

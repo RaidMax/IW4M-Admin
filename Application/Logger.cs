@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace IW4MAdmin.Application
 {
@@ -18,18 +19,18 @@ namespace IW4MAdmin.Application
         }
 
         readonly string FileName;
-        readonly object ThreadLock;
+        readonly SemaphoreSlim OnLogWriting;
 
         public Logger(string fn)
         {
-            FileName = Path.Join("Log", fn);
-            ThreadLock = new object();
-            if (File.Exists(fn))
-                File.Delete(fn);
+            FileName = Path.Join("Log", $"{fn}-{DateTime.Now.ToString("yyyyMMddHHmmssffff")}.log");
+            OnLogWriting = new SemaphoreSlim(1,1);
         }
 
         void Write(string msg, LogType type)
         {
+            OnLogWriting.Wait();
+
             string stringType = type.ToString();
 
             try
@@ -40,8 +41,6 @@ namespace IW4MAdmin.Application
             catch (Exception) { }
 
             string LogLine = $"[{DateTime.Now.ToString("MM.dd.yyy HH:mm:ss.fff")}] - {stringType}: {msg}";
-            lock (ThreadLock)
-            {
 #if DEBUG
             // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
 
@@ -53,7 +52,8 @@ namespace IW4MAdmin.Application
                 //if (type != LogType.Debug)
                 File.AppendAllText(FileName, $"{LogLine}{Environment.NewLine}");
 #endif
-            }
+
+            OnLogWriting.Release(1);
         }
 
         public void WriteVerbose(string msg)

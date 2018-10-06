@@ -23,9 +23,9 @@ namespace WebfrontCore.Controllers
         public IActionResult Error()
         {
             var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-            Manager.GetLogger().WriteError($"[Webfront] {exceptionFeature.Error.Message}");
-            Manager.GetLogger().WriteDebug(exceptionFeature.Path);
-            Manager.GetLogger().WriteDebug(exceptionFeature.Error.StackTrace);
+            Manager.GetLogger(0).WriteError($"[Webfront] {exceptionFeature.Error.Message}");
+            Manager.GetLogger(0).WriteDebug(exceptionFeature.Path);
+            Manager.GetLogger(0).WriteDebug(exceptionFeature.Error.StackTrace);
 
             ViewBag.Description = Localization["WEBFRONT_ERROR_DESC"];
             ViewBag.Title = Localization["WEBFRONT_ERROR_TITLE"];

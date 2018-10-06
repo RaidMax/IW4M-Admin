@@ -108,7 +108,7 @@ namespace IW4MAdmin.Plugins.Welcome
 
             catch (Exception)
             {
-                joining.CurrentServer.Manager.GetLogger().WriteError("Could not open file Plugins\\GeoIP.dat for Welcome Plugin");
+                joining.CurrentServer.Logger.WriteError("Could not open file Plugins\\GeoIP.dat for Welcome Plugin");
             }
             msg = msg.Replace("{{TimesConnected}}", TimesConnected(joining));
 

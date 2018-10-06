@@ -67,7 +67,7 @@ namespace IW4MAdmin.Application.Core
         {
             if (AuthenticatedClients.Values.Count > 18)
             {
-                Program.ServerManager.GetLogger().WriteWarning($"auth client count is {AuthenticatedClients.Values.Count}, this is bad");
+                Program.ServerManager.GetLogger(0).WriteError($"auth client count is {AuthenticatedClients.Values.Count}, this is bad");
                 return AuthenticatedClients.Values.Take(18).ToList();
             }
 

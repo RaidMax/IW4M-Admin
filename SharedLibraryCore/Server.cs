@@ -32,7 +32,7 @@ namespace SharedLibraryCore
             IP = config.IPAddress;
             Port = config.Port;
             Manager = mgr;
-            Logger = Manager.GetLogger();
+            Logger = Manager.GetLogger(this.GetHashCode());
             ServerConfig = config;
             RemoteConnection = new RCon.Connection(IP, Port, Password, Logger);
 

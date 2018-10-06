@@ -27,7 +27,7 @@ namespace IW4MAdmin.Application
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
         public Dictionary<int, Player> PrivilegedClients { get; set; }
-        public ILogger Logger { get; private set; }
+        public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
         public bool IsInitialized { get; private set; }
         // define what the delagate function looks like
@@ -49,11 +49,12 @@ namespace IW4MAdmin.Application
         ManualResetEventSlim OnQuit;
         readonly IPageList PageList;
         readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
+        readonly Dictionary<int, ILogger> Loggers = new Dictionary<int, ILogger>();
 
         private ApplicationManager()
         {
-            Logger = new Logger("IW4MAdmin.log");
             // do any needed migrations
+            // todo: move out
             ConfigurationMigration.MoveConfigFolder10518(Logger);
             _servers = new List<Server>();
             Commands = new List<Command>();
@@ -568,9 +569,29 @@ namespace IW4MAdmin.Application
             Running = false;
         }
 
-        public ILogger GetLogger()
+        public ILogger GetLogger(int serverId)
         {
-            return Logger;
+            if (Loggers.ContainsKey(serverId))
+            {
+                return Loggers[serverId];
+            }
+
+            else
+            {
+                Logger newLogger;
+
+                if (serverId == 0)
+                {
+                    newLogger = new Logger("IW4MAdmin-Manager");
+                }
+                else
+                {
+                    newLogger = new Logger($"IW4MAdmin-Server-{serverId}");
+                }
+
+                Loggers.Add(serverId, newLogger);
+                return newLogger;
+            }
         }
 
         public IList<MessageToken> GetMessageTokens()

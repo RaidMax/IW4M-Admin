@@ -59,7 +59,7 @@ namespace IW4MAdmin.Application.Localization
                 {
                     if (!localizationDict.TryAdd(item.Key, item.Value))
                     {
-                        Program.ServerManager.GetLogger().WriteError($"Could not add locale string {item.Key} to localization");
+                        Program.ServerManager.GetLogger(0).WriteError($"Could not add locale string {item.Key} to localization");
                     }
                 }
             }

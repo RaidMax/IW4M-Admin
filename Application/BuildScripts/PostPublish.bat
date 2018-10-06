@@ -1,6 +1,8 @@
 set SolutionDir=%1
 set ProjectDir=%2
 set TargetDir=%3
+set CurrentConfiguration=%4
+SET COPYCMD=/Y
 
 echo Deleting extra language files
 
@@ -54,9 +56,41 @@ del "%SolutionDir%Publish\Windows\*pdb"
 if exist "%SolutionDir%Publish\WindowsPrerelease\web.config" del "%SolutionDir%Publish\WindowsPrerelease\web.config"
 del "%SolutionDir%Publish\WindowsPrerelease\*pdb"
 
-echo making start scripts
-@echo dotnet IW4MAdmin.dll > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
-@echo dotnet IW4MAdmin.dll > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"
+echo setting up library folders
 
-@(echo #!/bin/bash && echo dotnet IW4MAdmin.dll) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
-@(echo #!/bin/bash && echo dotnet IW4MAdmin.dll) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"
+echo PR-Config
+if not exist  "%SolutionDir%Publish\WindowsPrerelease\Configuration" md "%SolutionDir%Publish\WindowsPrerelease\Configuration"
+move "%SolutionDir%Publish\WindowsPrerelease\DefaultSettings.json" "%SolutionDir%Publish\WindowsPrerelease\Configuration\"
+
+if "%CurrentConfiguration" == "Release" (
+	echo R-Config
+	if not exist  "%SolutionDir%Publish\Windows\Configuration" md "%SolutionDir%Publish\Windows\Configuration"
+	if exist "%SolutionDir%Publish\Windows\DefaultSettings.json" move "%SolutionDir%Publish\Windows\DefaultSettings.json" "%SolutionDir%Publish\Windows\Configuration\DefaultSettings.json"
+)
+
+echo PR-LIB
+if not exist "%SolutionDir%Publish\WindowsPrerelease\Lib\" md "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+move "%SolutionDir%Publish\WindowsPrerelease\*.dll" "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+move "%SolutionDir%Publish\WindowsPrerelease\*.json" "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+
+if "%CurrentConfiguration" == "Release" (
+	echo R-LIB
+	if not exist "%SolutionDir%Publish\Windows\Lib\" md "%SolutionDir%Publish\Windows\Lib\"
+	move "%SolutionDir%Publish\Windows\*.dll" "%SolutionDir%Publish\Windows\Lib\"
+	move "%SolutionDir%Publish\Windows\*.json" "%SolutionDir%Publish\Windows\Lib\"
+)
+
+echo PR-RT
+move "%SolutionDir%Publish\WindowsPrerelease\runtimes" "%SolutionDir%Publish\WindowsPrerelease\Lib\runtimes"
+
+if "%CurrentConfiguration" == "Release" (
+	echo R-RT
+	rem move "%SolutionDir%Publish\Windows\runtimes" "%SolutionDir%Publish\Windows\Lib\runtimes"
+)
+
+echo making start scripts
+@echo dotnet Lib/IW4MAdmin.dll > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
+@echo dotnet Lib/IW4MAdmin.dll > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"
+
+@(echo #!/bin/bash && echo dotnet Lib\IW4MAdmin.dll) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
+@(echo #!/bin/bash && echo dotnet Lib\IW4MAdmin.dll) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"

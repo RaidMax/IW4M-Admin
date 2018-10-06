@@ -18,6 +18,7 @@ using SharedLibraryCore.Database;
 using SharedLibraryCore.Events;
 
 using IW4MAdmin.Application.API.Master;
+using IW4MAdmin.Application.Migration;
 
 namespace IW4MAdmin.Application
 {
@@ -51,7 +52,9 @@ namespace IW4MAdmin.Application
 
         private ApplicationManager()
         {
-            Logger = new Logger($@"{Utilities.OperatingDirectory}IW4MAdmin.log");
+            Logger = new Logger("IW4MAdmin.log");
+            // do any needed migrations
+            ConfigurationMigration.MoveConfigFolder10518(Logger);
             _servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();

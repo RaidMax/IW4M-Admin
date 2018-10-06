@@ -252,7 +252,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (playerStats.ContainsKey(pl.ClientId))
             {
                 Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
-                return null;
+                return playerStats[pl.ClientId];
             }
 
             // get the client's stats from the database if it exists, otherwise create and attach a new one
@@ -281,20 +281,35 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 };
 
                 // insert if they've not been added
-                clientStatsSvc.Insert(clientStats);
+                clientStats = clientStatsSvc.Insert(clientStats);
+
+                if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
+                {
+                    Log.WriteWarning("Adding new client to stats failed");
+                }
+
                 await clientStatsSvc.SaveChangesAsync();
+            }
+
+            else
+            {
+                if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
+                {
+                    Log.WriteWarning("Adding pre-existing client to stats failed");
+                }
             }
 
             // migration for previous existing stats
             if (clientStats.HitLocations.Count == 0)
             {
-                clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
-                {
-                    Active = true,
-                    HitCount = 0,
-                    Location = hl
-                })
-                .ToList();
+                clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
+                    .Select(hl => new EFHitLocationCount()
+                    {
+                        Active = true,
+                        HitCount = 0,
+                        Location = hl
+                    })
+                    .ToList();
                 await statsSvc.ClientStatSvc.SaveChangesAsync();
             }
 
@@ -315,14 +330,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             clientStats.SessionScore = pl.Score;
             clientStats.LastScore = pl.Score;
 
-            Log.WriteInfo($"Adding {pl} to stats");
-
-            if (!playerStats.TryAdd(pl.ClientId, clientStats))
-                Log.WriteDebug($"Could not add client to stats {pl}");
-
             if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
-                Log.WriteDebug("Could not add client to detection");
+            {
+                Log.WriteWarning("Could not add client to detection");
+            }
 
+            Log.WriteInfo($"Adding {pl} to stats");
             return clientStats;
         }
 
@@ -473,7 +486,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var clientStats = Servers[serverId].PlayerStats[attacker.ClientId];
             var clientStatsSvc = statsSvc.ClientStatSvc;
             clientStatsSvc.Update(clientStats);
-            
 
             // increment their hit count
             if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
@@ -496,8 +508,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     if (Plugin.Config.Configuration().EnableAntiCheat)
                     {
-                        await ApplyPenalty(clientDetection.ProcessKill(hit, isDamage), clientDetection, attacker, ctx);
-                        await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
+                        ApplyPenalty(clientDetection.ProcessKill(hit, isDamage), clientDetection, attacker, ctx);
+                        ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
                     }
 
                     ctx.Set<EFHitLocationCount>().UpdateRange(clientStats.HitLocations);
@@ -526,7 +538,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        async Task ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, Player attacker, DatabaseContext ctx)
+        void ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, Player attacker, DatabaseContext ctx)
         {
             switch (penalty.ClientPenalty)
             {
@@ -546,7 +558,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                                 $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
                                                 $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
                                         }
-                                    }
+                                    },
+                        Level = Player.Permission.Console,
+                        CurrentServer = attacker.CurrentServer
                     });
                     if (clientDetection.Tracker.HasChanges)
                     {
@@ -558,30 +572,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         break;
                     }
-                    var e = new GameEvent()
-                    {
-                        Data = penalty.Type == Cheat.Detection.DetectionType.Bone ?
+
+                    string flagReason = penalty.Type == Cheat.Detection.DetectionType.Bone ?
                             $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
-                            $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
-                        Origin = new Player()
-                        {
-                            ClientId = 1,
-                            Level = Player.Permission.Console,
-                            ClientNumber = -1,
-                            CurrentServer = attacker.CurrentServer
-                        },
-                        Target = attacker,
-                        Owner = attacker.CurrentServer,
-                        Type = GameEvent.EventType.Flag
-                    };
-                    // because we created an event it must be processed by the manager
-                    // even if it didn't really do anything
-                    Manager.GetEventHandler().AddEvent(e);
-                    await new CFlag().ExecuteAsync(e);
+                            $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
+
+                    attacker.Flag(flagReason, new Player()
+                    {
+                        ClientId = 1,
+                        Level = Player.Permission.Console,
+                        CurrentServer = attacker.CurrentServer,
+                    });
+
                     if (clientDetection.Tracker.HasChanges)
                     {
                         SaveTrackedSnapshots(clientDetection, ctx);
                     }
+
                     break;
             }
         }

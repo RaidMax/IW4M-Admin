@@ -30,7 +30,7 @@ namespace WebfrontCore
 #if DEBUG
                 .UseContentRoot(Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\", "WebfrontCore")))
 #else
-                .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseContentRoot(Path.Join(Directory.GetCurrentDirectory(), "..\\"))
 #endif
                 .UseUrls(Manager.GetApplicationSettings().Configuration().WebfrontBindUrl)
                 .UseKestrel()

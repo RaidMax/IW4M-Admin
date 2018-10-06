@@ -22,7 +22,7 @@ namespace IW4MAdmin.Application
 
         public Logger(string fn)
         {
-            FileName = fn;
+            FileName = Path.Join("Log", fn);
             ThreadLock = new object();
             if (File.Exists(fn))
                 File.Delete(fn);

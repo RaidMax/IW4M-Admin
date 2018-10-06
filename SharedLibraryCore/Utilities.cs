@@ -20,7 +20,11 @@ namespace SharedLibraryCore
 {
     public static class Utilities
     {
-        public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+#if DEBUG == true
+        public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}";
+#else
+        public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
+#endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
         public static Player IW4MAdminClient = new Player() { ClientId = 1, Level = Player.Permission.Console };

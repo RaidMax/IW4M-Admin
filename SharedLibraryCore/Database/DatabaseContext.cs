@@ -24,7 +24,6 @@ namespace SharedLibraryCore.Database
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
-
         static string _ConnectionString;
         static string _provider;
 
@@ -52,21 +51,17 @@ namespace SharedLibraryCore.Database
         {
             if (string.IsNullOrEmpty(_ConnectionString))
             {
-                string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase);
+                string currentPath = Utilities.OperatingDirectory;
                 // allows the application to find the database file
                 currentPath = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
                     $"{Path.DirectorySeparatorChar}{currentPath}" :
                     currentPath;
 
-                var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database.db".Substring(6) };
+                var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database{Path.DirectorySeparatorChar}Database.db" };
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);
-                //#if DEBUG == true
-                //optionsBuilder.UseMySql("UserId=root;Password=dev;Host=127.0.0.1;port=3306;Database=IW4MAdmin");
-                // optionsBuilder.UseNpgsql("UserId=dev;Password=dev;Host=127.0.0.1;port=5432;Database=IW4MAdmin");
-                //#else
+
                 optionsBuilder.UseSqlite(connection);
-                //#endif
             }
 
             else

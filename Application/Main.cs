@@ -16,13 +16,12 @@ namespace IW4MAdmin.Application
     public class Program
     {
         static public double Version { get; private set; }
-        static public ApplicationManager ServerManager = ApplicationManager.GetInstance();
-        public static string OperatingDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+        static public ApplicationManager ServerManager;
         private static ManualResetEventSlim OnShutdownComplete = new ManualResetEventSlim();
 
         public static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.SetData("DataDirectory", OperatingDirectory);
+            AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
 
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -169,15 +168,25 @@ namespace IW4MAdmin.Application
         private static void OnCancelKey(object sender, ConsoleCancelEventArgs e)
         {
             ServerManager.Stop();
-            OnShutdownComplete.Wait(5000);
+            OnShutdownComplete.Wait();
         }
 
         static void CheckDirectories()
         {
-            string curDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Plugins")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Plugins"));
+            }
 
-            if (!Directory.Exists($"{curDirectory}Plugins"))
-                Directory.CreateDirectory($"{curDirectory}Plugins");
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Database")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Database"));
+            }
+
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Log")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Log"));
+            }
         }
     }
 }

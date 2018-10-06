@@ -231,7 +231,8 @@ namespace IW4MAdmin.Plugins.Stats
                     new ProfileMeta()
                     {
                         Key = "Hit Offset Average",
-                        Value = $"{Math.Round(((float)hitOffsetAverage), 4)}°",
+                        // todo: make sure this is wrapped somewhere else
+                        Value = $"{Math.Round(((float)hitOffsetAverage), 4).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))}°",
                         Sensitive = true
                     },
                     new ProfileMeta()

@@ -25,7 +25,7 @@ namespace SharedLibraryCore.Configuration
         public void Build()
         {
             ConfigurationRoot = new ConfigurationBuilder()
-              .AddJsonFile($"{AppDomain.CurrentDomain.BaseDirectory}{Filename}.json", true)
+              .AddJsonFile(Path.Join(Utilities.OperatingDirectory, "Configuration", $"{Filename}.json"), true)
               .Build();
 
             _configuration = ConfigurationRoot.Get<T>();
@@ -37,10 +37,7 @@ namespace SharedLibraryCore.Configuration
         public Task Save()
         {
             var appConfigJSON = JsonConvert.SerializeObject(_configuration, Formatting.Indented);
-            return Task.Factory.StartNew(() =>
-            {
-                File.WriteAllText($"{AppDomain.CurrentDomain.BaseDirectory}{Filename}.json", appConfigJSON);
-            });
+            return File.WriteAllTextAsync(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Configuration", $"{Filename}.json"), appConfigJSON);
         }
 
         public T Configuration() => _configuration;

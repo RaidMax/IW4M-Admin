@@ -37,7 +37,7 @@ namespace SharedLibraryCore.Configuration
         public Task Save()
         {
             var appConfigJSON = JsonConvert.SerializeObject(_configuration, Formatting.Indented);
-            return File.WriteAllTextAsync(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Configuration", $"{Filename}.json"), appConfigJSON);
+            return File.WriteAllTextAsync(Path.Join(Utilities.OperatingDirectory, "Configuration", $"{Filename}.json"), appConfigJSON);
         }
 
         public T Configuration() => _configuration;

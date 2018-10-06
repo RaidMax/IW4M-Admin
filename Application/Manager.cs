@@ -383,11 +383,10 @@ namespace IW4MAdmin.Application
                     await Plugin.OnLoadAsync(this);
                 }
 
-                catch (Exception e)
+                catch (Exception ex)
                 {
                     Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
-                    Logger.WriteDebug($"Exception: {e.Message}");
-                    Logger.WriteDebug($"Stack Trace: {e.StackTrace}");
+                    Logger.WriteDebug(ex.GetExceptionInfo());
                 }
             }
             #endregion

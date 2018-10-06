@@ -42,6 +42,7 @@ var plugin = {
             var library = importNamespace('SharedLibraryCore');
             var kickOrigin = new library.Objects.Player();
             kickOrigin.ClientId = 1;
+            kickOrigin.CurrentServer = origin.CurrentServer;
             origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], kickOrigin);
         }
     },
@@ -55,7 +56,7 @@ var plugin = {
 
     onLoadAsync: function (manager) {
         this.manager = manager;
-        this.logger = manager.GetLogger();
+        this.logger = manager.GetLogger(0);
     },
 
     onUnloadAsync: function () {

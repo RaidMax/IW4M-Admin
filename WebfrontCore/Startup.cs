@@ -20,7 +20,7 @@ namespace WebfrontCore
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
+            //    .SetBasePath(SharedLibraryCore.Utilities.OperatingDirectory)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
@@ -32,10 +32,10 @@ namespace WebfrontCore
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
-            var mvcBulder = services.AddMvc();
+            var mvcBuilder = services.AddMvc();
 
             foreach (var asm in Program.Manager.GetPluginAssemblies())
-                mvcBulder.AddApplicationPart(asm);
+                mvcBuilder.AddApplicationPart(asm);
 
             services.Configure<RazorViewEngineOptions>(o =>
             {

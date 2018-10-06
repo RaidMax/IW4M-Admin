@@ -147,7 +147,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                    });
 
 #if DEBUG == true
-            var statsInfoSql = iqStatsInfo.ToSql();
+                var statsInfoSql = iqStatsInfo.ToSql();
 #endif
                 var topPlayers = await iqStatsInfo.ToListAsync();
 
@@ -406,6 +406,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             string fraction, string visibilityPercentage, string snapAngles)
         {
             var statsSvc = ContextThreads[serverId];
+
+            // incase the add palyer event get delayed
+            if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
+            {
+                await AddPlayer(attacker);
+            }
+
+
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
             Vector3 vViewAngles = null;
@@ -675,7 +683,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
 #if DEBUG
-        Log.WriteDebug("Calculating standard kill");
+            Log.WriteDebug("Calculating standard kill");
 #endif
 
             // update the total stats
@@ -727,7 +735,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 #if !DEBUG
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
 #else
-                if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 0.1)
+            if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 0.1)
 #endif
             {
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;

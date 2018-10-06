@@ -26,8 +26,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         Dictionary<IW4Info.HitLocation, int> HitLocationCount;
         double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
-        DateTime LastHit;
         long LastOffset;
+        IW4Info.WeaponName LastWeapon;
         ILogger Log;
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
@@ -53,16 +53,16 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             if ((kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
                 kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
                 kill.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
-                kill.HitLoc == IW4Info.HitLocation.none || kill.TimeOffset - LastOffset < 0)
+                kill.HitLoc == IW4Info.HitLocation.none || kill.TimeOffset - LastOffset < 0 ||
+                // hack: prevents false positives
+                (LastWeapon != kill.Weapon && (kill.TimeOffset - LastOffset) == 50))
                 return new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Any,
                 };
 
             DetectionPenaltyResult result = null;
-
-            if (LastHit == DateTime.MinValue)
-                LastHit = DateTime.UtcNow;
+            LastWeapon = kill.Weapon;
 
             HitLocationCount[kill.HitLoc]++;
             if (!isDamage)

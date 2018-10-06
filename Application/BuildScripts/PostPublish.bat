@@ -82,10 +82,13 @@ if "%CurrentConfiguration" == "Release" (
 
 echo PR-RT
 move "%SolutionDir%Publish\WindowsPrerelease\runtimes" "%SolutionDir%Publish\WindowsPrerelease\Lib\runtimes"
+if exist "%SolutionDir%Publish\WindowsPrerelease\refs" move "%SolutionDir%Publish\WindowsPrerelease\refs" "%SolutionDir%Publish\WindowsPrerelease\Lib\refs"
+
 
 if "%CurrentConfiguration" == "Release" (
 	echo R-RT
-	rem move "%SolutionDir%Publish\Windows\runtimes" "%SolutionDir%Publish\Windows\Lib\runtimes"
+	move "%SolutionDir%Publish\Windows\runtimes" "%SolutionDir%Publish\Windows\Lib\runtimes"
+	if exist "%SolutionDir%Publish\Windows\refs" move "%SolutionDir%Publish\Windows\refs" "%SolutionDir%Publish\Windows\Lib\refs"
 )
 
 echo making start scripts

@@ -1126,7 +1126,7 @@ namespace SharedLibraryCore.Commands
         {
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             var gameserverProcesses = System.Diagnostics.Process.GetProcessesByName("iw4x");
 
@@ -1180,12 +1180,12 @@ namespace SharedLibraryCore.Commands
                         E.Origin.Tell("Could not kill server process");
                         E.Owner.Logger.WriteDebug("Unable to kill process");
                         E.Owner.Logger.WriteDebug($"Exception: {e.Message}");
-                        return Task.CompletedTask;
+                        return;
                     }
                 }
             }
 
-            return Task.CompletedTask;
+            return;
         }
     }
 

@@ -106,7 +106,7 @@ namespace IW4MAdmin.Application
                 var consoleTask = Task.Run(async () =>
                 {
                     String userInput;
-                    Player Origin = Utilities.IW4MAdminClient;
+                    Player Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
 
                     do
                     {
@@ -123,7 +123,6 @@ namespace IW4MAdmin.Application
 
                         if (userInput?.Length > 0)
                         {
-                            Origin.CurrentServer = ServerManager.Servers[0];
                             GameEvent E = new GameEvent()
                             {
                                 Type = GameEvent.EventType.Command,

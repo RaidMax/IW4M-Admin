@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Services;
@@ -33,8 +35,14 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> PublicAsync()
         {
-            var penalties = await (new GenericRepository<EFPenalty>())
-                .FindAsync(p => p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Ban && p.Active);
+            IList<EFPenalty> penalties;
+
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                penalties = await ctx.Penalties
+                    .Where(p => p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Ban && p.Active)
+                    .ToListAsync();
+            }
 
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {

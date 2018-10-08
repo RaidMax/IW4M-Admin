@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RuntimeFrameworkVersion>2.1.5</RuntimeFrameworkVersion>
     <RazorCompileOnBuild>false</RazorCompileOnBuild>
     <RazorCompileOnPublish>false</RazorCompileOnPublish>
     <PreserveCompilationContext>true</PreserveCompilationContext>
@@ -63,7 +64,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.1" />
-    <PackageReference Update="Microsoft.NETCore.App" />
+    <PackageReference Update="Microsoft.NETCore.App" Version="2.1.5" />
     <PackageReference Update="Microsoft.AspNetCore" Version="2.1.2" />
   </ItemGroup>
 

@@ -68,7 +68,6 @@ namespace SharedLibraryCore
 
             ScriptEngine.Execute(script);
             ScriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
-            ScriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient);
             dynamic pluginObject = ScriptEngine.GetValue("plugin").ToObject();
 
             this.Author = pluginObject.author;
@@ -87,6 +86,7 @@ namespace SharedLibraryCore
             {
                 ScriptEngine.SetValue("_gameEvent", E);
                 ScriptEngine.SetValue("_server", S);
+                ScriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(S));
                 return Task.FromResult(ScriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue());
             }
         }

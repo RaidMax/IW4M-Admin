@@ -205,8 +205,7 @@ namespace IW4MAdmin
                 if (currentBan != null)
                 {
                     Logger.WriteInfo($"Banned client {player} trying to connect...");
-                    var autoKickClient = Utilities.IW4MAdminClient;
-                    autoKickClient.CurrentServer = this;
+                    var autoKickClient = Utilities.IW4MAdminClient(this);
 
                     // the player is permanently banned
                     if (currentBan.Type == Penalty.PenaltyType.Ban)
@@ -911,7 +910,7 @@ namespace IW4MAdmin
             {
                 if (Target.Warnings >= 4)
                 {
-                    Target.Kick(loc["SERVER_WARNLIMT_REACHED"], Utilities.IW4MAdminClient);
+                    Target.Kick(loc["SERVER_WARNLIMT_REACHED"], Utilities.IW4MAdminClient(this));
                     return;
                 }
 

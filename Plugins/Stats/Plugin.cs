@@ -13,6 +13,8 @@ using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using IW4MAdmin.Plugins.Stats.Models;
+using SharedLibraryCore.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -122,8 +124,11 @@ namespace IW4MAdmin.Plugins.Stats
             // meta data info
             async Task<List<ProfileMeta>> getStats(int clientId)
             {
-                var statsSvc = new GenericRepository<EFClientStatistics>();
-                var clientStats = await statsSvc.FindAsync(c => c.ClientId == clientId);
+                IList<EFClientStatistics> clientStats;
+                using (var ctx = new DatabaseContext(disableTracking: true))
+                {
+                    clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == clientId).ToListAsync();
+                }
 
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
@@ -170,8 +175,14 @@ namespace IW4MAdmin.Plugins.Stats
 
             async Task<List<ProfileMeta>> getAnticheatInfo(int clientId)
             {
-                var statsSvc = new GenericRepository<EFClientStatistics>();
-                var clientStats = await statsSvc.FindAsync(c => c.ClientId == clientId);
+                IList<EFClientStatistics> clientStats;
+                using (var ctx = new DatabaseContext(disableTracking: true))
+                {
+                    clientStats = await ctx.Set<EFClientStatistics>()
+                        .Include(c => c.HitLocations)
+                        .Where(c => c.ClientId == clientId)
+                        .ToListAsync();
+                }
 
                 double headRatio = 0;
                 double chestRatio = 0;
@@ -246,19 +257,24 @@ namespace IW4MAdmin.Plugins.Stats
 
             async Task<List<ProfileMeta>> getMessages(int clientId)
             {
-                var messageSvc = new GenericRepository<EFClientMessage>();
-                var messages = await messageSvc.FindAsync(m => m.ClientId == clientId);
-                var messageMeta = messages.Select(m => new ProfileMeta()
+                List<ProfileMeta> messageMeta;
+                using (var ctx = new DatabaseContext(disableTracking: true))
                 {
-                    Key = "EventMessage",
-                    Value = m.Message,
-                    When = m.TimeSent,
-                    Extra = m.ServerId.ToString()
-                }).ToList();
+                    var messages = ctx.Set<EFClientMessage>().Where(m => m.ClientId == clientId);
+
+                    messageMeta = await messages.Select(m => new ProfileMeta()
+                    {
+                        Key = "EventMessage",
+                        Value = m.Message,
+                        When = m.TimeSent,
+                        Extra = m.ServerId.ToString()
+                    }).ToListAsync();
+                }
+
                 messageMeta.Add(new ProfileMeta()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
-                    Value = messages.Count
+                    Value = messageMeta.Count
                 });
 
                 return messageMeta;
@@ -275,16 +291,20 @@ namespace IW4MAdmin.Plugins.Stats
 
             string totalKills(Server server)
             {
-                var serverStats = new GenericRepository<EFServerStatistics>();
-                return serverStats.Find(s => s.Active)
-                    .Sum(c => c.TotalKills).ToString("#,##0");
+                using (var ctx = new DatabaseContext(disableTracking: true))
+                {
+                    long kills = ctx.Set<EFServerStatistics>().Where(s => s.Active).Sum(s => s.TotalKills);
+                    return kills.ToString("#,##0");
+                }
             }
 
             string totalPlayTime(Server server)
             {
-                var serverStats = new GenericRepository<EFServerStatistics>();
-                return Math.Ceiling((serverStats.GetQuery(s => s.Active)
-                    .Sum(c => c.TotalPlayTime) / 3600.0)).ToString("#,##0");
+                using (var ctx = new DatabaseContext(disableTracking: true))
+                {
+                    long playTime = ctx.Set<EFServerStatistics>().Where(s => s.Active).Sum(s => s.TotalPlayTime);
+                    return (playTime / 3600.0).ToString("#,##0");
+                }
             }
 
             string topStats(Server s)

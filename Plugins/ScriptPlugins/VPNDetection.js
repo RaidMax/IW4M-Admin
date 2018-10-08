@@ -28,7 +28,6 @@ var plugin = {
             var re = cl.GetAsync('https://api.xdefcon.com/proxy/check/?ip=' + origin.IPAddressString).Result;
             var co = re.Content;
             var parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
-            // todo: does this work as expected now?
             co.Dispose();
             re.Dispose();
             cl.Dispose();
@@ -39,11 +38,7 @@ var plugin = {
 
         if (usingVPN) {
             this.logger.WriteInfo(origin + ' is using a VPN (' + origin.IPAddressString + ')');
-            var library = importNamespace('SharedLibraryCore');
-            var kickOrigin = new library.Objects.Player();
-            kickOrigin.ClientId = 1;
-            kickOrigin.CurrentServer = origin.CurrentServer;
-            origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], kickOrigin);
+            origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], _IW4MAdminClient);
         }
     },
 

@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SharedLibraryCore.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -39,19 +41,21 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 }
             }
 
-            var clientStats = new GenericRepository<EFClientStatistics>();
             int serverId = E.Owner.GetHashCode();
 
-            if (E.Target != null)
+            using (var ctx = new DatabaseContext(disableTracking: true))
             {
-                pStats = (await clientStats.FindAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId)).First();
-                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()}";
-            }
+                if (E.Target != null)
+                {
+                    pStats = (await ctx.Set<EFClientStatistics>().FirstAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId));
+                    statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()}";
+                }
 
-            else
-            {
-                pStats = (await clientStats.FindAsync(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId)).First();
-                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()}";
+                else
+                {
+                    pStats = (await ctx.Set<EFClientStatistics>().FirstAsync((c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId)));
+                    statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()}";
+                }
             }
 
             if (E.Message.IsBroadcastCommand())

@@ -8,6 +8,8 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Services;
 using SharedLibraryCore.Database.Models;
 using System.Linq;
+using SharedLibraryCore.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace IW4MAdmin.Plugins.Welcome
 {
@@ -88,8 +90,18 @@ namespace IW4MAdmin.Plugins.Welcome
 
                 if (newPlayer.Level == Player.Permission.Flagged)
                 {
-                    var penalty = await new GenericRepository<EFPenalty>().FindAsync(p => p.OffenderId == newPlayer.ClientId && p.Type == Penalty.PenaltyType.Flag);
-                    E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penalty.FirstOrDefault()?.Offense}) has joined!");
+                    string penaltyReason;
+
+                    using (var ctx = new DatabaseContext(disableTracking: true))
+                    {
+                        penaltyReason = await ctx.Penalties
+                            .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == Penalty.PenaltyType.Flag)
+                            .OrderByDescending(p => p.When)
+                            .Select(p => p.AutomatedOffense ?? p.Offense)
+                            .FirstOrDefaultAsync();
+                    }
+
+                        E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penaltyReason}) has joined!");
                 }
                 else
                     E.Owner.Broadcast(ProcessAnnouncement(Config.Configuration().UserAnnouncementMessage, newPlayer));

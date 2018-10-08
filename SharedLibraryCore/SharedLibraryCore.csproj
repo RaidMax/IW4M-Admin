@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RuntimeFrameworkVersion>2.1.5</RuntimeFrameworkVersion>
     <ApplicationIcon />
     <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
@@ -11,15 +12,6 @@
     <Company>Forever None</Company>
     <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Migrations\20180502195240_Update.cs" />
-    <Compile Remove="Migrations\20180923025324_FixForPostgreSQL.cs" />
-    <Compile Remove="Migrations\20180923025702_FixForPostgreSQL.cs" />
-    <Compile Remove="Migrations\20180923030248_FixForPostgreSQL.cs" />
-    <Compile Remove="Migrations\20180923030426_FixForPostgreSQL.cs" />
-    <Compile Remove="Migrations\20180923030528_FixForPostgreSQL.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Jint" Version="2.11.58" />
@@ -39,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.NETCore.App" />
+    <PackageReference Update="Microsoft.NETCore.App" Version="2.1.5" />
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

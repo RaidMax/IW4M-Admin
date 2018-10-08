@@ -24,20 +24,20 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
     public class StatManager
     {
         private ConcurrentDictionary<int, ServerStats> Servers;
-        private ConcurrentDictionary<int, ThreadSafeStatsService> ContextThreads;
         private ILogger Log;
-        private IManager Manager;
+        private readonly IManager Manager;
 
 
         private readonly SemaphoreSlim OnProcessingPenalty;
+        private readonly SemaphoreSlim OnProcessingSensitive;
 
         public StatManager(IManager mgr)
         {
             Servers = new ConcurrentDictionary<int, ServerStats>();
-            ContextThreads = new ConcurrentDictionary<int, ThreadSafeStatsService>();
             Log = mgr.GetLogger(0);
             Manager = mgr;
             OnProcessingPenalty = new SemaphoreSlim(1, 1);
+            OnProcessingSensitive = new SemaphoreSlim(1, 1);
         }
 
         public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
@@ -188,36 +188,36 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <param name="sv"></param>
         public void AddServer(Server sv)
         {
+            // insert the server if it does not exist
             try
             {
                 int serverId = sv.GetHashCode();
-                var statsSvc = new ThreadSafeStatsService();
-                ContextThreads.TryAdd(serverId, statsSvc);
+                EFServer server;
 
-                var serverSvc = statsSvc.ServerSvc;
-
-                // get the server from the database if it exists, otherwise create and insert a new one
-                var server = statsSvc.ServerSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
-
-                if (server == null)
+                using (var ctx = new DatabaseContext(disableTracking: true))
                 {
-                    server = new EFServer()
-                    {
-                        Port = sv.GetPort(),
-                        Active = true,
-                        ServerId = serverId
-                    };
+                    var serverSet = ctx.Set<EFServer>();
+                    // get the server from the database if it exists, otherwise create and insert a new one
+                    server = serverSet.FirstOrDefault(c => c.ServerId == serverId);
 
-                    serverSvc.Insert(server);
+                    if (server == null)
+                    {
+                        server = new EFServer()
+                        {
+                            Port = sv.GetPort(),
+                            Active = true,
+                            ServerId = serverId
+                        };
+
+                        server = serverSet.Add(server).Entity;
+                        // this doesn't need to be async as it's during initialization
+                        ctx.SaveChanges();
+                    }
                 }
 
-                // this doesn't need to be async as it's during initialization
-                serverSvc.SaveChanges();
                 // check to see if the stats have ever been initialized
-                InitializeServerStats(sv);
-                statsSvc.ServerStatsSvc.SaveChanges();
+                var serverStats = InitializeServerStats(sv);
 
-                var serverStats = statsSvc.ServerStatsSvc.Find(c => c.ServerId == serverId).FirstOrDefault();
                 Servers.TryAdd(serverId, new ServerStats(server, serverStats)
                 {
                     IsTeamBased = sv.Gametype != "dm"
@@ -237,106 +237,134 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns>EFClientStatistic of specified player</returns>
         public async Task<EFClientStatistics> AddPlayer(Player pl)
         {
-            int serverId = pl.CurrentServer.GetHashCode();
+            await OnProcessingSensitive.WaitAsync();
 
-            if (!Servers.ContainsKey(serverId))
+            try
             {
-                Log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
-                return null;
-            }
+                int serverId = pl.CurrentServer.GetHashCode();
 
-            var playerStats = Servers[serverId].PlayerStats;
-            var detectionStats = Servers[serverId].PlayerDetections;
-            var statsSvc = ContextThreads[serverId];
 
-            if (playerStats.ContainsKey(pl.ClientId))
-            {
-                Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
-                return playerStats[pl.ClientId];
-            }
-
-            // get the client's stats from the database if it exists, otherwise create and attach a new one
-            // if this fails we want to throw an exception
-            var clientStatsSvc = statsSvc.ClientStatSvc;
-            var clientStats = clientStatsSvc.Find(c => c.ClientId == pl.ClientId && c.ServerId == serverId).FirstOrDefault();
-
-            if (clientStats == null)
-            {
-                clientStats = new EFClientStatistics()
+                if (!Servers.ContainsKey(serverId))
                 {
-                    Active = true,
-                    ClientId = pl.ClientId,
-                    Deaths = 0,
-                    Kills = 0,
-                    ServerId = serverId,
-                    Skill = 0.0,
-                    SPM = 0.0,
-                    EloRating = 200.0,
-                    HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
-                    {
-                        Active = true,
-                        HitCount = 0,
-                        Location = hl
-                    }).ToList()
-                };
-
-                // insert if they've not been added
-                clientStats = clientStatsSvc.Insert(clientStats);
-
-                if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
-                {
-                    Log.WriteWarning("Adding new client to stats failed");
+                    Log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
+                    return null;
                 }
 
-                await clientStatsSvc.SaveChangesAsync();
-            }
+                var playerStats = Servers[serverId].PlayerStats;
+                var detectionStats = Servers[serverId].PlayerDetections;
 
-            else
-            {
-                if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
+                if (playerStats.ContainsKey(pl.ClientId))
                 {
-                    Log.WriteWarning("Adding pre-existing client to stats failed");
+                    Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
+                    return playerStats[pl.ClientId];
                 }
-            }
 
-            // migration for previous existing stats
-            if (clientStats.HitLocations.Count == 0)
-            {
-                clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
-                    .Select(hl => new EFHitLocationCount()
+                // get the client's stats from the database if it exists, otherwise create and attach a new one
+                // if this fails we want to throw an exception
+
+                EFClientStatistics clientStats;
+
+                using (var ctx = new DatabaseContext(disableTracking: true))
+                {
+                    var clientStatsSet = ctx.Set<EFClientStatistics>();
+                    clientStats = clientStatsSet
+                        .Include(cl => cl.HitLocations)
+                        .FirstOrDefault(c => c.ClientId == pl.ClientId && c.ServerId == serverId);
+
+                    if (clientStats == null)
                     {
-                        Active = true,
-                        HitCount = 0,
-                        Location = hl
-                    })
-                    .ToList();
-                await statsSvc.ClientStatSvc.SaveChangesAsync();
+                        clientStats = new EFClientStatistics()
+                        {
+                            Active = true,
+                            ClientId = pl.ClientId,
+                            Deaths = 0,
+                            Kills = 0,
+                            ServerId = serverId,
+                            Skill = 0.0,
+                            SPM = 0.0,
+                            EloRating = 200.0,
+                            HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
+                            {
+                                Active = true,
+                                HitCount = 0,
+                                Location = hl
+                            }).ToList()
+                        };
+
+                        // insert if they've not been added
+                        clientStats = clientStatsSet.Add(clientStats).Entity;
+                        await ctx.SaveChangesAsync();
+
+                        if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
+                        {
+                            Log.WriteWarning("Adding new client to stats failed");
+                        }
+
+                    }
+
+                    else
+                    {
+                        if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
+                        {
+                            Log.WriteWarning("Adding pre-existing client to stats failed");
+                        }
+                    }
+
+                    // migration for previous existing stats
+                    if (clientStats.HitLocations.Count == 0)
+                    {
+                        clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
+                            .Select(hl => new EFHitLocationCount()
+                            {
+                                Active = true,
+                                HitCount = 0,
+                                Location = hl
+                            })
+                            .ToList();
+
+                        ctx.Update(clientStats);
+                        await ctx.SaveChangesAsync();
+                    }
+
+                    // for stats before rating
+                    if (clientStats.EloRating == 0.0)
+                    {
+                        clientStats.EloRating = clientStats.Skill;
+                    }
+
+                    if (clientStats.RollingWeightedKDR == 0)
+                    {
+                        clientStats.RollingWeightedKDR = clientStats.KDR;
+                    }
+
+                    // set these on connecting
+                    clientStats.LastActive = DateTime.UtcNow;
+                    clientStats.LastStatCalculation = DateTime.UtcNow;
+                    clientStats.SessionScore = pl.Score;
+                    clientStats.LastScore = pl.Score;
+
+                    if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
+                    {
+                        Log.WriteWarning("Could not add client to detection");
+                    }
+
+                    Log.WriteInfo($"Adding {pl} to stats");
+                }
+
+                return clientStats;
             }
 
-            // for stats before rating
-            if (clientStats.EloRating == 0.0)
+            catch (Exception ex)
             {
-                clientStats.EloRating = clientStats.Skill;
+
             }
 
-            if (clientStats.RollingWeightedKDR == 0)
+            finally
             {
-                clientStats.RollingWeightedKDR = clientStats.KDR;
+                OnProcessingSensitive.Release(1);
             }
 
-            // set these on connecting
-            clientStats.LastActive = DateTime.UtcNow;
-            clientStats.LastStatCalculation = DateTime.UtcNow;
-            clientStats.SessionScore = pl.Score;
-            clientStats.LastScore = pl.Score;
-
-            if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
-            {
-                Log.WriteWarning("Could not add client to detection");
-            }
-
-            Log.WriteInfo($"Adding {pl} to stats");
-            return clientStats;
+            return null;
         }
 
         /// <summary>
@@ -352,7 +380,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var playerStats = Servers[serverId].PlayerStats;
             var detectionStats = Servers[serverId].PlayerDetections;
             var serverStats = Servers[serverId].ServerStatistics;
-            var statsSvc = ContextThreads[serverId];
 
             if (!playerStats.ContainsKey(pl.ClientId))
             {
@@ -371,10 +398,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
 
             // sync their stats before they leave
-            var clientStatsSvc = statsSvc.ClientStatSvc;
             clientStats = UpdateStats(clientStats);
-            clientStatsSvc.Update(clientStats);
-            await clientStatsSvc.SaveChangesAsync();
+
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                ctx.Update(clientStats);
+                await ctx.SaveChangesAsync();
+            }
 
             // increment the total play time
             serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
@@ -405,15 +435,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads,
             string fraction, string visibilityPercentage, string snapAngles)
         {
-            var statsSvc = ContextThreads[serverId];
-
-            // incase the add palyer event get delayed
-            if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
-            {
-                await AddPlayer(attacker);
-            }
-
-
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
             Vector3 vViewAngles = null;
@@ -490,10 +511,20 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
+            // incase the add palyer event get delayed
+            if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
+            {
+                await AddPlayer(attacker);
+            }
+
             var clientDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
             var clientStats = Servers[serverId].PlayerStats[attacker.ClientId];
-            var clientStatsSvc = statsSvc.ClientStatSvc;
-            clientStatsSvc.Update(clientStats);
+
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                ctx.Set<EFClientStatistics>().Update(clientStats);
+                await ctx.SaveChangesAsync();
+            }
 
             // increment their hit count
             if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
@@ -528,17 +559,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 catch (Exception ex)
                 {
                     Log.WriteError("Could not save hit or AC info");
-                    Log.WriteDebug(ex.GetExceptionInfo());
-                }
-
-                try
-                {
-                    await clientStatsSvc.SaveChangesAsync();
-                }
-
-                catch (Exception ex)
-                {
-                    Log.WriteError("Could save save client stats");
                     Log.WriteDebug(ex.GetExceptionInfo());
                 }
 
@@ -743,10 +763,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // todo: do we want to save this immediately?
-            var clientStatsSvc = ContextThreads[serverId].ClientStatSvc;
-            clientStatsSvc.Update(attackerStats);
-            clientStatsSvc.Update(victimStats);
-            await clientStatsSvc.SaveChangesAsync();
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                var clientStatsSet = ctx.Set<EFClientStatistics>();
+
+                clientStatsSet.Update(attackerStats);
+                clientStatsSet.Update(victimStats);
+                await ctx.SaveChangesAsync();
+            }
         }
 
         /// <summary>
@@ -1079,39 +1103,43 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return clientStats;
         }
 
-        public void InitializeServerStats(Server sv)
+        public EFServerStatistics InitializeServerStats(Server sv)
         {
             int serverId = sv.GetHashCode();
-            var statsSvc = ContextThreads[serverId];
+            EFServerStatistics serverStats;
 
-            var serverStats = statsSvc.ServerStatsSvc.Find(s => s.ServerId == serverId).FirstOrDefault();
-            if (serverStats == null)
+            using (var ctx = new DatabaseContext(disableTracking: true))
             {
-                Log.WriteDebug($"Initializing server stats for {sv}");
-                // server stats have never been generated before
-                serverStats = new EFServerStatistics()
+                var serverStatsSet = ctx.Set<EFServerStatistics>();
+                serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
+
+                if (serverStats == null)
                 {
-                    Active = true,
-                    ServerId = serverId,
-                    TotalKills = 0,
-                    TotalPlayTime = 0,
-                };
+                    Log.WriteDebug($"Initializing server stats for {sv}");
+                    // server stats have never been generated before
+                    serverStats = new EFServerStatistics()
+                    {
+                        ServerId = serverId,
+                        TotalKills = 0,
+                        TotalPlayTime = 0,
+                    };
 
-                var ieClientStats = statsSvc.ClientStatSvc.Find(cs => cs.ServerId == serverId);
-
-                // set these incase we've imported settings 
-                serverStats.TotalKills = ieClientStats.Sum(cs => cs.Kills);
-                serverStats.TotalPlayTime = Manager.GetClientService().GetTotalPlayTime().Result;
-
-                statsSvc.ServerStatsSvc.Insert(serverStats);
+                    serverStats = serverStatsSet.Add(serverStats).Entity;
+                    ctx.SaveChanges();
+                }
             }
+
+            return serverStats;
         }
 
         public void ResetKillstreaks(int serverId)
         {
             var serverStats = Servers[serverId];
+
             foreach (var stat in serverStats.PlayerStats.Values)
+            {
                 stat.StartNewSession();
+            }
         }
 
         public void ResetStats(int clientId, int serverId)
@@ -1131,33 +1159,30 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (clientId < 1)
                 return;
 
-            var messageSvc = ContextThreads[serverId].MessageSvc;
-            messageSvc.Insert(new EFClientMessage()
+            using (var ctx = new DatabaseContext(disableTracking: true))
             {
-                Active = true,
-                ClientId = clientId,
-                Message = message,
-                ServerId = serverId,
-                TimeSent = DateTime.UtcNow
-            });
-            await messageSvc.SaveChangesAsync();
+                ctx.Set<EFClientMessage>().Add(new EFClientMessage()
+                {
+                    ClientId = clientId,
+                    Message = message,
+                    ServerId = serverId,
+                    TimeSent = DateTime.UtcNow
+                });
+
+                await ctx.SaveChangesAsync();
+            }
         }
 
         public async Task Sync(Server sv)
         {
             int serverId = sv.GetHashCode();
-            var statsSvc = ContextThreads[serverId];
-            var serverSvc = statsSvc.ServerSvc;
 
-            serverSvc.Update(Servers[serverId].Server);
-            await serverSvc.SaveChangesAsync();
-
-            await statsSvc.KillStatsSvc.SaveChangesAsync();
-            await statsSvc.ServerSvc.SaveChangesAsync();
-
-            statsSvc = null;
-            // this should prevent the gunk from having a long lasting context.
-            ContextThreads[serverId] = new ThreadSafeStatsService();
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                var serverSet = ctx.Set<EFServer>();
+                serverSet.Update(Servers[serverId].Server);
+                await ctx.SaveChangesAsync();
+            }
         }
 
         public void SetTeamBased(int serverId, bool isTeamBased)

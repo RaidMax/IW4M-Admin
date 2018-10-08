@@ -33,6 +33,7 @@ namespace SharedLibraryCore
             Port = config.Port;
             Manager = mgr;
             Logger = Manager.GetLogger(this.GetHashCode());
+            Logger.WriteInfo(this.ToString());
             ServerConfig = config;
             RemoteConnection = new RCon.Connection(IP, Port, Password, Logger);
 
@@ -263,7 +264,7 @@ namespace SharedLibraryCore
 
         public override string ToString()
         {
-            return $"{IP}_{Port}";
+            return $"{IP}-{Port}";
         }
 
         protected async Task<bool> ScriptLoaded()

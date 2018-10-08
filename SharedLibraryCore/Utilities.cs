@@ -27,7 +27,7 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
-        public static Player IW4MAdminClient = new Player() { ClientId = 1, Level = Player.Permission.Console };
+        public static Player IW4MAdminClient(Server server = null) => new Player() { ClientId = 1, Level = Player.Permission.Console, CurrentServer = server };
 
         public static string HttpRequest(string location, string header, string headerValue)
         {

@@ -95,6 +95,7 @@ namespace SharedLibraryCore.RCon
                 Ttl = 42,
                 ExclusiveAddressUse = true,
             };
+
             connectionState.OnSentData.Reset();
             connectionState.OnReceivedData.Reset();
             connectionState.ConnectionAttempts++;
@@ -103,7 +104,7 @@ namespace SharedLibraryCore.RCon
 #endif
             try
             {
-                response = await SendPayloadAsync(payload);
+                response = await SendPayloadAsync(payload, waitForResponse);
                 connectionState.OnComplete.Release(1);
                 connectionState.ConnectionAttempts = 0;
             }
@@ -139,7 +140,7 @@ namespace SharedLibraryCore.RCon
             return splitResponse;
         }
 
-        private async Task<byte[]> SendPayloadAsync(byte[] payload)
+        private async Task<byte[]> SendPayloadAsync(byte[] payload, bool waitForResponse)
         {
             var connectionState = ActiveQueries[this.Endpoint];
             var rconSocket = (Socket)connectionState.SendEventArgs.UserToken;
@@ -169,6 +170,11 @@ namespace SharedLibraryCore.RCon
                     rconSocket.Close();
                     throw new NetworkException("Timed out sending data", rconSocket);
                 }
+            }
+
+            if (!waitForResponse)
+            {
+                return new byte[0];
             }
 
             connectionState.ReceiveEventArgs.SetBuffer(connectionState.ReceiveBuffer);

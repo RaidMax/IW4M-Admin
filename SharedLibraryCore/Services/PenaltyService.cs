@@ -24,7 +24,6 @@ namespace SharedLibraryCore.Services
                     PunisherId = newEntity.Punisher.ClientId,
                     LinkId = newEntity.Link.AliasLinkId,
                     Type = newEntity.Type,
-                    Active = true,
                     Expires = newEntity.Expires,
                     Offense = newEntity.Offense,
                     When = newEntity.When,
@@ -69,19 +68,7 @@ namespace SharedLibraryCore.Services
         public async Task<IList<EFPenalty>> Find(Func<EFPenalty, bool> expression)
         {
             throw await Task.FromResult(new Exception());
-            /*
-            return await Task.FromResult(new List<EFPenalty>());
-            // fixme: this is so slow!
-            return await Task.Run(() =>
-            {
-                using (var context = new DatabaseContext())
-                    return context.Penalties
-                    .Include(p => p.Offender)
-                    .Include(p => p.Punisher)
-                    .Where(expression)
-                    .Where(p => p.Active)
-                    .ToList();
-            });*/
+
         }
 
         public Task<EFPenalty> Get(int entityID)
@@ -225,8 +212,6 @@ namespace SharedLibraryCore.Services
 
                     return list;
                 }
-
-
             }
         }
 

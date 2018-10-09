@@ -966,7 +966,6 @@ namespace IW4MAdmin
                 Offender = Target,
                 Offense = Reason,
                 Punisher = Origin,
-                Active = true,
                 When = DateTime.UtcNow,
                 Link = Target.AliasLink
             };

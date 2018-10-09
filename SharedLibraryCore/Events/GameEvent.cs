@@ -220,7 +220,8 @@ namespace SharedLibraryCore
         {
             return (queuedEvent.Target != null && queuedEvent.Target.ClientNumber != -1) &&
                                     (queuedEvent.Target.State != Player.ClientState.Connected &&
-                                    queuedEvent.Target.NetworkId != 0);
+                                    queuedEvent.Target.NetworkId != 0 &&
+                                    queuedEvent.Origin?.ClientId != 1);
         }
     }
 }

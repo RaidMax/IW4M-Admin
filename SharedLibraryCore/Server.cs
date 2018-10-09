@@ -321,7 +321,6 @@ namespace SharedLibraryCore
         protected int ConnectionErrors;
         protected List<string> BroadcastMessages;
         protected TimeSpan LastMessage;
-        protected IFile LogFile;
         protected DateTime LastPoll;
         protected ManualResetEventSlim OnRemoteCommandResponse;
 

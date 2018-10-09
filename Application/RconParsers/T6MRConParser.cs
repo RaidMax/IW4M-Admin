@@ -9,8 +9,6 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.RCon;
 using SharedLibraryCore.Exceptions;
 using System.Text;
-using System.Linq;
-using System.Net.Http;
 
 namespace IW4MAdmin.Application.RconParsers
 {

@@ -57,7 +57,16 @@ namespace SharedLibraryCore
             }
 
             Manager = mgr;
-            string script = File.ReadAllText(FileName);
+            string script;
+
+            using (var stream = new FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream, Encoding.Default))
+                {
+                    script = await reader.ReadToEndAsync();
+                }
+            }
+
             ScriptEngine = new Jint.Engine(cfg =>
                 cfg.AllowClr(new[]
                 {

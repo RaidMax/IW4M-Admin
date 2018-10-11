@@ -356,7 +356,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception ex)
             {
-
+                Log.WriteWarning("Could not add client to stats");
+                Log.WriteDebug(ex.GetExceptionInfo());
             }
 
             finally

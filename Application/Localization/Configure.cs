@@ -15,7 +15,7 @@ namespace IW4MAdmin.Application.Localization
         public static void Initialize(string customLocale)
         {
             string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
-            string[] localizationFiles = Directory.GetFiles("Localization", $"*.{currentLocale}.json");
+            string[] localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");
 
             try
             {
@@ -33,13 +33,13 @@ namespace IW4MAdmin.Application.Localization
             // culture doesn't exist so we just want language
             if (localizationFiles.Length == 0)
             {
-                localizationFiles = Directory.GetFiles("Localization", $"*.{currentLocale.Substring(0, 2)}*.json");
+                localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale.Substring(0, 2)}*.json");
             }
 
             // language doesn't exist either so defaulting to english
             if (localizationFiles.Length == 0)
             {
-                localizationFiles = Directory.GetFiles("Localization", "*.en-US.json");
+                localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), "*.en-US.json");
             }
 
             // this should never happen unless the localization folder is empty
@@ -64,7 +64,7 @@ namespace IW4MAdmin.Application.Localization
                 }
             }
 
-            string localizationFile = $"Localization{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocale}-{currentLocale.ToUpper()}.json";
+            string localizationFile = $"{Path.Join(Utilities.OperatingDirectory, "Localization")}{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocale}-{currentLocale.ToUpper()}.json";
 
             Utilities.CurrentLocalization = new SharedLibraryCore.Localization.Layout(localizationDict)
             {

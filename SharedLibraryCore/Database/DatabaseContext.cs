@@ -125,15 +125,15 @@ namespace SharedLibraryCore.Database
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
             IEnumerable<string> directoryFiles;
 
-            string pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}netcoreapp2.0{Path.DirectorySeparatorChar}Plugins";
+            string pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}netcoreapp2.1{Path.DirectorySeparatorChar}Plugins";
 
             if (!Directory.Exists(pluginDir))
             {
-                pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}Plugins";
+                pluginDir = Path.Join(Environment.CurrentDirectory, "Plugins");
 
                 if (!Directory.Exists(pluginDir))
                 {
-                    pluginDir = Utilities.OperatingDirectory;
+                    pluginDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
                 }
             }
 

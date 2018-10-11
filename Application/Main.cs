@@ -38,10 +38,11 @@ namespace IW4MAdmin.Application
 
             try
             {
+                Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
+
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
-                Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
                 Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
 

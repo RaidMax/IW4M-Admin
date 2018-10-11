@@ -109,17 +109,17 @@ namespace SharedLibraryCore.RCon
                 connectionState.ConnectionAttempts = 0;
             }
 
-            catch (Exception ex)
+            catch/* (Exception ex)*/
             {
                 if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
                 {
-                    Log.WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
+                   // Log.WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
                     await Task.Delay(StaticHelpers.FloodProtectionInterval);
                     goto retrySend;
                 }
 
                 connectionState.OnComplete.Release(1);
-                Log.WriteDebug(ex.GetExceptionInfo());
+                //Log.WriteDebug(ex.GetExceptionInfo());
                 throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}]");
             }
 

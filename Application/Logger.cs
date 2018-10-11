@@ -24,7 +24,7 @@ namespace IW4MAdmin.Application
 
         public Logger(string fn)
         {
-            FileName = Path.Join("Log", $"{fn}.log");
+            FileName = Path.Join(Utilities.OperatingDirectory, "Log", $"{fn}.log");
             OnLogWriting = new SemaphoreSlim(1, 1);
             RotateLogs();
         }

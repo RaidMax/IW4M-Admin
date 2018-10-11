@@ -874,7 +874,7 @@ namespace IW4MAdmin
                 Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
 #if !DEBUG
                 throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
-                //#else
+#else
                 LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
 #endif
             }

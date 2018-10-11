@@ -20,7 +20,6 @@ namespace WebfrontCore
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
-            //    .SetBasePath(SharedLibraryCore.Utilities.OperatingDirectory)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();

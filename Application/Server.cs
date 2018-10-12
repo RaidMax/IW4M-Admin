@@ -33,21 +33,30 @@ namespace IW4MAdmin
 
         public override int GetHashCode()
         {
-            // todo: make this better with collisions
-            int id = Math.Abs($"{IP}:{Port.ToString()}".Select(a => (int)a).Sum());
-
-            // hack: this is a nasty fix for get hashcode being changed
-            switch (id)
+            if (GameName == Game.IW4)
             {
-                case 765:
-                    return 886229536;
-                case 760:
-                    return 1645744423;
-                case 761:
-                    return 1645809959;
+                // todo: make this better with collisions
+                int id = Math.Abs($"{IP}:{Port.ToString()}".Select(a => (int)a).Sum());
+
+                // hack: this is a nasty fix for get hashcode being changed
+                switch (id)
+                {
+                    case 765:
+                        return 886229536;
+                    case 760:
+                        return 1645744423;
+                    case 761:
+                        return 1645809959;
+                }
+
+                return id;
             }
 
-            return id;
+            else
+            {
+               int id  = HashCode.Combine(IP, Port);
+                return id < 0 ? Math.Abs(id) : id;
+            }
         }
 
         public async Task OnPlayerJoined(Player logClient)

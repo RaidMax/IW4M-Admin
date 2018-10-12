@@ -58,42 +58,50 @@ del "%SolutionDir%Publish\WindowsPrerelease\*pdb"
 
 echo setting up library folders
 
-echo PR-Config
-if not exist  "%SolutionDir%Publish\WindowsPrerelease\Configuration" md "%SolutionDir%Publish\WindowsPrerelease\Configuration"
-move "%SolutionDir%Publish\WindowsPrerelease\DefaultSettings.json" "%SolutionDir%Publish\WindowsPrerelease\Configuration\"
+if "%CurrentConfiguration%" == "Prerelease" (
+	echo PR-Config
+	if not exist  "%SolutionDir%Publish\WindowsPrerelease\Configuration" md "%SolutionDir%Publish\WindowsPrerelease\Configuration"
+	move "%SolutionDir%Publish\WindowsPrerelease\DefaultSettings.json" "%SolutionDir%Publish\WindowsPrerelease\Configuration\"
+)
 
-if "%CurrentConfiguration" == "Release" (
+if "%CurrentConfiguration%" == "Release" (
 	echo R-Config
 	if not exist  "%SolutionDir%Publish\Windows\Configuration" md "%SolutionDir%Publish\Windows\Configuration"
 	if exist "%SolutionDir%Publish\Windows\DefaultSettings.json" move "%SolutionDir%Publish\Windows\DefaultSettings.json" "%SolutionDir%Publish\Windows\Configuration\DefaultSettings.json"
 )
 
-echo PR-LIB
-if not exist "%SolutionDir%Publish\WindowsPrerelease\Lib\" md "%SolutionDir%Publish\WindowsPrerelease\Lib\"
-move "%SolutionDir%Publish\WindowsPrerelease\*.dll" "%SolutionDir%Publish\WindowsPrerelease\Lib\"
-move "%SolutionDir%Publish\WindowsPrerelease\*.json" "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+if "%CurrentConfiguration%" == "Prerelease" (
+	echo PR-LIB
+	if not exist "%SolutionDir%Publish\WindowsPrerelease\Lib\" md "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+	move "%SolutionDir%Publish\WindowsPrerelease\*.dll" "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+	move "%SolutionDir%Publish\WindowsPrerelease\*.json" "%SolutionDir%Publish\WindowsPrerelease\Lib\"
+)
 
-if "%CurrentConfiguration" == "Release" (
+if "%CurrentConfiguration%" == "Release" (
 	echo R-LIB
 	if not exist "%SolutionDir%Publish\Windows\Lib\" md "%SolutionDir%Publish\Windows\Lib\"
 	move "%SolutionDir%Publish\Windows\*.dll" "%SolutionDir%Publish\Windows\Lib\"
 	move "%SolutionDir%Publish\Windows\*.json" "%SolutionDir%Publish\Windows\Lib\"
 )
 
-echo PR-RT
-move "%SolutionDir%Publish\WindowsPrerelease\runtimes" "%SolutionDir%Publish\WindowsPrerelease\Lib\runtimes"
-if exist "%SolutionDir%Publish\WindowsPrerelease\refs" move "%SolutionDir%Publish\WindowsPrerelease\refs" "%SolutionDir%Publish\WindowsPrerelease\Lib\refs"
+if "%CurrentConfiguration%" == "Prerelease" (
+	echo PR-RT
+	move "%SolutionDir%Publish\WindowsPrerelease\runtimes" "%SolutionDir%Publish\WindowsPrerelease\Lib\runtimes"
+	if exist "%SolutionDir%Publish\WindowsPrerelease\refs" move "%SolutionDir%Publish\WindowsPrerelease\refs" "%SolutionDir%Publish\WindowsPrerelease\Lib\refs"
+)
 
 
-if "%CurrentConfiguration" == "Release" (
+if "%CurrentConfiguration%" == "Release" (
 	echo R-RT
 	move "%SolutionDir%Publish\Windows\runtimes" "%SolutionDir%Publish\Windows\Lib\runtimes"
 	if exist "%SolutionDir%Publish\Windows\refs" move "%SolutionDir%Publish\Windows\refs" "%SolutionDir%Publish\Windows\Lib\refs"
 )
 
 echo making start scripts
-@echo dotnet Lib/IW4MAdmin.dll > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
-@echo dotnet Lib/IW4MAdmin.dll > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"
+@(echo dotnet Lib/IW4MAdmin.dll && echo pause) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
+@(echo dotnet Lib/IW4MAdmin.dll && echo pause) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"
 
 @(echo #!/bin/bash && echo dotnet Lib\IW4MAdmin.dll) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
 @(echo #!/bin/bash && echo dotnet Lib\IW4MAdmin.dll) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"
+
+eCHO "%CurrentConfiguration%"

@@ -26,11 +26,6 @@
         },
 
         {
-          "Alias": "Highrise",
-          "Name": "mp_highrise"
-        },
-
-        {
           "Alias": "Terminal",
           "Name": "mp_terminal"
         },

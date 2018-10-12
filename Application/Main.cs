@@ -38,13 +38,14 @@ namespace IW4MAdmin.Application
 
             try
             {
+                loc = Utilities.CurrentLocalization.LocalizationIndex;
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
 
                 CheckDirectories();
 
                 ServerManager = ApplicationManager.GetInstance();
                 Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
-                loc = Utilities.CurrentLocalization.LocalizationIndex;
+
 
                 ServerManager.Logger.WriteInfo($"Version is {Version}");
 
@@ -148,7 +149,7 @@ namespace IW4MAdmin.Application
                 {
                     e = e.InnerException;
                 }
-                Console.WriteLine($"Exception: {e.Message}");
+                Console.WriteLine(e.Message);
                 Console.WriteLine(loc["MANAGER_EXIT"]);
                 Console.ReadKey();
                 return;

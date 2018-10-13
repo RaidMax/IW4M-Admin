@@ -3,15 +3,23 @@ Version 2.2:
 -added top player stats page
 -added JavaScript plugin support
 -added webhook script to send notifications to discord
+-added remote log server to read log files on external machines
 -added abillity to exempt specific clients from VPN check
+-added ability to tempban through webfront with customizable times
 -added reserved slots for privileged users
 -added support for localized permission levels
 -added linux support!
 -added {{NEXTMAP}}, {{ADMINS}}, and {{MOSTPLAYED}} automessage tokens
+-added link to profile on client chat
+-added shared GUID kicker plugin
+-added PostgreSQL support
+-updated welcome plugin to use webapi instead of hardcoded file
 -updated event api
 -updated webfront tweak
 -update client search by IP
 -updated event management and client authentication
+-refactor RCon queries
+-cleaned up the folder structure of the application
 -fixed some namespace discrepancies
 -fixed parsing of certain chat messages
 -fixed various bugs
@@ -173,7 +181,7 @@ CHANGELOG:
 -fixed crash when RCON stops responding and removing a player
 -version on footer
 
-?VERSION: 0.8.1
+VERSION: 0.8.1
 CHANGELOG:
 -no longer have `world` client handle broken events
 -hopefully fixed an issue with clients missing connection event
@@ -215,7 +223,7 @@ CHANGELOG:
 -stability fixes
 -welcome has post-fixed connection indicator
 
-?VERSION: 0.5
+VERSION: 0.5
 CHANGELOG:
 -close config files after reading oops
 -added reload command

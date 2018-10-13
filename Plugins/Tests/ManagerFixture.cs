@@ -18,7 +18,9 @@ namespace Tests
         {
             File.WriteAllText("test_mp.log", "test_log_file");
 
-            Manager = Program.ServerManager;
+            IW4MAdmin.Application.Localization.Configure.Initialize("en-US");
+
+            Manager = ApplicationManager.GetInstance();
 
             var config = new ApplicationConfiguration
             {
@@ -43,6 +45,7 @@ namespace Tests
             Manager.ConfigHandler.Set(config);
 
             Manager.Init().Wait();
+
             Task.Run(() => Manager.Start());
         }
 

@@ -30,7 +30,7 @@ namespace IW4MAdmin.Application.Migration
 
                 if (!Directory.Exists(configDirectory))
                 {
-                    log.WriteDebug($"Creating directory for configs {configDirectory}");
+                    log?.WriteDebug($"Creating directory for configs {configDirectory}");
                     Directory.CreateDirectory(configDirectory);
                 }
 
@@ -40,7 +40,7 @@ namespace IW4MAdmin.Application.Migration
 
                 foreach (var configFile in configurationFiles)
                 {
-                    log.WriteDebug($"Moving config file {configFile}");
+                    log?.WriteDebug($"Moving config file {configFile}");
                     string destinationPath = Path.Join("Configuration", configFile);
                     if (!File.Exists(destinationPath))
                     {
@@ -51,7 +51,7 @@ namespace IW4MAdmin.Application.Migration
                 if (!File.Exists(Path.Join("Database", "Database.db")) &&
                     File.Exists("Database.db"))
                 {
-                    log.WriteDebug("Moving database file");
+                    log?.WriteDebug("Moving database file");
                     File.Move("Database.db", Path.Join("Database", "Database.db"));
                 }
             }

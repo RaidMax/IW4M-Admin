@@ -5,13 +5,15 @@ _______
 ### About
 **IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6), ~~[Pluto IW5](https://forum.plutonium.pw/category/5/plutonium-iw5)~~, and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
-Latest binary builds are always available at https://raidmax.org/IW4MAdmin  
+Latest binary builds are always available at:
+- [RaidMax](https://raidmax.org/IW4MAdmin)  
+- [GitHub](https://github.com/RaidMax/IW4M-Admin/releases)
 
 ---
 ### Setup
 **IW4MAdmin** requires minimal effort to get up and running.
 #### Prerequisites
-* [.NET Core 2.1 Runtime](https://www.microsoft.com/net/download) *or newer*  
+* [.NET Core 2.1.5 Runtime](https://www.microsoft.com/net/download) *or newer*  
 #### Installation
 1. Install .NET Core Runtime
 2.  Extract `IW4MAdmin-<version>.zip`  
@@ -105,6 +107,11 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 `ConnectionString`
 * Specifies the [connection string](https://www.connectionstrings.com/mysql/) to a MySQL server that is used instead of SQLite
 * Default &mdash; `null`
+
+`DatabaseProvider`
+* Specifies the database provider **IW4MAdmin** should use
+* Possible values &mdash; `sqlite`, `mysql`, `postgresql`
+* Default &mdash; `sqlite`
  
 `RConPollRate`
 * Specifies (in milliseconds) how often to poll each server for updates
@@ -163,9 +170,9 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 ___
 
 ### Commands
-|Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|
-|--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|
-|prune|pa|demote any privileged clients that have not connected recently (defaults to 30 days)|False|!pa \<optional inactive days\>|Owner|
+|Name              |Alias|Description        |Requires Target|Syntax           |Required Level|
+|--------------| -----| --------------------------------------------------------| -----------------| -------------| ---------------|
+|prune|pa|demote any trusted clients that have not connected recently (defaults to 30 days)|False|!pa \<optional inactive days\>|Owner|
 |quit|q|quit IW4MAdmin|False|!q |Owner|
 |rcon|rcon|send rcon command to server|False|!rcon \<commands\>|Owner|
 |ban|b|permanently ban a client from the server|True|!b \<player\> \<reason\>|SeniorAdmin|
@@ -190,23 +197,20 @@ ___
 |unflag|uf|Remove flag for client|True|!uf \<player\>|Moderator|
 |uptime|up|get current application running time|False|!up |Moderator|
 |usage|us|get application memory usage|False|!us |Moderator|
-|balance|bal|balance teams|False|!bal |Trusted|
-|login|li|login using password|False|!li \<password\>|Trusted|
 |warn|w|warn client for infringing rules|True|!w \<player\> \<reason\>|Trusted|
 |warnclear|wc|remove all warnings for a client|True|!wc \<player\>|Trusted|
 |admins|a|list currently connected privileged clients|False|!a |User|
 |getexternalip|ip|view your external IP address|False|!ip |User|
 |help|h|list all available commands|False|!h \<optional commands\>|User|
-|mostplayed|mp|view the top 5 dedicated players on the server|False|!mp |User|
+|nextmap|nm|view next map in rotation|False|!nm |User|
 |owner|iamgod|claim ownership of the server|False|!iamgod |User|
 |ping|pi|get client's latency|False|!pi \<optional player\>|User|
 |privatemessage|pm|send message to other client|True|!pm \<player\> \<message\>|User|
 |report|rep|report a client for suspicious behavior|True|!rep \<player\> \<reason\>|User|
-|resetstats|rs|reset your stats to factory-new|False|!rs |User|
 |rules|r|list server rules|False|!r |User|
-|stats|xlrstats|view your stats|False|!xlrstats \<optional player\>|User|
-|topstats|ts|view the top 5 players in this server|False|!ts |User|
+|setgravatar|sg|set gravatar for webfront profile|False|!sg \<gravatar email\>|User|
 |whoami|who|give information about yourself|False|!who |User|
+
 
 _These commands include all shipped plugin commands._
 
@@ -302,6 +306,11 @@ ___
 #### VPN Detection [Script Plugin]
 - This plugin detects if a client is using a VPN and kicks them if they are
 - To disable this plugin, delete `Plugins\VPNDetection.js`
+- Adding ClientIds to `vpnExceptionIds` will prevent a client from being kicked.
+
+#### Shared GUID Kicker [Script Plugin]
+- This plugin kicks users using a specific GUID
+- GUID `F4D2C30B712AC6E3` on IW4x was packed into a torrent version of the game.
 ___
 ### Webfront
 `Home`
@@ -432,9 +441,13 @@ python DiscordWebhook.py
 #### Anti-cheat
 This is an [IW4x](https://iw4xcachep26muba.onion.link/) only feature (wider game support planned), that uses analytics to detect aimbots and aim-assist tools.  
 To utilize anti-cheat, enable it during setup **and** copy `_customcallbacks.gsc` from `userraw` into your `IW4x Server\userraw\scripts` folder.  
+
 The anti-cheat feature is a work in progress and as such will be constantly tweaked and may not be 100% accurate, however the goal is to deter as many cheaters as possible from IW4x.
 #### Database Storage
-By default, all **IW4MAdmin** information is stored in `Database.db`.  
+By default, all **IW4MAdmin** information is stored in `Database.db`. 
+
 Should you need to reset your database, this file can simply be deleted.  
 Additionally, this file should be preserved during updates to retain client information.   
-Setting the `ConnectionString` property in `IW4MAdminSettings.json` will cause **IW4MAdmin** to attempt to use a MySQL connection for database storage. 
+
+Setting the `ConnectionString` and `DatabaseProvider` properties in `IW4MAdminSettings.json`  
+will allow **IW4MAdmin** to use alternate methods for database storage. 

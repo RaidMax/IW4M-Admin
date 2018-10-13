@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Collections.Generic;
 using SharedLibraryCore.Localization;
+using IW4MAdmin.Application.Migration;
 
 namespace IW4MAdmin.Application
 {
@@ -42,6 +43,9 @@ namespace IW4MAdmin.Application
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
 
                 CheckDirectories();
+                // do any needed migrations
+                // todo: move out
+                ConfigurationMigration.MoveConfigFolder10518(null);
 
                 ServerManager = ApplicationManager.GetInstance();
                 Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);

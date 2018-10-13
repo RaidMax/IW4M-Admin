@@ -54,7 +54,7 @@ namespace IW4MAdmin
 
             else
             {
-               int id  = HashCode.Combine(IP, Port);
+                int id = HashCode.Combine(IP, Port);
                 return id < 0 ? Math.Abs(id) : id;
             }
         }
@@ -589,7 +589,11 @@ namespace IW4MAdmin
             var now = DateTime.Now;
 #endif
             var currentClients = GetPlayersAsList();
-            var polledClients = await this.GetStatusAsync();
+            var polledClients = (await this.GetStatusAsync()).AsEnumerable();
+            if (this.Manager.GetApplicationSettings().Configuration().IgnoreBots)
+            {
+                polledClients = polledClients.Where(c => !c.IsBot);
+            }
 #if DEBUG
             Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
 #endif
@@ -855,7 +859,7 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
 #if DEBUG
-     //       basepath.Value = @"D:\";
+            //       basepath.Value = @"D:\";
 #endif
             string logPath = string.Empty;
 

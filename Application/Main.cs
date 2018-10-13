@@ -39,6 +39,8 @@ namespace IW4MAdmin.Application
 
             try
             {
+                ServerManager = ApplicationManager.GetInstance();
+                Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
 
@@ -46,10 +48,6 @@ namespace IW4MAdmin.Application
                 // do any needed migrations
                 // todo: move out
                 ConfigurationMigration.MoveConfigFolder10518(null);
-
-                ServerManager = ApplicationManager.GetInstance();
-                Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
-
 
                 ServerManager.Logger.WriteInfo($"Version is {Version}");
 

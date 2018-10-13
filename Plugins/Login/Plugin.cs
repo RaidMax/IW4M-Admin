@@ -28,6 +28,7 @@ namespace IW4MAdmin.Plugins.Login
             if (E.Type == GameEvent.EventType.Connect)
             {
                 AuthorizedClients.TryAdd(E.Origin.ClientId, false);
+                E.Origin.SetAdditionalProperty("IsLoggedIn", false);
             }
 
             if (E.Type == GameEvent.EventType.Disconnect)
@@ -51,7 +52,14 @@ namespace IW4MAdmin.Plugins.Login
                     return Task.CompletedTask;
 
                 if (!AuthorizedClients[E.Origin.ClientId])
+                {
                     throw new AuthorizationException(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_AUTH"]);
+                }
+
+                else
+                {
+                    E.Origin.SetAdditionalProperty("IsLoggedIn", true);
+                }
             }
 
             return Task.CompletedTask;

@@ -402,7 +402,9 @@ namespace SharedLibraryCore.Objects
 
         [NotMapped]
         Dictionary<string, object> _additionalProperties;
-        public T GetAdditionalProperty<T>(string name) => (T)_additionalProperties[name];
+
+        public T GetAdditionalProperty<T>(string name) => _additionalProperties.ContainsKey(name) ? (T)_additionalProperties[name] : default(T);
+
         public void SetAdditionalProperty(string name, object value)
         {
             if (_additionalProperties.ContainsKey(name))

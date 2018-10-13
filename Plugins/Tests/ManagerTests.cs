@@ -188,6 +188,22 @@ namespace Tests
 
             resetEvent.Wait(5000);
         }
+
+        [Fact]
+        public void PrintCommands()
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine("|Name              |Alias|Description                                                                               |Requires Target|Syntax           |Required Level|");
+            sb.AppendLine("|--------------| -----| --------------------------------------------------------| -----------------| -------------| ----------------|");
+
+            foreach (var command in Manager.GetCommands().OrderByDescending(c => c.Permission).ThenBy(c => c.Name))
+            {
+                sb.AppendLine($"|{command.Name}|{command.Alias}|{command.Description}|{command.RequiresTarget}|{command.Syntax.Substring(8).EscapeMarkdown()}|{command.Permission}|");
+            }
+
+            Assert.True(false, sb.ToString());
+        }
     }
 }
 

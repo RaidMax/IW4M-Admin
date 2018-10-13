@@ -53,9 +53,6 @@ namespace IW4MAdmin.Application
 
         private ApplicationManager()
         {
-            // do any needed migrations
-            // todo: move out
-            ConfigurationMigration.MoveConfigFolder10518(Logger);
             _servers = new List<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();

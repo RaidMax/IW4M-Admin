@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using IW4ScriptCommands.Commands;
+using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Objects;
 using System;
@@ -31,6 +32,19 @@ namespace WebfrontCore.Controllers.API
             }
 
             return Content("");
+        }
+
+        [HttpGet("{networkId}")]
+        public IActionResult GetTeamAssignments(string networkId, string teams = "")
+        {
+            var client = Manager.GetActiveClients()
+                .First(c => c.NetworkId == networkId.ConvertLong());
+
+            teams = teams ?? string.Empty;
+
+            string assignments = Balance.GetTeamAssignments(client, teams);
+
+            return Content(assignments);
         }
     }
 }

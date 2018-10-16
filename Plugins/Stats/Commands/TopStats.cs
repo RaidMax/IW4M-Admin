@@ -14,7 +14,6 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     class TopStats : Command
     {
-
         public static async Task<List<string>> GetTopStats(Server s)
         {
             int serverId = s.GetHashCode();

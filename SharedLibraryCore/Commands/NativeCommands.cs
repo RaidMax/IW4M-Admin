@@ -183,9 +183,17 @@ namespace SharedLibraryCore.Commands
                 string tempbanReason = match.Groups[2].ToString();
                 var length = match.Groups[1].ToString().ParseTimespan();
 
-                var _ = !(await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync()).Failed ?
-                    E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}") :
-                    E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
+                if (length > E.Owner.Manager.GetApplicationSettings().Configuration().MaximumTempBanTime)
+                {
+                    E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL_TOOLONG"]);
+                }
+
+                else
+                {
+                    var _ = !(await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync()).Failed ?
+                        E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}") :
+                        E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
+                }
             }
         }
     }
@@ -468,7 +476,11 @@ namespace SharedLibraryCore.Commands
                 {
                     ActiveClient.Level = newPerm;
                     await E.Owner.Manager.GetClientService().Update(ActiveClient);
-                    ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
+
+                    if (newPerm > oldPerm)
+                    {
+                        ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
+                    }
                 }
 
                 else
@@ -503,7 +515,9 @@ namespace SharedLibraryCore.Commands
 
                 E.Owner.Manager.GetEventHandler().AddEvent(e);
 
-                E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"]}");
+                var _ = newPerm < oldPerm ?
+                    E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"]} {E.Target.Name}") :
+                    E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"]}");
             }
 
             else
@@ -625,7 +639,7 @@ namespace SharedLibraryCore.Commands
             }
 
             IList<EFClient> db_players = (await (E.Owner.Manager.GetClientService() as ClientService)
-                .GetClientByName(E.Data))
+                .FindClientsByIdentifier(E.Data))
                 .OrderByDescending(p => p.LastConnection)
                 .ToList();
 
@@ -935,7 +949,8 @@ namespace SharedLibraryCore.Commands
         {
             var B = await E.Owner.Manager.GetPenaltyService().GetClientPenaltiesAsync(E.Target.ClientId);
 
-            var penalty = B.FirstOrDefault(b => b.Type > Penalty.PenaltyType.Kick && b.Expires > DateTime.UtcNow);
+            var penalty = B.FirstOrDefault(b => b.Type > Penalty.PenaltyType.Kick &&
+                (b.Expires == null || b.Expires > DateTime.UtcNow));
 
             if (penalty == null)
             {
@@ -943,7 +958,7 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
+            string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires.Value - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
             string success = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_SUCCESS"];
 
             E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, penalty.Punisher.Name)} {penalty.Punisher.Name} {timeRemaining}");

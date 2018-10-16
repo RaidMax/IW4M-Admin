@@ -112,6 +112,9 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 * Specifies the database provider **IW4MAdmin** should use
 * Possible values &mdash; `sqlite`, `mysql`, `postgresql`
 * Default &mdash; `sqlite`
+
+`Ignore Bots`
+* Disables bots from being registered by **IW4MAdmin**
  
 `RConPollRate`
 * Specifies (in milliseconds) how often to poll each server for updates

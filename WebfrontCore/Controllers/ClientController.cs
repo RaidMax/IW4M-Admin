@@ -146,7 +146,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> FindAsync(string clientName)
         {
-            var clients = (await Manager.GetClientService().GetClientByName(clientName))
+            var clients = (await Manager.GetClientService().FindClientsByIdentifier(clientName))
                             .OrderByDescending(c => c.LastConnection);
 
             var clientsDto = clients.Select(c => new PlayerInfo()

@@ -22,6 +22,7 @@ namespace SharedLibraryCore.Configuration
         public string ConnectionString { get; set; }
         public int RConPollRate { get; set; } = 5000;
         public bool IgnoreBots { get; set; }
+        public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }

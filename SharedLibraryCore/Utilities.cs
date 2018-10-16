@@ -248,14 +248,14 @@ namespace SharedLibraryCore
             if (!string.IsNullOrEmpty(bot))
                 // should set their GUID to the negation of their 1 based index  (-1 - -18)
                 return -(Convert.ToInt64(bot.Substring(3)) + 1);
-            return 0;
+            return long.MinValue;
         }
 
         public static int ConvertToIP(this string str)
         {
             System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip);
 
-            return ip == null ? 0 : BitConverter.ToInt32(ip.GetAddressBytes(), 0);
+            return ip == null ? int.MaxValue : BitConverter.ToInt32(ip.GetAddressBytes(), 0);
         }
 
         public static string ConvertIPtoString(this int ip)

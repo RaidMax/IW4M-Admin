@@ -255,27 +255,30 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<IList<EFClient>> GetClientByName(string name)
+        public async Task<IList<EFClient>> FindClientsByIdentifier(string identifier)
         {
-            if (name.Length < 3)
+            if (identifier.Length < 3)
+            {
                 return new List<EFClient>();
+            }
 
-            name = name.ToLower();
+            identifier = identifier.ToLower();
 
             using (var context = new DatabaseContext(disableTracking: true))
             {
-                int asIP = name.ConvertToIP();
-                // hack: so IW4MAdmin and bots don't show up in search results
-                asIP = asIP == 0 ? int.MaxValue : asIP;
+                long networkId = identifier.ConvertLong();
+                int ipAddress = identifier.ConvertToIP();
 
                 var iqLinkIds = (from alias in context.Aliases
-                                 where asIP != int.MaxValue ? alias.IPAddress == asIP : alias.Name.ToLower().Contains(name)
-                                 select alias.LinkId);
+                                 where alias.IPAddress == ipAddress ||
+                                alias.Name.ToLower().Contains(identifier)
+                                 select alias.LinkId).Distinct();
 
                 var linkIds = iqLinkIds.ToList();
 
                 var iqClients = context.Clients
-                    .Where(c => linkIds.Contains(c.AliasLinkId))
+                    .Where(c => linkIds.Contains(c.AliasLinkId) ||
+                        networkId == c.NetworkId)
                     .Include(c => c.CurrentAlias)
                     .Include(c => c.AliasLink.Children);
 

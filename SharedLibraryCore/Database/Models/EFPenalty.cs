@@ -27,7 +27,7 @@ namespace SharedLibraryCore.Database.Models
         [Required]
         public DateTime When { get; set; }
         [Required]
-        public DateTime Expires { get; set; }
+        public DateTime? Expires { get; set; }
         [Required]
         public string Offense { get; set; }
         public string AutomatedOffense { get; set; }

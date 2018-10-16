@@ -30,9 +30,6 @@ namespace SharedLibraryCore.Services
                     AutomatedOffense = newEntity.AutomatedOffense
                 };
 
-                if (addedEntity.Expires == DateTime.MaxValue)
-                    addedEntity.Expires = DateTime.Parse(System.Data.SqlTypes.SqlDateTime.MaxValue.ToString());
-
                 // make bans propogate to all aliases
                 if (addedEntity.Type == Objects.Penalty.PenaltyType.Ban)
                 {
@@ -225,7 +222,7 @@ namespace SharedLibraryCore.Services
                     .Where(p => p.LinkId == linkId ||
                          p.Link.Children.Any(a => a.IPAddress == ip))
                     .Where(p => p.Active)
-                    .Where(p => p.Expires > now);
+                    .Where(p => p.Expires == null || p.Expires > now);
                 
               
 #if DEBUG == true
@@ -246,7 +243,7 @@ namespace SharedLibraryCore.Services
                 var penalties = await context.Penalties
                     .Include(p => p.Link.Children)
                     .Where(p => p.LinkId == aliasLinkId)
-                    .Where(p => p.Expires > now)
+                    .Where(p => p.Expires > now || p.Expires == null)
                     .ToListAsync();
 
                 penalties.ForEach(async p =>

@@ -98,6 +98,9 @@ namespace SharedLibraryCore.Database
                 .WithMany(p => p.AdministeredPenalties)
                 .HasForeignKey(c => c.PunisherId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(p => p.Expires)
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<EFAliasLink>(entity =>

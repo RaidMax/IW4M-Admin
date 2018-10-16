@@ -1,3 +1,6 @@
+Version 2.3:
+-added configuration option to ignore bots
+
 Version 2.2:
 -upgraded projects to .NET 2.1
 -added top player stats page

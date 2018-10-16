@@ -143,7 +143,7 @@ namespace IW4MAdmin.Plugins.Stats
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
-                        Value = "#" + await Manager.GetClientOverallRanking(clientId),
+                        Value = "#" + await StatManager.GetClientOverallRanking(clientId),
                     },
                     new ProfileMeta()
                     {

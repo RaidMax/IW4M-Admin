@@ -197,7 +197,8 @@ namespace IW4MAdmin
                 Players[player.ClientNumber] = player;
 
                 var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
-                var currentBan = activePenalties.FirstOrDefault(b => b.Expires > DateTime.UtcNow);
+                var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan);
+
                 var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
                     .Where(p => p.Active)
                     .OrderByDescending(p => p.When)
@@ -232,7 +233,7 @@ namespace IW4MAdmin
                         string formattedKick = String.Format(
                             RconParser.GetCommandPrefixes().Kick,
                             polledPlayer.ClientNumber,
-                            $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
+                            $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
                         await this.ExecuteCommandAsync(formattedKick);
                     }
 
@@ -1060,7 +1061,7 @@ namespace IW4MAdmin
             Penalty newPenalty = new Penalty()
             {
                 Type = Penalty.PenaltyType.Ban,
-                Expires = DateTime.MaxValue,
+                Expires = null,
                 Offender = Target,
                 Offense = Message,
                 Punisher = Origin,
@@ -1080,7 +1081,7 @@ namespace IW4MAdmin
             var unbanPenalty = new Penalty()
             {
                 Type = Penalty.PenaltyType.Unban,
-                Expires = DateTime.UtcNow,
+                Expires = null,
                 Offender = Target,
                 Offense = reason,
                 Punisher = Origin,

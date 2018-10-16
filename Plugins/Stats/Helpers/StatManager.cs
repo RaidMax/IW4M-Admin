@@ -57,7 +57,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="clientId">client id of the player</param>
         /// <returns></returns>
-        public async Task<int> GetClientOverallRanking(int clientId)
+        public static async Task<int> GetClientOverallRanking(int clientId)
         {
             using (var context = new DatabaseContext(true))
             {

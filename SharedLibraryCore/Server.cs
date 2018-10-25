@@ -117,19 +117,14 @@ namespace SharedLibraryCore
         /// <param name="message">Message to be sent to all players</param>
         public GameEvent Broadcast(string message, Player sender = null)
         {
-#if DEBUG == false
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
-#else
-            Logger.WriteVerbose(message.StripColors());
-#endif
+
+            //Logger.WriteVerbose(message.StripColors());
+
             var e = new GameEvent()
             {
                 Type = GameEvent.EventType.Broadcast,
-#if DEBUG == true
-                Data = message,
-#else
                 Data = formattedMessage,
-#endif
                 Owner = this,
                 Origin = sender,
             };

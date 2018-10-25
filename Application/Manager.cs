@@ -151,7 +151,9 @@ namespace IW4MAdmin.Application
                                 {
                                     Logger.WriteWarning($"Delayed event for {e.Origin} was ignored because the target has left");
                                     // hack: don't do anything with the event because the target is invalid
+                                    e.Origin = null;
                                     e.Type = GameEvent.EventType.Unknown;
+
                                 }
                             }
                             Logger.WriteDebug($"Adding delayed event of type {e.Type} for {e.Origin} back for processing");
@@ -265,11 +267,7 @@ namespace IW4MAdmin.Application
                 ThreadPool.GetAvailableThreads(out int availableThreads, out int m);
                 Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 #endif
-#if DEBUG
-                await Task.Delay(10000);
-#else
                 await Task.Delay(ConfigHandler.Configuration().RConPollRate);
-#endif
             }
 
             // trigger the event processing loop to end

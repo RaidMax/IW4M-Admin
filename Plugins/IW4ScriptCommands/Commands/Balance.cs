@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace IW4ScriptCommands.Commands
 {
     class Balance
-    { 
+    {
         private class TeamAssignment
         {
             public IW4MAdmin.Plugins.Stats.IW4Info.Team CurrentTeam { get; set; }
@@ -17,33 +17,39 @@ namespace IW4ScriptCommands.Commands
             public IW4MAdmin.Plugins.Stats.Models.EFClientStatistics Stats { get; set; }
         }
 
-        public static string GetTeamAssignments(Player client, string teamsString = "")
+        public static string GetTeamAssignments(Player client, bool isDisconnect, Server server, string teamsString = "")
         {
             var scriptClientTeams = teamsString.Split(';', StringSplitOptions.RemoveEmptyEntries)
                 .Select(c => c.Split(','))
                 .Select(c => new TeamAssignment()
                 {
                     CurrentTeam = (IW4MAdmin.Plugins.Stats.IW4Info.Team)Enum.Parse(typeof(IW4MAdmin.Plugins.Stats.IW4Info.Team), c[1]),
-                    Num = client.CurrentServer.GetPlayersAsList().FirstOrDefault(p => p.ClientNumber== Int32.Parse(c[0]))?.ClientNumber ?? -1,
-                    Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(client.CurrentServer.Players.FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0])).ClientId, client.CurrentServer.GetHashCode())
+                    Num = server.GetPlayersAsList().FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0]))?.ClientNumber ?? -1,
+                    Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(server.Players.FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0])).ClientId, server.GetHashCode())
                 })
                 .ToList();
 
             // at least one team is full so we can't balance
-            if (scriptClientTeams.Count(ct => ct.CurrentTeam == IW4MAdmin.Plugins.Stats.IW4Info.Team.Axis) >= Math.Floor(client.CurrentServer.MaxClients / 2.0)
-                || scriptClientTeams.Count(ct => ct.CurrentTeam == IW4MAdmin.Plugins.Stats.IW4Info.Team.Allies) >= Math.Floor(client.CurrentServer.MaxClients / 2.0))
+            if (scriptClientTeams.Count(ct => ct.CurrentTeam == IW4MAdmin.Plugins.Stats.IW4Info.Team.Axis) >= Math.Floor(server.MaxClients / 2.0)
+                || scriptClientTeams.Count(ct => ct.CurrentTeam == IW4MAdmin.Plugins.Stats.IW4Info.Team.Allies) >= Math.Floor(server.MaxClients / 2.0))
             {
-               // E.Origin?.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BALANCE_FAIL"]);
+                // E.Origin?.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BALANCE_FAIL"]);
                 return string.Empty;
             }
 
             List<string> teamAssignments = new List<string>();
 
-            var activeClients = client.CurrentServer.GetPlayersAsList().Select(c => new TeamAssignment()
+            var _c = server.GetPlayersAsList();
+            if (isDisconnect && client != null)
+            {
+                _c = _c.Where(c => c.ClientNumber != client.ClientNumber).ToList();
+            }
+
+            var activeClients = _c.Select(c => new TeamAssignment()
             {
                 Num = c.ClientNumber,
-                Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, client.CurrentServer.GetHashCode()),
-                CurrentTeam = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, client.CurrentServer.GetHashCode()).Team
+                Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, server.GetHashCode()),
+                CurrentTeam = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, server.GetHashCode()).Team
             })
             .Where(c => scriptClientTeams.FirstOrDefault(sc => sc.Num == c.Num)?.CurrentTeam != IW4MAdmin.Plugins.Stats.IW4Info.Team.Spectator)
             .Where(c => c.CurrentTeam != scriptClientTeams.FirstOrDefault(p => p.Num == c.Num)?.CurrentTeam)

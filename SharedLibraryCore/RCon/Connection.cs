@@ -89,41 +89,43 @@ namespace SharedLibraryCore.RCon
             byte[] response = null;
 
             retrySend:
-            connectionState.SendEventArgs.UserToken = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
             {
-                DontFragment = true,
-                Ttl = 42,
+                //DontFragment = true,
+                Ttl = 100,
                 ExclusiveAddressUse = true,
-            };
-
-            connectionState.OnSentData.Reset();
-            connectionState.OnReceivedData.Reset();
-            connectionState.ConnectionAttempts++;
+            })
+            {
+                connectionState.SendEventArgs.UserToken = socket;
+                connectionState.OnSentData.Reset();
+                connectionState.OnReceivedData.Reset();
+                connectionState.ConnectionAttempts++;
 #if DEBUG == true
-            Log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
+                Log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
 #endif
-            try
-            {
-                response = await SendPayloadAsync(payload, waitForResponse);
-                connectionState.OnComplete.Release(1);
-                connectionState.ConnectionAttempts = 0;
-            }
-
-            catch/* (Exception ex)*/
-            {
-                if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
+                try
                 {
-                   // Log.WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
-                    await Task.Delay(StaticHelpers.FloodProtectionInterval);
-                    goto retrySend;
+                    response = await SendPayloadAsync(payload, waitForResponse);
+                    connectionState.OnComplete.Release(1);
+                    connectionState.ConnectionAttempts = 0;
                 }
 
-                connectionState.OnComplete.Release(1);
-                //Log.WriteDebug(ex.GetExceptionInfo());
-                throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}]");
+                catch/* (Exception ex)*/
+                {
+                    if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
+                    {
+                        // Log.WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
+                        await Task.Delay(StaticHelpers.FloodProtectionInterval);
+                        goto retrySend;
+                    }
+
+                    connectionState.OnComplete.Release(1);
+                    //Log.WriteDebug(ex.GetExceptionInfo());
+                    throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}]");
+                }
             }
 
-            string responseString = Utilities.EncodingType.GetString(response, 0, response.Length).TrimEnd('\0') + '\n';
+            string responseString = Utilities.EncodingType.GetString(response, 0, response.Length) + '\n';
 
             if (responseString.Contains("Invalid password"))
             {
@@ -135,9 +137,12 @@ namespace SharedLibraryCore.RCon
                 throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
             }
 
+            Log.WriteInfo(responseString);
+
             string[] splitResponse = responseString.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(line => line.Trim()).ToArray();
             return splitResponse;
+
         }
 
         private async Task<byte[]> SendPayloadAsync(byte[] payload, bool waitForResponse)

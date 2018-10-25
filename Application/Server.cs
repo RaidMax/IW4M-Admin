@@ -26,6 +26,7 @@ namespace IW4MAdmin
     {
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
+        public int Id { get; private set; }
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
         {
@@ -33,30 +34,28 @@ namespace IW4MAdmin
 
         public override int GetHashCode()
         {
-            if (GameName == Game.IW4)
+            if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28965")
             {
-                // todo: make this better with collisions
-                int id = Math.Abs($"{IP}:{Port.ToString()}".Select(a => (int)a).Sum());
-
-                // hack: this is a nasty fix for get hashcode being changed
-                switch (id)
-                {
-                    case 765:
-                        return 886229536;
-                    case 760:
-                        return 1645744423;
-                    case 761:
-                        return 1645809959;
-                }
-
-                return id;
+                return 886229536;
             }
 
-            else
+            if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28960")
             {
-                int id = HashCode.Combine(IP, Port);
-                return id < 0 ? Math.Abs(id) : id;
+                return 1645744423;
             }
+
+            if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28970")
+            {
+                return 1645809959;
+            }
+
+            if (Id == 0)
+            {
+                Id = HashCode.Combine(IP, Port);
+                Id = Id < 0 ? Math.Abs(Id) : Id;
+            }
+
+            return Id;
         }
 
         public async Task OnPlayerJoined(Player logClient)
@@ -560,11 +559,13 @@ namespace IW4MAdmin
 
             if (E.Type == GameEvent.EventType.Broadcast)
             {
+#if DEBUG == false
                 // this is a little ugly but I don't want to change the abstract class
                 if (E.Data != null)
                 {
                     await E.Owner.ExecuteCommandAsync(E.Data);
                 }
+#endif
             }
 
             while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
@@ -661,7 +662,7 @@ namespace IW4MAdmin
                         waiterList.Add(e);
                     }
                     // wait for all the disconnect tasks to finish
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync()));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
 
                     waiterList.Clear();
                     // this are our new connecting clients
@@ -686,7 +687,7 @@ namespace IW4MAdmin
                     }
 
                     // wait for all the connect tasks to finish
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync()));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
 
                     if (ConnectionErrors > 0)
                     {
@@ -700,7 +701,7 @@ namespace IW4MAdmin
                 catch (NetworkException e)
                 {
                     ConnectionErrors++;
-                    if (ConnectionErrors == 1)
+                    if (ConnectionErrors == 3)
                     {
                         Logger.WriteError($"{e.Message} {IP}:{Port}, {loc["SERVER_ERROR_POLLING"]}");
                         Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");

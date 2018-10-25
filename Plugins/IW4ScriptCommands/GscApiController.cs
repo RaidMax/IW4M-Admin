@@ -35,14 +35,18 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("{networkId}")]
-        public IActionResult GetTeamAssignments(string networkId, string teams = "")
+        public IActionResult GetTeamAssignments(string networkId, int serverId, string teams = "", bool isDisconnect = false)
         {
+            return Unauthorized();
+
             var client = Manager.GetActiveClients()
-                .First(c => c.NetworkId == networkId.ConvertLong());
+                .FirstOrDefault(c => c.NetworkId == networkId.ConvertLong());
+
+            var server = Manager.GetServers().First(c => c.GetHashCode() == serverId);
 
             teams = teams ?? string.Empty;
 
-            string assignments = Balance.GetTeamAssignments(client, teams);
+            string assignments = Balance.GetTeamAssignments(client,  isDisconnect, server, teams);
 
             return Content(assignments);
         }

@@ -17,15 +17,10 @@ namespace IW4ScriptCommands
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
-            //if (E.Type == GameEvent.EventType.JoinTeam || E.Type == GameEvent.EventType.Disconnect)
-            //{
-            //    E.Origin = new SharedLibraryCore.Objects.Player()
-            //    {
-            //        ClientId = 1,
-            //        CurrentServer = E.Owner
-            //    };
-            //    return new Commands.Balance().ExecuteAsync(E);
-            //}
+            if (E.Type == GameEvent.EventType.Start)
+            {
+                return S.SetDvarAsync("sv_iw4madmin_serverid", S.GetHashCode());
+            }
 
             if (E.Type == GameEvent.EventType.Warn)
             {

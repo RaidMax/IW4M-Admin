@@ -8,10 +8,14 @@ init()
 	SetDvarIfUninitialized("sv_framewaittime", 0.05);
 	SetDvarIfUninitialized("sv_additionalwaittime", 0.05);
 	SetDvarIfUninitialized("sv_maxstoredframes", 3);
+	
 	level thread onPlayerConnect();
+	
 	level waittill("prematch_over");
 	level.callbackPlayerKilled = ::Callback_PlayerKilled;
 	level.callbackPlayerDamage = ::Callback_PlayerDamage;
+	level.callbackPlayerDisconnect = ::Callback_PlayerDisconnect;
+	
 	level.playerTags = [];
 	level.playerTags[0] = "j_head";
 	level.playerTags[1] = "j_neck";
@@ -240,4 +244,10 @@ Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vD
 {
 	Process_Hit("Kill", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon);
 	self maps\mp\gametypes\_damage::Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
+}
+
+Callback_PlayerDisconnect()
+{
+	level notify("disconnected", self);
+	self maps\mp\gametypes\_playerlogic::Callback_PlayerDisconnect();
 }

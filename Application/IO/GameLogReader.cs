@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
 {
@@ -22,7 +23,7 @@ namespace IW4MAdmin.Application.IO
             Parser = parser;
         }
 
-        public ICollection<GameEvent> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();
@@ -30,6 +31,7 @@ namespace IW4MAdmin.Application.IO
             // open the file as a stream
             using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
             {
+                // todo: max async
                 // take the old start position and go back the number of new characters
                 rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
                 // the difference should be in the range of a int :P

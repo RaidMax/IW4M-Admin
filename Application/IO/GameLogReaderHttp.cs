@@ -5,6 +5,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using static SharedLibraryCore.Utilities;
 
 namespace IW4MAdmin.Application.IO
@@ -29,18 +30,19 @@ namespace IW4MAdmin.Application.IO
 
         public int UpdateInterval => 1000;
 
-        public ICollection<GameEvent> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
 #if DEBUG == true
             server.Logger.WriteDebug($"Begin reading {fileSizeDiff} from http log");
 #endif
             var events = new List<GameEvent>();
             string b64Path = server.LogPath.ToBase64UrlSafeString();
-            var response = Api.Log(b64Path).Result;
+            var response = await Api.Log(b64Path);
 
             if (!response.Success)
             {
                 server.Logger.WriteError($"Could not get log server info of {LogFile}/{b64Path} ({server.LogPath})");
+                return events;
             }
 
             // parse each line

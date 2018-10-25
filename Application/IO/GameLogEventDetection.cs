@@ -37,7 +37,7 @@ namespace IW4MAdmin.Application.IO
             Server = server;
         }
 
-        public void PollForChanges()
+        public async Task PollForChanges()
         {
             while (!Server.Manager.ShutdownRequested())
             {
@@ -45,7 +45,7 @@ namespace IW4MAdmin.Application.IO
                 {
                     try
                     {
-                        UpdateLogEvents();
+                        await UpdateLogEvents();
                     }
 
                     catch (Exception e)
@@ -59,7 +59,7 @@ namespace IW4MAdmin.Application.IO
             }
         }
 
-        private void UpdateLogEvents()
+        private async Task UpdateLogEvents()
         {
             long fileSize = Reader.Length;
 
@@ -74,7 +74,7 @@ namespace IW4MAdmin.Application.IO
 
             PreviousFileSize = fileSize;
 
-            var events = Reader.ReadEventsFromLog(Server, fileDiff, 0);
+            var events = await Reader.ReadEventsFromLog(Server, fileDiff, 0);
 
             foreach (var ev in events)
             {

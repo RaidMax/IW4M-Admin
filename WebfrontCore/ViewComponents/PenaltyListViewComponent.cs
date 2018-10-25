@@ -30,7 +30,7 @@ namespace WebfrontCore.ViewComponents
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
                 // show time passed if ban
-                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : $"{(p.Expires.Value.Year == DateTime.MaxValue.Year ? Utilities.GetTimePassed(p.When, true) : Utilities.TimeSpanText(p.Expires.Value - DateTime.UtcNow))}",
+                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : $"{((p.Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? Utilities.GetTimePassed(p.When, true) : Utilities.TimeSpanText((p.Expires ?? DateTime.MaxValue) - DateTime.UtcNow))}",
                 Sensitive = p.Type == Penalty.PenaltyType.Flag,
                 AutomatedOffense = p.AutomatedOffense
             });

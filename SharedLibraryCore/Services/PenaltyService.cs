@@ -145,7 +145,7 @@ namespace SharedLibraryCore.Services
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
                                               Type = penalty.Type.ToString(),
-                                              TimeRemaining = now > penalty.Expires ? "" : penalty.Expires.ToString(),
+                                              TimeRemaining = penalty.Expires.HasValue ?  (now > penalty.Expires ? "" : penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
                                               AutomatedOffense = penalty.AutomatedOffense
                                           },
                                           When = penalty.When,
@@ -160,7 +160,7 @@ namespace SharedLibraryCore.Services
                             ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
 
                         var pi = ((PenaltyInfo)p.Value);
-                        if (pi.TimeRemaining.Length > 0)
+                        if (pi.TimeRemaining?.Length > 0)
                             pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
 
                     });

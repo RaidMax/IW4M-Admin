@@ -1,10 +1,65 @@
+#include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
-#include common_scripts\utility;
+#include maps\mp\gametypes\_playerlogic;
 
 init()
 {
-	level thread WaitForCommand();
+	SetDvarIfUninitialized("sv_team_balance_assignments", "");
+	SetDvarIfUninitialized("sv_iw4madmin_serverid", 0);
+	SetDvarIfUninitialized("sv_iw4madmin_apiurl", "http://127.0.0.1:1624/api/gsc/");
+	level.apiUrl = GetDvar("sv_iw4madmin_apiurl");
+	//level thread WaitForCommand();
+	level thread onPlayerConnect();
+	level thread onPlayerDisconnect();
+}
+
+onPlayerConnect()
+{
+	for(;;)
+	{
+		level waittill( "connected", player );		
+		player thread onJoinedTeam();
+	}
+}
+
+onPlayerDisconnect()
+{
+	for(;;)
+	{
+		level waittill( "disconnected", player );
+		logPrint("player disconnected\n");
+		level.players[0] SetTeamBalanceAssignments(true);
+	}
+}
+
+onJoinedTeam()
+{
+	self endon("disconnect");
+	
+	for(;;)
+	{
+		self waittill( "joined_team" );
+		self SetTeamBalanceAssignments(false);
+	}
+}
+
+SetTeamBalanceAssignments(isDisconnect)
+{	
+	assignments = GetDvar("sv_team_balance_assignments");
+	dc = "";
+	if (isDisconnect)
+	{
+		dc = "&isDisconnect=true";
+	}
+	url = level.apiUrl + "GetTeamAssignments/" + self.guid + "/?teams=" + assignments + dc + "&serverId=" + GetDvar("sv_iw4madmin_serverid");
+	newAssignments = GetHttpString(url);
+	SetDvar("sv_team_balance_assignments", newAssignments.data);
+	
+	if (newAssignments.success)
+	{
+		BalanceTeams(strtok(newAssignments.data, ","));
+	}
 }
 
 WaitForCommand()
@@ -33,41 +88,79 @@ WaitForCommand()
 
 SendAlert(clientId, alertType, sound, message)
 {
-	client = playerForClientId(clientId);
+	client = getPlayerFromClientNum(clientId);
 
 	client thread playLeaderDialogOnPlayer(sound, client.team);
 	client playLocalSound(sound);
 	client iPrintLnBold("^1" + alertType + ": ^3" + message);
 }
 
+GetHttpString(url)
+{
+    response = spawnStruct();
+    response.success = false;
+	response.data = undefined;
+	
+	logPrint("Making request to " + url + "\n");
+    request = httpGet(url);
+    request waittill("done", success, data);
+
+    if(success != 0){
+        logPrint("Request succeeded\n");
+        response.success = true;
+        response.data = data;
+    }
+	
+    else
+    {
+         logPrint("Request failed\n");
+    }
+	
+    return response;
+}
+
 BalanceTeams(commandArgs)
 {
-	if (isRoundBased())
+	if (level.teamBased)
 	{
-		iPrintLnBold("Balancing Teams..");
+		printOnPlayers("^5Balancing Teams...");
 
 		for (i = 0; i < commandArgs.size; i+= 2)
 		{
-			teamNum = commandArgs[i+1];
-			clientNum = commandArgs[i];
-			if (teamNum == "0")
+			teamNum = int(commandArgs[i+1]);
+			clientNum = int(commandArgs[i]);
+			
+			//printOnPlayers("[" + teamNum + "," + clientNum + "]");
+			
+			if (teamNum == 2)
+			{
 				newTeam = "allies";
+			}
 			else
+			{
 				newTeam = "axis";
-			player = level.players[clientNum];
+			}
+			
+			player = getPlayerFromClientNum(clientNum);
 
-			if (!isPlayer(player))
-				continue;
-
-			iPrintLnBold(player.name + " " + teamNum);
+			//if (!isPlayer(player))
+			//	continue;
 
 			switch (newTeam)
 			{
 				case "axis":
-					player[[level.axis]]();
+					if (player.team != "axis")
+					{
+						//printOnPlayers("moving " + player.name + " to axis");
+						player[[level.axis]]();
+					}
 					break;
 				case "allies":
-					player[[level.allies]]();
+					if (player.team != "allies")
+					{
+						//printOnPlayers("moving " + player.name + " to allies");
+						player[[level.allies]]();
+					}
 					break;
 			}
 		}

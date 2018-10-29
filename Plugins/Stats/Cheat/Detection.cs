@@ -46,40 +46,40 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         /// <summary>
         /// Analyze kill and see if performed by a cheater
         /// </summary>
-        /// <param name="kill">kill performed by the player</param>
+        /// <param name="hit">kill performed by the player</param>
         /// <returns>true if detection reached thresholds, false otherwise</returns>
-        public DetectionPenaltyResult ProcessKill(EFClientKill kill, bool isDamage)
+        public DetectionPenaltyResult ProcessHit(EFClientKill hit, bool isDamage)
         {
-            if ((kill.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
-                kill.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
-                kill.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
-                kill.HitLoc == IW4Info.HitLocation.none || kill.TimeOffset - LastOffset < 0 ||
+            if ((hit.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
+                hit.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
+                hit.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
+                hit.HitLoc == IW4Info.HitLocation.none || hit.TimeOffset - LastOffset < 0 ||
                 // hack: prevents false positives
-                (LastWeapon != kill.Weapon && (kill.TimeOffset - LastOffset) == 50))
+                (LastWeapon != hit.Weapon && (hit.TimeOffset - LastOffset) == 50))
                 return new DetectionPenaltyResult()
                 {
                     ClientPenalty = Penalty.PenaltyType.Any,
                 };
 
             DetectionPenaltyResult result = null;
-            LastWeapon = kill.Weapon;
+            LastWeapon = hit.Weapon;
 
-            HitLocationCount[kill.HitLoc]++;
+            HitLocationCount[hit.HitLoc]++;
+            HitCount++;
+
             if (!isDamage)
             {
                 Kills++;
             }
 
-            HitCount++;
-
             #region VIEWANGLES   
-            if (kill.AnglesList.Count >= 2)
+            if (hit.AnglesList.Count >= 2)
             {
-                double realAgainstPredict = Vector3.ViewAngleDistance(kill.AnglesList[0], kill.AnglesList[1], kill.ViewAngles);
+                double realAgainstPredict = Vector3.ViewAngleDistance(hit.AnglesList[0], hit.AnglesList[1], hit.ViewAngles);
 
                 // LIFETIME
                 var hitLoc = ClientStats.HitLocations
-                    .First(hl => hl.Location == kill.HitLoc);
+                    .First(hl => hl.Location == hit.HitLoc);
 
                 float previousAverage = hitLoc.HitOffsetAverage;
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
@@ -88,11 +88,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset(hitLoc.HitCount) &&
                     hitLoc.HitCount > 100)
                 {
-                    Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
-                    Log.WriteDebug($"Lifetime Average = {newAverage}");
-                    Log.WriteDebug($"Bone = {hitLoc.Location}");
-                    Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
-                    Log.WriteDebug($"ID = {kill.AttackerId}");
+                    //Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
+                    //Log.WriteDebug($"Lifetime Average = {newAverage}");
+                    //Log.WriteDebug($"Bone = {hitLoc.Location}");
+                    //Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
+                    //Log.WriteDebug($"ID = {hit.AttackerId}");
 
                     result = new DetectionPenaltyResult()
                     {
@@ -110,10 +110,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (sessAverage > Thresholds.MaxOffset(HitCount) &&
                     HitCount > 30)
                 {
-                    Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
-                    Log.WriteDebug($"Session Average = {sessAverage}");
-                    Log.WriteDebug($"HitCount = {HitCount}");
-                    Log.WriteDebug($"ID = {kill.AttackerId}");
+                    //Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
+                    //Log.WriteDebug($"Session Average = {sessAverage}");
+                    //Log.WriteDebug($"HitCount = {HitCount}");
+                    //Log.WriteDebug($"ID = {hit.AttackerId}");
 
                     result = new DetectionPenaltyResult()
                     {
@@ -130,17 +130,20 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 #endif
             }
 
-            double currentStrain = Strain.GetStrain(isDamage, kill.Damage, kill.Distance / 0.0254, kill.ViewAngles, Math.Max(50, kill.TimeOffset - LastOffset));
-            LastOffset = kill.TimeOffset;
+            double currentStrain = Strain.GetStrain(isDamage, hit.Damage, hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, hit.TimeOffset - LastOffset));
+#if DEBUG == true
+            Log.WriteDebug($"Current Strain: {currentStrain}");
+#endif
+            LastOffset = hit.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)
             {
                 ClientStats.MaxStrain = currentStrain;
             }
 
+
             // flag
-            if (currentStrain > Thresholds.MaxStrainFlag &&
-                HitCount >= 10)
+            if (currentStrain > Thresholds.MaxStrainFlag)
             {
                 result = new DetectionPenaltyResult()
                 {
@@ -153,7 +156,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             // ban
             if (currentStrain > Thresholds.MaxStrainBan &&
-                HitCount >= 15)
+                HitCount >= 5)
             {
                 result = new DetectionPenaltyResult()
                 {
@@ -163,11 +166,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     Type = DetectionType.Strain
                 };
             }
-
-#if DEBUG
-            Log.WriteDebug($"Current Strain: {currentStrain}");
-#endif
-
             #endregion
 
             #region SESSION_RATIOS
@@ -197,7 +195,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     if (currentHeadshotRatio > maxHeadshotLerpValueForBan)
                     {
                         Log.WriteDebug("**Maximum Headshot Ratio Reached For Ban**");
-                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
                         Log.WriteDebug($"**HitCount: {HitCount}");
                         Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
                         Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
@@ -218,7 +216,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     else
                     {
                         Log.WriteDebug("**Maximum Headshot Ratio Reached For Flag**");
-                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
                         Log.WriteDebug($"**HitCount: {HitCount}");
                         Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
                         Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
@@ -247,7 +245,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     if (currentMaxBoneRatio > maxBoneRatioLerpValueForBan)
                     {
                         Log.WriteDebug("**Maximum Bone Ratio Reached For Ban**");
-                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
                         Log.WriteDebug($"**HitCount: {HitCount}");
                         Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
                         Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForBan}");
@@ -268,7 +266,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     else
                     {
                         Log.WriteDebug("**Maximum Bone Ratio Reached For Flag**");
-                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
                         Log.WriteDebug($"**HitCount: {HitCount}");
                         Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
                         Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForFlag}");
@@ -309,7 +307,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan && chestHits >= Thresholds.MediumSampleMinKills + 30)
                     {
                         Log.WriteDebug("**Maximum Chest/Abdomen Ratio Reached For Ban**");
-                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
                         Log.WriteDebug($"**Chest Hits: {chestHits}");
                         Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
                         Log.WriteDebug($"**MaxRatio {chestAbdomenLerpValueForBan}");
@@ -330,7 +328,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     else
                     {
                         Log.WriteDebug("**Maximum Chest/Abdomen Ratio Reached For Flag**");
-                        Log.WriteDebug($"ClientId: {kill.AttackerId}");
+                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
                         Log.WriteDebug($"**Chest Hits: {chestHits}");
                         Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
                         Log.WriteDebug($"**MaxRatio {chestAbdomenRatioLerpValueForFlag}");
@@ -356,31 +354,31 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             Tracker.OnChange(new EFACSnapshot()
             {
-                When = kill.When,
+                When = hit.When,
                 ClientId = ClientStats.ClientId,
                 SessionAngleOffset = AngleDifferenceAverage,
                 CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds,
                 CurrentStrain = currentStrain,
-                CurrentViewAngle = kill.ViewAngles,
+                CurrentViewAngle = hit.ViewAngles,
                 Hits = HitCount,
                 Kills = Kills,
                 Deaths = ClientStats.SessionDeaths,
-                HitDestinationId = kill.DeathOrigin.Vector3Id,
-                HitDestination = kill.DeathOrigin,
-                HitOriginId = kill.KillOrigin.Vector3Id,
-                HitOrigin = kill.KillOrigin,
+                HitDestinationId = hit.DeathOrigin.Vector3Id,
+                HitDestination = hit.DeathOrigin,
+                HitOriginId = hit.KillOrigin.Vector3Id,
+                HitOrigin = hit.KillOrigin,
                 EloRating = ClientStats.EloRating,
-                HitLocation = kill.HitLoc,
+                HitLocation = hit.HitLoc,
                 LastStrainAngle = Strain.LastAngle,
-                PredictedViewAngles = kill.AnglesList,
+                PredictedViewAngles = hit.AnglesList,
                 // this is in "meters"
-                Distance = kill.Distance,
+                Distance = hit.Distance,
                 SessionScore = ClientStats.SessionScore,
-                HitType = kill.DeathType,
+                HitType = hit.DeathType,
                 SessionSPM = ClientStats.SessionSPM,
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
-                WeaponId = kill.Weapon
+                WeaponId = hit.Weapon
             });
 
             return result ?? new DetectionPenaltyResult()

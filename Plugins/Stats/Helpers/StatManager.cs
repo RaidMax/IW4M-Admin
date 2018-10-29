@@ -548,7 +548,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     if (Plugin.Config.Configuration().EnableAntiCheat)
                     {
-                        ApplyPenalty(clientDetection.ProcessKill(hit, isDamage), clientDetection, attacker, ctx);
+                        ApplyPenalty(clientDetection.ProcessHit(hit, isDamage), clientDetection, attacker, ctx);
                         ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
                     }
 

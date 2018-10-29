@@ -14,8 +14,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public Vector3 LastAngle { get; private set; }
         public double LastDeltaTime { get; private set; }
 
-        public int TimesReachedMaxStrain { get; private set; }
-
         public double GetStrain(bool isDamage, int damage, double killDistance, Vector3 newAngle, double deltaTime)
         {
             if (LastAngle == null)
@@ -33,6 +31,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             double[] distance = Helpers.Extensions.AngleStuff(newAngle, LastAngle);
             LastDistance = distance[0] + distance[1];
 
+#if DEBUG == true
+            Console.WriteLine($"Last Distance = {LastDistance}");
+#endif
+
             // this happens on first kill
             if ((distance[0] == 0 && distance[1] == 0) ||
                 deltaTime == 0 ||
@@ -41,13 +43,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 return CurrentStrain;
             }
 
-            double newStrain = Math.Pow(distance[0] + distance[1], 0.99) / deltaTime;
+            double newStrain = Math.Pow(LastDistance, 0.99) / deltaTime;
             newStrain *= killDistance / 1000.0;
 
             CurrentStrain += newStrain;
-
-            if (CurrentStrain > Thresholds.MaxStrainBan)
-                TimesReachedMaxStrain++;
 
             LastAngle = newAngle;
             return CurrentStrain;

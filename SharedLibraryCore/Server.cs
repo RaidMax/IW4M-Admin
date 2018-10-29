@@ -119,7 +119,9 @@ namespace SharedLibraryCore
         {
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
 
-            //Logger.WriteVerbose(message.StripColors());
+#if DEBUG == true
+            Logger.WriteVerbose(message.StripColors());
+#endif
 
             var e = new GameEvent()
             {

@@ -6,6 +6,7 @@
     <RuntimeFrameworkVersion>2.1.5</RuntimeFrameworkVersion>
     <ApplicationIcon />
     <StartupObject />
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

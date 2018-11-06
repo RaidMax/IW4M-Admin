@@ -1,5 +1,6 @@
 ﻿using IW4MAdmin.Application;
 using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Objects;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace Tests
             var e = new GameEvent()
             {
                 Type = GameEvent.EventType.Connect,
-                Origin = new Player()
+                Origin = new EFClient()
                 {
                     Name = $"Player1",
                     NetworkId = 1,
@@ -33,7 +34,7 @@ namespace Tests
             Manager.GetEventHandler().AddEvent(e);
             e.OnProcessed.Wait();
 
-            var client = Manager.GetServers()[0].Players[0];
+            var client = Manager.GetServers()[0].Clients[0];
 
             e = new GameEvent()
             {

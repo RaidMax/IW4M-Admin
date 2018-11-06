@@ -1,23 +1,21 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
+﻿using IW4MAdmin.Plugins.Stats.Cheat;
+using IW4MAdmin.Plugins.Stats.Models;
+using IW4MAdmin.Plugins.Stats.Web.Dtos;
+using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
+using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
-using SharedLibraryCore.Commands;
-using IW4MAdmin.Plugins.Stats.Models;
-using System.Text.RegularExpressions;
-using IW4MAdmin.Plugins.Stats.Web.Dtos;
-using SharedLibraryCore.Database;
-using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Services;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -40,14 +38,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             OnProcessingSensitive = new SemaphoreSlim(1, 1);
         }
 
-        public EFClientStatistics GetClientStats(int clientId, int serverId) => Servers[serverId].PlayerStats[clientId];
+        public EFClientStatistics GetClientStats(int clientId, int serverId)
+        {
+            return Servers[serverId].PlayerStats[clientId];
+        }
 
         public static Expression<Func<EFRating, bool>> GetRankingFunc(int? serverId = null)
         {
             var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
             return (r) => r.ServerId == serverId &&
                 r.When > fifteenDaysAgo &&
-                r.RatingHistory.Client.Level != Player.Permission.Banned &&
+                r.RatingHistory.Client.Level != EFClient.Permission.Banned &&
                 r.Newest &&
                 r.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime;
         }
@@ -235,7 +236,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="pl">Player to add/retrieve stats for</param>
         /// <returns>EFClientStatistic of specified player</returns>
-        public async Task<EFClientStatistics> AddPlayer(Player pl)
+        public async Task<EFClientStatistics> AddPlayer(EFClient pl)
         {
             await OnProcessingSensitive.WaitAsync();
 
@@ -373,7 +374,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="pl">Disconnecting client</param>
         /// <returns></returns>
-        public async Task RemovePlayer(Player pl)
+        public async Task RemovePlayer(EFClient pl)
         {
             Log.WriteInfo($"Removing {pl} from stats");
 
@@ -432,7 +433,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// Process stats for kill event
         /// </summary>
         /// <returns></returns>
-        public async Task AddScriptHit(bool isDamage, DateTime time, Player attacker, Player victim, int serverId, string map, string hitLoc, string type,
+        public async Task AddScriptHit(bool isDamage, DateTime time, EFClient attacker, EFClient victim, int serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads,
             string fraction, string visibilityPercentage, string snapAngles)
         {
@@ -548,7 +549,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     if (Plugin.Config.Configuration().EnableAntiCheat)
                     {
-                        ApplyPenalty(clientDetection.ProcessHit(hit, isDamage), clientDetection, attacker, ctx);
+                        if (clientDetection.QueuedHits.Count > Detection.QUEUE_COUNT)
+                        {
+                            while (clientDetection.QueuedHits.Count > 0)
+                            {
+                                clientDetection.QueuedHits = clientDetection.QueuedHits.OrderBy(_hits => _hits.TimeOffset).ToList();
+                                var oldestHit = clientDetection.QueuedHits.First();
+                                clientDetection.QueuedHits.RemoveAt(0);
+                                ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage), clientDetection, attacker, ctx);
+                            }
+                        }
+
+                        else
+                        {
+                            clientDetection.QueuedHits.Add(hit);
+                        }
+
                         ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
                     }
 
@@ -567,16 +583,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        void ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, Player attacker, DatabaseContext ctx)
+        void ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, EFClient attacker, DatabaseContext ctx)
         {
             switch (penalty.ClientPenalty)
             {
                 case Penalty.PenaltyType.Ban:
-                    if (attacker.Level == Player.Permission.Banned)
+                    if (attacker.Level == EFClient.Permission.Banned)
                     {
                         break;
                     }
-                    attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new Player()
+                    attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new EFClient()
                     {
                         ClientId = 1,
                         AdministeredPenalties = new List<EFPenalty>()
@@ -588,7 +604,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                                 $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
                                         }
                                     },
-                        Level = Player.Permission.Console,
+                        Level = EFClient.Permission.Console,
                         CurrentServer = attacker.CurrentServer
                     });
                     if (clientDetection.Tracker.HasChanges)
@@ -597,7 +613,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                     break;
                 case Penalty.PenaltyType.Flag:
-                    if (attacker.Level != Player.Permission.User)
+                    if (attacker.Level != EFClient.Permission.User)
                     {
                         break;
                     }
@@ -606,10 +622,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
                             $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
 
-                    attacker.Flag(flagReason, new Player()
+                    attacker.Flag(flagReason, new EFClient()
                     {
                         ClientId = 1,
-                        Level = Player.Permission.Console,
+                        Level = EFClient.Permission.Console,
                         CurrentServer = attacker.CurrentServer,
                     });
 
@@ -677,7 +693,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        public async Task AddStandardKill(Player attacker, Player victim)
+        public async Task AddStandardKill(EFClient attacker, EFClient victim)
         {
             int serverId = attacker.CurrentServer.GetHashCode();
 
@@ -712,10 +728,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // this happens when the round has changed
             if (attackerStats.SessionScore == 0)
+            {
                 attackerStats.LastScore = 0;
+            }
 
             if (victimStats.SessionScore == 0)
+            {
                 victimStats.LastScore = 0;
+            }
 
             attackerStats.SessionScore = attacker.Score;
             victimStats.SessionScore = victim.Score;
@@ -780,7 +800,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <param name="client">client to update</param>
         /// <param name="clientStats">stats of client that is being updated</param>
         /// <returns></returns>
-        private async Task UpdateStatHistory(Player client, EFClientStatistics clientStats)
+        private async Task UpdateStatHistory(EFClient client, EFClientStatistics clientStats)
         {
             int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
 
@@ -1158,7 +1178,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             // the web users can have no account
             if (clientId < 1)
+            {
                 return;
+            }
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {

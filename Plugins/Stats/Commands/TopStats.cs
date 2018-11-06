@@ -9,6 +9,7 @@ using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Database;
 using System.Collections.Generic;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -33,7 +34,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                on client.CurrentAliasId equals alias.AliasId
                                where stats.ServerId == serverId
                                where stats.TimePlayed >= Plugin.Config.Configuration().TopPlayersMinPlayTime
-                               where client.Level != Player.Permission.Banned
+                               where client.Level != EFClient.Permission.Banned
                                where client.LastConnection >= fifteenDaysAgo
                                orderby stats.Performance descending
                                select new
@@ -66,7 +67,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             return topStatsText;
         }
 
-        public TopStats() : base("topstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_DESC"], "ts", Player.Permission.User, false) { }
+        public TopStats() : base("topstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_DESC"], "ts", EFClient.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {

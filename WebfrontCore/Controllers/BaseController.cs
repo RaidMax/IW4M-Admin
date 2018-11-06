@@ -46,7 +46,7 @@ namespace WebfrontCore.Controllers
             Client = Client ?? new EFClient()
             {
                 ClientId = -1,
-                Level = Player.Permission.User,
+                Level = EFClient.Permission.User,
                 CurrentAlias = new EFAlias() { Name = "Web Console Guest" }
             };
 
@@ -55,7 +55,7 @@ namespace WebfrontCore.Controllers
                 try
                 {
                     Client.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
-                    Client.Level = (Player.Permission)Enum.Parse(typeof(Player.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
+                    Client.Level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
                     Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
                     var stillExists = Manager.GetPrivilegedClients()[Client.ClientId];
 
@@ -81,7 +81,7 @@ namespace WebfrontCore.Controllers
             else
             {
                 Client.ClientId = 1;
-                Client.Level = Player.Permission.Console;
+                Client.Level = EFClient.Permission.Console;
                 Client.CurrentAlias = new EFAlias() { Name = "IW4MAdmin" };
             }
 

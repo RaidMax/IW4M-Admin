@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using System;
@@ -23,7 +24,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                 int clientNum = Int32.Parse(lineSplit[2]);
 
-                var player = new Player()
+                var player = new EFClient()
                 {
                     NetworkId = lineSplit[1].ConvertLong(),
                     ClientNumber = clientNum,
@@ -33,11 +34,11 @@ namespace IW4MAdmin.Application.EventParsers
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.Join,
-                    Origin = new Player()
+                    Origin = new EFClient()
                     {
                         ClientId = 1
                     },
-                    Target = new Player()
+                    Target = new EFClient()
                     {
                         ClientId = 1
                     },

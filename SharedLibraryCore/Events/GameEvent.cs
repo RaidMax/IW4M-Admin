@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore
@@ -50,11 +51,11 @@ namespace SharedLibraryCore
             /// </summary>
             Stop,
             /// <summary>
-            /// a client was detecting as connecting via RCon
+            /// a client was detecting as connecting via log
             /// </summary>
             Connect,
             /// <summary>
-            /// a client was detecting joining via log
+            /// a client was detecting joining by RCon
             /// </summary>
             Join,
             /// <summary>
@@ -170,8 +171,8 @@ namespace SharedLibraryCore
         public EventType Type;
         public string Data; // Data is usually the message sent by player
         public string Message;
-        public Player Origin;
-        public Player Target;
+        public EFClient Origin;
+        public EFClient Target;
         public Server Owner;
         public Boolean Remote = false;
         public object Extra { get; set; }
@@ -200,7 +201,7 @@ namespace SharedLibraryCore
         public static bool ShouldOriginEventBeDelayed(GameEvent queuedEvent)
         {
             return queuedEvent.Origin != null &&
-                                    (queuedEvent.Origin.State != Player.ClientState.Connected &&
+                                    (queuedEvent.Origin.State != EFClient.ClientState.Connected &&
                                     // we want to allow join and quit events
                                     queuedEvent.Type != EventType.Connect &&
                                     queuedEvent.Type != EventType.Join &&
@@ -219,7 +220,7 @@ namespace SharedLibraryCore
         public static bool ShouldTargetEventBeDelayed(GameEvent queuedEvent)
         {
             return (queuedEvent.Target != null && queuedEvent.Target.ClientNumber != -1) &&
-                                    (queuedEvent.Target.State != Player.ClientState.Connected &&
+                                    (queuedEvent.Target.State != EFClient.ClientState.Connected &&
                                     queuedEvent.Target.NetworkId != 0 &&
                                     queuedEvent.Origin?.ClientId != 1);
         }

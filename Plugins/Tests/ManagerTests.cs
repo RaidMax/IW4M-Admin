@@ -1,5 +1,6 @@
 ﻿using IW4MAdmin.Application;
 using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using System;
@@ -53,7 +54,7 @@ namespace Tests
                 var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.Join,
-                    Origin = new Player()
+                    Origin = new EFClient()
                     {
                         Name = $"Player{i}",
                         NetworkId = i,
@@ -78,7 +79,7 @@ namespace Tests
                 var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.Disconnect,
-                    Origin = new Player()
+                    Origin = new EFClient()
                     {
                         Name = $"Player{i}",
                         NetworkId = i,
@@ -113,7 +114,7 @@ namespace Tests
                 var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.Connect,
-                    Origin = new Player()
+                    Origin = new EFClient()
                     {
                         Name = $"Player{i}",
                         NetworkId = i,
@@ -134,7 +135,7 @@ namespace Tests
                 waiters.Dequeue().OnProcessed.Wait();
             }
 
-            int actualClientNum = server.GetPlayersAsList().Count(p => p.State == Player.ClientState.Connected);
+            int actualClientNum = server.GetClientsAsList().Count(p => p.State == EFClient.ClientState.Connected);
             Assert.True(actualClientNum == clientNum, $"client connected states don't match [{actualClientNum}:{clientNum}");
 
             for (int i = clientIndexStart; i < clientNum + clientIndexStart; i++)
@@ -142,7 +143,7 @@ namespace Tests
                 var e = new GameEvent()
                 {
                     Type = GameEvent.EventType.Disconnect,
-                    Origin = new Player()
+                    Origin = new EFClient()
                     {
                         Name = $"Player{i}",
                         NetworkId = i,

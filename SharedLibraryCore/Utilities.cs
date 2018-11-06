@@ -15,6 +15,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
+using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore
 {
@@ -27,12 +28,13 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
-        public static Player IW4MAdminClient(Server server = null) => new Player()
+        public static EFClient IW4MAdminClient(Server server = null) => new EFClient()
         {
             ClientId = 1,
-            State = Player.ClientState.Connected,
-            Level = Player.Permission.Console,
-            CurrentServer = server
+            State = EFClient.ClientState.Connected,
+            Level = EFClient.Permission.Console,
+            CurrentServer = server,
+            Name = "IW4MAdmin"
         };
 
         public static string HttpRequest(string location, string header, string headerValue)
@@ -98,16 +100,16 @@ namespace SharedLibraryCore
             return sb.ToString();
         }
 
-        public static Player.Permission MatchPermission(String str)
+        public static EFClient.Permission MatchPermission(String str)
         {
             String lookingFor = str.ToLower();
 
-            for (Player.Permission Perm = Player.Permission.User; Perm < Player.Permission.Console; Perm++)
+            for (EFClient.Permission Perm = EFClient.Permission.User; Perm < EFClient.Permission.Console; Perm++)
                 if (lookingFor.Contains(Perm.ToString().ToLower())
                     || lookingFor.Contains(CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{Perm.ToString().ToUpper()}"].ToLower()))
                     return Perm;
 
-            return Player.Permission.Banned;
+            return EFClient.Permission.Banned;
         }
 
         /// <summary>
@@ -131,25 +133,25 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="level">Specified player level</param>
         /// <returns></returns>
-        public static String ConvertLevelToColor(Player.Permission level, string localizedLevel)
+        public static String ConvertLevelToColor(EFClient.Permission level, string localizedLevel)
         {
             char colorCode = '6';
             // todo: maybe make this game independant?
             switch (level)
             {
-                case Player.Permission.Banned:
+                case EFClient.Permission.Banned:
                     colorCode = '1';
                     break;
-                case Player.Permission.Flagged:
+                case EFClient.Permission.Flagged:
                     colorCode = '9';
                     break;
-                case Player.Permission.Owner:
+                case EFClient.Permission.Owner:
                     colorCode = '5';
                     break;
-                case Player.Permission.User:
+                case EFClient.Permission.User:
                     colorCode = '2';
                     break;
-                case Player.Permission.Trusted:
+                case EFClient.Permission.Trusted:
                     colorCode = '3';
                     break;
                 default:
@@ -159,7 +161,7 @@ namespace SharedLibraryCore
             return $"^{colorCode}{localizedLevel ?? level.ToString()}";
         }
 
-        public static string ToLocalizedLevelName(this Player.Permission perm) => CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
+        public static string ToLocalizedLevelName(this EFClient.Permission perm) => CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
 
         public static String ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
         {
@@ -392,9 +394,9 @@ namespace SharedLibraryCore
             return "unknown";
         }
 
-        public static Player AsPlayer(this Database.Models.EFClient client)
+        public static EFClient AsEFClient(this Database.Models.EFClient client)
         {
-            return client == null ? null : new Player()
+            return client == null ? null : new EFClient()
             {
                 Active = client.Active,
                 AliasLink = client.AliasLink,
@@ -419,7 +421,7 @@ namespace SharedLibraryCore
             };
         }
 
-        public static bool IsPrivileged(this Player p) => p.Level > Player.Permission.User;
+        public static bool IsPrivileged(this EFClient p) => p.Level > EFClient.Permission.User;
 
         public static bool PromptBool(string question)
         {
@@ -524,7 +526,7 @@ namespace SharedLibraryCore
 
         public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
 
-        public static Task<List<Player>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
+        public static Task<List<EFClient>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
 
         public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)
         {

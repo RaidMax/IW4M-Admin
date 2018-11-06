@@ -27,7 +27,7 @@ namespace WebfrontCore.Controllers
                 ClientCount = s.ClientNum,
                 MaxClients = s.MaxClients,
                 GameType = s.Gametype,
-                Players = s.GetPlayersAsList()
+                Players = s.GetClientsAsList()
                 .Select(p => new PlayerInfo
                 {
                     Name = p.Name,
@@ -36,7 +36,7 @@ namespace WebfrontCore.Controllers
                     LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory,
-                PlayerHistory = s.PlayerHistory.ToArray(),
+                PlayerHistory = s.ClientHistory.ToArray(),
             };
             return PartialView("_ClientActivity", serverInfo);
         }

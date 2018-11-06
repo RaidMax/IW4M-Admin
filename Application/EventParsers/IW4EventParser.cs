@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 
@@ -20,7 +21,7 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "JoinTeam")
             {
-                var origin = server.GetPlayersAsList().FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertLong());
+                var origin = server.GetClientsAsList().FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertLong());
 
                 return new GameEvent()
                 {
@@ -41,7 +42,7 @@ namespace IW4MAdmin.Application.EventParsers
                         .Replace("\x15", "")
                         .Trim();
 
-                    var origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2));
+                    var origin = server.GetClientsAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2));
 
                     if (message[0] == '!' || message[0] == '@')
                     {
@@ -70,8 +71,8 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 if (!server.CustomCallback)
                 {
-                    var origin = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6));
-                    var target = server.GetPlayersAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2));
+                    var origin = server.GetClientsAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 6));
+                    var target = server.GetClientsAsList().First(c => c.ClientNumber == Utilities.ClientIdFromString(lineSplit, 2));
 
                     return new GameEvent()
                     {
@@ -86,8 +87,8 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "ScriptKill")
             {
-                var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
-                var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
+                var origin = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+                var target = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.ScriptKill,
@@ -100,8 +101,8 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "ScriptDamage")
             {
-                var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
-                var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
+                var origin = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+                var target = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
 
                 return new GameEvent()
                 {
@@ -120,8 +121,8 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     if (Regex.Match(eventType, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
                     {
-                        var origin = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong());
-                        var target = server.GetPlayersAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
+                        var origin = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong());
+                        var target = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
 
                         return new GameEvent()
                         {
@@ -146,12 +147,12 @@ namespace IW4MAdmin.Application.EventParsers
                         Type = GameEvent.EventType.Join,
                         Data = logLine,
                         Owner = server,
-                        Origin = new Player()
+                        Origin = new EFClient()
                         {
                             Name = regexMatch.Groups[4].ToString().StripColors(),
                             NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
-                            State = Player.ClientState.Connecting,
+                            State = EFClient.ClientState.Connecting,
                             CurrentServer = server
                         }
                     };
@@ -185,11 +186,11 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.MapEnd,
                     Data = lineSplit[0],
-                    Origin = new Player()
+                    Origin = new EFClient()
                     {
                         ClientId = 1
                     },
-                    Target = new Player()
+                    Target = new EFClient()
                     {
                         ClientId = 1
                     },
@@ -205,14 +206,8 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.MapChange,
                     Data = lineSplit[0],
-                    Origin = new Player()
-                    {
-                        ClientId = 1
-                    },
-                    Target = new Player()
-                    {
-                        ClientId = 1
-                    },
+                    Origin = Utilities.IW4MAdminClient(server),
+                    Target = Utilities.IW4MAdminClient(server),
                     Owner = server,
                     Extra = dump.DictionaryFromKeyValue()
                 };
@@ -221,14 +216,8 @@ namespace IW4MAdmin.Application.EventParsers
             return new GameEvent()
             {
                 Type = GameEvent.EventType.Unknown,
-                Origin = new Player()
-                {
-                    ClientId = 1
-                },
-                Target = new Player()
-                {
-                    ClientId = 1
-                },
+                Origin = Utilities.IW4MAdminClient(server),
+                Target = Utilities.IW4MAdminClient(server),
                 Owner = server
             };
         }

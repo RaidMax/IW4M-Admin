@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
@@ -38,11 +39,11 @@ namespace IW4MAdmin.Plugins.Login
 
             if (E.Type == GameEvent.EventType.Command)
             {
-                if (E.Origin.Level < Player.Permission.Moderator ||
-                    E.Origin.Level == Player.Permission.Console)
+                if (E.Origin.Level < EFClient.Permission.Moderator ||
+                    E.Origin.Level == EFClient.Permission.Console)
                     return Task.CompletedTask;
 
-                E.Owner.Manager.GetPrivilegedClients().TryGetValue(E.Origin.ClientId, out Player client);
+                E.Owner.Manager.GetPrivilegedClients().TryGetValue(E.Origin.ClientId, out EFClient client);
 
                 if (((Command)E.Extra).Name == new SharedLibraryCore.Commands.CSetPassword().Name &&
                     client?.Password == null)

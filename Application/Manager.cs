@@ -19,6 +19,7 @@ using SharedLibraryCore.Events;
 
 using IW4MAdmin.Application.API.Master;
 using IW4MAdmin.Application.Migration;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Application
 {
@@ -26,7 +27,7 @@ namespace IW4MAdmin.Application
     {
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
-        public Dictionary<int, Player> PrivilegedClients { get; set; }
+        public Dictionary<int, EFClient> PrivilegedClients { get; set; }
         public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
         public bool IsInitialized { get; private set; }
@@ -60,7 +61,7 @@ namespace IW4MAdmin.Application
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
-            PrivilegedClients = new Dictionary<int, Player>();
+            PrivilegedClients = new Dictionary<int, EFClient>();
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             StartTime = DateTime.UtcNow;
             OnQuit = new ManualResetEventSlim();
@@ -144,7 +145,7 @@ namespace IW4MAdmin.Application
                             if (e.Target != null)
                             {
                                 // update the target incase they left or have newer info
-                                e.Target = newEvent.Owner.GetPlayersAsList()
+                                e.Target = newEvent.Owner.GetClientsAsList()
                                     .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
                                 // we have to throw out the event because they left
                                 if (e.Target == null)
@@ -285,7 +286,7 @@ namespace IW4MAdmin.Application
             }
 
             // todo: optimize this (or replace it)
-            var ipList = (await ClientSvc.Find(c => c.Level > Player.Permission.Trusted))
+            var ipList = (await ClientSvc.Find(c => c.Level > EFClient.Permission.Trusted))
                 .Select(c => new
                 {
                     c.Password,
@@ -299,7 +300,7 @@ namespace IW4MAdmin.Application
             {
                 try
                 {
-                    PrivilegedClients.Add(a.ClientId, new Player()
+                    PrivilegedClients.Add(a.ClientId, new EFClient()
                     {
                         Name = a.Name,
                         ClientId = a.ClientId,
@@ -593,13 +594,13 @@ namespace IW4MAdmin.Application
             return MessageTokens;
         }
 
-        public IList<Player> GetActiveClients() => _servers.SelectMany(s => s.Players).Where(p => p != null).ToList();
+        public IList<EFClient> GetActiveClients() => _servers.SelectMany(s => s.Clients).Where(p => p != null).ToList();
 
         public ClientService GetClientService() => ClientSvc;
         public AliasService GetAliasService() => AliasSvc;
         public PenaltyService GetPenaltyService() => PenaltySvc;
         public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
-        public IDictionary<int, Player> GetPrivilegedClients() => PrivilegedClients;
+        public IDictionary<int, EFClient> GetPrivilegedClients() => PrivilegedClients;
         public bool ShutdownRequested() => !Running;
         public IEventHandler GetEventHandler() => Handler;
 

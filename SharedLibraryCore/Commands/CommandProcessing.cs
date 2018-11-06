@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Exceptions;
+﻿using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,7 @@ namespace SharedLibraryCore.Commands
                     var found = await Manager.GetClientService().Get(dbID);
                     if (found != null)
                     {
-                        E.Target = found.AsPlayer();
+                        E.Target = found;
                         E.Target.CurrentServer = E.Owner;
                         E.Data = String.Join(" ", Args.Skip(1));
                     }
@@ -68,14 +69,14 @@ namespace SharedLibraryCore.Commands
 
                 else if (Args[0].Length < 3 && cNum > -1 && cNum < E.Owner.MaxClients) // user specifying target by client num
                 {
-                    if (E.Owner.Players[cNum] != null)
+                    if (E.Owner.Clients[cNum] != null)
                     {
-                        E.Target = E.Owner.Players[cNum];
+                        E.Target = E.Owner.Clients[cNum];
                         E.Data = String.Join(" ", Args.Skip(1));
                     }
                 }
 
-                List<Player> matchingPlayers;
+                List<EFClient> matchingPlayers;
 
                 if (E.Target == null && C.RequiresTarget) // Find active player including quotes (multiple words)
                 {

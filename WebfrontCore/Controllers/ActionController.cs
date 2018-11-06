@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using WebfrontCore.ViewModels;
-using static SharedLibraryCore.Objects.Player;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace WebfrontCore.Controllers
 {

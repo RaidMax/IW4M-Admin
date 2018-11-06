@@ -8,12 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using SharedLibraryCore.Database;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
-        public ResetStats() : base("resetstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_DESC"], "rs", Player.Permission.User, false) { }
+        public ResetStats() : base("resetstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_DESC"], "rs", EFClient.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {

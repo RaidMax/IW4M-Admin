@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SharedLibraryCore.Database.Models
 {
-    public class EFClient : SharedEntity
+    public partial class EFClient : SharedEntity
     {
         [Key]
         public int ClientId { get; set; }
@@ -25,7 +25,7 @@ namespace SharedLibraryCore.Database.Models
         [ForeignKey("AliasLinkId")]
         public virtual EFAliasLink AliasLink { get; set; }
         [Required]
-        public Objects.Player.Permission Level { get; set; }
+        public Permission Level { get; set; }
 
         [Required]
         public int CurrentAliasId { get; set; }
@@ -57,11 +57,5 @@ namespace SharedLibraryCore.Database.Models
 
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }
-
-        public EFClient()
-        {
-            ReceivedPenalties = new List<EFPenalty>();
-            AdministeredPenalties = new List<EFPenalty>();
-        }
     }
 }

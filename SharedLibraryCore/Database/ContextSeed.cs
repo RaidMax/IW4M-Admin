@@ -3,6 +3,7 @@ using SharedLibraryCore.Database.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Database
 {
@@ -47,7 +48,7 @@ namespace SharedLibraryCore.Database
                     Connections = 0,
                     FirstConnection = DateTime.UtcNow,
                     LastConnection = DateTime.UtcNow,
-                    Level = Objects.Player.Permission.Console,
+                    Level = Permission.Console,
                     Masked = true,
                     NetworkId = 0,
                     AliasLinkId = 1,

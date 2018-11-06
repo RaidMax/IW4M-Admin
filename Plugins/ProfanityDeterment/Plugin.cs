@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 
@@ -48,7 +49,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                 if (containsObjectionalWord)
                 {
-                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
+                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new EFClient()
                     {
                         ClientId = 1,
                         CurrentServer = E.Owner
@@ -85,7 +86,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     var clientProfanity = ProfanityCounts[E.Origin.ClientId];
                     if (clientProfanity.Infringements >= Settings.Configuration().KickAfterInfringementCount)
                     {
-                        clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new Player()
+                        clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new EFClient()
                         {
                             ClientId = 1,
                             CurrentServer = E.Owner
@@ -96,7 +97,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     {
                         clientProfanity.Infringements++;
 
-                        clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new Player()
+                        clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new EFClient()
                         {
                             ClientId = 1,
                             CurrentServer = E.Owner

@@ -8,6 +8,7 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Objects;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
 {
@@ -35,7 +36,7 @@ namespace SharedLibraryCore.Services
                 {
                     await context.Clients
                         .Where(c => c.AliasLinkId == addedEntity.LinkId)
-                        .ForEachAsync(c => c.Level = Objects.Player.Permission.Banned);
+                        .ForEachAsync(c => c.Level = Permission.Banned);
                 }
 
                 // make flags propogate to all aliases
@@ -43,7 +44,7 @@ namespace SharedLibraryCore.Services
                 {
                     await context.Clients
                       .Where(c => c.AliasLinkId == addedEntity.LinkId)
-                      .ForEachAsync(c => c.Level = Objects.Player.Permission.Flagged);
+                      .ForEachAsync(c => c.Level = Permission.Flagged);
                 }
 
                 context.Penalties.Add(addedEntity);
@@ -221,10 +222,12 @@ namespace SharedLibraryCore.Services
                 var iqPenalties = context.Penalties
                     .Where(p => p.LinkId == linkId ||
                          p.Link.Children.Any(a => a.IPAddress == ip))
+                    .Where(p => p.Type == Penalty.PenaltyType.TempBan ||
+                         p.Type == Penalty.PenaltyType.Ban ||
+                         p.Type == Penalty.PenaltyType.Flag)
                     .Where(p => p.Active)
                     .Where(p => p.Expires == null || p.Expires > now);
-                
-              
+       
 #if DEBUG == true
                 var penaltiesSql = iqPenalties.ToSql();
 #endif
@@ -256,7 +259,7 @@ namespace SharedLibraryCore.Services
                         {
                             await internalContext.Clients
                                 .Where(c => c.AliasLinkId == p.LinkId)
-                                .ForEachAsync(c => c.Level = Player.Permission.User);
+                                .ForEachAsync(c => c.Level = EFClient.Permission.User);
                             await internalContext.SaveChangesAsync();
                         }
                     }

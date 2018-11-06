@@ -13,12 +13,13 @@ using Microsoft.EntityFrameworkCore;
 using System.Net;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin.Plugins.Welcome
 {
     public class Plugin : IPlugin
     {
-        String TimesConnected(Player P)
+        String TimesConnected(EFClient P)
         {
             int connection = P.Connections;
             String Prefix = String.Empty;
@@ -85,13 +86,13 @@ namespace IW4MAdmin.Plugins.Welcome
         {
             if (E.Type == GameEvent.EventType.Connect)
             {
-                Player newPlayer = E.Origin;
-                if (newPlayer.Level >= Player.Permission.Trusted && !E.Origin.Masked)
+                EFClient newPlayer = E.Origin;
+                if (newPlayer.Level >= Permission.Trusted && !E.Origin.Masked)
                     E.Owner.Broadcast(await ProcessAnnouncement(Config.Configuration().PrivilegedAnnouncementMessage, newPlayer));
 
                 newPlayer.Tell(await ProcessAnnouncement(Config.Configuration().UserWelcomeMessage, newPlayer));
 
-                if (newPlayer.Level == Player.Permission.Flagged)
+                if (newPlayer.Level == Permission.Flagged)
                 {
                     string penaltyReason;
 
@@ -111,7 +112,7 @@ namespace IW4MAdmin.Plugins.Welcome
             }
         }
 
-        private async Task<string> ProcessAnnouncement(string msg, Player joining)
+        private async Task<string> ProcessAnnouncement(string msg, EFClient joining)
         {
             msg = msg.Replace("{{ClientName}}", joining.Name);
             msg = msg.Replace("{{ClientLevel}}", Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name));

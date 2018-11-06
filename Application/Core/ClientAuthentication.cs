@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
@@ -9,16 +10,16 @@ namespace IW4MAdmin.Application.Core
 {
     class ClientAuthentication : IClientAuthentication
     {
-        private Queue<Player> ClientAuthenticationQueue;
-        private Dictionary<long, Player> AuthenticatedClients;
+        private Queue<EFClient> ClientAuthenticationQueue;
+        private Dictionary<long, EFClient> AuthenticatedClients;
 
         public ClientAuthentication()
         {
-            ClientAuthenticationQueue = new Queue<Player>();
-            AuthenticatedClients = new Dictionary<long, Player>();
+            ClientAuthenticationQueue = new Queue<EFClient>();
+            AuthenticatedClients = new Dictionary<long, EFClient>();
         }
 
-        public void AuthenticateClients(IList<Player> clients)
+        public void AuthenticateClients(IList<EFClient> clients)
         {
             // we need to un-auth all the clients that have disconnected
             var clientNetworkIds = clients.Select(c => c.NetworkId);
@@ -33,10 +34,10 @@ namespace IW4MAdmin.Application.Core
             foreach (var client in clients)
             {
                 // they've not been authenticated
-                if (!AuthenticatedClients.TryGetValue(client.NetworkId, out Player value))
+                if (!AuthenticatedClients.TryGetValue(client.NetworkId, out EFClient value))
                 {
                     // authenticate them
-                    client.State = Player.ClientState.Authenticated;
+                    client.State = EFClient.ClientState.Authenticated;
                     AuthenticatedClients.Add(client.NetworkId, client);
                 }
                 else
@@ -54,16 +55,16 @@ namespace IW4MAdmin.Application.Core
                 // grab each client that's connected via log
                 var clientToAuthenticate = ClientAuthenticationQueue.Dequeue();
                 // if they're not already authed, auth them
-                if (!AuthenticatedClients.TryGetValue(clientToAuthenticate.NetworkId, out Player value))
+                if (!AuthenticatedClients.TryGetValue(clientToAuthenticate.NetworkId, out EFClient value))
                 {
                     // authenticate them
-                    clientToAuthenticate.State = Player.ClientState.Authenticated;
+                    clientToAuthenticate.State = EFClient.ClientState.Authenticated;
                     AuthenticatedClients.Add(clientToAuthenticate.NetworkId, clientToAuthenticate);
                 }
             }
         }
 
-        public IList<Player> GetAuthenticatedClients()
+        public IList<EFClient> GetAuthenticatedClients()
         {
             if (AuthenticatedClients.Values.Count > 18)
             {
@@ -74,7 +75,7 @@ namespace IW4MAdmin.Application.Core
             return AuthenticatedClients.Values.ToList();
         }
 
-        public void RequestClientAuthentication(Player client)
+        public void RequestClientAuthentication(EFClient client)
         {
             ClientAuthenticationQueue.Enqueue(client);
         }

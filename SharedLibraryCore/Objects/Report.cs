@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharedLibraryCore.Database.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +9,8 @@ namespace SharedLibraryCore.Objects
 {
     public class Report
     {
-        public Player Target { get; set; }
-        public Player Origin { get; set; }
-        public String Reason { get;  set; }
+        public EFClient Target { get; set; }
+        public EFClient Origin { get; set; }
+        public string Reason { get;  set; }
     }
 }

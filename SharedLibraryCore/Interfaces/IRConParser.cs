@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.RCon;
 
@@ -10,7 +11,7 @@ namespace SharedLibraryCore.Interfaces
         Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName);
         Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue);
         Task<string[]> ExecuteCommandAsync(Connection connection, string command);
-        Task<List<Player>> GetStatusAsync(Connection connection);
+        Task<List<EFClient>> GetStatusAsync(Connection connection);
         CommandPrefix GetCommandPrefixes();
     }
 }

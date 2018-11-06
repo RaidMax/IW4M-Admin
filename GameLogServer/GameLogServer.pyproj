@@ -27,10 +27,16 @@
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Prerelease' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <OutputPath>bin\Prerelease\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="GameLogServer\log_reader.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="GameLogServer\restart_resource.py" />
     <Compile Include="GameLogServer\server.py">
       <SubType>Code</SubType>
     </Compile>

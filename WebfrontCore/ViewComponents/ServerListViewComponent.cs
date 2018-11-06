@@ -19,8 +19,8 @@ namespace WebfrontCore.ViewComponents
                 ClientCount = s.ClientNum,
                 MaxClients = s.MaxClients,
                 GameType = s.Gametype,
-                PlayerHistory = s.PlayerHistory.ToArray(),
-                Players = s.GetPlayersAsList()
+                PlayerHistory = s.ClientHistory.ToArray(),
+                Players = s.GetClientsAsList()
                 .Select(p => new PlayerInfo()
                 {
                     Name = p.Name,

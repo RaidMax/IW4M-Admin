@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
@@ -17,15 +18,15 @@ namespace IW4ScriptCommands.Commands
             public IW4MAdmin.Plugins.Stats.Models.EFClientStatistics Stats { get; set; }
         }
 
-        public static string GetTeamAssignments(Player client, bool isDisconnect, Server server, string teamsString = "")
+        public static string GetTeamAssignments(EFClient client, bool isDisconnect, Server server, string teamsString = "")
         {
             var scriptClientTeams = teamsString.Split(';', StringSplitOptions.RemoveEmptyEntries)
                 .Select(c => c.Split(','))
                 .Select(c => new TeamAssignment()
                 {
                     CurrentTeam = (IW4MAdmin.Plugins.Stats.IW4Info.Team)Enum.Parse(typeof(IW4MAdmin.Plugins.Stats.IW4Info.Team), c[1]),
-                    Num = server.GetPlayersAsList().FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0]))?.ClientNumber ?? -1,
-                    Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(server.Players.FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0])).ClientId, server.GetHashCode())
+                    Num = server.GetClientsAsList().FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0]))?.ClientNumber ?? -1,
+                    Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(server.Clients.FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0])).ClientId, server.GetHashCode())
                 })
                 .ToList();
 
@@ -39,7 +40,7 @@ namespace IW4ScriptCommands.Commands
 
             List<string> teamAssignments = new List<string>();
 
-            var _c = server.GetPlayersAsList();
+            var _c = server.GetClientsAsList();
             if (isDisconnect && client != null)
             {
                 _c = _c.Where(c => c.ClientNumber != client.ClientNumber).ToList();

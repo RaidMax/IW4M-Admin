@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore
@@ -14,7 +14,7 @@ namespace SharedLibraryCore
 
     public abstract class Command
     {
-        public Command(String commandName, String commandDescription, String commandAlias, Player.Permission requiredPermission, bool requiresTarget, CommandArgument[] param = null)
+        public Command(String commandName, String commandDescription, String commandAlias, EFClient.Permission requiredPermission, bool requiresTarget, CommandArgument[] param = null)
         { 
             Name = commandName;
             Description = commandDescription;
@@ -33,7 +33,7 @@ namespace SharedLibraryCore
         public String Alias { get; private set; }
         public int RequiredArgumentCount => Arguments.Count(c => c.Required);
         public bool RequiresTarget { get; private set; }
-        public Player.Permission Permission { get; private set; }
+        public EFClient.Permission Permission { get; private set; }
         public CommandArgument[] Arguments { get; private set; }
     }
 }

@@ -8,6 +8,7 @@ using SharedLibraryCore.Objects;
 using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Database;
 using System.Collections.Generic;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -34,7 +35,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                join alias in db.Aliases
                                on client.CurrentAliasId equals alias.AliasId
                                where stats.ServerId == serverId
-                               where client.Level != Player.Permission.Banned
+                               where client.Level != EFClient.Permission.Banned
                                where client.LastConnection >= thirtyDaysAgo
                                orderby stats.Kills descending
                                select new
@@ -55,7 +56,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             return mostPlayed;
         }
 
-        public MostPlayed() : base("mostplayed", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_DESC"], "mp", Player.Permission.User, false) { }
+        public MostPlayed() : base("mostplayed", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_DESC"], "mp", EFClient.Permission.User, false) { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {

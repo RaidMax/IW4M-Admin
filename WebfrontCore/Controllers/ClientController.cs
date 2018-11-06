@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Services;
 using System;
@@ -63,7 +64,7 @@ namespace WebfrontCore.Controllers
             var administeredPenaltiesMeta = await Manager.GetPenaltyService()
                 .ReadGetClientPenaltiesAsync(client.ClientId, false);
 
-            if (Authorized && client.Level > SharedLibraryCore.Objects.Player.Permission.Trusted)
+            if (Authorized && client.Level > EFClient.Permission.Trusted)
                 clientDto.Meta.Add(new ProfileMeta()
                 {
                     Key = Localization["WEBFRONT_CLIENT_META_MASKED"],
@@ -122,7 +123,7 @@ namespace WebfrontCore.Controllers
                 .OrderByDescending(a => a.Level)
                 .GroupBy(a => a.LinkId).Select(a => a.First());
 
-            var adminsDict = new Dictionary<SharedLibraryCore.Objects.Player.Permission, IList<ClientInfo>>();
+            var adminsDict = new Dictionary<EFClient.Permission, IList<ClientInfo>>();
 
             foreach (var admin in admins)
             {

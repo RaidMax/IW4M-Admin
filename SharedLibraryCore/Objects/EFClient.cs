@@ -1,13 +1,14 @@
-﻿using System;
+﻿using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Objects;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SharedLibraryCore.Objects
+namespace SharedLibraryCore.Database.Models
 {
-    public class Player : Database.Models.EFClient
+    public partial class EFClient
     {
         public enum ClientState
         {
@@ -76,7 +77,7 @@ namespace SharedLibraryCore.Objects
             Console = 8
         }
 
-        public Player()
+        public EFClient()
         {
             ConnectionTime = DateTime.UtcNow;
             ClientNumber = -1;
@@ -87,7 +88,10 @@ namespace SharedLibraryCore.Objects
             };
         }
 
-        public override string ToString() => $"{Name}::{NetworkId}";
+        public override string ToString()
+        {
+            return $"{Name}::{NetworkId}";
+        }
 
         /// <summary>
         /// send a message directly to the connected client
@@ -113,7 +117,7 @@ namespace SharedLibraryCore.Objects
         /// </summary>
         /// <param name="warnReason">reason for warn</param>
         /// <param name="sender">client performing the warn</param>
-        public GameEvent Warn(String warnReason, Player sender)
+        public GameEvent Warn(String warnReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -146,7 +150,7 @@ namespace SharedLibraryCore.Objects
         /// </summary>
         /// <param name="sender">client performing the warn clear</param>
         /// <returns></returns>
-        public GameEvent WarnClear(Player sender)
+        public GameEvent WarnClear(EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -175,7 +179,7 @@ namespace SharedLibraryCore.Objects
         /// <param name="reportReason">reason for the report</param>
         /// <param name="sender">client performing the report</param>
         /// <returns></returns>
-        public GameEvent Report(string reportReason, Player sender)
+        public GameEvent Report(string reportReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -221,7 +225,7 @@ namespace SharedLibraryCore.Objects
         /// <param name="flagReason">reason for flagging</param>
         /// <param name="sender">client performing the flag</param>
         /// <returns>game event for the flag</returns>
-        public GameEvent Flag(string flagReason, Player sender)
+        public GameEvent Flag(string flagReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -238,14 +242,14 @@ namespace SharedLibraryCore.Objects
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (this.Level == Player.Permission.Flagged)
+            else if (this.Level == Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
 
             else
             {
-                this.Level = Player.Permission.Flagged;
+                this.Level = Permission.Flagged;
             }
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
@@ -258,7 +262,7 @@ namespace SharedLibraryCore.Objects
         /// <param name="unflagReason">reason to unflag a player for</param>
         /// <param name="sender">client performing the unflag</param>
         /// <returns>game event for the un flug</returns>
-        public GameEvent Unflag(string unflagReason, Player sender)
+        public GameEvent Unflag(string unflagReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -275,7 +279,7 @@ namespace SharedLibraryCore.Objects
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (this.Level != Player.Permission.Flagged)
+            else if (this.Level != EFClient.Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
@@ -294,7 +298,7 @@ namespace SharedLibraryCore.Objects
         /// </summary>
         /// <param name="kickReason">reason to kick for</param>
         /// <param name="sender">client performing the kick</param>
-        public GameEvent Kick(String kickReason, Player sender)
+        public GameEvent Kick(String kickReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -322,7 +326,7 @@ namespace SharedLibraryCore.Objects
         /// <param name="tempbanReason">reason for the temp ban</param>
         /// <param name="banLength">how long the temp ban lasts</param>
         /// <param name="sender">client performing the tempban</param>
-        public GameEvent TempBan(String tempbanReason, TimeSpan banLength, Player sender)
+        public GameEvent TempBan(String tempbanReason, TimeSpan banLength, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -350,7 +354,7 @@ namespace SharedLibraryCore.Objects
         /// </summary>
         /// <param name="banReason">reason for the ban</param>
         /// <param name="sender">client performing the ban</param>
-        public GameEvent Ban(String banReason, Player sender)
+        public GameEvent Ban(String banReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -378,7 +382,7 @@ namespace SharedLibraryCore.Objects
         /// <param name="unbanReason">reason for the unban</param>
         /// <param name="sender">client performing the unban</param>
         /// <returns></returns>
-        public GameEvent Unban(String unbanReason, Player sender)
+        public GameEvent Unban(String unbanReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -400,10 +404,119 @@ namespace SharedLibraryCore.Objects
             return e;
         }
 
+        /// <summary>
+        /// Handles any client related logic on connection
+        /// </summary>
+        public void OnConnect()
+        {
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            //#if !DEBUG
+            if (Name.Length < 3)
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
+                Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
+                return;
+            }
+
+            if (Name == "Unknown Soldier" ||
+                Name == "UnknownSoldier" ||
+                Name == "CHEATER")
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is generic");
+                Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
+                return;
+            }
+
+            if (Name.Where(c => char.IsControl(c)).Count() > 0)
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name contains control characters");
+                Kick(loc["SERVER_KICK_CONTROLCHARS"], Utilities.IW4MAdminClient(CurrentServer));
+                return;
+            }
+
+            // reserved slots stuff
+            if ((CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged()) - CurrentServer.MaxClients) < CurrentServer.ServerConfig.ReservedSlotNumber &&
+               !this.IsPrivileged())
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
+                Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
+                return;
+            }
+
+            LastConnection = DateTime.UtcNow;
+            Connections += 1;
+
+            //#endif
+        }
+
+        public async Task OnJoin(int ipAddress)
+        {
+            // todo: fix this up
+            CurrentAlias.IPAddress = IPAddress;
+            await CurrentServer.Manager.GetClientService().Update(this);
+
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
+            var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan);
+
+            var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
+                .Where(p => p.Active)
+                .OrderByDescending(p => p.When)
+                .FirstOrDefault();
+
+            // remove their auto flag status after a week
+            if (Level == Permission.Flagged &&
+                currentAutoFlag != null &&
+                (DateTime.UtcNow - currentAutoFlag.When).TotalDays > 7)
+            {
+                Level = Permission.User;
+            }
+
+            if (currentBan != null)
+            {
+                CurrentServer.Logger.WriteInfo($"Banned client {this} trying to join...");
+                var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
+
+
+                // reban the "evading" guid
+                if (Level != Permission.Banned && 
+                    currentBan.Type == Penalty.PenaltyType.Ban)
+                {
+                    // hack: re apply the automated offense to the reban
+                    if (currentBan.AutomatedOffense != null)
+                    {
+                        autoKickClient.AdministeredPenalties.Add(new EFPenalty()
+                        {
+                            AutomatedOffense = currentBan.AutomatedOffense
+                        });
+                    }
+                    Ban($"{currentBan.Offense}", autoKickClient);
+                }
+
+                // the player is permanently banned
+                else if (currentBan.Type == Penalty.PenaltyType.Ban)
+                {
+                    Kick($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {CurrentServer.Website})", autoKickClient);
+                }
+
+                else
+                {
+                    //string formattedKick = String.Format(
+                    //    RconParser.GetCommandPrefixes().Kick,
+                    //    polledPlayer.ClientNumber,
+                    //    $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
+                    //await this.ExecuteCommandAsync(formattedKick);
+                }
+            }
+        }
+
         [NotMapped]
         Dictionary<string, object> _additionalProperties;
 
-        public T GetAdditionalProperty<T>(string name) => _additionalProperties.ContainsKey(name) ? (T)_additionalProperties[name] : default(T);
+        public T GetAdditionalProperty<T>(string name)
+        {
+            return _additionalProperties.ContainsKey(name) ? (T)_additionalProperties[name] : default(T);
+        }
 
         public void SetAdditionalProperty(string name, object value)
         {
@@ -433,18 +546,18 @@ namespace SharedLibraryCore.Objects
         public int Score { get; set; }
         [NotMapped]
         public bool IsBot { get; set; }
-        private int _ipaddress;
-        public override int IPAddress
-        {
-            get { return _ipaddress; }
-            set { _ipaddress = value; }
-        }
-        private string _name;
-        public override string Name
-        {
-            get { return _name; }
-            set { _name = value; }
-        }
+        //private int _ipaddress;
+        //public override int IPAddress
+        //{
+        //    get => _ipaddress;
+        //    set => _ipaddress = value;
+        //}
+        //private string _name;
+        //public override string Name
+        //{
+        //    get => _name;
+        //    set => _name = value;
+        //}
         [NotMapped]
         public ClientState State { get; set; }
         [NotMapped]
@@ -460,9 +573,12 @@ namespace SharedLibraryCore.Objects
 
         public override bool Equals(object obj)
         {
-            return ((Player)obj).NetworkId == this.NetworkId;
+            return ((EFClient)obj).NetworkId == this.NetworkId;
         }
 
-        public override int GetHashCode() => (int)NetworkId;
+        public override int GetHashCode()
+        {
+            return (int)NetworkId;
+        }
     }
 }

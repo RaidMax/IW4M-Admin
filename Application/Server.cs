@@ -1,24 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
-
+﻿using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.IO;
+using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Localization;
-
-using IW4MAdmin.Application.RconParsers;
-using IW4MAdmin.Application.EventParsers;
-using IW4MAdmin.Application.IO;
+using SharedLibraryCore.Objects;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin
 {
@@ -58,234 +56,101 @@ namespace IW4MAdmin
             return Id;
         }
 
-        public async Task OnPlayerJoined(Player logClient)
+        public async Task OnClientJoined(EFClient polledClient)
         {
-            var existingClient = Players[logClient.ClientNumber];
+            var existingClient = Clients[polledClient.ClientNumber];
 
-            if (existingClient == null ||
-                 (existingClient.NetworkId != logClient.NetworkId &&
-                 existingClient.State != Player.ClientState.Connected))
+            if (existingClient != null)
             {
-                Logger.WriteDebug($"Log detected {logClient} joining");
-                Players[logClient.ClientNumber] = logClient;
+                await existingClient.OnJoin(polledClient.IPAddress);
             }
-
-            await Task.CompletedTask;
         }
 
-        override public async Task<bool> AddPlayer(Player polledPlayer)
+        override public async Task OnClientConnected(EFClient clientFromLog)
         {
-            if ((polledPlayer.Ping == 999 && !polledPlayer.IsBot) ||
-                polledPlayer.Ping < 1 ||
-                polledPlayer.ClientNumber < 0)
-            {
-                return false;
-            }
-
-            // set this when they are waiting for authentication
-            if (Players[polledPlayer.ClientNumber] == null &&
-                polledPlayer.State == Player.ClientState.Connecting)
-            {
-                Players[polledPlayer.ClientNumber] = polledPlayer;
-                return false;
-            }
-
-#if !DEBUG
-            if (polledPlayer.Name.Length < 3)
-            {
-                Logger.WriteDebug($"Kicking {polledPlayer} because their name is too short");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_MINNAME"]);
-                await this.ExecuteCommandAsync(formattedKick);
-                return false;
-            }
-
-            if (Players.FirstOrDefault(p => p != null && p.Name == polledPlayer.Name && p.NetworkId != polledPlayer.NetworkId) != null)
-            {
-                Logger.WriteDebug($"Kicking {polledPlayer} because their name is already in use");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_NAME_INUSE"]);
-                await this.ExecuteCommandAsync(formattedKick);
-                return false;
-            }
-
-            if (polledPlayer.Name == "Unknown Soldier" ||
-                polledPlayer.Name == "UnknownSoldier" ||
-                polledPlayer.Name == "CHEATER")
-            {
-                Logger.WriteDebug($"Kicking {polledPlayer} because their name is generic");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_GENERICNAME"]);
-                await this.ExecuteCommandAsync(formattedKick);
-                return false;
-            }
-
-            if (polledPlayer.Name.Where(c => Char.IsControl(c)).Count() > 0)
-            {
-                Logger.WriteDebug($"Kicking {polledPlayer} because their name contains control characters");
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_CONTROLCHARS"]);
-                await this.ExecuteCommandAsync(formattedKick);
-                return false;
-            }
-
-#endif
-            Logger.WriteDebug($"Client slot #{polledPlayer.ClientNumber} now reserved");
+            Logger.WriteDebug($"Client slot #{clientFromLog.ClientNumber} now reserved");
 
             try
             {
-                Player player = null;
-                var client = await Manager.GetClientService().GetUnique(polledPlayer.NetworkId);
+                EFClient client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId);
 
                 // first time client is connecting to server
                 if (client == null)
                 {
-                    Logger.WriteDebug($"Client {polledPlayer} first time connecting");
-                    player = (await Manager.GetClientService().Create(polledPlayer)).AsPlayer();
+                    Logger.WriteDebug($"Client {clientFromLog} first time connecting");
+                    client = await Manager.GetClientService().Create(clientFromLog);
                 }
 
                 // client has connected in the past
                 else
                 {
-                    client.LastConnection = DateTime.UtcNow;
-                    client.Connections += 1;
-
                     var existingAlias = client.AliasLink.Children
-                        .FirstOrDefault(a => a.Name == polledPlayer.Name && a.IPAddress == polledPlayer.IPAddress);
+                        .FirstOrDefault(a => a.Name == clientFromLog.Name);
 
                     if (existingAlias == null)
                     {
-                        Logger.WriteDebug($"Client {polledPlayer} has connected previously under a different ip/name");
+                        Logger.WriteDebug($"Client {clientFromLog} has connected previously under a different ip/name");
                         client.CurrentAlias = new EFAlias()
                         {
-                            IPAddress = polledPlayer.IPAddress,
-                            Name = polledPlayer.Name,
+                            // this gets updated on client join
+                            IPAddress = clientFromLog.IPAddress,
+                            Name = clientFromLog.Name,
                         };
-                        // we need to update their new ip and name to the virtual property
-                        client.Name = polledPlayer.Name;
-                        client.IPAddress = polledPlayer.IPAddress;
                     }
 
                     else
                     {
                         client.CurrentAlias = existingAlias;
                         client.CurrentAliasId = existingAlias.AliasId;
-                        client.Name = existingAlias.Name;
-                        client.IPAddress = existingAlias.IPAddress;
                     }
 
                     await Manager.GetClientService().Update(client);
-                    player = client.AsPlayer();
                 }
 
-                // reserved slots stuff
-                if ((MaxClients - ClientNum) < ServerConfig.ReservedSlotNumber &&
-                   !player.IsPrivileged())
-                {
-                    Logger.WriteDebug($"Kicking {polledPlayer} their spot is reserved");
-                    string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, polledPlayer.ClientNumber, loc["SERVER_KICK_SLOT_IS_RESERVED"]);
-                    await this.ExecuteCommandAsync(formattedKick);
-                    return false;
-                }
-
-                Logger.WriteInfo($"Client {player} connected...");
+                Logger.WriteInfo($"Client {client} connected...");
 
                 // Do the player specific stuff
-                player.ClientNumber = polledPlayer.ClientNumber;
-                player.IsBot = polledPlayer.IsBot;
-                player.Score = polledPlayer.Score;
-                player.CurrentServer = this;
+                client.ClientNumber = clientFromLog.ClientNumber;
+                client.IsBot = clientFromLog.IsBot;
+                client.Score = clientFromLog.Score;
+                client.Ping = clientFromLog.Ping;
+                client.CurrentServer = this;
 
-                player.DelayedEvents = (Players[player.ClientNumber]?.DelayedEvents) ?? new Queue<GameEvent>();
-                Players[player.ClientNumber] = player;
+                Clients[client.ClientNumber] = client;
+                client.OnConnect();
 
-                var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(player.AliasLinkId, player.IPAddress);
-                var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan);
-
-                var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
-                    .Where(p => p.Active)
-                    .OrderByDescending(p => p.When)
-                    .FirstOrDefault();
-
-                // remove their auto flag status after a week
-                if (player.Level == Player.Permission.Flagged &&
-                    currentAutoFlag != null &&
-                    (DateTime.Now - currentAutoFlag.When).TotalDays > 7)
-                {
-                    player.Level = Player.Permission.User;
-                }
-
-                if (currentBan != null)
-                {
-                    Logger.WriteInfo($"Banned client {player} trying to connect...");
-                    var autoKickClient = Utilities.IW4MAdminClient(this);
-
-                    // the player is permanently banned
-                    if (currentBan.Type == Penalty.PenaltyType.Ban)
-                    {
-                        // don't store the kick message
-                        string formattedKick = String.Format(
-                         RconParser.GetCommandPrefixes().Kick,
-                         polledPlayer.ClientNumber,
-                         $"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {Website})");
-                        await this.ExecuteCommandAsync(formattedKick);
-                    }
-
-                    else
-                    {
-                        string formattedKick = String.Format(
-                            RconParser.GetCommandPrefixes().Kick,
-                            polledPlayer.ClientNumber,
-                            $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
-                        await this.ExecuteCommandAsync(formattedKick);
-                    }
-
-                    // reban the "evading" guid
-                    if (player.Level != Player.Permission.Banned && currentBan.Type == Penalty.PenaltyType.Ban)
-                    {
-                        // hack: re apply the automated offense to the reban
-                        if (currentBan.AutomatedOffense != null)
-                        {
-                            autoKickClient.AdministeredPenalties.Add(new EFPenalty() { AutomatedOffense = currentBan.AutomatedOffense });
-                        }
-                        player.Ban($"{currentBan.Offense}", autoKickClient);
-                    }
-
-                    // they didn't fully connect so empty their slot
-                    Players[player.ClientNumber] = null;
-                    return false;
-                }
-
-                player.State = Player.ClientState.Connected;
-                return true;
+                client.State = EFClient.ClientState.Connected;
             }
 
             catch (Exception ex)
             {
-                Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {polledPlayer.Name}::{polledPlayer.NetworkId}");
+                Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {clientFromLog.Name}::{clientFromLog.NetworkId}");
                 Logger.WriteDebug(ex.Message);
                 Logger.WriteDebug(ex.StackTrace);
-                return false;
             }
         }
 
         //Remove player by CLIENT NUMBER
-        override public async Task RemovePlayer(int cNum)
+        override public async Task RemoveClient(int cNum)
         {
-            if (cNum >= 0 && Players[cNum] != null)
+            if (cNum >= 0 && Clients[cNum] != null)
             {
-                Player Leaving = Players[cNum];
+                EFClient Leaving = Clients[cNum];
 
                 // occurs when the player disconnects via log before being authenticated by RCon
-                if (Leaving.State != Player.ClientState.Connected)
+                if (Leaving.State != EFClient.ClientState.Connected)
                 {
-                    Players[cNum] = null;
+                    Clients[cNum] = null;
                 }
 
                 else
                 {
                     Logger.WriteInfo($"Client {Leaving} [{Leaving.State.ToString().ToLower()}] disconnecting...");
-                    Leaving.State = Player.ClientState.Disconnecting;
+                    Leaving.State = EFClient.ClientState.Disconnecting;
                     Leaving.TotalConnectionTime += Leaving.ConnectionLength;
                     Leaving.LastConnection = DateTime.UtcNow;
                     await Manager.GetClientService().Update(Leaving);
-                    Players[cNum] = null;
+                    Clients[cNum] = null;
                 }
             }
         }
@@ -340,7 +205,7 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.Command &&
                 E.Extra != null &&
                 (canExecuteCommand ||
-                E.Origin?.Level == Player.Permission.Console))
+                E.Origin?.Level == EFClient.Permission.Console))
             {
                 await (((Command)E.Extra).ExecuteAsync(E));
             }
@@ -355,25 +220,17 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.Connect)
             {
-                E.Origin.State = Player.ClientState.Authenticated;
-                // add   them to the server 
-                if (!await AddPlayer(E.Origin))
-                {
-                    E.Origin.State = Player.ClientState.Connecting;
-                    Logger.WriteDebug("client didn't pass authentication, so we are discontinuing event");
-                    return false;
-                }
-                // hack: makes the event propgate with the correct info
-                E.Origin = Players[E.Origin.ClientNumber];
+                E.Origin.State = EFClient.ClientState.Authenticated;
+                await OnClientConnected(E.Origin);
 
                 ChatHistory.Add(new ChatInfo()
                 {
-                    Name = E.Origin?.Name ?? "ERROR!",
+                    Name = E.Origin.Name,
                     Message = "CONNECTED",
                     Time = DateTime.UtcNow
                 });
 
-                if (E.Origin.Level > Player.Permission.Moderator)
+                if (E.Origin.Level > EFClient.Permission.Moderator)
                 {
                     E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
                 }
@@ -381,7 +238,7 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Join)
             {
-                await OnPlayerJoined(E.Origin);
+                await OnClientJoined(E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Flag)
@@ -446,11 +303,11 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Quit)
             {
-                var origin = Players.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
+                var origin = Clients.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
 
                 if (origin != null &&
                     // we only want to forward the event if they are connected. 
-                    origin.State == Player.ClientState.Connected &&
+                    origin.State == EFClient.ClientState.Connected &&
                     // make sure we don't get the disconnect event from every time the game ends
                     origin.ConnectionLength < Manager.GetApplicationSettings().Configuration().RConPollRate)
                 {
@@ -465,9 +322,9 @@ namespace IW4MAdmin
                 }
 
                 else if (origin != null &&
-                    origin.State != Player.ClientState.Connected)
+                    origin.State != EFClient.ClientState.Connected)
                 {
-                    await RemovePlayer(origin.ClientNumber);
+                    await RemoveClient(origin.ClientNumber);
                 }
             }
 
@@ -481,9 +338,9 @@ namespace IW4MAdmin
                 });
 
                 var currentState = E.Origin.State;
-                await RemovePlayer(E.Origin.ClientNumber);
+                await RemoveClient(E.Origin.ClientNumber);
 
-                if (currentState != Player.ClientState.Connected)
+                if (currentState != EFClient.ClientState.Connected)
                 {
                     throw new ServerException("Disconnecting player was not in a connected state");
                 }
@@ -569,12 +426,16 @@ namespace IW4MAdmin
             }
 
             while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
+            {
                 ChatHistory.RemoveAt(0);
+            }
 
             // the last client hasn't fully disconnected yet
             // so there will still be at least 1 client left
             if (ClientNum < 2)
+            {
                 ChatHistory.Clear();
+            }
 
             return true;
         }
@@ -585,12 +446,12 @@ namespace IW4MAdmin
         /// array index 1 = disconnecting clients
         /// </summary>
         /// <returns></returns>
-        async Task<IList<Player>[]> PollPlayersAsync()
+        async Task<IList<EFClient>[]> PollPlayersAsync()
         {
 #if DEBUG
             var now = DateTime.Now;
 #endif
-            var currentClients = GetPlayersAsList();
+            var currentClients = GetClientsAsList();
             var polledClients = (await this.GetStatusAsync()).AsEnumerable();
             if (this.Manager.GetApplicationSettings().Configuration().IgnoreBots)
             {
@@ -604,15 +465,15 @@ namespace IW4MAdmin
             foreach (var client in polledClients)
             {
                 // todo: move out somehwere
-                var existingClient = Players[client.ClientNumber] ?? client;
+                var existingClient = Clients[client.ClientNumber] ?? client;
                 existingClient.Ping = client.Ping;
                 existingClient.Score = client.Score;
             }
 
             var disconnectingClients = currentClients.Except(polledClients);
-            var connectingClients = polledClients.Except(currentClients.Where(c => c.State == Player.ClientState.Connected));
+            var connectingClients = polledClients.Except(currentClients.Where(c => c.State == EFClient.ClientState.Connected));
 
-            return new List<Player>[] { connectingClients.ToList(), disconnectingClients.ToList() };
+            return new List<EFClient>[] { connectingClients.ToList(), disconnectingClients.ToList() };
         }
 
         DateTime start = DateTime.Now;
@@ -626,11 +487,13 @@ namespace IW4MAdmin
                 if (Manager.ShutdownRequested())
                 {
                     // todo: fix up disconnect
-                    //for (int i = 0; i < Players.Count; i++)
-                    //   await RemovePlayer(i);
+                    //for (int i = 0; i < EFClients.Count; i++)
+                    //   await RemoveClient(i);
 
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+                    {
                         await plugin.OnUnloadAsync();
+                    }
                 }
 
                 // only check every 2 minutes if the server doesn't seem to be responding
@@ -644,7 +507,7 @@ namespace IW4MAdmin
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
-                        if (disconnectingClient.State == Player.ClientState.Disconnecting)
+                        if (disconnectingClient.State == EFClient.ClientState.Disconnecting)
                         {
                             continue;
                         }
@@ -669,8 +532,8 @@ namespace IW4MAdmin
                     foreach (var client in polledClients[0])
                     {
                         // this prevents duplicate events from being sent to the event api
-                        if (GetPlayersAsList().Count(c => c.NetworkId == client.NetworkId &&
-                            c.State == Player.ClientState.Connected) != 0)
+                        if (GetClientsAsList().Count(c => c.NetworkId == client.NetworkId &&
+                            c.State == EFClient.ClientState.Connected) != 0)
                         {
                             continue;
                         }
@@ -730,9 +593,12 @@ namespace IW4MAdmin
                 // update the player history 
                 if ((lastCount - playerCountStart).TotalMinutes >= SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval)
                 {
-                    while (PlayerHistory.Count > ((60 / SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
-                        PlayerHistory.Dequeue();
-                    PlayerHistory.Enqueue(new SharedLibraryCore.Helpers.PlayerHistory(ClientNum));
+                    while (ClientHistory.Count > ((60 / SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
+                    {
+                        ClientHistory.Dequeue();
+                    }
+
+                    ClientHistory.Enqueue(new SharedLibraryCore.Helpers.PlayerHistory(ClientNum));
                     playerCountStart = DateTime.Now;
                 }
 
@@ -782,7 +648,9 @@ namespace IW4MAdmin
                 new IW3RConParser();
 
             if (ServerConfig.UseIW5MParser)
+            {
                 RconParser = new IW5MRConParser();
+            }
 
             var version = await this.GetDvarAsync<string>("version");
             GameName = Utilities.GetGame(version.Value);
@@ -793,16 +661,26 @@ namespace IW4MAdmin
                 RconParser = new IW4RConParser();
             }
             else if (GameName == Game.IW5)
+            {
                 EventParser = new IW5EventParser();
+            }
             else if (GameName == Game.T5M)
+            {
                 EventParser = new T5MEventParser();
+            }
             else if (GameName == Game.T6M)
+            {
                 EventParser = new T6MEventParser();
+            }
             else
+            {
                 EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
+            }
 
             if (GameName == Game.UKN)
+            {
                 Logger.WriteWarning($"Game name not recognized: {version}");
+            }
 
             var infoResponse = await this.GetInfoAsync();
             // this is normally slow, but I'm only doing it because different games have different prefixes
@@ -906,7 +784,7 @@ namespace IW4MAdmin
 #endif
         }
 
-        protected override async Task Warn(String Reason, Player Target, Player Origin)
+        protected override async Task Warn(String Reason, EFClient Target, EFClient Origin)
         {
             // ensure player gets warned if command not performed on them in game
             if (Target.ClientNumber < 0)
@@ -948,7 +826,7 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        protected override async Task Kick(String Reason, Player Target, Player Origin)
+        protected override async Task Kick(String Reason, EFClient Target, EFClient Origin)
         {
             // ensure player gets kicked if command not performed on them in game
             if (Target.ClientNumber < 0)
@@ -971,7 +849,7 @@ namespace IW4MAdmin
 #endif
 
 #if DEBUG
-            await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
+            await Target.CurrentServer.RemoveClient(Target.ClientNumber);
 #endif
 
             var newPenalty = new Penalty()
@@ -988,7 +866,7 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        protected override async Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin)
+        protected override async Task TempBan(String Reason, TimeSpan length, EFClient Target, EFClient Origin)
         {
             // ensure player gets banned if command not performed on them in game
             if (Target.ClientNumber < 0)
@@ -1009,7 +887,7 @@ namespace IW4MAdmin
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #else
-            await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
+            await Target.CurrentServer.RemoveClient(Target.ClientNumber);
 #endif
 
             Penalty newPenalty = new Penalty()
@@ -1027,15 +905,15 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        override protected async Task Ban(String Message, Player Target, Player Origin)
+        override protected async Task Ban(String Message, EFClient Target, EFClient Origin)
         {
             // ensure player gets banned if command not performed on them in game
             if (Target.ClientNumber < 0)
             {
-                Player ingameClient = null;
+                EFClient ingameClient = null;
 
                 ingameClient = Manager.GetServers()
-                    .Select(s => s.GetPlayersAsList())
+                    .Select(s => s.GetClientsAsList())
                     .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
                     ?.First(c => c.ClientId == Target.ClientId);
 
@@ -1049,13 +927,13 @@ namespace IW4MAdmin
             else
             {
                 // this is set only because they're still in the server.
-                Target.Level = Player.Permission.Banned;
+                Target.Level = EFClient.Permission.Banned;
 
 #if !DEBUG
                 string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
-                await Target.CurrentServer.RemovePlayer(Target.ClientNumber);
+                await Target.CurrentServer.RemoveClient(Target.ClientNumber);
 #endif
             }
 
@@ -1077,7 +955,7 @@ namespace IW4MAdmin
             Manager.GetPrivilegedClients().Remove(Target.ClientId);
         }
 
-        override public async Task Unban(string reason, Player Target, Player Origin)
+        override public async Task Unban(string reason, EFClient Target, EFClient Origin)
         {
             var unbanPenalty = new Penalty()
             {

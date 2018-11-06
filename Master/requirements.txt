@@ -1,6 +1,6 @@
-aniso8601==3.0.0
+aniso8601==3.0.2
 click==6.7
-Flask==0.12.2
+Flask==1.0.2
 Flask-JWT==0.3.2
 Flask-JWT-Extended==3.8.1
 Flask-RESTful==0.3.6
@@ -8,9 +8,15 @@ itsdangerous==0.24
 Jinja2==2.10
 MarkupSafe==1.0
 marshmallow==3.0.0b8
-pip==9.0.1
+pip==9.0.3
 PyJWT==1.4.2
-pytz==2018.4
+pytz==2018.5
 setuptools==39.0.1
 six==1.11.0
 Werkzeug==0.14.1
+certifi==2018.10.15
+chardet==3.0.4
+idna==2.7
+psutil==5.4.8
+requests==2.20.0
+urllib3==1.24

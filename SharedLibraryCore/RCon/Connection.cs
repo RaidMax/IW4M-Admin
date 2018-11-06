@@ -137,12 +137,9 @@ namespace SharedLibraryCore.RCon
                 throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
             }
 
-            Log.WriteInfo(responseString);
-
             string[] splitResponse = responseString.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(line => line.Trim()).ToArray();
             return splitResponse;
-
         }
 
         private async Task<byte[]> SendPayloadAsync(byte[] payload, bool waitForResponse)

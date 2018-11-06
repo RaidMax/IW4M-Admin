@@ -17,7 +17,7 @@
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>Master</Name>
     <RootNamespace>Master</RootNamespace>
-    <InterpreterId>MSBuild|dev_env|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env|X:\IW4MAdmin\GameLogServer\GameLogServer.pyproj</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <PythonRunWebServerCommand>
     </PythonRunWebServerCommand>
@@ -111,23 +111,15 @@
     <Folder Include="master\templates\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="FolderProfile.pubxml" />
     <Content Include="master\config\master.json" />
     <Content Include="master\templates\serverlist.html" />
+    <None Include="Release.pubxml" />
     <Content Include="requirements.txt" />
     <Content Include="master\templates\index.html" />
     <Content Include="master\templates\layout.html" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="dev_env\">
-      <Id>dev_env</Id>
-      <Version>3.6</Version>
-      <Description>dev_env (Python 3.6 (64-bit))</Description>
-      <InterpreterPath>Scripts\python.exe</InterpreterPath>
-      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
-      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
-      <Architecture>X64</Architecture>
-    </Interpreter>
+    <InterpreterReference Include="MSBuild|env|X:\IW4MAdmin\GameLogServer\GameLogServer.pyproj" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
   <!-- Specify pre- and post-build commands in the BeforeBuild and 

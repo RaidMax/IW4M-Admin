@@ -1,16 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Events;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers.API
 {
     public class ApiController : BaseController
     {
-        public IActionResult Index() => Ok($"IW4MAdmin API");
+        public IActionResult Index()
+        {
+            return Ok($"IW4MAdmin API");
+        }
 
         [HttpGet]
         public IActionResult Event(bool shouldConsume = true)
@@ -28,12 +28,12 @@ namespace WebfrontCore.Controllers.API
                     Id = server.GetHashCode(),
                     Name = server.Hostname,
                     MaxPlayers = server.MaxClients,
-                    CurrentPlayers = server.GetPlayersAsList().Count,
+                    CurrentPlayers = server.GetClientsAsList().Count,
                     Map = server.CurrentMap,
                     GameMode = server.Gametype,
                     Port = server.GetPort(),
                     Game = server.GameName.ToString(),
-                    Players = server.GetPlayersAsList()
+                    Players = server.GetClientsAsList()
                         .Select(player => new
                         {
                             player.Name,
@@ -52,6 +52,24 @@ namespace WebfrontCore.Controllers.API
             }
 
             return Json(serverInfo);
+        }
+
+        [HttpGet]
+        public IActionResult RestartApproved()
+        {
+            var serverToRestart = Manager.GetServers().FirstOrDefault(_server => _server.RestartRequested);
+
+            if (serverToRestart != null)
+            {
+                serverToRestart.RestartRequested = false;
+            }
+
+            return serverToRestart != null ? 
+            (IActionResult)Json(new
+            {
+                port = serverToRestart.GetPort()
+            }) : 
+            Unauthorized();
         }
     }
 }

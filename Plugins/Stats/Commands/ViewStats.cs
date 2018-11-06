@@ -10,12 +10,13 @@ using System.Threading.Tasks;
 using SharedLibraryCore.Database;
 using Microsoft.EntityFrameworkCore;
 using IW4MAdmin.Plugins.Stats.Helpers;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class CViewStats : Command
     {
-        public CViewStats() : base("stats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_VIEW_DESC"], "xlrstats", Player.Permission.User, false, new CommandArgument[]
+        public CViewStats() : base("stats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_VIEW_DESC"], "xlrstats", EFClient.Permission.User, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using static SharedLibraryCore.Objects.Player;
+﻿using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Objects
 {

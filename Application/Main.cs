@@ -110,7 +110,7 @@ namespace IW4MAdmin.Application
                 var consoleTask = Task.Run(async () =>
                 {
                     String userInput;
-                    Player Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
+                    var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
 
                     do
                     {

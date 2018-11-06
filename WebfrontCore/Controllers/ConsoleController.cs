@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Objects;
 using System;
@@ -29,7 +30,7 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> ExecuteAsync(int serverId, string command)
         {
             var server = Manager.GetServers().First(s => s.GetHashCode() == serverId);
-            var client = new Player()
+            var client = new EFClient()
             {
                 ClientId = Client.ClientId,
                 Level = Client.Level,

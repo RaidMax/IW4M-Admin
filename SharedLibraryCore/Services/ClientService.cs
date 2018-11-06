@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using SharedLibraryCore.Objects;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Dtos;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
 {
@@ -60,8 +61,8 @@ namespace SharedLibraryCore.Services
                     Level = hasExistingAlias ?
                         (await context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
                         .OrderByDescending(c => c.Level)
-                        .FirstOrDefaultAsync())?.Level ?? Player.Permission.User :
-                        Player.Permission.User,
+                        .FirstOrDefaultAsync())?.Level ?? Permission.User :
+                        Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,
                     LastConnection = DateTime.UtcNow,
@@ -228,7 +229,7 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
                 return await context.Clients
-                    .Where(c => c.Level == Player.Permission.Owner)
+                    .Where(c => c.Level == Permission.Owner)
                     .ToListAsync();
         }
 
@@ -237,7 +238,7 @@ namespace SharedLibraryCore.Services
             using (var context = new DatabaseContext(disableTracking: true))
             {
                 var iqClients = from client in context.Clients
-                                where client.Level >= Player.Permission.Trusted
+                                where client.Level >= Permission.Trusted
                                 where client.Active
                                 select new ClientInfo()
                                 {

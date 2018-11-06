@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
 {
     public class CLogin : Command
     {
-        public CLogin() : base("login", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"], "li", Player.Permission.Trusted, false, new CommandArgument[]
+        public CLogin() : base("login", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"], "li", EFClient.Permission.Trusted, false, new CommandArgument[]
         {
             new CommandArgument()
             {

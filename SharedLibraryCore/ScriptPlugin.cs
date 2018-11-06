@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -71,7 +72,7 @@ namespace SharedLibraryCore
                 cfg.AllowClr(new[]
                 {
                     typeof(System.Net.Http.HttpClient).Assembly,
-                    typeof(Objects.Player).Assembly,
+                    typeof(EFClient).Assembly,
                 })
                 .CatchClrExceptions());
 

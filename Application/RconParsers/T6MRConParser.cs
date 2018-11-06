@@ -9,6 +9,7 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.RCon;
 using SharedLibraryCore.Exceptions;
 using System.Text;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Application.RconParsers
 {
@@ -60,7 +61,7 @@ namespace IW4MAdmin.Application.RconParsers
             };
         }
 
-        public async Task<List<Player>> GetStatusAsync(Connection connection)
+        public async Task<List<EFClient>> GetStatusAsync(Connection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, "status");
             return ClientsFromStatus(response);
@@ -73,9 +74,9 @@ namespace IW4MAdmin.Application.RconParsers
             return true;
         }
 
-        private List<Player> ClientsFromStatus(string[] status)
+        private List<EFClient> ClientsFromStatus(string[] status)
         {
-            List<Player> StatusPlayers = new List<Player>();
+            List<EFClient> StatusPlayers = new List<EFClient>();
 
             foreach (string statusLine in status)
             {
@@ -98,7 +99,7 @@ namespace IW4MAdmin.Application.RconParsers
 #endif
                     int ipAddress = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
-                    var p = new Player()
+                    var p = new EFClient()
                     {
                         Name = name,
                         NetworkId = networkId,
@@ -106,7 +107,7 @@ namespace IW4MAdmin.Application.RconParsers
                         IPAddress = ipAddress,
                         Ping = Ping,
                         Score = 0,
-                        State = Player.ClientState.Connecting,
+                        State = EFClient.ClientState.Connecting,
                         IsBot = networkId == 0
                     };
 

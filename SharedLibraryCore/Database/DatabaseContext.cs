@@ -1,17 +1,13 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database.Models;
-using System.Reflection;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Data.Sqlite;
 using SharedLibraryCore.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Npgsql;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace SharedLibraryCore.Database
 {
@@ -26,6 +22,7 @@ namespace SharedLibraryCore.Database
 
         static string _ConnectionString;
         static string _provider;
+        private static string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins\";
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
@@ -57,7 +54,7 @@ namespace SharedLibraryCore.Database
                     $"{Path.DirectorySeparatorChar}{currentPath}" :
                     currentPath;
 
-                var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = $"{currentPath}{Path.DirectorySeparatorChar}Database{Path.DirectorySeparatorChar}Database.db" };
+                var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = Path.Join(currentPath, "Database", "Database.db") };
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);
 
@@ -126,23 +123,11 @@ namespace SharedLibraryCore.Database
 
             // adapted from
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
-            IEnumerable<string> directoryFiles;
+            string pluginDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
+            IEnumerable<string> directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
 
-            string pluginDir = $@"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Debug{Path.DirectorySeparatorChar}netcoreapp2.1{Path.DirectorySeparatorChar}Plugins";
-
-            if (!Directory.Exists(pluginDir))
-            {
-                pluginDir = Path.Join(Environment.CurrentDirectory, "Plugins");
-
-                if (!Directory.Exists(pluginDir))
-                {
-                    pluginDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
-                }
-            }
-
-            directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
 #if DEBUG == TRUE
-            foreach (string dllPath in Directory.GetFiles(@"C:\Projects\IW4M-Admin\Application\bin\Debug\netcoreapp2.1\Plugins").Where(f => f.EndsWith(".dll")))
+            foreach (string dllPath in Directory.GetFiles(_migrationPluginDirectory).Where(f => f.EndsWith(".dll")))
 #else
             foreach (string dllPath in directoryFiles)
 #endif
@@ -163,7 +148,9 @@ namespace SharedLibraryCore.Database
                     .Select(c => (IModelConfiguration)Activator.CreateInstance(c));
 
                 foreach (var configurable in configurations)
+                {
                     configurable.Configure(modelBuilder);
+                }
 
                 foreach (var type in library.ExportedTypes)
                 {

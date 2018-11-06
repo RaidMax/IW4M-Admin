@@ -5,6 +5,7 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using SharedLibraryCore.Configuration;
 using System.Reflection;
+using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -17,12 +18,12 @@ namespace SharedLibraryCore.Interfaces
         IList<Server> GetServers();
         IList<Command> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();
-        IList<Player> GetActiveClients();
+        IList<EFClient> GetActiveClients();
         IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();
         ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
-        IDictionary<int, Player> GetPrivilegedClients();
+        IDictionary<int, EFClient> GetPrivilegedClients();
         /// <summary>
         /// Get the event handlers
         /// </summary>

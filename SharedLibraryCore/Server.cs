@@ -9,6 +9,7 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore
 {
@@ -37,9 +38,9 @@ namespace SharedLibraryCore
             ServerConfig = config;
             RemoteConnection = new RCon.Connection(IP, Port, Password, Logger);
 
-            Players = new List<Player>(new Player[18]);
+            Clients = new List<EFClient>(new EFClient[18]);
             Reports = new List<Report>();
-            PlayerHistory = new Queue<PlayerHistory>();
+            ClientHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();
             NextMessage = 0;
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
@@ -61,32 +62,32 @@ namespace SharedLibraryCore
         }
 
         //Returns list of all current players
-        public List<Player> GetPlayersAsList()
+        public List<EFClient> GetClientsAsList()
         {
-            return Players.FindAll(x => x != null);
+            return Clients.FindAll(x => x != null);
         }
 
         /// <summary>
         /// Add a player to the server's player list
         /// </summary>
-        /// <param name="P">Player pulled from memory reading</param>
+        /// <param name="P">EFClient pulled from memory reading</param>
         /// <returns>True if player added sucessfully, false otherwise</returns>
-        abstract public Task<bool> AddPlayer(Player P);
+        abstract public Task OnClientConnected(EFClient P);
 
         /// <summary>
         /// Remove player by client number
         /// </summary>
         /// <param name="cNum">Client ID of player to be removed</param>
         /// <returns>true if removal succeded, false otherwise</returns>
-        abstract public Task RemovePlayer(int cNum);
+        abstract public Task RemoveClient(int cNum);
 
 
         /// <summary>
         /// Get a player by name
         /// </summary>
-        /// <param name="pName">Player name to search for</param>
+        /// <param name="pName">EFClient name to search for</param>
         /// <returns>Matching player if found</returns>
-        public List<Player> GetClientByName(String pName)
+        public List<EFClient> GetClientByName(String pName)
         {
             string[] QuoteSplit = pName.Split('"');
             bool literal = false;
@@ -96,9 +97,9 @@ namespace SharedLibraryCore
                 literal = true;
             }
             if (literal)
-                return Players.Where(p => p != null && p.Name.ToLower().Equals(pName.ToLower())).ToList();
+                return Clients.Where(p => p != null && p.Name.ToLower().Equals(pName.ToLower())).ToList();
 
-            return Players.Where(p => p != null && p.Name.ToLower().Contains(pName.ToLower())).ToList();
+            return Clients.Where(p => p != null && p.Name.ToLower().Contains(pName.ToLower())).ToList();
         }
 
         virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts) => (Task<bool>)Task.CompletedTask;
@@ -115,7 +116,7 @@ namespace SharedLibraryCore
         /// Send a message to all players
         /// </summary>
         /// <param name="message">Message to be sent to all players</param>
-        public GameEvent Broadcast(string message, Player sender = null)
+        public GameEvent Broadcast(string message, EFClient sender = null)
         {
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
 
@@ -139,19 +140,19 @@ namespace SharedLibraryCore
         /// Send a message to a particular players
         /// </summary>
         /// <param name="Message">Message to send</param>
-        /// <param name="Target">Player to send message to</param>
-        protected async Task Tell(String Message, Player Target)
+        /// <param name="Target">EFClient to send message to</param>
+        protected async Task Tell(String Message, EFClient Target)
         {
 #if !DEBUG
             string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Tell, Target.ClientNumber, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{Message}");
-            if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != Player.Permission.Console)
+            if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != EFClient.Permission.Console)
                 await this.ExecuteCommandAsync(formattedMessage);
 #else
             Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
             await Task.CompletedTask;
 #endif
 
-            if (Target.Level == Player.Permission.Console)
+            if (Target.Level == EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine(Message.StripColors());
@@ -179,7 +180,7 @@ namespace SharedLibraryCore
         /// <param name="message">Message to send out</param>
         public void ToAdmins(String message)
         {
-            foreach (var client in GetPlayersAsList().Where(c => c.Level > Player.Permission.Flagged))
+            foreach (var client in GetClientsAsList().Where(c => c.Level > EFClient.Permission.Flagged))
             {
                 client.Tell(message);
             }
@@ -189,15 +190,15 @@ namespace SharedLibraryCore
         /// Kick a player from the server
         /// </summary>
         /// <param name="Reason">Reason for kicking</param>
-        /// <param name="Target">Player to kick</param>
-        abstract protected Task Kick(String Reason, Player Target, Player Origin);
+        /// <param name="Target">EFClient to kick</param>
+        abstract protected Task Kick(String Reason, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server
         /// </summary>
         /// <param name="Reason">Reason for banning the player</param>
         /// <param name="Target">The player to ban</param>
-        abstract protected Task TempBan(String Reason, TimeSpan length, Player Target, Player Origin);
+        abstract protected Task TempBan(String Reason, TimeSpan length, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Perm ban a player from the server
@@ -205,9 +206,9 @@ namespace SharedLibraryCore
         /// <param name="Reason">The reason for the ban</param>
         /// <param name="Target">The person to ban</param>
         /// <param name="Origin">The person who banned the target</param>
-        abstract protected Task Ban(String Reason, Player Target, Player Origin);
+        abstract protected Task Ban(String Reason, EFClient Target, EFClient Origin);
 
-        abstract protected Task Warn(String Reason, Player Target, Player Origin);
+        abstract protected Task Warn(String Reason, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Unban a player by npID / GUID
@@ -215,7 +216,7 @@ namespace SharedLibraryCore
         /// <param name="npID">npID of the player</param>
         /// <param name="Target">I don't remember what this is for</param>
         /// <returns></returns>
-        abstract public Task Unban(string reason, Player Target, Player Origin);
+        abstract public Task Unban(string reason, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Change the current searver map
@@ -284,7 +285,7 @@ namespace SharedLibraryCore
         public List<Map> Maps { get; protected set; }
         public List<Report> Reports { get; set; }
         public List<ChatInfo> ChatHistory { get; protected set; }
-        public Queue<PlayerHistory> PlayerHistory { get; private set; }
+        public Queue<PlayerHistory> ClientHistory { get; private set; }
         public Game GameName { get; protected set; }
 
         // Info
@@ -296,11 +297,11 @@ namespace SharedLibraryCore
         {
             get
             {
-                return Players.Where(p => p != null).Count();
+                return Clients.Where(p => p != null).Count();
             }
         }
         public int MaxClients { get; protected set; }
-        public List<Player> Players { get; protected set; }
+        public List<EFClient> Clients { get; protected set; }
         public string Password { get; private set; }
         public bool Throttled { get; protected set; }
         public bool CustomCallback { get; protected set; }
@@ -309,6 +310,7 @@ namespace SharedLibraryCore
         public IRConParser RconParser { get; protected set; }
         public IEventParser EventParser { get; set; }
         public string LogPath { get; protected set; }
+        public bool RestartRequested { get; set; }
 
         // Internal
         protected string IP;

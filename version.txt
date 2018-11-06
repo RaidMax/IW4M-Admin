@@ -1,5 +1,6 @@
 Version 2.3:
 -added configuration option to ignore bots
+-updated anticheat slightly
 
 Version 2.2:
 -upgraded projects to .NET 2.1

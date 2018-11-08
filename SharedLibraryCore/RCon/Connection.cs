@@ -106,11 +106,17 @@ namespace SharedLibraryCore.RCon
                 try
                 {
                     response = await SendPayloadAsync(payload, waitForResponse);
+
+                    if (response.Length == 0)
+                    {
+                        throw new Exception();
+                    }
+
                     connectionState.OnComplete.Release(1);
                     connectionState.ConnectionAttempts = 0;
                 }
 
-                catch/* (Exception ex)*/
+                catch
                 {
                     if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
                     {

@@ -1,8 +1,7 @@
-﻿using System;
+﻿using SharedLibraryCore.Database.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore
 {
@@ -74,6 +73,18 @@ namespace SharedLibraryCore
             /// the current map changed
             /// </summary>
             MapChange,
+            /// <summary>
+            /// a client was detected as starting to connect
+            /// </summary>
+            PreConnect,
+            /// <summary>
+            /// a client was detecting as starting to disconnect
+            /// </summary>
+            PreDisconnect,
+            /// <summary>
+            /// a client's information was updated
+            /// </summary>
+            Update,
 
             // events "generated" by clients  
             /// <summary>
@@ -159,7 +170,10 @@ namespace SharedLibraryCore
         }
 
         static long NextEventId;
-        static long GetNextEventId() => Interlocked.Increment(ref NextEventId);
+        static long GetNextEventId()
+        {
+            return Interlocked.Increment(ref NextEventId);
+        }
 
         public GameEvent()
         {
@@ -186,11 +200,14 @@ namespace SharedLibraryCore
         /// asynchronously wait for GameEvent to be processed
         /// </summary>
         /// <returns>waitable task </returns>
-        public Task<GameEvent> WaitAsync(int timeOut = int.MaxValue) => Task.Run(() =>
+        public Task<GameEvent> WaitAsync(int timeOut = int.MaxValue)
         {
-            OnProcessed.Wait(timeOut);
-            return this;
-        });
+            return Task.Run(() =>
+            {
+                OnProcessed.Wait(timeOut);
+                return this;
+            });
+        }
 
         /// <summary>
         /// determine whether an event should be delayed or not

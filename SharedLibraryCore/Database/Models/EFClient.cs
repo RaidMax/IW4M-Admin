@@ -41,13 +41,13 @@ namespace SharedLibraryCore.Database.Models
         public virtual string Name
         {
             get { return CurrentAlias.Name; }
-            set { }
+            set { CurrentAlias.Name = value; }
         }
         [NotMapped]
         public virtual int IPAddress
         {
             get { return CurrentAlias.IPAddress; }
-            set { }
+            set { CurrentAlias.IPAddress = value;  }
         }
 
         [NotMapped]

@@ -32,6 +32,7 @@ namespace IW4MAdmin
 
         public override int GetHashCode()
         {
+            // hack: my laziness
             if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28965")
             {
                 return 886229536;
@@ -54,16 +55,6 @@ namespace IW4MAdmin
             }
 
             return Id;
-        }
-
-        public async Task OnClientJoined(EFClient polledClient)
-        {
-            var existingClient = Clients[polledClient.ClientNumber];
-
-            if (existingClient != null)
-            {
-                await existingClient.OnJoin(polledClient.IPAddress);
-            }
         }
 
         override public async Task OnClientConnected(EFClient clientFromLog)
@@ -119,40 +110,49 @@ namespace IW4MAdmin
                 Clients[client.ClientNumber] = client;
                 client.OnConnect();
 
+                // this only happens the preconnect event occurred from RCon polling
+                if (clientFromLog.IPAddress != 0)
+                {
+                    await client.OnJoin(clientFromLog.IPAddress);
+                }
+
                 client.State = EFClient.ClientState.Connected;
+#if DEBUG == true
+                Logger.WriteDebug($"End PreConnect for {client}");
+#endif   
+                var e = new GameEvent()
+                {
+                    Origin = client,
+                    Owner = this,
+                    Type = GameEvent.EventType.Connect
+                };
+
+                Manager.GetEventHandler().AddEvent(e);
             }
 
             catch (Exception ex)
             {
-                Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {clientFromLog.Name}::{clientFromLog.NetworkId}");
-                Logger.WriteDebug(ex.Message);
-                Logger.WriteDebug(ex.StackTrace);
+                Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {clientFromLog}");
+                Logger.WriteError(ex.GetExceptionInfo());
             }
         }
 
-        //Remove player by CLIENT NUMBER
-        override public async Task RemoveClient(int cNum)
+        override public async Task OnClientDisconnected(EFClient client)
         {
-            if (cNum >= 0 && Clients[cNum] != null)
+            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+            await client.OnDisconnect();
+            Clients[client.ClientNumber] = null;
+#if DEBUG == true
+            Logger.WriteDebug($"End PreDisconnect for {client}");
+#endif
+            var e = new GameEvent()
             {
-                EFClient Leaving = Clients[cNum];
+                Origin = client,
+                Owner = this,
+                Type = GameEvent.EventType.Disconnect
+            };
 
-                // occurs when the player disconnects via log before being authenticated by RCon
-                if (Leaving.State != EFClient.ClientState.Connected)
-                {
-                    Clients[cNum] = null;
-                }
-
-                else
-                {
-                    Logger.WriteInfo($"Client {Leaving} [{Leaving.State.ToString().ToLower()}] disconnecting...");
-                    Leaving.State = EFClient.ClientState.Disconnecting;
-                    Leaving.TotalConnectionTime += Leaving.ConnectionLength;
-                    Leaving.LastConnection = DateTime.UtcNow;
-                    await Manager.GetClientService().Update(Leaving);
-                    Clients[cNum] = null;
-                }
-            }
+            Manager.GetEventHandler().AddEvent(e);
         }
 
         public override async Task ExecuteEvent(GameEvent E)
@@ -218,27 +218,34 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task<bool> ProcessEvent(GameEvent E)
         {
-            if (E.Type == GameEvent.EventType.Connect)
+            if (E.Type == GameEvent.EventType.PreConnect)
             {
-                E.Origin.State = EFClient.ClientState.Authenticated;
-                await OnClientConnected(E.Origin);
+                bool clientExists = GetClientsAsList().Exists(_client => _client.NetworkId.Equals(E.Origin));
 
-                ChatHistory.Add(new ChatInfo()
+                if (!clientExists)
                 {
-                    Name = E.Origin.Name,
-                    Message = "CONNECTED",
-                    Time = DateTime.UtcNow
-                });
+#if DEBUG == true
+                    Logger.WriteDebug($"Begin PreConnect for {E.Origin}");
+#endif
+                    await OnClientConnected(E.Origin);
 
-                if (E.Origin.Level > EFClient.Permission.Moderator)
-                {
-                    E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = "CONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+
+                    if (E.Origin.Level > EFClient.Permission.Moderator)
+                    {
+                        E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                    }
                 }
-            }
 
-            else if (E.Type == GameEvent.EventType.Join)
-            {
-                await OnClientJoined(E.Origin);
+                else
+                {
+                    return false;
+                }
             }
 
             else if (E.Type == GameEvent.EventType.Flag)
@@ -303,13 +310,9 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Quit)
             {
-                var origin = Clients.FirstOrDefault(p => p != null && p.NetworkId == E.Origin.NetworkId);
+                var origin = GetClientsAsList().FirstOrDefault(_client => _client.NetworkId.Equals(E.Origin));
 
-                if (origin != null &&
-                    // we only want to forward the event if they are connected. 
-                    origin.State == EFClient.ClientState.Connected &&
-                    // make sure we don't get the disconnect event from every time the game ends
-                    origin.ConnectionLength < Manager.GetApplicationSettings().Configuration().RConPollRate)
+                if (origin != null)
                 {
                     var e = new GameEvent()
                     {
@@ -321,29 +324,45 @@ namespace IW4MAdmin
                     Manager.GetEventHandler().AddEvent(e);
                 }
 
-                else if (origin != null &&
-                    origin.State != EFClient.ClientState.Connected)
+                else
                 {
-                    await RemoveClient(origin.ClientNumber);
+                    return false;
                 }
             }
 
-            else if (E.Type == GameEvent.EventType.Disconnect)
+            else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
-                ChatHistory.Add(new ChatInfo()
-                {
-                    Name = E.Origin.Name,
-                    Message = "DISCONNECTED",
-                    Time = DateTime.UtcNow
-                });
+                // predisconnect comes from minimal rcon polled players and minimal log players
+                // so we need to disconnect the "full" version of the client
+                var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
 
-                var currentState = E.Origin.State;
-                await RemoveClient(E.Origin.ClientNumber);
-
-                if (currentState != EFClient.ClientState.Connected)
+                if (client != null)
                 {
-                    throw new ServerException("Disconnecting player was not in a connected state");
+#if DEBUG == true
+                    Logger.WriteDebug($"Begin PreDisconnect for {client}");
+#endif
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = client.Name,
+                        Message = "DISCONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+
+                    await OnClientDisconnected(client);
                 }
+
+                else
+                {
+                    return false;
+                }
+            }
+
+            else if (E.Type == GameEvent.EventType.Update)
+            {
+#if DEBUG == true
+                Logger.WriteDebug($"Begin Update for {E.Origin}");
+#endif
+                await OnClientUpdate(E.Origin);
             }
 
             if (E.Type == GameEvent.EventType.Say)
@@ -440,6 +459,24 @@ namespace IW4MAdmin
             return true;
         }
 
+        private Task OnClientUpdate(EFClient origin)
+        {
+            var client = Clients[origin.ClientNumber];
+
+            if (client != null)
+            {
+                client.Ping = origin.Ping;
+                client.Score = origin.Score;
+
+                if (origin.IPAddress == 0)
+                {
+                    return client.OnJoin(origin.IPAddress);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// lists the connecting and disconnecting clients via RCon response
         /// array index 0 =  connecting clients
@@ -471,9 +508,15 @@ namespace IW4MAdmin
             }
 
             var disconnectingClients = currentClients.Except(polledClients);
-            var connectingClients = polledClients.Except(currentClients.Where(c => c.State == EFClient.ClientState.Connected));
+            var connectingClients = polledClients.Except(currentClients);
+            var updatedClients = polledClients.Except(connectingClients);
 
-            return new List<EFClient>[] { connectingClients.ToList(), disconnectingClients.ToList() };
+            return new List<EFClient>[]
+            {
+                connectingClients.ToList(),
+                disconnectingClients.ToList(),
+                updatedClients.ToList()
+            };
         }
 
         DateTime start = DateTime.Now;
@@ -484,21 +527,30 @@ namespace IW4MAdmin
         {
             try
             {
+                #region SHUTDOWN
                 if (Manager.ShutdownRequested())
                 {
-                    // todo: fix up disconnect
-                    //for (int i = 0; i < EFClients.Count; i++)
-                    //   await RemoveClient(i);
+                    foreach (var client in GetClientsAsList())
+                    {
+                        var e = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.PreDisconnect,
+                            Origin = client,
+                            Owner = this,
+                        };
+
+                        Manager.GetEventHandler().AddEvent(e);
+                        await e.WaitAsync();
+                    }
 
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                     {
                         await plugin.OnUnloadAsync();
                     }
-                }
 
-                // only check every 2 minutes if the server doesn't seem to be responding
-                /*  if ((DateTime.Now - LastPoll).TotalMinutes < 0.5 && ConnectionErrors >= 1)
-                      return true;*/
+                    return true;
+                }
+                #endregion
 
                 try
                 {
@@ -514,7 +566,7 @@ namespace IW4MAdmin
 
                         var e = new GameEvent()
                         {
-                            Type = GameEvent.EventType.Disconnect,
+                            Type = GameEvent.EventType.PreDisconnect,
                             Origin = disconnectingClient,
                             Owner = this
                         };
@@ -531,16 +583,9 @@ namespace IW4MAdmin
                     // this are our new connecting clients
                     foreach (var client in polledClients[0])
                     {
-                        // this prevents duplicate events from being sent to the event api
-                        if (GetClientsAsList().Count(c => c.NetworkId == client.NetworkId &&
-                            c.State == EFClient.ClientState.Connected) != 0)
-                        {
-                            continue;
-                        }
-
                         var e = new GameEvent()
                         {
-                            Type = GameEvent.EventType.Connect,
+                            Type = GameEvent.EventType.PreConnect,
                             Origin = client,
                             Owner = this
                         };
@@ -552,11 +597,29 @@ namespace IW4MAdmin
                     // wait for all the connect tasks to finish
                     await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
 
+                    waiterList.Clear();
+                    // these are the clients that have updated
+                    foreach (var client in polledClients[2])
+                    {
+                        var e = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Update,
+                            Origin = client,
+                            Owner = this
+                        };
+
+                        Manager.GetEventHandler().AddEvent(e);
+                        waiterList.Add(e);
+                    }
+
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
+
                     if (ConnectionErrors > 0)
                     {
                         Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
                         Throttled = false;
                     }
+
                     ConnectionErrors = 0;
                     LastPoll = DateTime.Now;
                 }
@@ -575,20 +638,6 @@ namespace IW4MAdmin
 
                 LastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
-
-                // todo: re-enable on tick
-                /*
-                if ((DateTime.Now - tickTime).TotalMilliseconds >= 1000)
-                {
-                    foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
-                    {
-                        if (cts.IsCancellationRequested)
-                            break;
-
-                        await Plugin.OnTickAsync(this);
-                    }
-                    tickTime = DateTime.Now;
-                }*/
 
                 // update the player history 
                 if ((lastCount - playerCountStart).TotalMinutes >= SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval)
@@ -849,7 +898,7 @@ namespace IW4MAdmin
 #endif
 
 #if DEBUG
-            await Target.CurrentServer.RemoveClient(Target.ClientNumber);
+            await Target.CurrentServer.OnClientDisconnected(Target);
 #endif
 
             var newPenalty = new Penalty()
@@ -887,7 +936,7 @@ namespace IW4MAdmin
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #else
-            await Target.CurrentServer.RemoveClient(Target.ClientNumber);
+            await Target.CurrentServer.OnClientDisconnected(Target);
 #endif
 
             Penalty newPenalty = new Penalty()
@@ -933,7 +982,7 @@ namespace IW4MAdmin
                 string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
-                await Target.CurrentServer.RemoveClient(Target.ClientNumber);
+                await Target.CurrentServer.OnClientDisconnected(Target);
 #endif
             }
 

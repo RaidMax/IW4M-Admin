@@ -1,5 +1,4 @@
-﻿using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
+﻿using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -17,11 +16,6 @@ namespace SharedLibraryCore.Database.Models
             /// by the log file, but has not be authenticated by RCon
             /// </summary>
             Connecting,
-            /// <summary>
-            /// represents when the client has been parsed by RCon, 
-            /// but has not been validated against the database
-            /// </summary>
-            Authenticated,
             /// <summary>
             /// represents when the client has been authenticated by RCon
             /// and validated by the database
@@ -86,6 +80,7 @@ namespace SharedLibraryCore.Database.Models
             {
                 { "_reportCount", 0 }
             };
+            CurrentAlias = CurrentAlias ?? new EFAlias();
         }
 
         public override string ToString()
@@ -410,7 +405,7 @@ namespace SharedLibraryCore.Database.Models
         public void OnConnect()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            //#if !DEBUG
+#if !DEBUG
             if (Name.Length < 3)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
@@ -435,7 +430,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             // reserved slots stuff
-            if ((CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged()) - CurrentServer.MaxClients) < CurrentServer.ServerConfig.ReservedSlotNumber &&
+            if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged())) < CurrentServer.ServerConfig.ReservedSlotNumber &&
                !this.IsPrivileged())
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
@@ -446,13 +441,34 @@ namespace SharedLibraryCore.Database.Models
             LastConnection = DateTime.UtcNow;
             Connections += 1;
 
-            //#endif
+#endif
+        }
+
+        public async Task OnDisconnect()
+        {
+            State = ClientState.Disconnecting;
+            TotalConnectionTime += ConnectionLength;
+            LastConnection = DateTime.UtcNow;
+            await CurrentServer.Manager.GetClientService().Update(this);
         }
 
         public async Task OnJoin(int ipAddress)
         {
             // todo: fix this up
-            CurrentAlias.IPAddress = IPAddress;
+            var existingAlias = AliasLink.Children
+                        .FirstOrDefault(a => a.Name == Name && a.IPAddress == ipAddress);
+
+            if (existingAlias == null)
+            {
+                CurrentServer.Logger.WriteDebug($"Client {this} has connected previously under a different ip/name");
+
+                CurrentAlias = new EFAlias()
+                {
+                    IPAddress = ipAddress,
+                    Name = Name
+                };
+            }
+
             await CurrentServer.Manager.GetClientService().Update(this);
 
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
@@ -477,9 +493,8 @@ namespace SharedLibraryCore.Database.Models
                 CurrentServer.Logger.WriteInfo($"Banned client {this} trying to join...");
                 var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
 
-
                 // reban the "evading" guid
-                if (Level != Permission.Banned && 
+                if (Level != Permission.Banned &&
                     currentBan.Type == Penalty.PenaltyType.Ban)
                 {
                     // hack: re apply the automated offense to the reban
@@ -501,11 +516,7 @@ namespace SharedLibraryCore.Database.Models
 
                 else
                 {
-                    //string formattedKick = String.Format(
-                    //    RconParser.GetCommandPrefixes().Kick,
-                    //    polledPlayer.ClientNumber,
-                    //    $"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})");
-                    //await this.ExecuteCommandAsync(formattedKick);
+                    Kick($"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
                 }
             }
         }

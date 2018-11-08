@@ -79,7 +79,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="cNum">Client ID of player to be removed</param>
         /// <returns>true if removal succeded, false otherwise</returns>
-        abstract public Task RemoveClient(int cNum);
+        abstract public Task OnClientDisconnected(EFClient client);
 
 
         /// <summary>

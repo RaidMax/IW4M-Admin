@@ -33,7 +33,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                 return new GameEvent()
                 {
-                    Type = GameEvent.EventType.Join,
+                    Type = GameEvent.EventType.PreConnect,
                     Origin = new EFClient()
                     {
                         ClientId = 1

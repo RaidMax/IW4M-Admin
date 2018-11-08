@@ -244,7 +244,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 int serverId = pl.CurrentServer.GetHashCode();
 
-
                 if (!Servers.ContainsKey(serverId))
                 {
                     Log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");

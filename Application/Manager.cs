@@ -85,29 +85,7 @@ namespace IW4MAdmin.Application
             }
 
             try
-            {
-                // if the origin client is not in an authorized state (detected by RCon) don't execute the event
-                if (GameEvent.ShouldOriginEventBeDelayed(newEvent))
-                {
-                    Logger.WriteDebug($"Delaying origin execution of event type {newEvent.Type} for {newEvent.Origin} because they are not authed");
-                    if (newEvent.Type == GameEvent.EventType.Command)
-                    {
-                        newEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["SERVER_DELAYED_EVENT_WAIT"]);
-                    }
-
-                    // offload it to the player to keep
-                    newEvent.Origin.DelayedEvents.Enqueue(newEvent);
-                }
-
-                // if the target client is not in an authorized state (detected by RCon) don't execute the event
-                else if (GameEvent.ShouldTargetEventBeDelayed(newEvent))
-                {
-                    Logger.WriteDebug($"Delaying target execution of event type {newEvent.Type} for {newEvent.Target} because they are not authed");
-                    // offload it to the player to keep
-                    newEvent.Target.DelayedEvents.Enqueue(newEvent);
-                }
-
-                else
+            {         
                 {
 
                     await newEvent.Owner.ExecuteEvent(newEvent);

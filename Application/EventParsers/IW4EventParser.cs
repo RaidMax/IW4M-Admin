@@ -144,7 +144,7 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     return new GameEvent()
                     {
-                        Type = GameEvent.EventType.Join,
+                        Type = GameEvent.EventType.PreConnect,
                         Data = logLine,
                         Owner = server,
                         Origin = new EFClient()
@@ -159,26 +159,26 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            //if (eventType == "Q")
-            //{
-            //    var regexMatch = Regex.Match(logLine, @"^(Q;)(.{1,32});([0-9]+);(.*)$");
-            //    if (regexMatch.Success)
-            //    {
-            //        return new GameEvent()
-            //        {
-            //            Type = GameEvent.EventType.Quit,
-            //            Data = logLine,
-            //            Owner = server,
-            //            Origin = new Player()
-            //            {
-            //                Name = regexMatch.Groups[4].ToString().StripColors(),
-            //                NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
-            //                ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
-            //                State = Player.ClientState.Connecting
-            //            }
-            //        };
-            //    }
-            //}
+            if (eventType == "Q")
+            {
+                var regexMatch = Regex.Match(logLine, @"^(Q;)(.{1,32});([0-9]+);(.*)$");
+                if (regexMatch.Success)
+                {
+                    return new GameEvent()
+                    {
+                        Type = GameEvent.EventType.PreDisconnect,
+                        Data = logLine,
+                        Owner = server,
+                        Origin = new EFClient()
+                        {
+                            Name = regexMatch.Groups[4].ToString().StripColors(),
+                            NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
+                            ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
+                            State = EFClient.ClientState.Disconnecting
+                        }
+                    };
+                }
+            }
 
             if (eventType.Contains("ExitLevel"))
             {
@@ -186,14 +186,8 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.MapEnd,
                     Data = lineSplit[0],
-                    Origin = new EFClient()
-                    {
-                        ClientId = 1
-                    },
-                    Target = new EFClient()
-                    {
-                        ClientId = 1
-                    },
+                    Origin = Utilities.IW4MAdminClient(server),
+                    Target = Utilities.IW4MAdminClient(server),
                     Owner = server
                 };
             }

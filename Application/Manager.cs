@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Text;
-using System.Reflection;
-
+﻿using IW4MAdmin.Application.API.Master;
 using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Commands;
-using SharedLibraryCore.Helpers;
-using SharedLibraryCore.Exceptions;
-using SharedLibraryCore.Objects;
-using SharedLibraryCore.Services;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
-using SharedLibraryCore.Events;
-
-using IW4MAdmin.Application.API.Master;
-using IW4MAdmin.Application.Migration;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
@@ -61,7 +57,6 @@ namespace IW4MAdmin.Application
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
-            PrivilegedClients = new Dictionary<int, EFClient>();
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             StartTime = DateTime.UtcNow;
             OnQuit = new ManualResetEventSlim();
@@ -85,61 +80,12 @@ namespace IW4MAdmin.Application
             }
 
             try
-            {         
-                {
+            {
+                await newEvent.Owner.ExecuteEvent(newEvent);
 
-                    await newEvent.Owner.ExecuteEvent(newEvent);
-
-                    // save the event info to the database
-                    var changeHistorySvc = new ChangeHistoryService();
-                    await changeHistorySvc.Add(args.Event);
-
-                    // todo: this is a hacky mess
-                    if (newEvent.Origin?.DelayedEvents.Count > 0 &&
-                        (//newEvent.Origin?.State == Player.ClientState.Connected || 
-                        newEvent.Type == GameEvent.EventType.Connect))
-                    {
-                        var events = newEvent.Origin.DelayedEvents;
-
-                        // add the delayed event to the queue 
-                        while (events.Count > 0)
-                        {
-                            var oldEvent = events.Dequeue();
-
-                            var e = new GameEvent()
-                            {
-                                Type = oldEvent.Type,
-                                Origin = newEvent.Origin,
-                                Data = oldEvent.Data,
-                                Extra = oldEvent.Extra,
-                                Owner = oldEvent.Owner,
-                                Message = oldEvent.Message,
-                                Target = oldEvent.Target,
-                                Remote = oldEvent.Remote
-                            };
-
-                            e.Origin = newEvent.Origin;
-                            // check if the target was assigned
-                            if (e.Target != null)
-                            {
-                                // update the target incase they left or have newer info
-                                e.Target = newEvent.Owner.GetClientsAsList()
-                                    .FirstOrDefault(p => p.NetworkId == e.Target.NetworkId);
-                                // we have to throw out the event because they left
-                                if (e.Target == null)
-                                {
-                                    Logger.WriteWarning($"Delayed event for {e.Origin} was ignored because the target has left");
-                                    // hack: don't do anything with the event because the target is invalid
-                                    e.Origin = null;
-                                    e.Type = GameEvent.EventType.Unknown;
-
-                                }
-                            }
-                            Logger.WriteDebug($"Adding delayed event of type {e.Type} for {e.Origin} back for processing");
-                            this.GetEventHandler().AddEvent(e);
-                        }
-                    }
-                }
+                // save the event info to the database
+                var changeHistorySvc = new ChangeHistoryService();
+                await changeHistorySvc.Add(args.Event);
 
 #if DEBUG
                 Logger.WriteDebug($"Processed event with id {newEvent.Id}");
@@ -173,7 +119,7 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
 
-            skip:
+        skip:
 
             // tell anyone waiting for the output that we're done
             newEvent.OnProcessed.Set();
@@ -263,36 +209,7 @@ namespace IW4MAdmin.Application
                 await new ContextSeed(db).Seed();
             }
 
-            // todo: optimize this (or replace it)
-            var ipList = (await ClientSvc.Find(c => c.Level > EFClient.Permission.Trusted))
-                .Select(c => new
-                {
-                    c.Password,
-                    c.PasswordSalt,
-                    c.ClientId,
-                    c.Level,
-                    c.Name
-                });
-
-            foreach (var a in ipList)
-            {
-                try
-                {
-                    PrivilegedClients.Add(a.ClientId, new EFClient()
-                    {
-                        Name = a.Name,
-                        ClientId = a.ClientId,
-                        Level = a.Level,
-                        PasswordSalt = a.PasswordSalt,
-                        Password = a.Password
-                    });
-                }
-
-                catch (ArgumentException)
-                {
-                    continue;
-                }
-            }
+            PrivilegedClients = (await ClientSvc.GetPrivilegedClients()).ToDictionary(_client => _client.ClientId);
             #endregion
 
             #region CONFIG
@@ -341,7 +258,9 @@ namespace IW4MAdmin.Application
             }
 
             else if (config.Servers.Count == 0)
+            {
                 throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
+            }
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(config.CustomParserEncoding) ? config.CustomParserEncoding : "windows-1252");
@@ -367,7 +286,9 @@ namespace IW4MAdmin.Application
 
             #region COMMANDS
             if (ClientSvc.GetOwners().Result.Count == 0)
+            {
                 Commands.Add(new COwner());
+            }
 
             Commands.Add(new CQuit());
             Commands.Add(new CKick());
@@ -408,7 +329,9 @@ namespace IW4MAdmin.Application
             Commands.Add(new CNextMap());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
+            {
                 Commands.Add(C);
+            }
             #endregion
 
             #region INIT
@@ -443,7 +366,9 @@ namespace IW4MAdmin.Application
                 {
                     Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"]} [{Conf.IPAddress}:{Conf.Port}]");
                     if (e.GetType() == typeof(DvarException))
+                    {
                         Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"]} {(e as DvarException).Data["dvar_name"]} ({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})");
+                    }
                     else if (e.GetType() == typeof(NetworkException))
                     {
                         Logger.WriteDebug(e.Message);
@@ -572,23 +497,59 @@ namespace IW4MAdmin.Application
             return MessageTokens;
         }
 
-        public IList<EFClient> GetActiveClients() => _servers.SelectMany(s => s.Clients).Where(p => p != null).ToList();
+        public IList<EFClient> GetActiveClients()
+        {
+            return _servers.SelectMany(s => s.Clients).Where(p => p != null).ToList();
+        }
 
-        public ClientService GetClientService() => ClientSvc;
-        public AliasService GetAliasService() => AliasSvc;
-        public PenaltyService GetPenaltyService() => PenaltySvc;
-        public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings() => ConfigHandler;
-        public IDictionary<int, EFClient> GetPrivilegedClients() => PrivilegedClients;
-        public bool ShutdownRequested() => !Running;
-        public IEventHandler GetEventHandler() => Handler;
+        public ClientService GetClientService()
+        {
+            return ClientSvc;
+        }
+
+        public AliasService GetAliasService()
+        {
+            return AliasSvc;
+        }
+
+        public PenaltyService GetPenaltyService()
+        {
+            return PenaltySvc;
+        }
+
+        public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings()
+        {
+            return ConfigHandler;
+        }
+
+        public IDictionary<int, EFClient> GetPrivilegedClients()
+        {
+            return PrivilegedClients;
+        }
+
+        public bool ShutdownRequested()
+        {
+            return !Running;
+        }
+
+        public IEventHandler GetEventHandler()
+        {
+            return Handler;
+        }
 
         public void SetHasEvent()
         {
             OnQuit.Set();
         }
 
-        public IList<Assembly> GetPluginAssemblies() => SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies;
+        public IList<Assembly> GetPluginAssemblies()
+        {
+            return SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies;
+        }
 
-        public IPageList GetPageList() => PageList;
+        public IPageList GetPageList()
+        {
+            return PageList;
+        }
     }
 }

@@ -84,7 +84,7 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public async Task OnEventAsync(GameEvent E, Server S)
         {
-            if (E.Type == GameEvent.EventType.Connect)
+            if (E.Type == GameEvent.EventType.Join)
             {
                 EFClient newPlayer = E.Origin;
                 if (newPlayer.Level >= Permission.Trusted && !E.Origin.Masked)

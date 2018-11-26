@@ -1,21 +1,18 @@
-﻿using System;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Linq;
-using System.Collections.Generic;
-
-using SharedLibraryCore.Objects;
-using static SharedLibraryCore.Server;
-using System.Reflection;
-using System.IO;
-using System.Threading.Tasks;
-using System.Globalization;
-using System.Diagnostics;
-
-using Microsoft.EntityFrameworkCore.Query;
+﻿using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using SharedLibraryCore.Database.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore
 {
@@ -28,14 +25,20 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
-        public static EFClient IW4MAdminClient(Server server = null) => new EFClient()
+        public static EFClient IW4MAdminClient(Server server = null)
         {
-            ClientId = 1,
-            State = EFClient.ClientState.Connected,
-            Level = EFClient.Permission.Console,
-            CurrentServer = server,
-            Name = "IW4MAdmin"
-        };
+            return new EFClient()
+            {
+                ClientId = 1,
+                State = EFClient.ClientState.Connected,
+                Level = EFClient.Permission.Console,
+                CurrentServer = server,
+                CurrentAlias = new EFAlias()
+                {
+                    Name = "IW4MAdmin"
+                }
+            };
+        }
 
         public static string HttpRequest(string location, string header, string headerValue)
         {
@@ -64,7 +67,9 @@ namespace SharedLibraryCore
         public static String RemoveWords(this string str, int num)
         {
             if (str == null || str.Length == 0)
+            {
                 return "";
+            }
 
             String newStr = String.Empty;
             String[] tmp = str.Split(' ');
@@ -72,7 +77,9 @@ namespace SharedLibraryCore
             for (int i = 0; i < tmp.Length; i++)
             {
                 if (i >= num)
+                {
                     newStr += tmp[i] + ' ';
+                }
             }
 
             return newStr;
@@ -105,9 +112,13 @@ namespace SharedLibraryCore
             String lookingFor = str.ToLower();
 
             for (EFClient.Permission Perm = EFClient.Permission.User; Perm < EFClient.Permission.Console; Perm++)
+            {
                 if (lookingFor.Contains(Perm.ToString().ToLower())
                     || lookingFor.Contains(CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{Perm.ToString().ToUpper()}"].ToLower()))
+                {
                     return Perm;
+                }
+            }
 
             return EFClient.Permission.Banned;
         }
@@ -120,7 +131,10 @@ namespace SharedLibraryCore
         public static String StripColors(this string str)
         {
             if (str == null)
+            {
                 return "";
+            }
+
             str = Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "");
             string str2 = Regex.Match(str, @"(^\/+.*$)|(^.*\/+$)")
                 .Value
@@ -161,7 +175,10 @@ namespace SharedLibraryCore
             return $"^{colorCode}{localizedLevel ?? level.ToString()}";
         }
 
-        public static string ToLocalizedLevelName(this EFClient.Permission perm) => CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
+        public static string ToLocalizedLevelName(this EFClient.Permission perm)
+        {
+            return CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
+        }
 
         public static String ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
         {
@@ -174,7 +191,9 @@ namespace SharedLibraryCore
                 var found = tokens.FirstOrDefault(t => t.Name.ToLower() == Identifier.ToLower());
 
                 if (found != null)
+                {
                     str = str.Replace(Match, found.Process(server));
+                }
             }
 
             return str;
@@ -245,11 +264,17 @@ namespace SharedLibraryCore
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
             if (Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
+            {
                 return id;
+            }
+
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
             if (!string.IsNullOrEmpty(bot))
+            {
                 // should set their GUID to the negation of their 1 based index  (-1 - -18)
                 return -(Convert.ToInt64(bot.Substring(3)) + 1);
+            }
+
             return long.MinValue;
         }
 
@@ -260,9 +285,9 @@ namespace SharedLibraryCore
             return ip == null ? int.MaxValue : BitConverter.ToInt32(ip.GetAddressBytes(), 0);
         }
 
-        public static string ConvertIPtoString(this int ip)
+        public static string ConvertIPtoString(this int? ip)
         {
-            return new System.Net.IPAddress(BitConverter.GetBytes(ip)).ToString();
+            return !ip.HasValue ? "" : new System.Net.IPAddress(BitConverter.GetBytes(ip.Value)).ToString();
         }
 
         public static String GetTimePassed(DateTime start)
@@ -282,19 +307,28 @@ namespace SharedLibraryCore
             if (Elapsed.TotalMinutes < 120)
             {
                 if (Elapsed.TotalMinutes < 1.5)
+                {
                     return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MINUTES"]}{ago}";
+                }
+
                 return Math.Round(Elapsed.TotalMinutes, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MINUTES"]}{ago}";
             }
             if (Elapsed.TotalHours <= 24)
             {
                 if (Elapsed.TotalHours < 1.5)
+                {
                     return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]}{ago}";
+                }
+
                 return Math.Round(Elapsed.TotalHours, 0) + $" { CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]}{ago}";
             }
             if (Elapsed.TotalDays <= 90)
             {
                 if (Elapsed.TotalDays < 1.5)
+                {
                     return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_DAYS"]}{ago}";
+                }
+
                 return Math.Round(Elapsed.TotalDays, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_DAYS"]}{ago}";
             }
             if (Elapsed.TotalDays <= 365)
@@ -310,19 +344,39 @@ namespace SharedLibraryCore
         public static Game GetGame(string gameName)
         {
             if (gameName.Contains("IW4"))
+            {
                 return Game.IW4;
+            }
+
             if (gameName.Contains("CoD4"))
+            {
                 return Game.IW3;
+            }
+
             if (gameName.Contains("COD_WaW"))
+            {
                 return Game.T4;
+            }
+
             if (gameName.Contains("COD_T5_S"))
+            {
                 return Game.T5;
+            }
+
             if (gameName.Contains("T5M"))
+            {
                 return Game.T5M;
+            }
+
             if (gameName.Contains("IW5"))
+            {
                 return Game.IW5;
+            }
+
             if (gameName.Contains("COD_T6_S"))
+            {
                 return Game.T6M;
+            }
 
             return Game.UKN;
         }
@@ -337,7 +391,9 @@ namespace SharedLibraryCore
             var expressionMatch = Regex.Match(input, @"([0-9]+)(\w+)");
 
             if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
+            {
                 return new TimeSpan(1, 0, 0);
+            }
 
             char lengthDenote = expressionMatch.Groups[2].ToString()[0];
             int length = Int32.Parse(expressionMatch.Groups[1].ToString());
@@ -377,51 +433,41 @@ namespace SharedLibraryCore
             var loc = CurrentLocalization.LocalizationIndex;
 
             if (span.TotalMinutes < 60)
+            {
                 return $"{span.Minutes} {loc["GLOBAL_TIME_MINUTES"]}";
+            }
             else if (span.Hours >= 1 && span.TotalHours < 24)
+            {
                 return $"{span.Hours} {loc["GLOBAL_TIME_HOURS"]}";
+            }
             else if (span.TotalDays >= 1 && span.TotalDays < 7)
+            {
                 return $"{span.Days} {loc["GLOBAL_TIME_DAYS"]}";
+            }
             else if (span.TotalDays >= 7 && span.TotalDays < 90)
+            {
                 return $"{Math.Round(span.Days / 7.0, 0)} {loc["GLOBAL_TIME_WEEKS"]}";
+            }
             else if (span.TotalDays >= 90 && span.TotalDays < 365)
+            {
                 return $"{Math.Round(span.Days / 30.0, 0)} {loc["GLOBAL_TIME_MONTHS"]}";
+            }
             else if (span.TotalDays >= 365 && span.TotalDays < 36500)
+            {
                 return $"{Math.Round(span.Days / 365.0, 0)} {loc["GLOBAL_TIME_YEARS"]}";
+            }
             else if (span.TotalDays >= 36500)
+            {
                 return loc["GLOBAL_TIME_FOREVER"];
+            }
 
             return "unknown";
         }
 
-        public static EFClient AsEFClient(this Database.Models.EFClient client)
+        public static bool IsPrivileged(this EFClient p)
         {
-            return client == null ? null : new EFClient()
-            {
-                Active = client.Active,
-                AliasLink = client.AliasLink,
-                AliasLinkId = client.AliasLinkId,
-                ClientId = client.ClientId,
-                ClientNumber = -1,
-                FirstConnection = client.FirstConnection,
-                Connections = client.Connections,
-                NetworkId = client.NetworkId,
-                TotalConnectionTime = client.TotalConnectionTime,
-                Masked = client.Masked,
-                Name = client.CurrentAlias.Name,
-                IPAddress = client.CurrentAlias.IPAddress,
-                Level = client.Level,
-                LastConnection = client.LastConnection == DateTime.MinValue ? DateTime.UtcNow : client.LastConnection,
-                CurrentAlias = client.CurrentAlias,
-                CurrentAliasId = client.CurrentAlias.AliasId,
-                // todo: make sure this is up to date
-                IsBot = client.IPAddress == int.MinValue,
-                Password = client.Password,
-                PasswordSalt = client.PasswordSalt
-            };
+            return p.Level > EFClient.Permission.User;
         }
-
-        public static bool IsPrivileged(this EFClient p) => p.Level > EFClient.Permission.User;
 
         public static bool PromptBool(string question)
         {
@@ -474,7 +520,9 @@ namespace SharedLibraryCore
             int.TryParse(lineSplit[cIDPos].Trim(), out pID);
 
             if (pID == -1) // special case similar to mod_suicide
+            {
                 int.TryParse(lineSplit[2], out pID);
+            }
 
             return pID;
         }
@@ -489,7 +537,9 @@ namespace SharedLibraryCore
             {
                 dict = new Dictionary<string, string>();
                 for (int i = 0; i < values.Length; i += 2)
+                {
                     dict.Add(values[i], values[i + 1]);
+                }
             }
 
             return dict;
@@ -518,15 +568,30 @@ namespace SharedLibraryCore
             return cmdLine.Length > 1 ? cmdLine[1] : cmdLine[0];
         }
 
-        public static string ToBase64UrlSafeString(this string src) => Convert.ToBase64String(src.Select(c => Convert.ToByte(c)).ToArray()).Replace('+', '-').Replace('/', '_');
+        public static string ToBase64UrlSafeString(this string src)
+        {
+            return Convert.ToBase64String(src.Select(c => Convert.ToByte(c)).ToArray()).Replace('+', '-').Replace('/', '_');
+        }
 
-        public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName) => server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
+        public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName)
+        {
+            return server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
+        }
 
-        public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue) => server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
+        public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
+        {
+            return server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
+        }
 
-        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName) => await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
+        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
+        {
+            return await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
+        }
 
-        public static Task<List<EFClient>> GetStatusAsync(this Server server) => server.RconParser.GetStatusAsync(server.RemoteConnection);
+        public static Task<List<EFClient>> GetStatusAsync(this Server server)
+        {
+            return server.RconParser.GetStatusAsync(server.RemoteConnection);
+        }
 
         public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)
         {
@@ -535,7 +600,10 @@ namespace SharedLibraryCore
             {
                 response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
                 if (response.Length == 2)
+                {
                     break;
+                }
+
                 await Task.Delay(RCon.StaticHelpers.FloodProtectionInterval);
             }
             return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
@@ -548,7 +616,10 @@ namespace SharedLibraryCore
             return double.Parse(version) / 1000.0;
         }
 
-        public static string GetVersionAsString() => Assembly.GetCallingAssembly().GetName().Version.ToString();
+        public static string GetVersionAsString()
+        {
+            return Assembly.GetCallingAssembly().GetName().Version.ToString();
+        }
 
 #if DEBUG == true
 

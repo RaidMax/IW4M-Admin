@@ -75,27 +75,9 @@ namespace IW4MAdmin
                 // client has connected in the past
                 else
                 {
-                    var existingAlias = client.AliasLink.Children
-                        .FirstOrDefault(a => a.Name == clientFromLog.Name);
-
-                    if (existingAlias == null)
-                    {
-                        Logger.WriteDebug($"Client {clientFromLog} has connected previously under a different ip/name");
-                        client.CurrentAlias = new EFAlias()
-                        {
-                            // this gets updated on client join
-                            IPAddress = clientFromLog.IPAddress,
-                            Name = clientFromLog.Name,
-                        };
-                    }
-
-                    else
-                    {
-                        client.CurrentAlias = existingAlias;
-                        client.CurrentAliasId = existingAlias.AliasId;
-                    }
-
-                    await Manager.GetClientService().Update(client);
+                    // this is only a temporary version until the IPAddress is transmitted
+                    client.CurrentAlias.Active = false;
+                    client.CurrentAlias.Name = clientFromLog.Name;
                 }
 
                 Logger.WriteInfo($"Client {client} connected...");
@@ -108,13 +90,14 @@ namespace IW4MAdmin
                 client.CurrentServer = this;
 
                 Clients[client.ClientNumber] = client;
-                client.OnConnect();
 
-                // this only happens the preconnect event occurred from RCon polling
-                if (clientFromLog.IPAddress != 0)
+                // this only happens if the preconnect event occurred from RCon polling
+                if (clientFromLog.IPAddress.HasValue)
                 {
                     await client.OnJoin(clientFromLog.IPAddress);
                 }
+
+                client.OnConnect();
 
                 client.State = EFClient.ClientState.Connected;
 #if DEBUG == true
@@ -218,11 +201,23 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task<bool> ProcessEvent(GameEvent E)
         {
-            if (E.Type == GameEvent.EventType.PreConnect)
+            if (E.Type == GameEvent.EventType.ChangePermission)
             {
-                bool clientExists = GetClientsAsList().Exists(_client => _client.NetworkId.Equals(E.Origin));
+                if (!E.Target.IsPrivileged())
+                {
+                    // remove banned or demoted privileged user
+                    Manager.GetPrivilegedClients().Remove(E.Target.ClientId);
+                }
 
-                if (!clientExists)
+                else
+                {
+                    Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
+                }
+            }
+
+            else if (E.Type == GameEvent.EventType.PreConnect)
+            {
+                if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
                     Logger.WriteDebug($"Begin PreConnect for {E.Origin}");
@@ -468,7 +463,8 @@ namespace IW4MAdmin
                 client.Ping = origin.Ping;
                 client.Score = origin.Score;
 
-                if (origin.IPAddress == 0)
+                // update their IP if it hasn't been set yet
+                if (!client.IPAddress.HasValue)
                 {
                     return client.OnJoin(origin.IPAddress);
                 }
@@ -499,17 +495,9 @@ namespace IW4MAdmin
 #endif
             Throttled = false;
 
-            foreach (var client in polledClients)
-            {
-                // todo: move out somehwere
-                var existingClient = Clients[client.ClientNumber] ?? client;
-                existingClient.Ping = client.Ping;
-                existingClient.Score = client.Score;
-            }
-
             var disconnectingClients = currentClients.Except(polledClients);
             var connectingClients = polledClients.Except(currentClients);
-            var updatedClients = polledClients.Except(connectingClients);
+            var updatedClients = polledClients.Except(connectingClients).Except(disconnectingClients);
 
             return new List<EFClient>[]
             {
@@ -753,6 +741,7 @@ namespace IW4MAdmin
                 infoResponse["fs_game"];
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
+            var ip = await this.GetDvarAsync<string>("net_ip");
 
             WorkingDirectory = basepath.Value;
 
@@ -774,6 +763,8 @@ namespace IW4MAdmin
             this.MaxClients = maxplayers;
             this.FSGame = game;
             this.Gametype = gametype;
+            this.IP = ip.Value;
+
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
                 // this DVAR isn't set until the a map is loaded
@@ -1000,8 +991,6 @@ namespace IW4MAdmin
             };
 
             await Manager.GetPenaltyService().Create(newPenalty);
-            // prevent them from logging in again
-            Manager.GetPrivilegedClients().Remove(Target.ClientId);
         }
 
         override public async Task Unban(string reason, EFClient Target, EFClient Origin)

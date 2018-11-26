@@ -213,7 +213,7 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int ip = 0)
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int? ip = null)
         {
             var now = DateTime.UtcNow;
 
@@ -221,7 +221,7 @@ namespace SharedLibraryCore.Services
             {
                 var iqPenalties = context.Penalties
                     .Where(p => p.LinkId == linkId ||
-                         p.Link.Children.Any(a => a.IPAddress == ip))
+                         ip.HasValue ? p.Link.Children.Any(a => a.IPAddress == ip) : false)
                     .Where(p => p.Type == Penalty.PenaltyType.TempBan ||
                          p.Type == Penalty.PenaltyType.Ban ||
                          p.Type == Penalty.PenaltyType.Flag)

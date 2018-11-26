@@ -1,18 +1,16 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Application.EventParsers
 {
     class IW5EventParser : IW4EventParser
     {
-        public override string GetGameDir() => "logs";
+        public override string GetGameDir()
+        {
+            return "logs";
+        }
 
         public override GameEvent GetEvent(Server server, string logLine)
         {
@@ -28,7 +26,11 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     NetworkId = lineSplit[1].ConvertLong(),
                     ClientNumber = clientNum,
-                    Name = lineSplit[3]
+                    CurrentAlias = new EFAlias()
+                    {
+                        Active = false,
+                        Name = lineSplit[3]
+                    }
                 };
 
                 return new GameEvent()
@@ -48,7 +50,9 @@ namespace IW4MAdmin.Application.EventParsers
             }
 
             else
+            {
                 return base.GetEvent(server, logLine);
+            }
         }
     }
 }

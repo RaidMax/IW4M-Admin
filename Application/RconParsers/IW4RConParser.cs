@@ -1,15 +1,13 @@
-﻿using System;
+﻿using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.RCon;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Text;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
-using SharedLibraryCore;
-using SharedLibraryCore.RCon;
-using SharedLibraryCore.Exceptions;
-using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Application.RconParsers
 {
@@ -73,14 +71,19 @@ namespace IW4MAdmin.Application.RconParsers
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, $"set {dvarName} {dvarValue}")).Length > 0;
         }
 
-        public virtual CommandPrefix GetCommandPrefixes() => Prefixes;
+        public virtual CommandPrefix GetCommandPrefixes()
+        {
+            return Prefixes;
+        }
 
         private List<EFClient> ClientsFromStatus(string[] Status)
         {
             List<EFClient> StatusPlayers = new List<EFClient>();
 
             if (Status.Length < 4)
+            {
                 throw new ServerException("Unexpected status response received");
+            }
 
             int validMatches = 0;
             foreach (String S in Status)
@@ -103,13 +106,21 @@ namespace IW4MAdmin.Application.RconParsers
                         ping = int.Parse(regex.Groups[3].Value);
                     }
 
+                    else
+                    {
+                        continue;
+                    }
+
                     long networkId = regex.Groups[4].Value.ConvertLong();
                     string name = regex.Groups[5].Value.StripColors().Trim();
                     int ip = regex.Groups[7].Value.Split(':')[0].ConvertToIP();
 
                     var P = new EFClient()
                     {
-                        Name = name,
+                        CurrentAlias = new EFAlias()
+                        {
+                            Name = name
+                        },
                         NetworkId = networkId,
                         ClientNumber = clientNumber,
                         IPAddress = ip == 0 ? int.MinValue : ip,

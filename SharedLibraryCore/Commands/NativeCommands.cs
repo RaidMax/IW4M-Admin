@@ -37,11 +37,25 @@ namespace SharedLibraryCore.Commands
         {
             if ((await (E.Owner.Manager.GetClientService() as ClientService).GetOwners()).Count == 0)
             {
+                var oldPermission = E.Origin.Level;
                 E.Origin.Level =  EFClient.Permission.Owner;
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_SUCCESS"]);
-                // so setpassword/login works
-                E.Owner.Manager.GetPrivilegedClients().Add(E.Origin.ClientId, E.Origin);
                 await E.Owner.Manager.GetClientService().Update(E.Origin);
+
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.ChangePermission,
+                    Origin = E.Origin,
+                    Target = E.Origin,
+                    Owner = E.Owner,
+                    Extra = new Change()
+                    {
+                        PreviousValue = oldPermission.ToString(),
+                        NewValue = E.Origin.Level.ToString()
+                    }
+                };
+
+                E.Owner.Manager.GetEventHandler().AddEvent(e);
             }
             else
             {
@@ -492,17 +506,6 @@ namespace SharedLibraryCore.Commands
                 {
                     E.Target.Level = newPerm;
                     await E.Owner.Manager.GetClientService().Update(E.Target);
-                }
-
-                try
-                {
-                    E.Owner.Manager.GetPrivilegedClients().Add(E.Target.ClientId, E.Target);
-                }
-
-                catch (Exception)
-                {
-                    // this updates their privilege level to the webfront claims
-                    E.Owner.Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
 
                 var e = new GameEvent()

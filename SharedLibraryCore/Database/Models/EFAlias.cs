@@ -16,7 +16,7 @@ namespace SharedLibraryCore.Database.Models
         [MaxLength(24)]
         public string Name { get; set; }
         [Required]
-        public int IPAddress { get; set; }
+        public int? IPAddress { get; set; }
         [Required]
         public DateTime DateAdded { get; set; }
     }

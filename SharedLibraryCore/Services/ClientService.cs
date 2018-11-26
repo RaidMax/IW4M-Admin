@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
-using System.Linq.Expressions;
 using SharedLibraryCore.Objects;
-using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore.Dtos;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
@@ -21,61 +17,129 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                bool hasExistingAlias = false;
-                // get all aliases by IP
-                var aliases = await context.Aliases
-                    .Include(a => a.Link)
-                    .Where(a => a.IPAddress == entity.IPAddress)
-                    .ToListAsync();
-
-                // see if they have a matching IP + Name but new NetworkId
-                var existingAlias = aliases.FirstOrDefault(a => a.Name == entity.Name);
-                // if existing alias matches link them
-                EFAliasLink aliasLink = existingAlias?.Link;
-                // if no exact matches find the first IP that matches
-                aliasLink = aliasLink ?? aliases.FirstOrDefault()?.Link;
-                // if no exact or IP matches, create new link
-                aliasLink = aliasLink ?? new EFAliasLink()
-                {
-                    Active = true,
-                };
-
-                // this has to be set here because we can't evalute it properly later
-                hasExistingAlias = existingAlias != null;
-
-                // if no existing alias create new alias
-                existingAlias = existingAlias ?? new EFAlias()
-                {
-                    Active = true,
-                    DateAdded = DateTime.UtcNow,
-                    IPAddress = entity.IPAddress,
-                    Link = aliasLink,
-                    Name = entity.Name,
-                };
-
                 var client = new EFClient()
                 {
-                    Active = true,
-                    // set the level to the level of the existing client if they have the same IP + Name but new NetworkId
-                    // fixme: issues?
-                    Level = hasExistingAlias ?
-                        (await context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
-                        .OrderByDescending(c => c.Level)
-                        .FirstOrDefaultAsync())?.Level ?? Permission.User :
-                        Permission.User,
+                    Level = Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     Connections = 1,
                     LastConnection = DateTime.UtcNow,
                     Masked = false,
                     NetworkId = entity.NetworkId,
-                    AliasLink = aliasLink,
-                    CurrentAlias = existingAlias,
+                    AliasLink = new EFAliasLink()
+                    {
+                        Active = false
+                    },
+                };
+
+                client.CurrentAlias = new Alias()
+                {
+                    Name = entity.Name,
+                    Link = client.AliasLink,
+                    DateAdded = DateTime.UtcNow,
+                    // the first time a client is created, we may not have their ip, 
+                    // so we create a temporary alias
+                    Active = false
                 };
 
                 context.Clients.Add(client);
                 await context.SaveChangesAsync();
 
                 return client;
+            }
+        }
+
+        public async Task UpdateAlias(EFClient entity)
+        {
+            using (var context = new DatabaseContext())
+            {
+                context.Attach(entity);
+
+                string name = entity.Name;
+                int? ip = entity.IPAddress;
+
+                bool hasExistingAlias = false;
+
+                // get all aliases by IP
+                var aliases = await context.Aliases
+                    .Include(a => a.Link)
+                    .Where(a => a.IPAddress != null && a.IPAddress == ip)
+                    .ToListAsync();
+
+                // see if they have a matching IP + Name but new NetworkId
+                var existingAlias = aliases.FirstOrDefault(a => a.Name == name);
+                // if existing alias matches link them
+                EFAliasLink aliasLink = existingAlias?.Link;
+                // if no exact matches find the first IP that matches
+                aliasLink = aliasLink ?? aliases.FirstOrDefault()?.Link;
+                // if no exact or IP matches, create new link
+                aliasLink = aliasLink ?? new EFAliasLink();
+
+                // this has to be set here because we can't evalute it properly later
+                hasExistingAlias = existingAlias != null;
+
+                if (hasExistingAlias && !entity.AliasLink.Active)
+                {
+                    // we want to delete the temporary alias
+                    context.Entry(entity.CurrentAlias).State = EntityState.Deleted;
+                    entity.CurrentAlias = null;
+
+                    // we want to delete the temporary alias link
+                    context.Entry(entity.AliasLink).State = EntityState.Deleted;
+                    entity.AliasLink = null;
+
+                    // they have an existing alias so assign it
+                    entity.CurrentAlias = existingAlias;
+                    entity.AliasLink = aliasLink;
+
+                    await context.SaveChangesAsync();
+                }
+
+                // update the temporary alias to permanent one
+                else if (!entity.AliasLink.Active)
+                {
+                    // we want to track the current alias and link
+                    var alias = context.Update(entity.CurrentAlias).Entity;
+                    var _aliasLink = context.Update(entity.AliasLink).Entity;
+
+                    alias.Active = true;
+                    alias.IPAddress = ip;
+                    alias.Name = name;
+                    _aliasLink.Active = true;
+
+                    existingAlias = alias;
+                    aliasLink = _aliasLink;
+                }
+
+                // if no existing alias create new alias
+                existingAlias = existingAlias ?? new EFAlias()
+                {
+                    DateAdded = DateTime.UtcNow,
+                    IPAddress = ip,
+                    Link = aliasLink,
+                    Name = name,
+                };
+
+                var iqExistingPermission = context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
+                        .OrderByDescending(client => client.Level)
+                        .Select(c => new EFClient() { Level = c.Level });
+
+                entity.Level = hasExistingAlias ?
+                    (await iqExistingPermission.FirstOrDefaultAsync())?.Level ?? Permission.User :
+                    Permission.User;
+#if DEBUG
+                string sql = iqExistingPermission.AsQueryable().ToSql();
+#endif
+
+                if (entity.CurrentAlias != existingAlias ||
+                    entity.AliasLink != aliasLink)
+                {
+                    entity.CurrentAlias = existingAlias;
+                    entity.AliasLink = aliasLink;
+
+                    context.Update(entity);
+                }
+
+                await context.SaveChangesAsync();
             }
         }
 
@@ -132,13 +196,17 @@ namespace SharedLibraryCore.Services
                 var foundClient = await iqClient.FirstOrDefaultAsync();
 
                 if (foundClient == null)
+                {
                     return null;
+                }
 
                 foundClient.Client.LinkedAccounts = new Dictionary<int, long>();
                 // todo: find out the best way to do this
                 // I'm doing this here because I don't know the best way to have multiple awaits in the query
                 foreach (var linked in foundClient.LinkedAccounts)
+                {
                     foundClient.Client.LinkedAccounts.Add(linked.ClientId, linked.NetworkId);
+                }
 
                 return foundClient.Client;
             }
@@ -168,7 +236,7 @@ namespace SharedLibraryCore.Services
                 var client = context.Clients
                     .Include(c => c.AliasLink)
                     .Include(c => c.CurrentAlias)
-                    .Single(e => e.ClientId == entity.ClientId);
+                    .First(e => e.ClientId == entity.ClientId);
 
                 // if their level has been changed
                 if (entity.Level != client.Level)
@@ -191,7 +259,7 @@ namespace SharedLibraryCore.Services
                 {
                     client.CurrentAlias = new EFAlias()
                     {
-                        Active = true,
+                        Active = entity.CurrentAlias.IPAddress.HasValue ? true : false,
                         DateAdded = DateTime.UtcNow,
                         IPAddress = entity.CurrentAlias.IPAddress,
                         Name = entity.CurrentAlias.Name,
@@ -202,6 +270,8 @@ namespace SharedLibraryCore.Services
                 else
                 {
                     client.CurrentAliasId = entity.CurrentAliasId;
+                    client.IPAddress = entity.IPAddress;
+                    client.Name = entity.Name;
                 }
 
                 // set remaining non-navigation properties that may have been updated
@@ -219,7 +289,10 @@ namespace SharedLibraryCore.Services
 
                 // this is set so future updates don't trigger a new alias add
                 if (entity.CurrentAlias.AliasId == 0)
+                {
                     entity.CurrentAlias.AliasId = client.CurrentAlias.AliasId;
+                }
+
                 return client;
             }
         }
@@ -228,24 +301,27 @@ namespace SharedLibraryCore.Services
         public async Task<IList<EFClient>> GetOwners()
         {
             using (var context = new DatabaseContext())
+            {
                 return await context.Clients
                     .Where(c => c.Level == Permission.Owner)
                     .ToListAsync();
+            }
         }
 
-        public async Task<IList<ClientInfo>> GetPrivilegedClients()
+        public async Task<List<EFClient>> GetPrivilegedClients()
         {
             using (var context = new DatabaseContext(disableTracking: true))
             {
                 var iqClients = from client in context.Clients
                                 where client.Level >= Permission.Trusted
                                 where client.Active
-                                select new ClientInfo()
+                                select new EFClient()
                                 {
+                                    CurrentAlias = client.CurrentAlias,
                                     ClientId = client.ClientId,
-                                    Name = client.CurrentAlias.Name,
-                                    LinkId = client.AliasLinkId,
-                                    Level = client.Level
+                                    Level = client.Level,
+                                    Password = client.Password,
+                                    PasswordSalt = client.PasswordSalt
                                 };
 
 #if DEBUG == true
@@ -294,19 +370,15 @@ namespace SharedLibraryCore.Services
         public async Task<int> GetTotalClientsAsync()
         {
             using (var context = new DatabaseContext(true))
+            {
                 return await context.Clients
                     .CountAsync();
+            }
         }
 
         public Task<EFClient> CreateProxy()
         {
             throw new NotImplementedException();
-        }
-
-        public async Task<int> GetTotalPlayTime()
-        {
-            using (var context = new DatabaseContext(true))
-                return await context.Clients.SumAsync(c => c.TotalConnectionTime);
         }
         #endregion
     }

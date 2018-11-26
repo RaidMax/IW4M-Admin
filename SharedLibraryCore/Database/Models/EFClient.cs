@@ -44,14 +44,14 @@ namespace SharedLibraryCore.Database.Models
             set { CurrentAlias.Name = value; }
         }
         [NotMapped]
-        public virtual int IPAddress
+        public virtual int? IPAddress
         {
             get { return CurrentAlias.IPAddress; }
             set { CurrentAlias.IPAddress = value;  }
         }
 
         [NotMapped]
-        public string IPAddressString => new System.Net.IPAddress(BitConverter.GetBytes(IPAddress)).ToString();
+        public string IPAddressString => IPAddress.ConvertIPtoString();
         [NotMapped]
         public virtual IDictionary<int, long> LinkedAccounts { get; set; }
 

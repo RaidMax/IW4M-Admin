@@ -80,7 +80,6 @@ namespace SharedLibraryCore.Database.Models
             {
                 { "_reportCount", 0 }
             };
-            CurrentAlias = CurrentAlias ?? new EFAlias();
         }
 
         public override string ToString()
@@ -405,7 +404,7 @@ namespace SharedLibraryCore.Database.Models
         public void OnConnect()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-#if !DEBUG
+
             if (Name.Length < 3)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
@@ -440,8 +439,6 @@ namespace SharedLibraryCore.Database.Models
 
             LastConnection = DateTime.UtcNow;
             Connections += 1;
-
-#endif
         }
 
         public async Task OnDisconnect()
@@ -452,24 +449,11 @@ namespace SharedLibraryCore.Database.Models
             await CurrentServer.Manager.GetClientService().Update(this);
         }
 
-        public async Task OnJoin(int ipAddress)
+        public async Task OnJoin(int? ipAddress)
         {
-            // todo: fix this up
-            var existingAlias = AliasLink.Children
-                        .FirstOrDefault(a => a.Name == Name && a.IPAddress == ipAddress);
+            IPAddress = ipAddress;
 
-            if (existingAlias == null)
-            {
-                CurrentServer.Logger.WriteDebug($"Client {this} has connected previously under a different ip/name");
-
-                CurrentAlias = new EFAlias()
-                {
-                    IPAddress = ipAddress,
-                    Name = Name
-                };
-            }
-
-            await CurrentServer.Manager.GetClientService().Update(this);
+            await CurrentServer.Manager.GetClientService().UpdateAlias(this);
 
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
@@ -519,6 +503,19 @@ namespace SharedLibraryCore.Database.Models
                     Kick($"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
                 }
             }
+
+            else
+            {
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Join,
+                    Origin = this,
+                    Target = this,
+                    Owner = CurrentServer
+                };
+
+                CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            }
         }
 
         [NotMapped]
@@ -557,18 +554,7 @@ namespace SharedLibraryCore.Database.Models
         public int Score { get; set; }
         [NotMapped]
         public bool IsBot { get; set; }
-        //private int _ipaddress;
-        //public override int IPAddress
-        //{
-        //    get => _ipaddress;
-        //    set => _ipaddress = value;
-        //}
-        //private string _name;
-        //public override string Name
-        //{
-        //    get => _name;
-        //    set => _name = value;
-        //}
+        
         [NotMapped]
         public ClientState State { get; set; }
         [NotMapped]

@@ -313,7 +313,7 @@ namespace SharedLibraryCore
         public bool RestartRequested { get; set; }
 
         // Internal
-        protected string IP;
+        public string IP { get; protected set; }
         protected int Port;
         protected string FSGame;
         protected int NextMessage;

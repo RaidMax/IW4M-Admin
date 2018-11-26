@@ -28,12 +28,12 @@ namespace IW4MAdmin.Application.IO
 
         public long Length => -1;
 
-        public int UpdateInterval => 1000;
+        public int UpdateInterval => 350;
 
         public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
 #if DEBUG == true
-            server.Logger.WriteDebug($"Begin reading {fileSizeDiff} from http log");
+            server.Logger.WriteDebug($"Begin reading from http log");
 #endif
             var events = new List<GameEvent>();
             string b64Path = server.LogPath.ToBase64UrlSafeString();

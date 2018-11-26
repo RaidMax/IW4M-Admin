@@ -121,7 +121,7 @@ namespace WebfrontCore.Controllers
         {
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
                 .OrderByDescending(a => a.Level)
-                .GroupBy(a => a.LinkId).Select(a => a.First());
+                .GroupBy(a => a.AliasLinkId).Select(a => a.First());
 
             var adminsDict = new Dictionary<EFClient.Permission, IList<ClientInfo>>();
 

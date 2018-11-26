@@ -22,7 +22,7 @@ namespace SharedLibraryCore.Database
 
         static string _ConnectionString;
         static string _provider;
-        private static string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins\";
+        private static readonly string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins\";
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
@@ -110,6 +110,7 @@ namespace SharedLibraryCore.Database
 
             modelBuilder.Entity<EFAlias>(ent =>
             {
+                ent.Property(a => a.IPAddress).IsRequired(false);
                 ent.HasIndex(a => a.IPAddress);
                 ent.Property(a => a.Name).HasMaxLength(24);
                 ent.HasIndex(a => a.Name);
@@ -123,14 +124,15 @@ namespace SharedLibraryCore.Database
 
             // adapted from
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
+#if DEBUG
+            string pluginDir = _migrationPluginDirectory;
+#else
             string pluginDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
+#endif
             IEnumerable<string> directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
 
-#if DEBUG == TRUE
-            foreach (string dllPath in Directory.GetFiles(_migrationPluginDirectory).Where(f => f.EndsWith(".dll")))
-#else
+
             foreach (string dllPath in directoryFiles)
-#endif
             {
                 Assembly library;
                 try

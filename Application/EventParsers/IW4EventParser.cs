@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using SharedLibraryCore;
+﻿using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
+using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -149,7 +147,11 @@ namespace IW4MAdmin.Application.EventParsers
                         Owner = server,
                         Origin = new EFClient()
                         {
-                            Name = regexMatch.Groups[4].ToString().StripColors(),
+                            CurrentAlias = new EFAlias()
+                            {
+                                Active = false,
+                                Name = regexMatch.Groups[4].ToString().StripColors(),
+                            },
                             NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
                             State = EFClient.ClientState.Connecting,
@@ -171,7 +173,11 @@ namespace IW4MAdmin.Application.EventParsers
                         Owner = server,
                         Origin = new EFClient()
                         {
-                            Name = regexMatch.Groups[4].ToString().StripColors(),
+                            CurrentAlias = new EFAlias()
+                            {
+                                Active = false,
+                                Name = regexMatch.Groups[4].ToString().StripColors()
+                            },
                             NetworkId = regexMatch.Groups[2].ToString().ConvertLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[3].ToString()),
                             State = EFClient.ClientState.Disconnecting
@@ -217,6 +223,9 @@ namespace IW4MAdmin.Application.EventParsers
         }
 
         // other parsers can derive from this parser so we make it virtual
-        public virtual string GetGameDir() => "userraw";
+        public virtual string GetGameDir()
+        {
+            return "userraw";
+        }
     }
 }

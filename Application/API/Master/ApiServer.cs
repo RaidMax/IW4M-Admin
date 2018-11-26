@@ -9,6 +9,8 @@ namespace IW4MAdmin.Application.API.Master
     {
         [JsonProperty("id")]
         public int Id { get; set; }
+        [JsonProperty("ip")]
+        public string IPAddress { get; set; }
         [JsonProperty("port")]
         public short Port { get; set; }
         [JsonProperty("gametype")]

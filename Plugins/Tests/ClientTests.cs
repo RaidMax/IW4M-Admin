@@ -250,7 +250,7 @@ namespace Tests
             unbanCommand.ExecuteAsync(new GameEvent()
             {
                 Origin = new EFClient() { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer },
-                Target = Manager.GetClientService().Find(c => c.NetworkId == client.NetworkId).Result.First().AsEFClient(),
+                Target = Manager.GetClientService().Find(c => c.NetworkId == client.NetworkId).Result.First(),
                 Data = "test unban",
                 Type = GameEvent.EventType.Command,
                 Owner = client.CurrentServer

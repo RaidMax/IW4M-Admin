@@ -208,38 +208,5 @@ namespace SharedLibraryCore
                 return this;
             });
         }
-
-        /// <summary>
-        /// determine whether an event should be delayed or not
-        /// applies only to the origin entity
-        /// </summary>
-        /// <param name="queuedEvent">event to determine status for</param>
-        /// <returns>true if event should be delayed, false otherwise</returns>
-        public static bool ShouldOriginEventBeDelayed(GameEvent queuedEvent)
-        {
-            return queuedEvent.Origin != null &&
-                                    (queuedEvent.Origin.State != EFClient.ClientState.Connected &&
-                                    // we want to allow join and quit events
-                                    queuedEvent.Type != EventType.Connect &&
-                                    queuedEvent.Type != EventType.Join &&
-                                    queuedEvent.Type != EventType.Quit &&
-                                    queuedEvent.Type != EventType.Disconnect &&
-                                    // we don't care about unknown events
-                                    queuedEvent.Origin.NetworkId != 0);
-        }
-
-        /// <summary>
-        /// determine whether an event should be delayed or not
-        /// applies only to the target entity
-        /// </summary>
-        /// <param name="queuedEvent">event to determine status for</param>
-        /// <returns>true if event should be delayed, false otherwise</returns>
-        public static bool ShouldTargetEventBeDelayed(GameEvent queuedEvent)
-        {
-            return (queuedEvent.Target != null && queuedEvent.Target.ClientNumber != -1) &&
-                                    (queuedEvent.Target.State != EFClient.ClientState.Connected &&
-                                    queuedEvent.Target.NetworkId != 0 &&
-                                    queuedEvent.Origin?.ClientId != 1);
-        }
     }
 }

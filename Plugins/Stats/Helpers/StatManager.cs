@@ -25,7 +25,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private ILogger Log;
         private readonly IManager Manager;
 
-
         private readonly SemaphoreSlim OnProcessingPenalty;
         private readonly SemaphoreSlim OnProcessingSensitive;
 
@@ -348,7 +347,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         Log.WriteWarning("Could not add client to detection");
                     }
 
-                    Log.WriteInfo($"Adding {pl} to stats");
+                    pl.CurrentServer.Logger.WriteInfo($"Adding {pl} to stats");
                 }
 
                 return clientStats;

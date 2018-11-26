@@ -23,7 +23,8 @@ class Instance(Resource):
     def put(self, id):
         try:
             for server in request.json['servers']:
-                server['ip'] = request.remote_addr
+                if 'ip' not in server or server['ip'] == 'localhost':
+                    server['ip'] = request.remote_addr
             instance = InstanceSchema().load(request.json)
         except ValidationError as err:
             return {'message' : err.messages }, 400
@@ -34,7 +35,8 @@ class Instance(Resource):
     def post(self):
         try:
             for server in request.json['servers']:
-                server['ip'] = request.remote_addr
+               if 'ip' not in server or server['ip'] == 'localhost':
+                    server['ip'] = request.remote_addr
             instance = InstanceSchema().load(request.json)
         except ValidationError as err:
             return {'message' : err.messages }, 400

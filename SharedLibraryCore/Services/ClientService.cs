@@ -317,6 +317,7 @@ namespace SharedLibraryCore.Services
                                 where client.Active
                                 select new EFClient()
                                 {
+                                    AliasLinkId = client.AliasLinkId,
                                     CurrentAlias = client.CurrentAlias,
                                     ClientId = client.ClientId,
                                     Level = client.Level,

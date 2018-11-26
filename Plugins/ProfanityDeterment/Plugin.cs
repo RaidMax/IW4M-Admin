@@ -86,22 +86,14 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     var clientProfanity = ProfanityCounts[E.Origin.ClientId];
                     if (clientProfanity.Infringements >= Settings.Configuration().KickAfterInfringementCount)
                     {
-                        clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, new EFClient()
-                        {
-                            ClientId = 1,
-                            CurrentServer = E.Owner
-                        });
+                        clientProfanity.Client.Kick(Settings.Configuration().ProfanityKickMessage, Utilities.IW4MAdminClient(E.Owner));
                     }
 
                     else if (clientProfanity.Infringements < Settings.Configuration().KickAfterInfringementCount)
                     {
                         clientProfanity.Infringements++;
 
-                        clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, new EFClient()
-                        {
-                            ClientId = 1,
-                            CurrentServer = E.Owner
-                        });
+                        clientProfanity.Client.Warn(Settings.Configuration().ProfanityWarningMessage, Utilities.IW4MAdminClient(E.Owner));
                     }
                 }
             }

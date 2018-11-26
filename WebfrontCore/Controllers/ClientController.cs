@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Services;
@@ -8,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static SharedLibraryCore.Objects.Penalty;
 
 namespace WebfrontCore.Controllers
 {
@@ -65,6 +63,7 @@ namespace WebfrontCore.Controllers
                 .ReadGetClientPenaltiesAsync(client.ClientId, false);
 
             if (Authorized && client.Level > EFClient.Permission.Trusted)
+            {
                 clientDto.Meta.Add(new ProfileMeta()
                 {
                     Key = Localization["WEBFRONT_CLIENT_META_MASKED"],
@@ -72,6 +71,7 @@ namespace WebfrontCore.Controllers
                     Sensitive = true,
                     When = DateTime.MinValue
                 });
+            }
 
             if (Authorized)
             {
@@ -120,15 +120,17 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> PrivilegedAsync()
         {
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
-                .OrderByDescending(a => a.Level)
-                .GroupBy(a => a.AliasLinkId).Select(a => a.First());
+                .GroupBy(a => a.AliasLinkId).Select(_clients => _clients.OrderBy(_client => _client.LastConnection).LastOrDefault())
+                .OrderByDescending(_client => _client.Level);
 
             var adminsDict = new Dictionary<EFClient.Permission, IList<ClientInfo>>();
 
             foreach (var admin in admins)
             {
                 if (!adminsDict.ContainsKey(admin.Level))
+                {
                     adminsDict.Add(admin.Level, new List<ClientInfo>());
+                }
 
                 adminsDict[admin.Level].Add(new ClientInfo()
                 {

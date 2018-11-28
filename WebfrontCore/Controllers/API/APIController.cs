@@ -25,7 +25,7 @@ namespace WebfrontCore.Controllers.API
             var serverInfo = Manager.GetServers()
                 .Select(server => new
                 {
-                    Id = server.GetHashCode(),
+                    Id = server.EndPoint,
                     Name = server.Hostname,
                     MaxPlayers = server.MaxClients,
                     CurrentPlayers = server.GetClientsAsList().Count,

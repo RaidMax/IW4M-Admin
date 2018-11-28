@@ -1,14 +1,10 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Objects;
-using IW4MAdmin.Plugins.Stats.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SharedLibraryCore.Database;
+﻿using IW4MAdmin.Plugins.Stats.Models;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -21,13 +17,14 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             if (E.Origin.ClientNumber >= 0)
             {
 
-                int serverId = E.Owner.GetHashCode();
+                long serverId = await Helpers.StatManager.GetIdForServer(E.Owner);
 
                 EFClientStatistics clientStats;
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
                     clientStats = await ctx.Set<EFClientStatistics>()
-                        .Where(s => s.ClientId == E.Origin.ClientId && s.ServerId == serverId)
+                        .Where(s => s.ClientId == E.Origin.ClientId)
+                        .Where(s => s.ServerId == serverId)
                         .FirstAsync();
 
                     clientStats.Deaths = 0;
@@ -39,7 +36,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     clientStats.EloRating = 200.0;
 
                     // reset the cached version
-                    Plugin.Manager.ResetStats(E.Origin.ClientId, E.Owner.GetHashCode());
+                    Plugin.Manager.ResetStats(E.Origin.ClientId, serverId);
 
                     // fixme: this doesn't work properly when another context exists
                     await ctx.SaveChangesAsync();

@@ -9,8 +9,9 @@ namespace IW4MAdmin.Plugins.Stats.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public int ServerId { get; set; }
+        public long ServerId { get; set; }
         [Required]
         public int Port { get; set; }
+        public string EndPoint { get; set; }
     }
 }

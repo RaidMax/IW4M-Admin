@@ -1,7 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-
+﻿using IW4MAdmin.Plugins.Stats.Models;
+using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Interfaces;
-using IW4MAdmin.Plugins.Stats.Models;
 
 namespace Stats.Models
 {

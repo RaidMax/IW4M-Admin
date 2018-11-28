@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Reflection;
-
+﻿using IW4MAdmin.Plugins.Stats.Config;
+using IW4MAdmin.Plugins.Stats.Helpers;
+using IW4MAdmin.Plugins.Stats.Models;
+using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
-using IW4MAdmin.Plugins.Stats.Config;
-using IW4MAdmin.Plugins.Stats.Helpers;
-using IW4MAdmin.Plugins.Stats.Models;
-using SharedLibraryCore.Database;
-using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -44,16 +43,19 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
+                    await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.Say:
                     if (!string.IsNullOrEmpty(E.Data) &&
                         E.Origin.ClientId > 1)
-                        await Manager.AddMessageAsync(E.Origin.ClientId, E.Owner.GetHashCode(), E.Data);
+                    {
+                        await Manager.AddMessageAsync(E.Origin.ClientId, await StatManager.GetIdForServer(E.Owner), E.Data);
+                    }
+
                     break;
                 case GameEvent.EventType.MapChange:
-                    Manager.SetTeamBased(E.Owner.GetHashCode(), E.Owner.Gametype != "dm");
-                    Manager.ResetKillstreaks(S.GetHashCode());
-                    await Manager.Sync(S);
+                    Manager.SetTeamBased(await StatManager.GetIdForServer(E.Owner), E.Owner.Gametype != "dm");
+                    Manager.ResetKillstreaks(await StatManager.GetIdForServer(E.Owner));
                     break;
                 case GameEvent.EventType.MapEnd:
                     break;
@@ -77,7 +79,7 @@ namespace IW4MAdmin.Plugins.Stats
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 14)
                     {
-                        await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                        await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, await StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
                     }
                     break;
@@ -90,14 +92,14 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Damage:
                     if (!E.Owner.CustomCallback)
                     {
-                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, E.Owner.GetHashCode());
+                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, await StatManager.GetIdForServer(E.Owner));
                     }
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 14)
                     {
-                        await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, S.GetHashCode(), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                        await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, await StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
                     }
                     break;
@@ -327,12 +329,17 @@ namespace IW4MAdmin.Plugins.Stats
             Manager = new StatManager(manager);
         }
 
-        public Task OnTickAsync(Server S) => Task.CompletedTask;
+        public Task OnTickAsync(Server S)
+        {
+            return Task.CompletedTask;
+        }
 
         public async Task OnUnloadAsync()
         {
             foreach (var sv in ServerManager.GetServers())
+            {
                 await Manager.Sync(sv);
+            }
         }
     }
 }

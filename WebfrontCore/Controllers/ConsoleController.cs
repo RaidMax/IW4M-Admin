@@ -2,8 +2,6 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Objects;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +15,7 @@ namespace WebfrontCore.Controllers
             var activeServers = Manager.GetServers().Select(s => new ServerInfo()
             {
                 Name = s.Hostname,
-                ID = s.GetHashCode(),
+                ID = s.EndPoint,
             });
 
             ViewBag.Description = "Use the IW4MAdmin web console to execute commands";
@@ -27,9 +25,10 @@ namespace WebfrontCore.Controllers
             return View(activeServers);
         }
 
-        public async Task<IActionResult> ExecuteAsync(int serverId, string command)
+        public async Task<IActionResult> ExecuteAsync(long serverId, string command)
         {
-            var server = Manager.GetServers().First(s => s.GetHashCode() == serverId);
+            var server = Manager.GetServers().First(s => s.EndPoint == serverId);
+
             var client = new EFClient()
             {
                 ClientId = Client.ClientId,

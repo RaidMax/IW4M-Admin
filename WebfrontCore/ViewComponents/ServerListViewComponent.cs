@@ -13,7 +13,7 @@ namespace WebfrontCore.ViewComponents
             var serverInfo = servers.Select(s => new ServerInfo()
             {
                 Name = s.Hostname,
-                ID = s.GetHashCode(),
+                ID = s.EndPoint,
                 Port = s.GetPort(),
                 Map = s.CurrentMap.Alias,
                 ClientCount = s.ClientNum,

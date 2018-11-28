@@ -30,32 +30,32 @@ namespace IW4MAdmin
         {
         }
 
-        public override int GetHashCode()
-        {
-            // hack: my laziness
-            if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28965")
-            {
-                return 886229536;
-            }
+        //public override int EndPoint
+        //{
+        //    // hack: my laziness
+        //    if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28965")
+        //    {
+        //        return 886229536;
+        //    }
 
-            if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28960")
-            {
-                return 1645744423;
-            }
+        //    if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28960")
+        //    {
+        //        return 1645744423;
+        //    }
 
-            if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28970")
-            {
-                return 1645809959;
-            }
+        //    if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28970")
+        //    {
+        //        return 1645809959;
+        //    }
 
-            if (Id == 0)
-            {
-                Id = HashCode.Combine(IP, Port);
-                Id = Id < 0 ? Math.Abs(Id) : Id;
-            }
+        //    if (Id == 0)
+        //    {
+        //        Id = HashCode.Combine(IP, Port);
+        //        Id = Id < 0 ? Math.Abs(Id) : Id;
+        //    }
 
-            return Id;
-        }
+        //    return Id;
+        //}
 
         override public async Task OnClientConnected(EFClient clientFromLog)
         {
@@ -763,7 +763,7 @@ namespace IW4MAdmin
             this.MaxClients = maxplayers;
             this.FSGame = game;
             this.Gametype = gametype;
-            this.IP = ip.Value;
+            this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value;
 
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {

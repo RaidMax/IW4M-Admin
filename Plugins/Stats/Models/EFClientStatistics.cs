@@ -15,7 +15,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int ClientId { get; set; }
         [ForeignKey("ClientId")]
         public virtual EFClient Client { get; set; }
-        public int ServerId { get; set; }
+        public long ServerId { get; set; }
         [ForeignKey("ServerId")]
         public virtual EFServer Server { get; set; }
         [Required]

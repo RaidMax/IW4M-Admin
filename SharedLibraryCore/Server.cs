@@ -33,7 +33,7 @@ namespace SharedLibraryCore
             IP = config.IPAddress;
             Port = config.Port;
             Manager = mgr;
-            Logger = Manager.GetLogger(this.GetHashCode());
+            Logger = Manager.GetLogger(this.EndPoint);
             Logger.WriteInfo(this.ToString());
             ServerConfig = config;
             RemoteConnection = new RCon.Connection(IP, Port, Password, Logger);
@@ -48,6 +48,8 @@ namespace SharedLibraryCore
             InitializeTokens();
             InitializeAutoMessages();
         }
+
+        public long EndPoint => Convert.ToInt64($"{IP.Replace(".", "")}{Port}");
 
         //Returns current server IP set by `net_ip` -- *STRING*
         public String GetIP()

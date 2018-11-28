@@ -10,6 +10,7 @@ using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Database;
 using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
+using IW4MAdmin.Plugins.Stats.Helpers;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -17,7 +18,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     {
         public static async Task<List<string>> GetTopStats(Server s)
         {
-            int serverId = s.GetHashCode();
+            long serverId = await StatManager.GetIdForServer(s); 
             List<string> topStatsText = new List<string>()
             {
                 $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"

@@ -60,7 +60,7 @@ CREATE INDEX IX_EFAlias_LinkId ON EFAlias (
                 );
 
                 PRAGMA foreign_keys = 1;
-                ");
+                ", suppressTransaction:true);
             }
             else
             {

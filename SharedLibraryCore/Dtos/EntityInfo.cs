@@ -9,7 +9,7 @@ namespace SharedLibraryCore.Dtos
     /// </summary>
     public class EntityInfo
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
     }
 }

@@ -5,26 +5,27 @@ import time
 class LogReader(object):
     def __init__(self):
         self.log_file_sizes = {}
-        # (if the file changes more than this, ignore ) - 1 MB
-        self.max_file_size_change = 1000000
+        # (if the file changes more than this, ignore ) - 0.125 MB
+        self.max_file_size_change = 125000
         # (if the time between checks is greater, ignore ) - 5 minutes
-        self.max_file_time_change = 1000
+        self.max_file_time_change = 60
 
     def read_file(self, path):
         # prevent traversing directories
         if re.search('r^.+\.\.\\.+$', path):
             return False
         # must be a valid log path and log file
-        if not re.search(r'^.+[\\|\/](userraw|mods)[\\|\/].+.log$', path):
+        if not re.search(r'^.+[\\|\/](userraw|mods|main)[\\|\/].+.log$', path):
             return False
         # set the initialze size to the current file size
         file_size = 0
+
         if path not in self.log_file_sizes:
             self.log_file_sizes[path] = { 
                 'length' : self.file_length(path),
                 'read': time.time()
             }
-            return ''
+            return True
 
         # grab the previous values
         last_length = self.log_file_sizes[path]['length']
@@ -50,9 +51,9 @@ class LogReader(object):
 
         # if it's been too long since we read and the amount changed is too great, discard it
         # todo: do we really want old events? maybe make this an "or"
-        if file_size_difference > self.max_file_size_change and time_difference > self.max_file_time_change:
-            return ''
-            
+        if file_size_difference > self.max_file_size_change or time_difference > self.max_file_time_change:
+            return True
+
         new_log_info = self.get_file_lines(path, file_size_difference)
         return new_log_info
 

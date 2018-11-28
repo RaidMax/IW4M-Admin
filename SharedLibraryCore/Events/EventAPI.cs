@@ -41,7 +41,7 @@ namespace SharedLibraryCore.Events
                 OwnerEntity = new EntityInfo()
                 {
                     Name = E.Owner.Hostname,
-                    Id = E.Owner.GetHashCode()
+                    Id = E.Owner.EndPoint
                 },
                 OriginEntity = E.Origin == null ? null : new EntityInfo()
                 {

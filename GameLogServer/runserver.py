@@ -12,4 +12,4 @@ if __name__ == '__main__':
     except ValueError:
         PORT = 5555
     init()
-    app.run(HOST, PORT, debug=True)
+    app.run(HOST, PORT, debug=False)

@@ -20,7 +20,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int ClientId { get; set; }
         [ForeignKey("ClientId"), Column(Order = 0 )]
         public EFClient Client { get; set; }
-        public int ServerId { get; set; }
+        public long ServerId { get; set; }
         [ForeignKey("ServerId"), Column(Order = 1)]
         public EFServer Server { get; set; }
     }

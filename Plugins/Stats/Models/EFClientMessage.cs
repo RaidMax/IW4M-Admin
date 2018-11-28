@@ -13,7 +13,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
     {
         [Key]
         public long MessageId { get; set; }
-        public int ServerId { get; set; }
+        public long ServerId { get; set; }
         [ForeignKey("ServerId")]
         public virtual EFServer Server { get; set; }
         public int ClientId { get; set; }

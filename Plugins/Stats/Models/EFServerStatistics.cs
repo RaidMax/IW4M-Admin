@@ -8,7 +8,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
     {
         [Key]
         public int StatisticId { get; set; }
-        public int ServerId { get; set; }
+        public long ServerId { get; set; }
         [ForeignKey("ServerId")]
         public virtual EFServer Server { get; set; }
         public long TotalKills { get; set; }

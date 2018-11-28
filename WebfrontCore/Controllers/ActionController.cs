@@ -79,7 +79,7 @@ namespace WebfrontCore.Controllers
 
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
-                serverId = server.GetHashCode(),
+                serverId = server.EndPoint,
                 command
             }));
         }
@@ -110,7 +110,7 @@ namespace WebfrontCore.Controllers
 
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
-                serverId = server.GetHashCode(),
+                serverId = server.EndPoint,
                 command = $"!unban @{targetId} {Reason}"
             }));
         }
@@ -162,7 +162,7 @@ namespace WebfrontCore.Controllers
                         Values = Enum.GetValues(typeof(Permission)).OfType<Permission>()
                             .Where(p => p <= Client.Level)
                             .Where(p => p != Permission.Banned)
-                             .Where(p => p != Permission.Flagged)
+                            .Where(p => p != Permission.Flagged)
                             .ToDictionary(p => p.ToString(), p=> p.ToLocalizedLevelName())
                     },
                 },
@@ -178,7 +178,7 @@ namespace WebfrontCore.Controllers
 
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
-                serverId = server.GetHashCode(),
+                serverId = server.EndPoint,
                 command = $"!setlevel @{targetId} {level}"
             }));
         }

@@ -26,7 +26,7 @@ namespace IW4ScriptCommands.Commands
                 {
                     CurrentTeam = (IW4MAdmin.Plugins.Stats.IW4Info.Team)Enum.Parse(typeof(IW4MAdmin.Plugins.Stats.IW4Info.Team), c[1]),
                     Num = server.GetClientsAsList().FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0]))?.ClientNumber ?? -1,
-                    Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(server.Clients.FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0])).ClientId, server.GetHashCode())
+                    Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(server.Clients.FirstOrDefault(p => p.ClientNumber == Int32.Parse(c[0])).ClientId, server.EndPoint)
                 })
                 .ToList();
 
@@ -49,8 +49,8 @@ namespace IW4ScriptCommands.Commands
             var activeClients = _c.Select(c => new TeamAssignment()
             {
                 Num = c.ClientNumber,
-                Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, server.GetHashCode()),
-                CurrentTeam = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, server.GetHashCode()).Team
+                Stats = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, server.EndPoint),
+                CurrentTeam = IW4MAdmin.Plugins.Stats.Plugin.Manager.GetClientStats(c.ClientId, server.EndPoint).Team
             })
             .Where(c => scriptClientTeams.FirstOrDefault(sc => sc.Num == c.Num)?.CurrentTeam != IW4MAdmin.Plugins.Stats.IW4Info.Team.Spectator)
             .Where(c => c.CurrentTeam != scriptClientTeams.FirstOrDefault(p => p.Num == c.Num)?.CurrentTeam)

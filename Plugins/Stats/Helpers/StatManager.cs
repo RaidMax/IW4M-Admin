@@ -21,7 +21,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 {
     public class StatManager
     {
-        private ConcurrentDictionary<int, ServerStats> Servers;
+        private ConcurrentDictionary<long, ServerStats> Servers;
         private ILogger Log;
         private readonly IManager Manager;
 
@@ -30,19 +30,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public StatManager(IManager mgr)
         {
-            Servers = new ConcurrentDictionary<int, ServerStats>();
+            Servers = new ConcurrentDictionary<long, ServerStats>();
             Log = mgr.GetLogger(0);
             Manager = mgr;
             OnProcessingPenalty = new SemaphoreSlim(1, 1);
             OnProcessingSensitive = new SemaphoreSlim(1, 1);
         }
 
-        public EFClientStatistics GetClientStats(int clientId, int serverId)
+        public EFClientStatistics GetClientStats(int clientId, long serverId)
         {
             return Servers[serverId].PlayerStats[clientId];
         }
 
-        public static Expression<Func<EFRating, bool>> GetRankingFunc(int? serverId = null)
+        public static Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
         {
             var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
             return (r) => r.ServerId == serverId &&
@@ -191,21 +191,36 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // insert the server if it does not exist
             try
             {
-                int serverId = sv.GetHashCode();
+                long serverId = GetIdForServer(sv).Result;
                 EFServer server;
 
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
                     var serverSet = ctx.Set<EFServer>();
                     // get the server from the database if it exists, otherwise create and insert a new one
-                    server = serverSet.FirstOrDefault(c => c.ServerId == serverId);
+                    server = serverSet.FirstOrDefault(s => s.ServerId == serverId);
 
+                    // the server might be using legacy server id
+                    if (server == null)
+                    {
+                        server = serverSet.FirstOrDefault(s => s.EndPoint == sv.ToString());
+
+                        if (server != null)
+                        {
+                            // this provides a way to identify legacy server entries
+                            server.EndPoint = sv.ToString();
+                            ctx.Update(server);
+                            ctx.SaveChanges();
+                        }
+                    }
+
+                    // server has never been added before
                     if (server == null)
                     {
                         server = new EFServer()
                         {
                             Port = sv.GetPort(),
-                            Active = true,
+                            EndPoint = sv.ToString(),
                             ServerId = serverId
                         };
 
@@ -216,7 +231,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
 
                 // check to see if the stats have ever been initialized
-                var serverStats = InitializeServerStats(sv);
+                var serverStats = InitializeServerStats(server.ServerId);
 
                 Servers.TryAdd(serverId, new ServerStats(server, serverStats)
                 {
@@ -227,6 +242,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             catch (Exception e)
             {
                 Log.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]} - {e.Message}");
+                Log.WriteDebug(e.GetExceptionInfo());
             }
         }
 
@@ -241,7 +257,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             try
             {
-                int serverId = pl.CurrentServer.GetHashCode();
+                long serverId = await GetIdForServer(pl.CurrentServer);
 
                 if (!Servers.ContainsKey(serverId))
                 {
@@ -298,7 +314,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         {
                             Log.WriteWarning("Adding new client to stats failed");
                         }
-
                     }
 
                     else
@@ -374,19 +389,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         public async Task RemovePlayer(EFClient pl)
         {
-            Log.WriteInfo($"Removing {pl} from stats");
+            pl.CurrentServer.Logger.WriteInfo($"Removing {pl} from stats");
 
-            int serverId = pl.CurrentServer.GetHashCode();
+            long serverId = await GetIdForServer(pl.CurrentServer);
             var playerStats = Servers[serverId].PlayerStats;
             var detectionStats = Servers[serverId].PlayerDetections;
             var serverStats = Servers[serverId].ServerStatistics;
 
             if (!playerStats.ContainsKey(pl.ClientId))
             {
-                Log.WriteWarning($"Client disconnecting not in stats {pl}");
+                pl.CurrentServer.Logger.WriteWarning($"Client disconnecting not in stats {pl}");
                 // remove the client from the stats dictionary as they're leaving
                 playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue1);
-                detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue2);
+                detectionStats.TryRemove(pl.ClientId, out Detection removedValue2);
                 return;
             }
 
@@ -395,7 +410,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // remove the client from the stats dictionary as they're leaving
             playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
-            detectionStats.TryRemove(pl.ClientId, out Cheat.Detection removedValue4);
+            detectionStats.TryRemove(pl.ClientId, out Detection removedValue4);
 
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
@@ -407,10 +422,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // increment the total play time
-            serverStats.TotalPlayTime += (int)(DateTime.UtcNow - pl.LastConnection).TotalSeconds;
+            serverStats.TotalPlayTime += pl.ConnectionLength;
         }
 
-        public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, int serverId)
+        public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, long serverId)
         {
             string regex = @"^(D);(.+);([0-9]+);(allies|axis);(.+);([0-9]+);(allies|axis);(.+);(.+);([0-9]+);(.+);(.+)$";
             var match = Regex.Match(eventLine, regex, RegexOptions.IgnoreCase);
@@ -431,7 +446,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// Process stats for kill event
         /// </summary>
         /// <returns></returns>
-        public async Task AddScriptHit(bool isDamage, DateTime time, EFClient attacker, EFClient victim, int serverId, string map, string hitLoc, string type,
+        public async Task AddScriptHit(bool isDamage, DateTime time, EFClient attacker, EFClient victim, long serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads,
             string fraction, string visibilityPercentage, string snapAngles)
         {
@@ -581,7 +596,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        void ApplyPenalty(Cheat.DetectionPenaltyResult penalty, Cheat.Detection clientDetection, EFClient attacker, DatabaseContext ctx)
+        void ApplyPenalty(DetectionPenaltyResult penalty, Detection clientDetection, EFClient attacker, DatabaseContext ctx)
         {
             switch (penalty.ClientPenalty)
             {
@@ -693,7 +708,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task AddStandardKill(EFClient attacker, EFClient victim)
         {
-            int serverId = attacker.CurrentServer.GetHashCode();
+            long serverId = await GetIdForServer(attacker.CurrentServer);
 
             EFClientStatistics attackerStats = null;
             if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
@@ -723,6 +738,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update the total stats
             Servers[serverId].ServerStatistics.TotalKills += 1;
+            await Sync(attacker.CurrentServer);
 
             // this happens when the round has changed
             if (attackerStats.SessionScore == 0)
@@ -997,6 +1013,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // calulate elo
             if (Servers[attackerStats.ServerId].PlayerStats.Count > 1)
             {
+                #region DEPRECATED
                 /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
                      .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
                      .Where(cs =>
@@ -1020,6 +1037,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                  double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
                      validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
                      victimStats.EloRating;*/
+                #endregion
 
                 double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
                 double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
@@ -1122,9 +1140,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return clientStats;
         }
 
-        public EFServerStatistics InitializeServerStats(Server sv)
+        public EFServerStatistics InitializeServerStats(long serverId)
         {
-            int serverId = sv.GetHashCode();
             EFServerStatistics serverStats;
 
             using (var ctx = new DatabaseContext(disableTracking: true))
@@ -1134,7 +1151,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 if (serverStats == null)
                 {
-                    Log.WriteDebug($"Initializing server stats for {sv}");
+                    Log.WriteDebug($"Initializing server stats for {serverId}");
                     // server stats have never been generated before
                     serverStats = new EFServerStatistics()
                     {
@@ -1151,7 +1168,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return serverStats;
         }
 
-        public void ResetKillstreaks(int serverId)
+        public void ResetKillstreaks(long serverId)
         {
             var serverStats = Servers[serverId];
 
@@ -1161,7 +1178,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        public void ResetStats(int clientId, int serverId)
+        public void ResetStats(int clientId, long serverId)
         {
             var stats = Servers[serverId].PlayerStats[clientId];
             stats.Kills = 0;
@@ -1172,7 +1189,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             stats.EloRating = 200;
         }
 
-        public async Task AddMessageAsync(int clientId, int serverId, string message)
+        public async Task AddMessageAsync(int clientId, long serverId, string message)
         {
             // the web users can have no account
             if (clientId < 1)
@@ -1196,19 +1213,64 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task Sync(Server sv)
         {
-            int serverId = sv.GetHashCode();
+            long serverId = await GetIdForServer(sv);
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
                 var serverSet = ctx.Set<EFServer>();
                 serverSet.Update(Servers[serverId].Server);
+
+                var serverStatsSet = ctx.Set<EFServerStatistics>();
+                serverStatsSet.Update(Servers[serverId].ServerStatistics);
+
                 await ctx.SaveChangesAsync();
             }
         }
 
-        public void SetTeamBased(int serverId, bool isTeamBased)
+        public void SetTeamBased(long serverId, bool isTeamBased)
         {
             Servers[serverId].IsTeamBased = isTeamBased;
+        }
+
+        public static async Task<long> GetIdForServer(Server server)
+        {
+            // hack: my laziness
+            if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28965")
+            {
+                return 886229536;
+            }
+
+            else if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28960")
+            {
+                return 1645744423;
+            }
+
+            else if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28970")
+            {
+                return 1645809959;
+            }
+
+            else
+            {
+                long id = HashCode.Combine(server.IP, server.GetPort());
+                id = id < 0 ? Math.Abs(id) : id;
+                long? serverId;
+
+                // todo: cache this eventually, as it shouldn't change
+                using (var ctx = new DatabaseContext(disableTracking: true))
+                {
+                    serverId = (await ctx.Set<EFServer>().FirstOrDefaultAsync(_server => _server.ServerId == server.EndPoint ||
+                    _server.EndPoint == server.ToString() ||
+                    _server.ServerId == id))?.ServerId;
+                }
+
+                if (!serverId.HasValue)
+                {
+                    return id;
+                }
+
+                return serverId.Value;
+            }
         }
     }
 }

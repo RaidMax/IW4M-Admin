@@ -13,7 +13,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         [ForeignKey("RatingHistoryId")]
         public virtual EFClientRatingHistory RatingHistory { get; set; }
         // if null, indicates that the rating is an average rating
-        public int? ServerId { get; set; }
+        public long? ServerId { get; set; }
        // [ForeignKey("ServerId")] can't make this nullable if this annotation is set
         public virtual EFServer Server { get; set; }
         [Required]

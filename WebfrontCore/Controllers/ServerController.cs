@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers
 {
@@ -12,16 +9,19 @@ namespace WebfrontCore.Controllers
     {
         [HttpGet]
         [ResponseCache(NoStore = true, Duration = 0)]
-        public IActionResult  ClientActivity(int id)
+        public IActionResult ClientActivity(long id)
         {
-            var s = Manager.GetServers().FirstOrDefault(s2 => s2.GetHashCode() == id);
+            var s = Manager.GetServers().FirstOrDefault(s2 => s2.EndPoint == id);
+
             if (s == null)
+            {
                 return View("Error", "Invalid server!");
+            }
 
             var serverInfo = new ServerInfo()
             {
                 Name = s.Hostname,
-                ID = s.GetHashCode(),
+                ID = s.EndPoint,
                 Port = s.GetPort(),
                 Map = s.CurrentMap.Alias,
                 ClientCount = s.ClientNum,

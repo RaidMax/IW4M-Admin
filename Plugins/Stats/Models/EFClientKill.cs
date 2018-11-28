@@ -18,7 +18,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int AttackerId { get; set; }
         [ForeignKey("AttackerId")]
         public virtual EFClient Attacker { get; set; }
-        public int ServerId { get; set; }
+        public long ServerId { get; set; }
         [ForeignKey("ServerId")]
         public virtual EFServer Server { get; set; }
         public IW4Info.HitLocation HitLoc { get; set; }

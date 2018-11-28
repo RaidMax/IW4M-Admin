@@ -50,7 +50,7 @@ namespace IW4MAdmin.Application.IO
 
                     catch (Exception e)
                     {
-                        Server.Logger.WriteWarning($"Failed to update log event for {Server.GetHashCode()}");
+                        Server.Logger.WriteWarning($"Failed to update log event for {Server.EndPoint}");
                         Server.Logger.WriteDebug($"Exception: {e.Message}");
                         Server.Logger.WriteDebug($"StackTrace: {e.StackTrace}");
                     }

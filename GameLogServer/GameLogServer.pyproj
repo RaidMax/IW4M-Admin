@@ -48,8 +48,8 @@
     <Folder Include="GameLogServer\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="FolderProfile.pubxml" />
     <Content Include="requirements.txt" />
+    <None Include="Stable.pubxml" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">

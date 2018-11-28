@@ -19,7 +19,7 @@ namespace IW4ScriptCommands
         {
             if (E.Type == GameEvent.EventType.Start)
             {
-                return S.SetDvarAsync("sv_iw4madmin_serverid", S.GetHashCode());
+                return S.SetDvarAsync("sv_iw4madmin_serverid", S.EndPoint);
             }
 
             if (E.Type == GameEvent.EventType.Warn)

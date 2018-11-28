@@ -43,7 +43,7 @@ namespace IW4MAdmin.Application.API.Master
                                 Hostname = s.Hostname,
                                 Map = s.CurrentMap.Name,
                                 MaxClientNum = s.MaxClients,
-                                Id = s.GetHashCode(),
+                                Id = s.EndPoint,
                                 Port = (short)s.GetPort(),
                                 IPAddress = s.IP
                             }).ToList()

@@ -46,7 +46,7 @@ namespace IW4MAdmin.Application
         ManualResetEventSlim OnQuit;
         readonly IPageList PageList;
         readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
-        readonly Dictionary<int, ILogger> Loggers = new Dictionary<int, ILogger>();
+        readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
 
         private ApplicationManager()
         {
@@ -143,7 +143,7 @@ namespace IW4MAdmin.Application
         public async Task UpdateServerStates()
         {
             // store the server hash code and task for it
-            var runningUpdateTasks = new Dictionary<int, Task>();
+            var runningUpdateTasks = new Dictionary<long, Task>();
 
             while (Running)
             {
@@ -163,16 +163,16 @@ namespace IW4MAdmin.Application
                 }
 
                 // remove the update tasks as they have completd
-                foreach (int serverId in serverTasksToRemove)
+                foreach (long serverId in serverTasksToRemove)
                 {
                     runningUpdateTasks.Remove(serverId);
                 }
 
                 // select the servers where the tasks have completed
-                var serverIds = Servers.Select(s => s.GetHashCode()).Except(runningUpdateTasks.Select(r => r.Key)).ToList();
-                foreach (var server in Servers.Where(s => serverIds.Contains(s.GetHashCode())))
+                var serverIds = Servers.Select(s => s.EndPoint).Except(runningUpdateTasks.Select(r => r.Key)).ToList();
+                foreach (var server in Servers.Where(s => serverIds.Contains(s.EndPoint)))
                 {
-                    runningUpdateTasks.Add(server.GetHashCode(), Task.Run(async () =>
+                    runningUpdateTasks.Add(server.EndPoint, Task.Run(async () =>
                     {
                         try
                         {
@@ -467,7 +467,7 @@ namespace IW4MAdmin.Application
             Running = false;
         }
 
-        public ILogger GetLogger(int serverId)
+        public ILogger GetLogger(long serverId)
         {
             if (Loggers.ContainsKey(serverId))
             {

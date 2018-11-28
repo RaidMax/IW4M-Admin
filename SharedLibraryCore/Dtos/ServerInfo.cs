@@ -17,7 +17,7 @@ namespace SharedLibraryCore.Dtos
         public List<ChatInfo> ChatHistory { get; set; }
         public List<PlayerInfo> Players { get; set; }
         public Helpers.PlayerHistory[] PlayerHistory { get; set; }
-        public int ID { get; set; }
+        public long ID { get; set; }
         public bool Online { get; set; }
     }
 }

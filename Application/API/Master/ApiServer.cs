@@ -8,7 +8,7 @@ namespace IW4MAdmin.Application.API.Master
     public class ApiServer
     {
         [JsonProperty("id")]
-        public int Id { get; set; }
+        public long Id { get; set; }
         [JsonProperty("ip")]
         public string IPAddress { get; set; }
         [JsonProperty("port")]

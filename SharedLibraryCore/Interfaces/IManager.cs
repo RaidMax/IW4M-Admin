@@ -14,7 +14,7 @@ namespace SharedLibraryCore.Interfaces
         Task Init();
         void Start();
         void Stop();
-        ILogger GetLogger(int serverId);
+        ILogger GetLogger(long serverId);
         IList<Server> GetServers();
         IList<Command> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();

@@ -43,7 +43,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 }
             }
 
-            int serverId = E.Owner.GetHashCode();
+            long serverId = await StatManager.GetIdForServer(E.Owner);
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {

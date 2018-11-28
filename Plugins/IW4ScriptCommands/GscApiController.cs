@@ -42,7 +42,7 @@ namespace WebfrontCore.Controllers.API
             var client = Manager.GetActiveClients()
                 .FirstOrDefault(c => c.NetworkId == networkId.ConvertLong());
 
-            var server = Manager.GetServers().First(c => c.GetHashCode() == serverId);
+            var server = Manager.GetServers().First(c => c.EndPoint == serverId);
 
             teams = teams ?? string.Empty;
 

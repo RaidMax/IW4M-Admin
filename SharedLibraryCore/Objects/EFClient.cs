@@ -554,7 +554,7 @@ namespace SharedLibraryCore.Database.Models
         public int Score { get; set; }
         [NotMapped]
         public bool IsBot { get; set; }
-        
+
         [NotMapped]
         public ClientState State { get; set; }
         [NotMapped]

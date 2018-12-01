@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
+﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Objects;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
@@ -87,6 +87,7 @@ namespace SharedLibraryCore.Services
         public async Task<IList<EFPenalty>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
         {
             using (var context = new DatabaseContext(true))
+            {
                 return await context.Penalties
                    .Include(p => p.Offender.CurrentAlias)
                    .Include(p => p.Punisher.CurrentAlias)
@@ -96,17 +97,20 @@ namespace SharedLibraryCore.Services
                    .Skip(offset)
                    .Take(count)
                   .ToListAsync();
+            }
         }
 
         public async Task<IList<EFPenalty>> GetClientPenaltiesAsync(int clientId)
         {
             using (var context = new DatabaseContext(true))
+            {
                 return await context.Penalties
                     .Where(p => p.OffenderId == clientId)
                     .Where(p => p.Active)
                     .Include(p => p.Offender.CurrentAlias)
                     .Include(p => p.Punisher.CurrentAlias)
                     .ToListAsync();
+            }
         }
 
         /// <summary>
@@ -146,7 +150,7 @@ namespace SharedLibraryCore.Services
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
                                               Type = penalty.Type.ToString(),
-                                              TimeRemaining = penalty.Expires.HasValue ?  (now > penalty.Expires ? "" : penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
+                                              TimeRemaining = penalty.Expires.HasValue ? (now > penalty.Expires ? "" : penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
                                               AutomatedOffense = penalty.AutomatedOffense
                                           },
                                           When = penalty.When,
@@ -158,12 +162,15 @@ namespace SharedLibraryCore.Services
                     {
                         // todo: why does this have to be done?
                         if (((PenaltyInfo)p.Value).Type.Length < 2)
+                        {
                             ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
+                        }
 
                         var pi = ((PenaltyInfo)p.Value);
                         if (pi.TimeRemaining?.Length > 0)
+                        {
                             pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
-
+                        }
                     });
                     return list;
                 }
@@ -205,7 +212,9 @@ namespace SharedLibraryCore.Services
                     {
                         // todo: why does this have to be done?
                         if (((PenaltyInfo)p.Value).Type.Length < 2)
+                        {
                             ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
+                        }
                     });
 
                     return list;
@@ -217,24 +226,33 @@ namespace SharedLibraryCore.Services
         {
             var now = DateTime.UtcNow;
 
+            Expression<Func<EFPenalty, bool>> filter = (p) => new Penalty.PenaltyType[]
+                         {
+                            Penalty.PenaltyType.TempBan,
+                            Penalty.PenaltyType.Ban, Penalty.PenaltyType.Flag
+                         }.Contains(p.Type) &&
+                         p.Active &&
+                         (p.Expires == null || p.Expires > now);
+
             using (var context = new DatabaseContext(true))
             {
-                var iqPenalties = context.Penalties
-                    .Where(p => p.LinkId == linkId ||
-                         ip.HasValue ? p.Link.Children.Any(a => a.IPAddress == ip) : false)
-                    .Where(p => p.Type == Penalty.PenaltyType.TempBan ||
-                         p.Type == Penalty.PenaltyType.Ban ||
-                         p.Type == Penalty.PenaltyType.Flag)
-                    .Where(p => p.Active)
-                    .Where(p => p.Expires == null || p.Expires > now);
-       
+                var iqLinkPenalties = context.Penalties
+                    .Where(p => p.LinkId == linkId)
+                    .Where(filter);
+
+                var iqIPPenalties = context.Aliases
+                    .Where(a => a.IPAddress == ip)
+                    .SelectMany(a => a.Link.ReceivedPenalties)
+                    .Where(filter);
+
 #if DEBUG == true
-                var penaltiesSql = iqPenalties.ToSql();
+                var penaltiesSql = iqLinkPenalties.ToSql();
+                var ipPenaltiesSql = iqIPPenalties.ToSql();
 #endif
 
-                var activePenalties = await iqPenalties.ToListAsync();
+                var activePenalties = (await iqLinkPenalties.ToListAsync()).Union(await iqIPPenalties.ToListAsync());
                 // this is a bit more performant in memory (ordering)
-                return activePenalties.OrderByDescending(p =>p.When).ToList();
+                return activePenalties.OrderByDescending(p => p.When).ToList();
             }
         }
 

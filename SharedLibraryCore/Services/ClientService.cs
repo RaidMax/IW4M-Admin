@@ -79,6 +79,8 @@ namespace SharedLibraryCore.Services
 
                 if (hasExistingAlias && !entity.AliasLink.Active)
                 {
+                    entity.CurrentServer.Logger.WriteDebug($"Removing temporary alias for ${entity}");
+
                     // we want to delete the temporary alias
                     context.Entry(entity.CurrentAlias).State = EntityState.Deleted;
                     entity.CurrentAlias = null;
@@ -97,6 +99,8 @@ namespace SharedLibraryCore.Services
                 // update the temporary alias to permanent one
                 else if (!entity.AliasLink.Active)
                 {
+                    entity.CurrentServer.Logger.WriteDebug($"Linking permanent alias for ${entity}");
+
                     // we want to track the current alias and link
                     var alias = context.Update(entity.CurrentAlias).Entity;
                     var _aliasLink = context.Update(entity.AliasLink).Entity;
@@ -119,16 +123,15 @@ namespace SharedLibraryCore.Services
                     Name = name,
                 };
 
-                var iqExistingPermission = context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
-                        .OrderByDescending(client => client.Level)
-                        .Select(c => new EFClient() { Level = c.Level });
+                if (!hasExistingAlias)
+                {
+                    entity.CurrentServer.Logger.WriteDebug($"Connecting player does not have an existing alias {entity}");
+                }
 
                 entity.Level = hasExistingAlias ?
-                    (await iqExistingPermission.FirstOrDefaultAsync())?.Level ?? Permission.User :
+                    await context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
+                        .MaxAsync(c => c.Level) :
                     Permission.User;
-#if DEBUG
-                string sql = iqExistingPermission.AsQueryable().ToSql();
-#endif
 
                 if (entity.CurrentAlias != existingAlias ||
                     entity.AliasLink != aliasLink)

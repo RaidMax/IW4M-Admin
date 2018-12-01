@@ -19,9 +19,9 @@ namespace IW4MAdmin.Application.RconParsers
         {
             Tell = "tell {0} {1}",
             Say = "say {0}",
-            Kick = "clientKick {0}",
-            Ban = "clientKick {0}",
-            TempBan = "clientKick {0}"
+            Kick = "clientkick_for_reason {0} \"{1}\"",
+            Ban = "clientkick_for_reason {0} \"{1}\"",
+            TempBan = "clientkick_for_reason {0} \"{1}\""
         };
 
         public CommandPrefix GetCommandPrefixes() => Prefixes;

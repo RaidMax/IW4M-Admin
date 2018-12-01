@@ -802,8 +802,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 var clientStatsSet = ctx.Set<EFClientStatistics>();
 
-                clientStatsSet.Update(attackerStats);
-                clientStatsSet.Update(victimStats);
+                clientStatsSet.Attach(attackerStats).State = EntityState.Modified;
+                clientStatsSet.Attach(victimStats).State = EntityState.Modified;
                 await ctx.SaveChangesAsync();
             }
         }

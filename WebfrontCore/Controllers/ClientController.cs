@@ -120,7 +120,8 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> PrivilegedAsync()
         {
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
-                .GroupBy(a => a.AliasLinkId).Select(_clients => _clients.OrderBy(_client => _client.LastConnection).LastOrDefault())
+                .GroupBy(a => a.AliasLinkId).Where(_clients => _clients.FirstOrDefault(_client => _client.LastConnection == _clients.Max(c => c.LastConnection)) != null)
+                .Select(_client => _client.First())
                 .OrderByDescending(_client => _client.Level);
 
             var adminsDict = new Dictionary<EFClient.Permission, IList<ClientInfo>>();

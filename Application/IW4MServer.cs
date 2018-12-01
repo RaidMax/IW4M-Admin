@@ -24,38 +24,12 @@ namespace IW4MAdmin
     {
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
+        private DateTime SessionStart;
         public int Id { get; private set; }
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
         {
         }
-
-        //public override int EndPoint
-        //{
-        //    // hack: my laziness
-        //    if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28965")
-        //    {
-        //        return 886229536;
-        //    }
-
-        //    if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28960")
-        //    {
-        //        return 1645744423;
-        //    }
-
-        //    if ($"{IP}:{Port.ToString()}" == "66.150.121.184:28970")
-        //    {
-        //        return 1645809959;
-        //    }
-
-        //    if (Id == 0)
-        //    {
-        //        Id = HashCode.Combine(IP, Port);
-        //        Id = Id < 0 ? Math.Abs(Id) : Id;
-        //    }
-
-        //    return Id;
-        //}
 
         override public async Task OnClientConnected(EFClient clientFromLog)
         {
@@ -327,6 +301,13 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
+                if ((DateTime.UtcNow - SessionStart).TotalSeconds < 5)
+                {
+                    Logger.WriteInfo($"Cancelling pre disconnect for {E.Origin} as it occured too close to map end");
+                    E.FailReason = GameEvent.EventFailReason.Invalid;
+                    return false;
+                }
+
                 // predisconnect comes from minimal rcon polled players and minimal log players
                 // so we need to disconnect the "full" version of the client
                 var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
@@ -421,6 +402,7 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.MapEnd)
             {
                 Logger.WriteInfo("Game ending...");
+                SessionStart = DateTime.UtcNow;
             }
 
             if (E.Type == GameEvent.EventType.Tell)
@@ -439,9 +421,12 @@ namespace IW4MAdmin
 #endif
             }
 
-            while (ChatHistory.Count > Math.Ceiling((double)ClientNum / 2))
+            lock (ChatHistory)
             {
-                ChatHistory.RemoveAt(0);
+                while (ChatHistory.Count > Math.Ceiling(ClientNum / 2.0))
+                {
+                    ChatHistory.RemoveAt(0);
+                }
             }
 
             // the last client hasn't fully disconnected yet
@@ -954,7 +939,7 @@ namespace IW4MAdmin
 
                 ingameClient = Manager.GetServers()
                     .Select(s => s.GetClientsAsList())
-                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target.ClientId) != null)
+                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target?.ClientId) != null)
                     ?.First(c => c.ClientId == Target.ClientId);
 
                 if (ingameClient != null)
@@ -987,7 +972,7 @@ namespace IW4MAdmin
                 Active = true,
                 When = DateTime.UtcNow,
                 Link = Target.AliasLink,
-                AutomatedOffense = Origin.AdministeredPenalties.FirstOrDefault()?.AutomatedOffense
+                AutomatedOffense = Origin.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense
             };
 
             await Manager.GetPenaltyService().Create(newPenalty);

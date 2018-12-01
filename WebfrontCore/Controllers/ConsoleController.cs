@@ -34,7 +34,10 @@ namespace WebfrontCore.Controllers
                 ClientId = Client.ClientId,
                 Level = Client.Level,
                 CurrentServer = server,
-                Name = Client.Name
+                CurrentAlias = new EFAlias()
+                {
+                    Name = Client.Name
+                }
             };
 
             var remoteEvent = new GameEvent()
@@ -55,7 +58,9 @@ namespace WebfrontCore.Controllers
 
                 // remove the added command response
                 for (int i = 0; i < response.Count; i++)
+                {
                     server.CommandResult.Remove(response[i]);
+                }
             }
 
             else

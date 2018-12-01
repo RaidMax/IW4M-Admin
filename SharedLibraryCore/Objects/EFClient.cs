@@ -75,11 +75,11 @@ namespace SharedLibraryCore.Database.Models
         {
             ConnectionTime = DateTime.UtcNow;
             ClientNumber = -1;
-            DelayedEvents = new Queue<GameEvent>();
             _additionalProperties = new Dictionary<string, object>
             {
                 { "_reportCount", 0 }
             };
+            CurrentAlias = new EFAlias();
         }
 
         public override string ToString()
@@ -481,6 +481,7 @@ namespace SharedLibraryCore.Database.Models
                 if (Level != Permission.Banned &&
                     currentBan.Type == Penalty.PenaltyType.Ban)
                 {
+                    CurrentServer.Logger.WriteInfo($"Banned client {this} connected using a new GUID");
                     // hack: re apply the automated offense to the reban
                     if (currentBan.AutomatedOffense != null)
                     {
@@ -557,8 +558,7 @@ namespace SharedLibraryCore.Database.Models
 
         [NotMapped]
         public ClientState State { get; set; }
-        [NotMapped]
-        public Queue<GameEvent> DelayedEvents { get; set; }
+
         [NotMapped]
         // this is kinda dirty, but I need localizable level names
         public ClientPermission ClientPermission => new ClientPermission()

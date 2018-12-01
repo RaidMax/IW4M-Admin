@@ -47,7 +47,6 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="config.dev.json" />
     <Content Include="config.json">
       <Publish>True</Publish>
     </Content>

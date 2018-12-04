@@ -50,6 +50,12 @@ namespace SharedLibraryCore.Services
 
         public async Task UpdateAlias(EFClient entity)
         {
+            // todo: move this out
+            if (entity.IsBot)
+            {
+                return;
+            }
+
             using (var context = new DatabaseContext())
             {
                 context.Attach(entity);
@@ -60,10 +66,16 @@ namespace SharedLibraryCore.Services
                 bool hasExistingAlias = false;
 
                 // get all aliases by IP
-                var aliases = await context.Aliases
+                var iqAliases = context.Aliases
                     .Include(a => a.Link)
-                    .Where(a => a.IPAddress != null && a.IPAddress == ip)
-                    .ToListAsync();
+                    .Where(a => a.Link.Active)
+                    .Where(a => (a.IPAddress != null && a.IPAddress == ip) ||
+                    a.LinkId == entity.AliasLinkId);
+
+#if DEBUG == true
+                var aliasSql = iqAliases.ToSql();
+#endif
+                var aliases = await iqAliases.ToListAsync();
 
                 // see if they have a matching IP + Name but new NetworkId
                 var existingAlias = aliases.FirstOrDefault(a => a.Name == name);
@@ -112,6 +124,7 @@ namespace SharedLibraryCore.Services
 
                     existingAlias = alias;
                     aliasLink = _aliasLink;
+                    await context.SaveChangesAsync();
                 }
 
                 // if no existing alias create new alias
@@ -128,10 +141,24 @@ namespace SharedLibraryCore.Services
                     entity.CurrentServer.Logger.WriteDebug($"Connecting player does not have an existing alias {entity}");
                 }
 
-                entity.Level = hasExistingAlias ?
-                    await context.Clients.Where(c => c.AliasLinkId == existingAlias.LinkId)
-                        .MaxAsync(c => c.Level) :
-                    Permission.User;
+                else
+                {
+                    var linkIds = aliases.Select(a => a.LinkId);
+
+                    if (linkIds.Count() > 0)
+                    {
+                        var highestLevel = await context.Clients
+                            .Where(c => linkIds.Contains(c.AliasLinkId))
+                            .MaxAsync(c => c.Level);
+
+                        if (entity.Level != highestLevel)
+                        {
+                            context.Update(entity);
+                            entity.Level = highestLevel;
+                            await context.SaveChangesAsync();
+                        }
+                    }
+                }
 
                 if (entity.CurrentAlias != existingAlias ||
                     entity.AliasLink != aliasLink)

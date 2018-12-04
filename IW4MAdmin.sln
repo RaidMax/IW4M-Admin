@@ -40,7 +40,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 	ProjectSection(SolutionItems) = preProject
 		Plugins\ScriptPlugins\SharedGUIDKick.js = Plugins\ScriptPlugins\SharedGUIDKick.js
 		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js
-		Plugins\ScriptPlugins\VpnDetectionPrivate.js = Plugins\ScriptPlugins\VpnDetectionPrivate.js
 	EndProjectSection
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "GameLogServer", "GameLogServer\GameLogServer.pyproj", "{42EFDA12-10D3-4C40-A210-9483520116BC}"

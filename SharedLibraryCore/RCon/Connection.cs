@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,7 +28,8 @@ namespace SharedLibraryCore.RCon
         static readonly ConcurrentDictionary<EndPoint, ConnectionState> ActiveQueries = new ConcurrentDictionary<EndPoint, ConnectionState>();
         public IPEndPoint Endpoint { get; private set; }
         public string RConPassword { get; private set; }
-        ILogger Log;
+
+        private readonly ILogger Log;
 
         public Connection(string ipAddress, int port, string password, ILogger log)
         {
@@ -88,7 +88,7 @@ namespace SharedLibraryCore.RCon
 
             byte[] response = null;
 
-            retrySend:
+        retrySend:
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
             {
                 //DontFragment = true,
@@ -107,7 +107,7 @@ namespace SharedLibraryCore.RCon
                 {
                     response = await SendPayloadAsync(payload, waitForResponse);
 
-                    if (response.Length == 0)
+                    if (response.Length == 0 && waitForResponse)
                     {
                         throw new Exception();
                     }

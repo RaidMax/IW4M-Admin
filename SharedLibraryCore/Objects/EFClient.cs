@@ -485,7 +485,7 @@ namespace SharedLibraryCore.Database.Models
                     // hack: re apply the automated offense to the reban
                     if (currentBan.AutomatedOffense != null)
                     {
-                        autoKickClient.AdministeredPenalties.Add(new EFPenalty()
+                        autoKickClient.AdministeredPenalties?.Add(new EFPenalty()
                         {
                             AutomatedOffense = currentBan.AutomatedOffense
                         });

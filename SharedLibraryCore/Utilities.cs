@@ -36,7 +36,8 @@ namespace SharedLibraryCore
                 CurrentAlias = new EFAlias()
                 {
                     Name = "IW4MAdmin"
-                }
+                },
+                AdministeredPenalties = new List<EFPenalty>()
             };
         }
 

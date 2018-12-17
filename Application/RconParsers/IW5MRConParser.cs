@@ -142,7 +142,7 @@ namespace IW4MAdmin.Application.RconParsers
                     long networkId = 0;//playerInfo[4].ConvertLong();
                     int.TryParse(playerInfo[0], out clientId);
                     var regex = Regex.Match(responseLine, @"\d+\.\d+\.\d+.\d+\:\d{1,5}");
-                    int ipAddress = regex.Value.Split(':')[0].ConvertToIP();
+                    int? ipAddress = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @" +(\d+ +){3}");
                     int score = Int32.Parse(regex.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0]);
 

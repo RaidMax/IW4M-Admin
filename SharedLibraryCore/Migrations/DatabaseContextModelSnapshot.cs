@@ -457,6 +457,8 @@ namespace SharedLibraryCore.Migrations
 
                     b.Property<DateTime?>("Expires");
 
+                    b.Property<bool>("IsEvadedOffense");
+
                     b.Property<int>("LinkId");
 
                     b.Property<int>("OffenderId");

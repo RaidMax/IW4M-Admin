@@ -106,16 +106,11 @@ namespace IW4MAdmin.Application.RconParsers
                         ping = int.Parse(regex.Groups[3].Value);
                     }
 
-                    else
-                    {
-                        continue;
-                    }
-
                     long networkId = regex.Groups[4].Value.ConvertLong();
                     string name = regex.Groups[5].Value.StripColors().Trim();
-                    int ip = regex.Groups[7].Value.Split(':')[0].ConvertToIP();
+                    int? ip = regex.Groups[7].Value.Split(':')[0].ConvertToIP();
 
-                    var P = new EFClient()
+                    var client = new EFClient()
                     {
                         CurrentAlias = new EFAlias()
                         {
@@ -123,13 +118,19 @@ namespace IW4MAdmin.Application.RconParsers
                         },
                         NetworkId = networkId,
                         ClientNumber = clientNumber,
-                        IPAddress = ip == 0 ? int.MinValue : ip,
+                        IPAddress = ip,
                         Ping = ping,
                         Score = score,
-                        IsBot = ip == 0,
+                        IsBot = ip == null,
                         State = EFClient.ClientState.Connecting
                     };
-                    StatusPlayers.Add(P);
+                    StatusPlayers.Add(client);
+
+                    // they've not fully connected yet
+                    if (!client.IsBot && ping == 999)
+                    {
+                        continue;
+                    }
                 }
             }
 

@@ -1,0 +1,45 @@
+Metadata-Version: 2.0
+Name: pygal
+Version: 2.4.0
+Summary: A python svg graph plotting library
+Home-page: http://pygal.org/
+Author: Florian Mounier
+Author-email: florian.mounier@kozea.fr
+License: GNU LGPL v3+
+Keywords: svg,chart,graph,diagram,plot,histogram,kiviat
+Platform: Any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Multimedia :: Graphics :: Presentation
+Provides: pygal
+Provides-Extra: docs
+Requires-Dist: pygal-sphinx-directives; extra == 'docs'
+Requires-Dist: sphinx; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme; extra == 'docs'
+Provides-Extra: lxml
+Requires-Dist: lxml; extra == 'lxml'
+Provides-Extra: png
+Requires-Dist: cairosvg; extra == 'png'
+Provides-Extra: test
+Requires-Dist: cairosvg; extra == 'test'
+Requires-Dist: coveralls; extra == 'test'
+Requires-Dist: flask; extra == 'test'
+Requires-Dist: lxml; extra == 'test'
+Requires-Dist: pygal-maps-ch; extra == 'test'
+Requires-Dist: pygal-maps-fr; extra == 'test'
+Requires-Dist: pygal-maps-world; extra == 'test'
+Requires-Dist: pyquery; extra == 'test'
+Requires-Dist: pytest; extra == 'test'
+Requires-Dist: pytest-cov; extra == 'test'
+Requires-Dist: pytest-flake8; extra == 'test'
+Requires-Dist: pytest-isort; extra == 'test'
+Requires-Dist: pytest-runner; extra == 'test'
+
+UNKNOWN
+
+

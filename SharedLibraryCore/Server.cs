@@ -208,7 +208,7 @@ namespace SharedLibraryCore
         /// <param name="Reason">The reason for the ban</param>
         /// <param name="Target">The person to ban</param>
         /// <param name="Origin">The person who banned the target</param>
-        abstract protected Task Ban(String Reason, EFClient Target, EFClient Origin);
+        abstract protected Task Ban(String Reason, EFClient Target, EFClient Origin, bool isEvade);
 
         abstract protected Task Warn(String Reason, EFClient Target, EFClient Origin);
 
@@ -316,6 +316,8 @@ namespace SharedLibraryCore
 
         // Internal
         public string IP { get; protected set; }
+        public string Version { get; protected set; }
+
         protected int Port;
         protected string FSGame;
         protected int NextMessage;

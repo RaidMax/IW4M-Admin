@@ -168,6 +168,7 @@ function shouldIncludePlural(num) {
 let mostRecentDate = 0;
 let currentStepAmount = 0;
 let lastStep = '';
+// todo: fix
 function timeStep(stepDifference) {
     let hours = stepDifference / (1000 * 60 * 60);
     let days = stepDifference / (1000 * 60 * 60 * 24);

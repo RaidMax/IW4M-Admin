@@ -1,0 +1,6 @@
+Werkzeug>=0.14
+Flask
+PyJWT
+
+[asymmetric_crypto]
+cryptography

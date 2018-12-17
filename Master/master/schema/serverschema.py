@@ -13,6 +13,10 @@ class ServerSchema(Schema):
         required=True,
         validate=validate.Range(1, 65535, 'invalid port')
     )
+    version = fields.String(
+        required=False,
+        validate=validate.Length(0, 128, 'invalid server version')
+    )
     game = fields.String(
         required=True,
         validate=validate.Length(1, 5, 'invalid game name')

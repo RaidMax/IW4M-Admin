@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Database.Models
 {
@@ -31,6 +27,8 @@ namespace SharedLibraryCore.Database.Models
         [Required]
         public string Offense { get; set; }
         public string AutomatedOffense { get; set; }
+        [Required]
+        public bool IsEvadedOffense { get; set; }
         public Objects.Penalty.PenaltyType Type { get; set; }
     }
 }

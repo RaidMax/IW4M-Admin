@@ -68,7 +68,11 @@ namespace IW4MAdmin
                 // this only happens if the preconnect event occurred from RCon polling
                 if (clientFromLog.IPAddress.HasValue)
                 {
-                    await client.OnJoin(clientFromLog.IPAddress);
+                    // they're banned so we don't want to add them as connected
+                    if (!await client.OnJoin(clientFromLog.IPAddress))
+                    {
+                        return;
+                    }
                 }
 
                 client.OnConnect();
@@ -219,6 +223,7 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Flag)
             {
+                // todo: maybe move this to a seperate function
                 Penalty newPenalty = new Penalty()
                 {
                     Type = Penalty.PenaltyType.Flag,
@@ -259,7 +264,8 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Ban)
             {
-                await Ban(E.Data, E.Target, E.Origin);
+
+                await Ban(E.Data, E.Target, E.Origin, E.Extra as bool? ?? false);
             }
 
             else if (E.Type == GameEvent.EventType.Unban)
@@ -675,6 +681,7 @@ namespace IW4MAdmin
             }
 
             var version = await this.GetDvarAsync<string>("version");
+            Version = version.Value;
             GameName = Utilities.GetGame(version.Value);
 
             if (GameName == Game.IW4)
@@ -763,42 +770,45 @@ namespace IW4MAdmin
 
             CustomCallback = await ScriptLoaded();
             string mainPath = EventParser.GetGameDir();
-#if DEBUG
-            //       basepath.Value = @"D:\";
-#endif
             string logPath = string.Empty;
 
             LogPath = game == string.Empty ?
                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
                    $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
 
+            bool remoteLog = false;
             if (GameName == Game.IW5 || ServerConfig.ManualLogPath?.Length > 0)
             {
                 logPath = ServerConfig.ManualLogPath;
+                remoteLog = logPath.StartsWith("http");
             }
             else
             {
                 logPath = LogPath;
             }
 
-            // hopefully fix wine drive name mangling
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (remoteLog)
             {
-                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
+                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
             }
 
-            if (!File.Exists(logPath) && !logPath.StartsWith("http"))
-            {
-                Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
-#if !DEBUG
-                throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
-#else
-                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
-#endif
-            }
             else
             {
-                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
+                // fix wine drive name mangling
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
+                }
+
+                if (!File.Exists(logPath))
+                {
+                    Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
+#if !DEBUG
+                    throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
+#else
+                    LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
+#endif
+                }
             }
 
             Logger.WriteInfo($"Log file is {logPath}");
@@ -930,21 +940,21 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        override protected async Task Ban(String Message, EFClient Target, EFClient Origin)
+        override protected async Task Ban(string reason, EFClient targetClient, EFClient originClient, bool isEvade)
         {
             // ensure player gets banned if command not performed on them in game
-            if (Target.ClientNumber < 0)
+            if (targetClient.ClientNumber < 0)
             {
                 EFClient ingameClient = null;
 
                 ingameClient = Manager.GetServers()
                     .Select(s => s.GetClientsAsList())
-                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == Target?.ClientId) != null)
-                    ?.First(c => c.ClientId == Target.ClientId);
+                    .FirstOrDefault(l => l.FirstOrDefault(c => c.ClientId == targetClient?.ClientId) != null)
+                    ?.First(c => c.ClientId == targetClient.ClientId);
 
                 if (ingameClient != null)
                 {
-                    await Ban(Message, ingameClient, Origin);
+                    await Ban(reason, ingameClient, originClient, isEvade);
                     return;
                 }
             }
@@ -952,13 +962,13 @@ namespace IW4MAdmin
             else
             {
                 // this is set only because they're still in the server.
-                Target.Level = EFClient.Permission.Banned;
+                targetClient.Level = EFClient.Permission.Banned;
 
 #if !DEBUG
-                string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{Message} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
-                await Target.CurrentServer.ExecuteCommandAsync(formattedString);
+                string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
+                await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
-                await Target.CurrentServer.OnClientDisconnected(Target);
+                await targetClient.CurrentServer.OnClientDisconnected(targetClient);
 #endif
             }
 
@@ -966,13 +976,14 @@ namespace IW4MAdmin
             {
                 Type = Penalty.PenaltyType.Ban,
                 Expires = null,
-                Offender = Target,
-                Offense = Message,
-                Punisher = Origin,
+                Offender = targetClient,
+                Offense = reason,
+                Punisher = originClient,
                 Active = true,
                 When = DateTime.UtcNow,
-                Link = Target.AliasLink,
-                AutomatedOffense = Origin.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense
+                Link = targetClient.AliasLink,
+                AutomatedOffense = originClient.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
+                IsEvadedOffense = isEvade
             };
 
             await Manager.GetPenaltyService().Create(newPenalty);

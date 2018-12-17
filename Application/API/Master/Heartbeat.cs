@@ -39,6 +39,7 @@ namespace IW4MAdmin.Application.API.Master
                             {
                                 ClientNum = s.ClientNum,
                                 Game = s.GameName.ToString(),
+                                Version = s.Version,
                                 Gametype = s.Gametype,
                                 Hostname = s.Hostname,
                                 Map = s.CurrentMap.Name,

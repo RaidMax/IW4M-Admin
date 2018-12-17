@@ -1,8 +1,9 @@
 
 class ServerModel(object):
-    def __init__(self, id, port, game, hostname, clientnum, maxclientnum, map, gametype, ip):
+    def __init__(self, id, port, game, hostname, clientnum, maxclientnum, map, gametype, ip, version):
         self.id = id
         self.port = port
+        self.version = version
         self.game = game
         self.hostname = hostname
         self.clientnum = clientnum

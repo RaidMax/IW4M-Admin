@@ -375,7 +375,7 @@ namespace SharedLibraryCore.Services
             using (var context = new DatabaseContext(disableTracking: true))
             {
                 long networkId = identifier.ConvertLong();
-                int ipAddress = identifier.ConvertToIP();
+                int? ipAddress = identifier.ConvertToIP();
 
                 var iqLinkIds = (from alias in context.Aliases
                                  where alias.IPAddress == ipAddress ||

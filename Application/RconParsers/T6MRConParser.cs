@@ -97,7 +97,7 @@ namespace IW4MAdmin.Application.RconParsers
 #if DEBUG
                     Ping = 1;
 #endif
-                    int ipAddress = regex.Value.Split(':')[0].ConvertToIP();
+                    int? ipAddress = regex.Value.Split(':')[0].ConvertToIP();
                     regex = Regex.Match(responseLine, @"[0-9]{1,2}\s+[0-9]+\s+");
                     var p = new EFClient()
                     {
@@ -108,7 +108,7 @@ namespace IW4MAdmin.Application.RconParsers
                         Ping = Ping,
                         Score = 0,
                         State = EFClient.ClientState.Connecting,
-                        IsBot = networkId == 0
+                        IsBot = ipAddress == null
                     };
 
                     if (p.IsBot)

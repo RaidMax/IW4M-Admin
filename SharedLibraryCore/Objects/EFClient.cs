@@ -348,7 +348,7 @@ namespace SharedLibraryCore.Database.Models
         /// </summary>
         /// <param name="banReason">reason for the ban</param>
         /// <param name="sender">client performing the ban</param>
-        public GameEvent Ban(String banReason, EFClient sender)
+        public GameEvent Ban(String banReason, EFClient sender, bool isEvade = false)
         {
             var e = new GameEvent()
             {
@@ -357,7 +357,8 @@ namespace SharedLibraryCore.Database.Models
                 Data = banReason,
                 Origin = sender,
                 Target = this,
-                Owner = sender.CurrentServer
+                Owner = sender.CurrentServer,
+                Extra = isEvade
             };
 
             // enforce level restrictions
@@ -449,7 +450,7 @@ namespace SharedLibraryCore.Database.Models
             await CurrentServer.Manager.GetClientService().Update(this);
         }
 
-        public async Task OnJoin(int? ipAddress)
+        public async Task<bool> OnJoin(int? ipAddress)
         {
             IPAddress = ipAddress;
 
@@ -490,7 +491,7 @@ namespace SharedLibraryCore.Database.Models
                             AutomatedOffense = currentBan.AutomatedOffense
                         });
                     }
-                    Ban($"{currentBan.Offense}", autoKickClient);
+                    Ban($"{currentBan.Offense}", autoKickClient, true);
                 }
 
                 // the player is permanently banned
@@ -503,6 +504,8 @@ namespace SharedLibraryCore.Database.Models
                 {
                     Kick($"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
                 }
+
+                return false;
             }
 
             else
@@ -516,6 +519,7 @@ namespace SharedLibraryCore.Database.Models
                 };
 
                 CurrentServer.Manager.GetEventHandler().AddEvent(e);
+                return true;
             }
         }
 

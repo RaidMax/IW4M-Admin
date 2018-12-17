@@ -1,0 +1,7 @@
+..\__pycache__\itsdangerous.cpython-36.pyc
+..\itsdangerous.py
+PKG-INFO
+SOURCES.txt
+dependency_links.txt
+not-zip-safe
+top_level.txt

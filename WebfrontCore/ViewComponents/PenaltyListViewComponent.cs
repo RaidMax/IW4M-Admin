@@ -25,7 +25,9 @@ namespace WebfrontCore.ViewComponents
 #if DEBUG
                 Offense = !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
 #else
-                Offense = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
+                Offense = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense) ? (p.IsEvadedOffense ?
+                    $"({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]}) " : "") + p.AutomatedOffense :
+                    $"({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]}) " + p.Offense,
 #endif
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),

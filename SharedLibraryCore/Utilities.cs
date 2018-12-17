@@ -279,11 +279,11 @@ namespace SharedLibraryCore
             return long.MinValue;
         }
 
-        public static int ConvertToIP(this string str)
+        public static int? ConvertToIP(this string str)
         {
-            System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip);
-
-            return ip == null ? int.MaxValue : BitConverter.ToInt32(ip.GetAddressBytes(), 0);
+            return System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip) ?
+                 BitConverter.ToInt32(ip.GetAddressBytes(), 0) :
+                 new int?();
         }
 
         public static string ConvertIPtoString(this int? ip)

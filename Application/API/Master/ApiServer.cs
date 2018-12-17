@@ -13,6 +13,8 @@ namespace IW4MAdmin.Application.API.Master
         public string IPAddress { get; set; }
         [JsonProperty("port")]
         public short Port { get; set; }
+        [JsonProperty("version")]
+        public string Version { get; set; }
         [JsonProperty("gametype")]
         public string Gametype { get; set; }
         [JsonProperty("map")]

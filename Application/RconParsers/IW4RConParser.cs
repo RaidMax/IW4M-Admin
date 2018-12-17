@@ -124,13 +124,14 @@ namespace IW4MAdmin.Application.RconParsers
                         IsBot = ip == null,
                         State = EFClient.ClientState.Connecting
                     };
-                    StatusPlayers.Add(client);
 
                     // they've not fully connected yet
                     if (!client.IsBot && ping == 999)
                     {
                         continue;
                     }
+
+                    StatusPlayers.Add(client);
                 }
             }
 

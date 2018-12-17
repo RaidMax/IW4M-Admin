@@ -348,7 +348,7 @@ namespace SharedLibraryCore.Database.Models
         /// </summary>
         /// <param name="banReason">reason for the ban</param>
         /// <param name="sender">client performing the ban</param>
-        public GameEvent Ban(String banReason, EFClient sender, bool isEvade = false)
+        public GameEvent Ban(String banReason, EFClient sender, bool isEvade)
         {
             var e = new GameEvent()
             {

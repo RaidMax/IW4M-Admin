@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Objects;
 using System;
@@ -12,6 +13,9 @@ namespace WebfrontCore.ViewComponents
     {
         public async Task<IViewComponentResult> InvokeAsync(int offset, Penalty.PenaltyType showOnly)
         {
+            string showEvadeString(EFPenalty penalty) => penalty.IsEvadedOffense == true ?
+                    $"({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]}) " : "";
+
             var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(12, offset, showOnly);
             var penaltiesDto = penalties.Select(p => new PenaltyInfo()
             {
@@ -25,9 +29,9 @@ namespace WebfrontCore.ViewComponents
 #if DEBUG
                 Offense = !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
 #else
-                Offense = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense) ? (p.IsEvadedOffense ?
-                    $"({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]}) " : "") + p.AutomatedOffense :
-                    $"({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]}) " + p.Offense,
+                Offense = (User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense)) ?
+                    $"{showEvadeString(p)}{p.AutomatedOffense}" :
+                    $"{showEvadeString(p)}{p.Offense}",
 #endif
                 Type = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),

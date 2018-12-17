@@ -940,7 +940,7 @@ namespace IW4MAdmin
             await Manager.GetPenaltyService().Create(newPenalty);
         }
 
-        override protected async Task Ban(string reason, EFClient targetClient, EFClient originClient, bool isEvade)
+        override protected async Task Ban(string reason, EFClient targetClient, EFClient originClient, bool isEvade = false)
         {
             // ensure player gets banned if command not performed on them in game
             if (targetClient.ClientNumber < 0)

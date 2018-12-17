@@ -231,7 +231,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var _ = !(await E.Target.Ban(E.Data, E.Origin).WaitAsync()).Failed ?
+            var _ = !(await E.Target.Ban(E.Data, E.Origin, false).WaitAsync()).Failed ?
                     E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_SUCCESS"]}") :
                     E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_FAIL"]} {E.Target.Name}");
         }

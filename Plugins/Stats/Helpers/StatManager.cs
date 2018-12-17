@@ -618,8 +618,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                         }
                                     },
                         Level = EFClient.Permission.Console,
-                        CurrentServer = attacker.CurrentServer
-                    });
+                        CurrentServer = attacker.CurrentServer,
+
+                    }, false);
                     if (clientDetection.Tracker.HasChanges)
                     {
                         SaveTrackedSnapshots(clientDetection, ctx);

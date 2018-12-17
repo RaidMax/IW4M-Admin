@@ -66,7 +66,6 @@ namespace SharedLibraryCore.Services
         public async Task<IList<EFPenalty>> Find(Func<EFPenalty, bool> expression)
         {
             throw await Task.FromResult(new Exception());
-
         }
 
         public Task<EFPenalty> Get(int entityID)
@@ -96,7 +95,7 @@ namespace SharedLibraryCore.Services
                    .OrderByDescending(p => p.When)
                    .Skip(offset)
                    .Take(count)
-                  .ToListAsync();
+                   .ToListAsync();
             }
         }
 
@@ -116,7 +115,7 @@ namespace SharedLibraryCore.Services
         /// <summary>
         /// Get a read-only copy of client penalties
         /// </summary>
-        /// <param name="clientI"></param>
+        /// <param name="clientId"></param>
         /// <param name="victim">Retreive penalties for clients receiving penalties, other wise given</param>
         /// <returns></returns>
         public async Task<List<ProfileMeta>> ReadGetClientPenaltiesAsync(int clientId, bool victim = true)

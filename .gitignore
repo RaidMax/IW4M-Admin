@@ -232,3 +232,4 @@ bootstrap-custom.min.css
 launchSettings.json
 /VpnDetectionPrivate.js
 /Plugins/ScriptPlugins/VpnDetectionPrivate.js
+**/Master/env_master

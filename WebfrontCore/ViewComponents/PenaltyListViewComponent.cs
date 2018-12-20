@@ -46,7 +46,6 @@ namespace WebfrontCore.ViewComponents
 #else
             penaltiesDto = User.Identity.IsAuthenticated ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
 #endif
-
             return View("_List", penaltiesDto);
         }
     }

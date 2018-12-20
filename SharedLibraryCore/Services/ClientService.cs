@@ -106,6 +106,8 @@ namespace SharedLibraryCore.Services
                     entity.AliasLink = aliasLink;
 
                     await context.SaveChangesAsync();
+
+                    entity.AliasLinkId = aliasLink.AliasLinkId;
                 }
 
                 // update the temporary alias to permanent one
@@ -125,6 +127,8 @@ namespace SharedLibraryCore.Services
                     existingAlias = alias;
                     aliasLink = _aliasLink;
                     await context.SaveChangesAsync();
+
+                    entity.AliasLinkId = aliasLink.AliasLinkId;
                 }
 
                 // if no existing alias create new alias
@@ -378,7 +382,7 @@ namespace SharedLibraryCore.Services
                 int? ipAddress = identifier.ConvertToIP();
 
                 var iqLinkIds = (from alias in context.Aliases
-                                 where alias.IPAddress == ipAddress ||
+                                 where (alias.IPAddress != null && alias.IPAddress == ipAddress) ||
                                 alias.Name.ToLower().Contains(identifier)
                                  select alias.LinkId).Distinct();
 

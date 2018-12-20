@@ -803,12 +803,10 @@ namespace IW4MAdmin
                 if (!File.Exists(logPath))
                 {
                     Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
-#if !DEBUG
                     throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
-#else
-                    LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
-#endif
                 }
+
+                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
             }
 
             Logger.WriteInfo($"Log file is {logPath}");

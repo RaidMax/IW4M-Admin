@@ -406,6 +406,9 @@ namespace SharedLibraryCore.Database.Models
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
+            LastConnection = DateTime.UtcNow;
+            Connections += 1;
+
             if (Name.Length < 3)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
@@ -430,6 +433,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             // reserved slots stuff
+            // todo: is this broken on T6?
             if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged())) < CurrentServer.ServerConfig.ReservedSlotNumber &&
                !this.IsPrivileged())
             {
@@ -437,9 +441,6 @@ namespace SharedLibraryCore.Database.Models
                 Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
                 return;
             }
-
-            LastConnection = DateTime.UtcNow;
-            Connections += 1;
         }
 
         public async Task OnDisconnect()
@@ -452,13 +453,65 @@ namespace SharedLibraryCore.Database.Models
 
         public async Task<bool> OnJoin(int? ipAddress)
         {
+            CurrentServer.Logger.WriteDebug($"Start join for {this}::{ipAddress}::{Level.ToString()}");
+
             IPAddress = ipAddress;
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
 
             await CurrentServer.Manager.GetClientService().UpdateAlias(this);
 
-            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            OnConnect();
+
+            CurrentServer.Logger.WriteDebug($"OnConnect finished for {this}");
+
+            #region CLIENT_BAN
+            // kick them as their level is banned
+            if (Level == Permission.Banned)
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
+                var ban = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active);
+
+                if (ban == null)
+                {
+                    // this is from the old system before bans were applied to all accounts
+                    ban = (await CurrentServer.Manager
+                        .GetPenaltyService()
+                        .GetActivePenaltiesAsync(AliasLinkId))
+                        .FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.Ban);
+
+                    CurrentServer.Logger.WriteError($"Client {this} is banned, but no penalty exists for their ban");
+
+                    // hack: re apply the automated offense to the reban
+                    if (ban.AutomatedOffense != null)
+                    {
+                        autoKickClient.AdministeredPenalties?.Add(new EFPenalty()
+                        {
+                            AutomatedOffense = ban.AutomatedOffense
+                        });
+                    }
+                    // this is a reban of the new GUID and IP
+                    Ban($"{ban.Offense}", autoKickClient, false);
+                    return false;
+                }
+
+                Kick($"{loc["SERVER_BAN_PREV"]} {ban?.Offense}", autoKickClient);
+                return false;
+            }
+
+            var tempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan && _penalty.Expires > DateTime.UtcNow && _penalty.Active);
+            // they have an active tempban tied to their GUID
+            if (tempBan != null)
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because they are temporarily banned");
+                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                return false;
+            }
+            #endregion
+
+            // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
-            var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan);
+            var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban);
 
             var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
                 .Where(p => p.Active)
@@ -475,14 +528,13 @@ namespace SharedLibraryCore.Database.Models
 
             if (currentBan != null)
             {
-                CurrentServer.Logger.WriteInfo($"Banned client {this} trying to join...");
-                var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
+                CurrentServer.Logger.WriteInfo($"Banned client {this} trying to evade...");
 
                 // reban the "evading" guid
-                if (Level != Permission.Banned &&
-                    currentBan.Type == Penalty.PenaltyType.Ban)
+                if (Level != Permission.Banned)
                 {
                     CurrentServer.Logger.WriteInfo($"Banned client {this} connected using a new GUID");
+
                     // hack: re apply the automated offense to the reban
                     if (currentBan.AutomatedOffense != null)
                     {
@@ -491,18 +543,13 @@ namespace SharedLibraryCore.Database.Models
                             AutomatedOffense = currentBan.AutomatedOffense
                         });
                     }
+                    // this is a reban of the new GUID and IP
                     Ban($"{currentBan.Offense}", autoKickClient, true);
-                }
-
-                // the player is permanently banned
-                else if (currentBan.Type == Penalty.PenaltyType.Ban)
-                {
-                    Kick($"{loc["SERVER_BAN_PREV"]} {currentBan.Offense} ({loc["SERVER_BAN_APPEAL"]} {CurrentServer.Website})", autoKickClient);
                 }
 
                 else
                 {
-                    Kick($"{loc["SERVER_TB_REMAIN"]} ({(currentBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                    CurrentServer.Logger.WriteError($"Banned client {this} is banned but, no ban penalty was found (2)");
                 }
 
                 return false;

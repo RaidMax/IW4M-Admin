@@ -43,10 +43,12 @@ namespace WebfrontCore.Controllers
                     .Where(a => a.Name != client.Name)
                     .Select(a => a.Name)
                     .Distinct()
-                     .OrderBy(a => a)
+                    .OrderBy(a => a)
                     .ToList(),
                 IPs = client.AliasLink.Children
                     .Select(i => i.IPAddress.ConvertIPtoString())
+                    .Union(new List<string>() { client.CurrentAlias.IPAddress.ConvertIPtoString() })
+                    .Where(i => !string.IsNullOrEmpty(i))
                     .Distinct()
                     .OrderBy(i => i)
                     .ToList(),

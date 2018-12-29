@@ -64,23 +64,12 @@ namespace IW4MAdmin
                 client.CurrentServer = this;
 
                 Clients[client.ClientNumber] = client;
-
-                // this only happens if the preconnect event occurred from RCon polling
-                if (clientFromLog.IPAddress.HasValue)
-                {
-                    // they're banned so we don't want to add them as connected
-                    if (!await client.OnJoin(clientFromLog.IPAddress))
-                    {
-                        return;
-                    }
-                }
-
-                client.OnConnect();
+                await client.OnJoin(clientFromLog.IPAddress);
 
                 client.State = EFClient.ClientState.Connected;
 #if DEBUG == true
                 Logger.WriteDebug($"End PreConnect for {client}");
-#endif   
+#endif
                 var e = new GameEvent()
                 {
                     Origin = client,
@@ -231,14 +220,11 @@ namespace IW4MAdmin
                     Offender = E.Target,
                     Offense = E.Data,
                     Punisher = E.Origin,
-                    Active = true,
                     When = DateTime.UtcNow,
                     Link = E.Target.AliasLink
                 };
 
                 var addedPenalty = await Manager.GetPenaltyService().Create(newPenalty);
-                E.Target.ReceivedPenalties.Add(addedPenalty);
-
                 await Manager.GetClientService().Update(E.Target);
             }
 
@@ -264,8 +250,8 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Ban)
             {
-
-                await Ban(E.Data, E.Target, E.Origin, E.Extra as bool? ?? false);
+                bool isEvade = E.Extra != null ? (bool)E.Extra : false;
+                await Ban(E.Data, E.Target, E.Origin, isEvade);
             }
 
             else if (E.Type == GameEvent.EventType.Unban)
@@ -307,7 +293,7 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
-                if ((DateTime.UtcNow - SessionStart).TotalSeconds < 5)
+                if ((DateTime.UtcNow - SessionStart).TotalSeconds < 10)
                 {
                     Logger.WriteInfo($"Cancelling pre disconnect for {E.Origin} as it occured too close to map end");
                     E.FailReason = GameEvent.EventFailReason.Invalid;
@@ -840,7 +826,7 @@ namespace IW4MAdmin
                     return;
                 }
 
-                String message = $"^1{loc["SERVER_WARNING"]} ^7[^3{Target.Warnings}^7]: ^3{Target.Name}^7, {Reason}";
+                string message = $"^1{loc["SERVER_WARNING"]} ^7[^3{Target.Warnings}^7]: ^3{Target.Name}^7, {Reason}";
                 Target.CurrentServer.Broadcast(message);
             }
 
@@ -849,10 +835,8 @@ namespace IW4MAdmin
                 Type = Penalty.PenaltyType.Warning,
                 Expires = DateTime.UtcNow,
                 Offender = Target,
+                Punisher = Utilities.IW4MAdminClient(this),
                 Offense = Reason,
-                Punisher = Origin,
-                Active = true,
-                When = DateTime.UtcNow,
                 Link = Target.AliasLink
             };
 
@@ -892,7 +876,6 @@ namespace IW4MAdmin
                 Offender = Target,
                 Offense = Reason,
                 Punisher = Origin,
-                When = DateTime.UtcNow,
                 Link = Target.AliasLink
             };
 
@@ -930,8 +913,6 @@ namespace IW4MAdmin
                 Offender = Target,
                 Offense = Reason,
                 Punisher = Origin,
-                Active = true,
-                When = DateTime.UtcNow,
                 Link = Target.AliasLink
             };
 
@@ -977,8 +958,6 @@ namespace IW4MAdmin
                 Offender = targetClient,
                 Offense = reason,
                 Punisher = originClient,
-                Active = true,
-                When = DateTime.UtcNow,
                 Link = targetClient.AliasLink,
                 AutomatedOffense = originClient.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
                 IsEvadedOffense = isEvade

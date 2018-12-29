@@ -18,38 +18,86 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                // create the actual EFPenalty
-                EFPenalty addedEntity = new EFPenalty()
-                {
-                    OffenderId = newEntity.Offender.ClientId,
-                    PunisherId = newEntity.Punisher.ClientId,
-                    LinkId = newEntity.Link.AliasLinkId,
-                    Type = newEntity.Type,
-                    Expires = newEntity.Expires,
-                    Offense = newEntity.Offense,
-                    When = newEntity.When,
-                    AutomatedOffense = newEntity.AutomatedOffense
-                };
+                context.ChangeTracker.AutoDetectChangesEnabled = true;
+                context.ChangeTracker.LazyLoadingEnabled = true;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
                 // make bans propogate to all aliases
-                if (addedEntity.Type == Objects.Penalty.PenaltyType.Ban)
+                if (newEntity.Type == Penalty.PenaltyType.Ban)
                 {
                     await context.Clients
-                        .Where(c => c.AliasLinkId == addedEntity.LinkId)
-                        .ForEachAsync(c => c.Level = Permission.Banned);
+                        .Include(c => c.ReceivedPenalties)
+                        .Where(c => c.AliasLinkId == newEntity.Link.AliasLinkId)
+                        .ForEachAsync(c =>
+                        {
+                            if (c.Level != Permission.Banned)
+                            {
+                                c.Level = Permission.Banned;
+                                c.ReceivedPenalties.Add(new EFPenalty()
+                                {
+                                    Active = true,
+                                    OffenderId = c.ClientId,
+                                    PunisherId = newEntity.Punisher.ClientId,
+                                    LinkId = c.AliasLinkId,
+                                    Type = newEntity.Type,
+                                    Expires = newEntity.Expires,
+                                    Offense = newEntity.Offense,
+                                    When = DateTime.UtcNow,
+                                    AutomatedOffense = newEntity.AutomatedOffense,
+                                    IsEvadedOffense = newEntity.IsEvadedOffense
+                                });
+                            }
+                        });
                 }
 
                 // make flags propogate to all aliases
-                else if (addedEntity.Type == Objects.Penalty.PenaltyType.Flag)
+                else if (newEntity.Type == Penalty.PenaltyType.Flag)
                 {
                     await context.Clients
-                      .Where(c => c.AliasLinkId == addedEntity.LinkId)
-                      .ForEachAsync(c => c.Level = Permission.Flagged);
+                      .Include(c => c.ReceivedPenalties)
+                      .Where(c => c.AliasLinkId == newEntity.LinkId)
+                      .ForEachAsync(c =>
+                      {
+                          if (c.Level != Permission.Flagged)
+                          {
+                              c.Level = Permission.Flagged;
+                              c.ReceivedPenalties.Add(new EFPenalty()
+                              {
+                                  Active = true,
+                                  OffenderId = c.ClientId,
+                                  PunisherId = newEntity.Punisher.ClientId,
+                                  LinkId = c.AliasLinkId,
+                                  Type = newEntity.Type,
+                                  Expires = newEntity.Expires,
+                                  Offense = newEntity.Offense,
+                                  When = DateTime.UtcNow,
+                                  AutomatedOffense = newEntity.AutomatedOffense,
+                                  IsEvadedOffense = newEntity.IsEvadedOffense
+                              });
+                          }
+                      });
                 }
 
-                context.Penalties.Add(addedEntity);
+                // we just want to add it to the database
+                else
+                {
+                    context.Penalties.Add(new EFPenalty()
+                    {
+                        Active = true,
+                        OffenderId = newEntity.Offender.ClientId,
+                        PunisherId = newEntity.Punisher.ClientId,
+                        LinkId = newEntity.Link.AliasLinkId,
+                        Type = newEntity.Type,
+                        Expires = newEntity.Expires,
+                        Offense = newEntity.Offense,
+                        When = DateTime.UtcNow,
+                        AutomatedOffense = newEntity.AutomatedOffense,
+                        IsEvadedOffense = newEntity.IsEvadedOffense
+                    });
+                }
+
                 await context.SaveChangesAsync();
-                return addedEntity;
+                return newEntity;
             }
         }
 
@@ -228,7 +276,8 @@ namespace SharedLibraryCore.Services
             Expression<Func<EFPenalty, bool>> filter = (p) => new Penalty.PenaltyType[]
                          {
                             Penalty.PenaltyType.TempBan,
-                            Penalty.PenaltyType.Ban, Penalty.PenaltyType.Flag
+                            Penalty.PenaltyType.Ban,
+                            Penalty.PenaltyType.Flag
                          }.Contains(p.Type) &&
                          p.Active &&
                          (p.Expires == null || p.Expires > now);
@@ -240,7 +289,7 @@ namespace SharedLibraryCore.Services
                     .Where(filter);
 
                 var iqIPPenalties = context.Aliases
-                    .Where(a => a.IPAddress == ip)
+                    .Where(a => a.IPAddress != null & a.IPAddress == ip)
                     .SelectMany(a => a.Link.ReceivedPenalties)
                     .Where(filter);
 
@@ -249,7 +298,10 @@ namespace SharedLibraryCore.Services
                 var ipPenaltiesSql = iqIPPenalties.ToSql();
 #endif
 
-                var activePenalties = (await iqLinkPenalties.ToListAsync()).Union(await iqIPPenalties.ToListAsync());
+                var activePenalties = (await iqLinkPenalties.ToListAsync())
+                    .Union(await iqIPPenalties.ToListAsync())
+                    .Distinct();
+
                 // this is a bit more performant in memory (ordering)
                 return activePenalties.OrderByDescending(p => p.When).ToList();
             }

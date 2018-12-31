@@ -47,7 +47,7 @@ namespace SharedLibraryCore.Configuration
             if (UseIW5MParser)
                 ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_MANUALLOG"]);
 
-            ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(0, 32);
+            ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(null, 0, 32);
 
             return this;
         }

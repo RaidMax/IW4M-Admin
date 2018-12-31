@@ -131,7 +131,9 @@ namespace SharedLibraryCore.Services
                         LinkId = aliasLink.AliasLinkId,
                         Name = name
                     };
+                    context.Aliases.Add(entity.CurrentAlias);
                     entity.AliasLink.Children.Add(entity.CurrentAlias);
+
                     await context.SaveChangesAsync();
                 }
 
@@ -149,6 +151,7 @@ namespace SharedLibraryCore.Services
                     };
 
                     entity.AliasLink.Active = true;
+                    context.Aliases.Add(entity.CurrentAlias);
                     entity.AliasLink.Children.Add(entity.CurrentAlias);
 
                     await context.SaveChangesAsync();

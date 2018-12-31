@@ -64,7 +64,11 @@ namespace IW4MAdmin
                 client.CurrentServer = this;
 
                 Clients[client.ClientNumber] = client;
-                await client.OnJoin(clientFromLog.IPAddress);
+
+                if (clientFromLog.IPAddress != null)
+                {
+                    await client.OnJoin(clientFromLog.IPAddress);
+                }
 
                 client.State = EFClient.ClientState.Connected;
 #if DEBUG == true
@@ -441,7 +445,7 @@ namespace IW4MAdmin
                 client.Score = origin.Score;
 
                 // update their IP if it hasn't been set yet
-                if (!client.IPAddress.HasValue)
+                if (client.IPAddress == null)
                 {
                     return client.OnJoin(origin.IPAddress);
                 }
@@ -463,7 +467,7 @@ namespace IW4MAdmin
 #endif
             var currentClients = GetClientsAsList();
             var polledClients = (await this.GetStatusAsync()).AsEnumerable();
-            if (this.Manager.GetApplicationSettings().Configuration().IgnoreBots)
+            if (Manager.GetApplicationSettings().Configuration().IgnoreBots)
             {
                 polledClients = polledClients.Where(c => !c.IsBot);
             }

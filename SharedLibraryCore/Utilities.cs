@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Query;
+﻿#if DEBUG
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
+#endif
 using SharedLibraryCore.Database.Models;
 using System;
 using System.Collections.Generic;
@@ -281,9 +283,10 @@ namespace SharedLibraryCore
 
         public static int? ConvertToIP(this string str)
         {
-            return System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip) ?
-                 BitConverter.ToInt32(ip.GetAddressBytes(), 0) :
-                 new int?();
+            bool success = System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip);
+            return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4 ? 
+                (int?)BitConverter.ToInt32(ip.GetAddressBytes(), 0) :
+                null;
         }
 
         public static string ConvertIPtoString(this int? ip)
@@ -470,10 +473,17 @@ namespace SharedLibraryCore
             return p.Level > EFClient.Permission.User;
         }
 
-        public static bool PromptBool(string question)
+        /// <summary>
+        /// prompt user to answer a yes/no question
+        /// </summary>
+        /// <param name="question">question to prompt the user with</param>
+        /// <param name="description">description of the question's value</param>
+        /// <param name="defaultValue">default value to set if no input is entered</param>
+        /// <returns></returns>
+        public static bool PromptBool(string question, string description = null, char? defaultValue = 'y')
         {
-            Console.Write($"{question}? [y/n]: ");
-            return (Console.ReadLine().ToLower().FirstOrDefault() as char?) == 'y';
+            Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? "" : $" ({description}) ")}[y/n]: ");
+            return (Console.ReadLine().ToLower().FirstOrDefault() as char? ?? defaultValue) == 'y';
         }
 
         /// <summary>
@@ -482,13 +492,21 @@ namespace SharedLibraryCore
         /// <param name="question">question to prompt with</param>
         /// <param name="maxValue">maximum value to allow</param>
         /// <param name="minValue">minimum value to allow</param>
+        /// <param name="defaultValue">default value to set the return value to</param>
+        /// <param name="description">a description of the question's value</param>
         /// <returns>integer from user's input</returns>
-        public static int PromptInt(this string question, int minValue = 0, int maxValue = int.MaxValue)
+        public static int PromptInt(this string question, string description = null, int minValue = 0, int maxValue = int.MaxValue, int? defaultValue = null)
         {
-            Console.Write($"{question}: ");
+            Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue.Value.ToString()}")}]: ");
             int response;
 
-            while (!int.TryParse(Console.ReadLine(), out response) ||
+            string inputOrDefault()
+            {
+                string input = Console.ReadLine();
+                return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue.ToString() : input;
+            }
+
+            while (!int.TryParse(inputOrDefault(), out response) ||
                 response < minValue ||
                 response > maxValue)
             {
@@ -497,19 +515,32 @@ namespace SharedLibraryCore
                 {
                     range = $" [{minValue}-{maxValue}]";
                 }
-                Console.Write($"Please enter a valid number{range}: ");
+                Console.Write($"{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_INT"]}{range}: ");
             }
 
             return response;
         }
 
-        public static string PromptString(string question)
+        /// <summary>
+        /// prompt use to enter a string response
+        /// </summary>
+        /// <param name="question">question to prompt with</param>
+        /// <param name="description">description of the question's value</param>
+        /// <param name="defaultValue">default value to set the return value to</param>
+        /// <returns></returns>
+        public static string PromptString(string question, string description = null, string defaultValue = null)
         {
+            string inputOrDefault()
+            {
+                string input = Console.ReadLine();
+                return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue.ToString() : input;
+            }
+
             string response;
             do
             {
-                Console.Write($"{question}: ");
-                response = Console.ReadLine();
+                Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue}]")}: ");
+                response = inputOrDefault();
             } while (string.IsNullOrWhiteSpace(response));
 
             return response;

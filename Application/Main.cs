@@ -22,8 +22,6 @@ namespace IW4MAdmin.Application
 
         public static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
-
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 

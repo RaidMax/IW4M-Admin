@@ -94,45 +94,55 @@ namespace SharedLibraryCore.Services
                 // the existing alias matches ip and name, so we can just ignore the temporary one
                 if (exactAliasMatch)
                 {
+                    entity.CurrentServer.Logger.WriteDebug($"{entity} has exact alias match");
                     // they're using the same alias as before, so we need to make sure the current aliases is set to it
                     if (entity.CurrentAliasId != existingAlias.AliasId)
                     {
                         context.Update(entity);
 
                         entity.CurrentAlias = existingAlias;
-                        entity.CurrentAliasId = existingAlias.AliasId;
+                        if (existingAlias.AliasId > 0)
+                        {
+                            entity.CurrentAliasId = existingAlias.AliasId;
+                        }
+                        else
+                        {
+                            entity.CurrentServer.Logger.WriteDebug($"Updating alias for {entity} failed");
+                        }
+                        await context.SaveChangesAsync();
                     }
                 }
 
                 // theres no exact match, but they've played before with the GUID or IP
                 else if (hasExistingAlias)
                 {
+                    context.Update(entity);
+                    entity.AliasLink = aliasLink;
+                    entity.AliasLinkId = aliasLink.AliasLinkId;
+
                     // the current link is temporary so we need to update
                     if (!entity.AliasLink.Active)
                     {
+                        entity.CurrentServer.Logger.WriteDebug($"{entity} has temporary alias so we are deleting");
+                        
                         // we want to delete the temporary alias link
                         context.Entry(entity.AliasLink).State = EntityState.Deleted;
-                        context.Update(entity);
-
-                        entity.AliasLink = aliasLink;
-                        entity.AliasLinkId = aliasLink.AliasLinkId;
-
+                        entity.AliasLink = null;
                         await context.SaveChangesAsync();
                     }
 
-                    // they have an existing link 
-                    context.Update(entity);
                     entity.CurrentServer.Logger.WriteDebug($"Connecting player is using a new alias {entity}");
-                    entity.CurrentAlias = new EFAlias()
+
+                    var newAlias = new EFAlias()
                     {
                         DateAdded = DateTime.UtcNow,
                         IPAddress = ip,
                         Link = aliasLink,
-                        LinkId = aliasLink.AliasLinkId,
                         Name = name
                     };
-                    context.Aliases.Add(entity.CurrentAlias);
-                    entity.AliasLink.Children.Add(entity.CurrentAlias);
+
+                    context.Aliases.Add(newAlias);
+                    entity.CurrentAlias = newAlias;
 
                     await context.SaveChangesAsync();
                 }
@@ -140,19 +150,21 @@ namespace SharedLibraryCore.Services
                 // no record of them playing
                 else
                 {
-                    context.Update(entity);
-                    context.Update(entity.AliasLink);
-                    entity.CurrentAlias = new EFAlias()
+                    entity.CurrentServer.Logger.WriteDebug($"{entity} has not be seen before");
+                    var newAlias = new EFAlias()
                     {
                         DateAdded = DateTime.UtcNow,
                         IPAddress = ip,
-                        Link = aliasLink,
+                        Link = entity.AliasLink,
                         Name = name
                     };
 
+                    context.Update(entity);
+                    context.Update(entity.AliasLink);
+
                     entity.AliasLink.Active = true;
-                    context.Aliases.Add(entity.CurrentAlias);
-                    entity.AliasLink.Children.Add(entity.CurrentAlias);
+                    context.Aliases.Add(newAlias);
+                    entity.CurrentAlias = newAlias;
 
                     await context.SaveChangesAsync();
                 }

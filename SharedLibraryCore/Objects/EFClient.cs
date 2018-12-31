@@ -435,7 +435,7 @@ namespace SharedLibraryCore.Database.Models
             // reserved slots stuff
             // todo: is this broken on T6?
             if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged())) < CurrentServer.ServerConfig.ReservedSlotNumber &&
-               !this.IsPrivileged())
+               !this.IsPrivileged() && CurrentServer.GameName != Server.Game.T6M /* HACK: temporary */)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
                 Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
@@ -490,6 +490,7 @@ namespace SharedLibraryCore.Database.Models
                             AutomatedOffense = ban.AutomatedOffense
                         });
                     }
+
                     // this is a reban of the new GUID and IP
                     Ban($"{ban.Offense}", autoKickClient, false);
                     return false;

@@ -34,6 +34,7 @@ namespace IW4MAdmin
         override public async Task OnClientConnected(EFClient clientFromLog)
         {
             Logger.WriteDebug($"Client slot #{clientFromLog.ClientNumber} now reserved");
+            Clients[clientFromLog.ClientNumber] = new EFClient();
 
             try
             {
@@ -50,8 +51,11 @@ namespace IW4MAdmin
                 else
                 {
                     // this is only a temporary version until the IPAddress is transmitted
-                    client.CurrentAlias.Active = false;
-                    client.CurrentAlias.Name = clientFromLog.Name;
+                    client.CurrentAlias = new EFAlias
+                    {
+                        Name = clientFromLog.Name,
+                        IPAddress = clientFromLog.IPAddress
+                    };
                 }
 
                 Logger.WriteInfo($"Client {client} connected...");
@@ -65,11 +69,6 @@ namespace IW4MAdmin
 
                 Clients[client.ClientNumber] = client;
 
-                if (clientFromLog.IPAddress != null)
-                {
-                    await client.OnJoin(clientFromLog.IPAddress);
-                }
-
                 client.State = EFClient.ClientState.Connected;
 #if DEBUG == true
                 Logger.WriteDebug($"End PreConnect for {client}");
@@ -82,6 +81,11 @@ namespace IW4MAdmin
                 };
 
                 Manager.GetEventHandler().AddEvent(e);
+
+                if (client.IPAddress != null)
+                {
+                    await client.OnJoin(client.IPAddress);
+                }
             }
 
             catch (Exception ex)
@@ -297,7 +301,7 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
-                if ((DateTime.UtcNow - SessionStart).TotalSeconds < 10)
+                if ((DateTime.UtcNow - SessionStart).TotalSeconds < 30)
                 {
                     Logger.WriteInfo($"Cancelling pre disconnect for {E.Origin} as it occured too close to map end");
                     E.FailReason = GameEvent.EventFailReason.Invalid;

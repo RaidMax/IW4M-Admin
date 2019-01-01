@@ -8,7 +8,6 @@ using SharedLibraryCore.Objects;
 using SharedLibraryCore.Database;
 using System.Text;
 using System.Threading;
-using System.Collections.Generic;
 using SharedLibraryCore.Localization;
 using IW4MAdmin.Application.Migration;
 
@@ -22,6 +21,7 @@ namespace IW4MAdmin.Application
 
         public static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 

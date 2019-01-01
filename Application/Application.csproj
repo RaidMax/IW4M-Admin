@@ -6,7 +6,7 @@
     <RuntimeFrameworkVersion>2.1.5</RuntimeFrameworkVersion>
     <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
     <PackageId>RaidMax.IW4MAdmin.Application</PackageId>
-    <Version>2.2.2.0</Version>
+    <Version>2.2.3.0</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>IW4MAdmin</Product>

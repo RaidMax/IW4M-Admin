@@ -55,7 +55,7 @@ namespace SharedLibraryCore.Services
                 {
                     await context.Clients
                       .Include(c => c.ReceivedPenalties)
-                      .Where(c => c.AliasLinkId == newEntity.LinkId)
+                      .Where(c => c.AliasLinkId == newEntity.Link.AliasLinkId)
                       .ForEachAsync(c =>
                       {
                           if (c.Level != Permission.Flagged)
@@ -81,7 +81,7 @@ namespace SharedLibraryCore.Services
                 // we just want to add it to the database
                 else
                 {
-                    context.Penalties.Add(new EFPenalty()
+                    var penalty = new EFPenalty()
                     {
                         Active = true,
                         OffenderId = newEntity.Offender.ClientId,
@@ -93,7 +93,10 @@ namespace SharedLibraryCore.Services
                         When = DateTime.UtcNow,
                         AutomatedOffense = newEntity.AutomatedOffense,
                         IsEvadedOffense = newEntity.IsEvadedOffense
-                    });
+                    };
+
+                    newEntity.Offender.ReceivedPenalties.Add(penalty);
+                    context.Penalties.Add(penalty);
                 }
 
                 await context.SaveChangesAsync();

@@ -459,7 +459,10 @@ namespace SharedLibraryCore.Database.Models
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
 
-            await CurrentServer.Manager.GetClientService().UpdateAlias(this);
+            if (ipAddress != null)
+            {
+                await CurrentServer.Manager.GetClientService().UpdateAlias(this);
+            }
 
             OnConnect();
 

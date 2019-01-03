@@ -53,13 +53,6 @@ namespace SharedLibraryCore.Services
         private async Task UpdateAlias(string name, int? ip, EFClient entity, DatabaseContext context)
         {
             // entity is the tracked db context item
-            // todo: move this out
-#if DEBUG == false
-            if (entity.IsBot)
-            {
-                return;
-            }
-#endif
             // get all aliases by IP address and LinkId
             var iqAliases = context.Aliases
                 .Include(a => a.Link)
@@ -377,7 +370,8 @@ namespace SharedLibraryCore.Services
                                     ClientId = client.ClientId,
                                     Level = client.Level,
                                     Password = client.Password,
-                                    PasswordSalt = client.PasswordSalt
+                                    PasswordSalt = client.PasswordSalt,
+                                    NetworkId = client.NetworkId
                                 };
 
 #if DEBUG == true

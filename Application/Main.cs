@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using SharedLibraryCore.Localization;
 using IW4MAdmin.Application.Migration;
+using SharedLibraryCore.Exceptions;
 
 namespace IW4MAdmin.Application
 {
@@ -38,7 +39,15 @@ namespace IW4MAdmin.Application
             try
             {
                 ServerManager = ApplicationManager.GetInstance();
-                Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration()?.CustomLocale);
+                try
+                {
+                    Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration().CustomLocale);
+                }
+
+                catch (ServerException)
+                {
+                    Localization.Configure.Initialize();
+                }
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
 
@@ -107,7 +116,7 @@ namespace IW4MAdmin.Application
 
                 var consoleTask = Task.Run(async () =>
                 {
-                    String userInput;
+                    string userInput;
                     var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
 
                     do
@@ -144,13 +153,16 @@ namespace IW4MAdmin.Application
 
             catch (Exception e)
             {
-                Console.WriteLine(loc["MANAGER_INIT_FAIL"]);
+                string failMessage = loc == null ? "Failed to initalize IW4MAdmin" : loc["MANAGER_INIT_FAIL"];
+                string exitMessage = loc == null ? "Press any key to exit..." : loc["MANAGER_EXIT"];
+
+                Console.WriteLine(failMessage);
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
                 }
                 Console.WriteLine(e.Message);
-                Console.WriteLine(loc["MANAGER_EXIT"]);
+                Console.WriteLine(exitMessage);
                 Console.ReadKey();
                 return;
             }

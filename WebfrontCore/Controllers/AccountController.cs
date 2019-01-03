@@ -28,7 +28,8 @@ namespace WebfrontCore.Controllers
                     {
                         new Claim(ClaimTypes.NameIdentifier, client.Name),
                         new Claim(ClaimTypes.Role, client.Level.ToString()),
-                        new Claim(ClaimTypes.Sid, client.ClientId.ToString())
+                        new Claim(ClaimTypes.Sid, client.ClientId.ToString()),
+                        new Claim(ClaimTypes.PrimarySid, client.NetworkId.ToString())
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");

@@ -212,7 +212,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="input">Shorthand gametype reported from server</param>
         /// <returns></returns>
-        public static String GetLocalizedGametype(String input)
+        public static string GetLocalizedGametype(String input)
         {
             switch (input)
             {
@@ -284,7 +284,7 @@ namespace SharedLibraryCore
         public static int? ConvertToIP(this string str)
         {
             bool success = System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip);
-            return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4 ? 
+            return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4 ?
                 (int?)BitConverter.ToInt32(ip.GetAddressBytes(), 0) :
                 null;
         }
@@ -294,12 +294,12 @@ namespace SharedLibraryCore
             return !ip.HasValue ? "" : new System.Net.IPAddress(BitConverter.GetBytes(ip.Value)).ToString();
         }
 
-        public static String GetTimePassed(DateTime start)
+        public static string GetTimePassed(DateTime start)
         {
             return GetTimePassed(start, true);
         }
 
-        public static String GetTimePassed(DateTime start, bool includeAgo)
+        public static string GetTimePassed(DateTime start, bool includeAgo)
         {
             TimeSpan Elapsed = DateTime.UtcNow - start;
             string ago = includeAgo ? $" {CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_AGO"]}" : "";
@@ -480,10 +480,11 @@ namespace SharedLibraryCore
         /// <param name="description">description of the question's value</param>
         /// <param name="defaultValue">default value to set if no input is entered</param>
         /// <returns></returns>
-        public static bool PromptBool(string question, string description = null, char? defaultValue = 'y')
+        public static bool PromptBool(string question, string description = null, bool defaultValue = true)
         {
             Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? "" : $" ({description}) ")}[y/n]: ");
-            return (Console.ReadLine().ToLower().FirstOrDefault() as char? ?? defaultValue) == 'y';
+            char response = Console.ReadLine().ToLower().FirstOrDefault();
+            return response != 0 ? response == 'y' : defaultValue;
         }
 
         /// <summary>

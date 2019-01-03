@@ -6,7 +6,6 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 
 namespace IW4MAdmin.Plugins.Login
 {
@@ -23,7 +22,7 @@ namespace IW4MAdmin.Plugins.Login
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
-            if (E.Remote || Config.RequirePrivilegedClientLogin == false)
+            if (E.IsRemote || Config.RequirePrivilegedClientLogin == false)
                 return Task.CompletedTask;
 
             if (E.Type == GameEvent.EventType.Connect)

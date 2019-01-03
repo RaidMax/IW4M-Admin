@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace SharedLibraryCore.Configuration
             return File.WriteAllTextAsync(Path.Join(Utilities.OperatingDirectory, "Configuration", $"{Filename}.json"), appConfigJSON);
         }
 
-        public T Configuration() => _configuration;
+        public T Configuration() => _configuration == null ? throw new ServerException("Configuration is null") : _configuration;
 
         public void Set(T config)
         {

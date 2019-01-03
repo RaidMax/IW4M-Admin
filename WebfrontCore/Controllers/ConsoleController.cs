@@ -33,6 +33,7 @@ namespace WebfrontCore.Controllers
             {
                 ClientId = Client.ClientId,
                 Level = Client.Level,
+                NetworkId = Client.NetworkId,
                 CurrentServer = server,
                 CurrentAlias = new EFAlias()
                 {
@@ -46,7 +47,7 @@ namespace WebfrontCore.Controllers
                 Data = command,
                 Origin = client,
                 Owner = server,
-                Remote = true
+                IsRemote = true
             };
 
             Manager.GetEventHandler().AddEvent(remoteEvent);

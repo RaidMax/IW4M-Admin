@@ -188,7 +188,7 @@ namespace SharedLibraryCore
         public EFClient Origin;
         public EFClient Target;
         public Server Owner;
-        public Boolean Remote = false;
+        public bool IsRemote { get; set; } = false;
         public object Extra { get; set; }
         public ManualResetEventSlim OnProcessed { get; set; }
         public DateTime Time { get; set; }

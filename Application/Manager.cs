@@ -204,7 +204,8 @@ namespace IW4MAdmin.Application
             Running = true;
 
             #region DATABASE
-            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString, GetApplicationSettings().Configuration()?.DatabaseProvider))
+            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString,
+                GetApplicationSettings().Configuration()?.DatabaseProvider))
             {
                 await new ContextSeed(db).Seed();
             }

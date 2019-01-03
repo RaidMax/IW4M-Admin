@@ -449,7 +449,7 @@ namespace IW4MAdmin
                 client.Score = origin.Score;
 
                 // update their IP if it hasn't been set yet
-                if (client.IPAddress == null)
+                if (client.IPAddress == null && !client.IsBot)
                 {
                     return client.OnJoin(origin.IPAddress);
                 }

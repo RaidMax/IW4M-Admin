@@ -12,7 +12,7 @@ namespace IW4MAdmin.Application.Localization
 {
     public class Configure
     {
-        public static void Initialize(string customLocale)
+        public static void Initialize(string customLocale = null)
         {
             string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
             string[] localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");

@@ -1,14 +1,14 @@
-﻿using System;
-using System.Linq;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-
+using SharedLibraryCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
@@ -23,20 +23,32 @@ namespace WebfrontCore.Controllers
         private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
         private static string SocialLink;
         private static string SocialTitle;
+        protected List<Page> Pages;
 
         public BaseController()
         {
             if (Manager == null)
+            {
                 Manager = Program.Manager;
+            }
 
             if (Localization == null)
-                Localization = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+            {
+                Localization = Utilities.CurrentLocalization.LocalizationIndex;
+            }
 
             if (Manager.GetApplicationSettings().Configuration().EnableSocialLink && SocialLink == null)
             {
                 SocialLink = Manager.GetApplicationSettings().Configuration().SocialLinkAddress;
                 SocialTitle = Manager.GetApplicationSettings().Configuration().SocialLinkTitle;
             }
+
+            Pages = Manager.GetPageList().Pages
+                .Select(page => new Page
+                {
+                    Name = page.Key,
+                    Location = page.Value
+                }).ToList();
 
             ViewBag.Version = Manager.Version;
         }
@@ -55,6 +67,7 @@ namespace WebfrontCore.Controllers
                 try
                 {
                     Client.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
+                    Client.NetworkId = User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value.ConvertLong();
                     Client.Level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
                     Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
                 }
@@ -82,18 +95,11 @@ namespace WebfrontCore.Controllers
 
             Authorized = Client.ClientId >= 0;
             ViewBag.Authorized = Authorized;
-            ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontBindUrl;
+            ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontUrl;
             ViewBag.User = Client;
             ViewBag.SocialLink = SocialLink ?? "";
             ViewBag.SocialTitle = SocialTitle;
-
-            // grab the pages from plugins
-            ViewBag.Pages = Manager.GetPageList().Pages
-                .Select(page => new Page
-                {
-                    Name = page.Key,
-                    Location = page.Value
-                }).ToList();
+            ViewBag.Pages = Pages;
 
             base.OnActionExecuting(context);
         }

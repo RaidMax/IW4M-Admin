@@ -66,7 +66,7 @@ namespace SharedLibraryCore
         //Returns list of all current players
         public List<EFClient> GetClientsAsList()
         {
-            return Clients.FindAll(x => x != null);
+            return Clients.FindAll(x => x != null && x.NetworkId != 0);
         }
 
         /// <summary>

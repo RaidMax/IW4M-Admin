@@ -454,7 +454,7 @@ namespace SharedLibraryCore.Database.Models
         public async Task<bool> OnJoin(int? ipAddress)
         {
             CurrentServer.Logger.WriteDebug($"Start join for {this}::{ipAddress}::{Level.ToString()}");
-
+       
             IPAddress = ipAddress;
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
@@ -465,6 +465,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             OnConnect();
+            await CurrentServer.Manager.GetClientService().Update(this);
 
             CurrentServer.Logger.WriteDebug($"OnConnect finished for {this}");
 

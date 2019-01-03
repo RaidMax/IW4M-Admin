@@ -50,8 +50,9 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task UpdateAlias(EFClient entity)
+        private async Task UpdateAlias(string name, int? ip, EFClient entity, DatabaseContext context)
         {
+            // entity is the tracked db context item
             // todo: move this out
 #if DEBUG == false
             if (entity.IsBot)
@@ -59,100 +60,93 @@ namespace SharedLibraryCore.Services
                 return;
             }
 #endif
-            using (var context = new DatabaseContext())
-            {
-                string name = entity.Name;
-                int? ip = entity.IPAddress;
-
-                // indicates if someone appears to have played before
-                bool hasExistingAlias = false;
-
-                // get all aliases by IP address and LinkId
-                var iqAliases = context.Aliases
-                    .Include(a => a.Link)
-                    //.Where(a => a.Link.Active)
-                    .Where(a => (a.IPAddress == ip) ||
-                        a.LinkId == entity.AliasLinkId);
+            // get all aliases by IP address and LinkId
+            var iqAliases = context.Aliases
+                .Include(a => a.Link)
+                .Where(a => (a.IPAddress == ip) ||
+                    a.LinkId == entity.AliasLinkId);
 
 #if DEBUG == true
-                var aliasSql = iqAliases.ToSql();
+            var aliasSql = iqAliases.ToSql();
 #endif
-                var aliases = await iqAliases.ToListAsync();
+            var aliases = await iqAliases.ToListAsync();
 
-                // see if they have a matching IP + Name but new NetworkId
-                var existingAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
-                bool exactAliasMatch = existingAlias != null;
-                // if existing alias matches link them
-                EFAliasLink aliasLink = existingAlias?.Link;
-                // if no exact matches find the first IP that matches
-                aliasLink = aliasLink ?? aliases.FirstOrDefault()?.Link;
-                // if no matches are found, create new link
-                aliasLink = aliasLink ?? new EFAliasLink();
+            // see if they have a matching IP + Name but new NetworkId
+            var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
+            bool exactAliasMatch = existingExactAlias != null;
 
-                hasExistingAlias = aliases.Count > 0;
+            // if existing alias matches link them
+            EFAliasLink aliasLink = existingExactAlias?.Link;
+            // if no exact matches find the first IP that matches
+            aliasLink = aliasLink ?? aliases.FirstOrDefault()?.Link;
+            // if no matches are found, use our current one
+            aliasLink = aliasLink ?? entity.AliasLink;
 
-                // the existing alias matches ip and name, so we can just ignore the temporary one
-                if (exactAliasMatch)
+            bool hasExistingAlias = aliases.Count > 0;
+
+            // this happens when an alias exists but the current link is a temporary one
+            if ((exactAliasMatch || hasExistingAlias) &&
+                (!entity.AliasLink.Active && entity.AliasLinkId != aliasLink.AliasLinkId))
+            {
+                entity.AliasLinkId = aliasLink.AliasLinkId;
+                entity.AliasLink = aliasLink;
+
+                //entity.CurrentServer.Logger.WriteDebug($"Updating alias link for {entity}");
+                await context.SaveChangesAsync();
+
+                foreach (var alias in aliases.Union(new List<EFAlias>() { entity.CurrentAlias })
+                    .Where(_alias => !_alias.Active ||
+                    _alias.LinkId != aliasLink.AliasLinkId))
                 {
-                    entity.CurrentServer.Logger.WriteDebug($"{entity} has exact alias match");
-                    // they're using the same alias as before, so we need to make sure the current aliases is set to it
-                    if (entity.CurrentAliasId != existingAlias.AliasId)
-                    {
-                        context.Update(entity);
+                    entity.CurrentServer.Logger.WriteDebug($"{entity} updating alias-link id is {alias.LinkId}");
+                    alias.Active = true;
+                    alias.LinkId = aliasLink.AliasLinkId;
+                }
 
-                        if (existingAlias.AliasId > 0)
-                        {
-                            entity.CurrentAliasId = existingAlias.AliasId;
-                        }
-                        else
-                        {
-                            entity.CurrentServer.Logger.WriteDebug($"Updating alias for {entity} failed");
-                        }
-                    }
+                //entity.CurrentServer.Logger.WriteDebug($"Saving updated aliases for {entity}");
+                await context.SaveChangesAsync();
 
-                    if (!entity.CurrentAlias.Active)
-                    {
-                        existingAlias.Active = true;
-                    }
+                // todo: fix this
+                /*context.AliasLinks.Remove(entity.AliasLink);
+                entity.AliasLink = null;
 
-                    entity.CurrentAlias = existingAlias;
+                //entity.CurrentServer.Logger.WriteDebug($"Removing temporary link for {entity}");
+
+                try
+                {
+                    await context.SaveChangesAsync();
+                }
+                catch
+                {
+                   // entity.CurrentServer.Logger.WriteDebug($"Failed to remove link for {entity}");
+                }*/
+            }
+
+            // the existing alias matches ip and name, so we can just ignore the temporary one
+            if (exactAliasMatch)
+            {
+                entity.CurrentServer.Logger.WriteDebug($"{entity} has exact alias match");
+                entity.CurrentAliasId = existingExactAlias.AliasId;
+                entity.CurrentAlias = existingExactAlias;
+                await context.SaveChangesAsync();
+            }
+
+            // theres no exact match, but they've played before with the GUID or IP
+            else if (hasExistingAlias)
+            {
+                //entity.CurrentServer.Logger.WriteDebug($"Connecting player is using a new alias {entity}");
+
+                // this happens when a temporary alias gets updated
+                if (entity.CurrentAlias.Name == name && entity.CurrentAlias.IPAddress == null)
+                {
+                    entity.CurrentAlias.IPAddress = ip;
+                    entity.CurrentAlias.Active = true;
+                    //entity.CurrentServer.Logger.WriteDebug($"Updating temporary alias for {entity}");
                     await context.SaveChangesAsync();
                 }
 
-                // theres no exact match, but they've played before with the GUID or IP
-                else if (hasExistingAlias)
+                else
                 {
-                    // the current link is temporary so we need to update
-                    if (!entity.AliasLink.Active)
-                    {
-                        entity.CurrentServer.Logger.WriteDebug($"{entity} has temporary alias so we are deleting");
-
-                        foreach (var alias in aliases.Where(_alias => !_alias.Active))
-                        {
-                            context.Update(alias);
-
-                            if (alias.IPAddress == null && alias.Name == name)
-                            {
-                                context.Entry(alias).State = EntityState.Deleted;
-                            }
-
-                            else
-                            {
-                                alias.Active = true;
-                                alias.LinkId = aliasLink.AliasLinkId;
-                            }
-                        }
-
-                        // we want to delete the temporary alias link
-                        context.Entry(entity.AliasLink).State = EntityState.Deleted;
-                    }
-
-                    context.Update(entity);
-                    entity.AliasLink = aliasLink;
-                    entity.AliasLinkId = aliasLink.AliasLinkId;
-
-                    entity.CurrentServer.Logger.WriteDebug($"Connecting player is using a new alias {entity}");
-
                     var newAlias = new EFAlias()
                     {
                         DateAdded = DateTime.UtcNow,
@@ -162,65 +156,43 @@ namespace SharedLibraryCore.Services
                         Active = true,
                     };
 
-                    context.Aliases.Add(newAlias);
                     entity.CurrentAlias = newAlias;
-
+                    //entity.CurrentServer.Logger.WriteDebug($"Saving new alias for {entity}");
                     await context.SaveChangesAsync();
                 }
+            }
 
-                // no record of them playing
-                else
+            // no record of them playing
+            else
+            {
+                //entity.CurrentServer.Logger.WriteDebug($"{entity} has not be seen before");
+
+                entity.AliasLink.Active = true;
+                entity.CurrentAlias.Active = true;
+                entity.CurrentAlias.IPAddress = ip;
+                entity.CurrentAlias.Name = name;
+
+                //entity.CurrentServer.Logger.WriteDebug($"updating new alias for {entity}");
+                await context.SaveChangesAsync();
+            }
+
+            var linkIds = aliases.Select(a => a.LinkId);
+
+            if (linkIds.Count() > 0 &&
+                aliases.Count(_alias => _alias.Name == name && _alias.IPAddress == ip) > 0)
+            {
+                var highestLevel = await context.Clients
+                    .Where(c => linkIds.Contains(c.AliasLinkId))
+                    .MaxAsync(c => c.Level);
+
+                if (entity.Level != highestLevel)
                 {
-                    entity.CurrentServer.Logger.WriteDebug($"{entity} has not be seen before");
-
-                    if (name != entity.CurrentAlias.Name)
-                    {
-                        var newAlias = new EFAlias()
-                        {
-                            DateAdded = DateTime.UtcNow,
-                            IPAddress = ip,
-                            LinkId = entity.AliasLink.AliasLinkId,
-                            Name = name,
-                            Active = true
-                        };
-
-                        context.Update(entity);
-                        context.Aliases.Add(newAlias);
-                        entity.CurrentAlias = newAlias;
-                    }
-
-                    else
-                    {
-                        context.Update(entity.CurrentAlias);
-                        entity.CurrentAlias.Active = true;
-                        entity.CurrentAlias.IPAddress = ip;
-                        entity.CurrentAlias.Link = entity.AliasLink;
-                    }
-
-                    context.Update(entity.AliasLink);
-                    entity.AliasLink.Active = true;
-
+                    entity.CurrentServer.Logger.WriteDebug($"{entity} updating user level");
+                    // todo: log level changes here
+                    context.Update(entity);
+                    entity.Level = highestLevel;
                     await context.SaveChangesAsync();
                 }
-
-                var linkIds = aliases.Select(a => a.LinkId);
-
-                if (linkIds.Count() > 0 &&
-                    aliases.Count(_alias => _alias.Name == name && _alias.IPAddress == ip) > 0)
-                {
-                    var highestLevel = await context.Clients
-                        .Where(c => linkIds.Contains(c.AliasLinkId))
-                        .MaxAsync(c => c.Level);
-
-                    if (entity.Level != highestLevel)
-                    {
-                        // todo: log level changes here
-                        context.Update(entity);
-                        entity.Level = highestLevel;
-                        await context.SaveChangesAsync();
-                    }
-                }
-
             }
         }
 
@@ -310,15 +282,35 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        public async Task UpdateAlias(EFClient entity)
+        {
+            using (var context = new DatabaseContext())
+            {
+                var client = context.Clients
+                    .Include(c => c.AliasLink)
+                    .Include(c => c.CurrentAlias)
+                    .First(e => e.ClientId == entity.ClientId);
+
+                client.CurrentServer = entity.CurrentServer;
+
+                await UpdateAlias(entity.Name, entity.IPAddress, client, context);
+
+                entity.CurrentAlias = client.CurrentAlias;
+                entity.CurrentAliasId = client.CurrentAliasId;
+                entity.AliasLink = client.AliasLink;
+                entity.AliasLinkId = client.AliasLinkId;
+            }
+        }
+
         public async Task<EFClient> Update(EFClient entity)
         {
             using (var context = new DatabaseContext())
             {
                 // grab the context version of the entity
                 var client = context.Clients
-                    .Include(c => c.AliasLink)
-                    .Include(c => c.CurrentAlias)
                     .First(e => e.ClientId == entity.ClientId);
+
+                client.CurrentServer = entity.CurrentServer;
 
                 // if their level has been changed
                 if (entity.Level != client.Level)
@@ -332,28 +324,9 @@ namespace SharedLibraryCore.Services
                     // update all related clients level
                     await matchingClients.ForEachAsync(c =>
                     {
+                        // todo: log that it has changed here
                         c.Level = entity.Level;
                     });
-                }
-
-                // their alias has been updated and not yet saved
-                if (entity.CurrentAlias.AliasId == 0)
-                {
-                    client.CurrentAlias = new EFAlias()
-                    {
-                        Active = entity.CurrentAlias.IPAddress.HasValue ? true : false,
-                        DateAdded = DateTime.UtcNow,
-                        IPAddress = entity.CurrentAlias.IPAddress,
-                        Name = entity.CurrentAlias.Name,
-                        Link = client.AliasLink
-                    };
-                }
-
-                else
-                {
-                    client.CurrentAliasId = entity.CurrentAliasId;
-                    client.IPAddress = entity.IPAddress;
-                    client.Name = entity.Name;
                 }
 
                 // set remaining non-navigation properties that may have been updated

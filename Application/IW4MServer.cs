@@ -843,7 +843,7 @@ namespace IW4MAdmin
                 Type = Penalty.PenaltyType.Warning,
                 Expires = DateTime.UtcNow,
                 Offender = Target,
-                Punisher = Utilities.IW4MAdminClient(this),
+                Punisher = Origin,
                 Offense = Reason,
                 Link = Target.AliasLink
             };

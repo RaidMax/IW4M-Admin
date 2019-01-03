@@ -36,6 +36,13 @@ namespace SharedLibraryCore.Database
                 this.ChangeTracker.LazyLoadingEnabled = false;
                 this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             }
+
+            else
+            {
+                this.ChangeTracker.AutoDetectChangesEnabled = true;
+                this.ChangeTracker.LazyLoadingEnabled = true;
+                this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            }
         }
 
         public DatabaseContext(string connStr, string provider)

@@ -18,10 +18,6 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                context.ChangeTracker.AutoDetectChangesEnabled = true;
-                context.ChangeTracker.LazyLoadingEnabled = true;
-                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
-
                 // make bans propogate to all aliases
                 if (newEntity.Type == Penalty.PenaltyType.Ban)
                 {
@@ -95,7 +91,7 @@ namespace SharedLibraryCore.Services
                         IsEvadedOffense = newEntity.IsEvadedOffense
                     };
 
-                    newEntity.Offender.ReceivedPenalties.Add(penalty);
+                    newEntity.Offender.ReceivedPenalties?.Add(penalty);
                     context.Penalties.Add(penalty);
                 }
 

@@ -671,7 +671,7 @@ namespace IW4MAdmin
 
             var version = await this.GetDvarAsync<string>("version");
             Version = version.Value;
-            //GameName = Utilities.GetGame(version.Value);
+            GameName = Utilities.GetGame(version.Value);
 
             if (GameName == Game.IW4)
             {

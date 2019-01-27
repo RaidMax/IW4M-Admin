@@ -13,16 +13,24 @@ namespace IW4MAdmin.Application.RconParsers
 {
     class IW4RConParser : IRConParser
     {
-        private static readonly CommandPrefix Prefixes = new CommandPrefix()
+        public IW4RConParser()
         {
-            Tell = "tellraw {0} {1}",
-            Say = "sayraw {0}",
-            Kick = "clientkick {0} \"{1}\"",
-            Ban = "clientkick {0} \"{1}\"",
-            TempBan = "tempbanclient {0} \"{1}\""
-        };
+            Configuration = new DynamicRConParserConfiguration()
+            {
+                CommandPrefixes = new CommandPrefix()
+                {
+                    Tell = "tellraw {0} {1}",
+                    Say = "sayraw {0}",
+                    Kick = "clientkick {0} \"{1}\"",
+                    Ban = "clientkick {0} \"{1}\"",
+                    TempBan = "tempbanclient {0} \"{1}\""
+                },
+                StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$",
+                GameName = Server.Game.IW4
+            };
+        }
 
-        private static readonly string StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
+        public IRConParserConfiguration Configuration { get; set; }
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
@@ -71,11 +79,6 @@ namespace IW4MAdmin.Application.RconParsers
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, $"set {dvarName} {dvarValue}")).Length > 0;
         }
 
-        public virtual CommandPrefix GetCommandPrefixes()
-        {
-            return Prefixes;
-        }
-
         private List<EFClient> ClientsFromStatus(string[] Status)
         {
             List<EFClient> StatusPlayers = new List<EFClient>();
@@ -90,7 +93,7 @@ namespace IW4MAdmin.Application.RconParsers
             {
                 String responseLine = S.Trim();
 
-                var regex = Regex.Match(responseLine, StatusRegex, RegexOptions.IgnoreCase);
+                var regex = Regex.Match(responseLine, Configuration.StatusRegex, RegexOptions.IgnoreCase);
 
                 if (regex.Success)
                 {

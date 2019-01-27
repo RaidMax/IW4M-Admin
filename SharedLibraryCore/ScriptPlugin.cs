@@ -84,6 +84,17 @@ namespace SharedLibraryCore
             this.Name = pluginObject.name;
             this.Version = (float)pluginObject.version;
 
+
+            if (pluginObject.isParser)
+            {
+                await OnLoadAsync(mgr);
+                IEventParser eventParser = (IEventParser)ScriptEngine.GetValue("eventParser").ToObject();
+                IRConParser rconParser = (IRConParser)ScriptEngine.GetValue("rconParser").ToObject();
+                Manager.AdditionalEventParsers.Add(eventParser);
+                Manager.AdditionalRConParsers.Add(rconParser);
+            }
+     
+
             if (!firstRun)
             {
                 await OnLoadAsync(mgr);

@@ -40,6 +40,10 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <returns></returns>
         IPageList GetPageList();
+        IList<IRConParser> AdditionalRConParsers { get; }
+        IList<IEventParser> AdditionalEventParsers { get; }
+        IRConParser GenerateDynamicRConParser();
+        IEventParser GenerateDynamicEventParser();
         string Version { get;}
     }
 }

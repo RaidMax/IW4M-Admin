@@ -461,6 +461,11 @@ namespace SharedLibraryCore.Database.Models
 
             if (ipAddress != null)
             {
+                if (IPAddressString == "66.150.121.184")
+                {
+                    Kick("Your favorite servers are outdated. Please re-add the server.", autoKickClient);
+                    return false;
+                }
                 await CurrentServer.Manager.GetClientService().UpdateAlias(this);
             }
 

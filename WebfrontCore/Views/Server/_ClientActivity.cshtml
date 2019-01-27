@@ -2,7 +2,7 @@
 
 @{
     Layout = null;
-    int half = (int)Math.Ceiling(Model.ClientCount / 2.0);
+    int half = Model.ClientCount == 0 || Model.Players.Count == 0 ? 0 : (int)Math.Ceiling(Model.ClientCount / 2.0);
 }
 <div class="col-12 col-md-8 d-none d-md-block">
     @{
@@ -43,7 +43,7 @@
         </div>
         <div class="col-6 text-right">
             @{
-                for (int i = half; i < Model.ClientCount; i++)
+                for (int i = half; i < Math.Min(Model.ClientCount, Model.Players.Count); i++)
                 {
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
                     <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId }, new { @class = levelColorClass })</span><br />

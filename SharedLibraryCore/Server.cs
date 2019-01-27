@@ -120,7 +120,7 @@ namespace SharedLibraryCore
         /// <param name="message">Message to be sent to all players</param>
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
-            string formattedMessage = String.Format(RconParser.GetCommandPrefixes().Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
+            string formattedMessage = String.Format(RconParser.Configuration.CommandPrefixes.Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
 
 #if DEBUG == true
             Logger.WriteVerbose(message.StripColors());

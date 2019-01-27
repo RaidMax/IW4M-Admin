@@ -9,7 +9,21 @@ namespace IW4MAdmin.Application.EventParsers
 {
     class IW4EventParser : IEventParser
     {
-        private const string SayRegex = @"(say|sayteam);(.{1,32});([0-9]+)(.*);(.*)";
+        private IEventParserConfiguration _configuration;
+
+        public IW4EventParser()
+        {
+            _configuration = new DynamicEventParserConfiguration()
+            {
+                GameDirectory = "userraw",
+                SayRegex = "(say|sayteam);(.{1,32});([0-9]+)(.*);(.*)",
+                QuitRegex = @"^(Q;)(.{1,32});([0-9]+);(.*)$",
+                JoinRegex = @"^(J;)(.{1,32});([0-9]+);(.*)$",
+                DamageRegex = @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$"
+            };
+        }
+
+        public IEventParserConfiguration Configuration { get => _configuration; set => _configuration = value; }
 
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
@@ -32,7 +46,7 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "say" || eventType == "sayteam")
             {
-                var matchResult = Regex.Match(logLine, SayRegex);
+                var matchResult = Regex.Match(logLine, _configuration.SayRegex);
 
                 if (matchResult.Success)
                 {
@@ -117,7 +131,7 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 if (!server.CustomCallback)
                 {
-                    if (Regex.Match(eventType, @"^(D);((?:bot[0-9]+)|(?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[A-Z]|[0-9])+);([0-9]+);(axis|allies);(.+);((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$").Success)
+                    if (Regex.Match(eventType, _configuration.DamageRegex).Success)
                     {
                         var origin = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[5].ConvertLong());
                         var target = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
@@ -137,7 +151,7 @@ namespace IW4MAdmin.Application.EventParsers
             // join
             if (eventType == "J")
             {
-                var regexMatch = Regex.Match(logLine, @"^(J;)(.{1,32});([0-9]+);(.*)$");
+                var regexMatch = Regex.Match(logLine, _configuration.JoinRegex);
                 if (regexMatch.Success)
                 {
                     return new GameEvent()
@@ -163,7 +177,7 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "Q")
             {
-                var regexMatch = Regex.Match(logLine, @"^(Q;)(.{1,32});([0-9]+);(.*)$");
+                var regexMatch = Regex.Match(logLine, _configuration.QuitRegex);
                 if (regexMatch.Success)
                 {
                     return new GameEvent()
@@ -220,12 +234,6 @@ namespace IW4MAdmin.Application.EventParsers
                 Target = Utilities.IW4MAdminClient(server),
                 Owner = server
             };
-        }
-
-        // other parsers can derive from this parser so we make it virtual
-        public virtual string GetGameDir()
-        {
-            return "userraw";
         }
     }
 }

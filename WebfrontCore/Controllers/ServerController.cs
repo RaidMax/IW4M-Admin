@@ -35,7 +35,7 @@ namespace WebfrontCore.Controllers
                     Level = p.Level.ToLocalizedLevelName(),
                     LevelInt = (int)p.Level
                 }).ToList(),
-                ChatHistory = s.ChatHistory,
+                ChatHistory = s.ChatHistory.ToList(),
                 PlayerHistory = s.ClientHistory.ToArray(),
             };
             return PartialView("_ClientActivity", serverInfo);

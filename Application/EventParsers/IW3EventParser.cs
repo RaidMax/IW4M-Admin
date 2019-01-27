@@ -6,6 +6,9 @@ namespace IW4MAdmin.Application.EventParsers
 {
     class IW3EventParser : IW4EventParser
     {
-        public override string GetGameDir() => "main";
+        public IW3EventParser() : base()
+        {
+            Configuration.GameDirectory = "main";
+        }
     }
 }

@@ -1,30 +1,35 @@
-﻿using System;
+﻿using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.RCon;
+using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
-using SharedLibraryCore.RCon;
-using SharedLibraryCore.Exceptions;
-using System.Text;
-using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Application.RconParsers
 {
     public class T6MRConParser : IRConParser
     {
-        private static readonly CommandPrefix Prefixes = new CommandPrefix()
-        {
-            Tell = "tell {0} {1}",
-            Say = "say {0}",
-            Kick = "clientkick_for_reason {0} \"{1}\"",
-            Ban = "clientkick_for_reason {0} \"{1}\"",
-            TempBan = "clientkick_for_reason {0} \"{1}\""
-        };
+        public IRConParserConfiguration Configuration { get; set; }
 
-        public CommandPrefix GetCommandPrefixes() => Prefixes;
+        public T6MRConParser()
+        {
+            Configuration = new DynamicRConParserConfiguration()
+            {
+                CommandPrefixes = new CommandPrefix()
+                {
+                    Tell = "tell {0} {1}",
+                    Say = "say {0}",
+                    Kick = "clientkick_for_reason {0} \"{1}\"",
+                    Ban = "clientkick_for_reason {0} \"{1}\"",
+                    TempBan = "clientkick_for_reason {0} \"{1}\""
+                },
+                GameName = Server.Game.T6M
+            };
+        }
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
@@ -112,7 +117,9 @@ namespace IW4MAdmin.Application.RconParsers
                     };
 
                     if (p.IsBot)
+                    {
                         p.NetworkId = -p.ClientNumber;
+                    }
 
                     StatusPlayers.Add(p);
                 }

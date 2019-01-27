@@ -6,9 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database;
-using System;
-using System.IO;
-using System.Reflection;
 
 namespace WebfrontCore
 {
@@ -62,6 +59,7 @@ namespace WebfrontCore
                 loggerFactory.AddDebug();
                 app.UseDeveloperExceptionPage();
             }
+
             else
             {
                 app.UseExceptionHandler("/Home/Error");

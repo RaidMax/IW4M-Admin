@@ -669,32 +669,26 @@ namespace IW4MAdmin
                 (IRConParser)new T6MRConParser() :
                 new IW3RConParser();
 
-            if (ServerConfig.UseIW5MParser)
-            {
-                RconParser = new IW5MRConParser();
-            }
-
             var version = await this.GetDvarAsync<string>("version");
             Version = version.Value;
-            GameName = Utilities.GetGame(version.Value);
+            //GameName = Utilities.GetGame(version.Value);
 
             if (GameName == Game.IW4)
             {
                 EventParser = new IW4EventParser();
                 RconParser = new IW4RConParser();
             }
-            else if (GameName == Game.IW5)
-            {
-                EventParser = new IW5EventParser();
-            }
+
             else if (GameName == Game.T5M)
             {
                 EventParser = new T5MEventParser();
             }
+
             else if (GameName == Game.T6M)
             {
                 EventParser = new T6MEventParser();
             }
+
             else
             {
                 EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
@@ -703,6 +697,9 @@ namespace IW4MAdmin
             if (GameName == Game.UKN)
             {
                 Logger.WriteWarning($"Game name not recognized: {version}");
+
+                EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => (_parser as DynamicEventParser).Version == version.Value) ?? EventParser;
+                RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => (_parser as DynamicRConParser).Version == version.Value) ?? RconParser;
             }
 
             var infoResponse = await this.GetInfoAsync();
@@ -763,7 +760,7 @@ namespace IW4MAdmin
             }
 
             CustomCallback = await ScriptLoaded();
-            string mainPath = EventParser.GetGameDir();
+            string mainPath = EventParser.Configuration.GameDirectory;
             string logPath = string.Empty;
 
             LogPath = game == string.Empty ?

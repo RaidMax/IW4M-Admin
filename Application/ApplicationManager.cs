@@ -1,4 +1,6 @@
 ﻿using IW4MAdmin.Application.API.Master;
+using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
@@ -34,6 +36,13 @@ namespace IW4MAdmin.Application
         public DateTime StartTime { get; private set; }
         public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
+        public IList<IRConParser> AdditionalRConParsers => _additionalRConParsers.ToList<IRConParser>();
+
+        public IList<IEventParser> AdditionalEventParsers => _additionalEventParsers.ToList<IEventParser>();
+
+        private readonly IList<DynamicRConParser> _additionalRConParsers;
+        private readonly IList<DynamicEventParser> _additionalEventParsers;
+
         static ApplicationManager Instance;
         readonly List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
@@ -61,6 +70,8 @@ namespace IW4MAdmin.Application
             StartTime = DateTime.UtcNow;
             OnQuit = new ManualResetEventSlim();
             PageList = new PageList();
+            _additionalEventParsers = new List<DynamicEventParser>();
+            _additionalRConParsers = new List<DynamicRConParser>();
             OnServerEvent += OnGameEvent;
             OnServerEvent += EventApi.OnGameEvent;
         }
@@ -552,5 +563,9 @@ namespace IW4MAdmin.Application
         {
             return PageList;
         }
+
+        public IRConParser GenerateDynamicRConParser() => new DynamicRConParser();
+
+        public IEventParser GenerateDynamicEventParser() => new DynamicEventParser();
     }
 }

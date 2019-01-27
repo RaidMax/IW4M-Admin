@@ -6,6 +6,9 @@ namespace IW4MAdmin.Application.EventParsers
 {
     class T5MEventParser : IW4EventParser
     {
-        public override string GetGameDir() => "v2";
+        public T5MEventParser() : base()
+        {
+            Configuration.GameDirectory = "v2";
+        }
     }
 }

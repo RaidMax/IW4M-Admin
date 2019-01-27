@@ -43,7 +43,10 @@ namespace SharedLibraryCore.RCon
         /// <summary>
         /// interval in milliseconds to wait before sending the next RCon request
         /// </summary>
-        public static readonly int FloodProtectionInterval = 635;
+        public static readonly int FloodProtectionInterval = 650;
+        /// <summary>
+        /// how mant failed connection attempts before aborting connection
+        /// </summary>
         public static readonly int AllowedConnectionFails = 3;
     }
 }

@@ -18,6 +18,6 @@ namespace SharedLibraryCore.Interfaces
         /// Get game specific folder prefix for log files
         /// </summary>
         /// <returns>Game directory prefix</returns>
-        string GetGameDir();
+        IEventParserConfiguration Configuration { get; set; }
     }
 }

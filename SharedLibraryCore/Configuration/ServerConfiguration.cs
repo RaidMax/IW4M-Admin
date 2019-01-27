@@ -12,7 +12,6 @@ namespace SharedLibraryCore.Configuration
         public IList<string> Rules { get; set; }
         public IList<string> AutoMessages { get; set; }
         public bool UseT6MParser { get; set; }
-        public bool UseIW5MParser { get; set; }
         public string ManualLogPath { get; set; }
         public int ReservedSlotNumber { get; set; }
 
@@ -36,17 +35,9 @@ namespace SharedLibraryCore.Configuration
             }
 
             Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
-
             AutoMessages = new List<string>();
             Rules = new List<string>();
-
-
             UseT6MParser = Utilities.PromptBool(loc["SETUP_SERVER_USET6M"]);
-            if (!UseT6MParser)
-                UseIW5MParser = Utilities.PromptBool(loc["SETUP_SERVER_USEIW5M"]);
-            if (UseIW5MParser)
-                ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_MANUALLOG"]);
-
             ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(null, 0, 32);
 
             return this;

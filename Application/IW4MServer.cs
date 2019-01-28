@@ -865,7 +865,7 @@ namespace IW4MAdmin
 #if !DEBUG
             else
             {
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
+                string formattedKick = String.Format(RconParser.Configuration.CommandPrefixes.Kick, Target.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #endif
@@ -904,7 +904,7 @@ namespace IW4MAdmin
 #if !DEBUG
             else
             {
-                string formattedKick = String.Format(RconParser.GetCommandPrefixes().Kick, Target.ClientNumber, $"^7{loc["SERVER_TB_TEXT"]}- ^5{Reason}");
+                string formattedKick = String.Format(RconParser.Configuration.CommandPrefixes.Kick, Target.ClientNumber, $"^7{loc["SERVER_TB_TEXT"]}- ^5{Reason}");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #else
@@ -949,7 +949,7 @@ namespace IW4MAdmin
                 targetClient.Level = EFClient.Permission.Banned;
 
 #if !DEBUG
-                string formattedString = String.Format(RconParser.GetCommandPrefixes().Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
+                string formattedString = String.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
                 await targetClient.CurrentServer.OnClientDisconnected(targetClient);

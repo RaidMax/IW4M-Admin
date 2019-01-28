@@ -1,7 +1,6 @@
 ﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -85,15 +84,20 @@ namespace SharedLibraryCore
             this.Version = (float)pluginObject.version;
 
 
-            if (pluginObject.isParser)
+            try
             {
-                await OnLoadAsync(mgr);
-                IEventParser eventParser = (IEventParser)ScriptEngine.GetValue("eventParser").ToObject();
-                IRConParser rconParser = (IRConParser)ScriptEngine.GetValue("rconParser").ToObject();
-                Manager.AdditionalEventParsers.Add(eventParser);
-                Manager.AdditionalRConParsers.Add(rconParser);
+                if (pluginObject.isParser)
+                {
+                    await OnLoadAsync(mgr);
+                    IEventParser eventParser = (IEventParser)ScriptEngine.GetValue("eventParser").ToObject();
+                    IRConParser rconParser = (IRConParser)ScriptEngine.GetValue("rconParser").ToObject();
+                    Manager.AdditionalEventParsers.Add(eventParser);
+                    Manager.AdditionalRConParsers.Add(rconParser);
+                }
             }
-     
+            catch { }
+
+
             if (!firstRun)
             {
                 await OnLoadAsync(mgr);
@@ -123,6 +127,9 @@ namespace SharedLibraryCore
             return Task.FromResult(ScriptEngine.Execute("plugin.onTickAsync(_server)").GetCompletionValue());
         }
 
-        public Task OnUnloadAsync() => Task.FromResult(ScriptEngine.Execute("plugin.onUnloadAsync()").GetCompletionValue());
+        public Task OnUnloadAsync()
+        {
+            return Task.FromResult(ScriptEngine.Execute("plugin.onUnloadAsync()").GetCompletionValue());
+        }
     }
 }

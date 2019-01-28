@@ -157,12 +157,11 @@
         <script type="text/javascript" src="~/lib/moment/moment.js"></script>
         <script type="text/javascript" src="~/lib/moment-timezone/builds/moment-timezone-with-data.js"></script>
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
+        <script type="text/javascript" src="~/lib/canvasjs/canvasjs.js"></script>
         <script type="text/javascript" src="~/js/action.js"></script>
         <script type="text/javascript" src="~/js/search.js"></script>
     </environment>
     <environment include="Production">
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
         <script type="text/javascript" src="~/js/global.min.js"></script>
     </environment>
     @RenderSection("scripts", required: false)

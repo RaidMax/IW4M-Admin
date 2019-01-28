@@ -1,16 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using System.IO;
-using System.Reflection;
-
+﻿using IW4MAdmin.Application.Migration;
 using SharedLibraryCore;
-using SharedLibraryCore.Objects;
-using SharedLibraryCore.Database;
+using SharedLibraryCore.Localization;
+using System;
+using System.IO;
 using System.Text;
 using System.Threading;
-using SharedLibraryCore.Localization;
-using IW4MAdmin.Application.Migration;
-using SharedLibraryCore.Exceptions;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
@@ -39,15 +34,17 @@ namespace IW4MAdmin.Application
             try
             {
                 ServerManager = ApplicationManager.GetInstance();
-                try
+
+                if (ServerManager.GetApplicationSettings().Configuration() != null)
                 {
                     Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration().CustomLocale);
                 }
 
-                catch (ServerException)
+                else
                 {
                     Localization.Configure.Initialize();
                 }
+
                 loc = Utilities.CurrentLocalization.LocalizationIndex;
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
 
@@ -124,7 +121,9 @@ namespace IW4MAdmin.Application
                         userInput = Console.ReadLine();
 
                         if (userInput?.ToLower() == "quit")
+                        {
                             ServerManager.Stop();
+                        }
 
                         if (ServerManager.Servers.Count == 0)
                         {

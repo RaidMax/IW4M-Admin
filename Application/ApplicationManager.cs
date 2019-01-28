@@ -215,13 +215,7 @@ namespace IW4MAdmin.Application
             Running = true;
 
             #region CONFIG
-            ApplicationConfiguration config = null;
-
-            try
-            {
-                config = ConfigHandler.Configuration();
-            }
-            catch { }
+            var config = ConfigHandler.Configuration();
 
             // copy over default config if it doesn't exist
             if (config == null)

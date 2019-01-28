@@ -41,7 +41,7 @@ namespace SharedLibraryCore.Configuration
             return File.WriteAllTextAsync(Path.Join(Utilities.OperatingDirectory, "Configuration", $"{Filename}.json"), appConfigJSON);
         }
 
-        public T Configuration() => _configuration == null ? throw new ServerException("Configuration is null") : _configuration;
+        public T Configuration() => _configuration;
 
         public void Set(T config)
         {

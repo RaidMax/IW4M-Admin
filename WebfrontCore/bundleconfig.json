@@ -17,6 +17,7 @@
       "wwwroot/lib/bootstrap/dist/js/bootstrap.min.js",
       "wwwroot/lib/moment/min/moment.min.js",
       "wwwroot/lib/moment-timezone/builds/moment-timezone.min.js",
+      "wwwroot/lib/canvasjs/canvasjs.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",

@@ -6,19 +6,11 @@ namespace IW4MAdmin.Application.EventParsers
     {
         public string GameDirectory { get; set; }
 
-        public ParserRegex Say { get; set; }
-        public ParserRegex Join { get; set; }
-        public ParserRegex Quit { get; set; }
-        public ParserRegex Kill { get; set; }
-        public ParserRegex Damage { get; set; }
-
-        public DynamicEventParserConfiguration()
-        {
-            Say = new ParserRegex();
-            Join = new ParserRegex();
-            Quit = new ParserRegex();
-            Kill = new ParserRegex();
-            Damage = new ParserRegex();
-        }
+        public ParserRegex Say { get; set; } = new ParserRegex();
+        public ParserRegex Join { get; set; } = new ParserRegex();
+        public ParserRegex Quit { get; set; } = new ParserRegex();
+        public ParserRegex Kill { get; set; } = new ParserRegex();
+        public ParserRegex Damage { get; set; } = new ParserRegex();
+        public ParserRegex Action { get; set; } = new ParserRegex();
     }
 }

@@ -6,6 +6,6 @@ namespace SharedLibraryCore.Interfaces
     {
         CommandPrefix CommandPrefixes { get; set; }
         Server.Game GameName { get; set; }
-        string StatusRegex { get; set; }
+        ParserRegex Status { get; set; }
     }
 }

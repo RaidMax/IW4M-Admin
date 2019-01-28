@@ -8,5 +8,6 @@
         ParserRegex Quit { get; set; }
         ParserRegex Kill { get; set; }
         ParserRegex Damage { get; set; }
+        ParserRegex Action { get; set; }
     }
 }

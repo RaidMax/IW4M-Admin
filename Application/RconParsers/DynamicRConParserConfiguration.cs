@@ -8,6 +8,6 @@ namespace IW4MAdmin.Application.RconParsers
     {
         public CommandPrefix CommandPrefixes { get; set; }
         public Server.Game GameName { get; set; }
-        public string StatusRegex { get; set; }
+        public ParserRegex Status { get; set; } = new ParserRegex();
     }
 }

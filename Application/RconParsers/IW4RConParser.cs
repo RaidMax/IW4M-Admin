@@ -25,9 +25,16 @@ namespace IW4MAdmin.Application.RconParsers
                     Ban = "clientkick {0} \"{1}\"",
                     TempBan = "tempbanclient {0} \"{1}\""
                 },
-                StatusRegex = @"^( *[0-9]+) +-*([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$",
                 GameName = Server.Game.IW4
             };
+
+            Configuration.Status.Pattern = @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConClientNumber, 1);
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConScore, 2);
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConPing, 3);
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConNetworkId, 4);
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConName, 5);
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConIpAddress, 6);
         }
 
         public IRConParserConfiguration Configuration { get; set; }
@@ -49,6 +56,7 @@ namespace IW4MAdmin.Application.RconParsers
                 throw e;
             }
 
+            // todo: can this be made more portable and modifiable from plugin
             string[] ValueSplit = LineSplit[1].Split(new char[] { '"' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (ValueSplit.Length < 5)
@@ -93,25 +101,25 @@ namespace IW4MAdmin.Application.RconParsers
             {
                 String responseLine = S.Trim();
 
-                var regex = Regex.Match(responseLine, Configuration.StatusRegex, RegexOptions.IgnoreCase);
+                var regex = Regex.Match(responseLine, Configuration.Status.Pattern, RegexOptions.IgnoreCase);
 
                 if (regex.Success)
                 {
                     validMatches++;
-                    int clientNumber = int.Parse(regex.Groups[1].Value);
-                    int score = int.Parse(regex.Groups[2].Value);
+                    int clientNumber = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]].Value);
+                    int score = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]].Value);
 
                     int ping = 999;
 
                     // their state can be CNCT, ZMBI etc
-                    if (regex.Groups[3].Value.Length <= 3)
+                    if (regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Value.Length <= 3)
                     {
-                        ping = int.Parse(regex.Groups[3].Value);
+                        ping = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Value);
                     }
 
-                    long networkId = regex.Groups[4].Value.ConvertLong();
-                    string name = regex.Groups[5].Value.StripColors().Trim();
-                    int? ip = regex.Groups[7].Value.Split(':')[0].ConvertToIP();
+                    long networkId = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].Value.ConvertLong();
+                    string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.StripColors().Trim();
+                    int? ip = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Value.Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()
                     {

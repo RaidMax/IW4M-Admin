@@ -214,18 +214,14 @@ namespace IW4MAdmin.Application
         {
             Running = true;
 
-            #region DATABASE
-            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString,
-                GetApplicationSettings().Configuration()?.DatabaseProvider))
-            {
-                await new ContextSeed(db).Seed();
-            }
-
-            PrivilegedClients = (await ClientSvc.GetPrivilegedClients()).ToDictionary(_client => _client.ClientId);
-            #endregion
-
             #region CONFIG
-            var config = ConfigHandler.Configuration();
+            ApplicationConfiguration config = null;
+
+            try
+            {
+                config = ConfigHandler.Configuration();
+            }
+            catch { }
 
             // copy over default config if it doesn't exist
             if (config == null)
@@ -278,6 +274,17 @@ namespace IW4MAdmin.Application
             Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(config.CustomParserEncoding) ? config.CustomParserEncoding : "windows-1252");
 
             #endregion
+
+            #region DATABASE
+            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString,
+                GetApplicationSettings().Configuration()?.DatabaseProvider))
+            {
+                await new ContextSeed(db).Seed();
+            }
+
+            PrivilegedClients = (await ClientSvc.GetPrivilegedClients()).ToDictionary(_client => _client.ClientId);
+            #endregion
+
             #region PLUGINS
             SharedLibraryCore.Plugins.PluginImporter.Load(this);
 
@@ -564,8 +571,14 @@ namespace IW4MAdmin.Application
             return PageList;
         }
 
-        public IRConParser GenerateDynamicRConParser() => new DynamicRConParser();
+        public IRConParser GenerateDynamicRConParser()
+        {
+            return new DynamicRConParser();
+        }
 
-        public IEventParser GenerateDynamicEventParser() => new DynamicEventParser();
+        public IEventParser GenerateDynamicEventParser()
+        {
+            return new DynamicEventParser();
+        }
     }
 }

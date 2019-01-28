@@ -94,7 +94,6 @@ namespace SharedLibraryCore
                 Manager.AdditionalRConParsers.Add(rconParser);
             }
      
-
             if (!firstRun)
             {
                 await OnLoadAsync(mgr);

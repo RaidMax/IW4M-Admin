@@ -28,7 +28,7 @@ namespace WebfrontCore.ViewComponents
                     Level = p.Level.ToLocalizedLevelName(),
                     LevelInt = (int)p.Level
                 }).ToList(),
-                ChatHistory = s.ChatHistory,
+                ChatHistory = s.ChatHistory.ToList(),
                 Online = !s.Throttled
             }).ToList();
             return View("_List", serverInfo);

@@ -482,7 +482,7 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static bool PromptBool(string question, string description = null, bool defaultValue = true)
         {
-            Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? "" : $" ({description}) ")}[y/n]: ");
+            Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? " " : $" ({description}) ")}[y/n]: ");
             char response = Console.ReadLine().ToLower().FirstOrDefault();
             return response != 0 ? response == 'y' : defaultValue;
         }

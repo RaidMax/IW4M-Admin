@@ -34,7 +34,7 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConPing, 3);
             Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConNetworkId, 4);
             Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConName, 5);
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConIpAddress, 6);
+            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConIpAddress, 7);
         }
 
         public IRConParserConfiguration Configuration { get; set; }

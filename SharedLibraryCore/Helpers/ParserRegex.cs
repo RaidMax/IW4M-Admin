@@ -28,6 +28,11 @@ namespace SharedLibraryCore.Interfaces
             RConNetworkId = 103,
             RConName = 104,
             RConIpAddress = 105,
+            RConDvarName = 106,
+            RConDvarValue = 107,
+            RConDvarDefaultValue = 108,
+            RConDvarLatchedValue = 109,
+            RConDvarDomain = 110,
             AdditionalGroup = 200
         }
         public string Pattern { get; set; }

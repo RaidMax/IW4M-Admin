@@ -23,7 +23,11 @@ namespace IW4MAdmin.Application.RconParsers
                     Say = "sayraw {0}",
                     Kick = "clientkick {0} \"{1}\"",
                     Ban = "clientkick {0} \"{1}\"",
-                    TempBan = "tempbanclient {0} \"{1}\""
+                    TempBan = "tempbanclient {0} \"{1}\"",
+                    RConQuery = "ÿÿÿÿrcon {0} {1}",
+                    RConGetStatus = "ÿÿÿÿgetstatus",
+                    RConGetInfo = "ÿÿÿÿgetinfo",
+                    RConResponse = "ÿÿÿÿprint",
                 },
                 GameName = Server.Game.IW4
             };
@@ -35,6 +39,13 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConNetworkId, 4);
             Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConName, 5);
             Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConIpAddress, 7);
+
+            Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)\" default: \"(.+)\"\n(?:latched: \"(.+)\"\n)? *(.+)$";
+            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarName, 1);
+            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarValue, 2);
+            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarDefaultValue, 3);
+            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarLatchedValue, 4);
+            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarDomain, 5);
         }
 
         public IRConParserConfiguration Configuration { get; set; }
@@ -47,32 +58,37 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName)
         {
-            string[] LineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.DVAR, dvarName);
+            string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.DVAR, dvarName);
+            string response = string.Join('\n', lineSplit.Skip(1));
 
-            if (LineSplit.Length < 3)
+            if (lineSplit[0] != Configuration.CommandPrefixes.RConResponse)
             {
-                var e = new DvarException($"DVAR \"{dvarName}\" does not exist");
-                e.Data["dvar_name"] = dvarName;
-                throw e;
+                throw new DvarException($"Could not retrieve DVAR \"{dvarName}\"");
             }
 
-            // todo: can this be made more portable and modifiable from plugin
-            string[] ValueSplit = LineSplit[1].Split(new char[] { '"' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (ValueSplit.Length < 5)
+            if (response.Contains("Unknown command"))
             {
-                var e = new DvarException($"DVAR \"{dvarName}\" does not exist");
-                e.Data["dvar_name"] = dvarName;
-                throw e;
+                throw new DvarException($"DVAR \"{dvarName}\" does not exist");
             }
 
-            string DvarName = Regex.Replace(ValueSplit[0], @"\^[0-9]", "");
-            string DvarCurrentValue = Regex.Replace(ValueSplit[2], @"\^[0-9]", "");
-            string DvarDefaultValue = Regex.Replace(ValueSplit[4], @"\^[0-9]", "");
+            var match = Regex.Match(response, Configuration.Dvar.Pattern);
 
-            return new Dvar<T>(DvarName)
+            if (!match.Success)
             {
-                Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T))
+                throw new DvarException($"Could not retrieve DVAR \"{dvarName}\"");
+            }
+
+            string value = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarValue]].Value.StripColors();
+            string defaultValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDefaultValue]].Value.StripColors();
+            string latchedValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarLatchedValue]].Value.StripColors();
+
+            return new Dvar<T>()
+            {
+                Name = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarName]].Value.StripColors(),
+                Value = string.IsNullOrEmpty(value) ? default(T) : (T)Convert.ChangeType(value, typeof(T)),
+                DefaultValue = string.IsNullOrEmpty(defaultValue) ? default(T) : (T)Convert.ChangeType(defaultValue, typeof(T)),
+                LatchedValue = string.IsNullOrEmpty(latchedValue) ? default(T) : (T)Convert.ChangeType(latchedValue, typeof(T)),
+                Domain = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDomain]].Value.StripColors()
             };
         }
 

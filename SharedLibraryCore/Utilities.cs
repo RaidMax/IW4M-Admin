@@ -347,6 +347,11 @@ namespace SharedLibraryCore
 
         public static Game GetGame(string gameName)
         {
+            if (string.IsNullOrEmpty(gameName))
+            {
+                return Game.UKN;
+            }
+
             if (gameName.Contains("IW4"))
             {
                 return Game.IW4;

@@ -433,9 +433,9 @@ namespace SharedLibraryCore.Database.Models
             }
 
             // reserved slots stuff
-            // todo: is this broken on T6?
+            // todo: bots don't seem to honor party_maxplayers/sv_maxclients
             if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged())) < CurrentServer.ServerConfig.ReservedSlotNumber &&
-               !this.IsPrivileged() && CurrentServer.GameName != Server.Game.T6M /* HACK: temporary */)
+               !this.IsPrivileged())
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
                 Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
@@ -461,9 +461,10 @@ namespace SharedLibraryCore.Database.Models
 
             if (ipAddress != null)
             {
-                if (IPAddressString == "66.150.121.184")
+                // todo: remove this in a few weeks because it's just temporary for server forwarding
+                if (IPAddressString == "66.150.121.184" || IPAddressString == "62.210.178.177")
                 {
-                    Kick("Your favorite servers are outdated. Please re-add the server.", autoKickClient);
+                    Kick($"Your favorite servers are outdated. Please remove and re-add this server. ({CurrentServer.Hostname})", autoKickClient);
                     return false;
                 }
                 await CurrentServer.Manager.GetClientService().UpdateAlias(this);

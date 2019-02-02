@@ -665,13 +665,17 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
+            //RemoteConnection.SetConfiguration(Manager.AdditionalRConParsers.First().Configuration);
+
             RconParser = ServerConfig.UseT6MParser ?
                 (IRConParser)new T6MRConParser() :
-                new IW3RConParser();
+                new IW4RConParser();
+
+            RemoteConnection.SetConfiguration(RconParser.Configuration);
 
             var version = await this.GetDvarAsync<string>("version");
             Version = version.Value;
-            GameName = Utilities.GetGame(version.Value);
+            GameName = Utilities.GetGame(version?.Value);
 
             if (GameName == Game.IW4)
             {
@@ -702,7 +706,7 @@ namespace IW4MAdmin
                 RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => (_parser as DynamicRConParser).Version == version.Value) ?? RconParser;
             }
 
-            var infoResponse = await this.GetInfoAsync();
+            var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;
             // this is normally slow, but I'm only doing it because different games have different prefixes
             var hostname = infoResponse == null ?
                 (await this.GetDvarAsync<string>("sv_hostname")).Value :

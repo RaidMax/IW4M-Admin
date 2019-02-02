@@ -30,12 +30,19 @@ namespace SharedLibraryCore.RCon
         public string RConPassword { get; private set; }
 
         private readonly ILogger Log;
+        private IRConParserConfiguration Config;
 
-        public Connection(string ipAddress, int port, string password, ILogger log)
+        public Connection(string ipAddress, int port, string password, ILogger log, IRConParserConfiguration config)
         {
             Endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
             RConPassword = password;
             Log = log;
+            Config = config;
+        }
+
+        public void SetConfiguration(IRConParserConfiguration config)
+        {
+            Config = config;
         }
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", bool waitForResponse = true)
@@ -73,16 +80,14 @@ namespace SharedLibraryCore.RCon
             {
                 case StaticHelpers.QueryType.DVAR:
                 case StaticHelpers.QueryType.COMMAND:
-                    var header = "ÿÿÿÿrcon ".Select(Convert.ToByte).ToList();
-                    byte[] p = Utilities.EncodingType.GetBytes($"{RConPassword} {parameters}");
-                    header.AddRange(p);
-                    payload = header.ToArray();
+                    payload = Utilities.EncodingType
+                        .GetBytes(string.Format(Config.CommandPrefixes.RConQuery, RConPassword, parameters + '\0'));
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
-                    payload = "ÿÿÿÿgetstatus".Select(Convert.ToByte).ToArray();
+                    payload = (Config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
                     break;
                 case StaticHelpers.QueryType.GET_INFO:
-                    payload = "ÿÿÿÿgetinfo".Select(Convert.ToByte).ToArray();
+                    payload = (Config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
                     break;
             }
 

@@ -36,7 +36,7 @@ namespace SharedLibraryCore
             Logger = Manager.GetLogger(this.EndPoint);
             Logger.WriteInfo(this.ToString());
             ServerConfig = config;
-            RemoteConnection = new RCon.Connection(IP, Port, Password, Logger);
+            RemoteConnection = new RCon.Connection(IP, Port, Password, Logger, null);
 
             Clients = new List<EFClient>(new EFClient[18]);
             Reports = new List<Report>();

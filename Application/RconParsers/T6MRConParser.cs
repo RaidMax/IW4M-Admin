@@ -60,9 +60,10 @@ namespace IW4MAdmin.Application.RconParsers
             string DvarName = dvarName;
             string DvarCurrentValue = Regex.Replace(ValueSplit[1], @"\^[0-9]", "");
 
-            return new Dvar<T>(DvarName)
+            return new Dvar<T>()
             {
-                Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T))
+                Value = (T)Convert.ChangeType(DvarCurrentValue, typeof(T)),
+                Name = DvarName
             };
         }
 

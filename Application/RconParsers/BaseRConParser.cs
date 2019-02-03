@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.RconParsers
 {
-    class IW4RConParser : IRConParser
+    class BaseRConParser : IRConParser
     {
-        public IW4RConParser()
+        public BaseRConParser()
         {
             Configuration = new DynamicRConParserConfiguration()
             {
@@ -33,19 +33,19 @@ namespace IW4MAdmin.Application.RconParsers
             };
 
             Configuration.Status.Pattern = @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConClientNumber, 1);
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConScore, 2);
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConPing, 3);
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConNetworkId, 4);
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConName, 5);
-            Configuration.Status.GroupMapping.Add(ParserRegex.GroupType.RConIpAddress, 7);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConClientNumber, 1);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConScore, 2);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConPing, 3);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 4);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConName, 5);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 7);
 
             Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)\" default: \"(.+)\"\n(?:latched: \"(.+)\"\n)? *(.+)$";
-            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarName, 1);
-            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarValue, 2);
-            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarDefaultValue, 3);
-            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarLatchedValue, 4);
-            Configuration.Dvar.GroupMapping.Add(ParserRegex.GroupType.RConDvarDomain, 5);
+            Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarName, 1);
+            Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarValue, 2);
+            Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDefaultValue, 3);
+            Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarLatchedValue, 4);
+            Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDomain, 5);
         }
 
         public IRConParserConfiguration Configuration { get; set; }

@@ -7,9 +7,9 @@ using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Application.EventParsers
 {
-    class IW4EventParser : IEventParser
+    class BaseEventParser : IEventParser
     {
-        public IW4EventParser()
+        public BaseEventParser()
         {
             Configuration = new DynamicEventParserConfiguration()
             {
@@ -17,53 +17,53 @@ namespace IW4MAdmin.Application.EventParsers
             };
 
             Configuration.Say.Pattern = @"^(say|sayteam);(.{1,32});([0-9]+)(.*);(.*)$";
-            Configuration.Say.GroupMapping.Add(ParserRegex.GroupType.EventType, 1);
-            Configuration.Say.GroupMapping.Add(ParserRegex.GroupType.OriginNetworkId, 2);
-            Configuration.Say.GroupMapping.Add(ParserRegex.GroupType.OriginClientNumber, 3);
-            Configuration.Say.GroupMapping.Add(ParserRegex.GroupType.OriginName, 4);
-            Configuration.Say.GroupMapping.Add(ParserRegex.GroupType.Message, 5);
+            Configuration.Say.AddMapping(ParserRegex.GroupType.EventType, 1);
+            Configuration.Say.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
+            Configuration.Say.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
+            Configuration.Say.AddMapping(ParserRegex.GroupType.OriginName, 4);
+            Configuration.Say.AddMapping(ParserRegex.GroupType.Message, 5);
 
             Configuration.Quit.Pattern = @"^(Q);(.{16,32}|bot[0-9]+);([0-9]+);(.*)$";
-            Configuration.Quit.GroupMapping.Add(ParserRegex.GroupType.EventType, 1);
-            Configuration.Quit.GroupMapping.Add(ParserRegex.GroupType.OriginNetworkId, 2);
-            Configuration.Quit.GroupMapping.Add(ParserRegex.GroupType.OriginClientNumber, 3);
-            Configuration.Quit.GroupMapping.Add(ParserRegex.GroupType.OriginName, 4);
+            Configuration.Quit.AddMapping(ParserRegex.GroupType.EventType, 1);
+            Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
+            Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
+            Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
             Configuration.Join.Pattern = @"^(J);(.{16,32}|bot[0-9]+);([0-9]+);(.*)$";
-            Configuration.Join.GroupMapping.Add(ParserRegex.GroupType.EventType, 1);
-            Configuration.Join.GroupMapping.Add(ParserRegex.GroupType.OriginNetworkId, 2);
-            Configuration.Join.GroupMapping.Add(ParserRegex.GroupType.OriginClientNumber, 3);
-            Configuration.Join.GroupMapping.Add(ParserRegex.GroupType.OriginName, 4);
+            Configuration.Join.AddMapping(ParserRegex.GroupType.EventType, 1);
+            Configuration.Join.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
+            Configuration.Join.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
+            Configuration.Join.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
             Configuration.Damage.Pattern = @"^(D);([A-Fa-f0-9_]{16,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world);(.{1,24});([A-Fa-f0-9_]{16,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world);(.{1,24})?;((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.EventType, 1);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.TargetNetworkId, 2);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.TargetClientNumber, 3);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.TargetTeam, 4);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.TargetName, 5);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.OriginNetworkId, 6);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.OriginClientNumber, 7);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.OriginTeam, 8);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.OriginName, 9);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.Weapon, 10);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.Damage, 11);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.MeansOfDeath, 12);
-            Configuration.Damage.GroupMapping.Add(ParserRegex.GroupType.HitLocation, 13);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.EventType, 1);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetTeam, 4);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetName, 5);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.OriginNetworkId, 6);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.OriginClientNumber, 7);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.OriginTeam, 8);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.OriginName, 9);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.Weapon, 10);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.Damage, 11);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
+            Configuration.Damage.AddMapping(ParserRegex.GroupType.HitLocation, 13);
 
             Configuration.Kill.Pattern = @"^(K);([A-Fa-f0-9_]{16,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world);(.{1,24});([A-Fa-f0-9_]{16,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world);(.{1,24})?;((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.EventType, 1);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.TargetNetworkId, 2);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.TargetClientNumber, 3);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.TargetTeam, 4);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.TargetName, 5);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.OriginNetworkId, 6);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.OriginClientNumber, 7);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.OriginTeam, 8);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.OriginName, 9);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.Weapon, 10);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.Damage, 11);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.MeansOfDeath, 12);
-            Configuration.Kill.GroupMapping.Add(ParserRegex.GroupType.HitLocation, 13);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.EventType, 1);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetTeam, 4);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetName, 5);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.OriginNetworkId, 6);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.OriginClientNumber, 7);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.OriginTeam, 8);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.OriginName, 9);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.Weapon, 10);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.Damage, 11);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
+            Configuration.Kill.AddMapping(ParserRegex.GroupType.HitLocation, 13);
         }
 
         public IEventParserConfiguration Configuration { get; set; }

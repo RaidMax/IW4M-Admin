@@ -2,7 +2,7 @@
 
 namespace IW4MAdmin.Application.EventParsers
 {
-    class T6MEventParser : IW4EventParser
+    class T6MEventParser : BaseEventParser
     {
         public T6MEventParser() : base()
         {

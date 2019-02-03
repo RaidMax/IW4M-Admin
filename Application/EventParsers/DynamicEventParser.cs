@@ -5,7 +5,11 @@ using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Application.EventParsers
 {
-    sealed internal class DynamicEventParser : IW4EventParser
+    /// <summary>
+    /// empty generic implementation of the IEventParserConfiguration
+    /// allows script plugins to generate dynamic event parsers
+    /// </summary>
+    sealed internal class DynamicEventParser : BaseEventParser
     {
     }
 }

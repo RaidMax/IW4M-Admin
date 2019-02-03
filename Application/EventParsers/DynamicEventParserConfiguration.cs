@@ -2,7 +2,11 @@
 
 namespace IW4MAdmin.Application.EventParsers
 {
-    class DynamicEventParserConfiguration : IEventParserConfiguration
+    /// <summary>
+    /// generic implementation of the IEventParserConfiguration
+    /// allows script plugins to generate dynamic configurations
+    /// </summary>
+    sealed internal class DynamicEventParserConfiguration : IEventParserConfiguration
     {
         public string GameDirectory { get; set; }
         public ParserRegex Say { get; set; } = new ParserRegex();

@@ -671,8 +671,8 @@ namespace IW4MAdmin
             var eventParser = Manager.AdditionalEventParsers
                 .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
 
-            rconParser = rconParser ?? new IW4RConParser();
-            eventParser = eventParser ?? new IW4EventParser();
+            rconParser = rconParser ?? new BaseRConParser();
+            eventParser = eventParser ?? new BaseEventParser();
 
             RemoteConnection.SetConfiguration(rconParser.Configuration);
 
@@ -685,8 +685,8 @@ namespace IW4MAdmin
 
             if (GameName == Game.IW4)
             {
-                EventParser = new IW4EventParser();
-                RconParser = new IW4RConParser();
+                EventParser = new BaseEventParser();
+                RconParser = new BaseRConParser();
             }
 
             else if (GameName == Game.T5M)

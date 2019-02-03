@@ -6,7 +6,7 @@ using System.Text;
 
 namespace IW4MAdmin.Application.RconParsers
 {
-    class IW3RConParser : IW4RConParser
+    class IW3RConParser : BaseRConParser
     {
         public IW3RConParser() : base()
         {

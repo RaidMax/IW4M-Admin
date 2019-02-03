@@ -1,11 +1,10 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.RCon;
-using System;
-using static SharedLibraryCore.Server;
-
-namespace IW4MAdmin.Application.RconParsers
+﻿namespace IW4MAdmin.Application.RconParsers
 {
-    sealed internal class DynamicRConParser : IW4RConParser
+    /// <summary>
+    /// empty implementation of the IW4RConParser
+    /// allows script plugins to generate dynamic RCon parsers
+    /// </summary>
+    sealed internal class DynamicRConParser : BaseRConParser
     {
     }
 }

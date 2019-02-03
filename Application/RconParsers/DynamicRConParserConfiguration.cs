@@ -4,7 +4,11 @@ using SharedLibraryCore.RCon;
 
 namespace IW4MAdmin.Application.RconParsers
 {
-    class DynamicRConParserConfiguration : IRConParserConfiguration
+    /// <summary>
+    /// generic implementation of the IRConParserConfiguration
+    /// allows script plugins to generate dynamic RCon configurations
+    /// </summary>
+    sealed internal class DynamicRConParserConfiguration : IRConParserConfiguration
     {
         public CommandPrefix CommandPrefixes { get; set; }
         public Server.Game GameName { get; set; }

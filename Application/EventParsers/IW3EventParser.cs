@@ -4,7 +4,7 @@ using System.Text;
 
 namespace IW4MAdmin.Application.EventParsers
 {
-    class IW3EventParser : IW4EventParser
+    class IW3EventParser : BaseEventParser
     {
         public IW3EventParser() : base()
         {

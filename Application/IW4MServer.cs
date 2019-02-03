@@ -665,13 +665,19 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
-            //RemoteConnection.SetConfiguration(Manager.AdditionalRConParsers.First().Configuration);
+            var rconParser = Manager.AdditionalRConParsers
+                .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
 
-            RconParser = ServerConfig.UseT6MParser ?
-                (IRConParser)new T6MRConParser() :
-                new IW4RConParser();
+            var eventParser = Manager.AdditionalEventParsers
+                .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
 
-            RemoteConnection.SetConfiguration(RconParser.Configuration);
+            rconParser = rconParser ?? new IW4RConParser();
+            eventParser = eventParser ?? new IW4EventParser();
+
+            RemoteConnection.SetConfiguration(rconParser.Configuration);
+
+            RconParser = rconParser;
+            EventParser = eventParser;
 
             var version = await this.GetDvarAsync<string>("version");
             Version = version.Value;
@@ -693,18 +699,18 @@ namespace IW4MAdmin
                 EventParser = new T6MEventParser();
             }
 
-            else
-            {
-                EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
-            }
+            //else
+            //{
+            //    EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
+            //}
 
-            if (GameName == Game.UKN)
-            {
-                Logger.WriteWarning($"Game name not recognized: {version}");
+            //if (GameName == Game.UKN)
+            //{
+            //    Logger.WriteWarning($"Game name not recognized: {version}");
 
-                EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => (_parser as DynamicEventParser).Version == version.Value) ?? EventParser;
-                RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => (_parser as DynamicRConParser).Version == version.Value) ?? RconParser;
-            }
+            //    EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? EventParser;
+            //    RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => (_parser as DynamicRConParser).Version == version.Value) ?? RconParser;
+            //}
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;
             // this is normally slow, but I'm only doing it because different games have different prefixes
@@ -750,7 +756,7 @@ namespace IW4MAdmin
             this.MaxClients = maxplayers;
             this.FSGame = game;
             this.Gametype = gametype;
-            this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value;
+            this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
 
             if (logsync.Value == 0 || logfile.Value == string.Empty)
             {
@@ -767,9 +773,9 @@ namespace IW4MAdmin
             string mainPath = EventParser.Configuration.GameDirectory;
             string logPath = string.Empty;
 
-            LogPath = game == string.Empty ?
-                   $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile.Value}" :
-                   $"{basepath.Value.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile.Value}";
+            LogPath = string.IsNullOrEmpty(game) ?
+                   $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile?.Value}" :
+                   $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game?.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile?.Value}";
 
             bool remoteLog = false;
             if (GameName == Game.IW5 || ServerConfig.ManualLogPath?.Length > 0)

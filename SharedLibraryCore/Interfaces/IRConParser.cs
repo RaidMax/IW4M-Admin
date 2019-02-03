@@ -14,5 +14,6 @@ namespace SharedLibraryCore.Interfaces
         Task<string[]> ExecuteCommandAsync(Connection connection, string command);
         Task<List<EFClient>> GetStatusAsync(Connection connection);
         IRConParserConfiguration Configuration { get; set; }
+        string Version { get; set; }
     }
 }

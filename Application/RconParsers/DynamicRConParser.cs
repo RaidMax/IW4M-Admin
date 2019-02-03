@@ -7,6 +7,5 @@ namespace IW4MAdmin.Application.RconParsers
 {
     sealed internal class DynamicRConParser : IW4RConParser
     {
-        public string Version { get; set; }
     }
 }

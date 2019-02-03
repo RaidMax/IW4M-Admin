@@ -14,6 +14,7 @@ namespace IW4MAdmin.Application.RconParsers
     public class T6MRConParser : IRConParser
     {
         public IRConParserConfiguration Configuration { get; set; }
+        public string Version { get; set; } = "";
 
         public T6MRConParser()
         {

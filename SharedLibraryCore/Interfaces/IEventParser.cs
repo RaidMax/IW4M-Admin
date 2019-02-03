@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharedLibraryCore.Interfaces
+﻿namespace SharedLibraryCore.Interfaces
 {
     public interface IEventParser
     {
@@ -19,5 +15,6 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <returns>Game directory prefix</returns>
         IEventParserConfiguration Configuration { get; set; }
+        string Version { get; set; }
     }
 }

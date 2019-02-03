@@ -7,6 +7,5 @@ namespace IW4MAdmin.Application.EventParsers
 {
     sealed internal class DynamicEventParser : IW4EventParser
     {
-        public string Version { get; set; }
     }
 }

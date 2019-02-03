@@ -435,7 +435,9 @@ namespace SharedLibraryCore.Database.Models
             // reserved slots stuff
             // todo: bots don't seem to honor party_maxplayers/sv_maxclients
             if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged())) < CurrentServer.ServerConfig.ReservedSlotNumber &&
-               !this.IsPrivileged())
+               !this.IsPrivileged() &&
+               CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
+               CurrentServer.MaxClients != 0)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
                 Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));

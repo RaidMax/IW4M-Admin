@@ -68,6 +68,8 @@ namespace IW4MAdmin.Application.EventParsers
 
         public IEventParserConfiguration Configuration { get; set; }
 
+        public string Version { get; set; } = "IW4x (v0.6.0)";
+
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
             logLine = Regex.Replace(logLine, @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();

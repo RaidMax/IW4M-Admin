@@ -50,6 +50,8 @@ namespace IW4MAdmin.Application.RconParsers
 
         public IRConParserConfiguration Configuration { get; set; }
 
+        public string Version { get; set; } = "IW4x (v0.6.0)";
+
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {
             var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
@@ -61,7 +63,7 @@ namespace IW4MAdmin.Application.RconParsers
             string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.DVAR, dvarName);
             string response = string.Join('\n', lineSplit.Skip(1));
 
-            if (lineSplit[0] != Configuration.CommandPrefixes.RConResponse)
+            if (!lineSplit[0].Contains(Configuration.CommandPrefixes.RConResponse))
             {
                 throw new DvarException($"Could not retrieve DVAR \"{dvarName}\"");
             }
@@ -113,9 +115,9 @@ namespace IW4MAdmin.Application.RconParsers
             }
 
             int validMatches = 0;
-            foreach (String S in Status)
+            foreach (string S in Status)
             {
-                String responseLine = S.Trim();
+                string responseLine = S.Trim();
 
                 var regex = Regex.Match(responseLine, Configuration.Status.Pattern, RegexOptions.IgnoreCase);
 

@@ -38,6 +38,22 @@ namespace SharedLibraryCore.Interfaces
         public string Pattern { get; set; }
         public Dictionary<GroupType, int> GroupMapping { get; private set; }
 
+        public void AddMapping(object mapKey, object mapValue)
+        {
+            if (int.TryParse(mapKey.ToString(), out int key) && int.TryParse(mapValue.ToString(), out int value))
+            {
+                if (GroupMapping.ContainsKey((GroupType)key))
+                {
+                    GroupMapping[(GroupType)key] = value;
+                }
+
+                else
+                {
+                    GroupMapping.Add((GroupType)key, value);
+                }
+            }
+        }
+
         public ParserRegex()
         {
             GroupMapping = new Dictionary<GroupType, int>();

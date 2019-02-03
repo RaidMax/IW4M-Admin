@@ -28,6 +28,7 @@ namespace SharedLibraryCore.Configuration
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         public int AutoMessagePeriod { get; set; }
+        public string CustomParserVersion { get; set; }
         public List<string> AutoMessages { get; set; }
         public List<string> GlobalRules { get; set; }
         public List<MapConfiguration> Maps { get; set; }

@@ -71,6 +71,22 @@ namespace SharedLibraryCore.Interfaces
                     GroupMapping.Add((GroupType)key, value);
                 }
             }
+
+            if (mapKey.GetType() == typeof(GroupType) && mapValue.GetType().ToString() == "System.Int32")
+            {
+                GroupType k = (GroupType)Enum.Parse(typeof(GroupType), mapKey.ToString());
+                int v = int.Parse(mapValue.ToString());
+
+                if (GroupMapping.ContainsKey(k))
+                {
+                    GroupMapping[k] = v;
+                }
+
+                else
+                {
+                    GroupMapping.Add(k, v);
+                }
+            }
         }
 
         public ParserRegex()

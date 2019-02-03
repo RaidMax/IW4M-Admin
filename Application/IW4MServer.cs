@@ -665,31 +665,22 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
-            var rconParser = Manager.AdditionalRConParsers
+            RconParser = Manager.AdditionalRConParsers
                 .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
 
-            var eventParser = Manager.AdditionalEventParsers
+            EventParser = Manager.AdditionalEventParsers
                 .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
 
-            rconParser = rconParser ?? new BaseRConParser();
-            eventParser = eventParser ?? new BaseEventParser();
+            RconParser = RconParser ?? new BaseRConParser();
+            EventParser = EventParser ?? new BaseEventParser();
 
-            RemoteConnection.SetConfiguration(rconParser.Configuration);
-
-            RconParser = rconParser;
-            EventParser = eventParser;
+            RemoteConnection.SetConfiguration(RconParser.Configuration);
 
             var version = await this.GetDvarAsync<string>("version");
             Version = version.Value;
             GameName = Utilities.GetGame(version?.Value);
 
-            if (GameName == Game.IW4)
-            {
-                EventParser = new BaseEventParser();
-                RconParser = new BaseRConParser();
-            }
-
-            else if (GameName == Game.T5M)
+            if (GameName == Game.T5M)
             {
                 EventParser = new T5MEventParser();
             }
@@ -699,18 +690,11 @@ namespace IW4MAdmin
                 EventParser = new T6MEventParser();
             }
 
-            //else
-            //{
-            //    EventParser = new IW3EventParser(); // this uses the 'main' folder for log paths
-            //}
-
-            //if (GameName == Game.UKN)
-            //{
-            //    Logger.WriteWarning($"Game name not recognized: {version}");
-
-            //    EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? EventParser;
-            //    RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => (_parser as DynamicRConParser).Version == version.Value) ?? RconParser;
-            //}
+            else if (version.Value.Length != 0)
+            {
+                RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? RconParser;
+                EventParser = Manager.AdditionalEventParsers.First(_parser => _parser.Version == version.Value) ?? EventParser;
+            }
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;
             // this is normally slow, but I'm only doing it because different games have different prefixes

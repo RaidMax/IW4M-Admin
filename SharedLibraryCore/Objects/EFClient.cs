@@ -434,7 +434,7 @@ namespace SharedLibraryCore.Database.Models
 
             // reserved slots stuff
             // todo: bots don't seem to honor party_maxplayers/sv_maxclients
-            if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged())) < CurrentServer.ServerConfig.ReservedSlotNumber &&
+            if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged() && !_client.IsBot)) < CurrentServer.ServerConfig.ReservedSlotNumber &&
                !this.IsPrivileged() &&
                CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
                CurrentServer.MaxClients != 0)

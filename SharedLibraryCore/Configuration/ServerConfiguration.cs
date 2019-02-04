@@ -13,6 +13,7 @@ namespace SharedLibraryCore.Configuration
         public IList<string> AutoMessages { get; set; }
         public bool UseT6MParser { get; set; }
         public string ManualLogPath { get; set; }
+        public string CustomParserVersion { get; set; }
         public int ReservedSlotNumber { get; set; }
 
         public IBaseConfiguration Generate()

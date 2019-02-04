@@ -24,7 +24,9 @@ namespace IW4MAdmin.Application.RconParsers
                     Kick = "clientkick {0} \"{1}\"",
                     Ban = "clientkick {0} \"{1}\"",
                     TempBan = "tempbanclient {0} \"{1}\"",
-                    RConQuery = "ÿÿÿÿrcon {0} {1}",
+                    RConCommand = "ÿÿÿÿrcon {0} {1}",
+                    RConGetDvar = "ÿÿÿÿrcon {0} {1}",
+                    RConSetDvar = "ÿÿÿÿrcon {0} set {1}",
                     RConGetStatus = "ÿÿÿÿgetstatus",
                     RConGetInfo = "ÿÿÿÿgetinfo",
                     RConResponse = "ÿÿÿÿprint",
@@ -60,7 +62,7 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName)
         {
-            string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.DVAR, dvarName);
+            string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
             string response = string.Join('\n', lineSplit.Skip(1));
 
             if (!lineSplit[0].Contains(Configuration.CommandPrefixes.RConResponse))
@@ -102,7 +104,7 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue)
         {
-            return (await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, $"set {dvarName} {dvarValue}")).Length > 0;
+            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, $"{dvarName} {dvarValue}")).Length > 0;
         }
 
         private List<EFClient> ClientsFromStatus(string[] Status)

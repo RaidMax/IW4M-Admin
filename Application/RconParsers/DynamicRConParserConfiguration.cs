@@ -14,5 +14,6 @@ namespace IW4MAdmin.Application.RconParsers
         public Server.Game GameName { get; set; }
         public ParserRegex Status { get; set; } = new ParserRegex();
         public ParserRegex Dvar { get; set; } = new ParserRegex();
+        public bool WaitForResponse { get; set; } = true;
     }
 }

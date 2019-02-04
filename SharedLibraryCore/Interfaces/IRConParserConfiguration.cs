@@ -20,5 +20,10 @@ namespace SharedLibraryCore.Interfaces
         /// stores the regex info for parsing get DVAR responses
         /// </summary>
         ParserRegex Dvar { get; set; }
+        /// <summary>
+        /// indicates if the application should wait for response from server
+        /// when executing a command
+        /// </summary>
+        bool WaitForResponse { get; set; }
     }
 }

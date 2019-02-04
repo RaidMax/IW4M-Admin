@@ -39,6 +39,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlugins", "{3F9ACC27-26DB-49FA-BCD2-50C54A49C9FA}"
 	ProjectSection(SolutionItems) = preProject
 		Plugins\ScriptPlugins\ParserIW3.js = Plugins\ScriptPlugins\ParserIW3.js
+		Plugins\ScriptPlugins\ParserPT6.js = Plugins\ScriptPlugins\ParserPT6.js
 		Plugins\ScriptPlugins\ParserTeknoMW3.js = Plugins\ScriptPlugins\ParserTeknoMW3.js
 		Plugins\ScriptPlugins\SharedGUIDKick.js = Plugins\ScriptPlugins\SharedGUIDKick.js
 		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js

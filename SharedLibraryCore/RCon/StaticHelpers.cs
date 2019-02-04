@@ -24,7 +24,12 @@ namespace SharedLibraryCore.RCon
             /// retrieve the value of a DVAR
             /// RCon password is required
             /// </summary>
-            DVAR,
+            GET_DVAR,
+            /// <summary>
+            /// set the value of a DVAR
+            /// RCon password is required
+            /// </summary>
+            SET_DVAR,
             /// <summary>
             /// execute a command
             /// RCon password is required

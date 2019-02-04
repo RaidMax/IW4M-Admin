@@ -45,7 +45,7 @@ namespace SharedLibraryCore.RCon
             Config = config;
         }
 
-        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", bool waitForResponse = true)
+        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
         {
             if (!ActiveQueries.ContainsKey(this.Endpoint))
             {
@@ -75,18 +75,26 @@ namespace SharedLibraryCore.RCon
 #endif
 
             byte[] payload = null;
+            bool waitForResponse = Config.WaitForResponse;
 
             switch (type)
             {
-                case StaticHelpers.QueryType.DVAR:
+                case StaticHelpers.QueryType.GET_DVAR:
+                    waitForResponse |= true;
+                    payload = (string.Format(Config.CommandPrefixes.RConGetDvar, RConPassword, parameters + '\0')).Select(Convert.ToByte).ToArray();
+                    break;
+                case StaticHelpers.QueryType.SET_DVAR:
+                    payload = (string.Format(Config.CommandPrefixes.RConSetDvar, RConPassword, parameters + '\0')).Select(Convert.ToByte).ToArray();
+                    break;
                 case StaticHelpers.QueryType.COMMAND:
-                    payload = Utilities.EncodingType
-                        .GetBytes(string.Format(Config.CommandPrefixes.RConQuery, RConPassword, parameters + '\0'));
+                    payload = (string.Format(Config.CommandPrefixes.RConCommand, RConPassword, parameters + '\0')).Select(Convert.ToByte).ToArray();
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
+                    waitForResponse |= true;
                     payload = (Config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
                     break;
                 case StaticHelpers.QueryType.GET_INFO:
+                    waitForResponse |= true;
                     payload = (Config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
                     break;
             }

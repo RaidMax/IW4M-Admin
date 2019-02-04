@@ -389,6 +389,7 @@ namespace IW4MAdmin
                     var dict = (Dictionary<string, string>)E.Extra;
                     Gametype = dict["g_gametype"].StripColors();
                     Hostname = dict["sv_hostname"].StripColors();
+                    MaxClients = Int32.Parse(dict["sv_maxclients"]);
 
                     string mapname = dict["mapname"].StripColors();
                     CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
@@ -666,10 +667,10 @@ namespace IW4MAdmin
         public async Task Initialize()
         {
             RconParser = Manager.AdditionalRConParsers
-                .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
+                .FirstOrDefault(_parser => _parser.Version == ServerConfig.CustomParserVersion);
 
             EventParser = Manager.AdditionalEventParsers
-                .FirstOrDefault(_parser => _parser.Version == Manager.GetApplicationSettings().Configuration().CustomParserVersion);
+                .FirstOrDefault(_parser => _parser.Version == ServerConfig.CustomParserVersion);
 
             RconParser = RconParser ?? new BaseRConParser();
             EventParser = EventParser ?? new BaseEventParser();
@@ -680,20 +681,10 @@ namespace IW4MAdmin
             Version = version.Value;
             GameName = Utilities.GetGame(version?.Value);
 
-            if (GameName == Game.T5M)
-            {
-                EventParser = new T5MEventParser();
-            }
-
-            else if (GameName == Game.T6M)
-            {
-                EventParser = new T6MEventParser();
-            }
-
-            else if (version.Value.Length != 0)
+            if (version?.Value?.Length != 0)
             {
                 RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? RconParser;
-                EventParser = Manager.AdditionalEventParsers.First(_parser => _parser.Version == version.Value) ?? EventParser;
+                EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? EventParser;
             }
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;

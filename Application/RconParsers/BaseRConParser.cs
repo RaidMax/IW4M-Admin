@@ -42,7 +42,7 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConName, 5);
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 7);
 
-            Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)\" default: \"(.+)\"\n(?:latched: \"(.+)\"\n)? *(.+)$";
+            Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)\" default: \"(.+)?\"\n(?:latched: \"(.+)?\"\n)? *(.+)$";
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarName, 1);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarValue, 2);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDefaultValue, 3);

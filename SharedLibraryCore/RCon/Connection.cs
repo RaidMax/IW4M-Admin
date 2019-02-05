@@ -81,13 +81,13 @@ namespace SharedLibraryCore.RCon
             {
                 case StaticHelpers.QueryType.GET_DVAR:
                     waitForResponse |= true;
-                    payload = (string.Format(Config.CommandPrefixes.RConGetDvar, RConPassword, parameters + '\0')).Select(Convert.ToByte).ToArray();
+                    payload = Utilities.EncodingType.GetBytes(string.Format(Config.CommandPrefixes.RConGetDvar, RConPassword, parameters + '\0'));
                     break;
                 case StaticHelpers.QueryType.SET_DVAR:
-                    payload = (string.Format(Config.CommandPrefixes.RConSetDvar, RConPassword, parameters + '\0')).Select(Convert.ToByte).ToArray();
+                    payload = Utilities.EncodingType.GetBytes(string.Format(Config.CommandPrefixes.RConSetDvar, RConPassword, parameters + '\0'));
                     break;
                 case StaticHelpers.QueryType.COMMAND:
-                    payload = (string.Format(Config.CommandPrefixes.RConCommand, RConPassword, parameters + '\0')).Select(Convert.ToByte).ToArray();
+                    payload = Utilities.EncodingType.GetBytes(string.Format(Config.CommandPrefixes.RConCommand, RConPassword, parameters + '\0'));
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
                     waitForResponse |= true;

@@ -21,6 +21,7 @@ namespace SharedLibraryCore.Helpers
         {
 
         }
+
         public Vector3(float x, float y, float z)
         {
             X = x;

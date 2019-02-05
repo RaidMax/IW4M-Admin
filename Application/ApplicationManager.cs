@@ -210,6 +210,25 @@ namespace IW4MAdmin.Application
         {
             Running = true;
 
+
+            #region PLUGINS
+            SharedLibraryCore.Plugins.PluginImporter.Load(this);
+
+            foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+            {
+                try
+                {
+                    await Plugin.OnLoadAsync(this);
+                }
+
+                catch (Exception ex)
+                {
+                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
+                    Logger.WriteDebug(ex.GetExceptionInfo());
+                }
+            }
+            #endregion
+
             #region CONFIG
             var config = ConfigHandler.Configuration();
 
@@ -232,7 +251,18 @@ namespace IW4MAdmin.Application
 
                     do
                     {
-                        newConfig.Servers.Add((ServerConfiguration)new ServerConfiguration().Generate());
+                        var serverConfig = new ServerConfiguration();
+                        foreach (var parser in AdditionalRConParsers)
+                        {
+                            serverConfig.AddRConParser(parser);
+                        }
+
+                        foreach (var parser in AdditionalEventParsers)
+                        {
+                            serverConfig.AddEventParser(parser);
+                        }
+
+                        newConfig.Servers.Add((ServerConfiguration)serverConfig.Generate());
                     } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["SETUP_SERVER_SAVE"]));
 
                     config = newConfig;
@@ -273,24 +303,6 @@ namespace IW4MAdmin.Application
             }
 
             PrivilegedClients = (await ClientSvc.GetPrivilegedClients()).ToDictionary(_client => _client.ClientId);
-            #endregion
-
-            #region PLUGINS
-            SharedLibraryCore.Plugins.PluginImporter.Load(this);
-
-            foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
-            {
-                try
-                {
-                    await Plugin.OnLoadAsync(this);
-                }
-
-                catch (Exception ex)
-                {
-                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
-                    Logger.WriteDebug(ex.GetExceptionInfo());
-                }
-            }
             #endregion
 
             #region COMMANDS

@@ -493,6 +493,45 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
+        /// prompt user to make a selection
+        /// </summary>
+        /// <typeparam name="T">type of selection</typeparam>
+        /// <param name="question">question to prompt the user with</param>
+        /// <param name="defaultValue">default value to set if no input is entered</param>
+        /// <param name="description">description of the question's value</param>
+        /// <param name="selections">array of possible selections (should be able to convert to string)</param>
+        /// <returns></returns>
+        public static Tuple<int, T> PromptSelection<T>(string question, T defaultValue, string description = null, params T[] selections)
+        {
+            bool hasDefault = false;
+
+            if (defaultValue != null)
+            {
+                hasDefault = true;
+                selections = (new T[] { defaultValue }).Union(selections).ToArray();
+            }
+
+            Console.WriteLine($"{question}{(string.IsNullOrEmpty(description) ? "" : $" [{ description}:]")}");
+            Console.WriteLine(new string('=', 52));
+            for (int index = 0; index < selections.Length; index++)
+            {
+                Console.WriteLine($"{(hasDefault ? index : index + 1)}] {selections[index]}");
+            }
+            Console.WriteLine(new string('=', 52));
+
+            int selectionIndex = PromptInt(CurrentLocalization.LocalizationIndex["SETUP_PROMPT_MAKE_SELECTION"], null, hasDefault ? 0 : 1, selections.Length, hasDefault ? 0 : (int?)null);
+
+            if (!hasDefault)
+            {
+                selectionIndex--;
+            }
+
+            T selection = selections[selectionIndex ];
+
+            return Tuple.Create(selectionIndex, selection);
+        }
+
+        /// <summary>
         /// prompt user to enter a number
         /// </summary>
         /// <param name="question">question to prompt with</param>
@@ -503,7 +542,7 @@ namespace SharedLibraryCore
         /// <returns>integer from user's input</returns>
         public static int PromptInt(this string question, string description = null, int minValue = 0, int maxValue = int.MaxValue, int? defaultValue = null)
         {
-            Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue.Value.ToString()}")}]: ");
+            Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue.Value.ToString()}]")}: ");
             int response;
 
             string inputOrDefault()

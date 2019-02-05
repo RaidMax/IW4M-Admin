@@ -283,6 +283,24 @@ namespace IW4MAdmin.Application
                     config.WebfrontBindUrl = "http://0.0.0.0:1624";
                     await ConfigHandler.Save();
                 }
+
+                foreach (var serverConfig in config.Servers)
+                {
+                    if (serverConfig.RConParserVersion == null || serverConfig.EventParserVersion == null)
+                    {
+                        foreach (var parser in AdditionalRConParsers)
+                        {
+                            serverConfig.AddRConParser(parser);
+                        }
+
+                        foreach (var parser in AdditionalEventParsers)
+                        {
+                            serverConfig.AddEventParser(parser);
+                        }
+
+                        serverConfig.ModifyParsers();
+                    }
+                }
             }
 
             else if (config.Servers.Count == 0)

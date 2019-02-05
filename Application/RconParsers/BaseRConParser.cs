@@ -19,8 +19,8 @@ namespace IW4MAdmin.Application.RconParsers
             {
                 CommandPrefixes = new CommandPrefix()
                 {
-                    Tell = "tellraw {0} {1}",
-                    Say = "sayraw {0}",
+                    Tell = "tell {0} {1}",
+                    Say = "say {0}",
                     Kick = "clientkick {0} \"{1}\"",
                     Ban = "clientkick {0} \"{1}\"",
                     TempBan = "tempbanclient {0} \"{1}\"",
@@ -42,7 +42,7 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConName, 5);
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 7);
 
-            Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)\" default: \"(.+)?\"\n(?:latched: \"(.+)?\"\n)? *(.+)$";
+            Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)?\" default: \"(.+)?\"\n(?:latched: \"(.+)?\"\n)? *(.+)$";
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarName, 1);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarValue, 2);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDefaultValue, 3);
@@ -52,7 +52,7 @@ namespace IW4MAdmin.Application.RconParsers
 
         public IRConParserConfiguration Configuration { get; set; }
 
-        public string Version { get; set; } = "IW4x (v0.6.0)";
+        public string Version { get; set; } = "CoD";
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {

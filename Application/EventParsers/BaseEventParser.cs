@@ -13,7 +13,7 @@ namespace IW4MAdmin.Application.EventParsers
         {
             Configuration = new DynamicEventParserConfiguration()
             {
-                GameDirectory = "userraw",
+                GameDirectory = "main",
             };
 
             Configuration.Say.Pattern = @"^(say|sayteam);(.{8,32});([0-9]+);(.+);(.*)$";
@@ -68,7 +68,7 @@ namespace IW4MAdmin.Application.EventParsers
 
         public IEventParserConfiguration Configuration { get; set; }
 
-        public string Version { get; set; } = "IW4x (v0.6.0)";
+        public string Version { get; set; } = "CoD";
 
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
@@ -215,6 +215,8 @@ namespace IW4MAdmin.Application.EventParsers
                 var regexMatch = Regex.Match(logLine, Configuration.Join.Pattern);
                 if (regexMatch.Success)
                 {
+                    bool isBot = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().Contains("bot");
+
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.PreConnect,
@@ -230,7 +232,8 @@ namespace IW4MAdmin.Application.EventParsers
                             NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
-                            CurrentServer = server
+                            CurrentServer = server,
+                            IsBot = isBot
                         }
                     };
                 }

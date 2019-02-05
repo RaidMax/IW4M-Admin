@@ -13,7 +13,8 @@ namespace SharedLibraryCore.Configuration
         public IList<string> Rules { get; set; }
         public IList<string> AutoMessages { get; set; }
         public string ManualLogPath { get; set; }
-        public string CustomParserVersion { get; set; }
+        public string RConParserVersion { get; set; }
+        public string EventParserVersion { get; set; }
         public int ReservedSlotNumber { get; set; }
 
         private readonly IList<IRConParser> rconParsers;
@@ -27,6 +28,27 @@ namespace SharedLibraryCore.Configuration
 
         public void AddRConParser(IRConParser parser) => rconParsers.Add(parser);
         public void AddEventParser(IEventParser parser) => eventParsers.Add(parser);
+
+        public void ModifyParsers()
+        {
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            var parserVersions = rconParsers.Select(_parser => _parser.Version).ToArray();
+            var selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_RCON_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
+
+            if (selection.Item1 > 0)
+            {
+                RConParserVersion = selection.Item2;
+            }
+
+            parserVersions = eventParsers.Select(_parser => _parser.Version).ToArray();
+            Console.WriteLine($"{IPAddress}:{Port}");
+            selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_EVENT_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
+
+            if (selection.Item1 > 0)
+            {
+                EventParserVersion = selection.Item2;
+            }
+        }
 
         public IBaseConfiguration Generate()
         {
@@ -52,21 +74,7 @@ namespace SharedLibraryCore.Configuration
             Rules = new List<string>();
             ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(null, 0, 32);
 
-            var parserVersions = rconParsers.Select(_parser => _parser.Version).ToArray();
-            var selection = Utilities.PromptSelection(loc["SETUP_SERVER_RCON_PARSER_VERSION"], $"{loc["SETUP_PROMPT_DEFAULT"]} (IW4x)", null, parserVersions);
-
-            if (selection.Item1 > 0)
-            {
-                CustomParserVersion = selection.Item2;
-            }
-
-            parserVersions = eventParsers.Select(_parser => _parser.Version).ToArray();
-            selection = Utilities.PromptSelection(loc["SETUP_SERVER_EVENT_PARSER_VERSION"], $"{loc["SETUP_PROMPT_DEFAULT"]} (IW4x)", null, parserVersions);
-
-            if (selection.Item1 > 0)
-            {
-                CustomParserVersion = selection.Item2;
-            }
+            ModifyParsers();
 
             return this;
         }

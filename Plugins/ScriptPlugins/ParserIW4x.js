@@ -14,15 +14,15 @@ var plugin = {
         rconParser = manager.GenerateDynamicRConParser();
         eventParser = manager.GenerateDynamicEventParser();
 
-        rconParser.Configuration.CommandPrefixes.Tell    = 'tell {0} {1}';
-        rconParser.Configuration.CommandPrefixes.Say     = 'say {0}';
+        rconParser.Configuration.CommandPrefixes.Tell    = 'tellraw {0} {1}';
+        rconParser.Configuration.CommandPrefixes.Say     = 'sayraw {0}';
         rconParser.Configuration.CommandPrefixes.Kick    = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban     = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"';
-        rconParser.Version = 'CoD4 MP 1.8 build 13620 Thu Oct 04 00:43:04 2007 win-x86';
+        eventParser.Configuration.GameDirectory = 'userraw';
 
-        eventParser.Configuration.GameDirectory = 'main';
-        eventParser.Version = 'CoD4 MP 1.8 build 13620 Thu Oct 04 00:43:04 2007 win-x86';
+        rconParser.Version = 'IW4x (v0.6.0)';
+        eventParser.Version = 'IW4x (v0.6.0)';
     },
 
     onUnloadAsync: function () {

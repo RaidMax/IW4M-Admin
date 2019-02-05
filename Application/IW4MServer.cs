@@ -667,10 +667,10 @@ namespace IW4MAdmin
         public async Task Initialize()
         {
             RconParser = Manager.AdditionalRConParsers
-                .FirstOrDefault(_parser => _parser.Version == ServerConfig.CustomParserVersion);
+                .FirstOrDefault(_parser => _parser.Version == ServerConfig.RConParserVersion);
 
             EventParser = Manager.AdditionalEventParsers
-                .FirstOrDefault(_parser => _parser.Version == ServerConfig.CustomParserVersion);
+                .FirstOrDefault(_parser => _parser.Version == ServerConfig.EventParserVersion);
 
             RconParser = RconParser ?? new BaseRConParser();
             EventParser = EventParser ?? new BaseEventParser();

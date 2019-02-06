@@ -1,4 +1,6 @@
-﻿namespace SharedLibraryCore.Interfaces
+﻿using static SharedLibraryCore.Server;
+
+namespace SharedLibraryCore.Interfaces
 {
     public interface IEventParser
     {
@@ -15,6 +17,15 @@
         /// </summary>
         /// <returns>Game directory prefix</returns>
         IEventParserConfiguration Configuration { get; set; }
+
+        /// <summary>
+        /// stores the game/client specific version (usually the value of the "version" DVAR)
+        /// </summary>
         string Version { get; set; }
+
+        /// <summary>
+        /// specifies the game name (usually the internal studio iteration ie: IW4, T5 etc...)
+        /// </summary>
+        Game GameName { get; set; }
     }
 }

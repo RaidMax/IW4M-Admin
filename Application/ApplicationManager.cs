@@ -299,6 +299,7 @@ namespace IW4MAdmin.Application
                         }
 
                         serverConfig.ModifyParsers();
+                        await ConfigHandler.Save();
                     }
                 }
             }

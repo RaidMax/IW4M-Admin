@@ -11,7 +11,6 @@ namespace IW4MAdmin.Application.RconParsers
     sealed internal class DynamicRConParserConfiguration : IRConParserConfiguration
     {
         public CommandPrefix CommandPrefixes { get; set; }
-        public Server.Game GameName { get; set; }
         public ParserRegex Status { get; set; } = new ParserRegex();
         public ParserRegex Dvar { get; set; } = new ParserRegex();
         public bool WaitForResponse { get; set; } = true;

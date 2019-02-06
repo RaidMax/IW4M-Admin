@@ -367,14 +367,9 @@ namespace SharedLibraryCore
                 return Game.T4;
             }
 
-            if (gameName.Contains("COD_T5_S"))
+            if (gameName.Contains("T5"))
             {
                 return Game.T5;
-            }
-
-            if (gameName.Contains("T5M"))
-            {
-                return Game.T5M;
             }
 
             if (gameName.Contains("IW5"))
@@ -384,7 +379,7 @@ namespace SharedLibraryCore
 
             if (gameName.Contains("COD_T6_S"))
             {
-                return Game.T6M;
+                return Game.T6;
             }
 
             return Game.UKN;

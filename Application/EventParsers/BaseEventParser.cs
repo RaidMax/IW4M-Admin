@@ -4,6 +4,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -69,6 +70,8 @@ namespace IW4MAdmin.Application.EventParsers
         public IEventParserConfiguration Configuration { get; set; }
 
         public string Version { get; set; } = "CoD";
+
+        public Game GameName { get; set; } = Game.COD;
 
         public virtual GameEvent GetEvent(Server server, string logLine)
         {

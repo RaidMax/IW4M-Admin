@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'IW3 Parser',
     isParser: true,
 
@@ -22,7 +22,9 @@ var plugin = {
         eventParser.Configuration.GameDirectory = 'userraw';
 
         rconParser.Version = 'IW4x (v0.6.0)';
+        rconParser.GameName = 2; // IW4x
         eventParser.Version = 'IW4x (v0.6.0)';
+        eventParser.GameName = 2; // IW4x
     },
 
     onUnloadAsync: function () {

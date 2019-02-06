@@ -51,5 +51,16 @@ namespace SharedLibraryCore.Interfaces
         /// stores the game/client specific version (usually the value of the "version" DVAR)
         /// </summary>
         string Version { get; set; }
+
+        /// <summary>
+        /// specifies the game name (usually the internal studio iteration ie: IW4, T5 etc...)
+        /// </summary>
+        Game GameName { get; set; }
+        
+        /// <summary>
+        /// indicates if the game supports generating a log path from DVAR retrieval
+        /// of fs_game, fs_basepath, g_log
+        /// </summary>
+        bool CanGenerateLogPath { get; set; }
     }
 }

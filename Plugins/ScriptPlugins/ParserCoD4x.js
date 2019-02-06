@@ -17,9 +17,11 @@ var plugin = {
         rconParser.Configuration.Dvar.Pattern = '^"(.+)" is: "(.+)?" default: "(.+)?" info: "(.+)?"$';
         rconParser.Configuration.Dvar.AddMapping(110, 4);
         rconParser.Version = 'CoD4 X 1.8 win_mingw-x86 build 2055 May  2 2017';
+        rconParser.GameName = 1; // IW3
 
         eventParser.Configuration.GameDirectory = 'main';
         eventParser.Version = 'CoD4 X 1.8 win_mingw-x86 build 2055 May  2 2017';
+        eventParser.GameName = 1; // IW3
     },
 
     onUnloadAsync: function () {

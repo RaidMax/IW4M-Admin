@@ -17,14 +17,16 @@ namespace SharedLibraryCore
     {
         public enum Game
         {
-            UKN,
-            IW3,
-            IW4,
-            IW5,
-            T4,
-            T5,
-            T5M,
-            T6M,
+            COD = -1,
+            UKN = 0,
+            IW3 = 1,
+            IW4 = 2,
+            IW5 = 3,
+            IW6 = 4,
+            T4  = 5,
+            T5  = 6,
+            T6  = 7,
+            T7  = 8
         }
 
         public Server(IManager mgr, ServerConfiguration config)
@@ -50,12 +52,6 @@ namespace SharedLibraryCore
         }
 
         public long EndPoint => Convert.ToInt64($"{IP.Replace(".", "")}{Port}");
-
-        //Returns current server IP set by `net_ip` -- *STRING*
-        public String GetIP()
-        {
-            return IP;
-        }
 
         //Returns current server port set by `net_port` -- *INT*
         public int GetPort()

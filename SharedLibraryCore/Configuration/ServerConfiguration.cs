@@ -38,10 +38,15 @@ namespace SharedLibraryCore.Configuration
             if (selection.Item1 > 0)
             {
                 RConParserVersion = selection.Item2;
+
+                if (!rconParsers[selection.Item1 - 1].CanGenerateLogPath)
+                {
+                    Console.WriteLine(loc["SETUP_SERVER_NO_LOG"]);
+                    ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_LOG_PATH"]);
+                }
             }
 
             parserVersions = eventParsers.Select(_parser => _parser.Version).ToArray();
-            Console.WriteLine($"{IPAddress}:{Port}");
             selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_EVENT_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
 
             if (selection.Item1 > 0)

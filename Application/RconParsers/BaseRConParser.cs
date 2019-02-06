@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Application.RconParsers
 {
@@ -31,7 +32,6 @@ namespace IW4MAdmin.Application.RconParsers
                     RConGetInfo = "ÿÿÿÿgetinfo",
                     RConResponse = "ÿÿÿÿprint",
                 },
-                GameName = Server.Game.IW4
             };
 
             Configuration.Status.Pattern = @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$";
@@ -53,6 +53,8 @@ namespace IW4MAdmin.Application.RconParsers
         public IRConParserConfiguration Configuration { get; set; }
 
         public string Version { get; set; } = "CoD";
+        public Game GameName { get; set; } = Game.COD;
+        public bool CanGenerateLogPath { get; set; } = true;
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {

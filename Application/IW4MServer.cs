@@ -679,7 +679,12 @@ namespace IW4MAdmin
 
             var version = await this.GetDvarAsync<string>("version");
             Version = version.Value;
-            GameName = Utilities.GetGame(version?.Value);
+            GameName = Utilities.GetGame(version?.Value ?? RconParser.Version);
+
+            if (GameName == Game.UKN)
+            {
+                GameName = RconParser.GameName;
+            }
 
             if (version?.Value?.Length != 0)
             {
@@ -733,12 +738,12 @@ namespace IW4MAdmin
             this.Gametype = gametype;
             this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
 
-            if (logsync.Value == 0 || logfile.Value == string.Empty)
+            if ((logsync.Value == 0 || logfile.Value == string.Empty) && RconParser.CanGenerateLogPath)
             {
                 // this DVAR isn't set until the a map is loaded
                 await this.SetDvarAsync("logfile", 2);
                 await this.SetDvarAsync("g_logsync", 2); // set to 2 for continous in other games, clamps to 1 for IW4
-                await this.SetDvarAsync("g_log", "games_mp.log");
+                //await this.SetDvarAsync("g_log", "games_mp.log");
                 Logger.WriteWarning("Game log file not properly initialized, restarting map...");
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");

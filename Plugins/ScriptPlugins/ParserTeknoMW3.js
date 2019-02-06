@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'Tekno MW3 Parser',
     isParser: true,
 
@@ -27,9 +27,12 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(107, 1); // RCon DvarValue
         rconParser.Configuration.Dvar.Pattern = '^(.*)$';
         rconParser.Version = 'IW5 MP 1.4 build 382 latest Thu Jan 19 2012 11:09:49AM win-x86';
+        rconParser.GameName = 3; // IW5
+        rconParser.CanGenerateLogPath = false;
 
         eventParser.Configuration.GameDirectory = 'scripts';
         eventParser.Version = 'IW5 MP 1.4 build 382 latest Thu Jan 19 2012 11:09:49AM win-x86';
+        eventParser.GameName = 3; // IW5
     },
 
     onUnloadAsync: function () {

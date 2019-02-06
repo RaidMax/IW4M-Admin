@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'Plutoniun T6 Parser',
     isParser: true,
 
@@ -34,11 +34,12 @@ var plugin = {
         rconParser.Configuration.Status.AddMapping(104, 6);
         rconParser.Configuration.Status.AddMapping(105, 8);
 
-
-        eventParser.Configuration.GameDirectory = 't6r\\\\data';
+        eventParser.Configuration.GameDirectory = 't6r\\data';
 
         rconParser.Version = 'Call of Duty Multiplayer - Ship COD_T6_S MP build 1.0.44 CL(1759941) CODPCAB2 CEG Fri May 9 19:19:19 2014 win-x86 813e66d5';
+        rconParser.GameName = 7; // T6
         eventParser.Version = 'Call of Duty Multiplayer - Ship COD_T6_S MP build 1.0.44 CL(1759941) CODPCAB2 CEG Fri May 9 19:19:19 2014 win-x86 813e66d5';
+        eventParser.GameName = 7; // T6
     },
 
     onUnloadAsync: function () {

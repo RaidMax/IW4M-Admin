@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -77,17 +78,28 @@ namespace SharedLibraryCore.RCon
             byte[] payload = null;
             bool waitForResponse = Config.WaitForResponse;
 
+            string converterEncoding(string text)
+            {
+                var destinationEncoding = Encoding.GetEncoding("windows-1252");
+                byte[] originalEncodedBytes = Utilities.EncodingType.GetBytes(text);
+                byte[] convertedBytes = Encoding.Convert(Utilities.EncodingType, destinationEncoding, originalEncodedBytes);
+                return destinationEncoding.GetString(convertedBytes);
+            }
+
+            string convertedRConPassword = converterEncoding(RConPassword);
+            string convertedParameters = converterEncoding(parameters);
+
             switch (type)
             {
                 case StaticHelpers.QueryType.GET_DVAR:
                     waitForResponse |= true;
-                    payload = Utilities.EncodingType.GetBytes(string.Format(Config.CommandPrefixes.RConGetDvar, RConPassword, parameters + '\0'));
+                    payload = string.Format(Config.CommandPrefixes.RConGetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                     break;
                 case StaticHelpers.QueryType.SET_DVAR:
-                    payload = Utilities.EncodingType.GetBytes(string.Format(Config.CommandPrefixes.RConSetDvar, RConPassword, parameters + '\0'));
+                    payload = string.Format(Config.CommandPrefixes.RConSetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                     break;
                 case StaticHelpers.QueryType.COMMAND:
-                    payload = Utilities.EncodingType.GetBytes(string.Format(Config.CommandPrefixes.RConCommand, RConPassword, parameters + '\0'));
+                    payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                     break;
                 case StaticHelpers.QueryType.GET_STATUS:
                     waitForResponse |= true;
@@ -144,7 +156,7 @@ namespace SharedLibraryCore.RCon
                 }
             }
 
-            string responseString = Utilities.EncodingType.GetString(response, 0, response.Length) + '\n';
+            string responseString = Encoding.GetEncoding("windows-1252").GetString(response, 0, response.Length) + '\n';
 
             if (responseString.Contains("Invalid password"))
             {
@@ -157,7 +169,8 @@ namespace SharedLibraryCore.RCon
             }
 
             string[] splitResponse = responseString.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim()).ToArray();
+                .Select(line => line.Trim())
+                .ToArray();
             return splitResponse;
         }
 

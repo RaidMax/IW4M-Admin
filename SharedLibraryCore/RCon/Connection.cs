@@ -78,16 +78,14 @@ namespace SharedLibraryCore.RCon
             byte[] payload = null;
             bool waitForResponse = Config.WaitForResponse;
 
-            string converterEncoding(string text)
-            {
-                var destinationEncoding = Encoding.GetEncoding("windows-1252");
-                byte[] originalEncodedBytes = Utilities.EncodingType.GetBytes(text);
-                byte[] convertedBytes = Encoding.Convert(Utilities.EncodingType, destinationEncoding, originalEncodedBytes);
-                return destinationEncoding.GetString(convertedBytes);
+            string convertEncoding(string text)
+            {   
+                byte[] convertedBytes = Utilities.EncodingType.GetBytes(text);
+                return Utilities.EncodingType.GetString(convertedBytes);
             }
 
-            string convertedRConPassword = converterEncoding(RConPassword);
-            string convertedParameters = converterEncoding(parameters);
+            string convertedRConPassword = convertEncoding(RConPassword);
+            string convertedParameters = convertEncoding(parameters);
 
             switch (type)
             {
@@ -108,6 +106,10 @@ namespace SharedLibraryCore.RCon
                 case StaticHelpers.QueryType.GET_INFO:
                     waitForResponse |= true;
                     payload = (Config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
+                    break;
+                case StaticHelpers.QueryType.COMMAND_STATUS:
+                    waitForResponse |= true;
+                    payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0").Select(Convert.ToByte).ToArray();
                     break;
             }
 

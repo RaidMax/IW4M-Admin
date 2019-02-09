@@ -139,13 +139,14 @@ namespace IW4MAdmin.Plugins.Welcome
                 {
                     string response = await wc.DownloadStringTaskAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}"));
                     var responseObj  = JObject.Parse(response);
+                    response = responseObj["country"].ToString();
 
-                    return responseObj["country"].ToString();
+                    return string.IsNullOrEmpty(response) ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"] : response;
                 }
 
                 catch
                 {
-                    return "a third world country";
+                    return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_IP"];
                 }
             }
         }

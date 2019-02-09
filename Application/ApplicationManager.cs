@@ -286,6 +286,8 @@ namespace IW4MAdmin.Application
 
                 foreach (var serverConfig in config.Servers)
                 {
+                    Migration.ConfigurationMigration.ModifyLogPath020919(serverConfig);
+
                     if (serverConfig.RConParserVersion == null || serverConfig.EventParserVersion == null)
                     {
                         foreach (var parser in AdditionalRConParsers)
@@ -299,8 +301,8 @@ namespace IW4MAdmin.Application
                         }
 
                         serverConfig.ModifyParsers();
-                        await ConfigHandler.Save();
                     }
+                    await ConfigHandler.Save();
                 }
             }
 

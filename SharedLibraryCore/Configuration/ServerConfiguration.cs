@@ -16,6 +16,7 @@ namespace SharedLibraryCore.Configuration
         public string RConParserVersion { get; set; }
         public string EventParserVersion { get; set; }
         public int ReservedSlotNumber { get; set; }
+        public Uri GameLogServerUrl { get; set; }
 
         private readonly IList<IRConParser> rconParsers;
         private readonly IList<IEventParser> eventParsers;

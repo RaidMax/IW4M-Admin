@@ -17,13 +17,13 @@ namespace IW4MAdmin.Application.IO
     {
         readonly IEventParser Parser;
         readonly IGameLogServer Api;
-        readonly string LogFile;
+        readonly string logPath;
 
-        public GameLogReaderHttp(string logFile, IEventParser parser)
+        public GameLogReaderHttp(Uri gameLogServerUri, string logPath, IEventParser parser)
         {
-            LogFile = logFile;
+            this.logPath = logPath.ToBase64UrlSafeString(); ;
             Parser = parser;
-            Api = RestClient.For<IGameLogServer>(logFile);
+            Api = RestClient.For<IGameLogServer>(gameLogServerUri);
         }
 
         public long Length => -1;
@@ -36,12 +36,12 @@ namespace IW4MAdmin.Application.IO
             server.Logger.WriteDebug($"Begin reading from http log");
 #endif
             var events = new List<GameEvent>();
-            string b64Path = server.LogPath.ToBase64UrlSafeString();
+            string b64Path = logPath;
             var response = await Api.Log(b64Path);
 
             if (!response.Success)
             {
-                server.Logger.WriteError($"Could not get log server info of {LogFile}/{b64Path} ({server.LogPath})");
+                server.Logger.WriteError($"Could not get log server info of {logPath}/{b64Path} ({server.LogPath})");
                 return events;
             }
 

@@ -266,9 +266,14 @@ namespace SharedLibraryCore
         public static long ConvertLong(this string str)
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
-            if (Int64.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
+            if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
             {
                 return id;
+            }
+
+            if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
+            {
+                return (uint)id;
             }
 
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
@@ -639,6 +644,13 @@ namespace SharedLibraryCore
 
             return cmdLine.Length > 1 ? cmdLine[1] : cmdLine[0];
         }
+
+        /// <summary>
+        /// indicates if the given log path is a remote (http) uri
+        /// </summary>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        public static bool IsRemoteLog(this string log) => (log ?? "").StartsWith("http");
 
         public static string ToBase64UrlSafeString(this string src)
         {

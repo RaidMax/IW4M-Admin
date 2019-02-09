@@ -750,47 +750,36 @@ namespace IW4MAdmin
             }
 
             CustomCallback = await ScriptLoaded();
-            string mainPath = EventParser.Configuration.GameDirectory;
-            string logPath = string.Empty;
-
-            LogPath = string.IsNullOrEmpty(game) ?
-                   $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile?.Value}" :
-                   $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game?.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile?.Value}";
-
-            bool remoteLog = false;
-            if (GameName == Game.IW5 || ServerConfig.ManualLogPath?.Length > 0)
+            
+            // they've manually specified the log path
+            if (!string.IsNullOrEmpty(ServerConfig.ManualLogPath))
             {
-                logPath = ServerConfig.ManualLogPath;
-                remoteLog = logPath.StartsWith("http");
-            }
-            else
-            {
-                logPath = LogPath;
-            }
-
-            if (remoteLog)
-            {
-                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
+                LogPath = ServerConfig.ManualLogPath;
             }
 
             else
             {
+                string mainPath = EventParser.Configuration.GameDirectory;
+
+                LogPath = string.IsNullOrEmpty(game) ?
+                       $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile?.Value}" :
+                       $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game?.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile?.Value}";
+
                 // fix wine drive name mangling
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
+                    LogPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
                 }
 
-                if (!File.Exists(logPath))
+                if (!File.Exists(LogPath))
                 {
-                    Logger.WriteError($"{logPath} {loc["SERVER_ERROR_DNE"]}");
-                    throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {logPath}");
+                    Logger.WriteError($"{LogPath} {loc["SERVER_ERROR_DNE"]}");
+                    throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {LogPath}");
                 }
-
-                LogEvent = new GameLogEventDetection(this, logPath, logfile.Value);
             }
 
-            Logger.WriteInfo($"Log file is {logPath}");
+            LogEvent = new GameLogEventDetection(this, LogPath, ServerConfig.GameLogServerUrl);
+            Logger.WriteInfo($"Log file is {LogPath}");
 
             _ = Task.Run(() => LogEvent.PollForChanges());
 #if !DEBUG

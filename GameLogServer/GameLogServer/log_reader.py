@@ -15,7 +15,7 @@ class LogReader(object):
         if re.search('r^.+\.\.\\.+$', path):
             return False
         # must be a valid log path and log file
-        if not re.search(r'^.+[\\|\/](userraw|mods|main)[\\|\/].+.log$', path):
+        if not re.search(r'^.+[\\|\/](.+)[\\|\/].+.log$', path):
             return False
         # set the initialze size to the current file size
         file_size = 0

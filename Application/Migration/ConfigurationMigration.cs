@@ -56,5 +56,14 @@ namespace IW4MAdmin.Application.Migration
                 }
             }
         }
+
+        public static void ModifyLogPath020919(SharedLibraryCore.Configuration.ServerConfiguration config)
+        {
+            if (config.ManualLogPath.IsRemoteLog())
+            {
+                config.GameLogServerUrl = new Uri(config.ManualLogPath);
+                config.ManualLogPath = null;
+            }
+        }
     }
 }

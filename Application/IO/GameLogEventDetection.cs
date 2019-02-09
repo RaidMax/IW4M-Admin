@@ -19,19 +19,10 @@ namespace IW4MAdmin.Application.IO
             public string ServerId { get; set; }
         }
 
-        public GameLogEventDetection(Server server, string gameLogPath, string gameLogName)
+        public GameLogEventDetection(Server server, string gameLogPath, Uri gameLogServerUri)
         {
             GameLogFile = gameLogPath;
-            // todo: abtract this more
-            if (gameLogPath.StartsWith("http"))
-            {
-                Reader = new GameLogReaderHttp(gameLogPath, server.EventParser);
-            }
-            else
-            {
-                Reader = new GameLogReader(gameLogPath, server.EventParser);
-            }
-
+            Reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : Reader = new GameLogReader(gameLogPath, server.EventParser); 
             Server = server;
         }
 

@@ -35,6 +35,11 @@ namespace SharedLibraryCore.RCon
             /// RCon password is required
             /// </summary>
             COMMAND,
+            /// <summary>
+            /// get the full server command information
+            /// RCon password is required
+            /// </summary>
+            COMMAND_STATUS
         }
 
         /// <summary>

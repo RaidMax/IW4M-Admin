@@ -771,7 +771,7 @@ namespace IW4MAdmin
                     LogPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
                 }
 
-                if (!File.Exists(LogPath))
+                if (!File.Exists(LogPath) && ServerConfig.GameLogServerUrl == null)
                 {
                     Logger.WriteError($"{LogPath} {loc["SERVER_ERROR_DNE"]}");
                     throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {LogPath}");

@@ -266,14 +266,19 @@ namespace SharedLibraryCore
         public static long ConvertLong(this string str)
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
-            if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long id))
+            long id;
+
+            if (str.Length <= 10)
             {
-                return id;
+                if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
+                {
+                    return (uint)id;
+                }
             }
 
-            if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
+            if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
             {
-                return (uint)id;
+                return id;
             }
 
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
@@ -526,7 +531,7 @@ namespace SharedLibraryCore
                 selectionIndex--;
             }
 
-            T selection = selections[selectionIndex ];
+            T selection = selections[selectionIndex];
 
             return Tuple.Create(selectionIndex, selection);
         }
@@ -650,7 +655,10 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="log"></param>
         /// <returns></returns>
-        public static bool IsRemoteLog(this string log) => (log ?? "").StartsWith("http");
+        public static bool IsRemoteLog(this string log)
+        {
+            return (log ?? "").StartsWith("http");
+        }
 
         public static string ToBase64UrlSafeString(this string src)
         {

@@ -32,10 +32,12 @@ namespace SharedLibraryCore.RCon
 
         private readonly ILogger Log;
         private IRConParserConfiguration Config;
+        private readonly Encoding defaultEncoding;
 
         public Connection(string ipAddress, int port, string password, ILogger log, IRConParserConfiguration config)
         {
             Endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
+            defaultEncoding = Encoding.GetEncoding("windows-1252");
             RConPassword = password;
             Log = log;
             Config = config;
@@ -81,7 +83,7 @@ namespace SharedLibraryCore.RCon
             string convertEncoding(string text)
             {   
                 byte[] convertedBytes = Utilities.EncodingType.GetBytes(text);
-                return Utilities.EncodingType.GetString(convertedBytes);
+                return defaultEncoding.GetString(convertedBytes);
             }
 
             string convertedRConPassword = convertEncoding(RConPassword);

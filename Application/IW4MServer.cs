@@ -690,6 +690,7 @@ namespace IW4MAdmin
             {
                 RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? RconParser;
                 EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? EventParser;
+                Version = RconParser.Version;
             }
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;

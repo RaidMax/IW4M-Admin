@@ -4,7 +4,7 @@ from master.models.servermodel import ServerModel
 class ServerSchema(Schema):
     id = fields.Int(
         required=True,
-        validate=validate.Range(1, 25525525525565535, 'invalid id')
+        validate=validate.Range(0, 25525525525565535, 'invalid id')
     )
     ip = fields.Str(
         required=True
@@ -35,7 +35,7 @@ class ServerSchema(Schema):
     )
     map = fields.String(
         required=True,
-        validate=validate.Length(1, 32, 'invalid map name')
+        validate=validate.Length(0, 64, 'invalid map name')
     )
     gametype = fields.String(
         required=True,

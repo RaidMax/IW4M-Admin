@@ -5,6 +5,7 @@ from marshmallow import ValidationError
 from master.schema.instanceschema import InstanceSchema
 from master import ctx
 import json
+from netaddr import IPAddress
 
 class Instance(Resource):
     def get(self, id=None):
@@ -23,7 +24,7 @@ class Instance(Resource):
     def put(self, id):
         try:
             for server in request.json['servers']:
-                if 'ip' not in server or server['ip'] == 'localhost':
+                if 'ip' not in server or IPAddress(server['ip']).is_private() or IPAddress(server['ip']).is_loopback():
                     server['ip'] = request.remote_addr
                 if 'version' not in server:
                     server['version'] = 'Unknown'

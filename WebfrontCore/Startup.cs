@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database;
+using System.Linq;
+using WebfrontCore.Middleware;
 
 namespace WebfrontCore
 {
@@ -47,22 +49,31 @@ namespace WebfrontCore
                     options.AccessDeniedPath = "/";
                     options.LoginPath = "/";
                 });
+
+#if DEBUG
+            services.AddLogging(_builder =>
+            {
+                _builder.AddDebug();
+            });
+#endif
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            //loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-
             if (env.IsDevelopment())
             {
-                loggerFactory.AddDebug();
                 app.UseDeveloperExceptionPage();
             }
 
             else
             {
                 app.UseExceptionHandler("/Home/Error");
+            }
+
+            if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
+            {
+                app.UseMiddleware<IPWhitelist>(Program.Manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
             }
 
             app.UseStaticFiles();

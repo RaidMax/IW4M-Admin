@@ -268,7 +268,7 @@ namespace SharedLibraryCore
             str = str.Substring(0, Math.Min(str.Length, 16));
             long id;
 
-            if (str.Length <= 10)
+            if (str.Length <= 11) // 10 numeric characters + signed character
             {
                 if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
                 {

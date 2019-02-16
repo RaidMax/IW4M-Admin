@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database;
-using System.Linq;
 using WebfrontCore.Middleware;
 
 namespace WebfrontCore
@@ -30,15 +30,27 @@ namespace WebfrontCore
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
-            var mvcBuilder = services.AddMvc();
+            var mvcBuilder = services.AddMvc()
+                .ConfigureApplicationPartManager(_ =>
+                {
+                    foreach (var assembly in Program.Manager.GetPluginAssemblies())
+                    {
+                        if (assembly.FullName.Contains("Views"))
+                        {
+                            _.ApplicationParts.Add(new CompiledRazorAssemblyPart(assembly));
+                        }
+
+                        else if (assembly.FullName.Contains("Web"))
+                        {
+                            _.ApplicationParts.Add(new AssemblyPart(assembly));
+                        }
+                    }
+                });
 
             foreach (var asm in Program.Manager.GetPluginAssemblies())
-                mvcBuilder.AddApplicationPart(asm);
-
-            services.Configure<RazorViewEngineOptions>(o =>
             {
-                o.ViewLocationFormats.Add("/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
-            });
+                mvcBuilder.AddApplicationPart(asm);
+            }
 
             services.AddEntityFrameworkSqlite()
                 .AddDbContext<DatabaseContext>();

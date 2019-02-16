@@ -12,6 +12,7 @@ namespace SharedLibraryCore.Plugins
         public static List<Command> ActiveCommands = new List<Command>();
         public static List<IPlugin> ActivePlugins = new List<IPlugin>();
         public static List<Assembly> PluginAssemblies = new List<Assembly>();
+        public static List<Assembly> Assemblies = new List<Assembly>();
 
         public static bool Load(IManager Manager)
         {
@@ -58,6 +59,7 @@ namespace SharedLibraryCore.Plugins
             {
                 if (Plugin != null)
                 {
+                    Assemblies.Add(Plugin);
                     Type[] types = Plugin.GetTypes();
                     foreach (Type assemblyType in types)
                     {

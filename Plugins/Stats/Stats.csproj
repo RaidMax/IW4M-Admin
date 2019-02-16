@@ -16,12 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Web\Views\Stats\_MessageContext.cshtml">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
     <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj" />
   </ItemGroup>
@@ -33,9 +27,4 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
   </Target>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="xcopy /E /K /Y /C /I &quot;$(ProjectDir)Web\Views&quot;  &quot;$(SolutionDir)WebfrontCore\Views\Plugins&quot;&#xD;&#xA;xcopy /E /K /Y /C /I &quot;$(ProjectDir)Web\wwwroot\images&quot;  &quot;$(SolutionDir)WebfrontCore\wwwroot\images&quot;" />
-  </Target>
-
 </Project>

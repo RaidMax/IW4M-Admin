@@ -594,7 +594,7 @@ namespace IW4MAdmin.Application
 
         public IList<Assembly> GetPluginAssemblies()
         {
-            return SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies;
+            return SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies.Union(SharedLibraryCore.Plugins.PluginImporter.Assemblies).ToList();
         }
 
         public IPageList GetPageList()

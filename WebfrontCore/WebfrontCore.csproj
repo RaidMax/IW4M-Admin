@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
-    <RazorCompileOnBuild>false</RazorCompileOnBuild>
+    <RazorCompileOnBuild>true</RazorCompileOnBuild>
     <RazorCompileOnPublish>true</RazorCompileOnPublish>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
@@ -33,7 +33,6 @@
     <Content Remove="bower.json" />
     <Content Remove="bundleconfig.json" />
     <Content Remove="compilerconfig.json" />
-    <Content Remove="Views\Plugins\Stats\_RatingHistory.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +43,7 @@
 
   <ItemGroup>
     <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
+    <Content Update="Views\*.*" CopyToPublishDirectory="Never" />
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\images\icon.png" CopyToPublishDirectory="Always" />

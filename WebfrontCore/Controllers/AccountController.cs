@@ -21,9 +21,11 @@ namespace WebfrontCore.Controllers
             try
             {
                 var client = Manager.GetPrivilegedClients()[clientId];
-                string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt));
 
-                if (hashedPassword[0] == client.Password)
+                // string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt));
+                //if (hashedPassword[0] == client.Password)
+
+                if (Manager.TokenAuthenticator.AuthorizeToken(client.NetworkId, password))
                 {
                     var claims = new[]
                     {
@@ -60,13 +62,6 @@ namespace WebfrontCore.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
-        }
-
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> GenerateLoginTokenAsync()
-        {
-            return Json(new { token = Manager.TokenAuthenticator.GenerateNextToken(Client.NetworkId) });
         }
     }
 }

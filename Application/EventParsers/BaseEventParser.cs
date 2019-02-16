@@ -87,7 +87,7 @@ namespace IW4MAdmin.Application.EventParsers
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.JoinTeam,
-                    Data = eventType,
+                    Data = logLine,
                     Origin = origin,
                     Owner = server
                 };
@@ -203,7 +203,7 @@ namespace IW4MAdmin.Application.EventParsers
                         return new GameEvent()
                         {
                             Type = GameEvent.EventType.Damage,
-                            Data = eventType,
+                            Data = logLine,
                             Origin = origin,
                             Target = target,
                             Owner = server

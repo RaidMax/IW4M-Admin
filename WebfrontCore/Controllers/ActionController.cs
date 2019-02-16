@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using WebfrontCore.ViewModels;
@@ -181,6 +182,26 @@ namespace WebfrontCore.Controllers
                 serverId = server.EndPoint,
                 command = $"!setlevel @{targetId} {level}"
             }));
+        }
+
+        public async Task<IActionResult> GenerateLoginTokenForm()
+        {
+            var info = new ActionInfo()
+            {
+                ActionButtonLabel = "Generate",
+                Name = "GenerateLoginToken",
+                Action = "GenerateLoginTokenAsync",
+                Inputs = new List<InputInfo>()
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        [Authorize]
+        public string GenerateLoginTokenAsync()
+        {
+            var state = Manager.TokenAuthenticator.GenerateNextToken(Client.NetworkId);
+            return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token, $"{state.RemainingTime} {Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}", Client.ClientId);
         }
     }
 }

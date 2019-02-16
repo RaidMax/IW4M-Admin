@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
@@ -10,15 +11,8 @@ namespace IW4MAdmin.Application.Misc
     {
         private readonly ConcurrentDictionary<long, TokenState> _tokens;
         private readonly RNGCryptoServiceProvider _random;
-        private readonly static TimeSpan _timeoutPeriod = new TimeSpan(0, 0, 30);
+        private readonly static TimeSpan _timeoutPeriod = new TimeSpan(0, 0, 120);
         private const short TOKEN_LENGTH = 4;
-
-        private class TokenState
-        {
-            public long NetworkId { get; set; }
-            public DateTime RequestTime { get; set; } = DateTime.Now;
-            public string Token { get; set; }
-        }
 
         public TokenAuthentication()
         {
@@ -38,32 +32,44 @@ namespace IW4MAdmin.Application.Misc
             return authorizeSuccessful;
         }
 
-        public string GenerateNextToken(long networkId)
+        public TokenState GenerateNextToken(long networkId)
         {
             TokenState state = null;
+
             if (_tokens.ContainsKey(networkId))
             {
                 state = _tokens[networkId];
 
-                if ((DateTime.Now - state.RequestTime) < _timeoutPeriod)
+                if ((DateTime.Now - state.RequestTime) > _timeoutPeriod)
                 {
-                    return null;
+                    _tokens.TryRemove(networkId, out TokenState _);
                 }
 
                 else
                 {
-                    _tokens.TryRemove(networkId, out TokenState _);
+                    return state;
                 }
             }
 
             state = new TokenState()
             {
                 NetworkId = networkId,
-                Token = _generateToken()
+                Token = _generateToken(),
+                TokenDuration = _timeoutPeriod
             };
 
             _tokens.TryAdd(networkId, state);
-            return state.Token;
+
+            // perform some housekeeping so we don't have built up tokens if they're not ever used
+            foreach (var (key, value) in _tokens)
+            {
+                if ((DateTime.Now - value.RequestTime) > _timeoutPeriod)
+                {
+                    _tokens.TryRemove(key, out TokenState _);
+                }
+            }
+
+            return state;
         }
 
         public string _generateToken()

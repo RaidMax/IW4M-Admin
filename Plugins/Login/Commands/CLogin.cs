@@ -1,8 +1,5 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Plugins.Login.Commands
@@ -22,18 +19,22 @@ namespace IW4MAdmin.Plugins.Login.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var client = E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId];
-            string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(E.Data, client.PasswordSalt));
+            bool success = E.Owner.Manager.TokenAuthenticator.AuthorizeToken(E.Origin.NetworkId, E.Data);
 
-            if (hashedPassword[0] == client.Password)
+            if (!success)
             {
-                Plugin.AuthorizedClients[E.Origin.ClientId] = true;
-                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]);
+                string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(E.Data, client.PasswordSalt));
+
+                if (hashedPassword[0] == client.Password)
+                {
+                    success = true;
+                    Plugin.AuthorizedClients[E.Origin.ClientId] = true;
+                }
             }
 
-            else
-            {
+            _ = success ?
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]) :
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
-            }
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharedLibraryCore.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,7 +12,7 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="networkId">network id of the players to generate the token for</param>
         /// <returns>4 character string token</returns>
-        string GenerateNextToken(long networkId);
+        TokenState GenerateNextToken(long networkId);
 
         /// <summary>
         /// authorizes given token

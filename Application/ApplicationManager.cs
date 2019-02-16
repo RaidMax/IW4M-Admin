@@ -376,7 +376,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CPing());
             Commands.Add(new CSetGravatar());
             Commands.Add(new CNextMap());
-            Commands.Add(new GenerateTokenCommand());
+            Commands.Add(new RequestTokenCommand());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
             {

@@ -427,19 +427,20 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, long serverId)
         {
-            string regex = @"^(D);(.+);([0-9]+);(allies|axis);(.+);([0-9]+);(allies|axis);(.+);(.+);([0-9]+);(.+);(.+)$";
-            var match = Regex.Match(eventLine, regex, RegexOptions.IgnoreCase);
+            // todo: maybe do something with this
+            //string regex = @"^(D);(.+);([0-9]+);(allies|axis);(.+);([0-9]+);(allies|axis);(.+);(.+);([0-9]+);(.+);(.+)$";
+            //var match = Regex.Match(eventLine, regex, RegexOptions.IgnoreCase);
 
-            if (match.Success)
-            {
-                // this gives us what team the player is on
-                var attackerStats = Servers[serverId].PlayerStats[attackerClientId];
-                var victimStats = Servers[serverId].PlayerStats[victimClientId];
-                IW4Info.Team victimTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[4].ToString());
-                IW4Info.Team attackerTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[7].ToString());
-                attackerStats.Team = attackerTeam;
-                victimStats.Team = victimTeam;
-            }
+            //if (match.Success)
+            //{
+            //    // this gives us what team the player is on
+            //    var attackerStats = Servers[serverId].PlayerStats[attackerClientId];
+            //    var victimStats = Servers[serverId].PlayerStats[victimClientId];
+            //    IW4Info.Team victimTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[4].ToString(), true);
+            //    IW4Info.Team attackerTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[7].ToString(), true);
+            //    attackerStats.Team = attackerTeam;
+            //    victimStats.Team = victimTeam;
+            //}
         }
 
         /// <summary>

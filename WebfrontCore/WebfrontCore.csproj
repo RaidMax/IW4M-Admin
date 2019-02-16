@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
-    <RazorCompileOnBuild>true</RazorCompileOnBuild>
+    <RazorCompileOnBuild>false</RazorCompileOnBuild>
     <RazorCompileOnPublish>true</RazorCompileOnPublish>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
@@ -12,7 +12,7 @@
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>IW4MAdmin</Product>
-    <Description>IW4MAdmin is a complete server administration tool for IW4x and most Call of Duty® dedicated server</Description>
+    <Description>IW4MAdmin is a complete server administration tool for IW4x and most Call of Duty® dedicated servers</Description>
     <Copyright>2019</Copyright>
     <PackageLicenseUrl>https://github.com/RaidMax/IW4M-Admin/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://raidmax.org/IW4MAdmin</PackageProjectUrl>
@@ -74,7 +74,5 @@
     </ProjectReference>
   </ItemGroup>
 
-
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
-
 </Project>

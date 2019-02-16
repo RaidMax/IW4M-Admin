@@ -1,4 +1,4 @@
-﻿@model List<IW4MAdmin.Plugins.Stats.Web.Dtos.TopStatsInfo>
+﻿@model List<dynamic>
 @{
     Layout = null;
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex.Set;
@@ -46,7 +46,7 @@
                     </div>
                 }
                 <span class="text-muted pl-1 pr-1" style="font-size: 1.25rem;">&mdash;</span>
-                @Html.ActionLink(stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })
+                @Html.ActionLink((string)stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })
             </div>
 
             <span class="text-primary">@stat.Performance</span><span class="text-muted"> @loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"]</span><br />

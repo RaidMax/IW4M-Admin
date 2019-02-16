@@ -45,5 +45,6 @@ namespace SharedLibraryCore.Interfaces
         IRConParser GenerateDynamicRConParser();
         IEventParser GenerateDynamicEventParser();
         string Version { get;}
+        ITokenAuthentication TokenAuthenticator { get; }
     }
 }

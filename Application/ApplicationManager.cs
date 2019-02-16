@@ -1,5 +1,6 @@
 ﻿using IW4MAdmin.Application.API.Master;
 using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.Misc;
 using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
@@ -39,6 +40,10 @@ namespace IW4MAdmin.Application
         public IList<IRConParser> AdditionalRConParsers { get; }
         public IList<IEventParser> AdditionalEventParsers { get; }
 
+        public ITokenAuthentication TokenAuthenticator => Authenticator;
+
+        public ITokenAuthentication Authenticator => _authenticator;
+
         static ApplicationManager Instance;
         readonly List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
@@ -52,6 +57,7 @@ namespace IW4MAdmin.Application
         readonly IPageList PageList;
         readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
+        readonly ITokenAuthentication _authenticator;
 
         private ApplicationManager()
         {
@@ -70,6 +76,7 @@ namespace IW4MAdmin.Application
             AdditionalRConParsers = new List<IRConParser>();
             OnServerEvent += OnGameEvent;
             OnServerEvent += EventApi.OnGameEvent;
+            _authenticator = new TokenAuthentication();
         }
 
         private async void OnGameEvent(object sender, GameEventArgs args)
@@ -369,6 +376,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CPing());
             Commands.Add(new CSetGravatar());
             Commands.Add(new CNextMap());
+            Commands.Add(new GenerateTokenCommand());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
             {

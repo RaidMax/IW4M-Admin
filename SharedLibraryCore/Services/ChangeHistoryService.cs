@@ -4,6 +4,7 @@ using SharedLibraryCore.Events;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,6 +33,13 @@ namespace SharedLibraryCore.Services
                     };
                     break;
                 case GameEvent.EventType.Command:
+                    if (e.Extra is Command cmd)
+                    {
+                        if (cmd.Name == "login" || cmd.Name == "setpassword")
+                        {
+                            e.Message = string.Join(' ', e.Message.Split(" ").Select((arg, index) => index > 0 ? "*****" : arg));
+                        }
+                    }
                     change = new EFChangeHistory()
                     {
                         OriginEntityId = e.Origin.ClientId,

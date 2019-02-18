@@ -197,7 +197,8 @@ namespace SharedLibraryCore.Services
                                               Offense = penalty.Offense,
                                               Type = penalty.Type.ToString(),
                                               TimeRemaining = penalty.Expires.HasValue ? (now > penalty.Expires ? "" : penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
-                                              AutomatedOffense = penalty.AutomatedOffense
+                                              AutomatedOffense = penalty.AutomatedOffense,
+                                              Expired = penalty.Expires.HasValue && penalty.Expires <= DateTime.UtcNow
                                           },
                                           When = penalty.When,
                                           Sensitive = penalty.Type == Penalty.PenaltyType.Flag
@@ -216,6 +217,11 @@ namespace SharedLibraryCore.Services
                         if (pi.TimeRemaining?.Length > 0)
                         {
                             pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
+
+                            if (!pi.Expired)
+                            {
+                                pi.TimeRemaining = $"{pi.TimeRemaining} {Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]}";
+                            }
                         }
                     });
                     return list;

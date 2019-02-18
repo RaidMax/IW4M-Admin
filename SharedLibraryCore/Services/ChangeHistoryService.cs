@@ -5,7 +5,6 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Services
@@ -33,6 +32,7 @@ namespace SharedLibraryCore.Services
                     };
                     break;
                 case GameEvent.EventType.Command:
+                    // this prevents passwords/tokens being logged into the database in plain text
                     if (e.Extra is Command cmd)
                     {
                         if (cmd.Name == "login" || cmd.Name == "setpassword")

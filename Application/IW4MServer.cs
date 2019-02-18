@@ -97,20 +97,27 @@ namespace IW4MAdmin
 
         override public async Task OnClientDisconnected(EFClient client)
         {
-            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-            await client.OnDisconnect();
-            Clients[client.ClientNumber] = null;
 #if DEBUG == true
-            Logger.WriteDebug($"End PreDisconnect for {client}");
-#endif
-            var e = new GameEvent()
+            if (client.ClientNumber >= 0)
             {
-                Origin = client,
-                Owner = this,
-                Type = GameEvent.EventType.Disconnect
-            };
+#endif
+                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+                await client.OnDisconnect();
+                Clients[client.ClientNumber] = null;
+#if DEBUG == true
+                Logger.WriteDebug($"End PreDisconnect for {client}");
+#endif
+                var e = new GameEvent()
+                {
+                    Origin = client,
+                    Owner = this,
+                    Type = GameEvent.EventType.Disconnect
+                };
 
-            Manager.GetEventHandler().AddEvent(e);
+                Manager.GetEventHandler().AddEvent(e);
+#if DEBUG == true
+            }
+#endif
         }
 
         public override async Task ExecuteEvent(GameEvent E)
@@ -751,7 +758,7 @@ namespace IW4MAdmin
             }
 
             CustomCallback = await ScriptLoaded();
-            
+
             // they've manually specified the log path
             if (!string.IsNullOrEmpty(ServerConfig.ManualLogPath))
             {

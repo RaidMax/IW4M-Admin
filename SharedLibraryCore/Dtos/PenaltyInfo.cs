@@ -19,5 +19,6 @@ namespace SharedLibraryCore.Dtos
         public string Type { get; set; }
         public string TimePunished { get; set; }
         public string TimeRemaining { get; set; }
+        public bool Expired { get; set; }
     }
 }

@@ -95,6 +95,18 @@ namespace WebfrontCore.Controllers
                 administeredPenaltiesMeta.ForEach(p => p.Value.Offense = p.Value.AutomatedOffense ?? p.Value.Offense);
             }
 
+            var currentPenalty = activePenalties.FirstOrDefault();
+
+            if (currentPenalty != null && currentPenalty.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.TempBan)
+            {
+                clientDto.Meta.Add(new ProfileMeta()
+                {
+                    Key = Localization["WEBFRONT_CLIENT_META_REMAINING_BAN"],
+                    Value = ((currentPenalty.Expires - DateTime.UtcNow) ?? new TimeSpan()).TimeSpanText(),
+                    When = currentPenalty.When
+                });
+            }
+
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
             clientDto.Meta.AddRange(Authorized ? penaltyMeta : penaltyMeta.Where(m => !m.Sensitive));
             clientDto.Meta.AddRange(Authorized ? administeredPenaltiesMeta : administeredPenaltiesMeta.Where(m => !m.Sensitive));

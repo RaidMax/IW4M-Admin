@@ -637,7 +637,7 @@ namespace IW4MAdmin
                     && BroadcastMessages.Count > 0
                     && ClientNum > 0)
                 {
-                    string[] messages = this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage]).Split(Environment.NewLine);
+                    string[] messages = (await this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage])).Split(Environment.NewLine);
 
                     foreach (string message in messages)
                     {
@@ -978,10 +978,10 @@ namespace IW4MAdmin
 
         override public void InitializeTokens()
         {
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Manager.GetClientService().GetTotalClientsAsync().Result.ToString()));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Application.Program.Version.ToString()));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s).Result));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("ADMINS", (Server s) => SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s)));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Task.Run(() => (object)Manager.GetClientService().GetTotalClientsAsync())));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Task.Run(() => (object)Application.Program.Version.ToString())));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => Task.Run(() => (object)SharedLibraryCore.Commands.CNextMap.GetNextMap(s))));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("ADMINS", (Server s) => Task.Run(() => (object)SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s))));
         }
     }
 }

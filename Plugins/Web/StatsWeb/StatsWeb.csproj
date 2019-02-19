@@ -3,6 +3,7 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RazorCompileOnBuild>true</RazorCompileOnBuild>
     <ResolvedRazorCompileToolset>RazorSdk</ResolvedRazorCompileToolset>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

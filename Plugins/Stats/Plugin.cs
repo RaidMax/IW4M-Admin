@@ -291,32 +291,32 @@ namespace IW4MAdmin.Plugins.Stats
 
             MetaService.AddMeta(getMessages);
 
-            string totalKills(Server server)
+            async Task<object> totalKills(Server server)
             {
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
-                    long kills = ctx.Set<EFServerStatistics>().Where(s => s.Active).Sum(s => s.TotalKills);
+                    long kills = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
                     return kills.ToString("#,##0");
                 }
             }
 
-            string totalPlayTime(Server server)
+            async Task<object> totalPlayTime(Server server)
             {
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
-                    long playTime = ctx.Set<EFServerStatistics>().Where(s => s.Active).Sum(s => s.TotalPlayTime);
+                    long playTime = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
                     return (playTime / 3600.0).ToString("#,##0");
                 }
             }
 
-            string topStats(Server s)
+            async Task<object> topStats(Server s)
             {
-                return String.Join(Environment.NewLine, Commands.TopStats.GetTopStats(s).Result);
+                return String.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s));
             }
 
-            string mostPlayed(Server s)
+            async Task<object> mostPlayed(Server s)
             {
-                return String.Join(Environment.NewLine, Commands.MostPlayed.GetMostPlayed(s).Result);
+                return String.Join(Environment.NewLine, await Commands.MostPlayed.GetMostPlayed(s));
             }
 
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));

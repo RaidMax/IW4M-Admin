@@ -183,7 +183,7 @@ namespace SharedLibraryCore
             return CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
         }
 
-        public static String ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
+        public async static Task<string> ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
         {
             MatchCollection RegexMatches = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
             foreach (Match M in RegexMatches)
@@ -195,7 +195,7 @@ namespace SharedLibraryCore
 
                 if (found != null)
                 {
-                    str = str.Replace(Match, found.Process(server));
+                    str = str.Replace(Match, (await found.ProcessAsync(server)).ToString());
                 }
             }
 

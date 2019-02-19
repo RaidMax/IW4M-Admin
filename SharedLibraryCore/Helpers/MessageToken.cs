@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Helpers
 {
     public class MessageToken
     {
         public string Name { get; private set; }
-        Func<Server, string> Value;
-        public MessageToken(string Name, Func<Server, string> Value)
+        private readonly Func<Server, Task<object>> _asyncValue;
+
+
+        public MessageToken(string Name, Func<Server, Task<object>> Value)
         {
             this.Name = Name;
-            this.Value = Value;
+            _asyncValue = Value;
         }
-        
-        public string Process(Server server)
+
+        public Task<object> ProcessAsync(Server server)
         {
-            return this.Value(server);
+            return _asyncValue(server);
         }
     }
 }

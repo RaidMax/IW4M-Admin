@@ -53,6 +53,7 @@ namespace WebfrontCore.Controllers
                     .OrderBy(i => i)
                     .ToList(),
                 HasActivePenalty = activePenalties.Count > 0,
+                ActivePenaltyType = activePenalties.Count > 0 ? activePenalties.First().Type.ToString() : null,
                 Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
                 TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText(),
                 LinkedAccounts = client.LinkedAccounts

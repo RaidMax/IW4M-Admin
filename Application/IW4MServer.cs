@@ -978,10 +978,10 @@ namespace IW4MAdmin
 
         override public void InitializeTokens()
         {
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Task.Run(() => (object)Manager.GetClientService().GetTotalClientsAsync())));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Task.Run(() => (object)Application.Program.Version.ToString())));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => Task.Run(() => (object)SharedLibraryCore.Commands.CNextMap.GetNextMap(s))));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("ADMINS", (Server s) => Task.Run(() => (object)SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s))));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s)));
+            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("ADMINS", (Server s) => Task.FromResult(SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s))));
         }
     }
 }

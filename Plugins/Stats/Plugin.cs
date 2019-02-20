@@ -291,7 +291,7 @@ namespace IW4MAdmin.Plugins.Stats
 
             MetaService.AddMeta(getMessages);
 
-            async Task<object> totalKills(Server server)
+            async Task<string> totalKills(Server server)
             {
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
@@ -300,7 +300,7 @@ namespace IW4MAdmin.Plugins.Stats
                 }
             }
 
-            async Task<object> totalPlayTime(Server server)
+            async Task<string> totalPlayTime(Server server)
             {
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
@@ -309,14 +309,14 @@ namespace IW4MAdmin.Plugins.Stats
                 }
             }
 
-            async Task<object> topStats(Server s)
+            async Task<string> topStats(Server s)
             {
-                return String.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s));
+                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s));
             }
 
-            async Task<object> mostPlayed(Server s)
+            async Task<string> mostPlayed(Server s)
             {
-                return String.Join(Environment.NewLine, await Commands.MostPlayed.GetMostPlayed(s));
+                return string.Join(Environment.NewLine, await Commands.MostPlayed.GetMostPlayed(s));
             }
 
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));

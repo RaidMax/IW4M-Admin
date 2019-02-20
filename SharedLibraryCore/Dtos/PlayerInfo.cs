@@ -17,6 +17,7 @@ namespace SharedLibraryCore.Dtos
         public List<string> Aliases { get; set; }
         public List<string> IPs { get; set; }
         public bool HasActivePenalty { get; set; }
+        public string ActivePenaltyType { get; set; }
         public int ConnectionCount { get; set; }
         public string LastSeen { get; set; }
         public string FirstSeen { get; set; }

@@ -195,7 +195,7 @@ namespace SharedLibraryCore
 
                 if (found != null)
                 {
-                    str = str.Replace(Match, (await found.ProcessAsync(server)).ToString());
+                    str = str.Replace(Match, await found.ProcessAsync(server));
                 }
             }
 

@@ -23,7 +23,7 @@ namespace AutomessageFeed
         private Configuration _configuration;
         private int _currentFeedItem;
 
-        private async Task<object> GetNextFeedItem(Server server)
+        private async Task<string> GetNextFeedItem(Server server)
         {
             var items = new List<string>();
 

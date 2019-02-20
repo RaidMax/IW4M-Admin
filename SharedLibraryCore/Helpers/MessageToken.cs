@@ -7,18 +7,19 @@ namespace SharedLibraryCore.Helpers
     public class MessageToken
     {
         public string Name { get; private set; }
-        private readonly Func<Server, Task<object>> _asyncValue;
+        private readonly Func<Server, Task<string>> _asyncValue;
 
 
-        public MessageToken(string Name, Func<Server, Task<object>> Value)
+        public MessageToken(string Name, Func<Server, Task<string>> Value)
         {
             this.Name = Name;
             _asyncValue = Value;
         }
 
-        public Task<object> ProcessAsync(Server server)
+        public async Task<string> ProcessAsync(Server server)
         {
-            return _asyncValue(server);
+            string result = await _asyncValue(server);
+            return result;
         }
     }
 }

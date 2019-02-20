@@ -14,7 +14,11 @@ namespace AutomessageFeed
         public IBaseConfiguration Generate()
         {
             EnableFeed = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_PROMPT_ENABLE"]);
-            FeedUrl = Utilities.PromptString(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_URL"]);
+
+            if (EnableFeed)
+            {
+                FeedUrl = Utilities.PromptString(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_URL"]);
+            }
 
             return this;
         }

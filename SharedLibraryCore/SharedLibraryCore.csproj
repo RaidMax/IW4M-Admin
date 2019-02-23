@@ -17,6 +17,7 @@
     <Compile Remove="Migrations\20181126232438_AddEndpointToEFServer.cs" />
     <Compile Remove="Migrations\20181126233300_AddEndpointToEFServer.cs" />
     <Compile Remove="Migrations\20181127143920_AddEndpointToEFServerUpdateServerIdType.cs" />
+    <Compile Remove="Migrations\20190222234606_AddIndexToEFMeta-KeyAndClientId.cs" />
   </ItemGroup>
 
   <ItemGroup>

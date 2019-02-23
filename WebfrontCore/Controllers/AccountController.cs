@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
@@ -10,6 +9,11 @@ namespace WebfrontCore.Controllers
 {
     public class AccountController : BaseController
     {
+        /// <summary>
+        /// life span in months
+        /// </summary>
+        private const int COOKIE_LIFESPAN = 3;
+
         [HttpGet]
         public async Task<IActionResult> LoginAsync(int clientId, string password)
         {
@@ -22,10 +26,10 @@ namespace WebfrontCore.Controllers
             {
                 var client = Manager.GetPrivilegedClients()[clientId];
 
-                // string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt));
-                //if (hashedPassword[0] == client.Password)
+                bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(client.NetworkId, password) ||
+                    (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt)))[0] == client.Password;
 
-                if (Manager.TokenAuthenticator.AuthorizeToken(client.NetworkId, password))
+                if (loginSuccess)
                 {
                     var claims = new[]
                     {
@@ -40,7 +44,7 @@ namespace WebfrontCore.Controllers
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new AuthenticationProperties()
                     {
                         AllowRefresh = true,
-                        ExpiresUtc = DateTime.UtcNow.AddDays(30),
+                        ExpiresUtc = DateTime.UtcNow.AddMonths(COOKIE_LIFESPAN),
                         IsPersistent = true,
                         IssuedUtc = DateTime.UtcNow
                     });

@@ -1,8 +1,5 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AutomessageFeed
 {
@@ -10,6 +7,7 @@ namespace AutomessageFeed
     {
         public bool EnableFeed { get; set; }
         public string FeedUrl { get; set; }
+        public int MaxFeedItems { get; set; }
 
         public IBaseConfiguration Generate()
         {
@@ -18,6 +16,9 @@ namespace AutomessageFeed
             if (EnableFeed)
             {
                 FeedUrl = Utilities.PromptString(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_URL"]);
+                MaxFeedItems = Utilities.PromptInt(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_PROMPT_MAXITEMS"],
+                    Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_PROMPT_MAXITEMS_DESC"],
+                    0, int.MaxValue, 0);
             }
 
             return this;

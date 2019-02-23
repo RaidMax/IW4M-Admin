@@ -7,6 +7,7 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
@@ -58,6 +59,7 @@ namespace IW4MAdmin.Application
         readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
         readonly ITokenAuthentication _authenticator;
+        private readonly MetaService _metaService;
 
         private ApplicationManager()
         {
@@ -77,6 +79,7 @@ namespace IW4MAdmin.Application
             OnServerEvent += OnGameEvent;
             OnServerEvent += EventApi.OnGameEvent;
             _authenticator = new TokenAuthentication();
+            _metaService = new MetaService();
         }
 
         private async void OnGameEvent(object sender, GameEventArgs args)
@@ -382,6 +385,45 @@ namespace IW4MAdmin.Application
             {
                 Commands.Add(C);
             }
+            #endregion
+
+            #region META
+            async Task<List<ProfileMeta>> getLastMap(int clientId)
+            {
+                var meta = await _metaService.GetPersistentMeta("LastMapPlayed", new EFClient() { ClientId = clientId });
+
+                return meta == null ? new List<ProfileMeta>() : new List<ProfileMeta>()
+                {
+                    new ProfileMeta()
+                    {
+                        Id = meta.MetaId,
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
+                        Value = meta.Value,
+                        Show = true
+                    }
+
+                };
+            }
+
+            async Task<List<ProfileMeta>> getLastServer(int clientId)
+            {
+                var meta = await _metaService.GetPersistentMeta("LastServerPlayed", new EFClient() { ClientId = clientId });
+
+                return meta == null ? new List<ProfileMeta>() : new List<ProfileMeta>()
+                {
+                    new ProfileMeta()
+                    {
+                        Id = meta.MetaId,
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_SERVER"],
+                        Value = meta.Value,
+                        Show = true
+                    }
+
+                };
+            }
+
+            MetaService.AddRuntimeMeta(getLastMap);
+            MetaService.AddRuntimeMeta(getLastServer);
             #endregion
 
             #region INIT

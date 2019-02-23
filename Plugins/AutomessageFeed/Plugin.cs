@@ -43,7 +43,7 @@ namespace AutomessageFeed
                 }
             }
 
-            if (_currentFeedItem < items.Count)
+            if (_currentFeedItem < items.Count && (_configuration.MaxFeedItems == 0 || _currentFeedItem < _configuration.MaxFeedItems))
             {
                 _currentFeedItem++;
                 return items[_currentFeedItem - 1];

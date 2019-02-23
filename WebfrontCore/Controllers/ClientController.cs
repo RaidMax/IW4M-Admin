@@ -59,7 +59,7 @@ namespace WebfrontCore.Controllers
                 LinkedAccounts = client.LinkedAccounts
             };
 
-            var meta = await MetaService.GetMeta(client.ClientId);
+            var meta = await MetaService.GetRuntimeMeta(client.ClientId);
             var penaltyMeta = await Manager.GetPenaltyService()
                 .ReadGetClientPenaltiesAsync(client.ClientId);
             var administeredPenaltiesMeta = await Manager.GetPenaltyService()

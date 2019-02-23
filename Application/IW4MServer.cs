@@ -9,6 +9,7 @@ using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Localization;
 using SharedLibraryCore.Objects;
+using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -199,6 +200,12 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.PreConnect)
             {
+                // we don't want to track bots in the database at all if ignore bots is requested
+                if (E.Origin.IsBot && Manager.GetApplicationSettings().Configuration().IgnoreBots)
+                {
+                    return false;
+                }
+
                 if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
@@ -304,6 +311,12 @@ namespace IW4MAdmin
                 {
                     return false;
                 }
+            }
+
+            else if (E.Type == GameEvent.EventType.Disconnect)
+            {
+                await new MetaService().AddPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin);
+                await new MetaService().AddPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)

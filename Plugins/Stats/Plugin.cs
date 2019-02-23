@@ -282,14 +282,14 @@ namespace IW4MAdmin.Plugins.Stats
                 return messageMeta;
             }
 
-            MetaService.AddMeta(getStats);
+            MetaService.AddRuntimeMeta(getStats);
 
             if (Config.Configuration().EnableAntiCheat)
             {
-                MetaService.AddMeta(getAnticheatInfo);
+                MetaService.AddRuntimeMeta(getAnticheatInfo);
             }
 
-            MetaService.AddMeta(getMessages);
+            MetaService.AddRuntimeMeta(getMessages);
 
             async Task<string> totalKills(Server server)
             {

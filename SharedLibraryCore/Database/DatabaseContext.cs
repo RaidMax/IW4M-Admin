@@ -4,6 +4,7 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -22,7 +23,7 @@ namespace SharedLibraryCore.Database
 
         static string _ConnectionString;
         static string _provider;
-        private static readonly string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins\";
+        private static readonly string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins";
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
 
@@ -123,6 +124,11 @@ namespace SharedLibraryCore.Database
                 ent.HasIndex(a => a.Name);
             });
 
+            modelBuilder.Entity<EFMeta>(ent =>
+            {
+                ent.HasIndex(_meta => _meta.Key);
+            });
+
             // force full name for database conversion
             modelBuilder.Entity<EFClient>().ToTable("EFClients");
             modelBuilder.Entity<EFAlias>().ToTable("EFAlias");
@@ -137,7 +143,6 @@ namespace SharedLibraryCore.Database
             string pluginDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
 #endif
             IEnumerable<string> directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
-
 
             foreach (string dllPath in directoryFiles)
             {

@@ -23,6 +23,8 @@ namespace SharedLibraryCore.Database.Models
         public virtual EFClient Client { get; set; }
         [Required]
         [MinLength(3)]
+        [StringLength(32)]
+        [MaxLength(32)]
         public string Key { get; set; }
         [Required]
         public string Value { get; set; }

@@ -41,11 +41,11 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client)
+        public async Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client)
         {
             using (var ctx = new DatabaseContext(disableTracking:true))
             {
-                return ctx.EFMeta
+                return await ctx.EFMeta
                     .Where(_meta => _meta.Key == metaKey)
                     .Where(_meta => _meta.ClientId == client.ClientId)
                     .FirstOrDefaultAsync();

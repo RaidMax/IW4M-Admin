@@ -427,10 +427,16 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region INIT
+            int failedServers = 0;
+            int successServers = 0;
+            Exception lastException = null;
+
             async Task Init(ServerConfiguration Conf)
             {
                 // setup the event handler after the class is initialized
+
                 Handler = new GameEventHandler(this);
+
                 try
                 {
                     var ServerInstance = new IW4MServer(this, Conf);
@@ -452,26 +458,37 @@ namespace IW4MAdmin.Application
                     };
 
                     Handler.AddEvent(e);
+                    successServers++;
                 }
 
                 catch (ServerException e)
                 {
                     Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"]} [{Conf.IPAddress}:{Conf.Port}]");
+
                     if (e.GetType() == typeof(DvarException))
                     {
                         Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"]} {(e as DvarException).Data["dvar_name"]} ({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})");
                     }
+
                     else if (e.GetType() == typeof(NetworkException))
                     {
                         Logger.WriteDebug(e.Message);
                     }
 
-                    // throw the exception to the main method to stop before instantly exiting
-                    throw e;
+                    failedServers++;
+                    lastException = e;
                 }
             }
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
+
+            if (failedServers > 0 && successServers > 0)
+            {
+                if (!Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_START_WITH_ERRORS"]))
+                {
+                    throw lastException;
+                }
+            }
             #endregion
         }
 

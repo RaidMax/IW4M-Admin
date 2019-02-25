@@ -111,8 +111,13 @@
 }
 
 .penalties-color-tempban {
-    color: #fd9c38;
-    color: rgba(253, 139, 22, 0.85);
+    color: #fe7e4c;
+    color: rgba(254, 126, 76, 0.85);
+}
+
+.penalties-bgcolor-tempban {
+    background-color: #fe7e4c;
+    background-color: rgba(254, 126, 76, 0.85);
 }
 
 .penalties-color-flag {

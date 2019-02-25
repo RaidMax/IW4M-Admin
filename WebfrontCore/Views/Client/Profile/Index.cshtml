@@ -4,10 +4,11 @@
     string shortCode = match == string.Empty ? "?" : match;
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
+    bool isTempBanned = Model.ActivePenaltyType == "TempBan";
 }
 <div id="profile_wrapper" class="row d-flex d-sm-inline-flex justify-content-center justify-content-left pb-3">
     <div class="mr-auto ml-auto ml-sm-0 mr-sm-0">
-        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.LevelInt" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
+        <div id="profile_avatar" class="mb-4 mb-md-0 text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
             @if (string.IsNullOrEmpty(gravatarUrl))
             {
                 <span class="profile-shortcode">@shortCode</span>
@@ -44,7 +45,15 @@
 
                         @if (Model.LevelInt < (int)ViewBag.User.Level && Model.HasActivePenalty)
                         {
-                            <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
+                            @if (isTempBanned)
+                            {
+                                <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
+                                <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked penalties-color-tempban h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
+                            }
+                            else
+                            {
+                                <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
+                            }
                         }
 
                     </div>
@@ -73,7 +82,7 @@
             }
         </div>
         <div id="profile_level" class="text-muted  mb-2">
-            <h5><span class="level-color-@Model.LevelInt"><strong>@Model.Level</strong></span></h5>
+            <h5><span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")"><strong>@Model.Level @(isTempBanned ? $"&emdash; {loc["WEBFRONT_PROFILE_TEMPBAN"]}" : "")</strong></span></h5>
         </div>
         <div id="profile_time_played" class="text-muted">
             @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]

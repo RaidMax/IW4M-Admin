@@ -2,7 +2,6 @@
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +13,21 @@ namespace SharedLibraryCore.Services
     {
         private static List<Func<int, Task<List<ProfileMeta>>>> _metaActions = new List<Func<int, Task<List<ProfileMeta>>>>();
 
+        /// <summary>
+        /// adds or updates meta key and value to the database
+        /// </summary>
+        /// <param name="metaKey">key of meta data</param>
+        /// <param name="metaValue">value of the meta data</param>
+        /// <param name="client">client to save the meta for</param>
+        /// <returns></returns>
         public async Task AddPersistentMeta(string metaKey, string metaValue, EFClient client)
         {
             using (var ctx = new DatabaseContext())
             {
-                var existingMeta = await ctx.EFMeta.FirstOrDefaultAsync(_meta => _meta.ClientId == client.ClientId && _meta.Key == metaKey);
+                var existingMeta = await ctx.EFMeta
+                    .Where(_meta => _meta.Key == metaKey)
+                    .Where(_meta => _meta.ClientId == client.ClientId)
+                    .FirstOrDefaultAsync();
 
                 if (existingMeta != null)
                 {
@@ -41,6 +50,12 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        /// <summary>
+        /// retrieves meta data for given client and key
+        /// </summary>
+        /// <param name="metaKey">key to retrieve value for</param>
+        /// <param name="client">client to retrieve meta for</param>
+        /// <returns></returns>
         public async Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client)
         {
             using (var ctx = new DatabaseContext(disableTracking:true))
@@ -52,11 +67,20 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        /// <summary>
+        /// aads a meta task to the runtime meta list
+        /// </summary>
+        /// <param name="metaAction"></param>
         public static void AddRuntimeMeta(Func<int, Task<List<ProfileMeta>>> metaAction)
         {
             _metaActions.Add(metaAction);
         }
 
+        /// <summary>
+        /// retrieves all the runtime meta information for given client idea
+        /// </summary>
+        /// <param name="clientId">id of the client</param>
+        /// <returns></returns>
         public static async Task<List<ProfileMeta>> GetRuntimeMeta(int clientId)
         {
             var meta = new List<ProfileMeta>();

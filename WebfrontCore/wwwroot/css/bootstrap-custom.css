@@ -6416,3 +6416,22 @@ form *, select {
   position: fixed;
   bottom: 1em;
   right: 1em; }
+
+.nav-tabs, .nav-tabs .nav-link.active {
+  border-color: #007ACC;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #fff !important; }
+
+.nav-tabs .nav-link:hover {
+  border-color: #007ACC;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-width: 2px; }
+
+.nav-tabs .nav-link {
+  border-radius: 0;
+  padding: 1rem;
+  color: #6c757d;
+  border-width: 2px; }
+
+.nav-tabs .nav-link.active {
+  border-bottom-color: transparent; }

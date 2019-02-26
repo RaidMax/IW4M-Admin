@@ -82,7 +82,7 @@
             }
         </div>
         <div id="profile_level" class="text-muted  mb-2">
-            <h5><span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")"><strong>@Model.Level @(isTempBanned ? $"&emdash; {loc["WEBFRONT_PROFILE_TEMPBAN"]}" : "")</strong></span></h5>
+            <h5><span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")"><strong>@Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")</strong></span></h5>
         </div>
         <div id="profile_time_played" class="text-muted">
             @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]

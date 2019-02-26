@@ -18,5 +18,6 @@ namespace IW4MAdmin.Plugins.Stats.Web.Dtos
         public int Deaths { get; set; }
         public int RatingChange { get; set; }
         public List<double> PerformanceHistory { get; set; }
+        public List<ServerInfo> Servers { get; set; }
     }
 }

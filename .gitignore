@@ -223,7 +223,7 @@ global.min.js
 bootstrap-custom.min.css
 **/Master/static
 **/Master/dev_env
-/WebfrontCore/Views/Plugins/Stats
+/WebfrontCore/Views/Plugins/*
 /WebfrontCore/wwwroot/**/dds
 
 /DiscordWebhook/env

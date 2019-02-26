@@ -47,6 +47,14 @@ namespace WebfrontCore
                     }
                 });
 
+#if DEBUG
+            mvcBuilder = mvcBuilder.AddRazorOptions(options => options.AllowRecompilingViewsOnFileChange = true);
+            services.Configure<RazorViewEngineOptions>(_options =>
+            {
+                _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
+            });
+#endif
+
             foreach (var asm in Program.Manager.GetPluginAssemblies())
             {
                 mvcBuilder.AddApplicationPart(asm);

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
         {
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex.Set["WEBFRONT_STATS_INDEX_TITLE"];
             ViewBag.Description = Utilities.CurrentLocalization.LocalizationIndex.Set["WEBFRONT_STATS_INDEX_DESC"];
+            ViewBag.Servers = Manager.GetServers().Select(_server => new ServerInfo() { Name = _server.Hostname, ID = _server.GetHashCode() });
 
             return View("Index", await Plugin.Manager.GetTopStats(0, 50));
         }

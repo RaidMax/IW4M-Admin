@@ -1,14 +1,53 @@
 ﻿@model List<IW4MAdmin.Plugins.Stats.Web.Dtos.TopStatsInfo>
-<h4 class="pb-2 text-center ">@ViewBag.Title</h4>
 
-<div id="stats_top_players" class="striped border-top border-bottom">
-    @await Html.PartialAsync("_List", Model)
+<ul class="nav nav-tabs" role="tablist" id="stats_top_players">
+    <li class="nav-item">
+        <a class="nav-link active" href="#server_0" role="tab" data-toggle="tab" aria-selected="true">All Servers</a>
+    </li>
+
+    @foreach (var server in ViewBag.Servers)
+    {
+        <li class="nav-item">
+            <a class="nav-link" href="#server_@server.ID" role="tab" data-toggle="tab" aria-selected="false">@server.Name</a>
+        </li>
+    }
+</ul>
+
+<div class="tab-content striped border-bottom">
+    <div role="tabpanel" class="tab-pane active" id="server_0">
+        @{
+            if (Model.Count > 0)
+            {
+                await Html.PartialAsync("_List", Model);
+            }
+            else
+            {
+                <div class="p-2 text-center">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex.Set["PLUGINS_STATS_TEXT_NOQUALIFY"]</div>
+            }
+        }
+    </div>
+
+    @foreach (var server in ViewBag.Servers)
+    {
+        <div role="tabpanel" class="tab-pane" id="server_@server.ID">
+            @{
+                if (Model.Count > 0)
+                {
+                    await Html.PartialAsync("_List", Model);
+                }
+                else
+                {
+                    <div class="p-2 text-center">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex.Set["PLUGINS_STATS_TEXT_NOQUALIFY"]</div>
+                }
+            }
+        </div>
+    }
 </div>
 
 @section scripts {
     <environment include="Development">
-        <script type="text/javascript" src="~/js/loader.js"></script>
-        <script type="text/javascript" src="~/js/stats.js"></script>
+        @*<script type="text/javascript" src="~/js/loader.js"></script>
+            <script type="text/javascript" src="~/js/stats.js"></script>*@
     </environment>
-    <script>initLoader('/Stats/GetTopPlayersAsync', '#stats_top_players', 50);</script>
+    @*<script>initLoader('/Stats/GetTopPlayersAsync', '#stats_top_players', 50);</script>*@
 }

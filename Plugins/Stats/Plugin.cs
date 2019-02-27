@@ -26,7 +26,7 @@ namespace IW4MAdmin.Plugins.Stats
         public string Author => "RaidMax";
 
         public static StatManager Manager { get; private set; }
-        private IManager ServerManager;
+        public static IManager ServerManager;
         public static BaseConfigurationHandler<StatsConfiguration> Config { get; private set; }
 
         public async Task OnEventAsync(GameEvent E, Server S)

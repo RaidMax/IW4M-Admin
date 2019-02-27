@@ -64,10 +64,6 @@ if ($(loaderResponseId).length === 1) {
         $window
             .off('scroll', ScrollHandler)
             .on('scroll', ScrollHandler);
-
-        /*$('#load_penalties_button').click(function () {
-            loadMorePenalties();
-        });*/
     });
 
     function ScrollHandler(e) {

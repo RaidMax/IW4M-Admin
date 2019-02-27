@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <RazorCompileOnBuild>false</RazorCompileOnBuild>
+    <RazorCompileOnBuild>true</RazorCompileOnBuild>
     <RazorCompiledOnPublish>true</RazorCompiledOnPublish>
     <ResolvedRazorCompileToolset>RazorSdk</ResolvedRazorCompileToolset>
     <Configurations>Debug;Release;Prerelease</Configurations>
@@ -13,10 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Stats\Stats.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    
   </ItemGroup>
 
   <ItemGroup>

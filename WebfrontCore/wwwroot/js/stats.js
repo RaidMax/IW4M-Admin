@@ -72,6 +72,10 @@ $(document).ready(function () {
             getStatsChart($(element).attr('id'), $(element).width(), $(element).height()).render();
         });
     });
+
+    $('.top-players-link').click(function (event) {
+        initLoader('/Stats/GetTopPlayersAsync?serverId=' + $(this).data('serverid'), $(this).attr('href'), 50);
+    });
 });
 
 $(document).on("loaderFinished", function (event, response) {

@@ -184,7 +184,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public async Task<IActionResult> GenerateLoginTokenForm()
+        public IActionResult GenerateLoginTokenForm()
         {
             var info = new ActionInfo()
             {

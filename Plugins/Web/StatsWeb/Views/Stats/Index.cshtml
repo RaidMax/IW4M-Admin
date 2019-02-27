@@ -1,53 +1,34 @@
-﻿@model List<IW4MAdmin.Plugins.Stats.Web.Dtos.TopStatsInfo>
-
-<ul class="nav nav-tabs" role="tablist" id="stats_top_players">
+﻿<ul class="nav nav-tabs" role="tablist" id="stats_top_players">
     <li class="nav-item">
-        <a class="nav-link active" href="#server_0" role="tab" data-toggle="tab" aria-selected="true">All Servers</a>
+        <a class="nav-link active top-players-link" href="#server_0" role="tab" data-toggle="tab" aria-selected="true" data-serverid="0">All Servers</a>
     </li>
 
     @foreach (var server in ViewBag.Servers)
     {
-        <li class="nav-item">
-            <a class="nav-link" href="#server_@server.ID" role="tab" data-toggle="tab" aria-selected="false">@server.Name</a>
+        <li class="nav-item ">
+            <a class="nav-link top-players-link" href="#server_@server.ID" role="tab" data-toggle="tab" aria-selected="false" data-serverid="@server.ID">@server.Name</a>
         </li>
     }
 </ul>
 
 <div class="tab-content striped border-bottom">
     <div role="tabpanel" class="tab-pane active" id="server_0">
-        @{
-            if (Model.Count > 0)
-            {
-                await Html.PartialAsync("_List", Model);
-            }
-            else
-            {
-                <div class="p-2 text-center">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex.Set["PLUGINS_STATS_TEXT_NOQUALIFY"]</div>
-            }
-        }
+        @await Component.InvokeAsync("TopPlayers", new { count = 50, offset = 0 })
     </div>
 
     @foreach (var server in ViewBag.Servers)
     {
         <div role="tabpanel" class="tab-pane" id="server_@server.ID">
-            @{
-                if (Model.Count > 0)
-                {
-                    await Html.PartialAsync("_List", Model);
-                }
-                else
-                {
-                    <div class="p-2 text-center">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex.Set["PLUGINS_STATS_TEXT_NOQUALIFY"]</div>
-                }
-            }
+            @await Component.InvokeAsync("TopPlayers", new { count = 50, offset = 0, serverId = server.ID })
         </div>
     }
 </div>
 
-@section scripts {
+@section scripts
+    {
     <environment include="Development">
-        @*<script type="text/javascript" src="~/js/loader.js"></script>
-            <script type="text/javascript" src="~/js/stats.js"></script>*@
+        <script type="text/javascript" src="~/js/loader.js"></script>
+        <script type="text/javascript" src="~/js/stats.js"></script>
     </environment>
-    @*<script>initLoader('/Stats/GetTopPlayersAsync', '#stats_top_players', 50);</script>*@
+    <script>initLoader('/Stats/GetTopPlayersAsync', '#server_0', 50);</script>
 }

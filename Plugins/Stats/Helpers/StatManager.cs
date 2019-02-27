@@ -82,13 +82,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        public async Task<List<TopStatsInfo>> GetTopStats(int start, int count)
+        public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null)
         {
             using (var context = new DatabaseContext(true))
             {
                 // setup the query for the clients within the given rating range
                 var iqClientRatings = (from rating in context.Set<EFRating>()
-                    .Where(GetRankingFunc())
+                    .Where(GetRankingFunc(serverId))
                                        select new
                                        {
                                            rating.RatingHistory.ClientId,
@@ -113,7 +113,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var iqRatingInfo = from rating in context.Set<EFRating>()
                                    where clientIds.Contains(rating.RatingHistory.ClientId)
-                                   where rating.ServerId == null
+                                   where rating.ServerId == serverId
                                    select new
                                    {
                                        rating.Ranking,

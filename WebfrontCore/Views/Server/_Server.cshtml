@@ -12,7 +12,7 @@
 </div>
 
 <div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity pt-2 pb-2">
-    @Html.Partial("../Server/_ClientActivity", Model)
+    @await Html.PartialAsync("../Server/_ClientActivity", Model)
 </div>
 
 <div class="row server-history mb-4">

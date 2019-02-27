@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
-    <RazorCompileOnBuild>false</RazorCompileOnBuild>
+    <RazorCompileOnBuild>true</RazorCompileOnBuild>
     <RazorCompileOnPublish>true</RazorCompileOnPublish>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
@@ -33,12 +33,20 @@
     <Content Remove="bower.json" />
     <Content Remove="bundleconfig.json" />
     <Content Remove="compilerconfig.json" />
+    <Content Remove="Views\Plugins\Stats\Components\TopPlayers\_List.cshtml" />
+    <Content Remove="Views\Plugins\Stats\Index.cshtml" />
+    <Content Remove="Views\Plugins\Stats\_MessageContext.cshtml" />
+    <Content Remove="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="bower.json" />
     <None Include="bundleconfig.json" />
     <None Include="compilerconfig.json" />
+    <None Include="Views\Plugins\Stats\Components\TopPlayers\_List.cshtml" />
+    <None Include="Views\Plugins\Stats\Index.cshtml" />
+    <None Include="Views\Plugins\Stats\_MessageContext.cshtml" />
+    <None Include="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
   </ItemGroup>
 
   <ItemGroup>

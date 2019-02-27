@@ -6,6 +6,6 @@
 @{
     foreach (var penalty in Model)
     {
-        Html.RenderPartial("_Penalty", penalty);
+        await Html.RenderPartialAsync("_Penalty", penalty);
     }
 }

@@ -221,22 +221,31 @@ form *, select {
 }
 
 .nav-tabs, .nav-tabs .nav-link.active {
-    border-color: $blue;
+    border-width: 0;
+    color: $blue;
     background-color: rgba(0, 0, 0, 0.2);
     color: $white !important;
 }
 
+.nav-tabs .nav-link.active
+{
+    border-bottom-width: 1px;
+    border-bottom-color: $blue !important;
+}
+
 .nav-tabs .nav-link:hover {
-    border-color: $blue;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-width: 2px;
+    background-color: #222222;
+    color: $blue;
+    border-width: 0 0 1px 0;
+    border-bottom-color: $blue;
 }
 
 .nav-tabs .nav-link {
     border-radius: 0;
     padding: 1rem;
     color: #6c757d;
-    border-width: 2px;
+    border-width: 0 0 1px 0;
+    border-bottom-color: transparent;
 }
 
 .nav-tabs .nav-link.active {

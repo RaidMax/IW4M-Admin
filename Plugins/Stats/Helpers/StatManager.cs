@@ -155,6 +155,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var finished = topPlayers.Select(s => new TopStatsInfo()
                 {
                     ClientId = s.ClientId,
+                    Id = (int?)serverId ?? 0,
                     Deaths = s.Deaths,
                     Kills = s.Kills,
                     KDR = Math.Round(s.KDR, 2),

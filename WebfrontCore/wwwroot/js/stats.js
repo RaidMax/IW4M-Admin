@@ -74,7 +74,9 @@ $(document).ready(function () {
     });
 
     $('.top-players-link').click(function (event) {
-        initLoader('/Stats/GetTopPlayersAsync?serverId=' + $(this).data('serverid'), $(this).attr('href'), 50);
+        $($(this).attr('href')).html('');
+        initLoader('/Stats/GetTopPlayersAsync?serverId=' + $(this).data('serverid'), $(this).attr('href'), 10, 0);
+        loadMoreItems();
     });
 });
 

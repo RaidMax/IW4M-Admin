@@ -4,11 +4,11 @@ let isLoaderLoading = false;
 let loadUri = '';
 let loaderResponseId = '';
 
-function initLoader(location, loaderId, count = 10) {
+function initLoader(location, loaderId, count = 10, start = count) {
     loadUri = location;
     loaderResponseId = loaderId;
     loadCount = count;
-    loaderOffset = count;
+    loaderOffset = start;
     setupListeners();
 }
 

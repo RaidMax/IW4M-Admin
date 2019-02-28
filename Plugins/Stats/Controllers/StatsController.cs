@@ -18,7 +18,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
         {
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex.Set["WEBFRONT_STATS_INDEX_TITLE"];
             ViewBag.Description = Utilities.CurrentLocalization.LocalizationIndex.Set["WEBFRONT_STATS_INDEX_DESC"];
-            ViewBag.Servers = Manager.GetServers().Select(_server => new ServerInfo() { Name = _server.Hostname, ID = _server.GetHashCode() });
+            ViewBag.Servers = Manager.GetServers().Select(_server => new ServerInfo() { Name = _server.Hostname, ID = _server.EndPoint });
 
             return View("Index");
         }

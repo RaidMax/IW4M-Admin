@@ -6418,20 +6418,27 @@ form *, select {
   right: 1em; }
 
 .nav-tabs, .nav-tabs .nav-link.active {
-  border-color: #007ACC;
+  border-width: 0;
+  color: #007ACC;
   background-color: rgba(0, 0, 0, 0.2);
   color: #fff !important; }
 
+.nav-tabs .nav-link.active {
+  border-bottom-width: 1px;
+  border-bottom-color: #007ACC !important; }
+
 .nav-tabs .nav-link:hover {
-  border-color: #007ACC;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-width: 2px; }
+  background-color: #222222;
+  color: #007ACC;
+  border-width: 0 0 1px 0;
+  border-bottom-color: #007ACC; }
 
 .nav-tabs .nav-link {
   border-radius: 0;
   padding: 1rem;
   color: #6c757d;
-  border-width: 2px; }
+  border-width: 0 0 1px 0;
+  border-bottom-color: transparent; }
 
 .nav-tabs .nav-link.active {
   border-bottom-color: transparent; }

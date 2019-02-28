@@ -61,7 +61,7 @@
             <span class="text-muted">@loc["WEBFRONT_PROFILE_LSEEN"]</span><span class="text-primary"> @stat.LastSeen </span><span class="text-muted">@loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
         </div>
 
-        <div class="col-md-6 client-rating-graph" id="rating_history_@stat.ClientId" data-history="@Html.Raw(Json.Serialize(stat.PerformanceHistory))">
+        <div class="col-md-6 client-rating-graph" id="rating_history_@(stat.ClientId + "_" + stat.Id)" data-history="@Html.Raw(Json.Serialize(stat.PerformanceHistory))">
 
         </div>
 

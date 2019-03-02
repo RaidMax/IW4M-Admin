@@ -1,4 +1,4 @@
-﻿<ul class="nav nav-tabs border-top" role="tablist" id="stats_top_players">
+﻿<ul class="nav nav-tabs border-top border-bottom nav-fill" role="tablist" id="stats_top_players">
     <li class="nav-item">
         <a class="nav-link active top-players-link" href="#server_0" role="tab" data-toggle="tab" aria-selected="true" data-serverid="0">All Servers</a>
     </li>
@@ -12,13 +12,13 @@
 </ul>
 
 <div class="tab-content border-bottom">
-    <div role="tabpanel" class="tab-pane active" id="server_0">
+    <div role="tabpanel" class="tab-pane active striped" id="server_0">
         @await Component.InvokeAsync("TopPlayers", new { count = 10, offset = 0 })
     </div>
 
     @foreach (var server in ViewBag.Servers)
     {
-        <div role="tabpanel" class="tab-pane" id="server_@server.ID">
+        <div role="tabpanel" class="tab-pane striped" id="server_@server.ID">
         </div>
     }
 </div>

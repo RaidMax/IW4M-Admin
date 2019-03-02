@@ -64,7 +64,7 @@ a.nav-link {
 .server-activity,
 #mobile_seperator,
 .border-bottom {
-    border-bottom: 2px solid $primary !important;
+    border-bottom: 1px solid $primary !important;
 }
 
 .border-top {
@@ -221,33 +221,35 @@ form *, select {
 }
 
 .nav-tabs, .nav-tabs .nav-link.active {
-    border-width: 0;
-    color: $blue;
-    background-color: rgba(0, 0, 0, 0.2);
+    color: $white;
     color: $white !important;
-}
-
-.nav-tabs .nav-link.active
-{
-    border-bottom-width: 1px;
-    border-bottom-color: $blue !important;
+    border: none;
 }
 
 .nav-tabs .nav-link:hover {
-    background-color: #222222;
     color: $blue;
-    border-width: 0 0 1px 0;
-    border-bottom-color: $blue;
+    background-color: rgba(24, 24, 24, 0.75);
+    border: none;
 }
 
 .nav-tabs .nav-link {
     border-radius: 0;
-    padding: 1rem;
+    padding: 1.5rem;
     color: #6c757d;
-    border-width: 0 0 1px 0;
-    border-bottom-color: transparent;
+    border: none;
+    min-width: 20rem;
+    background-color: #181818;
 }
 
 .nav-tabs .nav-link.active {
-    border-bottom-color: transparent;
+    border: none;
+    background-color: $blue;
+}
+
+.nav-tabs .nav-link.active:hover {
+    background-color: rgba(0, 122, 204, 0.75);
+}
+
+.nav-tabs .nav-item {
+    margin-bottom: 0;
 }

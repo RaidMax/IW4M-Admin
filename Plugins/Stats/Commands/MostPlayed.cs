@@ -39,7 +39,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                where stats.ServerId == serverId
                                where client.Level != EFClient.Permission.Banned
                                where client.LastConnection >= thirtyDaysAgo
-                               orderby stats.Kills descending
+                               orderby stats.TimePlayed descending
                                select new
                                {
                                    alias.Name,

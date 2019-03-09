@@ -325,7 +325,6 @@ namespace IW4MAdmin.Plugins.Stats
             manager.GetMessageTokens().Add(new MessageToken("MOSTPLAYED", mostPlayed));
 
             ServerManager = manager;
-
             Manager = new StatManager(manager);
         }
 

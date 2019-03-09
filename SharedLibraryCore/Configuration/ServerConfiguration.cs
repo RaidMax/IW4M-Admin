@@ -8,7 +8,7 @@ namespace SharedLibraryCore.Configuration
     public class ServerConfiguration : IBaseConfiguration
     {
         public string IPAddress { get; set; }
-        public ushort Port { get; set; }
+        public int Port { get; set; }
         public string Password { get; set; }
         public IList<string> Rules { get; set; }
         public IList<string> AutoMessages { get; set; }
@@ -27,8 +27,15 @@ namespace SharedLibraryCore.Configuration
             eventParsers = new List<IEventParser>();
         }
 
-        public void AddRConParser(IRConParser parser) => rconParsers.Add(parser);
-        public void AddEventParser(IEventParser parser) => eventParsers.Add(parser);
+        public void AddRConParser(IRConParser parser)
+        {
+            rconParsers.Add(parser);
+        }
+
+        public void AddEventParser(IEventParser parser)
+        {
+            eventParsers.Add(parser);
+        }
 
         public void ModifyParsers()
         {
@@ -65,26 +72,26 @@ namespace SharedLibraryCore.Configuration
                 string input = Utilities.PromptString(loc["SETUP_SERVER_IP"]);
 
                 if (System.Net.IPAddress.TryParse(input, out System.Net.IPAddress ip))
+                {
                     IPAddress = input;
+                }
             }
 
-            while(Port < 1)
-            {
-                string input = Utilities.PromptString(loc["SETUP_SERVER_PORT"]);
-                if (UInt16.TryParse(input, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.CurrentCulture, out ushort port))
-                    Port = port;
-            }
-
+            Port = Utilities.PromptInt(Utilities.PromptString(loc["SETUP_SERVER_PORT"]), null, 1, ushort.MaxValue);
             Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
             AutoMessages = new List<string>();
             Rules = new List<string>();
             ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(null, 0, 32);
+            ManualLogPath = null;
 
             ModifyParsers();
 
             return this;
         }
 
-        public string Name() => "ServerConfiguration";
+        public string Name()
+        {
+            return "ServerConfiguration";
+        }
     }
 }

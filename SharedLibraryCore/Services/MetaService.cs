@@ -58,7 +58,7 @@ namespace SharedLibraryCore.Services
         /// <returns></returns>
         public async Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client)
         {
-            using (var ctx = new DatabaseContext(disableTracking:true))
+            using (var ctx = new DatabaseContext(disableTracking: true))
             {
                 return await ctx.EFMeta
                     .Where(_meta => _meta.Key == metaKey)

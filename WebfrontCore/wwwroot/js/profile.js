@@ -1,5 +1,6 @@
 ﻿// keeps track of how many events have been displayed
 let count = 1;
+let metaIndex = 0;
 
 $(document).ready(function () {
 
@@ -51,7 +52,15 @@ $(document).ready(function () {
     $.each(clientInfo.Meta, function (index, meta) {
         if (!meta.key.includes("Event")) {
             let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-primary">${meta.value}</span><span class="profile-meta-title text-muted"> ${meta.key}</span></div>`;
-            $("#profile_meta").append(metaString);
+            if (metaIndex < 10) {
+                let selector = '#profile_meta_' + ((metaIndex % 2) + 1);
+                $(selector).append(metaString);
+            }
+            else {
+                let selector = '#profile_meta_' + (metaIndex % 3);
+                $(selector).append(metaString);
+            }
+            metaIndex++;
         }
     });
 

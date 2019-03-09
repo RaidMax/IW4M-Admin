@@ -87,7 +87,7 @@ namespace SharedLibraryCore.Services
                 //entity.CurrentServer.Logger.WriteDebug($"Updating alias link for {entity}");
                 await context.SaveChangesAsync();
 
-                foreach (var alias in aliases.Union(new List<EFAlias>() { entity.CurrentAlias })
+                foreach (var alias in aliases.Append(entity.CurrentAlias)
                     .Where(_alias => !_alias.Active ||
                     _alias.LinkId != aliasLink.AliasLinkId))
                 {

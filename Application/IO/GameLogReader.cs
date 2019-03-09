@@ -34,9 +34,9 @@ namespace IW4MAdmin.Application.IO
                 // todo: max async
                 // take the old start position and go back the number of new characters
                 rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
-                // the difference should be in the range of a int :P
+                
                 string newLine;
-                while (!String.IsNullOrEmpty(newLine = rd.ReadLine()))
+                while (!string.IsNullOrEmpty(newLine = await rd.ReadLineAsync()))
                 {
                     logLines.Add(newLine);
                 }

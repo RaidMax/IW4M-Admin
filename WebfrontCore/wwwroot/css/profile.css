@@ -164,10 +164,6 @@
     line-height: 1.4em;
 }
 
-#profile_wrapper {
-    border-bottom: 2px rgb(0, 122, 204) solid;
-}
-
 .profile-event-timestep {
     font-size: 1.25rem;
 }

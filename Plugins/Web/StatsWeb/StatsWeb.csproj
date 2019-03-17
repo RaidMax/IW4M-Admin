@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <RazorCompileOnBuild>true</RazorCompileOnBuild>
-    <RazorCompiledOnPublish>true</RazorCompiledOnPublish>
-    <ResolvedRazorCompileToolset>RazorSdk</ResolvedRazorCompileToolset>
+    <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
+    <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
@@ -16,7 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    
+    <Content Update="Views\_ViewImports.cshtml">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

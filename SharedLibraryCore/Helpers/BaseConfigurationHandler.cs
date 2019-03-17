@@ -1,47 +1,42 @@
-﻿using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using SharedLibraryCore.Exceptions;
+﻿using Newtonsoft.Json;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Configuration
 {
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
-        readonly string Filename;
-        IConfigurationRoot ConfigurationRoot { get; set; }
+        readonly string _configurationPath;
         T _configuration;
 
         public BaseConfigurationHandler(string fn)
         {
-            Filename = fn;
+            _configurationPath = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{fn}.json");
             Build();
         }
 
         public void Build()
         {
-            ConfigurationRoot = new ConfigurationBuilder()
-              .AddJsonFile(Path.Join(Utilities.OperatingDirectory, "Configuration", $"{Filename}.json"), true)
-              .Build();
-
-            _configuration = ConfigurationRoot.Get<T>();
+            var configContent = File.ReadAllText(_configurationPath);
+            _configuration = JsonConvert.DeserializeObject<T>(configContent);
 
             if (_configuration == null)
+            {
                 _configuration = default(T);
+            }
         }
 
         public Task Save()
         {
             var appConfigJSON = JsonConvert.SerializeObject(_configuration, Formatting.Indented);
-            return File.WriteAllTextAsync(Path.Join(Utilities.OperatingDirectory, "Configuration", $"{Filename}.json"), appConfigJSON);
+            return File.WriteAllTextAsync(_configurationPath, appConfigJSON);
         }
 
-        public T Configuration() => _configuration;
+        public T Configuration()
+        {
+            return _configuration;
+        }
 
         public void Set(T config)
         {

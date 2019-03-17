@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
-    <RazorCompileOnBuild>false</RazorCompileOnBuild>
-    <RazorCompileOnPublish>true</RazorCompileOnPublish>
+    <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
+    <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
     <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
@@ -37,6 +37,7 @@
     <Content Remove="Views\Plugins\Stats\Index.cshtml" />
     <Content Remove="Views\Plugins\Stats\_MessageContext.cshtml" />
     <Content Remove="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
+    <Content Remove="Views\Plugins\_ViewImports.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +48,7 @@
     <None Include="Views\Plugins\Stats\Index.cshtml" />
     <None Include="Views\Plugins\Stats\_MessageContext.cshtml" />
     <None Include="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
+    <None Include="Views\Plugins\_ViewImports.cshtml" />
   </ItemGroup>
 
   <ItemGroup>

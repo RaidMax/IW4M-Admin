@@ -4,7 +4,7 @@ var eventParser;
 var plugin = {
     author: 'RaidMax',
     version: 0.2,
-    name: 'IW3 Parser',
+    name: 'IW4 Parser',
     isParser: true,
 
     onEventAsync: function (gameEvent, server) {

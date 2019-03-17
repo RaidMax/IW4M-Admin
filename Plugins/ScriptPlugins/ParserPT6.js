@@ -4,7 +4,7 @@ var eventParser;
 var plugin = {
     author: 'RaidMax',
     version: 0.2,
-    name: 'Plutoniun T6 Parser',
+    name: 'Plutonium T6 Parser',
     isParser: true,
 
     onEventAsync: function (gameEvent, server) {

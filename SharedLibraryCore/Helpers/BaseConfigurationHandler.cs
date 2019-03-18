@@ -18,10 +18,12 @@ namespace SharedLibraryCore.Configuration
 
         public void Build()
         {
-            var configContent = File.ReadAllText(_configurationPath);
-            _configuration = JsonConvert.DeserializeObject<T>(configContent);
-
-            if (_configuration == null)
+            try
+            {
+                var configContent = File.ReadAllText(_configurationPath);
+                _configuration = JsonConvert.DeserializeObject<T>(configContent);
+            }
+            catch
             {
                 _configuration = default(T);
             }

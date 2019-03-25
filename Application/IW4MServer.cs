@@ -82,11 +82,7 @@ namespace IW4MAdmin
                 };
 
                 Manager.GetEventHandler().AddEvent(e);
-
-                if (client.IPAddress != null)
-                {
-                    await client.OnJoin(client.IPAddress);
-                }
+                await client.OnJoin(client.IPAddress);
             }
 
             catch (Exception ex)
@@ -186,6 +182,9 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.ChangePermission)
             {
+                var newPermission = (EFClient.Permission)E.Extra;
+                E.Target.Level = newPermission;
+                
                 if (!E.Target.IsPrivileged())
                 {
                     // remove banned or demoted privileged user
@@ -196,6 +195,8 @@ namespace IW4MAdmin
                 {
                     Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
+
+                await Manager.GetClientService().Update(E.Target);
             }
 
             else if (E.Type == GameEvent.EventType.PreConnect)
@@ -611,6 +612,17 @@ namespace IW4MAdmin
                     if (ConnectionErrors > 0)
                     {
                         Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
+
+                        var _event = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.ConnectionRestored,
+                            Owner = this,
+                            Origin = Utilities.IW4MAdminClient(this),
+                            Target = Utilities.IW4MAdminClient(this)
+                        };
+
+                        Manager.GetEventHandler().AddEvent(_event);
+
                         Throttled = false;
                     }
 
@@ -625,6 +637,19 @@ namespace IW4MAdmin
                     {
                         Logger.WriteError($"{e.Message} {IP}:{Port}, {loc["SERVER_ERROR_POLLING"]}");
                         Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
+
+                        var _event = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.ConnectionLost,
+                            Owner = this,
+                            Origin = Utilities.IW4MAdminClient(this),
+                            Target = Utilities.IW4MAdminClient(this),
+                            Extra = e,
+                            Data = ConnectionErrors.ToString()
+                        };
+
+                        Manager.GetEventHandler().AddEvent(_event);
+
                         Throttled = true;
                     }
                     return true;

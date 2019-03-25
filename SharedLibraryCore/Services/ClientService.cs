@@ -21,7 +21,6 @@ namespace SharedLibraryCore.Services
                 {
                     Level = Permission.User,
                     FirstConnection = DateTime.UtcNow,
-                    Connections = 1,
                     LastConnection = DateTime.UtcNow,
                     Masked = false,
                     NetworkId = entity.NetworkId,
@@ -356,11 +355,25 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        /// <summary>
+        /// retrieves the number of owners 
+        /// (client level is owner)
+        /// </summary>
+        /// <returns></returns>
+        public async Task<int> GetOwnerCount()
+        {
+            using (var ctx = new DatabaseContext(true))
+            {
+                return await ctx.Clients.AsNoTracking()
+                    .CountAsync(_client => _client.Level == Permission.Owner);
+            }
+        }
+
         public async Task<List<EFClient>> GetPrivilegedClients()
         {
             using (var context = new DatabaseContext(disableTracking: true))
             {
-                var iqClients = from client in context.Clients
+                var iqClients = from client in context.Clients.AsNoTracking()
                                 where client.Level >= Permission.Trusted
                                 where client.Active
                                 select new EFClient()

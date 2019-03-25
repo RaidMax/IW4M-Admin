@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Database.Models
@@ -377,7 +378,7 @@ namespace SharedLibraryCore.Database.Models
         /// <param name="unbanReason">reason for the unban</param>
         /// <param name="sender">client performing the unban</param>
         /// <returns></returns>
-        public GameEvent Unban(String unbanReason, EFClient sender)
+        public GameEvent Unban(string unbanReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -390,6 +391,32 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
+            if (this.Level > sender.Level)
+            {
+                e.FailReason = GameEvent.EventFailReason.Permission;
+            }
+
+            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            return e;
+        }
+
+        /// <summary>
+        /// sets the level of the client
+        /// </summary>
+        /// <param name="permission">new permission to set client to</param>
+        /// <param name="sender">user performing the set level</param>
+        /// <returns></returns>
+        public GameEvent SetLevel(Permission permission, EFClient sender)
+        {
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.ChangePermission,
+                Extra = permission,
+                Origin = sender,
+                Target = this,
+                Owner = sender.CurrentServer
+            };
+
             if (this.Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
@@ -416,9 +443,9 @@ namespace SharedLibraryCore.Database.Models
                 return;
             }
 
-            if (Name == "Unknown Soldier" ||
-                Name == "UnknownSoldier" ||
-                Name == "CHEATER")
+            if (CurrentServer.Manager.GetApplicationSettings().Configuration()
+                .DisallowedClientNames
+                ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is generic");
                 Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
@@ -453,92 +480,121 @@ namespace SharedLibraryCore.Database.Models
             await CurrentServer.Manager.GetClientService().Update(this);
         }
 
-        public async Task<bool> OnJoin(int? ipAddress)
+        public async Task OnJoin(int? ipAddress)
         {
             CurrentServer.Logger.WriteDebug($"Start join for {this}::{ipAddress}::{Level.ToString()}");
-       
-            IPAddress = ipAddress;
-            var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
 
             if (ipAddress != null)
             {
-                // todo: remove this in a few weeks because it's just temporary for server forwarding
-                if (IPAddressString == "66.150.121.184" || IPAddressString == "62.210.178.177")
-                {
-                    Kick($"Your favorite servers are outdated. Please remove and re-add this server. ({CurrentServer.Hostname})", autoKickClient);
-                    return false;
-                }
+                IPAddress = ipAddress;
                 await CurrentServer.Manager.GetClientService().UpdateAlias(this);
             }
 
+            // we want to run any non GUID based logic here
             OnConnect();
-            await CurrentServer.Manager.GetClientService().Update(this);
 
-            CurrentServer.Logger.WriteDebug($"OnConnect finished for {this}");
+            if (await CanConnect(ipAddress) && IPAddress != null)
+            {
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Join,
+                    Origin = this,
+                    Target = this,
+                    Owner = CurrentServer
+                };
 
-            #region CLIENT_BAN
+                CurrentServer.Manager.GetEventHandler().AddEvent(e);
+
+                await CurrentServer.Manager.GetClientService().Update(this);
+            }
+
+            else
+            {
+                CurrentServer.Logger.WriteDebug($"Client {this} is not allowed to join the server");
+            }
+
+            CurrentServer.Logger.WriteDebug($"OnJoin finished for {this}");
+        }
+
+        private async Task<bool> CanConnect(int? ipAddress)
+        {
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
+
+            #region CLIENT_GUID_BAN
             // kick them as their level is banned
             if (Level == Permission.Banned)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
-                var ban = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active);
+                var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active);
 
-                if (ban == null)
+                if (profileBan == null)
                 {
                     // this is from the old system before bans were applied to all accounts
-                    ban = (await CurrentServer.Manager
+                    profileBan = (await CurrentServer.Manager
                         .GetPenaltyService()
                         .GetActivePenaltiesAsync(AliasLinkId))
                         .FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.Ban);
 
-                    CurrentServer.Logger.WriteError($"Client {this} is banned, but no penalty exists for their ban");
+                    CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but no previous penalty exists for their ban");
+
+                    if (profileBan == null)
+                    {
+                        profileBan = new EFPenalty() { Offense = loc["SERVER_BAN_UNKNOWN"] };
+                        CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but we could not find the penalty on any linked accounts");
+                    }
 
                     // hack: re apply the automated offense to the reban
-                    if (ban.AutomatedOffense != null)
+                    if (profileBan.AutomatedOffense != null)
                     {
                         autoKickClient.AdministeredPenalties?.Add(new EFPenalty()
                         {
-                            AutomatedOffense = ban.AutomatedOffense
+                            AutomatedOffense = profileBan.AutomatedOffense
                         });
                     }
 
                     // this is a reban of the new GUID and IP
-                    Ban($"{ban.Offense}", autoKickClient, false);
+                    Ban($"{profileBan.Offense}", autoKickClient, false);
                     return false;
                 }
 
-                Kick($"{loc["SERVER_BAN_PREV"]} {ban?.Offense}", autoKickClient);
-                return false;
-            }
-
-            var tempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan && _penalty.Expires > DateTime.UtcNow && _penalty.Active);
-            // they have an active tempban tied to their GUID
-            if (tempBan != null)
-            {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because they are temporarily banned");
-                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                Kick($"{loc["SERVER_BAN_PREV"]} {profileBan?.Offense}", autoKickClient);
                 return false;
             }
             #endregion
 
+            #region CLIENT_GUID_TEMPBAN
+            else
+            {
+                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan && _penalty.Active);
+
+                // they have an active tempban tied to their GUID
+                if (profileTempBan != null)
+                {
+                    CurrentServer.Logger.WriteDebug($"Kicking {this} because their GUID is temporarily banned");
+                    Kick($"{loc["SERVER_TB_REMAIN"]} ({(profileTempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                    return false;
+                }
+
+            }
+            #endregion
+
+            #region CLIENT_LINKED_BAN
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
-            var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban);
+            var tempBan = activePenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan);
 
-            var currentAutoFlag = activePenalties.Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
-                .Where(p => p.Active)
-                .OrderByDescending(p => p.When)
-                .FirstOrDefault();
-
-            // remove their auto flag status after a week
-            if (Level == Permission.Flagged &&
-                currentAutoFlag != null &&
-                (DateTime.UtcNow - currentAutoFlag.When).TotalDays > 7)
+            // they have an active tempban tied to their AliasLink
+            if (tempBan != null)
             {
-                Level = Permission.User;
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because their AliasLink is temporarily banned");
+                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                return false;
             }
 
+            var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban);
+
+            // they have a perm ban tied to their AliasLink
             if (currentBan != null)
             {
                 CurrentServer.Logger.WriteInfo($"Banned client {this} trying to evade...");
@@ -567,18 +623,23 @@ namespace SharedLibraryCore.Database.Models
 
                 return false;
             }
+            #endregion
 
             else
             {
-                var e = new GameEvent()
-                {
-                    Type = GameEvent.EventType.Join,
-                    Origin = this,
-                    Target = this,
-                    Owner = CurrentServer
-                };
+                var currentAutoFlag = activePenalties
+                    .Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
+                    .OrderByDescending(p => p.When)
+                    .FirstOrDefault();
 
-                CurrentServer.Manager.GetEventHandler().AddEvent(e);
+                // remove their auto flag status after a week
+                if (Level == Permission.Flagged &&
+                    currentAutoFlag != null &&
+                    (DateTime.UtcNow - currentAutoFlag.When).TotalDays > 7)
+                {
+                    Level = Permission.User;
+                }
+
                 return true;
             }
         }

@@ -146,13 +146,12 @@
 }
 
 #profile_avatar {
-    height: 10.5rem;
-    width: 10.5rem;
+   
 }
 
 .profile-shortcode {
-    font-size: 10.5rem;
-    line-height: 10.5rem;
+    font-size: 5rem;
+    line-height: 5rem;
     color: white;
 }
 

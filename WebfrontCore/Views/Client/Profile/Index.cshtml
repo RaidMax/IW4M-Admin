@@ -6,37 +6,23 @@
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     bool isTempBanned = Model.ActivePenaltyType == "TempBan";
 }
-<div id="profile_wrapper" class="d-flex row pb-3">
-    <div id="profile_avatar" class="ml-auto mr-auto mb-4 mb-md-0 text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
+<div id="profile_wrapper" class="pb-3 row d-flex flex-fill">
+    <div id="profile_avatar" class="text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
         @if (string.IsNullOrEmpty(gravatarUrl))
         {
             <span class="profile-shortcode">@shortCode</span>
         }
     </div>
-    <div class="ml-auto mr-auto">
-        <div id="profile_name" class="client-name h1 pl-3 pr-3">@Model.Name</div>
-        <div id="profile_info" class="text-center text-md-left pr-md-3 pl-md-3">
+    <div class="">
+        <div class="text-center text-sm-left">
+            <div id="profile_name" class="client-name h1">@Model.Name</div>
             <div id="profile_level" class="text-muted mb-2">
                 <h5><span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")"><strong>@Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")</strong></span></h5>
             </div>
-            <div id="profile_time_played" class="text-muted">
-                @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
-            </div>
-            <div id="profile_first_seen" class="text-muted">
-                @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-            </div>
-            <div id="profile_last_seen" class="text-muted">
-                @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-            </div>
-            <div id="profile_meta_0" class="text-center text-sm-left"></div>
         </div>
-    </div>
-    <div class="flex-fill mb-1 pl-md-3 pr-md-3 align-self-end text-center text-sm-left" id="profile_meta_1">
-    </div>
-    @if (ViewBag.Authorized)
-    {
-        <div class="mr-auto ml-auto">
-            <div class="text-center text-sm-right mt-2">
+        @if (ViewBag.Authorized)
+        {
+            <div class="text-center text-sm-right col-lg-4 col-12 mt-2">
                 <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
                 @if (Model.LevelInt != -1)
                 {
@@ -81,10 +67,27 @@
                     }
                 </div>
             </div>
-            <div class="flex-fill text-center text-sm-right" id="profile_meta_2">
-            </div>
+
+        }
+    </div>
+    @*<div id="profile_info" class="text-center text-md-left pr-md-3 pl-md-3">
+
+        <div id="profile_time_played" class="text-muted">
+            @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
         </div>
-    }
+        <div id="profile_first_seen" class="text-muted">
+            @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+        </div>
+        <div id="profile_last_seen" class="text-muted">
+            @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+        </div>
+        <div id="profile_meta_0" class="text-center text-sm-left"></div>
+    </div>
+    <div class="flex-fill mb-1 pl-md-3 pr-md-3 align-self-end text-center text-sm-left" id="profile_meta_1">
+    </div>
+
+    <div class="flex-fill text-center text-sm-right" id="profile_meta_2">
+    </div>*@
 </div>
 
 <div class="row d-md-flex pt-2">
@@ -100,7 +103,7 @@
     <script>
         const clientInfo = {};
         clientInfo.clientId = @Model.ClientId;
-        clientInfo.Meta =@Html.Raw(Json.Serialize(@Model.Meta.Where(m => m.Show)));
+        clientInfo.Meta = @Html.Raw(Json.Serialize(@Model.Meta.Where(m => m.Show)));
     </script>
     <environment include="Development">
         <script type="text/javascript" src="~/js/profile.js"></script>

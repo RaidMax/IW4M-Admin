@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Events;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
@@ -18,7 +17,7 @@ namespace SharedLibraryCore.Commands
     public class CQuit : Command
     {
         public CQuit() :
-            base("quit", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_QUIT_DESC"], "q",  EFClient.Permission.Owner, false)
+            base("quit", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_QUIT_DESC"], "q", EFClient.Permission.Owner, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -30,32 +29,15 @@ namespace SharedLibraryCore.Commands
     public class COwner : Command
     {
         public COwner() :
-            base("owner", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_DESC"], "iamgod",  EFClient.Permission.User, false)
+            base("owner", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_DESC"], "iamgod", EFClient.Permission.User, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            if ((await (E.Owner.Manager.GetClientService() as ClientService).GetOwners()).Count == 0)
+            if (await (E.Owner.Manager.GetClientService() as ClientService).GetOwnerCount() == 0 &&
+                !E.Target.SetLevel(EFClient.Permission.Owner, Utilities.IW4MAdminClient(E.Owner)).Failed)
             {
-                var oldPermission = E.Origin.Level;
-                E.Origin.Level =  EFClient.Permission.Owner;
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_SUCCESS"]);
-                await E.Owner.Manager.GetClientService().Update(E.Origin);
-
-                var e = new GameEvent()
-                {
-                    Type = GameEvent.EventType.ChangePermission,
-                    Origin = E.Origin,
-                    Target = E.Origin,
-                    Owner = E.Owner,
-                    Extra = new Change()
-                    {
-                        PreviousValue = oldPermission.ToString(),
-                        NewValue = E.Origin.Level.ToString()
-                    }
-                };
-
-                E.Owner.Manager.GetEventHandler().AddEvent(e);
             }
             else
             {
@@ -67,7 +49,7 @@ namespace SharedLibraryCore.Commands
     public class CWarn : Command
     {
         public CWarn() :
-            base("warn", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_DESC"], "w",  EFClient.Permission.Trusted, true, new CommandArgument[]
+            base("warn", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_DESC"], "w", EFClient.Permission.Trusted, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -96,7 +78,7 @@ namespace SharedLibraryCore.Commands
     public class CWarnClear : Command
     {
         public CWarnClear() :
-            base("warnclear", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_DESC"], "wc",  EFClient.Permission.Trusted, true, new CommandArgument[]
+            base("warnclear", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_DESC"], "wc", EFClient.Permission.Trusted, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -120,7 +102,7 @@ namespace SharedLibraryCore.Commands
     public class CKick : Command
     {
         public CKick() :
-            base("kick", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_DESC"], "k",  EFClient.Permission.Moderator, true, new CommandArgument[]
+            base("kick", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_DESC"], "k", EFClient.Permission.Moderator, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -146,7 +128,7 @@ namespace SharedLibraryCore.Commands
     public class CSay : Command
     {
         public CSay() :
-            base("say", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SAY_DESC"], "s",  EFClient.Permission.Moderator, false, new CommandArgument[]
+            base("say", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SAY_DESC"], "s", EFClient.Permission.Moderator, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -166,7 +148,7 @@ namespace SharedLibraryCore.Commands
     public class CTempBan : Command
     {
         public CTempBan() :
-            base("tempban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_DESC"], "tb",  EFClient.Permission.Administrator, true, new CommandArgument[]
+            base("tempban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_DESC"], "tb", EFClient.Permission.Administrator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -214,7 +196,7 @@ namespace SharedLibraryCore.Commands
     public class CBan : Command
     {
         public CBan() :
-            base("ban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_DESC"], "b",  EFClient.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("ban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_DESC"], "b", EFClient.Permission.SeniorAdmin, true, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -240,7 +222,7 @@ namespace SharedLibraryCore.Commands
     public class CUnban : Command
     {
         public CUnban() :
-            base("unban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_DESC"], "ub",  EFClient.Permission.SeniorAdmin, true, new CommandArgument[]
+            base("unban", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_DESC"], "ub", EFClient.Permission.SeniorAdmin, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -273,7 +255,7 @@ namespace SharedLibraryCore.Commands
     public class CWhoAmI : Command
     {
         public CWhoAmI() :
-            base("whoami", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WHO_DESC"], "who",  EFClient.Permission.User, false)
+            base("whoami", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WHO_DESC"], "who", EFClient.Permission.User, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -288,7 +270,7 @@ namespace SharedLibraryCore.Commands
     public class CList : Command
     {
         public CList() :
-            base("list", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_LIST_DESC"], "l",  EFClient.Permission.Moderator, false)
+            base("list", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_LIST_DESC"], "l", EFClient.Permission.Moderator, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -307,11 +289,11 @@ namespace SharedLibraryCore.Commands
                 // todo: make this better :)
                 if (P.Masked)
                 {
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor( EFClient.Permission.User, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces( EFClient.Permission.SeniorAdmin.ToString().Length -  EFClient.Permission.User.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(EFClient.Permission.User, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(EFClient.Permission.SeniorAdmin.ToString().Length - EFClient.Permission.User.ToString().Length));
                 }
                 else
                 {
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces( EFClient.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
+                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(EFClient.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
                 }
 
                 if (count == 2 || E.Owner.GetClientsAsList().Count == 1)
@@ -339,7 +321,7 @@ namespace SharedLibraryCore.Commands
     public class CHelp : Command
     {
         public CHelp() :
-            base("help", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_HELP_DESC"], "h",  EFClient.Permission.User, false, new CommandArgument[]
+            base("help", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_HELP_DESC"], "h", EFClient.Permission.User, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -404,7 +386,7 @@ namespace SharedLibraryCore.Commands
     public class CFastRestart : Command
     {
         public CFastRestart() :
-            base("fastrestart", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FASTRESTART_DESC"], "fr",  EFClient.Permission.Moderator, false)
+            base("fastrestart", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FASTRESTART_DESC"], "fr", EFClient.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -420,7 +402,7 @@ namespace SharedLibraryCore.Commands
     public class CMapRotate : Command
     {
         public CMapRotate() :
-            base("maprotate", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE_DESC"], "mr",  EFClient.Permission.Administrator, false)
+            base("maprotate", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAPROTATE_DESC"], "mr", EFClient.Permission.Administrator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -437,7 +419,7 @@ namespace SharedLibraryCore.Commands
     public class CSetLevel : Command
     {
         public CSetLevel() :
-            base("setlevel", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DESC"], "sl",  EFClient.Permission.Moderator, true, new CommandArgument[]
+            base("setlevel", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DESC"], "sl", EFClient.Permission.Moderator, true, new CommandArgument[]
                 {
                      new CommandArgument()
                      {
@@ -452,50 +434,54 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent E)
         {
+
+            EFClient.Permission oldPerm = E.Target.Level;
+            EFClient.Permission newPerm = Utilities.MatchPermission(E.Data);
+
             if (E.Target == E.Origin)
             {
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SELF"]);
-                return;
+                return Task.CompletedTask;
             }
 
-             EFClient.Permission oldPerm = E.Target.Level;
-             EFClient.Permission newPerm = Utilities.MatchPermission(E.Data);
 
-            if (newPerm ==  EFClient.Permission.Owner &&
+            else if (newPerm == EFClient.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
             {
+                // only one owner is allowed
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_OWNER"]);
-                return;
+                return Task.CompletedTask;
             }
 
-            if (E.Origin.Level <  EFClient.Permission.Owner &&
+            else if (E.Origin.Level < EFClient.Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy)
             {
+                // only the owner is allowed to set levels
                 E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{E.Target.Name}");
-                return;
+                return Task.CompletedTask;
             }
 
-            if (newPerm >= E.Origin.Level)
+            else if (E.Origin.Level <= newPerm &&
+                E.Origin.Level < EFClient.Permission.Owner)
             {
-                if (E.Origin.Level <  EFClient.Permission.Owner)
-                {
-                    E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
-                    return;
-                }
+                // can't promote a client to higher than your current perms
+                E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
+                return Task.CompletedTask;
             }
 
-            else if (newPerm >  EFClient.Permission.Banned)
+            else if (newPerm > EFClient.Permission.Banned)
             {
                 var ActiveClient = E.Owner.Manager.GetActiveClients()
                     .FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
 
                 if (ActiveClient != null)
                 {
-                    ActiveClient.Level = newPerm;
-                    await E.Owner.Manager.GetClientService().Update(ActiveClient);
+                    ActiveClient.SetLevel(newPerm, E.Origin);
 
+                    // inform the client that they were promoted
+                    // we don't really want to tell them if they're demoted haha
                     if (newPerm > oldPerm)
                     {
                         ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
@@ -504,26 +490,11 @@ namespace SharedLibraryCore.Commands
 
                 else
                 {
-                    E.Target.Level = newPerm;
-                    await E.Owner.Manager.GetClientService().Update(E.Target);
+                    E.Target.SetLevel(newPerm, E.Origin);
                 }
 
-                var e = new GameEvent()
-                {
-                    Origin = E.Origin,
-                    Target = E.Target,
-                    Owner = E.Owner,
-                    Type = GameEvent.EventType.ChangePermission,
-                    Extra = new Change()
-                    {
-                        PreviousValue = oldPerm.ToString(),
-                        NewValue = newPerm.ToString()
-                    }
-                };
-
-                E.Owner.Manager.GetEventHandler().AddEvent(e);
-
-                var _ = newPerm < oldPerm ?
+                // inform the origin that the client has been updated
+                _ = newPerm < oldPerm ?
                     E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"]} {E.Target.Name}") :
                     E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"]}");
             }
@@ -532,13 +503,15 @@ namespace SharedLibraryCore.Commands
             {
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_FAIL"]);
             }
+
+            return Task.CompletedTask;
         }
     }
 
     public class CUsage : Command
     {
         public CUsage() :
-            base("usage", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_USAGE_DESC"], "us",  EFClient.Permission.Moderator, false)
+            base("usage", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_USAGE_DESC"], "us", EFClient.Permission.Moderator, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -551,7 +524,7 @@ namespace SharedLibraryCore.Commands
     public class CUptime : Command
     {
         public CUptime() :
-            base("uptime", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UPTIME_DESC"], "up",  EFClient.Permission.Moderator, false)
+            base("uptime", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UPTIME_DESC"], "up", EFClient.Permission.Moderator, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -566,13 +539,13 @@ namespace SharedLibraryCore.Commands
     public class CListAdmins : Command
     {
         public CListAdmins() :
-            base("admins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_DESC"], "a",  EFClient.Permission.User, false)
+            base("admins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ADMINS_DESC"], "a", EFClient.Permission.User, false)
         { }
 
         public static string OnlineAdmins(Server S)
         {
             var onlineAdmins = S.GetClientsAsList()
-                .Where(p => p.Level >  EFClient.Permission.Flagged)
+                .Where(p => p.Level > EFClient.Permission.Flagged)
                 .Where(p => !p.Masked)
                 .Select(p => $"[^3{Utilities.ConvertLevelToColor(p.Level, p.ClientPermission.Name)}^7] {p.Name}");
 
@@ -595,7 +568,7 @@ namespace SharedLibraryCore.Commands
     public class CLoadMap : Command
     {
         public CLoadMap() :
-            base("map", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_DESC"], "m",  EFClient.Permission.Administrator, false, new CommandArgument[]
+            base("map", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_DESC"], "m", EFClient.Permission.Administrator, false, new CommandArgument[]
             {
                  new CommandArgument()
                  {
@@ -628,7 +601,7 @@ namespace SharedLibraryCore.Commands
     public class CFindPlayer : Command
     {
         public CFindPlayer() :
-            base("find", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FIND_DESC"], "f",  EFClient.Permission.Administrator, false, new CommandArgument[]
+            base("find", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FIND_DESC"], "f", EFClient.Permission.Administrator, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -672,7 +645,7 @@ namespace SharedLibraryCore.Commands
     public class CListRules : Command
     {
         public CListRules() :
-            base("rules", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RULES_DESC"], "r",  EFClient.Permission.User, false)
+            base("rules", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RULES_DESC"], "r", EFClient.Permission.User, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -707,7 +680,7 @@ namespace SharedLibraryCore.Commands
     public class CPrivateMessage : Command
     {
         public CPrivateMessage() :
-            base("privatemessage", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PM_DESC"], "pm",  EFClient.Permission.User, true, new CommandArgument[]
+            base("privatemessage", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PM_DESC"], "pm", EFClient.Permission.User, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -734,7 +707,7 @@ namespace SharedLibraryCore.Commands
     public class CFlag : Command
     {
         public CFlag() :
-            base("flag", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_DESC"], "fp",  EFClient.Permission.Moderator, true, new CommandArgument[]
+            base("flag", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_DESC"], "fp", EFClient.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -776,7 +749,7 @@ namespace SharedLibraryCore.Commands
     public class CUnflag : Command
     {
         public CUnflag() :
-            base("unflag", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_DESC"], "uf",  EFClient.Permission.Moderator, true, new CommandArgument[]
+            base("unflag", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_DESC"], "uf", EFClient.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -814,7 +787,7 @@ namespace SharedLibraryCore.Commands
     public class CReport : Command
     {
         public CReport() :
-            base("report", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_DESC"], "rep",  EFClient.Permission.User, true, new CommandArgument[]
+            base("report", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_DESC"], "rep", EFClient.Permission.User, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -885,7 +858,7 @@ namespace SharedLibraryCore.Commands
     public class CListReports : Command
     {
         public CListReports() :
-            base("reports", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORTS_DESC"], "reps",  EFClient.Permission.Moderator, false, new CommandArgument[]
+            base("reports", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORTS_DESC"], "reps", EFClient.Permission.Moderator, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -922,7 +895,7 @@ namespace SharedLibraryCore.Commands
     public class CMask : Command
     {
         public CMask() :
-            base("mask", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MASK_DESC"], "hide",  EFClient.Permission.Moderator, false)
+            base("mask", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MASK_DESC"], "hide", EFClient.Permission.Moderator, false)
         { }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -945,7 +918,7 @@ namespace SharedLibraryCore.Commands
     public class CListBanInfo : Command
     {
         public CListBanInfo() :
-            base("baninfo", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_DESC"], "bi",  EFClient.Permission.Moderator, true, new CommandArgument[]
+            base("baninfo", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_DESC"], "bi", EFClient.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -978,7 +951,7 @@ namespace SharedLibraryCore.Commands
     public class CListAlias : Command
     {
         public CListAlias() :
-            base("alias", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ALIAS_DESC"], "known",  EFClient.Permission.Moderator, true, new CommandArgument[]
+            base("alias", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ALIAS_DESC"], "known", EFClient.Permission.Moderator, true, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -1012,7 +985,7 @@ namespace SharedLibraryCore.Commands
     public class CExecuteRCON : Command
     {
         public CExecuteRCON() :
-            base("rcon", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RCON_DESC"], "rcon",  EFClient.Permission.Owner, false, new CommandArgument[]
+            base("rcon", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RCON_DESC"], "rcon", EFClient.Permission.Owner, false, new CommandArgument[]
                 {
                     new CommandArgument()
                     {
@@ -1040,7 +1013,7 @@ namespace SharedLibraryCore.Commands
     public class CPlugins : Command
     {
         public CPlugins() :
-            base("plugins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PLUGINS_DESC"], "p",  EFClient.Permission.Administrator, false)
+            base("plugins", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PLUGINS_DESC"], "p", EFClient.Permission.Administrator, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -1057,7 +1030,7 @@ namespace SharedLibraryCore.Commands
     public class CIP : Command
     {
         public CIP() :
-            base("getexternalip", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_IP_DESC"], "ip",  EFClient.Permission.User, false)
+            base("getexternalip", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_IP_DESC"], "ip", EFClient.Permission.User, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -1069,7 +1042,7 @@ namespace SharedLibraryCore.Commands
 
     public class CPruneAdmins : Command
     {
-        public CPruneAdmins() : base("prune", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_DESC"], "pa",  EFClient.Permission.Owner, false, new CommandArgument[]
+        public CPruneAdmins() : base("prune", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_DESC"], "pa", EFClient.Permission.Owner, false, new CommandArgument[]
         {
             new CommandArgument()
             {
@@ -1108,10 +1081,10 @@ namespace SharedLibraryCore.Commands
             {
                 var lastActive = DateTime.UtcNow.AddDays(-inactiveDays);
                 inactiveUsers = await context.Clients
-                    .Where(c => c.Level >  EFClient.Permission.Flagged && c.Level <=  EFClient.Permission.Moderator)
+                    .Where(c => c.Level > EFClient.Permission.Flagged && c.Level <= EFClient.Permission.Moderator)
                     .Where(c => c.LastConnection < lastActive)
                     .ToListAsync();
-                inactiveUsers.ForEach(c => c.Level =  EFClient.Permission.User);
+                inactiveUsers.ForEach(c => c.Level = EFClient.Permission.User);
                 await context.SaveChangesAsync();
             }
             E.Origin.Tell($"^5{inactiveUsers.Count} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_SUCCESS"]}");
@@ -1120,7 +1093,7 @@ namespace SharedLibraryCore.Commands
 
     public class CSetPassword : Command
     {
-        public CSetPassword() : base("setpassword", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETPASSWORD_DESC"], "sp",  EFClient.Permission.Moderator, false, new CommandArgument[]
+        public CSetPassword() : base("setpassword", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETPASSWORD_DESC"], "sp", EFClient.Permission.Moderator, false, new CommandArgument[]
             {
                 new CommandArgument()
                 {
@@ -1154,7 +1127,7 @@ namespace SharedLibraryCore.Commands
 
     public class CKillServer : Command
     {
-        public CKillServer() : base("killserver", "kill the game server", "kill",  EFClient.Permission.Administrator, false)
+        public CKillServer() : base("killserver", "kill the game server", "kill", EFClient.Permission.Administrator, false)
         {
         }
 
@@ -1236,7 +1209,7 @@ namespace SharedLibraryCore.Commands
 
     public class CPing : Command
     {
-        public CPing() : base("ping", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_DESC"], "pi",  EFClient.Permission.User, false, new CommandArgument[]
+        public CPing() : base("ping", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_DESC"], "pi", EFClient.Permission.User, false, new CommandArgument[]
         {
             new CommandArgument()
             {
@@ -1277,7 +1250,7 @@ namespace SharedLibraryCore.Commands
 
     public class CSetGravatar : Command
     {
-        public CSetGravatar() : base("setgravatar", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_DESC"], "sg",  EFClient.Permission.User, false, new CommandArgument[]
+        public CSetGravatar() : base("setgravatar", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_DESC"], "sg", EFClient.Permission.User, false, new CommandArgument[]
         {
             new CommandArgument()
             {
@@ -1341,7 +1314,7 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class CNextMap : Command
     {
-        public CNextMap() : base("nextmap", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_DESC"], "nm",  EFClient.Permission.User, false) { }
+        public CNextMap() : base("nextmap", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_DESC"], "nm", EFClient.Permission.User, false) { }
         public static async Task<string> GetNextMap(Server s)
         {
             string mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value.ToLower();

@@ -20,5 +20,7 @@ namespace SharedLibraryCore.Dtos
         public string TimePunished { get; set; }
         public string TimeRemaining { get; set; }
         public bool Expired { get; set; }
+        public string IPAddress { get; set; }
+        public ulong NetworkId { get; set; }
     }
 }

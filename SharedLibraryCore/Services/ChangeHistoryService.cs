@@ -45,7 +45,6 @@ namespace SharedLibraryCore.Services
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target?.ClientId ?? 0,
                         Comment = "Executed command",
-                        PreviousValue = "",
                         CurrentValue = e.Message,
                         TypeOfChange = EFChangeHistory.ChangeType.Command
                     };
@@ -56,8 +55,7 @@ namespace SharedLibraryCore.Services
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target.ClientId,
                         TypeOfChange = EFChangeHistory.ChangeType.Permission,
-                        PreviousValue = ((Change)e.Extra).PreviousValue,
-                        CurrentValue = ((Change)e.Extra).NewValue
+                        CurrentValue = ((EFClient.Permission)e.Extra).ToString()
                     };
                     break;
                 default:

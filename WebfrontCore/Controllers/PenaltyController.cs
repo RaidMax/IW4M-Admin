@@ -33,30 +33,42 @@ namespace WebfrontCore.Controllers
             }));
         }
 
+        /// <summary>
+        /// retrieves all permanent bans ordered by ban date
+        /// if request is authorized, it will include the client's ip address.
+        /// </summary>
+        /// <returns></returns>
         public async Task<IActionResult> PublicAsync()
         {
-            IList<EFPenalty> penalties;
+            IList<PenaltyInfo> penalties;
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
-                penalties = await ctx.Penalties
+                // todo: this seems like it's pulling unnecessary info from LINQ to entities.
+                var iqPenalties = ctx.Penalties
                     .Where(p => p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Ban && p.Active)
-                    .ToListAsync();
+                    .OrderByDescending(_penalty => _penalty.When)
+                    .Select(p => new PenaltyInfo()
+                    {
+                        Id = p.PenaltyId,
+                        OffenderId = p.OffenderId,
+                        Offense = p.Offense,
+                        PunisherId = p.PunisherId,
+                        Type = p.Type.ToString(),
+                        TimePunished = p.When.ToString(),
+                        TimeRemaining = "",
+                        AutomatedOffense = Authorized ? p.AutomatedOffense : "",
+                        NetworkId = (ulong)p.Offender.NetworkId,
+                        IPAddress = Authorized ? p.Offender.IPAddressString : ""
+                    });
+#if DEBUG == true
+                var querySql = iqPenalties.ToSql();
+#endif
+
+                penalties = await iqPenalties.ToListAsync();
             }
 
-            var penaltiesDto = penalties.Select(p => new PenaltyInfo()
-            {
-                Id = p.PenaltyId,
-                OffenderId = p.OffenderId,
-                Offense = p.Offense,
-                PunisherId = p.PunisherId,
-                Type = p.Type.ToString(),
-                TimePunished = p.When.ToString(),
-                TimeRemaining = "",
-                AutomatedOffense = p.AutomatedOffense
-            }).ToList();
-
-            return Json(penaltiesDto);
+            return Json(penalties);
         }
     }
 }

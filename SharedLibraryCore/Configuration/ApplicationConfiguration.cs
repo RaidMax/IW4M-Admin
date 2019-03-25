@@ -33,6 +33,7 @@ namespace SharedLibraryCore.Configuration
         public List<string> AutoMessages { get; set; }
         public List<string> GlobalRules { get; set; }
         public List<MapConfiguration> Maps { get; set; }
+        public List<string> DisallowedClientNames { get; set; }
 
         public IBaseConfiguration Generate()
         {
@@ -61,6 +62,13 @@ namespace SharedLibraryCore.Configuration
             }
 
             RConPollRate = 5000;
+            DisallowedClientNames = new List<string>()
+            {
+                "Unknown Soldier",
+                "UnknownSoldier",
+                "CHEATER",
+                "VickNet"
+            };
 
             return this;
         }

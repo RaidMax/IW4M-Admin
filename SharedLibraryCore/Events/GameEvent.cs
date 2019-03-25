@@ -85,6 +85,14 @@ namespace SharedLibraryCore
             /// a client's information was updated
             /// </summary>
             Update,
+            /// <summary>
+            /// connection was lost to a server (the server has not responded after a number of attempts)
+            /// </summary>
+            ConnectionLost,
+            /// <summary>
+            /// connection was restored to a server (the server began responding again)
+            /// </summary>
+            ConnectionRestored,
 
             // events "generated" by clients  
             /// <summary>
@@ -167,6 +175,10 @@ namespace SharedLibraryCore
             /// team info printed out by game script
             /// </summary>
             JoinTeam = 304,
+            /// <summary>
+            /// used for community generated plugin events
+            /// </summary>
+            Other
         }
 
         static long NextEventId;

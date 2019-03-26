@@ -7,7 +7,6 @@ using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 
 namespace IW4MAdmin.Plugins.ProfanityDeterment
 {

@@ -566,7 +566,9 @@ namespace SharedLibraryCore.Database.Models
             #region CLIENT_GUID_TEMPBAN
             else
             {
-                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan && _penalty.Active);
+                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan && 
+                    _penalty.Active &&
+                    _penalty.Expires > DateTime.UtcNow);
 
                 // they have an active tempban tied to their GUID
                 if (profileTempBan != null)

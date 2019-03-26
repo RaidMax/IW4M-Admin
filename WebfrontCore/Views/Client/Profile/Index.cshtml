@@ -6,88 +6,100 @@
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     bool isTempBanned = Model.ActivePenaltyType == "TempBan";
 }
-<div id="profile_wrapper" class="pb-3 row d-flex flex-fill">
-    <div id="profile_avatar" class="text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
+<div class="row" style="background: white; height: 50px;"></div>
+
+<div id="profile_wrapper" class="pb-3 row">
+    <!-- Initial/Avatar Column -->
+    <div id="profile_avatar" class="col-12 col-lg-2 text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
         @if (string.IsNullOrEmpty(gravatarUrl))
         {
             <span class="profile-shortcode">@shortCode</span>
         }
     </div>
-    <div class="">
-        <div class="text-center text-sm-left">
-            <div id="profile_name" class="client-name h1">@Model.Name</div>
-            <div id="profile_level" class="text-muted mb-2">
-                <h5><span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")"><strong>@Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")</strong></span></h5>
-            </div>
+    <!-- Name/Level Column -->
+    <div class="text-center text-lg-left col-12 col-lg-8">
+        <div class="d-block d-lg-inline-flex align-self-start">
+            <div id="profile_name" class="client-name h1 mb-0 mt-n2">@Model.Name</div>
+            <br />
+            <br />
+            @if (ViewBag.Authorized)
+            {
+                <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-lg-2 mb-0 mt-0 mt-lg-2 align-self-center"></div>
+            }
         </div>
         @if (ViewBag.Authorized)
         {
-            <div class="text-center text-sm-right col-lg-4 col-12 mt-2">
-                <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-md-2"></div>
-                @if (Model.LevelInt != -1)
+            <div id="profile_aliases" class="text-muted mt-2 mb-2">
+                @foreach (var linked in Model.LinkedAccounts)
                 {
-                    <div id="profile_action_edit_btn" class="profile-action oi oi-cog text-muted h3 ml-2" title="Client Options" data-action="edit" aria-hidden="true"></div>
+                    @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new { id = linked.Key }, new { @class = "link-inverse" })<br />
                 }
-                @if (Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty)
+                @foreach (string alias in Model.Aliases)
+                {
+                    @alias<br />
+                }
+
+                @foreach (string ip in Model.IPs)
+                {
+                    <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a><br />
+                }
+            </div>
+        }
+        <div id="profile_level" class="text-muted align-self-end">
+            <h4 class="mb-0">
+                <span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")">
+                    <strong>@Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")</strong>
+                </span>
+            </h4>
+        </div>
+    </div>
+    @if (ViewBag.Authorized)
+    {
+        <div class="col-12 col-lg-2 pr-lg-0 text-center text-lg-right">
+
+            @if (Model.LevelInt != -1)
+            {
+                <div id="profile_action_edit_btn" class="profile-action oi oi-cog text-muted h3 ml-2" title="Client Options" data-action="edit" aria-hidden="true"></div>
+            }
+            @if (Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty)
+            {
+                <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
+            }
+
+            @if (Model.LevelInt < (int)ViewBag.User.Level && Model.HasActivePenalty)
+            {
+                @if (isTempBanned)
                 {
                     <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
+                    <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked penalties-color-tempban h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                 }
-
-                @if (Model.LevelInt < (int)ViewBag.User.Level && Model.HasActivePenalty)
+                else
                 {
-                    @if (isTempBanned)
-                    {
-                        <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
-                        <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked penalties-color-tempban h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
-                    }
-                    else
-                    {
-                        <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
-                    }
+                    <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                 }
+            }
+        </div>
 
-                <div id="profile_aliases" class="text-muted">
-                    @{
-                        foreach (var linked in Model.LinkedAccounts)
-                        {
-                            @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new { id = linked.Key }, new { @class = "link-inverse" })<br />
-                        }
-                        foreach (string alias in Model.Aliases)
-                        {
-                            @alias<br />
-                        }
+    }
 
-                        if (ViewBag.Authorized)
-                        {
-                            foreach (string ip in Model.IPs)
-                            {
-                                <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a><br />
-                            }
-                        }
-                    }
-                </div>
-            </div>
-
-        }
-    </div>
     @*<div id="profile_info" class="text-center text-md-left pr-md-3 pl-md-3">
 
-        <div id="profile_time_played" class="text-muted">
-            @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
+            <div id="profile_time_played" class="text-muted">
+                @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
+            </div>
+            <div id="profile_first_seen" class="text-muted">
+                @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+            </div>
+            <div id="profile_last_seen" class="text-muted">
+                @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+            </div>
+            <div id="profile_meta_0" class="text-center text-sm-left"></div>
         </div>
-        <div id="profile_first_seen" class="text-muted">
-            @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+        <div class="flex-fill mb-1 pl-md-3 pr-md-3 align-self-end text-center text-sm-left" id="profile_meta_1">
         </div>
-        <div id="profile_last_seen" class="text-muted">
-            @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-        </div>
-        <div id="profile_meta_0" class="text-center text-sm-left"></div>
-    </div>
-    <div class="flex-fill mb-1 pl-md-3 pr-md-3 align-self-end text-center text-sm-left" id="profile_meta_1">
-    </div>
 
-    <div class="flex-fill text-center text-sm-right" id="profile_meta_2">
-    </div>*@
+        <div class="flex-fill text-center text-sm-right" id="profile_meta_2">
+        </div>*@
 </div>
 
 <div class="row d-md-flex pt-2">

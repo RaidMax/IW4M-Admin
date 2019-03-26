@@ -384,7 +384,8 @@ namespace SharedLibraryCore.Services
                                     Level = client.Level,
                                     Password = client.Password,
                                     PasswordSalt = client.PasswordSalt,
-                                    NetworkId = client.NetworkId
+                                    NetworkId = client.NetworkId,
+                                    LastConnection = client.LastConnection
                                 };
 
 #if DEBUG == true

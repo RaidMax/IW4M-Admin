@@ -6,30 +6,27 @@
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     bool isTempBanned = Model.ActivePenaltyType == "TempBan";
 }
-<div class="row" style="background: white; height: 50px;"></div>
 
-<div id="profile_wrapper" class="pb-3 row">
+<div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
     <!-- Initial/Avatar Column -->
-    <div id="profile_avatar" class="col-12 col-lg-2 text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
+    <div id="profile_avatar" class="d-block d-lg-inline-flex flex-column mr-auto ml-auto mr-lg-0 ml-lg-0 justify-content-center text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
         @if (string.IsNullOrEmpty(gravatarUrl))
         {
             <span class="profile-shortcode">@shortCode</span>
         }
     </div>
     <!-- Name/Level Column -->
-    <div class="text-center text-lg-left col-12 col-lg-8">
-        <div class="d-block d-lg-inline-flex align-self-start">
-            <div id="profile_name" class="client-name h1 mb-0 mt-n2">@Model.Name</div>
-            <br />
-            <br />
+    <div class="d-block d-lg-inline-flex flex-column flex-fill text-center text-lg-left pb-3 pb-lg-0 pt-3 pt-lg-0 pl-3 pr-3">
+        <div class="mt-n2 flex-fill d-block d-lg-inline-flex">
+            <div id="profile_name" class="client-name h1 mb-0">@Model.Name</div>
             @if (ViewBag.Authorized)
             {
-                <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-lg-2 mb-0 mt-0 mt-lg-2 align-self-center"></div>
+                <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-lg-2 mb-0 pt-lg-2 mt-lg-1"></div>
             }
         </div>
         @if (ViewBag.Authorized)
         {
-            <div id="profile_aliases" class="text-muted mt-2 mb-2">
+            <div id="profile_aliases" class="text-muted pt-0 pt-lg-2 pb-2">
                 @foreach (var linked in Model.LinkedAccounts)
                 {
                     @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new { id = linked.Key }, new { @class = "link-inverse" })<br />
@@ -45,22 +42,13 @@
                 }
             </div>
         }
-        <div id="profile_level" class="text-muted align-self-end">
-            <h4 class="mb-0">
-                <span class="level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")">
-                    <strong>@Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")</strong>
-                </span>
-            </h4>
+        <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")">
+            @Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")
         </div>
     </div>
     @if (ViewBag.Authorized)
     {
-        <div class="col-12 col-lg-2 pr-lg-0 text-center text-lg-right">
-
-            @if (Model.LevelInt != -1)
-            {
-                <div id="profile_action_edit_btn" class="profile-action oi oi-cog text-muted h3 ml-2" title="Client Options" data-action="edit" aria-hidden="true"></div>
-            }
+        <div class="pr-lg-0 text-center text-lg-right">
             @if (Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty)
             {
                 <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
@@ -78,28 +66,33 @@
                     <div id="profile_action_unban_btn" class="profile-action oi oi-lock-locked text-danger h3 ml-2" title="Unban Client" data-action="unban" aria-hidden="true"></div>
                 }
             }
-        </div>
 
+            @if (Model.LevelInt != -1)
+            {
+                <div id="profile_action_edit_btn" class="profile-action oi oi-cog text-muted h3 ml-2" title="Client Options" data-action="edit" aria-hidden="true"></div>
+            }
+        </div>
     }
+</div>
 
-    @*<div id="profile_info" class="text-center text-md-left pr-md-3 pl-md-3">
-
-            <div id="profile_time_played" class="text-muted">
-                @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
-            </div>
-            <div id="profile_first_seen" class="text-muted">
-                @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-            </div>
-            <div id="profile_last_seen" class="text-muted">
-                @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-            </div>
-            <div id="profile_meta_0" class="text-center text-sm-left"></div>
+<div id="profile_info" class="row d-block d-lg-flex flex-row border-bottom border-top pt-2 pb-2">
+    <div id="profile_meta_0" class="text-center text-lg-left mr-0 mr-lg-4">
+        <div id="profile_time_played" class="text-muted">
+            @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
         </div>
-        <div class="flex-fill mb-1 pl-md-3 pr-md-3 align-self-end text-center text-sm-left" id="profile_meta_1">
+        <div id="profile_first_seen" class="text-muted">
+            @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
         </div>
+        <div id="profile_last_seen" class="text-muted">
+            @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
+        </div>
+    </div>
 
-        <div class="flex-fill text-center text-sm-right" id="profile_meta_2">
-        </div>*@
+    <div class="text-center text-lg-left mr-0 mr-lg-4" id="profile_meta_1">
+    </div>
+
+    <div class="text-center text-lg-left" id="profile_meta_2">
+    </div>
 </div>
 
 <div class="row d-md-flex pt-2">

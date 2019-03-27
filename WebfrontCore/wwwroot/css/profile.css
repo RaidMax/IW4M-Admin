@@ -146,12 +146,12 @@
 }
 
 #profile_avatar {
-   
+    min-width: 8rem;
+    min-height: 8rem;
 }
 
 .profile-shortcode {
     font-size: 5rem;
-    line-height: 5rem;
     color: white;
 }
 
@@ -171,10 +171,6 @@
     color: #f1a8e8;
     color: rgba(236, 130, 222, 0.69);
     font-weight: bold;
-}
-
-#profile_wrapper {
-    border-bottom: 2px rgb(0, 122, 204) solid;
 }
 
 .profile-action {

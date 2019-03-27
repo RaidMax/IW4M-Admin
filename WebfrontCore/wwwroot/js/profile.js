@@ -52,14 +52,14 @@ $(document).ready(function () {
     $.each(clientInfo.Meta, function (index, meta) {
         if (!meta.key.includes("Event")) {
             let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-primary">${meta.value}</span><span class="profile-meta-title text-muted"> ${meta.key}</span></div>`;
-            if (metaIndex < 10) {
-                let selector = '#profile_meta_' + ((metaIndex % 2) + 1);
-                $(selector).append(metaString);
+
+            // todo: fix the view so we don't have the 3 hardcoded meta
+            if (metaIndex % 3 == 0 && metaIndex < 7) {
+                metaIndex++;
             }
-            else {
-                let selector = '#profile_meta_' + (metaIndex % 3);
-                $(selector).append(metaString);
-            }
+            let selector = '#profile_meta_' + (metaIndex % 3);
+            $(selector).append(metaString);
+
             metaIndex++;
         }
     });
@@ -74,14 +74,14 @@ $(document).ready(function () {
             'serverId': $(this).data('serverid'),
             'when': $(this).data('when')
         })
-        .done(function (response) {
-            $('.client-message-context').remove();
-            location.after(response);
-            hideLoader();
-        })
-        .fail(function (jqxhr, textStatus, error) {
-            errorLoader();
-        });
+            .done(function (response) {
+                $('.client-message-context').remove();
+                location.after(response);
+                hideLoader();
+            })
+            .fail(function (jqxhr, textStatus, error) {
+                errorLoader();
+            });
     });
 
     /*

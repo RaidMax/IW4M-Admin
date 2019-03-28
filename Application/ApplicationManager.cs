@@ -388,42 +388,80 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region META
-            async Task<List<ProfileMeta>> getLastMap(int clientId)
+            async Task<List<ProfileMeta>> getProfileMeta(int clientId, int offset, int count)
             {
-                var meta = await _metaService.GetPersistentMeta("LastMapPlayed", new EFClient() { ClientId = clientId });
+                var metaList = new List<ProfileMeta>();
 
-                return meta == null ? new List<ProfileMeta>() : new List<ProfileMeta>()
+                // we don't want to return anything because it means we're trying to retrieve paged meta data
+                if (count > 1)
                 {
-                    new ProfileMeta()
-                    {
-                        Id = meta.MetaId,
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
-                        Value = meta.Value,
-                        Show = true
-                    }
+                    return metaList;
+                }
 
-                };
-            }
+                var lastMapMeta = await _metaService.GetPersistentMeta("LastMapPlayed", new EFClient() { ClientId = clientId });
 
-            async Task<List<ProfileMeta>> getLastServer(int clientId)
-            {
-                var meta = await _metaService.GetPersistentMeta("LastServerPlayed", new EFClient() { ClientId = clientId });
-
-                return meta == null ? new List<ProfileMeta>() : new List<ProfileMeta>()
+                metaList.Add(new ProfileMeta()
                 {
-                    new ProfileMeta()
-                    {
-                        Id = meta.MetaId,
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_SERVER"],
-                        Value = meta.Value,
-                        Show = true
-                    }
+                    Id = lastMapMeta.MetaId,
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
+                    Value = lastMapMeta.Value,
+                    Show = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
 
-                };
-            }
+                var lastServerMeta = await _metaService.GetPersistentMeta("LastServerPlayed", new EFClient() { ClientId = clientId });
 
-            MetaService.AddRuntimeMeta(getLastMap);
-            MetaService.AddRuntimeMeta(getLastServer);
+                metaList.Add(new ProfileMeta()
+                {
+                    Id = lastServerMeta.MetaId,
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_SERVER"],
+                    Value = lastServerMeta.Value,
+                    Show = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
+
+                var client = await GetClientService().Get(clientId);
+
+                metaList.Add(new ProfileMeta()
+                {
+                    Id = client.ClientId,
+                    Key = $"{Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]} {Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]}",
+                    Value = Math.Round(client.TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
+                    Show = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
+
+                metaList.Add(new ProfileMeta()
+                {
+                    Id = client.ClientId,
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_FSEEN"],
+                    Value = Utilities.GetTimePassed(client.FirstConnection, false),
+                    Show = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
+
+                metaList.Add(new ProfileMeta()
+                {
+                    Id = client.ClientId,
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"],
+                    Value = Utilities.GetTimePassed(client.LastConnection, false),
+                    Show = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
+
+                metaList.Add(new ProfileMeta()
+                {
+                    Id = client.ClientId,
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_CONNECTIONS"],
+                    Value = client.Connections,
+                    Show = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
+
+                return metaList;
+            };
+
+            MetaService.AddRuntimeMeta(getProfileMeta);
             #endregion
 
             #region INIT

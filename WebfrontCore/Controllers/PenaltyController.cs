@@ -46,20 +46,25 @@ namespace WebfrontCore.Controllers
             {
                 // todo: this seems like it's pulling unnecessary info from LINQ to entities.
                 var iqPenalties = ctx.Penalties
+                    .AsNoTracking()
                     .Where(p => p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Ban && p.Active)
                     .OrderByDescending(_penalty => _penalty.When)
                     .Select(p => new PenaltyInfo()
                     {
                         Id = p.PenaltyId,
                         OffenderId = p.OffenderId,
+                        OffenderName = p.Offender.CurrentAlias.Name,
+                        OffenderNetworkId = (ulong)p.Offender.NetworkId,
+                        OffenderIPAddress = Authorized ? p.Offender.CurrentAlias.IPAddress.ConvertIPtoString() : null,
                         Offense = p.Offense,
                         PunisherId = p.PunisherId,
-                        Type = p.Type.ToString(),
+                        PunisherNetworkId = (ulong)p.Punisher.NetworkId,
+                        PunisherName = p.Punisher.CurrentAlias.Name,
+                        PunisherIPAddress = Authorized ? p.Punisher.CurrentAlias.IPAddress.ConvertIPtoString() : null,
+                        PenaltyType = p.Type.ToString(),
                         TimePunished = p.When.ToString(),
-                        TimeRemaining = "",
-                        AutomatedOffense = Authorized ? p.AutomatedOffense : "",
-                        NetworkId = (ulong)p.Offender.NetworkId,
-                        IPAddress = Authorized ? p.Offender.IPAddressString : ""
+                        TimeRemaining = null,
+                        AutomatedOffense = Authorized ? p.AutomatedOffense : null,
                     });
 #if DEBUG == true
                 var querySql = iqPenalties.ToSql();

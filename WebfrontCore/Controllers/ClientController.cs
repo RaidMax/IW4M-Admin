@@ -34,10 +34,6 @@ namespace WebfrontCore.Controllers
                 ClientId = client.ClientId,
                 IPAddress = client.IPAddressString,
                 NetworkId = client.NetworkId,
-                ConnectionCount = client.Connections,
-                FirstSeen = Utilities.GetTimePassed(client.FirstConnection, false),
-                LastSeen = Utilities.GetTimePassed(client.LastConnection, false),
-                TimePlayed = Math.Round(client.TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
                 Meta = new List<ProfileMeta>(),
                 Aliases = client.AliasLink.Children
                     .Where(a => a.Name != client.Name)
@@ -59,7 +55,7 @@ namespace WebfrontCore.Controllers
                 LinkedAccounts = client.LinkedAccounts
             };
 
-            var meta = await MetaService.GetRuntimeMeta(client.ClientId);
+            var meta = await MetaService.GetRuntimeMeta(client.ClientId, 0, 1);
             var penaltyMeta = await Manager.GetPenaltyService()
                 .ReadGetClientPenaltiesAsync(client.ClientId);
             var administeredPenaltiesMeta = await Manager.GetPenaltyService()
@@ -76,19 +72,19 @@ namespace WebfrontCore.Controllers
                 });
             }
 
-            if (Authorized)
-            {
-                clientDto.Meta.AddRange(client.AliasLink.Children
-                    .GroupBy(a => a.Name)
-                    .Select(a => a.First())
-                    .Select(a => new ProfileMeta()
-                    {
-                        Key = "AliasEvent",
-                        Value = $"{Localization["WEBFRONT_CLIENT_META_JOINED"]} {a.Name}",
-                        Sensitive = true,
-                        When = a.DateAdded
-                    }));
-            }
+            //if (Authorized)
+            //{
+            //    clientDto.Meta.AddRange(client.AliasLink.Children
+            //        .GroupBy(a => a.Name)
+            //        .Select(a => a.First())
+            //        .Select(a => new ProfileMeta()
+            //        {
+            //            Value = $"{Localization["WEBFRONT_CLIENT_META_JOINED"]} {a.Name}",
+            //            Sensitive = true,
+            //            When = a.DateAdded,
+            //            Type = ProfileMeta.MetaType.AliasUpdate
+            //        }));
+            //}
 
             if (Authorized)
             {
@@ -118,6 +114,7 @@ namespace WebfrontCore.Controllers
                 Value = m.Value,
                 Show = false,
             }));
+
             clientDto.Meta = clientDto.Meta
                 .OrderByDescending(m => m.When)
                 .ToList();
@@ -173,13 +170,25 @@ namespace WebfrontCore.Controllers
                 Name = c.Name,
                 Level = c.Level.ToLocalizedLevelName(),
                 LevelInt = (int)c.Level,
-                ClientId = c.ClientId,
-                LastSeen = Utilities.GetTimePassed(c.LastConnection, false)
+                // todo: add back last seen for search
+                ClientId = c.ClientId
             })
             .ToList();
 
             ViewBag.Title = $"{clientsDto.Count} {Localization["WEBFRONT_CLIENT_SEARCH_MATCHING"]} \"{clientName}\"";
             return View("Find/Index", clientsDto);
+        }
+
+        public async Task<IActionResult> Meta(int id, int count, int offset)
+        {
+            var meta = await MetaService.GetRuntimeMeta(id, offset, count);
+
+            if (meta.Count == 0)
+            {
+                return Ok();
+            }
+
+            return View("Components/ProfileMetaList/_List", meta);
         }
     }
 }

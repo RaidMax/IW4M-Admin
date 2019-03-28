@@ -124,8 +124,13 @@ namespace IW4MAdmin.Plugins.Stats
                    "/Stats/TopPlayersAsync");
 
             // meta data info
-            async Task<List<ProfileMeta>> getStats(int clientId)
+            async Task<List<ProfileMeta>> getStats(int clientId, int offset, int count)
             {
+                if (count > 1)
+                {
+                    return new List<ProfileMeta>();
+                }
+
                 IList<EFClientStatistics> clientStats;
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
@@ -146,38 +151,50 @@ namespace IW4MAdmin.Plugins.Stats
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
                         Value = "#" + await StatManager.GetClientOverallRanking(clientId),
+                        Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                            Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"],
-                           Value = kills
+                           Value = kills,
+                           Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"],
-                        Value = deaths
+                        Value = deaths,
+                        Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"],
-                        Value = kdr
+                        Value = kdr,
+                        Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
-                        Value = performance
+                        Value = performance,
+                        Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_META_SPM"],
-                        Value = spm
+                        Value = spm,
+                        Type = ProfileMeta.MetaType.Information
                     }
                 };
             }
 
-            async Task<List<ProfileMeta>> getAnticheatInfo(int clientId)
+            async Task<List<ProfileMeta>> getAnticheatInfo(int clientId, int offset, int count)
             {
+                if (count > 1)
+                {
+                    return new List<ProfileMeta>();
+                }
+
                 IList<EFClientStatistics> clientStats;
+
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
                     clientStats = await ctx.Set<EFClientStatistics>()
@@ -221,24 +238,28 @@ namespace IW4MAdmin.Plugins.Stats
                     {
                         Key = "Chest Ratio",
                         Value = chestRatio,
+                        Type = ProfileMeta.MetaType.Information,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
                         Key = "Abdomen Ratio",
                         Value = abdomenRatio,
+                        Type = ProfileMeta.MetaType.Information,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
                         Key = "Chest To Abdomen Ratio",
                         Value = chestAbdomenRatio,
+                        Type = ProfileMeta.MetaType.Information,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
                         Key = "Headshot Ratio",
                         Value = headRatio,
+                        Type = ProfileMeta.MetaType.Information,
                         Sensitive = true
                     },
                     new ProfileMeta()
@@ -246,49 +267,64 @@ namespace IW4MAdmin.Plugins.Stats
                         Key = "Hit Offset Average",
                         // todo: make sure this is wrapped somewhere else
                         Value = $"{Math.Round(((float)hitOffsetAverage), 4).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))}°",
+                        Type = ProfileMeta.MetaType.Information,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
                         Key = "Max Strain",
                         Value = Math.Round(maxStrain, 3),
+                        Type = ProfileMeta.MetaType.Information,
                         Sensitive = true
                     },
                 };
             }
 
-            async Task<List<ProfileMeta>> getMessages(int clientId)
+            async Task<List<ProfileMeta>> getMessages(int clientId, int offset, int count)
             {
+                if (count <= 1)
+                {
+                    using (var ctx = new DatabaseContext(true))
+                    {
+                        return new List<ProfileMeta>
+                        {
+                            new ProfileMeta()
+                            {
+                                Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
+                                Value = await ctx.Set<EFClientMessage>().CountAsync(),
+                                Type = ProfileMeta.MetaType.Information
+                            }
+                        };
+                    }
+                }
+
                 List<ProfileMeta> messageMeta;
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
-                    var messages = ctx.Set<EFClientMessage>().Where(m => m.ClientId == clientId);
+                    var messages = ctx.Set<EFClientMessage>().Where(m => m.ClientId == clientId)
+                        .OrderByDescending(_message => _message.TimeSent)
+                        .Skip(offset)
+                        .Take(count);
 
                     messageMeta = await messages.Select(m => new ProfileMeta()
                     {
-                        Key = "EventMessage",
+                        Key = null,
                         Value = m.Message,
                         When = m.TimeSent,
-                        Extra = m.ServerId.ToString()
+                        Extra = m.ServerId.ToString(),
+                        Type = ProfileMeta.MetaType.ChatMessage
                     }).ToListAsync();
                 }
 
-                messageMeta.Add(new ProfileMeta()
-                {
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
-                    Value = messageMeta.Count
-                });
-
                 return messageMeta;
             }
-
-            MetaService.AddRuntimeMeta(getStats);
 
             if (Config.Configuration().EnableAntiCheat)
             {
                 MetaService.AddRuntimeMeta(getAnticheatInfo);
             }
 
+            MetaService.AddRuntimeMeta(getStats);
             MetaService.AddRuntimeMeta(getMessages);
 
             async Task<string> totalKills(Server server)

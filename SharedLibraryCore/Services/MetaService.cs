@@ -11,7 +11,7 @@ namespace SharedLibraryCore.Services
 {
     public class MetaService
     {
-        private static List<Func<int, Task<List<ProfileMeta>>>> _metaActions = new List<Func<int, Task<List<ProfileMeta>>>>();
+        private static List<Func<int, int, int, Task<List<ProfileMeta>>>> _metaActions = new List<Func<int, int, int, Task<List<ProfileMeta>>>>();
 
         /// <summary>
         /// adds or updates meta key and value to the database
@@ -71,7 +71,7 @@ namespace SharedLibraryCore.Services
         /// aads a meta task to the runtime meta list
         /// </summary>
         /// <param name="metaAction"></param>
-        public static void AddRuntimeMeta(Func<int, Task<List<ProfileMeta>>> metaAction)
+        public static void AddRuntimeMeta(Func<int, int, int, Task<List<ProfileMeta>>> metaAction)
         {
             _metaActions.Add(metaAction);
         }
@@ -80,14 +80,16 @@ namespace SharedLibraryCore.Services
         /// retrieves all the runtime meta information for given client idea
         /// </summary>
         /// <param name="clientId">id of the client</param>
+        /// <param name="count">number of meta items to retrieve</param>
+        /// <param name="offset">offset from the first item</param>
         /// <returns></returns>
-        public static async Task<List<ProfileMeta>> GetRuntimeMeta(int clientId)
+        public static async Task<List<ProfileMeta>> GetRuntimeMeta(int clientId, int offset = 0, int count = int.MaxValue)
         {
             var meta = new List<ProfileMeta>();
 
             foreach (var action in _metaActions)
             {
-                meta.AddRange(await action(clientId));
+                meta.AddRange(await action(clientId, offset, count));
             }
 
             return meta;

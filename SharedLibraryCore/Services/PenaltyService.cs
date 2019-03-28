@@ -195,7 +195,7 @@ namespace SharedLibraryCore.Services
                                               PunisherName = punisherAlias.Name,
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
-                                              Type = penalty.Type.ToString(),
+                                              PenaltyType = penalty.Type.ToString(),
                                               TimeRemaining = penalty.Expires.HasValue ? (now > penalty.Expires ? "" : penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
                                               AutomatedOffense = penalty.AutomatedOffense,
                                               Expired = penalty.Expires.HasValue && penalty.Expires <= DateTime.UtcNow
@@ -208,9 +208,9 @@ namespace SharedLibraryCore.Services
                     list.ForEach(p =>
                     {
                         // todo: why does this have to be done?
-                        if (((PenaltyInfo)p.Value).Type.Length < 2)
+                        if (((PenaltyInfo)p.Value).PenaltyType.Length < 2)
                         {
-                            ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
+                            ((PenaltyInfo)p.Value).PenaltyType = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).PenaltyType)).ToString();
                         }
 
                         var pi = ((PenaltyInfo)p.Value);
@@ -251,7 +251,7 @@ namespace SharedLibraryCore.Services
                                               PunisherName = punisherAlias.Name,
                                               PunisherId = penalty.PunisherId,
                                               Offense = penalty.Offense,
-                                              Type = penalty.Type.ToString(),
+                                              PenaltyType = penalty.Type.ToString(),
                                               AutomatedOffense = penalty.AutomatedOffense
                                           },
                                           When = penalty.When,
@@ -263,9 +263,9 @@ namespace SharedLibraryCore.Services
                     list.ForEach(p =>
                     {
                         // todo: why does this have to be done?
-                        if (((PenaltyInfo)p.Value).Type.Length < 2)
+                        if (((PenaltyInfo)p.Value).PenaltyType.Length < 2)
                         {
-                            ((PenaltyInfo)p.Value).Type = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).Type)).ToString();
+                            ((PenaltyInfo)p.Value).PenaltyType = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).PenaltyType)).ToString();
                         }
                     });
 

@@ -1,13 +1,4 @@
-﻿// keeps track of how many events have been displayed
-let count = 1;
-let metaIndex = 0;
-
-$(document).ready(function () {
-
-    if (typeof clientInfo === 'undefined') {
-        return false;
-    }
-
+﻿$(document).ready(function () {
 	/*
 	Expand alias tab if they have any
 	*/
@@ -16,51 +7,6 @@ $(document).ready(function () {
         if (aliases && aliases.length !== 0) {
             $('#profile_aliases').slideToggle(150);
             $(this).toggleClass('oi-caret-top');
-        }
-    });
-
-    /* 
-    load the initial 40 events
-    */
-    $.each(clientInfo.Meta, function (index, meta) {
-        if (meta.key.includes("Event")) {
-            loadMeta(meta);
-            if (count % 40 === 0) {
-                count++;
-                return false;
-            }
-            count++;
-        }
-    });
-
-    /*
-    load additional events on scroll
-    */
-    $(window).scroll(function () {
-        if ($(window).scrollTop() === $(document).height() - $(window).height() || $(document).height() === $(window).height()) {
-            while (count % 40 !== 0 && count < clientInfo.Meta.length) {
-                loadMeta(clientInfo.Meta[count - 1]);
-                count++;
-            }
-            count++;
-        }
-    });
-
-    /*
-    load meta thats not an event
-    */
-    $.each(clientInfo.Meta, function (index, meta) {
-        if (!meta.key.includes("Event")) {
-            let metaString = `<div class="profile-meta-entry"><span class="profile-meta-value text-primary">${meta.value}</span><span class="profile-meta-title text-muted"> ${meta.key}</span></div>`;
-
-            // todo: fix the view so we don't have the 3 hardcoded meta
-            if (metaIndex % 3 == 0 && metaIndex < 7) {
-                metaIndex++;
-            }
-            let selector = '#profile_meta_' + (metaIndex % 3);
-            $(selector).append(metaString);
-
-            metaIndex++;
         }
     });
 
@@ -150,88 +96,3 @@ $(document).ready(function () {
             });
     });
 });
-
-function penaltyToName(penaltyName) {
-    switch (penaltyName) {
-        case "Flag":
-            return "Flagged";
-        case "Warning":
-            return "Warned";
-        case "Report":
-            return "Reported";
-        case "Ban":
-            return "Banned";
-        case "Kick":
-            return "Kicked";
-        case "TempBan":
-            return "Temp Banned";
-        case "Unban":
-            return "Unbanned";
-    }
-}
-
-function shouldIncludePlural(num) {
-    return num > 1 ? 's' : '';
-}
-
-let mostRecentDate = 0;
-let currentStepAmount = 0;
-let lastStep = '';
-// todo: fix
-function timeStep(stepDifference) {
-    let hours = stepDifference / (1000 * 60 * 60);
-    let days = stepDifference / (1000 * 60 * 60 * 24);
-    let weeks = stepDifference / (1000 * 60 * 60 * 24 * 7);
-
-    if (Math.round(weeks) > Math.round(currentStepAmount / 24 * 7)) {
-        currentStepAmount = Math.round(weeks);
-        return `${currentStepAmount} week${shouldIncludePlural(currentStepAmount)} ago`;
-    }
-
-    if (Math.round(days) > Math.round(currentStepAmount / 24)) {
-        currentStepAmount = Math.round(days);
-        return `${currentStepAmount} day${shouldIncludePlural(currentStepAmount)} ago`;
-    }
-
-    if (Math.round(hours) > currentStepAmount) {
-        currentStepAmount = Math.round(hours);
-        return `${currentStepAmount} hour${shouldIncludePlural(currentStepAmount)} ago`;
-    }
-}
-
-function loadMeta(meta) {
-    let eventString = '';
-    const metaDate = moment.utc(meta.when).valueOf();
-
-    if (mostRecentDate === 0) {
-        mostRecentDate = metaDate;
-    }
-
-    const step = timeStep(moment.utc().valueOf() - metaDate);
-
-    if (step !== lastStep && step !== undefined && metaDate > 0) {
-        $('#profile_events').append('<span class="p2 text-white profile-event-timestep"><span class="text-primary">&mdash;</span> ' + step + '</span>');
-        lastStep = step;
-    }
-
-    // it's a penalty
-    if (meta.class.includes("Penalty")) {
-        if (meta.value.punisherId !== clientInfo.clientId) {
-            const timeRemaining = meta.value.type === 'TempBan' && meta.value.timeRemaining.length > 0 ?
-                `(${meta.value.timeRemaining})` :
-                '';
-            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)}</span> by <span class="text-highlight"> <a class="link-inverse"  href="${meta.value.punisherId}">${meta.value.punisherName}</a></span > for <span style="color: white; " class="automated-penalty-info-detailed" data-clientid="${meta.value.offenderId}">${meta.value.offense}</span><span class="text-muted"> ${timeRemaining}</span></div>`;
-        }
-        else {
-            eventString = `<div><span class="penalties-color-${meta.value.type.toLowerCase()}">${penaltyToName(meta.value.type)} </span> <span class="text-highlight"><a class="link-inverse" href="${meta.value.offenderId}"> ${meta.value.offenderName}</a></span > for <span style="color: white;" class="automated-penalty-info-detailed" data-clientid="${meta.value.offenderId}">${meta.value.offense}</span></div>`;
-        }
-    }
-    else if (meta.key.includes("Alias")) {
-        eventString = `<div><span class="text-success">${meta.value}</span></div>`;
-    }
-    // it's a message
-    else if (meta.key.includes("Event")) {
-        eventString = `<div><span style="color:white;">></span><span class="client-message text-muted" data-serverid="${meta.extra}" data-when="${meta.when}"> ${meta.value}</span></div>`;
-    }
-    $('#profile_events').append(eventString);
-}

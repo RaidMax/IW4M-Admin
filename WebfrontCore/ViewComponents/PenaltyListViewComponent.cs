@@ -33,7 +33,7 @@ namespace WebfrontCore.ViewComponents
                     $"{showEvadeString(p)}{p.AutomatedOffense}" :
                     $"{showEvadeString(p)}{p.Offense}",
 #endif
-                Type = p.Type.ToString(),
+                PenaltyType = p.Type.ToString(),
                 TimePunished = Utilities.GetTimePassed(p.When, false),
                 // show time passed if ban
                 TimeRemaining = DateTime.UtcNow > p.Expires ? "" : $"{((p.Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? Utilities.GetTimePassed(p.When, true) : Utilities.TimeSpanText((p.Expires ?? DateTime.MaxValue) - DateTime.UtcNow))}",

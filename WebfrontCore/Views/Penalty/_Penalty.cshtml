@@ -13,9 +13,9 @@
 </tr>
 
 <tr class="d-table-row d-md-none bg-dark">
-    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
-    <td class="penalties-color-@Model.Type.ToLower()">
-        @Model.Type
+    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_PenaltyType"]</th>
+    <td class="penalties-color-@Model.PenaltyType.ToLower()">
+        @Model.PenaltyType
     </td>
 </tr>
 
@@ -53,8 +53,8 @@
     <td>
         @Html.ActionLink(Model.OffenderName, "ProfileAsync", "Client", new { id = Model.OffenderId }, new { @class = "link-inverse" })
     </td>
-    <td class="penalties-color-@Model.Type.ToLower()">
-        @Model.Type
+    <td class="penalties-color-@Model.PenaltyType.ToLower()">
+        @Model.PenaltyType
     </td>
     <td class="text-light w-50">
         @Model.Offense

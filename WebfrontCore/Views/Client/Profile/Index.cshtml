@@ -5,6 +5,9 @@
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     bool isTempBanned = Model.ActivePenaltyType == "TempBan";
+    var informationMeta = Model.Meta
+        .Where(_meta => _meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Information)
+        .ToList();
 }
 
 <div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
@@ -76,27 +79,41 @@
 </div>
 
 <div id="profile_info" class="row d-block d-lg-flex flex-row border-bottom border-top pt-2 pb-2">
+
     <div id="profile_meta_0" class="text-center text-lg-left mr-0 mr-lg-4">
-        <div id="profile_time_played" class="text-muted">
-            @loc["WEBFRONT_PROFILE_PLAYER"] <span class="text-primary">@Model.TimePlayed</span> @loc["GLOBAL_TIME_HOURS"]
-        </div>
-        <div id="profile_first_seen" class="text-muted">
-            @loc["WEBFRONT_PROFILE_FSEEN"] <span class="text-primary">@Model.FirstSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-        </div>
-        <div id="profile_last_seen" class="text-muted">
-            @loc["WEBFRONT_PROFILE_LSEEN"] <span class="text-primary">@Model.LastSeen</span> @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]
-        </div>
+        @for (int i = 0; i < informationMeta.Count; i += 3)
+        {
+            <div class="profile-meta-entry">
+                <span class="profile-meta-value text-primary">@informationMeta[i].Value</span>
+                <span class="profile-meta-title text-muted"> @informationMeta[i].Key</span>
+            </div>
+        }
     </div>
 
     <div class="text-center text-lg-left mr-0 mr-lg-4" id="profile_meta_1">
+        @for (int i = 1; i < informationMeta.Count; i += 3)
+        {
+            <div class="profile-meta-entry">
+                <span class="profile-meta-value text-primary">@informationMeta[i].Value</span>
+                <span class="profile-meta-title text-muted"> @informationMeta[i].Key</span>
+            </div>
+        }
     </div>
 
     <div class="text-center text-lg-left" id="profile_meta_2">
+        @for (int i = 2; i < informationMeta.Count; i += 3)
+        {
+            <div class="profile-meta-entry">
+                <span class="profile-meta-value text-primary">@informationMeta[i].Value</span>
+                <span class="profile-meta-title text-muted"> @informationMeta[i].Key</span>
+            </div>
+        }
     </div>
 </div>
 
 <div class="row d-md-flex pt-2">
     <div id="profile_events" class="text-muted text-left ml-sm-0">
+        @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0 })
     </div>
 </div>
 
@@ -105,12 +122,9 @@
 }
 
 @section scripts {
-    <script>
-        const clientInfo = {};
-        clientInfo.clientId = @Model.ClientId;
-        clientInfo.Meta = @Html.Raw(Json.Serialize(@Model.Meta.Where(m => m.Show)));
-    </script>
     <environment include="Development">
+        <script type="text/javascript" src="~/js/loader.js"></script>
         <script type="text/javascript" src="~/js/profile.js"></script>
     </environment>
+    <script>initLoader('/Client/Meta/@Model.ClientId', '#profile_events', 30);</script>
 }

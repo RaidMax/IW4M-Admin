@@ -1,0 +1,20 @@
+﻿@model List<SharedLibraryCore.Dtos.ProfileMeta>
+@{Layout = null;}
+
+<div class="p2 text-white profile-event-timestep">
+    <span class="text-primary">&mdash;</span>
+    <span>@SharedLibraryCore.Utilities.GetTimePassed(Model.FirstOrDefault()?.When ?? DateTime.Now, true)</span>
+</div>
+
+@foreach (var meta in Model)
+{
+    @switch (meta.Type)
+    {
+        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ChatMessage:
+            <div>
+                <span style="color:white;">></span>
+                <span class="client-message text-muted" data-serverid="@meta.Extra" data-when="@meta.When"> @meta.Value</span>
+            </div>
+            break;
+    }
+}

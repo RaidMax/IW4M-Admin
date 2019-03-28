@@ -29,6 +29,19 @@ namespace WebfrontCore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // allow CORS
+            services.AddCors(_options =>
+            {
+                _options.AddPolicy("AllowAll",
+                    _builder =>
+                    {
+                        _builder.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                    });
+            });
+
             // Add framework services.
             var mvcBuilder = services.AddMvc()
                 .ConfigureApplicationPartManager(_ =>
@@ -98,6 +111,7 @@ namespace WebfrontCore
 
             app.UseStaticFiles();
             app.UseAuthentication();
+            app.UseCors("AllowAll");
 
             app.UseMvc(routes =>
             {

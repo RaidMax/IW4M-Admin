@@ -2,6 +2,8 @@
 @{
     Layout = null;
 
+    var timeSinceLastEvent = DateTime.MinValue;
+
     string formatPenalty(SharedLibraryCore.Dtos.ProfileMeta meta)
     {
         var penalty = meta.Value as SharedLibraryCore.Dtos.PenaltyInfo;
@@ -11,7 +13,7 @@
             $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{penalty.PenaltyType.ToUpper()}";
 
         string localizationMessage = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex[localizationKey];
-        var regexMatch = System.Text.RegularExpressions.Regex.Match(localizationMessage, @"^{{([^{}]+)}}.+$");
+        var regexMatch = System.Text.RegularExpressions.Regex.Match(localizationMessage, @"^.*{{([^{}]+)}}.+$");
         string penaltyType = regexMatch.Groups[1].Value.ToString();
 
         localizationMessage = localizationMessage.Replace(penaltyType, $"<span class='penalties-color-{penalty.PenaltyType.ToLower()}'>{penaltyType}</span>");
@@ -24,28 +26,30 @@
             .Replace("}", "") :
             string.Format(localizationMessage,
             $"<span class='text-highlight'><a class='link-inverse' href='{penalty.PunisherId}'>{penalty.PunisherName}</a></span>",
-            $"<span class='automated-penalty-info-detailed text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense}</span>",
+            $"<span class='automated-penalty-info-detailed text-white' data-clientid='{penalty.OffenderId}'>{(ViewBag.Authorized && !string.IsNullOrEmpty(penalty.AutomatedOffense) ? $"{penalty.Offense} ({penalty.AutomatedOffense})" : penalty.Offense)}</span>",
             penalty.Offense)
             .Replace("{", "")
             .Replace("}", "");
     }
 }
 
-@if (Model.Count > 0)
-{
-    <div class="p2 text-white profile-event-timestep">
-        <span class="text-primary">&mdash;</span>
-        <span>@SharedLibraryCore.Utilities.GetTimePassed(Model.First().When, true)</span>
-    </div>
-}
-
 @if (Model.Count == 0)
 {
-     <div class="p2 text-muted profile-event-timestep">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_NONE"]</div>
+    <div class="p2 text-muted profile-event-timestep">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_NONE"]</div>
 }
 
 @foreach (var meta in Model.OrderByDescending(_meta => _meta.When))
 {
+    @if (Math.Abs((meta.When - timeSinceLastEvent).TotalDays) >= 1)
+    {
+        <div class="p2 text-white profile-event-timestep">
+            <span class="text-primary">&mdash;</span>
+            <span>@SharedLibraryCore.Utilities.GetTimePassed(meta.When, true)</span>
+        </div>
+
+        timeSinceLastEvent = meta.When;
+    }
+
     @switch (meta.Type)
     {
         case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ChatMessage:

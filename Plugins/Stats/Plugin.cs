@@ -150,37 +150,49 @@ namespace IW4MAdmin.Plugins.Stats
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
-                        Value = "#" + await StatManager.GetClientOverallRanking(clientId),
+                        Value = "#" + (await StatManager.GetClientOverallRanking(clientId)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Column = 0,
+                        Order = 0,
                         Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                            Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"],
-                           Value = kills,
+                           Value = kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                           Column = 0,
+                           Order = 1,
                            Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"],
-                        Value = deaths,
+                        Value = deaths.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Column = 0,
+                        Order = 2,
                         Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"],
-                        Value = kdr,
+                        Value = kdr.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Column = 0,
+                        Order = 3,
                         Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
-                        Value = performance,
+                        Value = performance.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Column = 0,
+                        Order = 4,
                         Type = ProfileMeta.MetaType.Information
                     },
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_META_SPM"],
-                        Value = spm,
+                        Value = spm.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Column = 0,
+                        Order = 5,
                         Type = ProfileMeta.MetaType.Information
                     }
                 };
@@ -236,45 +248,57 @@ namespace IW4MAdmin.Plugins.Stats
                 {
                     new ProfileMeta()
                     {
-                        Key = "Chest Ratio",
-                        Value = chestRatio,
+                        Key =  $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 1",
+                        Value = chestRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 0,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
-                        Key = "Abdomen Ratio",
-                        Value = abdomenRatio,
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 2",
+                        Value = abdomenRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 1,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
-                        Key = "Chest To Abdomen Ratio",
-                        Value = chestAbdomenRatio,
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 3",
+                        Value = chestAbdomenRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 2,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
-                        Key = "Headshot Ratio",
-                        Value = headRatio,
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 4",
+                        Value = headRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 3,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
-                        Key = "Hit Offset Average",
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 5",
                         // todo: make sure this is wrapped somewhere else
                         Value = $"{Math.Round(((float)hitOffsetAverage), 4).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))}°",
                         Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 4,
                         Sensitive = true
                     },
                     new ProfileMeta()
                     {
-                        Key = "Max Strain",
-                        Value = Math.Round(maxStrain, 3),
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 6",
+                        Value = Math.Round(maxStrain, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 5,
                         Sensitive = true
                     },
                 };
@@ -291,8 +315,11 @@ namespace IW4MAdmin.Plugins.Stats
                             new ProfileMeta()
                             {
                                 Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
-                                Value = await ctx.Set<EFClientMessage>()
-                                    .CountAsync(_message => _message.ClientId == clientId),
+                                Value = (await ctx.Set<EFClientMessage>()
+                                    .CountAsync(_message => _message.ClientId == clientId))
+                                    .ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                                Column = 1,
+                                Order= 4,
                                 Type = ProfileMeta.MetaType.Information
                             }
                         };
@@ -335,7 +362,7 @@ namespace IW4MAdmin.Plugins.Stats
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
                     long kills = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
-                    return kills.ToString("#,##0");
+                    return kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
                 }
             }
 
@@ -344,7 +371,7 @@ namespace IW4MAdmin.Plugins.Stats
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
                     long playTime = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
-                    return (playTime / 3600.0).ToString("#,##0");
+                    return (playTime / 3600.0).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
                 }
             }
 

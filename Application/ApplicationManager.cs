@@ -409,7 +409,7 @@ namespace IW4MAdmin.Application
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
                         Value = lastMapMeta.Value,
                         Show = true,
-                        Type = ProfileMeta.MetaType.Information
+                        Type = ProfileMeta.MetaType.Information,
                     });
                 }
 
@@ -433,8 +433,10 @@ namespace IW4MAdmin.Application
                 {
                     Id = client.ClientId,
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]} {Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]}",
-                    Value = Math.Round(client.TotalConnectionTime / 3600.0, 1).ToString("#,##0"),
+                    Value = Math.Round(client.TotalConnectionTime / 3600.0, 1).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Show = true,
+                    Column = 1,
+                    Order = 0,
                     Type = ProfileMeta.MetaType.Information
                 });
 
@@ -444,6 +446,8 @@ namespace IW4MAdmin.Application
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_FSEEN"],
                     Value = Utilities.GetTimePassed(client.FirstConnection, false),
                     Show = true,
+                    Column = 1,
+                    Order = 1,
                     Type = ProfileMeta.MetaType.Information
                 });
 
@@ -453,16 +457,19 @@ namespace IW4MAdmin.Application
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"],
                     Value = Utilities.GetTimePassed(client.LastConnection, false),
                     Show = true,
+                    Column = 1,
+                    Order = 2,
                     Type = ProfileMeta.MetaType.Information
                 });
 
                 metaList.Add(new ProfileMeta()
-
                 {
                     Id = client.ClientId,
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_CONNECTIONS"],
-                    Value = client.Connections,
+                    Value = client.Connections.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Show = true,
+                    Column = 1,
+                    Order = 3,
                     Type = ProfileMeta.MetaType.Information
                 });
 
@@ -471,6 +478,8 @@ namespace IW4MAdmin.Application
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_MASKED"],
                     Value = client.Masked ? Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_TRUE"] : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
                     Sensitive = true,
+                    Column = 1,
+                    Order = 4,
                     Type = ProfileMeta.MetaType.Information
                 });
 

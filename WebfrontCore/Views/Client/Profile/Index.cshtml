@@ -7,7 +7,9 @@
     bool isTempBanned = Model.ActivePenaltyType == "TempBan";
     var informationMeta = Model.Meta
         .Where(_meta => _meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Information)
-        .ToList();
+        .OrderBy(_meta => _meta.Order)
+        .GroupBy(_meta => _meta.Column)
+        .OrderBy(_grouping => _grouping.Key);
 }
 
 <div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
@@ -79,35 +81,18 @@
 </div>
 
 <div id="profile_info" class="row d-block d-lg-flex flex-row border-bottom border-top pt-2 pb-2">
-    <div id="profile_meta_0" class="text-center text-lg-left mr-0 mr-lg-4">
-        @for (int i = 0; i < informationMeta.Count; i += 3)
-        {
-            <div class="profile-meta-entry">
-                <span class="profile-meta-value text-primary">@informationMeta[i].Value</span>
-                <span class="profile-meta-title text-muted"> @informationMeta[i].Key</span>
-            </div>
-        }
-    </div>
-
-    <div class="text-center text-lg-left mr-0 mr-lg-4" id="profile_meta_1">
-        @for (int i = 1; i < informationMeta.Count; i += 3)
-        {
-            <div class="profile-meta-entry">
-                <span class="profile-meta-value text-primary">@informationMeta[i].Value</span>
-                <span class="profile-meta-title text-muted"> @informationMeta[i].Key</span>
-            </div>
-        }
-    </div>
-
-    <div class="text-center text-lg-left" id="profile_meta_2">
-        @for (int i = 2; i < informationMeta.Count; i += 3)
-        {
-            <div class="profile-meta-entry">
-                <span class="profile-meta-value text-primary">@informationMeta[i].Value</span>
-                <span class="profile-meta-title text-muted"> @informationMeta[i].Key</span>
-            </div>
-        }
-    </div>
+    @foreach (var metaColumn in informationMeta)
+    {
+        <div class="text-center text-lg-left mr-0 mr-lg-4">
+            @foreach (var meta in metaColumn)
+            {
+                <div class="profile-meta-entry">
+                    <span class="profile-meta-value text-primary">@meta.Value</span>
+                    <span class="profile-meta-title text-muted"> @meta.Key</span>
+                </div>
+            }
+        </div>
+    }
 </div>
 
 <div class="row d-md-flex pt-2">

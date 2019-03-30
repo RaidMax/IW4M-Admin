@@ -1,5 +1,6 @@
 ﻿let loaderOffset = 10;
 let loadCount = 10;
+let loaderReachedEnd = false;
 let startAt = null;
 let isLoaderLoading = false;
 let loadUri = '';
@@ -14,7 +15,7 @@ function initLoader(location, loaderId, count = 10, start = count) {
 }
 
 function loadMoreItems() {
-    if (isLoaderLoading) {
+    if (isLoaderLoading || loaderReachedEnd) {
         return false;
     }
 
@@ -25,6 +26,8 @@ function loadMoreItems() {
             $(loaderResponseId).append(response);
             if (response.trim().length === 0) {
                 staleLoader();
+                loaderReachedEnd = true;
+                $('.loader-load-more').addClass('disabled');
             }
             $(document).trigger("loaderFinished", response);
             startAt = $(response).filter('.loader-data-time').last().data('time');
@@ -66,7 +69,7 @@ function setupListeners() {
             $window
                 .off('scroll', ScrollHandler)
                 .on('scroll', ScrollHandler);
-            $('.loader-load-more').click(function (e) {
+            $('.loader-load-more:not(.disabled)').click(function (e) {
                 if (!isLoaderLoading) {
                     loadMoreItems();
                 }

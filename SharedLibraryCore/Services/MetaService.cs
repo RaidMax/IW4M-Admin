@@ -95,6 +95,51 @@ namespace SharedLibraryCore.Services
 
             if (count == 1)
             {
+                var table = new List<List<ProfileMeta>>();
+                var metaWithColumn = meta
+                    .Where(_meta => _meta.Column != null);
+
+                var columnGrouping = metaWithColumn
+                    .GroupBy(_meta => _meta.Column);
+
+                var metaToSort = meta.Except(metaWithColumn).ToList();
+
+                foreach (var metaItem in columnGrouping)
+                {
+                    table.Add(new List<ProfileMeta>(metaItem));
+                }
+
+                while (metaToSort.Count > 0)
+                {
+                    var sortingMeta = metaToSort.First();
+
+                    int indexOfSmallestColumn()
+                    {
+                        int index = 0;
+                        int smallestColumnSize = int.MaxValue;
+                        for (int i = 0; i < table.Count; i++)
+                        {
+                            if (table[i].Count < smallestColumnSize)
+                            {
+                                smallestColumnSize = table[i].Count;
+                                index = i;
+                            }
+                        }
+                        return index;
+                    }
+
+                    int columnIndex = indexOfSmallestColumn();
+
+                    sortingMeta.Column = columnIndex;
+                    sortingMeta.Order = columnGrouping
+                        .First(_group => _group.Key == columnIndex)
+                        .Count();
+
+                    table[columnIndex].Add(sortingMeta);
+
+                    metaToSort.Remove(sortingMeta);
+                }
+
                 return meta;
             }
 

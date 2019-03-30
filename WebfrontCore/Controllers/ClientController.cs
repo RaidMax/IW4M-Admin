@@ -15,16 +15,13 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> ProfileAsync(int id)
         {
             var client = await Manager.GetClientService().Get(id);
+
             if (client == null)
             {
                 return NotFound();
             }
 
             var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress);
-
-#if DEBUG
-            Authorized = true;
-#endif
 
             var clientDto = new PlayerInfo()
             {
@@ -55,42 +52,7 @@ namespace WebfrontCore.Controllers
                 LinkedAccounts = client.LinkedAccounts
             };
 
-            var meta = await MetaService.GetRuntimeMeta(client.ClientId, 0, 1);
-            var penaltyMeta = await Manager.GetPenaltyService()
-                .ReadGetClientPenaltiesAsync(client.ClientId);
-            var administeredPenaltiesMeta = await Manager.GetPenaltyService()
-                .ReadGetClientPenaltiesAsync(client.ClientId, false);
-
-            if (Authorized && client.Level > EFClient.Permission.Trusted)
-            {
-                clientDto.Meta.Add(new ProfileMeta()
-                {
-                    Key = Localization["WEBFRONT_CLIENT_META_MASKED"],
-                    Value = client.Masked ? Localization["WEBFRONT_CLIENT_META_TRUE"] : Localization["WEBFRONT_CLIENT_META_FALSE"],
-                    Sensitive = true,
-                    When = DateTime.MinValue
-                });
-            }
-
-            //if (Authorized)
-            //{
-            //    clientDto.Meta.AddRange(client.AliasLink.Children
-            //        .GroupBy(a => a.Name)
-            //        .Select(a => a.First())
-            //        .Select(a => new ProfileMeta()
-            //        {
-            //            Value = $"{Localization["WEBFRONT_CLIENT_META_JOINED"]} {a.Name}",
-            //            Sensitive = true,
-            //            When = a.DateAdded,
-            //            Type = ProfileMeta.MetaType.AliasUpdate
-            //        }));
-            //}
-
-            if (Authorized)
-            {
-                penaltyMeta.ForEach(p => p.Value.Offense = p.Value.AutomatedOffense ?? p.Value.Offense);
-                administeredPenaltiesMeta.ForEach(p => p.Value.Offense = p.Value.AutomatedOffense ?? p.Value.Offense);
-            }
+            var meta = await MetaService.GetRuntimeMeta(client.ClientId, 0, 1, DateTime.UtcNow);
 
             var currentPenalty = activePenalties.FirstOrDefault();
 
@@ -105,20 +67,7 @@ namespace WebfrontCore.Controllers
             }
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
-            clientDto.Meta.AddRange(Authorized ? penaltyMeta : penaltyMeta.Where(m => !m.Sensitive));
-            clientDto.Meta.AddRange(Authorized ? administeredPenaltiesMeta : administeredPenaltiesMeta.Where(m => !m.Sensitive));
-            clientDto.Meta.AddRange(client.Meta.Select(m => new ProfileMeta()
-            {
-                When = m.Created,
-                Key = m.Key,
-                Value = m.Value,
-                Show = false,
-            }));
-
-            clientDto.Meta = clientDto.Meta
-                .OrderByDescending(m => m.When)
-                .ToList();
-
+  
             ViewBag.Title = clientDto.Name.Substring(clientDto.Name.Length - 1).ToLower()[0] == 's' ?
                 clientDto.Name + "'" :
                 clientDto.Name + "'s";
@@ -179,9 +128,9 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
-        public async Task<IActionResult> Meta(int id, int count, int offset)
+        public async Task<IActionResult> Meta(int id, int count, int offset, DateTime? startAt)
         {
-            var meta = await MetaService.GetRuntimeMeta(id, offset, count);
+            var meta = await MetaService.GetRuntimeMeta(id, startAt == null ? offset : 0, count, startAt ?? DateTime.UtcNow);
 
             if (meta.Count == 0)
             {

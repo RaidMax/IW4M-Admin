@@ -12,6 +12,7 @@ using SharedLibraryCore.Events;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
@@ -388,7 +389,7 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region META
-            async Task<List<ProfileMeta>> getProfileMeta(int clientId, int offset, int count)
+            async Task<List<ProfileMeta>> getProfileMeta(int clientId, int offset, int count, DateTime? startAt)
             {
                 var metaList = new List<ProfileMeta>();
 
@@ -400,25 +401,31 @@ namespace IW4MAdmin.Application
 
                 var lastMapMeta = await _metaService.GetPersistentMeta("LastMapPlayed", new EFClient() { ClientId = clientId });
 
-                metaList.Add(new ProfileMeta()
+                if (lastMapMeta != null)
                 {
-                    Id = lastMapMeta.MetaId,
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
-                    Value = lastMapMeta.Value,
-                    Show = true,
-                    Type = ProfileMeta.MetaType.Information
-                });
+                    metaList.Add(new ProfileMeta()
+                    {
+                        Id = lastMapMeta.MetaId,
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
+                        Value = lastMapMeta.Value,
+                        Show = true,
+                        Type = ProfileMeta.MetaType.Information
+                    });
+                }
 
                 var lastServerMeta = await _metaService.GetPersistentMeta("LastServerPlayed", new EFClient() { ClientId = clientId });
 
-                metaList.Add(new ProfileMeta()
+                if (lastServerMeta != null)
                 {
-                    Id = lastServerMeta.MetaId,
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_SERVER"],
-                    Value = lastServerMeta.Value,
-                    Show = true,
-                    Type = ProfileMeta.MetaType.Information
-                });
+                    metaList.Add(new ProfileMeta()
+                    {
+                        Id = lastServerMeta.MetaId,
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_SERVER"],
+                        Value = lastServerMeta.Value,
+                        Show = true,
+                        Type = ProfileMeta.MetaType.Information
+                    });
+                }
 
                 var client = await GetClientService().Get(clientId);
 
@@ -450,6 +457,7 @@ namespace IW4MAdmin.Application
                 });
 
                 metaList.Add(new ProfileMeta()
+
                 {
                     Id = client.ClientId,
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_CONNECTIONS"],
@@ -458,10 +466,51 @@ namespace IW4MAdmin.Application
                     Type = ProfileMeta.MetaType.Information
                 });
 
+                metaList.Add(new ProfileMeta()
+                {
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_MASKED"],
+                    Value = client.Masked ? Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_TRUE"] : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
+                    Sensitive = true,
+                    Type = ProfileMeta.MetaType.Information
+                });
+
                 return metaList;
-            };
+            }
+
+            async Task<List<ProfileMeta>> getPenaltyMeta(int clientId, int offset, int count, DateTime? startAt)
+            {
+                if (count <= 1)
+                {
+                    return new List<ProfileMeta>();
+                }
+
+                var penalties = await GetPenaltyService().GetAllClientPenaltiesAsync(clientId, count, offset, startAt);
+
+                return penalties.Select(_penalty => new ProfileMeta()
+                {
+                    Id = _penalty.PenaltyId,
+                    Type = _penalty.PunisherId == clientId ? ProfileMeta.MetaType.Penalized : ProfileMeta.MetaType.ReceivedPenalty,
+                    Value = new PenaltyInfo
+                    {
+                        Id = _penalty.PenaltyId,
+                        OffenderName = _penalty.Offender.Name,
+                        OffenderId = _penalty.OffenderId,
+                        PunisherName = _penalty.Punisher.Name,
+                        PunisherId = _penalty.PunisherId,
+                        Offense = _penalty.Offense,
+                        PenaltyType = _penalty.Type.ToString(),
+                        TimeRemaining = _penalty.Expires.HasValue ? (DateTime.Now > _penalty.Expires ? "" : _penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
+                        AutomatedOffense = _penalty.AutomatedOffense,
+                        Expired = _penalty.Expires.HasValue && _penalty.Expires <= DateTime.UtcNow
+                    },
+                    When = _penalty.When,
+                    Sensitive = _penalty.Type == Penalty.PenaltyType.Flag
+                })
+                .ToList();
+            }
 
             MetaService.AddRuntimeMeta(getProfileMeta);
+            MetaService.AddRuntimeMeta(getPenaltyMeta);
             #endregion
 
             #region INIT

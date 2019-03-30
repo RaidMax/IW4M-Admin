@@ -13,7 +13,9 @@ namespace SharedLibraryCore.Dtos
             Other,
             Information,
             AliasUpdate,
-            ChatMessage
+            ChatMessage,
+            Penalized,
+            ReceivedPenalty,
         }
 
         public DateTime When { get; set; }

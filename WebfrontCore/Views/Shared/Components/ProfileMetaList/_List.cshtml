@@ -1,20 +1,62 @@
 ﻿@model List<SharedLibraryCore.Dtos.ProfileMeta>
-@{Layout = null;}
+@{
+    Layout = null;
 
-<div class="p2 text-white profile-event-timestep">
-    <span class="text-primary">&mdash;</span>
-    <span>@SharedLibraryCore.Utilities.GetTimePassed(Model.FirstOrDefault()?.When ?? DateTime.Now, true)</span>
-</div>
+    string formatPenalty(SharedLibraryCore.Dtos.ProfileMeta meta)
+    {
+        var penalty = meta.Value as SharedLibraryCore.Dtos.PenaltyInfo;
 
-@foreach (var meta in Model)
+        string localizationKey = meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized ?
+            $"WEBFRONT_CLIENT_META_PENALIZED_{penalty.PenaltyType.ToUpper()}" :
+            $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{penalty.PenaltyType.ToUpper()}";
+
+        string localizationMessage = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex[localizationKey];
+        var regexMatch = System.Text.RegularExpressions.Regex.Match(localizationMessage, @"^{{([^{}]+)}}.+$");
+        string penaltyType = regexMatch.Groups[1].Value.ToString();
+
+        localizationMessage = localizationMessage.Replace(penaltyType, $"<span class='penalties-color-{penalty.PenaltyType.ToLower()}'>{penaltyType}</span>");
+
+        return meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized ?
+            string.Format(localizationMessage,
+            $"<span class='text-highlight'><a class='link-inverse' href='{penalty.OffenderId}'>{penalty.OffenderName}</a></span>",
+            $"<span class='automated-penalty-info-detailed text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense}</span>")
+            .Replace("{", "")
+            .Replace("}", "") :
+            string.Format(localizationMessage,
+            $"<span class='text-highlight'><a class='link-inverse' href='{penalty.PunisherId}'>{penalty.PunisherName}</a></span>",
+            $"<span class='automated-penalty-info-detailed text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense}</span>",
+            penalty.Offense)
+            .Replace("{", "")
+            .Replace("}", "");
+    }
+}
+
+@if (Model.Count > 0)
+{
+    <div class="p2 text-white profile-event-timestep">
+        <span class="text-primary">&mdash;</span>
+        <span>@SharedLibraryCore.Utilities.GetTimePassed(Model.First().When, true)</span>
+    </div>
+}
+
+@if (Model.Count == 0)
+{
+     <div class="p2 text-muted profile-event-timestep">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_NONE"]</div>
+}
+
+@foreach (var meta in Model.OrderByDescending(_meta => _meta.When))
 {
     @switch (meta.Type)
     {
         case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ChatMessage:
-            <div>
+            <div class="profile-meta-entry loader-data-time" data-time="@meta.When">
                 <span style="color:white;">></span>
                 <span class="client-message text-muted" data-serverid="@meta.Extra" data-when="@meta.When"> @meta.Value</span>
             </div>
+            break;
+        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ReceivedPenalty:
+        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized:
+            <div class="profile-meta-entry loader-data-time" data-time="@meta.When">@Html.Raw(formatPenalty(meta))</div>
             break;
     }
 }

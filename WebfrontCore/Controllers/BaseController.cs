@@ -59,7 +59,7 @@ namespace WebfrontCore.Controllers
             {
                 ClientId = -1,
                 Level = EFClient.Permission.User,
-                CurrentAlias = new EFAlias() { Name = "Web Console Guest" }
+                CurrentAlias = new EFAlias() { Name = "Webfront Guest" }
             };
 
             if (!HttpContext.Connection.RemoteIpAddress.GetAddressBytes().SequenceEqual(LocalHost))
@@ -70,6 +70,7 @@ namespace WebfrontCore.Controllers
                     Client.NetworkId = User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value.ConvertLong();
                     Client.Level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
                     Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
+                    Authorized = Client.ClientId >= 0;
                 }
 
                 catch (InvalidOperationException)
@@ -93,7 +94,6 @@ namespace WebfrontCore.Controllers
                 Authorized = true;
             }
 
-            Authorized = Client.ClientId >= 0;
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontUrl;
             ViewBag.User = Client;

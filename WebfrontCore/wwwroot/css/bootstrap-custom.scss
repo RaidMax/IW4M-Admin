@@ -163,6 +163,10 @@ form *, select {
     visibility: hidden;
 }
 
+.loader-load-more {
+    border-radius: 0;
+}
+
 .input-border-transition {
     -webkit-transition: border 500ms ease-out;
     -moz-transition: border 500ms ease-out;

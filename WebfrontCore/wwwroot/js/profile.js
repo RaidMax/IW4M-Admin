@@ -13,6 +13,7 @@
     /*
      * load context of chat 
      */
+    $(document).off('click', '.client-message');
     $(document).on('click', '.client-message', function (e) {
         showLoader();
         const location = $(this);
@@ -33,6 +34,7 @@
     /*
  * load info on ban/flag
  */
+    $(document).off('click', '.automated-penalty-info-detailed');
     $(document).on('click', '.automated-penalty-info-detailed', function (e) {
         showLoader();
         const location = $(this).parent();

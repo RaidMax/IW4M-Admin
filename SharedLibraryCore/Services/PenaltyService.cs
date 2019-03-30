@@ -159,6 +159,24 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        public async Task<IList<EFPenalty>> GetAllClientPenaltiesAsync(int clientId, int count, int offset, DateTime? startAt)
+        {
+            using (var ctx = new DatabaseContext(true))
+            {
+                var iqPenalties = ctx.Penalties.AsNoTracking()
+                    .Include(_penalty => _penalty.Offender.CurrentAlias)
+                    .Include(_penalty => _penalty.Punisher.CurrentAlias)
+                    .Where(_penalty => _penalty.Active)
+                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId)
+                    .Where(_penalty => _penalty.When < startAt)
+                    .OrderByDescending(_penalty => _penalty.When)
+                    .Skip(offset)
+                    .Take(count);
+
+                return await iqPenalties.ToListAsync();
+            }
+        }
+
         /// <summary>
         /// Get a read-only copy of client penalties
         /// </summary>

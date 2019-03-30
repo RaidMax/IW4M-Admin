@@ -79,7 +79,6 @@
 </div>
 
 <div id="profile_info" class="row d-block d-lg-flex flex-row border-bottom border-top pt-2 pb-2">
-
     <div id="profile_meta_0" class="text-center text-lg-left mr-0 mr-lg-4">
         @for (int i = 0; i < informationMeta.Count; i += 3)
         {
@@ -115,6 +114,10 @@
     <div id="profile_events" class="text-muted text-left ml-sm-0">
         @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0 })
     </div>
+</div>
+
+<div class="row">
+    <div class="oi oi-chevron-bottom text-center mt-2 btn btn-primary btn-block loader-load-more" title="Load more meta" data-action="unban" aria-hidden="true"></div>
 </div>
 
 @section targetid {

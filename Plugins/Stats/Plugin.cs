@@ -124,7 +124,7 @@ namespace IW4MAdmin.Plugins.Stats
                    "/Stats/TopPlayersAsync");
 
             // meta data info
-            async Task<List<ProfileMeta>> getStats(int clientId, int offset, int count)
+            async Task<List<ProfileMeta>> getStats(int clientId, int offset, int count, DateTime? startAt)
             {
                 if (count > 1)
                 {
@@ -186,7 +186,7 @@ namespace IW4MAdmin.Plugins.Stats
                 };
             }
 
-            async Task<List<ProfileMeta>> getAnticheatInfo(int clientId, int offset, int count)
+            async Task<List<ProfileMeta>> getAnticheatInfo(int clientId, int offset, int count, DateTime? startAt)
             {
                 if (count > 1)
                 {
@@ -280,7 +280,7 @@ namespace IW4MAdmin.Plugins.Stats
                 };
             }
 
-            async Task<List<ProfileMeta>> getMessages(int clientId, int offset, int count)
+            async Task<List<ProfileMeta>> getMessages(int clientId, int offset, int count, DateTime? startAt)
             {
                 if (count <= 1)
                 {
@@ -291,7 +291,8 @@ namespace IW4MAdmin.Plugins.Stats
                             new ProfileMeta()
                             {
                                 Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
-                                Value = await ctx.Set<EFClientMessage>().CountAsync(),
+                                Value = await ctx.Set<EFClientMessage>()
+                                    .CountAsync(_message => _message.ClientId == clientId),
                                 Type = ProfileMeta.MetaType.Information
                             }
                         };
@@ -301,7 +302,9 @@ namespace IW4MAdmin.Plugins.Stats
                 List<ProfileMeta> messageMeta;
                 using (var ctx = new DatabaseContext(disableTracking: true))
                 {
-                    var messages = ctx.Set<EFClientMessage>().Where(m => m.ClientId == clientId)
+                    var messages = ctx.Set<EFClientMessage>()
+                        .Where(m => m.ClientId == clientId)
+                        .Where(_message => _message.TimeSent < startAt)
                         .OrderByDescending(_message => _message.TimeSent)
                         .Skip(offset)
                         .Take(count);

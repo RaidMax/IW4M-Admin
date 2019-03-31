@@ -28,53 +28,51 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             @Html.ActionLink("IW4MAdmin", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_HOME"], "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-md-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_HOME"], "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
                     @foreach (var _page in ViewBag.Pages)
                     {
-                        <li class="nav-item text-center text-md-left">
+                        <li class="nav-item text-center text-lg-left">
                             <a class="nav-link" href="@_page.Location">@_page.Name</a>
                         </li>
                     }
-                    <li class="nav-item text-center text-md-left"></li>
+                    <li class="nav-item text-center text-lg-left"></li>
                     @if (!string.IsNullOrEmpty(ViewBag.SocialLink))
                     {
-                        <li class="nav-item text-center text-md-left"><a href="@ViewBag.SocialLink" class="nav-link" target="_blank">@ViewBag.SocialTitle</a></li>
+                        <li class="nav-item text-center text-lg-left"><a href="@ViewBag.SocialLink" class="nav-link" target="_blank">@ViewBag.SocialTitle</a></li>
                     }
                     @if (ViewBag.Authorized)
                     {
-                        <li class="nav-link dropdown text-center text-md-left p-0">
+                        <li class="nav-link dropdown text-center text-lg-left p-0">
                             <a href="#" class="nav-link oi oi-person dropdown-toggle oi-fix-navbar w-100" id="account_dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
 
                             <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
                                 @Html.ActionLink(loc["WEBFRONT_NAV_CONSOLE"], "Index", "Console", new { area = "" }, new
                            {
-                               @class = "dropdown-item bg-dark text-muted text-center text-md-left",
+                               @class = "dropdown-item bg-dark text-muted text-center text-lg-left",
                                title = "Web Console"
                            })
                                 @Html.ActionLink(loc["WEBFRONT_NAV_PROFILE"], "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new
                            {
-                               @class = "dropdown-item bg-dark text-muted text-center text-md-left",
+                               @class = "dropdown-item bg-dark text-muted text-center text-lg-left",
                                title = "Client Profile",
                            })
                                 @Html.ActionLink(loc["WEBFRONT_NAV_LOGOUT"], "LogoutAsync", "Account", new { area = "" }, new
                            {
-                               @class = "dropdown-item bg-dark text-muted text-center text-md-left",
+                               @class = "dropdown-item bg-dark text-muted text-center text-lg-left",
                                title = "Logout of account"
                            })
-                                <a class="dropdown-item bg-dark text-muted text-center text-md-left profile-action" href="#" data-action="GenerateLoginToken" aria-hidden="true" title="@loc["WEBFRONT_ACTION_TOKEN"]">@loc["WEBFRONT_ACTION_TOKEN"]</a>
+                                <a class="dropdown-item bg-dark text-muted text-center text-lg-left profile-action" href="#" data-action="GenerateLoginToken" aria-hidden="true" title="@loc["WEBFRONT_ACTION_TOKEN"]">@loc["WEBFRONT_ACTION_TOKEN"]</a>
                             </div>
                         </li>
-                        <li class="nav-item text-center text-md-left"></li>
-                        <li class="nav-item text-center text-md-left"></li>
                     }
                     else
                     {
@@ -84,7 +82,7 @@
                     }
                 </ul>
                 <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
-                    <input id="client_search" name="clientName" class="form-control mr-auto ml-auto mr-md-2" type="text" placeholder="@loc["WEBFRONT_NAV_SEARCH"]" />
+                    <input id="client_search" name="clientName" class="form-control mr-lg-2 w-100" type="text" placeholder="@loc["WEBFRONT_NAV_SEARCH"]" />
                 </form>
             </div>
         </nav>

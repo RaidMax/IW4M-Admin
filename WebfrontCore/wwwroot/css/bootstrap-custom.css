@@ -6453,3 +6453,10 @@ form *, select {
 
 .mt-n2 {
   margin-top: -0.5rem !important; }
+
+/* Configuration */
+.configuration-form input[type='text'], .configuration-form input[type='number'] {
+  border: 1px solid #fd7e14; }
+
+.hide {
+  display: none; }

@@ -3,10 +3,12 @@
     Layout = null;
 }
 
-<div class="client-message-context bg-dark p-2 mt-2 mb-2 border-top border-bottom">
-    <h5>@Model.First().Time.ToString()</h5>
-    @foreach (var message in Model)
-    {
-        <span class="text-white">@Html.ActionLink(@message.Name, "ProfileAsync", "Client", new { id = message.ClientId})</span><span> &mdash; @message.Message</span><br />
-    }
+<div class="client-message-context">
+    <h5 class="bg-primary pt-2 pb-2 pl-3 mb-0 mt-2 text-white">@Model.First().Time.ToString()</h5>
+    <div class="bg-dark p-3 mb-2 border-bottom">
+        @foreach (var message in Model)
+        {
+            <span class="text-white">@message.Name</span><span> &mdash; @message.Message</span><br />
+        }
+    </div>
 </div>

@@ -22,6 +22,8 @@ namespace SharedLibraryCore.Dtos
         public List<ProfileMeta> Meta { get; set; }
         public bool Online { get; set; }
         public string TimeOnline { get; set; }
+        public DateTime LastConnection { get; set; }
+        public string LastConnectionText => Utilities.GetTimePassed(LastConnection, true);
         public IDictionary<int, long> LinkedAccounts { get; set; }
     }
 }

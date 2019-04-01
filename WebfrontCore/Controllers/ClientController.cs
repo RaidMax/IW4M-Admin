@@ -119,7 +119,7 @@ namespace WebfrontCore.Controllers
                 Name = c.Name,
                 Level = c.Level.ToLocalizedLevelName(),
                 LevelInt = (int)c.Level,
-                // todo: add back last seen for search
+                LastConnection = c.LastConnection,
                 ClientId = c.ClientId
             })
             .ToList();

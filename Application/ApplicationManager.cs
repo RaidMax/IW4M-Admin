@@ -250,10 +250,10 @@ namespace IW4MAdmin.Application
                 ConfigHandler.Set((ApplicationConfiguration)new ApplicationConfiguration().Generate());
                 var newConfig = ConfigHandler.Configuration();
 
-                newConfig.AutoMessagePeriod = defaultConfig.AutoMessagePeriod;
                 newConfig.AutoMessages = defaultConfig.AutoMessages;
                 newConfig.GlobalRules = defaultConfig.GlobalRules;
                 newConfig.Maps = defaultConfig.Maps;
+                newConfig.QuickMessages = defaultConfig.QuickMessages;
 
                 if (newConfig.Servers == null)
                 {
@@ -493,27 +493,15 @@ namespace IW4MAdmin.Application
                     return new List<ProfileMeta>();
                 }
 
-                var penalties = await GetPenaltyService().GetAllClientPenaltiesAsync(clientId, count, offset, startAt);
+                var penalties = await GetPenaltyService().GetClientPenaltyForMetaAsync(clientId, count, offset, startAt);
 
                 return penalties.Select(_penalty => new ProfileMeta()
                 {
-                    Id = _penalty.PenaltyId,
+                    Id = _penalty.Id,
                     Type = _penalty.PunisherId == clientId ? ProfileMeta.MetaType.Penalized : ProfileMeta.MetaType.ReceivedPenalty,
-                    Value = new PenaltyInfo
-                    {
-                        Id = _penalty.PenaltyId,
-                        OffenderName = _penalty.Offender.Name,
-                        OffenderId = _penalty.OffenderId,
-                        PunisherName = _penalty.Punisher.Name,
-                        PunisherId = _penalty.PunisherId,
-                        Offense = _penalty.Offense,
-                        PenaltyType = _penalty.Type.ToString(),
-                        TimeRemaining = _penalty.Expires.HasValue ? (DateTime.Now > _penalty.Expires ? "" : _penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
-                        AutomatedOffense = _penalty.AutomatedOffense,
-                        Expired = _penalty.Expires.HasValue && _penalty.Expires <= DateTime.UtcNow
-                    },
-                    When = _penalty.When,
-                    Sensitive = _penalty.Type == Penalty.PenaltyType.Flag
+                    Value = _penalty,
+                    When = _penalty.TimePunished,
+                    Sensitive = _penalty.Sensitive
                 })
                 .ToList();
             }

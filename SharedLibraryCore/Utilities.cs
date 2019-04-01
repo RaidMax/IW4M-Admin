@@ -596,19 +596,6 @@ namespace SharedLibraryCore
             return response;
         }
 
-        public static int ClientIdFromString(String[] lineSplit, int cIDPos)
-        {
-            int pID = -2; // apparently falling = -1 cID so i can't use it now
-            int.TryParse(lineSplit[cIDPos].Trim(), out pID);
-
-            if (pID == -1) // special case similar to mod_suicide
-            {
-                int.TryParse(lineSplit[2], out pID);
-            }
-
-            return pID;
-        }
-
         public static Dictionary<string, string> DictionaryFromKeyValue(this string eventLine)
         {
             string[] values = eventLine.Substring(1).Split('\\');

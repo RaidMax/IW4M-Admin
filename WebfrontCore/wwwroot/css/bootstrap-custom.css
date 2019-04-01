@@ -6318,6 +6318,10 @@ a.link-inverse:hover {
   .d-md-table-header-group {
     display: table-header-group !important; } }
 
+@media (min-width: 992px) {
+  .d-lg-table-header-group {
+    display: table-header-group !important; } }
+
 #console_command_response {
   min-height: 20rem; }
 

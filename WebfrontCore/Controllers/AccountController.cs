@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -24,10 +25,14 @@ namespace WebfrontCore.Controllers
 
             try
             {
+#if DEBUG == true
+                var client = Utilities.IW4MAdminClient();
+                bool loginSuccess = true;
+#else
                 var client = Manager.GetPrivilegedClients()[clientId];
-
                 bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(client.NetworkId, password) ||
                     (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt)))[0] == client.Password;
+#endif
 
                 if (loginSuccess)
                 {

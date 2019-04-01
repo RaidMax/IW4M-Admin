@@ -16,6 +16,51 @@
     "Keep grenade launcher use to a minimum",
     "Balance teams at ALL times"
   ],
+  "QuickMessages": [
+    {
+      "Game": "IW4",
+      "Messages": {
+        "QUICKMESSAGE_AREA_SECURE": "Area secure!",
+        "QUICKMESSAGE_ARE_YOU_CRAZY": "Are you crazy?",
+        "QUICKMESSAGE_ATTACK_LEFT_FLANK": "Attack left flank!",
+        "QUICKMESSAGE_ATTACK_RIGHT_FLANK": "Attack right flank!",
+        "QUICKMESSAGE_COME_ON": "Come on.",
+        "QUICKMESSAGE_ENEMIES_SPOTTED": "Multiple contacts!",
+        "QUICKMESSAGE_ENEMY_DOWN": "Enemy down!",
+        "QUICKMESSAGE_ENEMY_GRENADE": "Enemy grenade!",
+        "QUICKMESSAGE_ENEMY_SPOTTED": "Contact!",
+        "QUICKMESSAGE_FALL_BACK": "Fall back!",
+        "QUICKMESSAGE_FOLLOW_ME": "On me!",
+        "QUICKMESSAGE_GREAT_SHOT": "Nice shot!",
+        "QUICKMESSAGE_GRENADE": "Grenade!",
+        "QUICKMESSAGE_HOLD_THIS_POSITION": "Hold this position!",
+        "QUICKMESSAGE_HOLD_YOUR_FIRE": "Hold your fire!",
+        "QUICKMESSAGE_IM_IN_POSITION": "In position.",
+        "QUICKMESSAGE_IM_ON_MY_WAY": "Moving.",
+        "QUICKMESSAGE_MOVE_IN": "Move in!",
+        "QUICKMESSAGE_NEED_REINFORCEMENTS": "Need reinforcements!",
+        "QUICKMESSAGE_NO_SIR": "Negative.",
+        "QUICKMESSAGE_ON_MY_WAY": "On my way.",
+        "QUICKMESSAGE_REGROUP": "Regroup!",
+        "QUICKMESSAGE_SNIPER": "Sniper!",
+        "QUICKMESSAGE_SORRY": "Sorry.",
+        "QUICKMESSAGE_SQUAD_ATTACK_LEFT_FLANK": "Squad, attack left flank!",
+        "QUICKMESSAGE_SQUAD_ATTACK_RIGHT_FLANK": "Squad, attack right flank!",
+        "QUICKMESSAGE_SQUAD_HOLD_THIS_POSITION": "Squad, hold this position!",
+        "QUICKMESSAGE_SQUAD_REGROUP": "Squad, regroup!",
+        "QUICKMESSAGE_SQUAD_STICK_TOGETHER": "Squad, stick together!",
+        "QUICKMESSAGE_STICK_TOGETHER": "Stick together!",
+        "QUICKMESSAGE_SUPPRESSING_FIRE": "Base of fire!",
+        "QUICKMESSAGE_TOOK_LONG_ENOUGH": "Took long enough!",
+        "QUICKMESSAGE_TOOK_YOU_LONG_ENOUGH": "Took you long enough!",
+        "QUICKMESSAGE_WATCH_SIX": "Watch your six!",
+        "QUICKMESSAGE_YES_SIR": "Roger.",
+        "QUICKMESSAGE_YOURE_CRAZY": "You're crazy!",
+        "QUICKMESSAGE_YOURE_NUTS": "You're nuts!",
+        "QUICKMESSAGE_YOU_OUTTA_YOUR_MIND": "You outta your mind?"
+      }
+    }
+  ],
   "Maps": [
     {
       "Game": "IW3",

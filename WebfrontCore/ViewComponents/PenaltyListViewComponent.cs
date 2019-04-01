@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SharedLibraryCore;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Objects;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,42 +7,14 @@ namespace WebfrontCore.ViewComponents
 {
     public class PenaltyListViewComponent : ViewComponent
     {
+        private const int PENALTY_COUNT = 15;
+
         public async Task<IViewComponentResult> InvokeAsync(int offset, Penalty.PenaltyType showOnly)
         {
-            string showEvadeString(EFPenalty penalty) => penalty.IsEvadedOffense == true ?
-                    $"({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]}) " : "";
+            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(PENALTY_COUNT, offset, showOnly);
+            penalties = User.Identity.IsAuthenticated ? penalties : penalties.Where(p => !p.Sensitive).ToList();
 
-            var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(12, offset, showOnly);
-            var penaltiesDto = penalties.Select(p => new PenaltyInfo()
-            {
-                Id = p.PenaltyId,
-                OffenderId = p.OffenderId,
-                OffenderName = p.Offender.Name,
-                PunisherId = p.PunisherId,
-                PunisherName = p.Punisher.Name,
-                PunisherLevel = p.Punisher.Level.ToLocalizedLevelName(),
-                PunisherLevelId = (int)p.Punisher.Level,
-#if DEBUG
-                Offense = !string.IsNullOrEmpty(p.AutomatedOffense) ? p.AutomatedOffense : p.Offense,
-#else
-                Offense = (User.Identity.IsAuthenticated && !string.IsNullOrEmpty(p.AutomatedOffense)) ?
-                    $"{showEvadeString(p)}{p.AutomatedOffense}" :
-                    $"{showEvadeString(p)}{p.Offense}",
-#endif
-                PenaltyType = p.Type.ToString(),
-                TimePunished = Utilities.GetTimePassed(p.When, false),
-                // show time passed if ban
-                TimeRemaining = DateTime.UtcNow > p.Expires ? "" : $"{((p.Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? Utilities.GetTimePassed(p.When, true) : Utilities.TimeSpanText((p.Expires ?? DateTime.MaxValue) - DateTime.UtcNow))}",
-                Sensitive = p.Type == Penalty.PenaltyType.Flag,
-                AutomatedOffense = p.AutomatedOffense
-            });
-
-#if DEBUG
-            penaltiesDto = penaltiesDto.ToList();
-#else
-            penaltiesDto = User.Identity.IsAuthenticated ? penaltiesDto.ToList() : penaltiesDto.Where(p => !p.Sensitive).ToList();
-#endif
-            return View("_List", penaltiesDto);
+            return View("_List", penalties);
         }
     }
 }

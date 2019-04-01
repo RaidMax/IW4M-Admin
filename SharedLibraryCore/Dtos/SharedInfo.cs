@@ -3,8 +3,8 @@ namespace SharedLibraryCore.Dtos
 {
     public class SharedInfo
     {
-        public bool Sensitive { get; set; }
+        public virtual bool Sensitive { get; set; }
         public bool Show { get; set; } = true;
-        public int Id {get;set;}
-}
+        public int Id { get; set; }
+    }
 }

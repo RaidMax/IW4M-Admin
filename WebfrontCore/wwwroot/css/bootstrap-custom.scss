@@ -88,7 +88,13 @@ a.link-inverse:hover {
 
 @media (min-width: 768px) {
     .d-md-table-header-group {
-        display: table-header-group !important
+        display: table-header-group !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .d-lg-table-header-group {
+        display: table-header-group !important;
     }
 }
 

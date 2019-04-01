@@ -9,24 +9,24 @@
         var penalty = meta.Value as SharedLibraryCore.Dtos.PenaltyInfo;
 
         string localizationKey = meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized ?
-            $"WEBFRONT_CLIENT_META_PENALIZED_{penalty.PenaltyType.ToUpper()}" :
-            $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{penalty.PenaltyType.ToUpper()}";
+            $"WEBFRONT_CLIENT_META_PENALIZED_{penalty.PenaltyTypeText.ToUpper()}" :
+            $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{penalty.PenaltyTypeText.ToUpper()}";
 
         string localizationMessage = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex[localizationKey];
         var regexMatch = System.Text.RegularExpressions.Regex.Match(localizationMessage, @"^.*{{([^{}]+)}}.+$");
         string penaltyType = regexMatch.Groups[1].Value.ToString();
 
-        localizationMessage = localizationMessage.Replace(penaltyType, $"<span class='penalties-color-{penalty.PenaltyType.ToLower()}'>{penaltyType}</span>");
+        localizationMessage = localizationMessage.Replace(penaltyType, $"<span class='penalties-color-{penalty.PenaltyTypeText.ToLower()}'>{penaltyType}</span>");
 
         return meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized ?
             string.Format(localizationMessage,
             $"<span class='text-highlight'><a class='link-inverse' href='{penalty.OffenderId}'>{penalty.OffenderName}</a></span>",
-            $"<span class='automated-penalty-info-detailed text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense}</span>")
+            $"<span class='{(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense} {(ViewBag.Authorized ? penalty.AdditionalPenaltyInformation : "")}</span>")
             .Replace("{", "")
             .Replace("}", "") :
             string.Format(localizationMessage,
             $"<span class='text-highlight'><a class='link-inverse' href='{penalty.PunisherId}'>{penalty.PunisherName}</a></span>",
-            $"<span class='automated-penalty-info-detailed text-white' data-clientid='{penalty.OffenderId}'>{(ViewBag.Authorized && !string.IsNullOrEmpty(penalty.AutomatedOffense) ? $"{penalty.Offense} ({penalty.AutomatedOffense})" : penalty.Offense)}</span>",
+            $"<span class='{(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense} {(ViewBag.Authorized ? penalty.AdditionalPenaltyInformation : "")}</span>",
             penalty.Offense)
             .Replace("{", "")
             .Replace("}", "");
@@ -55,7 +55,7 @@
         case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ChatMessage:
             <div class="profile-meta-entry loader-data-time" data-time="@meta.When">
                 <span style="color:white;">></span>
-                <span class="client-message text-muted" data-serverid="@meta.Extra" data-when="@meta.When"> @meta.Value</span>
+                <span class="client-message text-muted" data-serverid="@meta.Extra" data-when="@meta.When" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGE_CONTEXT"]"> @meta.Value</span>
             </div>
             break;
         case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ReceivedPenalty:

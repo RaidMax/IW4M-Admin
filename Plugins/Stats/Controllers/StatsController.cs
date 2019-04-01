@@ -89,16 +89,30 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
         {
             using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
             {
-                var penaltyInfo = await ctx.Set<Models.EFACSnapshot>()
-                    .Where(s => s.ClientId == clientId)
+                int linkId = await ctx.Clients
+                    .Where(_client => _client.ClientId == clientId)
+                    .Select(_client => _client.AliasLinkId)
+                    .FirstOrDefaultAsync();
+
+                var clientIds = await ctx.Clients.Where(_client => _client.AliasLinkId == linkId)
+                    .Select(_client => _client.ClientId)
+                    .ToListAsync();
+
+                var iqPenaltyInfo = ctx.Set<Models.EFACSnapshot>()
+                    .Where(s => clientIds.Contains(s.ClientId))
                     .Include(s => s.LastStrainAngle)
                     .Include(s => s.HitOrigin)
                     .Include(s => s.HitDestination)
                     .Include(s => s.CurrentViewAngle)
                     .Include(s => s.PredictedViewAngles)
                     .OrderBy(s => s.When)
-                    .ThenBy(s => s.Hits)
-                    .ToListAsync();
+                    .ThenBy(s => s.Hits);
+
+#if DEBUG == true
+                var sql = iqPenaltyInfo.ToSql();
+#endif
+
+                var penaltyInfo = await iqPenaltyInfo.ToListAsync();
 
                 return View("_PenaltyInfo", penaltyInfo);
             }

@@ -7,10 +7,10 @@ namespace SharedLibraryCore.Configuration
 {
     public class DefaultConfiguration : IBaseConfiguration
     {
-        public int AutoMessagePeriod { get; set; }
         public List<string> AutoMessages { get; set; }
         public List<string> GlobalRules { get; set; }
         public List<MapConfiguration> Maps { get; set; }
+        public List<QuickMessageConfiguration> QuickMessages {get; set;}
 
         public IBaseConfiguration Generate() => this;
 

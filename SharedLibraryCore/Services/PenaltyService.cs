@@ -130,22 +130,6 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IList<EFPenalty>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
-        {
-            using (var context = new DatabaseContext(true))
-            {
-                return await context.Penalties
-                   .Include(p => p.Offender.CurrentAlias)
-                   .Include(p => p.Punisher.CurrentAlias)
-                   .Where(p => showOnly == Penalty.PenaltyType.Any ? p.Type != Penalty.PenaltyType.Any : p.Type == showOnly)
-                   .Where(p => p.Active)
-                   .OrderByDescending(p => p.When)
-                   .Skip(offset)
-                   .Take(count)
-                   .ToListAsync();
-            }
-        }
-
         public async Task<IList<EFPenalty>> GetClientPenaltiesAsync(int clientId)
         {
             using (var context = new DatabaseContext(true))
@@ -159,136 +143,79 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<IList<EFPenalty>> GetAllClientPenaltiesAsync(int clientId, int count, int offset, DateTime? startAt)
+        public async Task<IList<PenaltyInfo>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
         {
-            using (var ctx = new DatabaseContext(true))
+            using (var context = new DatabaseContext(true))
             {
-                var iqPenalties = ctx.Penalties.AsNoTracking()
-                    .Include(_penalty => _penalty.Offender.CurrentAlias)
-                    .Include(_penalty => _penalty.Punisher.CurrentAlias)
-                    .Where(_penalty => _penalty.Active)
-                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId)
-                    .Where(_penalty => _penalty.When < startAt)
-                    .OrderByDescending(_penalty => _penalty.When)
+                var iqPenalties = context.Penalties
+                    .Where(p => showOnly == Penalty.PenaltyType.Any ? p.Type != Penalty.PenaltyType.Any : p.Type == showOnly)
+                    .Where(p => p.Active)
+                    .OrderByDescending(p => p.When)
                     .Skip(offset)
-                    .Take(count);
+                    .Take(count)
+                     .Select(_penalty => new PenaltyInfo()
+                     {
+                         Id = _penalty.PenaltyId,
+                         Offense = _penalty.Offense,
+                         AutomatedOffense = _penalty.AutomatedOffense,
+                         OffenderId = _penalty.OffenderId,
+                         OffenderName = _penalty.Offender.CurrentAlias.Name,
+                         PunisherId = _penalty.PunisherId,
+                         PunisherName = _penalty.Punisher.CurrentAlias.Name,
+                         PunisherLevel = _penalty.Punisher.Level,
+                         PenaltyType = _penalty.Type,
+                         Expires = _penalty.Expires,
+                         TimePunished = _penalty.When,
+                         IsEvade = _penalty.IsEvadedOffense
+                     });
 
+#if DEBUG == true
+                var querySql = iqPenalties.ToSql();
+#endif
                 return await iqPenalties.ToListAsync();
             }
         }
 
         /// <summary>
-        /// Get a read-only copy of client penalties
+        /// retrieves penalty information for meta service
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <param name="victim">Retreive penalties for clients receiving penalties, other wise given</param>
+        /// <param name="clientId">database id of the client</param>
+        /// <param name="count">how many items to retrieve</param>
+        /// <param name="offset">not used</param>
+        /// <param name="startAt">retreive penalties older than this</param>
         /// <returns></returns>
-        public async Task<List<ProfileMeta>> ReadGetClientPenaltiesAsync(int clientId, bool victim = true)
+        public async Task<IList<PenaltyInfo>> GetClientPenaltyForMetaAsync(int clientId, int count, int offset, DateTime? startAt)
         {
-            using (var context = new DatabaseContext(true))
+            using (var ctx = new DatabaseContext(true))
             {
-                // todo: clean this up
-                if (victim)
-                {
-                    var now = DateTime.UtcNow;
-                    var iqPenalties = from penalty in context.Penalties.AsNoTracking()
-                                      where penalty.OffenderId == clientId
-                                      join victimClient in context.Clients.AsNoTracking()
-                                      on penalty.OffenderId equals victimClient.ClientId
-                                      join victimAlias in context.Aliases.AsNoTracking()
-                                      on victimClient.CurrentAliasId equals victimAlias.AliasId
-                                      join punisherClient in context.Clients.AsNoTracking()
-                                      on penalty.PunisherId equals punisherClient.ClientId
-                                      join punisherAlias in context.Aliases.AsNoTracking()
-                                      on punisherClient.CurrentAliasId equals punisherAlias.AliasId
-                                      //orderby penalty.When descending
-                                      select new ProfileMeta()
-                                      {
-                                          Key = "Event.Penalty",
-                                          Value = new PenaltyInfo
-                                          {
-                                              Id = penalty.PenaltyId,
-                                              OffenderName = victimAlias.Name,
-                                              OffenderId = victimClient.ClientId,
-                                              PunisherName = punisherAlias.Name,
-                                              PunisherId = penalty.PunisherId,
-                                              Offense = penalty.Offense,
-                                              PenaltyType = penalty.Type.ToString(),
-                                              TimeRemaining = penalty.Expires.HasValue ? (now > penalty.Expires ? "" : penalty.Expires.ToString()) : DateTime.MaxValue.ToString(),
-                                              AutomatedOffense = penalty.AutomatedOffense,
-                                              Expired = penalty.Expires.HasValue && penalty.Expires <= DateTime.UtcNow
-                                          },
-                                          When = penalty.When,
-                                          Sensitive = penalty.Type == Penalty.PenaltyType.Flag
-                                      };
-                    // fixme: is this good and fast?
-                    var list = await iqPenalties.ToListAsync();
-                    list.ForEach(p =>
+                var iqPenalties = ctx.Penalties.AsNoTracking()
+                    .Where(_penalty => _penalty.Active)
+                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId)
+                    .Where(_penalty => _penalty.When < startAt)
+                    .OrderByDescending(_penalty => _penalty.When)
+                    .Skip(offset)
+                    .Take(count)
+                    .Select(_penalty => new PenaltyInfo()
                     {
-                        // todo: why does this have to be done?
-                        if (((PenaltyInfo)p.Value).PenaltyType.Length < 2)
-                        {
-                            ((PenaltyInfo)p.Value).PenaltyType = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).PenaltyType)).ToString();
-                        }
-
-                        var pi = ((PenaltyInfo)p.Value);
-                        if (pi.TimeRemaining?.Length > 0)
-                        {
-                            pi.TimeRemaining = (DateTime.Parse(((PenaltyInfo)p.Value).TimeRemaining) - now).TimeSpanText();
-
-                            if (!pi.Expired)
-                            {
-                                pi.TimeRemaining = $"{pi.TimeRemaining} {Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]}";
-                            }
-                        }
-                    });
-                    return list;
-                }
-
-                else
-                {
-                    var iqPenalties = from penalty in context.Penalties.AsNoTracking()
-                                      where penalty.PunisherId == clientId
-                                      join victimClient in context.Clients.AsNoTracking()
-                                      on penalty.OffenderId equals victimClient.ClientId
-                                      join victimAlias in context.Aliases
-                                      on victimClient.CurrentAliasId equals victimAlias.AliasId
-                                      join punisherClient in context.Clients
-                                      on penalty.PunisherId equals punisherClient.ClientId
-                                      join punisherAlias in context.Aliases
-                                      on punisherClient.CurrentAliasId equals punisherAlias.AliasId
-                                      //orderby penalty.When descending
-                                      select new ProfileMeta()
-                                      {
-                                          Key = "Event.Penalty",
-                                          Value = new PenaltyInfo
-                                          {
-                                              Id = penalty.PenaltyId,
-                                              OffenderName = victimAlias.Name,
-                                              OffenderId = victimClient.ClientId,
-                                              PunisherName = punisherAlias.Name,
-                                              PunisherId = penalty.PunisherId,
-                                              Offense = penalty.Offense,
-                                              PenaltyType = penalty.Type.ToString(),
-                                              AutomatedOffense = penalty.AutomatedOffense
-                                          },
-                                          When = penalty.When,
-                                          Sensitive = penalty.Type == Penalty.PenaltyType.Flag
-                                      };
-                    // fixme: is this good and fast?
-                    var list = await iqPenalties.ToListAsync();
-
-                    list.ForEach(p =>
-                    {
-                        // todo: why does this have to be done?
-                        if (((PenaltyInfo)p.Value).PenaltyType.Length < 2)
-                        {
-                            ((PenaltyInfo)p.Value).PenaltyType = ((Penalty.PenaltyType)Convert.ToInt32(((PenaltyInfo)p.Value).PenaltyType)).ToString();
-                        }
+                        Id = _penalty.PenaltyId,
+                        Offense = _penalty.Offense,
+                        AutomatedOffense = _penalty.AutomatedOffense,
+                        OffenderId = _penalty.OffenderId,
+                        OffenderName = _penalty.Offender.CurrentAlias.Name,
+                        PunisherId = _penalty.PunisherId,
+                        PunisherName = _penalty.Punisher.CurrentAlias.Name,
+                        PunisherLevel = _penalty.Punisher.Level,
+                        PenaltyType = _penalty.Type,
+                        Expires = _penalty.Expires,
+                        TimePunished = _penalty.When,
+                        IsEvade = _penalty.IsEvadedOffense
                     });
 
-                    return list;
-                }
+#if DEBUG == true
+                var querySql = iqPenalties.ToSql();
+#endif
+
+                return await iqPenalties.ToListAsync();
             }
         }
 

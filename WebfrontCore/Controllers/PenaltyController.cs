@@ -10,12 +10,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebfrontCore.ViewComponents;
+using static SharedLibraryCore.Objects.Penalty;
 
 namespace WebfrontCore.Controllers
 {
     public class PenaltyController : BaseController
     {
-        public IActionResult List(int showOnly = (int)SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
+        public IActionResult List(PenaltyType showOnly = PenaltyType.Any)
         {
             ViewBag.Description = "List of all the recent penalties (bans, kicks, warnings) on IW4MAdmin";
             ViewBag.Title = Localization["WEBFRONT_PENALTY_TITLE"];
@@ -24,12 +25,12 @@ namespace WebfrontCore.Controllers
             return View((SharedLibraryCore.Objects.Penalty.PenaltyType)showOnly);
         }
 
-        public async Task<IActionResult> ListAsync(int offset = 0, int showOnly = (int)SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
+        public async Task<IActionResult> ListAsync(int offset = 0, PenaltyType showOnly = PenaltyType.Any)
         {
             return await Task.FromResult(View("_List", new ViewModels.PenaltyFilterInfo()
             {
                 Offset = offset,
-                ShowOnly = (SharedLibraryCore.Objects.Penalty.PenaltyType)showOnly
+                ShowOnly = showOnly
             }));
         }
 
@@ -47,7 +48,7 @@ namespace WebfrontCore.Controllers
                 // todo: this seems like it's pulling unnecessary info from LINQ to entities.
                 var iqPenalties = ctx.Penalties
                     .AsNoTracking()
-                    .Where(p => p.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.Ban && p.Active)
+                    .Where(p => p.Type == PenaltyType.Ban && p.Active)
                     .OrderByDescending(_penalty => _penalty.When)
                     .Select(p => new PenaltyInfo()
                     {
@@ -61,9 +62,7 @@ namespace WebfrontCore.Controllers
                         PunisherNetworkId = (ulong)p.Punisher.NetworkId,
                         PunisherName = p.Punisher.CurrentAlias.Name,
                         PunisherIPAddress = Authorized ? p.Punisher.CurrentAlias.IPAddress.ConvertIPtoString() : null,
-                        PenaltyType = p.Type.ToString(),
-                        TimePunished = p.When.ToString(),
-                        TimeRemaining = null,
+                        TimePunished = p.When,
                         AutomatedOffense = Authorized ? p.AutomatedOffense : null,
                     });
 #if DEBUG == true

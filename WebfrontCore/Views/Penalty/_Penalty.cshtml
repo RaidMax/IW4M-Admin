@@ -5,72 +5,72 @@
 
 @model SharedLibraryCore.Dtos.PenaltyInfo
 
-<tr class="d-table-row d-md-none bg-dark">
+<tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
     <td>
         @Html.ActionLink(Model.OffenderName, "ProfileAsync", "Client", new { id = Model.OffenderId }, new { @class = "link-inverse" })
     </td>
 </tr>
 
-<tr class="d-table-row d-md-none bg-dark">
+<tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
-    <td class="penalties-color-@Model.PenaltyType.ToLower()">
+    <td class="penalties-color-@Model.PenaltyTypeText.ToLower()">
         @Model.PenaltyType
     </td>
 </tr>
 
-<tr class="d-table-row d-md-none bg-dark">
+<tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
     <td class="text-light">
-        @Model.Offense
+        @($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")
     </td>
 </tr>
 
-<tr class="d-table-row d-md-none bg-dark">
+<tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
     <td>
-        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevelId }) 
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + (int)Model.PunisherLevel })
     </td>
 </tr>
 
-<tr class="d-table-row d-md-none bg-dark">
+<tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</th>
     <td class="text-light mb-2 border-bottom">
         @{
-            if (Model.TimeRemaining == string.Empty)
+            if (Model.Expired)
             {
-                <span>@Model.TimePunished @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
+                <span>@Model.TimePunishedString</span>
             }
             else
             {
-                <span> @Model.TimeRemaining</span>
+                <span>@Model.TimeRemaining</span>
             }
         }
     </td>
 </tr>
 
-<tr class="d-none d-md-table-row">
+<tr class="d-none d-lg-table-row">
     <td>
         @Html.ActionLink(Model.OffenderName, "ProfileAsync", "Client", new { id = Model.OffenderId }, new { @class = "link-inverse" })
     </td>
-    <td class="penalties-color-@Model.PenaltyType.ToLower()">
+    <td class="penalties-color-@Model.PenaltyTypeText.ToLower()">
         @Model.PenaltyType
     </td>
     <td class="text-light w-50">
-        @Model.Offense
+        @($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")
     </td>
     <td>
-        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + Model.PunisherLevelId }) 
+        @Html.ActionLink(Model.PunisherName, "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + (int)Model.PunisherLevel })
     </td>
     <td class="text-right text-light">
         @{
-            if (Model.TimeRemaining == string.Empty)
+            if (Model.Expired)
             {
-                <span>@Model.TimePunished  @loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
+                <span>@Model.TimePunishedString</span>
             }
             else
             {
-                <span> @Model.TimeRemaining </span>
+                <span>@Model.TimeRemaining</span>
             }
         }
     </td>

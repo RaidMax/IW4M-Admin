@@ -2,7 +2,7 @@
 @{
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
-<h4 class="pb-3 text-center ">@ViewBag.Title</h4>
+<h4 class="pb-3 text-center">@ViewBag.Title</h4>
 <div class="row">
     <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
         @{
@@ -36,7 +36,7 @@
 </div>
 <div class="row">
     <table class="table table-striped">
-        <thead class="d-none d-md-table-header-group">
+        <thead class="d-none d-lg-table-header-group">
             <tr class="bg-primary pt-2 pb-2">
                 <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
                 <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
@@ -53,10 +53,10 @@
             })
         </tbody>
     </table>
-    <table class="table d-table d-md-none">
+    <table class="table d-table d-lg-none">
         <tbody></tbody>
     </table>
-    <span id="load_penalties_button" class="oi oi-chevron-bottom text-center text-primary w-100 h3 pb-0 mb-0 d-none d-md-block"></span>
+    <span id="load_penalties_button" class="oi oi-chevron-bottom text-center text-primary w-100 h3 pb-0 mb-0 d-none d-lg-block"></span>
 </div>
 
 @section scripts {

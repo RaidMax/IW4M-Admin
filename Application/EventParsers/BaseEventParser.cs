@@ -139,11 +139,16 @@ namespace IW4MAdmin.Application.EventParsers
 
                     if (match.Success)
                     {
-                        var origin = server.GetClientsAsList()
-                                .First(c => c.NetworkId == match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertLong());
-                        var target = server.GetClientsAsList()
-                            .First(c => c.NetworkId == match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertLong());
+                        string originId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].Value.ToString();
+                        string targetId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].Value.ToString();
 
+                        var origin = !string.IsNullOrEmpty(originId) ? server.GetClientsAsList()
+                                .First(c => c.NetworkId == originId.ConvertLong()) :
+                                Utilities.IW4MAdminClient(server);
+
+                        var target = !string.IsNullOrEmpty(targetId) ? server.GetClientsAsList()
+                                .First(c => c.NetworkId == targetId.ConvertLong()) :
+                                Utilities.IW4MAdminClient(server);
 
                         return new GameEvent()
                         {
@@ -159,8 +164,14 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "ScriptKill")
             {
-                var origin = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
-                var target = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
+                long originId = lineSplit[1].ConvertLong();
+                long targetId = lineSplit[2].ConvertLong();
+
+                var origin = originId == long.MinValue ? Utilities.IW4MAdminClient(server) :
+                    server.GetClientsAsList().First(c => c.NetworkId == originId);
+                var target = targetId == long.MinValue ? Utilities.IW4MAdminClient(server) :
+                    server.GetClientsAsList().FirstOrDefault(c => c.NetworkId == targetId) ?? Utilities.IW4MAdminClient(server);
+
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.ScriptKill,
@@ -173,8 +184,13 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "ScriptDamage")
             {
-                var origin = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[1].ConvertLong());
-                var target = server.GetClientsAsList().First(c => c.NetworkId == lineSplit[2].ConvertLong());
+                long originId = lineSplit[1].ConvertLong();
+                long targetId = lineSplit[2].ConvertLong();
+
+                var origin = originId == long.MinValue ? Utilities.IW4MAdminClient(server) :
+                    server.GetClientsAsList().First(c => c.NetworkId == originId);
+                var target = targetId == long.MinValue ? Utilities.IW4MAdminClient(server) :
+                    server.GetClientsAsList().FirstOrDefault(c => c.NetworkId == targetId) ?? Utilities.IW4MAdminClient(server);
 
                 return new GameEvent()
                 {
@@ -195,10 +211,16 @@ namespace IW4MAdmin.Application.EventParsers
 
                     if (regexMatch.Success)
                     {
-                        var origin = server.GetClientsAsList()
-                            .First(c => c.NetworkId == regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertLong());
-                        var target = server.GetClientsAsList()
-                            .First(c => c.NetworkId == regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertLong());
+                        string originId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
+                        string targetId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString();
+
+                        var origin = !string.IsNullOrEmpty(originId) ? server.GetClientsAsList()
+                            .First(c => c.NetworkId == originId.ConvertLong()) :
+                            Utilities.IW4MAdminClient(server);
+
+                        var target = !string.IsNullOrEmpty(targetId) ? server.GetClientsAsList()
+                            .First(c => c.NetworkId == targetId.ConvertLong()) :
+                            Utilities.IW4MAdminClient(server);
 
                         return new GameEvent()
                         {

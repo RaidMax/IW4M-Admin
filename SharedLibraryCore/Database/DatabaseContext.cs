@@ -24,12 +24,33 @@ namespace SharedLibraryCore.Database
         static string _ConnectionString;
         static string _provider;
         private static readonly string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins";
+        private static int activeContextCount;
 
-        public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt) { }
+        public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt)
+        {
+#if DEBUG == true
+            activeContextCount++;
+            Console.WriteLine($"Initialized DB Context #{activeContextCount}");
+#endif
+        }
 
-        public DatabaseContext() { }
+        public DatabaseContext()
+        {
+#if DEBUG == true
+            activeContextCount++;
+            Console.WriteLine($"Initialized DB Context #{activeContextCount}");
+#endif
+        }
 
-        public DatabaseContext(bool disableTracking)
+        public override void Dispose()
+        {
+#if DEBUG == true
+            activeContextCount--;
+            Console.WriteLine($"Disposed DB Context #{activeContextCount}");
+#endif
+        }
+
+        public DatabaseContext(bool disableTracking) : this()
         {
             if (disableTracking)
             {
@@ -46,7 +67,7 @@ namespace SharedLibraryCore.Database
             }
         }
 
-        public DatabaseContext(string connStr, string provider)
+        public DatabaseContext(string connStr, string provider) : this()
         {
             _ConnectionString = connStr;
             _provider = provider;

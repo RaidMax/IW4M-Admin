@@ -86,12 +86,34 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Kill:
                     if (!E.Owner.CustomCallback)
                     {
+                        // this treats "world" damage as self damage
+                        if (E.Origin.ClientId == 1)
+                        {
+                            E.Origin = E.Target;
+                        }
+
+                        if (E.Target.ClientId == 1)
+                        {
+                            E.Target = E.Origin;
+                        }
+
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     }
                     break;
                 case GameEvent.EventType.Damage:
                     if (!E.Owner.CustomCallback)
                     {
+                        // this treats "world" damage as self damage
+                        if (E.Origin.ClientId == 1)
+                        {
+                            E.Origin = E.Target;
+                        }
+
+                        if (E.Target.ClientId == 1)
+                        {
+                            E.Target = E.Origin;
+                        }
+
                         Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, await StatManager.GetIdForServer(E.Owner));
                     }
                     break;

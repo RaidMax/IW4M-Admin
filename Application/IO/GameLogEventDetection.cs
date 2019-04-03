@@ -30,7 +30,7 @@ namespace IW4MAdmin.Application.IO
         {
             while (!Server.Manager.ShutdownRequested())
             {
-                if ((Server.Manager as ApplicationManager).IsInitialized)
+                if (Server.IsInitialized)
                 {
                     try
                     {

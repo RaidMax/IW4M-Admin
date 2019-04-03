@@ -18,6 +18,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin
 {
@@ -101,9 +102,7 @@ namespace IW4MAdmin
                 Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
                 await client.OnDisconnect();
                 Clients[client.ClientNumber] = null;
-#if DEBUG == true
-                Logger.WriteDebug($"End PreDisconnect for {client}");
-#endif
+
                 var e = new GameEvent()
                 {
                     Origin = client,
@@ -183,9 +182,8 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.ChangePermission)
             {
                 var newPermission = (EFClient.Permission)E.Extra;
-                E.Target.Level = newPermission;
-                
-                if (!E.Target.IsPrivileged())
+       
+                if (newPermission < Permission.Moderator)
                 {
                     // remove banned or demoted privileged user
                     Manager.GetPrivilegedClients().Remove(E.Target.ClientId);
@@ -196,7 +194,7 @@ namespace IW4MAdmin
                     Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
 
-                await Manager.GetClientService().Update(E.Target);
+                await Manager.GetClientService().UpdateLevel((Permission)E.Extra, E.Target, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.PreConnect)
@@ -207,6 +205,9 @@ namespace IW4MAdmin
                     return false;
                 }
 
+                var existingClient = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
+
+            CONNECT:
                 if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
@@ -225,6 +226,14 @@ namespace IW4MAdmin
                     {
                         E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
                     }
+                }
+
+                // for some reason there's still a client in the spot
+                else if (existingClient == null)
+                {
+                    Logger.WriteWarning($"{E.Origin} is connecteding but {Clients[E.Origin.ClientNumber]} is currently in that client slot");
+                    await OnClientDisconnected(Clients[E.Origin.ClientNumber]);
+                    goto CONNECT;
                 }
 
                 else
@@ -248,17 +257,17 @@ namespace IW4MAdmin
                 };
 
                 var addedPenalty = await Manager.GetPenaltyService().Create(newPenalty);
-                await Manager.GetClientService().Update(E.Target);
+                E.Target.SetLevel(Permission.Flagged, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Unflag)
             {
-                await Manager.GetClientService().Update(E.Target);
+                E.Target.SetLevel(Permission.User, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Report)
             {
-                this.Reports.Add(new Report()
+                Reports.Add(new Report()
                 {
                     Origin = E.Origin,
                     Target = E.Target,
@@ -292,42 +301,49 @@ namespace IW4MAdmin
                 await Warn(E.Data, E.Target, E.Origin);
             }
 
-            else if (E.Type == GameEvent.EventType.Quit)
-            {
-                var origin = GetClientsAsList().FirstOrDefault(_client => _client.NetworkId.Equals(E.Origin));
+            //else if (E.Type == GameEvent.EventType.Quit)
+            //{
+            //    var origin = GetClientsAsList().FirstOrDefault(_client => _client.NetworkId.Equals(E.Origin));
 
-                if (origin != null)
-                {
-                    var e = new GameEvent()
-                    {
-                        Type = GameEvent.EventType.Disconnect,
-                        Origin = origin,
-                        Owner = this
-                    };
+            //    if (origin != null)
+            //    {
+            //        var e = new GameEvent()
+            //        {
+            //            Type = GameEvent.EventType.Disconnect,
+            //            Origin = origin,
+            //            Owner = this
+            //        };
 
-                    Manager.GetEventHandler().AddEvent(e);
-                }
+            //        Manager.GetEventHandler().AddEvent(e);
+            //    }
 
-                else
-                {
-                    return false;
-                }
-            }
+            //    else
+            //    {
+            //        return false;
+            //    }
+            //}
 
             else if (E.Type == GameEvent.EventType.Disconnect)
             {
+                ChatHistory.Add(new ChatInfo()
+                {
+                    Name = E.Origin.Name,
+                    Message = "DISCONNECTED",
+                    Time = DateTime.UtcNow
+                });
+
                 await new MetaService().AddPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin);
                 await new MetaService().AddPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
-                if ((DateTime.UtcNow - SessionStart).TotalSeconds < 30)
-                {
-                    Logger.WriteInfo($"Cancelling pre disconnect for {E.Origin} as it occured too close to map end");
-                    E.FailReason = GameEvent.EventFailReason.Invalid;
-                    return false;
-                }
+                //if ((DateTime.UtcNow - SessionStart).TotalSeconds < 30)
+                //{
+                //    Logger.WriteInfo($"Cancelling pre disconnect for {E.Origin} as it occured too close to map end");
+                //    E.FailReason = GameEvent.EventFailReason.Invalid;
+                //    return false;
+                //}
 
                 // predisconnect comes from minimal rcon polled players and minimal log players
                 // so we need to disconnect the "full" version of the client
@@ -338,18 +354,16 @@ namespace IW4MAdmin
 #if DEBUG == true
                     Logger.WriteDebug($"Begin PreDisconnect for {client}");
 #endif
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = client.Name,
-                        Message = "DISCONNECTED",
-                        Time = DateTime.UtcNow
-                    });
-
                     await OnClientDisconnected(client);
+#if DEBUG == true
+                    Logger.WriteDebug($"End PreDisconnect for {client}");
+#endif
                 }
 
                 else
                 {
+                    Logger.WriteDebug($"Client {E.Origin} detected as disconnecting, but could not find them in the player list");
+                    Logger.WriteDebug($"Expected {E.Origin} but found {GetClientsAsList().FirstOrDefault(_client => _client.ClientNumber == E.Origin.ClientNumber)}");
                     return false;
                 }
             }
@@ -410,7 +424,7 @@ namespace IW4MAdmin
                     var dict = (Dictionary<string, string>)E.Extra;
                     Gametype = dict["g_gametype"].StripColors();
                     Hostname = dict["sv_hostname"].StripColors();
-                    MaxClients = Int32.Parse(dict["sv_maxclients"]);
+                    MaxClients = int.Parse(dict["sv_maxclients"]);
 
                     string mapname = dict["mapname"].StripColors();
                     CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
@@ -493,6 +507,7 @@ namespace IW4MAdmin
 #endif
             var currentClients = GetClientsAsList();
             var polledClients = (await this.GetStatusAsync()).AsEnumerable();
+
             if (Manager.GetApplicationSettings().Configuration().IgnoreBots)
             {
                 polledClients = polledClients.Where(c => !c.IsBot);
@@ -970,8 +985,6 @@ namespace IW4MAdmin
 
             else
             {
-                // this is set only because they're still in the server.
-                targetClient.Level = EFClient.Permission.Banned;
 
 #if !DEBUG
                 string formattedString = String.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
@@ -994,6 +1007,7 @@ namespace IW4MAdmin
             };
 
             await Manager.GetPenaltyService().Create(newPenalty);
+            targetClient.SetLevel(Permission.Banned, originClient);
         }
 
         override public async Task Unban(string reason, EFClient Target, EFClient Origin)
@@ -1010,8 +1024,9 @@ namespace IW4MAdmin
                 Link = Target.AliasLink
             };
 
-            await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId);
+            await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId, Origin);
             await Manager.GetPenaltyService().Create(unbanPenalty);
+            Target.SetLevel(Permission.User, Origin);
         }
 
         override public void InitializeTokens()

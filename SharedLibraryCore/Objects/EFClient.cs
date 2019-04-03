@@ -81,6 +81,7 @@ namespace SharedLibraryCore.Database.Models
                 { "_reportCount", 0 }
             };
             CurrentAlias = new EFAlias();
+            ReceivedPenalties = new List<EFPenalty>();
         }
 
         public override string ToString()
@@ -242,11 +243,6 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
 
-            else
-            {
-                this.Level = Permission.Flagged;
-            }
-
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
@@ -274,14 +270,9 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (this.Level != EFClient.Permission.Flagged)
+            else if (this.Level != Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
-            }
-
-            else
-            {
-                this.Level = Permission.User;
             }
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
@@ -403,15 +394,15 @@ namespace SharedLibraryCore.Database.Models
         /// <summary>
         /// sets the level of the client
         /// </summary>
-        /// <param name="permission">new permission to set client to</param>
+        /// <param name="newPermission">new permission to set client to</param>
         /// <param name="sender">user performing the set level</param>
         /// <returns></returns>
-        public GameEvent SetLevel(Permission permission, EFClient sender)
+        public GameEvent SetLevel(Permission newPermission, EFClient sender)
         {
             var e = new GameEvent()
             {
                 Type = GameEvent.EventType.ChangePermission,
-                Extra = permission,
+                Extra = newPermission,
                 Origin = sender,
                 Target = this,
                 Owner = sender.CurrentServer
@@ -493,19 +484,22 @@ namespace SharedLibraryCore.Database.Models
             // we want to run any non GUID based logic here
             OnConnect();
 
-            if (await CanConnect(ipAddress) && IPAddress != null)
+            if (await CanConnect(ipAddress))
             {
-                var e = new GameEvent()
+                if (IPAddress != null)
                 {
-                    Type = GameEvent.EventType.Join,
-                    Origin = this,
-                    Target = this,
-                    Owner = CurrentServer
-                };
+                    await CurrentServer.Manager.GetClientService().Update(this);
 
-                CurrentServer.Manager.GetEventHandler().AddEvent(e);
+                    var e = new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Join,
+                        Origin = this,
+                        Target = this,
+                        Owner = CurrentServer
+                    };
 
-                await CurrentServer.Manager.GetClientService().Update(this);
+                    CurrentServer.Manager.GetEventHandler().AddEvent(e);
+                }
             }
 
             else
@@ -525,7 +519,6 @@ namespace SharedLibraryCore.Database.Models
             // kick them as their level is banned
             if (Level == Permission.Banned)
             {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
                 var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active);
 
                 if (profileBan == null)
@@ -558,6 +551,7 @@ namespace SharedLibraryCore.Database.Models
                     return false;
                 }
 
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
                 Kick($"{loc["SERVER_BAN_PREV"]} {profileBan?.Offense}", autoKickClient);
                 return false;
             }
@@ -566,7 +560,7 @@ namespace SharedLibraryCore.Database.Models
             #region CLIENT_GUID_TEMPBAN
             else
             {
-                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan && 
+                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan &&
                     _penalty.Active &&
                     _penalty.Expires > DateTime.UtcNow);
 

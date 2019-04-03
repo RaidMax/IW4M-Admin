@@ -1,6 +1,5 @@
 ﻿using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Events;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -16,7 +15,7 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<EFChangeHistory> Add(GameEvent e)
+        public async Task<EFChangeHistory> Add(GameEvent e, DatabaseContext ctx = null)
         {
             EFChangeHistory change = null;
 
@@ -54,6 +53,7 @@ namespace SharedLibraryCore.Services
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target.ClientId,
+                        Comment = "Changed permission level",
                         TypeOfChange = EFChangeHistory.ChangeType.Permission,
                         CurrentValue = ((EFClient.Permission)e.Extra).ToString()
                     };
@@ -64,18 +64,27 @@ namespace SharedLibraryCore.Services
 
             if (change != null)
             {
-                using (var ctx = new DatabaseContext(true))
-                {
-                    ctx.EFChangeHistory.Add(change);
-                    try
-                    {
-                        await ctx.SaveChangesAsync();
-                    }
+                bool existingCtx = ctx != null;
+                ctx = ctx ?? new DatabaseContext(true);
 
-                    catch (Exception ex)
+                ctx.EFChangeHistory.Add(change);
+
+                try
+                {
+                    await ctx.SaveChangesAsync();
+                }
+
+                catch (Exception ex)
+                {
+                    e.Owner.Logger.WriteWarning(ex.Message);
+                    e.Owner.Logger.WriteDebug(ex.GetExceptionInfo());
+                }
+
+                finally
+                {
+                    if (!existingCtx)
                     {
-                        e.Owner.Logger.WriteWarning(ex.Message);
-                        e.Owner.Logger.WriteDebug(ex.GetExceptionInfo());
+                        ctx.Dispose();
                     }
                 }
             }

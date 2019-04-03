@@ -478,9 +478,14 @@ namespace SharedLibraryCore
             return "unknown";
         }
 
+        /// <summary>
+        /// Helper extension that determines if a user is a privileged client
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
         public static bool IsPrivileged(this EFClient p)
         {
-            return p.Level > EFClient.Permission.User;
+            return p.Level > EFClient.Permission.Flagged;
         }
 
         /// <summary>

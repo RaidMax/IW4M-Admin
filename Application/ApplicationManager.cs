@@ -202,6 +202,11 @@ namespace IW4MAdmin.Application
                             Logger.WriteWarning($"Failed to update status for {server}");
                             Logger.WriteDebug(e.GetExceptionInfo());
                         }
+
+                        finally
+                        {
+                            server.IsInitialized = true;
+                        }
                     }));
                 }
 #if DEBUG

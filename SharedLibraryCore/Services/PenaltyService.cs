@@ -18,86 +18,26 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                // make bans propogate to all aliases
-                if (newEntity.Type == Penalty.PenaltyType.Ban)
+                var penalty = new EFPenalty()
                 {
-                    await context.Clients
-                        .Include(c => c.ReceivedPenalties)
-                        .Where(c => c.AliasLinkId == newEntity.Link.AliasLinkId)
-                        .ForEachAsync(c =>
-                        {
-                            if (c.Level != Permission.Banned)
-                            {
-                                c.Level = Permission.Banned;
-                                c.ReceivedPenalties.Add(new EFPenalty()
-                                {
-                                    Active = true,
-                                    OffenderId = c.ClientId,
-                                    PunisherId = newEntity.Punisher.ClientId,
-                                    LinkId = c.AliasLinkId,
-                                    Type = newEntity.Type,
-                                    Expires = newEntity.Expires,
-                                    Offense = newEntity.Offense,
-                                    When = DateTime.UtcNow,
-                                    AutomatedOffense = newEntity.AutomatedOffense,
-                                    IsEvadedOffense = newEntity.IsEvadedOffense
-                                });
-                            }
-                        });
-                }
+                    Active = true,
+                    OffenderId = newEntity.Offender.ClientId,
+                    PunisherId = newEntity.Punisher.ClientId,
+                    LinkId = newEntity.Link.AliasLinkId,
+                    Type = newEntity.Type,
+                    Expires = newEntity.Expires,
+                    Offense = newEntity.Offense,
+                    When = DateTime.UtcNow,
+                    AutomatedOffense = newEntity.AutomatedOffense,
+                    IsEvadedOffense = newEntity.IsEvadedOffense
+                };
 
-                // make flags propogate to all aliases
-                else if (newEntity.Type == Penalty.PenaltyType.Flag)
-                {
-                    await context.Clients
-                      .Include(c => c.ReceivedPenalties)
-                      .Where(c => c.AliasLinkId == newEntity.Link.AliasLinkId)
-                      .ForEachAsync(c =>
-                      {
-                          if (c.Level != Permission.Flagged)
-                          {
-                              c.Level = Permission.Flagged;
-                              c.ReceivedPenalties.Add(new EFPenalty()
-                              {
-                                  Active = true,
-                                  OffenderId = c.ClientId,
-                                  PunisherId = newEntity.Punisher.ClientId,
-                                  LinkId = c.AliasLinkId,
-                                  Type = newEntity.Type,
-                                  Expires = newEntity.Expires,
-                                  Offense = newEntity.Offense,
-                                  When = DateTime.UtcNow,
-                                  AutomatedOffense = newEntity.AutomatedOffense,
-                                  IsEvadedOffense = newEntity.IsEvadedOffense
-                              });
-                          }
-                      });
-                }
-
-                // we just want to add it to the database
-                else
-                {
-                    var penalty = new EFPenalty()
-                    {
-                        Active = true,
-                        OffenderId = newEntity.Offender.ClientId,
-                        PunisherId = newEntity.Punisher.ClientId,
-                        LinkId = newEntity.Link.AliasLinkId,
-                        Type = newEntity.Type,
-                        Expires = newEntity.Expires,
-                        Offense = newEntity.Offense,
-                        When = DateTime.UtcNow,
-                        AutomatedOffense = newEntity.AutomatedOffense,
-                        IsEvadedOffense = newEntity.IsEvadedOffense
-                    };
-
-                    newEntity.Offender.ReceivedPenalties?.Add(penalty);
-                    context.Penalties.Add(penalty);
-                }
-
+                newEntity.Offender.ReceivedPenalties?.Add(penalty);
+                context.Penalties.Add(penalty);
                 await context.SaveChangesAsync();
-                return newEntity;
             }
+
+            return newEntity;
         }
 
         public Task<EFPenalty> CreateProxy()
@@ -257,31 +197,20 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task RemoveActivePenalties(int aliasLinkId)
+        public async Task RemoveActivePenalties(int aliasLinkId, EFClient origin)
         {
             using (var context = new DatabaseContext())
             {
                 var now = DateTime.UtcNow;
-                var penalties = await context.Penalties
+                var penalties = context.Penalties
                     .Include(p => p.Link.Children)
                     .Where(p => p.LinkId == aliasLinkId)
-                    .Where(p => p.Expires > now || p.Expires == null)
-                    .ToListAsync();
+                    .Where(p => p.Expires > now || p.Expires == null);
 
-                penalties.ForEach(async p =>
+                await penalties.ForEachAsync(p =>
                 {
                     p.Active = false;
-                    // reset the player levels
-                    if (p.Type == Penalty.PenaltyType.Ban)
-                    {
-                        using (var internalContext = new DatabaseContext())
-                        {
-                            await internalContext.Clients
-                                .Where(c => c.AliasLinkId == p.LinkId)
-                                .ForEachAsync(c => c.Level = EFClient.Permission.User);
-                            await internalContext.SaveChangesAsync();
-                        }
-                    }
+                    
                 });
 
                 await context.SaveChangesAsync();

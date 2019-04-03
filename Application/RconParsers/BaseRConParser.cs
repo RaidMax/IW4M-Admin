@@ -119,9 +119,9 @@ namespace IW4MAdmin.Application.RconParsers
             }
 
             int validMatches = 0;
-            foreach (string S in Status)
+            foreach (string statusLine in Status)
             {
-                string responseLine = S.Trim();
+                string responseLine = statusLine.Trim();
 
                 var regex = Regex.Match(responseLine, Configuration.Status.Pattern, RegexOptions.IgnoreCase);
 
@@ -158,11 +158,11 @@ namespace IW4MAdmin.Application.RconParsers
                         State = EFClient.ClientState.Connecting
                     };
 
-                    // they've not fully connected yet
-                    if (!client.IsBot && ping == 999)
-                    {
-                        continue;
-                    }
+                    //// they've not fully connected yet
+                    //if (!client.IsBot && ping == 999)
+                    //{
+                    //    continue;
+                    //}
 
                     StatusPlayers.Add(client);
                 }

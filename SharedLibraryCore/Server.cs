@@ -87,6 +87,11 @@ namespace SharedLibraryCore
         /// <returns>Matching player if found</returns>
         public List<EFClient> GetClientByName(String pName)
         {
+            if (string.IsNullOrEmpty(pName))
+            {
+                return new List<EFClient>();
+            }
+
             string[] QuoteSplit = pName.Split('"');
             bool literal = false;
             if (QuoteSplit.Length > 1)
@@ -95,9 +100,11 @@ namespace SharedLibraryCore
                 literal = true;
             }
             if (literal)
-                return Clients.Where(p => p != null && p.Name.ToLower().Equals(pName.ToLower())).ToList();
+            {
+                return GetClientsAsList().Where(p => p.Name?.ToLower() == pName.ToLower()).ToList();
+            }
 
-            return Clients.Where(p => p != null && p.Name.ToLower().Contains(pName.ToLower())).ToList();
+            return GetClientsAsList().Where(p => (p.Name?.ToLower() ?? "").Contains(pName.ToLower())).ToList();
         }
 
         virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts) => (Task<bool>)Task.CompletedTask;
@@ -313,6 +320,7 @@ namespace SharedLibraryCore
         // Internal
         public string IP { get; protected set; }
         public string Version { get; protected set; }
+        public bool IsInitialized { get; set; }
 
         protected int Port;
         protected string FSGame;

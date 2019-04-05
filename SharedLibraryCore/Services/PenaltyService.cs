@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
 {
@@ -35,6 +34,35 @@ namespace SharedLibraryCore.Services
                 newEntity.Offender.ReceivedPenalties?.Add(penalty);
                 context.Penalties.Add(penalty);
                 await context.SaveChangesAsync();
+
+                // certain penalties we want to save across all profiles
+                if (penalty.Type.ShouldPenaltyApplyToAllProfiles())
+                {
+                    var iqLinkedProfiles = context.Clients
+                        .Where(_client => _client.AliasLinkId == newEntity.Link.AliasLinkId)
+                        // prevent adding the penalty twice to the same profile
+                        .Where(_client => _client.ClientId != penalty.OffenderId);
+
+                    await iqLinkedProfiles.ForEachAsync(_client =>
+                    {
+                        var linkedPenalty = new EFPenalty()
+                        {
+                            OffenderId = _client.ClientId,
+                            PunisherId = newEntity.Punisher.ClientId,
+                            LinkId = newEntity.Link.AliasLinkId,
+                            Type = newEntity.Type,
+                            Expires = newEntity.Expires,
+                            Offense = newEntity.Offense,
+                            When = DateTime.UtcNow,
+                            AutomatedOffense = newEntity.AutomatedOffense,
+                            IsEvadedOffense = newEntity.IsEvadedOffense
+                        };
+
+                        context.Penalties.Add(linkedPenalty);
+                    });
+
+                    await context.SaveChangesAsync();
+                }
             }
 
             return newEntity;
@@ -70,26 +98,12 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IList<EFPenalty>> GetClientPenaltiesAsync(int clientId)
-        {
-            using (var context = new DatabaseContext(true))
-            {
-                return await context.Penalties
-                    .Where(p => p.OffenderId == clientId)
-                    .Where(p => p.Active)
-                    .Include(p => p.Offender.CurrentAlias)
-                    .Include(p => p.Punisher.CurrentAlias)
-                    .ToListAsync();
-            }
-        }
-
         public async Task<IList<PenaltyInfo>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
         {
             using (var context = new DatabaseContext(true))
             {
                 var iqPenalties = context.Penalties
                     .Where(p => showOnly == Penalty.PenaltyType.Any ? p.Type != Penalty.PenaltyType.Any : p.Type == showOnly)
-                    .Where(p => p.Active)
                     .OrderByDescending(p => p.When)
                     .Skip(offset)
                     .Take(count)
@@ -129,7 +143,7 @@ namespace SharedLibraryCore.Services
             using (var ctx = new DatabaseContext(true))
             {
                 var iqPenalties = ctx.Penalties.AsNoTracking()
-                    .Where(_penalty => _penalty.Active)
+                    //.Where(_penalty => _penalty.Active)
                     .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId)
                     .Where(_penalty => _penalty.When < startAt)
                     .OrderByDescending(_penalty => _penalty.When)
@@ -159,7 +173,7 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int? ip = null)
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int? ip = null, bool includePunisherName = false)
         {
             var now = DateTime.UtcNow;
 
@@ -210,7 +224,7 @@ namespace SharedLibraryCore.Services
                 await penalties.ForEachAsync(p =>
                 {
                     p.Active = false;
-                    
+
                 });
 
                 await context.SaveChangesAsync();

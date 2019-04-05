@@ -571,26 +571,28 @@ namespace SharedLibraryCore.Database.Models
                     Kick($"{loc["SERVER_TB_REMAIN"]} ({(profileTempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
                     return false;
                 }
-
             }
             #endregion
 
-            #region CLIENT_LINKED_BAN
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
+
+            #region CLIENT_LINKED_TEMPBAN
             var tempBan = activePenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan);
 
             // they have an active tempban tied to their AliasLink
             if (tempBan != null)
             {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because their AliasLink is temporarily banned");
-                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                CurrentServer.Logger.WriteDebug($"Tempbanning {this} because their AliasLink is temporarily banned, but they are not");
+                TempBan(tempBan.Offense, DateTime.UtcNow - (tempBan.Expires ?? DateTime.UtcNow), autoKickClient);
                 return false;
             }
+            #endregion
 
+            #region CLIENT_LINKED_BAN
             var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban);
 
-            // they have a perm ban tied to their AliasLink
+            // they have a perm ban tied to their AliasLink/profile
             if (currentBan != null)
             {
                 CurrentServer.Logger.WriteInfo($"Banned client {this} trying to evade...");
@@ -621,7 +623,20 @@ namespace SharedLibraryCore.Database.Models
             }
             #endregion
 
-            else
+            #region CLIENT_LINKED_FLAG
+            if (Level != Permission.Flagged)
+            {
+                var currentFlag = activePenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.Flag);
+
+                if (currentFlag != null)
+                {
+                    CurrentServer.Logger.WriteDebug($"Flagging {this} because their AliasLink is flagged, but they are not");
+                    Flag(currentFlag.Offense, autoKickClient);
+                }
+            }
+            #endregion
+
+            if (Level == Permission.Flagged)
             {
                 var currentAutoFlag = activePenalties
                     .Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
@@ -629,15 +644,15 @@ namespace SharedLibraryCore.Database.Models
                     .FirstOrDefault();
 
                 // remove their auto flag status after a week
-                if (Level == Permission.Flagged &&
-                    currentAutoFlag != null &&
+                if (currentAutoFlag != null &&
                     (DateTime.UtcNow - currentAutoFlag.When).TotalDays > 7)
                 {
-                    Level = Permission.User;
+                    CurrentServer.Logger.WriteInfo($"Unflagging {this} because the auto flag time has expired");
+                    Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
                 }
-
-                return true;
             }
+
+            return true;
         }
 
         [NotMapped]

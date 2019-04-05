@@ -34,7 +34,6 @@ namespace SharedLibraryCore.Database
                     AliasId = 1,
                     Active = true,
                     DateAdded = DateTime.UtcNow,
-                    IPAddress = 0,
                     Name = "IW4MAdmin",
                     LinkId = 1
                 };

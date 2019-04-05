@@ -262,6 +262,18 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Unflag)
             {
+                var unflagPenalty = new Penalty()
+                {
+                    Type = Penalty.PenaltyType.Unflag,
+                    Expires = DateTime.UtcNow,
+                    Offender = E.Target,
+                    Offense = E.Data,
+                    Punisher  = E.Origin,
+                    When = DateTime.UtcNow,
+                    Link = E.Target.AliasLink
+                };
+
+                await Manager.GetPenaltyService().Create(unflagPenalty);
                 E.Target.SetLevel(Permission.User, E.Origin);
             }
 
@@ -593,6 +605,12 @@ namespace IW4MAdmin
                     // this are our new connecting clients
                     foreach (var client in polledClients[0])
                     {
+                        // note: this prevents players in ZMBI state from being registered with no name
+                        if (string.IsNullOrEmpty(client.Name))
+                        {
+                            continue;
+                        }
+
                         var e = new GameEvent()
                         {
                             Type = GameEvent.EventType.PreConnect,

@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Objects.Penalty;
 using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore
@@ -476,6 +477,15 @@ namespace SharedLibraryCore
             }
 
             return "unknown";
+        }
+
+        public static bool ShouldPenaltyApplyToAllProfiles(this PenaltyType penaltyType)
+        {
+            return penaltyType == PenaltyType.Ban ||
+                penaltyType == PenaltyType.Unban ||
+                penaltyType == PenaltyType.Flag ||
+                penaltyType == PenaltyType.Unflag ||
+                penaltyType == PenaltyType.TempBan;
         }
 
         /// <summary>

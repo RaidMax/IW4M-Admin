@@ -930,10 +930,8 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var B = await E.Owner.Manager.GetPenaltyService().GetClientPenaltiesAsync(E.Target.ClientId);
-
-            var penalty = B.FirstOrDefault(b => b.Type > Penalty.PenaltyType.Kick &&
-                (b.Expires == null || b.Expires > DateTime.UtcNow));
+            var existingPenalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.IPAddress);
+            var penalty = existingPenalties.FirstOrDefault(b => b.Type > Penalty.PenaltyType.Kick);
 
             if (penalty == null)
             {
@@ -944,7 +942,7 @@ namespace SharedLibraryCore.Commands
             string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires.Value - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
             string success = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_SUCCESS"];
 
-            E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, penalty.Punisher.Name)} {penalty.Punisher.Name} {timeRemaining}");
+            E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, "")} {penalty.Offense} {timeRemaining}");
         }
     }
 

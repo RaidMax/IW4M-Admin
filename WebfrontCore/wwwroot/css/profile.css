@@ -101,6 +101,10 @@
     color: rgba(116, 147, 99, 1);
 }
 
+.penalties-color-unflag {
+    color: rgb(140, 154, 132);
+}
+
 .penalties-color-report {
     color: #b3ae8f;
 }

@@ -15,11 +15,7 @@ namespace SharedLibraryCore.Objects
             Ban,
             Unban,
             Any,
-        }
-        
-        public String GetWhenFormatted()
-        {
-            return When.ToString("MM/dd/yy HH:mm:ss"); ;
+            Unflag
         }
     }
 }

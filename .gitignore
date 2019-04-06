@@ -233,3 +233,4 @@ launchSettings.json
 /VpnDetectionPrivate.js
 /Plugins/ScriptPlugins/VpnDetectionPrivate.js
 **/Master/env_master
+/GameLogServer/log_env

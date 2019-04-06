@@ -6,7 +6,6 @@ class LogResource(Resource):
     def get(self, path):
         path = urlsafe_b64decode(path).decode('utf-8')
         log_info = reader.read_file(path)
-        print(log_info)
 
         return {
             'success' : log_info is not False,

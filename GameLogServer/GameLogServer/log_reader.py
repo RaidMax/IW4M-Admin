@@ -6,8 +6,7 @@ class LogReader(object):
     def __init__(self):
         self.log_file_sizes = {}
         # (if the time between checks is greater, ignore ) - in seconds
-        # self.max_file_time_change = 60
-        self.max_file_time_change = 10
+        self.max_file_time_change = 30
 
     def read_file(self, path):
         # this removes old entries that are no longer valid
@@ -17,33 +16,34 @@ class LogReader(object):
             print('could not clear old logs')
             print(e)
 
+        if os.name != 'nt':
+            path = re.sub(r'^[A-Z]\:', '', path)
+            path = re.sub(r'\\+', '/', path)
+
         # prevent traversing directories
         if re.search('r^.+\.\.\\.+$', path):
             return False
         # must be a valid log path and log file
         if not re.search(r'^.+[\\|\/](.+)[\\|\/].+.log$', path):
             return False
-        # set the initial size to the current file size
-        file_size = 0
 
-        # this is the first time the log has been requested
-        if path not in self.log_file_sizes:
-            self.log_file_sizes[path] = { 
-                'length' : self.file_length(path),
-                'read': time.time()
-            }
-            return ''
-
-        # grab the previous values
-        last_length = self.log_file_sizes[path]['length']
-
-        # the file is being tracked already
+        # get the new file size
         new_file_size = self.file_length(path)
           
         # the log size was unable to be read (probably the wrong path)
         if new_file_size < 0:
             return False
 
+        # this is the first time the log has been requested
+        if path not in self.log_file_sizes:
+            self.log_file_sizes[path] = { 
+                'length' : new_file_size,
+                'read': time.time()
+            }
+            return ''
+
+        # grab the previous values
+        last_length = self.log_file_sizes[path]['length']
         file_size_difference = new_file_size - last_length
 
         # update the new size and actually read the data
@@ -61,7 +61,8 @@ class LogReader(object):
             file_handle.seek(-length, 2)
             file_data = file_handle.read(length)
             file_handle.close()
-            return file_data.decode('utf-8')
+            # using ignore errors omits the pesky 0xb2 bytes we're reading in for some reason
+            return file_data.decode('utf-8', errors='ignore')
         except Exception as e:
             print('could not read the log file at {0}, wanted to read {1} bytes'.format(path, length))
             print(e)

@@ -18,7 +18,7 @@ namespace Tests
         {
             File.WriteAllText("test_mp.log", "test_log_file");
 
-            IW4MAdmin.Application.Localization.Configure.Initialize("en-US");
+            //IW4MAdmin.Application.Localization.Configure.Initialize("en-US");
 
             Manager = ApplicationManager.GetInstance();
 
@@ -41,7 +41,7 @@ namespace Tests
                 Maps = new List<MapConfiguration>(),
                 RConPollRate = 10000
             };
-            Manager.ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("test.json");
+            Manager.ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("test");
             Manager.ConfigHandler.Set(config);
 
             Manager.Init().Wait();

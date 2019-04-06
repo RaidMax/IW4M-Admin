@@ -36,8 +36,7 @@ namespace IW4MAdmin
         override public async Task OnClientConnected(EFClient clientFromLog)
         {
             Logger.WriteDebug($"Client slot #{clientFromLog.ClientNumber} now reserved");
-            Clients[clientFromLog.ClientNumber] = new EFClient();
-
+  
             try
             {
                 EFClient client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId);
@@ -71,7 +70,7 @@ namespace IW4MAdmin
 
                 Clients[client.ClientNumber] = client;
 
-                client.State = EFClient.ClientState.Connected;
+                client.State = ClientState.Connected;
 #if DEBUG == true
                 Logger.WriteDebug($"End PreConnect for {client}");
 #endif
@@ -207,7 +206,14 @@ namespace IW4MAdmin
 
                 var existingClient = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
 
+                // they're already connected
+                if (existingClient != null)
+                {
+                    return false;
+                }
+
             CONNECT:
+                // we can go ahead and put them in
                 if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
@@ -229,16 +235,11 @@ namespace IW4MAdmin
                 }
 
                 // for some reason there's still a client in the spot
-                else if (existingClient == null)
+                else
                 {
                     Logger.WriteWarning($"{E.Origin} is connecteding but {Clients[E.Origin.ClientNumber]} is currently in that client slot");
                     await OnClientDisconnected(Clients[E.Origin.ClientNumber]);
                     goto CONNECT;
-                }
-
-                else
-                {
-                    return false;
                 }
             }
 

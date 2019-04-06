@@ -34,7 +34,7 @@ namespace Tests
         [Fact]
         public void AreCommandAliasesUnique()
         {
-            var mgr = IW4MAdmin.Application.Program.ServerManager;
+            var mgr = Program.ServerManager;
             bool test = mgr.GetCommands().Count == mgr.GetCommands().Select(c => c.Alias).Distinct().Count();
 
             Assert.True(test, "command aliases are not unique");

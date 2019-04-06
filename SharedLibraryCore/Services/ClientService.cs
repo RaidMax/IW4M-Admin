@@ -17,7 +17,6 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-
                 int? linkId = null;
                 int? aliasId = null;
 
@@ -45,23 +44,31 @@ namespace SharedLibraryCore.Services
                     NetworkId = entity.NetworkId
                 };
 
-                if (linkId.HasValue)
-                {
-                    client.AliasLinkId = linkId.Value;
-                }
-
-                else
-                {
-                    client.AliasLink = new EFAliasLink();
-                }
-
+                // they're just using a new GUID
                 if (aliasId.HasValue)
                 {
                     client.CurrentAliasId = aliasId.Value;
+                    client.AliasLinkId = linkId.Value;
                 }
 
+                // link was found but they don't have an exact alias
+                else if (!aliasId.HasValue && linkId.HasValue)
+                {
+                    client.AliasLinkId = linkId.Value;
+                    client.CurrentAlias = new Alias()
+                    {
+                        Name = entity.Name,
+                        DateAdded = DateTime.UtcNow,
+                        IPAddress = entity.IPAddress,
+                        LinkId = linkId.Value
+                    };
+                }
+
+                // brand new players (supposedly)
                 else
                 {
+                    client.AliasLink = new EFAliasLink();
+
                     client.CurrentAlias = new Alias()
                     {
                         Name = entity.Name,
@@ -69,11 +76,6 @@ namespace SharedLibraryCore.Services
                         IPAddress = entity.IPAddress,
                         Link = client.AliasLink,
                     };
-
-                    if (client.CurrentAlias.Link == null)
-                    {
-                        client.CurrentAlias.LinkId = linkId.Value;
-                    }
                 }
 
                 context.Clients.Add(client);
@@ -125,6 +127,11 @@ namespace SharedLibraryCore.Services
                 entity.CurrentServer.Logger.WriteDebug($"found a link for {entity} so we are updating link from {entity.AliasLink.AliasLinkId} to {newAliasLink.AliasLinkId}");
 
                 var oldAliasLink = entity.AliasLink;
+
+                // update all the clients that have the old alias link
+                await context.Clients
+                    .Where(_client => _client.AliasLinkId == oldAliasLink.AliasLinkId)
+                    .ForEachAsync(_client => _client.AliasLinkId = newAliasLink.AliasLinkId);
 
                 entity.AliasLink = newAliasLink;
                 entity.AliasLinkId = newAliasLink.AliasLinkId;

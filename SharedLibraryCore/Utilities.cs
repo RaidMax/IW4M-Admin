@@ -22,7 +22,8 @@ namespace SharedLibraryCore
     public static class Utilities
     {
 #if DEBUG == true
-        public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}";
+        public static string OperatingDirectory => @"X:\IW4MAdmin\Application\bin\Debug\netcoreapp2.2\";
+        //public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}";
 #else
         public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
 #endif

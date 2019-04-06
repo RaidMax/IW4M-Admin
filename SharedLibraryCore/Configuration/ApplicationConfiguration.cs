@@ -28,7 +28,7 @@ namespace SharedLibraryCore.Configuration
         public string WebfrontBindUrl { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MANUAL_URL")]
         public string ManualWebfrontUrl { get; set; }
-        public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl) ? WebfrontBindUrl.Replace("0.0.0.0", "127.0.0.1") : ManualWebfrontUrl;
+        public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl) ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1") : ManualWebfrontUrl;
         [LocalizedDisplayName("SETUP_USE_CUSTOMENCODING")]
         public bool EnableCustomParserEncoding { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENCODING")]

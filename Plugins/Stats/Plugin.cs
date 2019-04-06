@@ -51,7 +51,6 @@ namespace IW4MAdmin.Plugins.Stats
                     {
                         await Manager.AddMessageAsync(E.Origin.ClientId, await StatManager.GetIdForServer(E.Owner), E.Data);
                     }
-
                     break;
                 case GameEvent.EventType.MapChange:
                     Manager.SetTeamBased(await StatManager.GetIdForServer(E.Owner), E.Owner.Gametype != "dm");
@@ -79,6 +78,22 @@ namespace IW4MAdmin.Plugins.Stats
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 14)
                     {
+                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
+                        {
+                            return;
+                        }
+
+                        // this treats "world" damage as self damage
+                        if (E.Origin.ClientId <= 1)
+                        {
+                            E.Origin = E.Target;
+                        }
+
+                        if (E.Target.ClientId <= 1)
+                        {
+                            E.Target = E.Origin;
+                        }
+
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, await StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
                     }
@@ -86,13 +101,18 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Kill:
                     if (!E.Owner.CustomCallback)
                     {
+                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
+                        {
+                            return;
+                        }
+
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId == 1)
+                        if (E.Origin.ClientId <= 1)
                         {
                             E.Origin = E.Target;
                         }
 
-                        if (E.Target.ClientId == 1)
+                        if (E.Target.ClientId <= 1)
                         {
                             E.Target = E.Origin;
                         }
@@ -103,13 +123,18 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Damage:
                     if (!E.Owner.CustomCallback)
                     {
+                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
+                        {
+                            return;
+                        }
+
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId == 1)
+                        if (E.Origin.ClientId <= 1)
                         {
                             E.Origin = E.Target;
                         }
 
-                        if (E.Target.ClientId == 1)
+                        if (E.Target.ClientId <= 1)
                         {
                             E.Target = E.Origin;
                         }
@@ -121,6 +146,22 @@ namespace IW4MAdmin.Plugins.Stats
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
                     if (killInfo.Length >= 14)
                     {
+                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
+                        {
+                            return;
+                        }
+
+                        // this treats "world" damage as self damage
+                        if (E.Origin.ClientId <= 1)
+                        {
+                            E.Origin = E.Target;
+                        }
+
+                        if (E.Target.ClientId <= 1)
+                        {
+                            E.Target = E.Origin;
+                        }
+
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, await StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
                     }

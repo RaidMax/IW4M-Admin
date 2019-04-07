@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'IW4 Parser',
     isParser: true,
 
@@ -25,6 +25,7 @@ var plugin = {
         rconParser.GameName = 2; // IW4x
         eventParser.Version = 'IW4x (v0.6.0)';
         eventParser.GameName = 2; // IW4x
+        eventParser.URLProtocolFormat = 'iw4x://{{ip}}:{{port}}';
     },
 
     onUnloadAsync: function () {

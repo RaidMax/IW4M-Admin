@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -714,6 +713,20 @@ namespace SharedLibraryCore
         public static string GetVersionAsString()
         {
             return Assembly.GetCallingAssembly().GetName().Version.ToString();
+        }
+
+        public static string FormatExt(this string input, params object[] values)
+        {
+            var matches = Regex.Matches(Regex.Unescape(input), @"{{\w+}}");
+            string output = input;
+            int index = 0;
+            foreach (Match match in matches)
+            {
+                output = output.Replace(match.Value.ToString(), $"{{{index.ToString()}}}");
+                index++;
+            }
+
+            return string.Format(output, values);
         }
 
 #if DEBUG == true

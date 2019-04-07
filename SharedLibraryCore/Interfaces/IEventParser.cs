@@ -27,5 +27,10 @@ namespace SharedLibraryCore.Interfaces
         /// specifies the game name (usually the internal studio iteration ie: IW4, T5 etc...)
         /// </summary>
         Game GameName { get; set; }
+
+        /// <summary>
+        /// specifies the connect URI used to join game servers via web browser
+        /// </summary>
+        string URLProtocolFormat { get; set; }
     }
 }

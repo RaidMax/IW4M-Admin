@@ -36,6 +36,10 @@
             @{
                 for (int i = 0; i < half; i++)
                 {
+                    if (i > Model.Players.Count - 1)
+                    {
+                        continue;
+                    }
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
                     <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId }, new { @class = levelColorClass })</span><br />
                 }
@@ -45,6 +49,10 @@
             @{
                 for (int i = half; i < Math.Min(Model.ClientCount, Model.Players.Count); i++)
                 {
+                    if (i > Model.Players.Count - 1)
+                    {
+                        continue;
+                    }
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
                     <span>@Html.ActionLink(Model.Players[i].Name, "ProfileAsync", "Client", new { id = Model.Players[i].ClientId }, new { @class = levelColorClass })</span><br />
                 }

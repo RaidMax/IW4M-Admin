@@ -45,19 +45,16 @@ namespace IW4MAdmin
                 if (client == null)
                 {
                     Logger.WriteDebug($"Client {clientFromLog} first time connecting");
+                    clientFromLog.CurrentServer = this;
                     client = await Manager.GetClientService().Create(clientFromLog);
                 }
 
-                // client has connected in the past
-                else
+                /// this is only a temporary version until the IPAddress is transmitted
+                client.CurrentAlias = new EFAlias()
                 {
-                    // this is only a temporary version until the IPAddress is transmitted
-                    client.CurrentAlias = new EFAlias
-                    {
-                        Name = clientFromLog.Name,
-                        IPAddress = clientFromLog.IPAddress
-                    };
-                }
+                    Name = clientFromLog.Name,
+                    IPAddress = clientFromLog.IPAddress
+                };
 
                 Logger.WriteInfo($"Client {client} connected...");
 
@@ -209,16 +206,18 @@ namespace IW4MAdmin
                 // they're already connected
                 if (existingClient != null)
                 {
+                    Logger.WriteWarning($"detected preconnect for {E.Origin}, but they are already connected");
                     return false;
                 }
 
             CONNECT:
-                // we can go ahead and put them in
                 if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
                     Logger.WriteDebug($"Begin PreConnect for {E.Origin}");
 #endif
+                    // we can go ahead and put them in so that they don't get re added
+                    Clients[E.Origin.ClientNumber] = E.Origin;
                     await OnClientConnected(E.Origin);
 
                     ChatHistory.Add(new ChatInfo()
@@ -314,28 +313,6 @@ namespace IW4MAdmin
                 await Warn(E.Data, E.Target, E.Origin);
             }
 
-            //else if (E.Type == GameEvent.EventType.Quit)
-            //{
-            //    var origin = GetClientsAsList().FirstOrDefault(_client => _client.NetworkId.Equals(E.Origin));
-
-            //    if (origin != null)
-            //    {
-            //        var e = new GameEvent()
-            //        {
-            //            Type = GameEvent.EventType.Disconnect,
-            //            Origin = origin,
-            //            Owner = this
-            //        };
-
-            //        Manager.GetEventHandler().AddEvent(e);
-            //    }
-
-            //    else
-            //    {
-            //        return false;
-            //    }
-            //}
-
             else if (E.Type == GameEvent.EventType.Disconnect)
             {
                 ChatHistory.Add(new ChatInfo()
@@ -351,13 +328,6 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
-                //if ((DateTime.UtcNow - SessionStart).TotalSeconds < 30)
-                //{
-                //    Logger.WriteInfo($"Cancelling pre disconnect for {E.Origin} as it occured too close to map end");
-                //    E.FailReason = GameEvent.EventFailReason.Invalid;
-                //    return false;
-                //}
-
                 // predisconnect comes from minimal rcon polled players and minimal log players
                 // so we need to disconnect the "full" version of the client
                 var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
@@ -375,7 +345,7 @@ namespace IW4MAdmin
 
                 else
                 {
-                    Logger.WriteDebug($"Client {E.Origin} detected as disconnecting, but could not find them in the player list");
+                    Logger.WriteWarning($"Client {E.Origin} detected as disconnecting, but could not find them in the player list");
                     Logger.WriteDebug($"Expected {E.Origin} but found {GetClientsAsList().FirstOrDefault(_client => _client.ClientNumber == E.Origin.ClientNumber)}");
                     return false;
                 }
@@ -488,9 +458,9 @@ namespace IW4MAdmin
             return true;
         }
 
-        private Task OnClientUpdate(EFClient origin)
+        private async Task OnClientUpdate(EFClient origin)
         {
-            var client = Clients[origin.ClientNumber];
+            var client = Clients.FirstOrDefault(_client => _client.Equals(origin));
 
             if (client != null)
             {
@@ -500,11 +470,9 @@ namespace IW4MAdmin
                 // update their IP if it hasn't been set yet
                 if (client.IPAddress == null && !client.IsBot)
                 {
-                    return client.OnJoin(origin.IPAddress);
+                    await client.OnJoin(origin.IPAddress);
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -582,7 +550,7 @@ namespace IW4MAdmin
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
-                        if (disconnectingClient.State == EFClient.ClientState.Disconnecting)
+                        if (disconnectingClient.State == ClientState.Disconnecting)
                         {
                             continue;
                         }

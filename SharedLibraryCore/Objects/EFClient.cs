@@ -80,13 +80,12 @@ namespace SharedLibraryCore.Database.Models
             {
                 { "_reportCount", 0 }
             };
-            CurrentAlias = new EFAlias();
             ReceivedPenalties = new List<EFPenalty>();
         }
 
         public override string ToString()
         {
-            return $"{Name}::{NetworkId}";
+            return $"{CurrentAlias?.Name ?? "--"}::{NetworkId}";
         }
 
         /// <summary>

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SharedLibraryCore.Database.Models
 {
-    public class EFAlias : SharedEntity
+    public partial class EFAlias : SharedEntity
     {
         [Key]
         public int AliasId { get; set; }

@@ -1,6 +1,4 @@
-﻿
-@model SharedLibraryCore.Dtos.ServerInfo
-
+﻿@model SharedLibraryCore.Dtos.ServerInfo
 @{
     Layout = null;
 }
@@ -12,7 +10,12 @@
 </div>
 
 <div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity pt-2 pb-2">
-    @await Html.PartialAsync("../Server/_ClientActivity", Model)
+    <div class="col-4">
+        <div class="oi oi-play-circle h1"></div>
+    </div>
+    <div class="col-8">
+        @await Html.PartialAsync("../Server/_ClientActivity", Model)
+    </div>
 </div>
 
 <div class="row server-history mb-4">

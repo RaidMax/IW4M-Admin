@@ -11,19 +11,10 @@ namespace SharedLibraryCore.Helpers
         {
             DateTime t = DateTime.UtcNow;
             When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, UpdateInterval * (int)Math.Round(t.Minute / (float)UpdateInterval)), 0);
-            PlayerCount = cNum;
+            y = cNum;
         }
-
-#if DEBUG
-        public PlayerHistory(DateTime t, int cNum)
-        {
-            When = new DateTime(t.Year, t.Month, t.Day, t.Hour, Math.Min(59, UpdateInterval * (int)Math.Round(t.Minute / (float)UpdateInterval)), 0);
-            PlayerCount = cNum;
-        }
-#endif 
 
         private DateTime When;
-        private int PlayerCount;
 
         /// <summary>
         /// Used by CanvasJS as a point on the x axis
@@ -36,16 +27,9 @@ namespace SharedLibraryCore.Helpers
             }
         }
 
-
         /// <summary>
         /// Used by CanvasJS as a point on the y axis
         /// </summary>
-        public int y
-        {
-            get
-            {
-                return PlayerCount;
-            }
-        }
+        public int y { get; }
     }
 }

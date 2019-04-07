@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'FrenchFry, RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'CoD4x Parser',
     isParser: true,
 
@@ -27,6 +27,7 @@ var plugin = {
         eventParser.Configuration.GameDirectory = 'main';
         eventParser.Version = 'CoD4 X 1.8 win_mingw-x86 build 2055 May  2 2017';
         eventParser.GameName = 1; // IW3
+        eventParser.URLProtocolFormat = 'cod4://{{ip}}:{{port}}';
     },
 
     onUnloadAsync: function () {

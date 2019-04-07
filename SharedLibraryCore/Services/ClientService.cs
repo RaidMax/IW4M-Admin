@@ -28,9 +28,12 @@ namespace SharedLibraryCore.Services
 
                     if (existingAlias != null)
                     {
+                        entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing link {existingAlias.LinkId}");
+
                         linkId = existingAlias.LinkId;
                         if (existingAlias.Name == entity.Name)
                         {
+                            entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing alias {existingAlias.AliasId}");
                             aliasId = existingAlias.AliasId;
                         }
                     }
@@ -44,9 +47,12 @@ namespace SharedLibraryCore.Services
                     NetworkId = entity.NetworkId
                 };
 
+                context.Clients.Add(client);
+      
                 // they're just using a new GUID
                 if (aliasId.HasValue)
                 {
+                    entity.CurrentServer.Logger.WriteDebug($"[create] setting {entity}'s alias id and linkid to ({aliasId.Value}, {linkId.Value})");
                     client.CurrentAliasId = aliasId.Value;
                     client.AliasLinkId = linkId.Value;
                 }
@@ -54,8 +60,9 @@ namespace SharedLibraryCore.Services
                 // link was found but they don't have an exact alias
                 else if (!aliasId.HasValue && linkId.HasValue)
                 {
+                    entity.CurrentServer.Logger.WriteDebug($"[create] setting {entity}'s linkid to {linkId.Value}, but creating new alias");
                     client.AliasLinkId = linkId.Value;
-                    client.CurrentAlias = new Alias()
+                    client.CurrentAlias = new EFAlias()
                     {
                         Name = entity.Name,
                         DateAdded = DateTime.UtcNow,
@@ -67,18 +74,22 @@ namespace SharedLibraryCore.Services
                 // brand new players (supposedly)
                 else
                 {
-                    client.AliasLink = new EFAliasLink();
-
-                    client.CurrentAlias = new Alias()
+                    entity.CurrentServer.Logger.WriteDebug($"[create] creating new Link and Alias for {entity}");
+                    var link = new EFAliasLink();
+                    var alias = new EFAlias()
                     {
                         Name = entity.Name,
                         DateAdded = DateTime.UtcNow,
                         IPAddress = entity.IPAddress,
-                        Link = client.AliasLink,
+                        Link = link
                     };
+
+                    link.Children.Add(alias);
+
+                    client.AliasLink = link;
+                    client.CurrentAlias = alias;
                 }
 
-                context.Clients.Add(client);
                 await context.SaveChangesAsync();
 
                 return client;
@@ -473,11 +484,6 @@ namespace SharedLibraryCore.Services
                 return await context.Clients
                     .CountAsync();
             }
-        }
-
-        public Task<EFClient> CreateProxy()
-        {
-            throw new NotImplementedException();
         }
         #endregion
     }

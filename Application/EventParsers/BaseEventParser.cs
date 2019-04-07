@@ -73,6 +73,8 @@ namespace IW4MAdmin.Application.EventParsers
 
         public Game GameName { get; set; } = Game.COD;
 
+        public string URLProtocolFormat { get; set; } = "CoD://{{ip}}:{{port}}";
+
         public virtual GameEvent GetEvent(Server server, string logLine)
         {
             logLine = Regex.Replace(logLine, @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();

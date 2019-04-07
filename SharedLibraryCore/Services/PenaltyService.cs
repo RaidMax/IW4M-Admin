@@ -68,11 +68,6 @@ namespace SharedLibraryCore.Services
             return newEntity;
         }
 
-        public Task<EFPenalty> CreateProxy()
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<EFPenalty> Delete(EFPenalty entity)
         {
             throw new NotImplementedException();

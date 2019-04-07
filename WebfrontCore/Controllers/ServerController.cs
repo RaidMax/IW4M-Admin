@@ -11,7 +11,7 @@ namespace WebfrontCore.Controllers
         [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult ClientActivity(long id)
         {
-            var s = Manager.GetServers().FirstOrDefault(s2 => s2.EndPoint == id);
+            var s = Manager.GetServers().FirstOrDefault(_server => _server.EndPoint == id);
 
             if (s == null)
             {

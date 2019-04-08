@@ -19,5 +19,6 @@ namespace SharedLibraryCore.Dtos
         public Helpers.PlayerHistory[] PlayerHistory { get; set; }
         public long ID { get; set; }
         public bool Online { get; set; }
+        public string ConnectProtocolUrl { get; set; }
     }
 }

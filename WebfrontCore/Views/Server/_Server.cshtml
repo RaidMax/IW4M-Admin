@@ -3,21 +3,21 @@
     Layout = null;
 }
 
-<div class="row server-header" id="server_header_@Model.ID">
-    <div class="col-md-4 bg-primary text-center  text-md-left">@Model.Name</div>
-    <div class="text-center col-md-4 bg-primary">@Model.Map</div>
-    <div class="text-center text-md-right col-md-4 bg-primary"><span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span></div>
+<div class="row server-header pt-1 pb-1  bg-primary " id="server_header_@Model.ID">
+    <div class="col-md-4 text-center text-md-left d-inline-flex justify-content-center justify-content-md-start">
+        <span>@Model.Name</span>
+        <a href="@Model.ConnectProtocolUrl" class="ml-2 align-self-center d-none d-md-flex server-join-button" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
+            <span class="oi oi-play-circle"></span>
+        </a>
+    </div>
+    <div class="text-center col-md-4">@Model.Map</div>
+    <div class="text-center text-md-right col-md-4"><span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span></div>
 </div>
 
 <div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity pt-2 pb-2">
-    <div class="col-4">
-        <div class="oi oi-play-circle h1"></div>
-    </div>
-    <div class="col-8">
-        @await Html.PartialAsync("../Server/_ClientActivity", Model)
-    </div>
+    @await Html.PartialAsync("../Server/_ClientActivity", Model)
 </div>
 
 <div class="row server-history mb-4">
-    <div class="server-history-row col-md-12" id="server_history_@Model.ID" data-serverid="@Model.ID" data-clienthistory='@Html.Raw(Json.Serialize(Model.PlayerHistory))' data-online="@Model.Online"></div>
+    <div class="server-history-row" id="server_history_@Model.ID" data-serverid="@Model.ID" data-clienthistory='@Html.Raw(Json.Serialize(Model.PlayerHistory))' data-online="@Model.Online"></div>
 </div>

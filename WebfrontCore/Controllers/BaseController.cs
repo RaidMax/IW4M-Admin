@@ -66,11 +66,16 @@ namespace WebfrontCore.Controllers
             {
                 try
                 {
-                    Client.ClientId = Convert.ToInt32(base.User.Claims.First(c => c.Type == ClaimTypes.Sid).Value);
-                    Client.NetworkId = User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value.ConvertLong();
-                    Client.Level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
-                    Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
-                    Authorized = Client.ClientId >= 0;
+                    int clientId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid)?.Value ?? "-1");
+
+                    if (clientId > 0)
+                    {
+                        Client.ClientId = clientId;
+                        Client.NetworkId = User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value.ConvertLong();
+                        Client.Level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
+                        Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
+                        Authorized = Client.ClientId >= 0;
+                    }
                 }
 
                 catch (InvalidOperationException)

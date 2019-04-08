@@ -29,7 +29,8 @@ namespace WebfrontCore.ViewComponents
                     LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
-                Online = !s.Throttled
+                Online = !s.Throttled,
+                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(s.IP, s.GetPort())
             }).ToList();
             return View("_List", serverInfo);
         }

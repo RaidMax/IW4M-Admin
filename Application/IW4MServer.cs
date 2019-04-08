@@ -66,8 +66,6 @@ namespace IW4MAdmin
                 client.CurrentServer = this;
 
                 Clients[client.ClientNumber] = client;
-
-                client.State = ClientState.Connected;
 #if DEBUG == true
                 Logger.WriteDebug($"End PreConnect for {client}");
 #endif
@@ -80,6 +78,7 @@ namespace IW4MAdmin
 
                 Manager.GetEventHandler().AddEvent(e);
                 await client.OnJoin(client.IPAddress);
+                client.State = ClientState.Connected;
             }
 
             catch (Exception ex)
@@ -460,7 +459,7 @@ namespace IW4MAdmin
 
         private async Task OnClientUpdate(EFClient origin)
         {
-            var client = Clients.FirstOrDefault(_client => _client.Equals(origin));
+            var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(origin));
 
             if (client != null)
             {
@@ -468,7 +467,9 @@ namespace IW4MAdmin
                 client.Score = origin.Score;
 
                 // update their IP if it hasn't been set yet
-                if (client.IPAddress == null && !client.IsBot)
+                if (client.IPAddress == null && 
+                    !client.IsBot && 
+                    client.State == ClientState.Connected)
                 {
                     await client.OnJoin(origin.IPAddress);
                 }

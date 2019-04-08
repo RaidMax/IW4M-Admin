@@ -8,6 +8,7 @@ $secondary: $orange !default;
 $light: rgb(204, 204, 204) !default;
 $dark: rgb(24, 24, 24) !default;
 $body-bg: rgb(34,34,34) !default;
+$big-dark: #191919;
 $body-color: $white !default;
 $link-color: $white !default;
 $link-decoration: none !default;
@@ -67,6 +68,10 @@ a.nav-link {
     border-bottom: 1px solid $primary !important;
 }
 
+.server-history {
+    background-color: $big-dark;
+}
+
 .border-top {
     border-top: 1px solid $primary !important;
 }
@@ -76,6 +81,10 @@ a.nav-link {
     border-radius: 0;
     border: 1px solid $orange;
     color: $white;
+}
+
+.server-join-button, .server-join-button:hover {
+    color: $white !important;
 }
 
 a.link-inverse {
@@ -216,7 +225,7 @@ form *, select {
     font-size: 1rem;
 }
 
-.client-message, .automated-penalty-info-detailed {
+.client-message, .automated-penalty-info-detailed, .oi {
     cursor: pointer;
 }
 
@@ -277,6 +286,6 @@ form *, select {
     border: 1px solid $orange;
 }
 
-.hide { 
+.hide {
     display: none;
 }

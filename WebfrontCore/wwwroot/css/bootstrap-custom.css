@@ -6299,6 +6299,9 @@ a.nav-link {
 .border-bottom {
   border-bottom: 1px solid #007ACC !important; }
 
+.server-history {
+  background-color: #191919; }
+
 .border-top {
   border-top: 1px solid #007ACC !important; }
 
@@ -6307,6 +6310,9 @@ a.nav-link {
   border-radius: 0;
   border: 1px solid #fd7e14;
   color: #fff; }
+
+.server-join-button, .server-join-button:hover {
+  color: #fff !important; }
 
 a.link-inverse {
   color: #007ACC; }
@@ -6413,7 +6419,7 @@ form *, select {
 .client-rating-change-amount {
   font-size: 1rem; }
 
-.client-message, .automated-penalty-info-detailed {
+.client-message, .automated-penalty-info-detailed, .oi {
   cursor: pointer; }
 
 #footer_text {

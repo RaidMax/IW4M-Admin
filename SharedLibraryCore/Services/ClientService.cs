@@ -135,7 +135,7 @@ namespace SharedLibraryCore.Services
             // this happens when the link we found is different than the one we create before adding an IP
             if (isAliasLinkUpdated)
             {
-                entity.CurrentServer.Logger.WriteDebug($"found a link for {entity} so we are updating link from {entity.AliasLink.AliasLinkId} to {newAliasLink.AliasLinkId}");
+                entity.CurrentServer.Logger.WriteDebug($"[updatealias] found a link for {entity} so we are updating link from {entity.AliasLink.AliasLinkId} to {newAliasLink.AliasLinkId}");
 
                 var oldAliasLink = entity.AliasLink;
 
@@ -161,7 +161,7 @@ namespace SharedLibraryCore.Services
             // the existing alias matches ip and name, so we can just ignore the temporary one
             if (hasExactAliasMatch)
             {
-                entity.CurrentServer.Logger.WriteDebug($"{entity} has exact alias match");
+                entity.CurrentServer.Logger.WriteDebug($"[updatealias] {entity} has exact alias match");
 
                 var oldAlias = entity.CurrentAlias;
                 entity.CurrentAliasId = existingExactAlias.AliasId;
@@ -169,8 +169,9 @@ namespace SharedLibraryCore.Services
                 await context.SaveChangesAsync();
 
                 // the alias is the same so we can just remove it 
-                if (oldAlias.AliasId != existingExactAlias.AliasId)
+                if (oldAlias.AliasId != existingExactAlias.AliasId && oldAlias.AliasId > 0)
                 {
+                    entity.CurrentServer.Logger.WriteDebug($"[updatealias] {entity} has exact alias match, so we're going to try to remove aliasId {oldAlias.AliasId} with linkId {oldAlias.AliasId}");
                     context.Aliases.Remove(oldAlias);
                     await context.SaveChangesAsync();
                 }
@@ -179,7 +180,7 @@ namespace SharedLibraryCore.Services
             // theres no exact match, but they've played before with the GUID or IP
             else
             {
-                entity.CurrentServer.Logger.WriteDebug($"Connecting player is using a new alias {entity}");
+                entity.CurrentServer.Logger.WriteDebug($"[updatealias] {entity} is using a new alias");
 
                 var newAlias = new EFAlias()
                 {

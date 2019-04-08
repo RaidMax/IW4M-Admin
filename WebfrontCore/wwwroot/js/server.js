@@ -89,4 +89,10 @@ function refreshClientActivity() {
     });
 }
 
+$(document).ready(function() {
+    $('.server-join-button').click(function (e) {
+        $(this).children('.server-header-ip-address').show();
+    });
+})
+
 setInterval(refreshClientActivity, 2000);

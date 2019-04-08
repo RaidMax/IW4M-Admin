@@ -176,7 +176,7 @@ namespace IW4MAdmin
         {
             if (E.Type == GameEvent.EventType.ChangePermission)
             {
-                var newPermission = (EFClient.Permission)E.Extra;
+                var newPermission = (Permission)E.Extra;
        
                 if (newPermission < Permission.Moderator)
                 {
@@ -189,7 +189,8 @@ namespace IW4MAdmin
                     Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
                 }
 
-                await Manager.GetClientService().UpdateLevel((Permission)E.Extra, E.Target, E.Origin);
+                Logger.WriteInfo($"{E.Origin} is setting {E.Target} to permission level {newPermission}");
+                await Manager.GetClientService().UpdateLevel(newPermission, E.Target, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.PreConnect)
@@ -342,7 +343,7 @@ namespace IW4MAdmin
 #endif
                 }
 
-                else
+                else if (client?.State != ClientState.Disconnecting)
                 {
                     Logger.WriteWarning($"Client {E.Origin} detected as disconnecting, but could not find them in the player list");
                     Logger.WriteDebug($"Expected {E.Origin} but found {GetClientsAsList().FirstOrDefault(_client => _client.ClientNumber == E.Origin.ClientNumber)}");
@@ -471,7 +472,16 @@ namespace IW4MAdmin
                     !client.IsBot && 
                     client.State == ClientState.Connected)
                 {
-                    await client.OnJoin(origin.IPAddress);
+                    try
+                    {
+                        await client.OnJoin(origin.IPAddress);
+                    }
+
+                    catch (Exception e)
+                    {
+                        origin.CurrentServer.Logger.WriteWarning($"Could not execute on join for {origin}");
+                        origin.CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
+                    }
                 }
             }
         }

@@ -467,7 +467,17 @@ namespace SharedLibraryCore.Database.Models
             State = ClientState.Disconnecting;
             TotalConnectionTime += ConnectionLength;
             LastConnection = DateTime.UtcNow;
-            await CurrentServer.Manager.GetClientService().Update(this);
+
+            try
+            {
+                await CurrentServer.Manager.GetClientService().Update(this);
+            }
+
+            catch (Exception e)
+            {
+                CurrentServer.Logger.WriteWarning($"Could not update disconnected player {this}");
+                CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
+            }
         }
 
         public async Task OnJoin(int? ipAddress)

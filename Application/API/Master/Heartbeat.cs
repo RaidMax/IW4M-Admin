@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using RestEase;
 using SharedLibraryCore;
@@ -11,6 +12,7 @@ namespace IW4MAdmin.Application.API.Master
     public class HeartbeatState
     {
         public bool Connected { get; set; }
+        public CancellationToken Token { get; set; }
     }
 
     public class Heartbeat

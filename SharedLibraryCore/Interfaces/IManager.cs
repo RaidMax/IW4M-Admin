@@ -46,5 +46,6 @@ namespace SharedLibraryCore.Interfaces
         IEventParser GenerateDynamicEventParser();
         string Version { get;}
         ITokenAuthentication TokenAuthenticator { get; }
+        string ExternalIPAddress { get; }
     }
 }

@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -728,6 +729,53 @@ namespace SharedLibraryCore
             }
 
             return string.Format(output, values);
+        }
+
+        /// <summary>
+        /// https://stackoverflow.com/questions/8113546/how-to-determine-whether-an-ip-address-in-private/39120248
+        /// An extension method to determine if an IP address is internal, as specified in RFC1918
+        /// </summary>
+        /// <param name="toTest">The IP address that will be tested</param>
+        /// <returns>Returns true if the IP is internal, false if it is external</returns>
+        public static bool IsInternal(this IPAddress toTest)
+        {
+            if (toTest.ToString().StartsWith("127.0.0"))
+            {
+                return true;
+            }
+
+            byte[] bytes = toTest.GetAddressBytes();
+            switch (bytes[0])
+            {
+                case 10:
+                    return true;
+                case 172:
+                    return bytes[1] < 32 && bytes[1] >= 16;
+                case 192:
+                    return bytes[1] == 168;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// retrieves the external IP address of the current running machine
+        /// </summary>
+        /// <returns></returns>
+        public static async Task<string> GetExternalIP()
+        {
+            try
+            {
+                using (var wc = new WebClient())
+                {
+                    return await wc.DownloadStringTaskAsync("https://api.ipify.org");
+                }
+            }
+
+            catch
+            {
+                return null;
+            }
         }
 
 #if DEBUG == true

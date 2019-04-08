@@ -7,7 +7,8 @@
     <div class="col-md-4 text-center text-md-left d-inline-flex justify-content-center justify-content-md-start">
         <span>@Model.Name</span>
         <a href="@Model.ConnectProtocolUrl" class="ml-2 align-self-center d-none d-md-flex server-join-button" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
-            <span class="oi oi-play-circle"></span>
+            <span class="oi oi-play-circle mr-2 align-self-center"></span>
+            <span class="server-header-ip-address" style="display:none;">@Model.IPAddress</span>
         </a>
     </div>
     <div class="text-center col-md-4">@Model.Map</div>

@@ -40,8 +40,8 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public virtual string Name
         {
-            get { return CurrentAlias.Name; }
-            set { CurrentAlias.Name = value; }
+            get { return CurrentAlias?.Name ?? "--"; }
+            set { if (CurrentAlias != null) CurrentAlias.Name = value; }
         }
         [NotMapped]
         public virtual int? IPAddress

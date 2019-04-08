@@ -248,13 +248,13 @@ namespace SharedLibraryCore.Services
                             Type = GameEvent.EventType.ChangePermission,
                             Extra = newPermission,
                             Origin = origin,
+                            Owner = temporalClient.CurrentServer,
                             Target = _client
                         }, ctx);
 #if DEBUG == true
                         temporalClient.CurrentServer.Logger.WriteDebug($"Updated linked {_client.ClientId} to {newPermission}");
 #endif
                     });
-
 
                     await ctx.SaveChangesAsync();
                 }

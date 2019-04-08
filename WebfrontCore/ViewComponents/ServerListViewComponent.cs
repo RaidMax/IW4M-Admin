@@ -2,6 +2,7 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
+using System.Net;
 
 namespace WebfrontCore.ViewComponents
 {
@@ -10,6 +11,7 @@ namespace WebfrontCore.ViewComponents
         public IViewComponentResult Invoke()
         {
             var servers = Program.Manager.GetServers();
+
             var serverInfo = servers.Select(s => new ServerInfo()
             {
                 Name = s.Hostname,
@@ -30,7 +32,8 @@ namespace WebfrontCore.ViewComponents
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
                 Online = !s.Throttled,
-                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(s.IP, s.GetPort())
+                IPAddress = $"{(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP)}:{s.GetPort()}",
+                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP, s.GetPort())
             }).ToList();
             return View("_List", serverInfo);
         }

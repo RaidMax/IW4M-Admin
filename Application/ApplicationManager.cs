@@ -41,10 +41,9 @@ namespace IW4MAdmin.Application
 
         public IList<IRConParser> AdditionalRConParsers { get; }
         public IList<IEventParser> AdditionalEventParsers { get; }
-
         public ITokenAuthentication TokenAuthenticator => Authenticator;
-
         public ITokenAuthentication Authenticator => _authenticator;
+        public string ExternalIPAddress { get; private set; }
 
         static ApplicationManager Instance;
         readonly List<AsyncStatus> TaskStatuses;
@@ -158,7 +157,7 @@ namespace IW4MAdmin.Application
             return Instance ?? (Instance = new ApplicationManager());
         }
 
-        public async Task UpdateServerStates()
+        public async Task UpdateServerStates(CancellationToken token)
         {
             // store the server hash code and task for it
             var runningUpdateTasks = new Dictionary<long, Task>();
@@ -215,17 +214,19 @@ namespace IW4MAdmin.Application
                 ThreadPool.GetAvailableThreads(out int availableThreads, out int m);
                 Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 #endif
-                await Task.Delay(ConfigHandler.Configuration().RConPollRate);
+                try
+                {
+                    await Task.Delay(ConfigHandler.Configuration().RConPollRate, token);
+                }
+                // if a cancellation is received, we want to return immediately
+                catch { break; }
             }
-
-            // trigger the event processing loop to end
-            SetHasEvent();
         }
 
         public async Task Init()
         {
             Running = true;
-
+            ExternalIPAddress = await Utilities.GetExternalIP();
 
             #region PLUGINS
             SharedLibraryCore.Plugins.PluginImporter.Load(this);
@@ -642,27 +643,34 @@ namespace IW4MAdmin.Application
                     }
 
                 }
-                await Task.Delay(30000);
+
+                try
+                {
+                    await Task.Delay(30000, heartbeatState.Token);
+                }
+                catch { break; }
             }
         }
 
         public void Start()
         {
+            var tokenSource = new CancellationTokenSource();
             // this needs to be run seperately from the main thread
-            var _ = Task.Run(() => SendHeartbeat(new HeartbeatState()));
-            _ = Task.Run(() => UpdateServerStates());
+            _ = Task.Run(() => SendHeartbeat(new HeartbeatState() { Token = tokenSource.Token }));
+            _ = Task.Run(() => UpdateServerStates(tokenSource.Token));
 
             while (Running)
             {
                 OnQuit.Wait();
+                tokenSource.Cancel();
                 OnQuit.Reset();
             }
-            _servers.Clear();
         }
 
         public void Stop()
         {
             Running = false;
+            OnQuit.Set();
         }
 
         public ILogger GetLogger(long serverId)
@@ -737,7 +745,7 @@ namespace IW4MAdmin.Application
 
         public void SetHasEvent()
         {
-            OnQuit.Set();
+            
         }
 
         public IList<Assembly> GetPluginAssemblies()

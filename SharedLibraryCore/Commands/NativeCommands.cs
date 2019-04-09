@@ -1219,6 +1219,11 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
+            if (E.Target == null)
+            {
+                E.Target = E.Owner.GetClientByName(E.Data).FirstOrDefault();
+            }
+
             if (E.Message.IsBroadcastCommand())
             {
                 if (E.Target == null)

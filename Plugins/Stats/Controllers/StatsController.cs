@@ -54,10 +54,11 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetMessageAsync(int serverId, DateTime when)
+        public async Task<IActionResult> GetMessageAsync(int serverId, long when)
         {
-            var whenUpper = when.AddMinutes(5);
-            var whenLower = when.AddMinutes(-5);
+            var whenTime = DateTime.FromFileTimeUtc(when);
+            var whenUpper = whenTime.AddMinutes(5);
+            var whenLower = whenTime.AddMinutes(-5);
 
             using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
             {

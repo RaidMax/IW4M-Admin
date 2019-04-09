@@ -259,6 +259,7 @@ namespace IW4MAdmin.Application
                 newConfig.AutoMessages = defaultConfig.AutoMessages;
                 newConfig.GlobalRules = defaultConfig.GlobalRules;
                 newConfig.Maps = defaultConfig.Maps;
+                newConfig.DisallowedClientNames = defaultConfig.DisallowedClientNames;
                 newConfig.QuickMessages = defaultConfig.QuickMessages;
 
                 if (newConfig.Servers == null)
@@ -287,7 +288,7 @@ namespace IW4MAdmin.Application
                 }
             }
 
-            else if (config != null)
+            else
             {
                 if (string.IsNullOrEmpty(config.Id))
                 {
@@ -323,7 +324,7 @@ namespace IW4MAdmin.Application
                 }
             }
 
-            else if (config.Servers.Count == 0)
+            if (config.Servers.Count == 0)
             {
                 throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
             }

@@ -22,6 +22,12 @@ namespace SharedLibraryCore.Services
         /// <returns></returns>
         public async Task AddPersistentMeta(string metaKey, string metaValue, EFClient client)
         {
+            // this seems to happen if the client disconnects before they've had time to authenticate and be added
+            if (client.ClientId < 1)
+            {
+                return;
+            }
+
             using (var ctx = new DatabaseContext())
             {
                 var existingMeta = await ctx.EFMeta

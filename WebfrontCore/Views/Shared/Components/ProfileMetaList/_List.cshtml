@@ -55,7 +55,7 @@
         case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ChatMessage:
             <div class="profile-meta-entry loader-data-time" data-time="@meta.When">
                 <span style="color:white;">></span>
-                <span class="client-message text-muted" data-serverid="@meta.Extra" data-when="@meta.When" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGE_CONTEXT"]"> @meta.Value</span>
+                <span class="client-message text-muted" data-serverid="@meta.Extra" data-when="@meta.When.ToFileTimeUtc()" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGE_CONTEXT"]"> @meta.Value</span>
             </div>
             break;
         case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ReceivedPenalty:

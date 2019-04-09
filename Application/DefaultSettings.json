@@ -16,6 +16,7 @@
     "Keep grenade launcher use to a minimum",
     "Balance teams at ALL times"
   ],
+  "DisallowedClientNames": ["Unknown Soldier", "VickNet", "UnknownSoldier", "CHEATER"],
   "QuickMessages": [
     {
       "Game": "IW4",

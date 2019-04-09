@@ -624,7 +624,7 @@ namespace IW4MAdmin
 
                     if (ConnectionErrors > 0)
                     {
-                        Logger.WriteVerbose($"{loc["MANAGER_CONNECTION_REST"]} {IP}:{Port}");
+                        Logger.WriteVerbose(loc["MANAGER_CONNECTION_REST"].FormatExt($"{IP}:{Port}"));
 
                         var _event = new GameEvent()
                         {
@@ -832,8 +832,8 @@ namespace IW4MAdmin
 
                 if (!File.Exists(LogPath) && ServerConfig.GameLogServerUrl == null)
                 {
-                    Logger.WriteError($"{LogPath} {loc["SERVER_ERROR_DNE"]}");
-                    throw new ServerException($"{loc["SERVER_ERROR_LOG"]} {LogPath}");
+                    Logger.WriteError(loc["SERVER_ERROR_DNE"].FormatExt(LogPath));
+                    throw new ServerException(loc["SERVER_ERROR_DNE"].FormatExt(LogPath));
                 }
             }
 
@@ -985,7 +985,7 @@ namespace IW4MAdmin
             {
 
 #if !DEBUG
-                string formattedString = String.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7({loc["SERVER_BAN_APPEAL"]} {Website})^7");
+                string formattedString = String.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7{loc["SERVER_BAN_APPEAL"].FormatExt(Website)}^7");
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
                 await targetClient.CurrentServer.OnClientDisconnected(targetClient);

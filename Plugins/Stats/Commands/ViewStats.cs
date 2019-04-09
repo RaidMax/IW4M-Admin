@@ -69,7 +69,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             if (E.Message.IsBroadcastCommand())
             {
                 string name = E.Target == null ? E.Origin.Name : E.Target.Name;
-                E.Owner.Broadcast($"{loc["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"]} ^5{name}^7");
+                E.Owner.Broadcast(loc["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(name));
                 E.Owner.Broadcast(statLine);
             }
 
@@ -77,7 +77,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             {
                 if (E.Target != null)
                 {
-                    E.Origin.Tell($"{loc["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"]} ^5{E.Target.Name}^7");
+                    E.Origin.Tell(loc["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(E.Target.Name));
                 }
 
                 E.Origin.Tell(statLine);

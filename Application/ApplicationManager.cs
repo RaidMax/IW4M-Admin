@@ -538,7 +538,7 @@ namespace IW4MAdmin.Application
                         _servers.Add(ServerInstance);
                     }
 
-                    Logger.WriteVerbose($"{Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"]} {ServerInstance.Hostname}");
+                    Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(ServerInstance.Hostname));
                     // add the start event for this server
 
                     var e = new GameEvent()
@@ -558,7 +558,7 @@ namespace IW4MAdmin.Application
 
                     if (e.GetType() == typeof(DvarException))
                     {
-                        Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"]} {(e as DvarException).Data["dvar_name"]} ({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})");
+                        Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"].FormatExt((e as DvarException).Data["dvar_name"])} ({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})");
                     }
 
                     else if (e.GetType() == typeof(NetworkException))

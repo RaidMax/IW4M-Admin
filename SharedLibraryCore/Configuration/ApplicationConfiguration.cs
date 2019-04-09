@@ -1,8 +1,6 @@
 ﻿using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace SharedLibraryCore.Configuration
 {
@@ -50,6 +48,8 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_WHITELIST")]
         public bool EnableWebfrontConnectionWhitelist { get; set; }
         public List<string> WebfrontConnectionWhitelist { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_USE_LOCAL_TRANSLATIONS")]
+        public bool UseLocalTranslations { get; set; }
         public string Id { get; set; }
         public List<ServerConfiguration> Servers { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
@@ -76,7 +76,9 @@ namespace SharedLibraryCore.Configuration
             WebfrontBindUrl = "http://0.0.0.0:1624";
 
             if (EnableCustomSayName)
+            {
                 CustomSayName = Utilities.PromptString(loc["SETUP_SAY_NAME"]);
+            }
 
             EnableSocialLink = Utilities.PromptBool(loc["SETUP_DISPLAY_SOCIAL"]);
 
@@ -98,6 +100,9 @@ namespace SharedLibraryCore.Configuration
             return this;
         }
 
-        public string Name() => "ApplicationConfiguration";
+        public string Name()
+        {
+            return "ApplicationConfiguration";
+        }
     }
 }

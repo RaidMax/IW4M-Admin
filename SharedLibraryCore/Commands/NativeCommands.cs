@@ -68,7 +68,7 @@ namespace SharedLibraryCore.Commands
         {
             if (E.Target.Warn(E.Data, E.Origin).Failed)
             {
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_FAIL"]} {E.Target.Name}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARN_FAIL"].FormatExt(E.Target.Name));
             }
 
             return Task.CompletedTask;
@@ -92,7 +92,7 @@ namespace SharedLibraryCore.Commands
         {
             if (!E.Target.WarnClear(E.Origin).Failed)
             {
-                E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_SUCCESS"]} {E.Target.Name}");
+                E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_WARNCLEAR_SUCCESS"].FormatExt(E.Target.Name));
             }
 
             return Task.CompletedTask;
@@ -120,8 +120,8 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var _ = !(await E.Target.Kick(E.Data, E.Origin).WaitAsync()).Failed ?
-                  E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_SUCCESS"]}") :
-                  E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_FAIL"]} {E.Target.Name}");
+                  E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_SUCCESS"].FormatExt(E.Target.Name)) :
+                  E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_KICK_FAIL"].FormatExt(E.Target.Name));
         }
     }
 
@@ -186,8 +186,8 @@ namespace SharedLibraryCore.Commands
                 else
                 {
                     var _ = !(await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync()).Failed ?
-                        E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"]} ^5{length.TimeSpanText()}") :
-                        E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"]} {E.Target.Name}");
+                        E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(E.Target, length.TimeSpanText())) :
+                        E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_TEMPBAN_FAIL"].FormatExt(E.Target.Name));
                 }
             }
         }
@@ -214,8 +214,8 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var _ = !(await E.Target.Ban(E.Data, E.Origin, false).WaitAsync()).Failed ?
-                    E.Origin.Tell($"^5{E.Target} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_SUCCESS"]}") :
-                    E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_FAIL"]} {E.Target.Name}");
+                    E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_SUCCESS"].FormatExt(E.Target.Name)) :
+                    E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BAN_FAIL"].FormatExt(E.Target.Name));
         }
     }
 
@@ -243,11 +243,11 @@ namespace SharedLibraryCore.Commands
             if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan).FirstOrDefault() != null)
             {
                 await E.Target.Unban(E.Data, E.Origin).WaitAsync();
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_SUCCESS"]} {E.Target}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_SUCCESS"].FormatExt(E.Target));
             }
             else
             {
-                E.Origin.Tell($"{E.Target} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_FAIL"]}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNBAN_FAIL"].FormatExt(E.Target));
             }
         }
     }
@@ -484,7 +484,7 @@ namespace SharedLibraryCore.Commands
                     // we don't really want to tell them if they're demoted haha
                     if (newPerm > oldPerm)
                     {
-                        ActiveClient.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"]} {newPerm}");
+                        ActiveClient.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"].FormatExt(newPerm)));
                     }
                 }
 
@@ -495,8 +495,8 @@ namespace SharedLibraryCore.Commands
 
                 // inform the origin that the client has been updated
                 _ = newPerm < oldPerm ?
-                    E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"]} {E.Target.Name}") :
-                    E.Origin.Tell($"{E.Target.Name} {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"]}");
+                    E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"].FormatExt(E.Target.Name)) :
+                    E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS"].FormatExt(E.Target.Name));
             }
 
             else
@@ -516,7 +516,7 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            E.Origin.Tell($"IW4MAdmin {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_USAGE_TEXT"]} " + Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1) + "MB");
+            E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_USAGE_TEXT"].FormatExt(Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1)));
             return Task.CompletedTask;
         }
     }
@@ -531,7 +531,7 @@ namespace SharedLibraryCore.Commands
         {
             TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            E.Origin.Tell($"IW4M Admin {loc["COMMANDS_UPTIME_TEXT"]} {uptime.Days} {loc["GLOBAL_TIME_DAYS"]}, {uptime.Hours} {loc["GLOBAL_TIME_HOURS"]}, {uptime.Minutes} {loc["GLOBAL_TIME_MINUTES"]}");
+            E.Origin.Tell(loc["COMMANDS_UPTIME_TEXT"].FormatExt(uptime.Days, uptime.Hours, uptime.Minutes));
             return Task.CompletedTask;
         }
     }
@@ -585,14 +585,14 @@ namespace SharedLibraryCore.Commands
             {
                 if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
                 {
-                    E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_SUCCESS"]} ^5{m.Alias}");
+                    E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_SUCCESS"].FormatExt(m.Alias));
                     await Task.Delay(5000);
                     await E.Owner.LoadMap(m.Name);
                     return;
                 }
             }
 
-            E.Owner.Broadcast($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_UKN"]} ^5{newMap}");
+            E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_MAP_UKN"].FormatExt(newMap));
             await Task.Delay(5000);
             await E.Owner.LoadMap(newMap);
         }
@@ -728,7 +728,7 @@ namespace SharedLibraryCore.Commands
 
             if (E.FailReason == GameEvent.EventFailReason.Permission)
             {
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_FAIL"]} ^5{E.Target.Name}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_FAIL"].FormatExt(E.Target.Name));
             }
 
             else if (E.FailReason == GameEvent.EventFailReason.Invalid)
@@ -738,7 +738,7 @@ namespace SharedLibraryCore.Commands
 
             else
             {
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_SUCCESS"]} ^5{E.Target.Name}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_SUCCESS"].FormatExt(E.Target.Name));
             }
 
             return Task.CompletedTask;
@@ -765,7 +765,7 @@ namespace SharedLibraryCore.Commands
 
             if (unflagEvent.FailReason == GameEvent.EventFailReason.Permission)
             {
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_FAIL"]} ^5{E.Target.Name}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNFLAG_FAIL"].FormatExt(E.Target.Name));
             }
 
             else if (unflagEvent.FailReason == GameEvent.EventFailReason.Invalid)
@@ -775,7 +775,7 @@ namespace SharedLibraryCore.Commands
 
             else
             {
-                E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"]} ^5{E.Target.Name}");
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_FLAG_UNFLAG"].FormatExt(E.Target.Name));
             }
 
             return Task.CompletedTask;
@@ -814,7 +814,7 @@ namespace SharedLibraryCore.Commands
 
             if (reportEvent.FailReason == GameEvent.EventFailReason.Permission)
             {
-                commandEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL"]} {commandEvent.Target.Name}");
+                commandEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_REPORT_FAIL"].FormatExt(commandEvent.Target.Name));
             }
 
             else if (reportEvent.FailReason == GameEvent.EventFailReason.Invalid)
@@ -939,10 +939,16 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            string timeRemaining = penalty.Type == Penalty.PenaltyType.TempBan ? $"({(penalty.Expires.Value - DateTime.UtcNow).TimeSpanText()} remaining)" : "";
-            string success = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_SUCCESS"];
+            if (penalty.Type == Penalty.PenaltyType.Ban)
+            {
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_SUCCESS"].FormatExt(E.Target.Name, penalty.Offense));
+            }
 
-            E.Origin.Tell($"^1{E.Target.Name} ^7{string.Format(success, "")} {penalty.Offense} {timeRemaining}");
+            else
+            {
+                string remainingTime = (penalty.Expires.Value - DateTime.UtcNow).TimeSpanText();
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_TB_SUCCESS"].FormatExt(E.Target.Name, penalty.Offense, remainingTime));
+            }
         }
     }
 
@@ -1033,7 +1039,7 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_IP_SUCCESS"]} ^5{E.Origin.IPAddressString}");
+            E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_IP_SUCCESS"].FormatExt(E.Origin.IPAddressString));
             return Task.CompletedTask;
         }
     }
@@ -1085,7 +1091,7 @@ namespace SharedLibraryCore.Commands
                 inactiveUsers.ForEach(c => c.SetLevel(EFClient.Permission.User, E.Origin));
                 await context.SaveChangesAsync();
             }
-            E.Origin.Tell($"^5{inactiveUsers.Count} ^7{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_SUCCESS"]}");
+            E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_SUCCESS"].FormatExt(inactiveUsers.Count));
         }
     }
 
@@ -1172,7 +1178,7 @@ namespace SharedLibraryCore.Commands
                         if (!E.Owner.Throttled)
                         {
 #if !DEBUG
-                        await E.Owner.ExecuteCommandAsync("quit");
+                            await E.Owner.ExecuteCommandAsync("quit");
 #endif
                         }
                     }
@@ -1224,27 +1230,13 @@ namespace SharedLibraryCore.Commands
                 E.Target = E.Owner.GetClientByName(E.Data).FirstOrDefault();
             }
 
-            if (E.Message.IsBroadcastCommand())
+            if (E.Target == null)
             {
-                if (E.Target == null)
-                {
-                    E.Owner.Broadcast($"{E.Origin.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Origin.Ping}^7ms");
-                }
-                else
-                {
-                    E.Owner.Broadcast($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
-                }
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_SELF"].FormatExt(E.Origin.Ping));
             }
             else
             {
-                if (E.Target == null)
-                {
-                    E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_SELF"]} ^5{E.Origin.Ping}^7ms");
-                }
-                else
-                {
-                    E.Origin.Tell($"{E.Target.Name}'s {Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"]} ^5{E.Target.Ping}^7ms");
-                }
+                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PING_TARGET"].FormatExt(E.Target.Name, E.Target.Ping));
             }
 
             return Task.CompletedTask;
@@ -1265,50 +1257,16 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            using (var ctx = new DatabaseContext())
+            var metaSvc = new MetaService();
+
+            using (var md5 = MD5.Create())
             {
-                var iqMeta = from meta in ctx.EFMeta
-                             where meta.ClientId == E.Origin.ClientId
-                             where meta.Key == "GravatarEmail"
-                             select meta;
-
-                var gravatarMeta = await iqMeta.FirstOrDefaultAsync();
-
-                // gravatar meta has never been added
-                if (gravatarMeta == null)
-                {
-                    using (var md5 = MD5.Create())
-                    {
-                        gravatarMeta = new EFMeta()
-                        {
-                            Active = true,
-                            ClientId = E.Origin.ClientId,
-                            Key = "GravatarEmail",
-                            Value = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
-                                .Select(h => h.ToString("x2"))),
-                        };
-
-                        ctx.EFMeta.Add(gravatarMeta);
-                        await ctx.SaveChangesAsync();
-                        E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_SUCCESS_NEW"]);
-                        return;
-                    }
-                }
-
-                else
-                {
-                    ctx.EFMeta.Update(gravatarMeta);
-                    using (var md5 = MD5.Create())
-                    {
-                        gravatarMeta.Value = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
+                string gravatarEmail = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
                                 .Select(h => h.ToString("x2")));
-                        gravatarMeta.Updated = DateTime.UtcNow;
-                    }
-
-                    await ctx.SaveChangesAsync();
-                    E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_SUCCESS_UPDATE"]);
-                }
+                await metaSvc.AddPersistentMeta("GravatarEmail", gravatarEmail, E.Origin);
             }
+
+            E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GRAVATAR_SUCCESS_NEW"]);
         }
     }
 
@@ -1331,7 +1289,7 @@ namespace SharedLibraryCore.Commands
             // no maprotation at all
             if (regexMatches.Count() == 0)
             {
-                return $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"]} ^5{s.CurrentMap.Alias}/{Utilities.GetLocalizedGametype(s.Gametype)}";
+                return $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(s.CurrentMap.Alias)}/{Utilities.GetLocalizedGametype(s.Gametype)}";
             }
 
             // the current map is not in rotation

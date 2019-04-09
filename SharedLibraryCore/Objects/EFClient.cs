@@ -561,7 +561,7 @@ namespace SharedLibraryCore.Database.Models
                 }
 
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
-                Kick($"{loc["SERVER_BAN_PREV"]} {profileBan?.Offense}", autoKickClient);
+                Kick(loc["SERVER_BAN_PREV"].FormatExt(profileBan?.Offense), autoKickClient);
                 return false;
             }
             #endregion

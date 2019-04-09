@@ -728,7 +728,11 @@ namespace SharedLibraryCore
                 index++;
             }
 
-            return string.Format(output, values);
+            try
+            {
+                return string.Format(output, values);
+            }
+            catch { return input; }
         }
 
         /// <summary>

@@ -90,7 +90,7 @@ namespace IW4MAdmin.Application
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString("0.0")}]");
-                    Console.WriteLine($"{loc["MANAGER_VERSION_CURRENT"]} [v{Version.ToString("0.0")}]");
+                        Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}]"));
                     Console.ForegroundColor = ConsoleColor.Gray;
                 }
 #else
@@ -98,7 +98,7 @@ namespace IW4MAdmin.Application
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
-                    Console.WriteLine($"{loc["MANAGER_VERSION_CURRENT"]} [v{Version.ToString("0.0")}-pr]");
+                    Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}-pr]"));
                     Console.ForegroundColor = ConsoleColor.Gray;
                 }
 #endif 

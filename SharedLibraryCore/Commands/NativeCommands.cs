@@ -35,7 +35,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             if (await (E.Owner.Manager.GetClientService() as ClientService).GetOwnerCount() == 0 &&
-                !E.Target.SetLevel(EFClient.Permission.Owner, Utilities.IW4MAdminClient(E.Owner)).Failed)
+                !E.Origin.SetLevel(EFClient.Permission.Owner, Utilities.IW4MAdminClient(E.Owner)).Failed)
             {
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_OWNER_SUCCESS"]);
             }
@@ -484,7 +484,7 @@ namespace SharedLibraryCore.Commands
                     // we don't really want to tell them if they're demoted haha
                     if (newPerm > oldPerm)
                     {
-                        ActiveClient.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"].FormatExt(newPerm)));
+                        ActiveClient.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SUCCESS_TARGET"].FormatExt(newPerm));
                     }
                 }
 

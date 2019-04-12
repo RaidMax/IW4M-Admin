@@ -5,10 +5,101 @@
     string optionalText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["COMMAND_HELP_OPTIONAL"];
     string advancedText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADVANCED"];
     string addText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADD"];
+
+    var properties = Model.GetType().GetProperties();
+
+    string[] getLinkedPropertyName(System.Reflection.PropertyInfo info)
+    {
+        var test = (info.GetCustomAttributes(false)
+             .Where(_attr => _attr.GetType() == typeof(SharedLibraryCore.Helpers.LinkedConfiguration))
+             .FirstOrDefault() as SharedLibraryCore.Helpers.LinkedConfiguration);
+
+        return test?.LinkedPropertyNames ?? new string[0];
+    }
+
+    bool shouldIgnore(System.Reflection.PropertyInfo info) => (info.GetCustomAttributes(false)
+             .Where(_attr => _attr.GetType() == typeof(SharedLibraryCore.Helpers.ConfigurationIgnore))
+             .FirstOrDefault() as SharedLibraryCore.Helpers.ConfigurationIgnore) != null;
+
+    bool isOptional(System.Reflection.PropertyInfo info) => (info.GetCustomAttributes(false)
+             .Where(_attr => _attr.GetType() == typeof(SharedLibraryCore.Helpers.ConfigurationOptional))
+             .FirstOrDefault() as SharedLibraryCore.Helpers.ConfigurationOptional) != null;
+
+    bool hasLinkedParent(System.Reflection.PropertyInfo info)
+    {
+        return Model.GetType().GetProperties().SelectMany(_prop => getLinkedPropertyName(_prop)).Contains(info.Name);
+    }
 }
 
 <div class="row">
-    <div class="col-12 text-white-50 configuration-form">
+    <div class="col-12 text-white-50 ">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            @foreach (var property in properties)
+            {
+                if (shouldIgnore(property))
+                {
+                    continue;
+                }
+
+                string[] linkedPropertyNames = getLinkedPropertyName(property);
+
+                if (property.PropertyType.Name == typeof(System.Boolean).Name)
+                {
+                    
+                   
+
+                    var attributes = linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class = "has-related-content", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null;
+                    <div class="form-group form-check bg-primary mb-0 pl-3 pr-3 p-2">
+                        @Html.Editor(property.Name, attributes)
+                        @Html.Label(property.Name, null, new { @class = "form-check-label ml-1" })
+                    </div>
+                }
+
+                else if (property.PropertyType.Name.Contains("List"))
+                {
+                    if (hasLinkedParent(property))
+                    {
+                        <div id="@($"{property.Name}_content")" class="@(linkedPropertyNames.Length == 0 ? "" : "hide") bg-dark pl-3 pr-3 pb-2">
+                            @if (linkedPropertyNames.Length == 0)
+                            {
+                                @Html.Label(property.Name, null, new { @class = "pt-3" })
+                            }
+                            @Html.Editor(property.Name, new { htmlAttributes = new { @class = $"form-group form-control bg-dark text-white-50 {(linkedPropertyNames.Length == 0 ? "mb-3" : "mb-0")}" } })
+                        </div>
+                    }
+
+                    else
+                    {
+                        @Html.Label(property.Name, null, new { @class = "bg-primary pl-3 pr-3 p-2 mb-0 mt-0 w-100" })
+                        <div id="@($"{property.Name}_content")" class="pl-3 pr-3 pt-2 pb-3 bg-dark">
+                            @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mt-2", placeholder = isOptional(property) ? optionalText : "" } })
+                            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new mt-2">@addText</a>
+                        </div>
+                    }
+                }
+
+                else
+                {
+                    if (hasLinkedParent(property))
+                    {
+                        <div id="@($"{property.Name}_content")" class="@(hasLinkedParent(property) ? "hide" : "") bg-dark pl-3 pr-3 pb-3">
+                            @Html.Label(property.Name, null, new { @class = "pt-3" })
+                            @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-group form-control bg-dark text-white-50 mb-0", placeholder = isOptional(property) ? optionalText : "" } })
+                        </div>
+                    }
+
+                    else
+                    {
+
+                    }
+                }
+            }
+            <button asp-controller="Configuration" asp-action="Edit"></button>
+        </form>
+    </div>
+    <div class="col-12 text-white-50 configuration-form d-none">
         <form asp-action="Index">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -80,7 +171,7 @@
 
             <div class="form-group form-check bg-primary mb-0">
                 <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" asp-for="IgnoreBots"/> @Html.DisplayNameFor(model => model.IgnoreBots)
+                    <input class="form-check-input" asp-for="IgnoreBots" /> @Html.DisplayNameFor(model => model.IgnoreBots)
                 </label>
             </div>
 

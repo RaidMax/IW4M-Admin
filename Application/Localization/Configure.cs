@@ -17,17 +17,20 @@ namespace IW4MAdmin.Application.Localization
             string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
             string[] localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");
 
-            try
+            if (!Program.ServerManager.GetApplicationSettings()?.Configuration()?.UseLocalTranslations ?? false)
             {
-                var api = Endpoint.Get();
-                var localization = api.GetLocalization(currentLocale).Result;
-                Utilities.CurrentLocalization = localization;
-                return;
-            }
+                try
+                {
+                    var api = Endpoint.Get();
+                    var localization = api.GetLocalization(currentLocale).Result;
+                    Utilities.CurrentLocalization = localization;
+                    return;
+                }
 
-            catch (Exception)
-            {
-                // the online localization failed so will default to local files
+                catch (Exception)
+                {
+                    // the online localization failed so will default to local files
+                }
             }
 
             // culture doesn't exist so we just want language

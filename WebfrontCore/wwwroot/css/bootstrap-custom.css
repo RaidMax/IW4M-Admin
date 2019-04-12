@@ -6465,7 +6465,7 @@ form *, select {
   margin-top: -0.5rem !important; }
 
 /* Configuration */
-.configuration-form input[type='text'], .configuration-form input[type='number'] {
+.configuration-form input[type='text'], .configuration-form input[type='number'], input.text-box {
   border: 1px solid #fd7e14; }
 
 .hide {

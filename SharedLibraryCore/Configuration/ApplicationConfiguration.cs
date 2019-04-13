@@ -8,6 +8,7 @@ namespace SharedLibraryCore.Configuration
 {
     public class ApplicationConfiguration : IBaseConfiguration
     {
+
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
         [LinkedConfiguration("WebfrontBindUrl", "ManualWebfrontUrl")]
         public bool EnableWebFront { get; set; }
@@ -76,6 +77,7 @@ namespace SharedLibraryCore.Configuration
         public List<string> GlobalRules { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_DISALLOWED_NAMES")]
         public List<string> DisallowedClientNames { get; set; }
+        [UIHint("ServerConfiguration")]
         public List<ServerConfiguration> Servers { get; set; }
 
 

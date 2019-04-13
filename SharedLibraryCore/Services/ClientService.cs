@@ -171,6 +171,12 @@ namespace SharedLibraryCore.Services
                 // the alias is the same so we can just remove it 
                 if (oldAlias.AliasId != existingExactAlias.AliasId && oldAlias.AliasId > 0)
                 {
+                    await context.Clients
+                        .Where(_client => _client.CurrentAliasId == oldAlias.AliasId)
+                        .ForEachAsync(_client => _client.CurrentAliasId = existingExactAlias.AliasId);
+
+                    await context.SaveChangesAsync();
+
                     entity.CurrentServer.Logger.WriteDebug($"[updatealias] {entity} has exact alias match, so we're going to try to remove aliasId {oldAlias.AliasId} with linkId {oldAlias.AliasId}");
                     context.Aliases.Remove(oldAlias);
                     await context.SaveChangesAsync();

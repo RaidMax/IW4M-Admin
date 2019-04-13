@@ -36,7 +36,7 @@ namespace IW4MAdmin
         override public async Task OnClientConnected(EFClient clientFromLog)
         {
             Logger.WriteDebug($"Client slot #{clientFromLog.ClientNumber} now reserved");
-  
+
             try
             {
                 EFClient client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId);
@@ -94,18 +94,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-                await client.OnDisconnect();
-                Clients[client.ClientNumber] = null;
+            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+            Clients[client.ClientNumber] = null;
+            await client.OnDisconnect();
 
-                var e = new GameEvent()
-                {
-                    Origin = client,
-                    Owner = this,
-                    Type = GameEvent.EventType.Disconnect
-                };
+            var e = new GameEvent()
+            {
+                Origin = client,
+                Owner = this,
+                Type = GameEvent.EventType.Disconnect
+            };
 
-                Manager.GetEventHandler().AddEvent(e);
+            Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -177,7 +177,7 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.ChangePermission)
             {
                 var newPermission = (Permission)E.Extra;
-       
+
                 if (newPermission < Permission.Moderator)
                 {
                     // remove banned or demoted privileged user
@@ -268,7 +268,7 @@ namespace IW4MAdmin
                     Expires = DateTime.UtcNow,
                     Offender = E.Target,
                     Offense = E.Data,
-                    Punisher  = E.Origin,
+                    Punisher = E.Origin,
                     When = DateTime.UtcNow,
                     Link = E.Target.AliasLink
                 };
@@ -468,8 +468,8 @@ namespace IW4MAdmin
                 client.Score = origin.Score;
 
                 // update their IP if it hasn't been set yet
-                if (client.IPAddress == null && 
-                    !client.IsBot && 
+                if (client.IPAddress == null &&
+                    !client.IsBot &&
                     client.State == ClientState.Connected)
                 {
                     try

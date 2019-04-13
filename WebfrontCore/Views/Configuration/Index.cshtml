@@ -5,6 +5,7 @@
     string optionalText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["COMMAND_HELP_OPTIONAL"];
     string advancedText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADVANCED"];
     string addText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADD"];
+    string saveText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVE"];
 
     var properties = Model.GetType().GetProperties();
 
@@ -47,10 +48,7 @@
 
                 if (property.PropertyType.Name == typeof(System.Boolean).Name)
                 {
-                    
-                   
-
-                    var attributes = linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class = "has-related-content", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null;
+                    var attributes = linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class = "has-related-content mb-0", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null;
                     <div class="form-group form-check bg-primary mb-0 pl-3 pr-3 p-2">
                         @Html.Editor(property.Name, attributes)
                         @Html.Label(property.Name, null, new { @class = "form-check-label ml-1" })
@@ -61,10 +59,10 @@
                 {
                     if (hasLinkedParent(property))
                     {
-                        <div id="@($"{property.Name}_content")" class="@(linkedPropertyNames.Length == 0 ? "" : "hide") bg-dark pl-3 pr-3 pb-2">
+                        <div id="@($"{property.Name}_content")" class="@(linkedPropertyNames.Length == 0 ? "" : "hide") bg-dark pl-3 pr-3">
                             @if (linkedPropertyNames.Length == 0)
                             {
-                                @Html.Label(property.Name, null, new { @class = "pt-3" })
+                                @Html.Label(property.Name, null, new { @class = "" })
                             }
                             @Html.Editor(property.Name, new { htmlAttributes = new { @class = $"form-group form-control bg-dark text-white-50 {(linkedPropertyNames.Length == 0 ? "mb-3" : "mb-0")}" } })
                         </div>
@@ -72,9 +70,9 @@
 
                     else
                     {
-                        @Html.Label(property.Name, null, new { @class = "bg-primary pl-3 pr-3 p-2 mb-0 mt-0 w-100" })
+                        @Html.Label(property.Name, null, new { @class = "bg-primary pl-3 pr-3 p-2 mb-0 w-100" })
                         <div id="@($"{property.Name}_content")" class="pl-3 pr-3 pt-2 pb-3 bg-dark">
-                            @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mt-2", placeholder = isOptional(property) ? optionalText : "" } })
+                            @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mt-3 mb-3", placeholder = isOptional(property) ? optionalText : "" } })
                             <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new mt-2">@addText</a>
                         </div>
                     }
@@ -84,152 +82,22 @@
                 {
                     if (hasLinkedParent(property))
                     {
-                        <div id="@($"{property.Name}_content")" class="@(hasLinkedParent(property) ? "hide" : "") bg-dark pl-3 pr-3 pb-3">
-                            @Html.Label(property.Name, null, new { @class = "pt-3" })
+                        <div id="@($"{property.Name}_content")" class="@(hasLinkedParent(property) ? "hide" : "") bg-dark pl-3 pr-3 pt-2 pb-3">
+                            @Html.Label(property.Name, null, new { @class = "mt-1" })
                             @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-group form-control bg-dark text-white-50 mb-0", placeholder = isOptional(property) ? optionalText : "" } })
                         </div>
                     }
 
                     else
                     {
-
+                        @Html.Label(property.Name, null, new { @class = "bg-primary pl-3 pr-3 p-2 mb-0 w-100" })
+                        <div class="p-3 bg-dark">
+                            @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-group form-control bg-dark text-white-50 mb-0", placeholder = isOptional(property) ? optionalText : "" } })
+                        </div>
                     }
                 }
             }
-            <button asp-controller="Configuration" asp-action="Edit"></button>
-        </form>
-    </div>
-    <div class="col-12 text-white-50 configuration-form d-none">
-        <form asp-action="Index">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <!-- start webfront settings -->
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input has-related-content" data-related-content="#enable_webfront_content" asp-for="EnableWebFront" /> @Html.DisplayNameFor(model => model.EnableWebFront)
-                </label>
-            </div>
-            <div id="enable_webfront_content" class="hide bg-dark pl-4 pr-4 pt-2 pb-2">
-                <div class="form-group">
-                    <label asp-for="WebfrontBindUrl" class="control-label"></label>
-                    <input asp-for="WebfrontBindUrl" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="WebfrontBindUrl" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="ManualWebfrontUrl" class="control-label"></label>
-                    <input asp-for="ManualWebfrontUrl" placeholder="@optionalText" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="ManualWebfrontUrl" class="text-danger"></span>
-                </div>
-            </div>
-            <!-- end webfront settings -->
-
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" asp-for="EnableMultipleOwners" /> @Html.DisplayNameFor(model => model.EnableMultipleOwners)
-                </label>
-            </div>
-
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" asp-for="EnableSteppedHierarchy" /> @Html.DisplayNameFor(model => model.EnableSteppedHierarchy)
-                </label>
-            </div>
-
-            <!-- start social link settings -->
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" data-related-content="#enable_social_content" asp-for="EnableSocialLink" /> @Html.DisplayNameFor(model => model.EnableSocialLink)
-                </label>
-            </div>
-            <div id="enable_social_content" class="hide bg-dark pl-4 pr-4 pt-2 pb-2">
-                <div class="form-group">
-                    <label asp-for="SocialLinkAddress" class="control-label"></label>
-                    <input asp-for="SocialLinkAddress" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="SocialLinkAddress" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="SocialLinkTitle" class="control-label"></label>
-                    <input asp-for="SocialLinkTitle" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="SocialLinkTitle" class="text-danger"></span>
-                </div>
-            </div>
-            <!-- end social link settings -->
-            <!-- start custom say name settings -->
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" data-related-content="#enable_sayname_content" asp-for="EnableCustomSayName" /> @Html.DisplayNameFor(model => model.EnableCustomSayName)
-                </label>
-            </div>
-            <div id="enable_sayname_content" class="hide bg-dark pl-4 pr-4 pt-2 pb-2">
-                <div class="form-group">
-                    <label asp-for="CustomSayName" class="control-label"></label>
-                    <input asp-for="CustomSayName" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="CustomSayName" class="text-danger"></span>
-                </div>
-            </div>
-            <!-- end custom say name settings -->
-
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" asp-for="IgnoreBots" /> @Html.DisplayNameFor(model => model.IgnoreBots)
-                </label>
-            </div>
-
-            <div class="form-group form-check bg-primary mb-0">
-                <label class="form-check-label p-2 pl-4">
-                    <input class="form-check-input" data-related-content="#enable_webfront_connection_whitelist_content" asp-for="EnableWebfrontConnectionWhitelist" /> @Html.DisplayNameFor(model => model.EnableWebfrontConnectionWhitelist)
-                </label>
-            </div>
-            <div id="enable_webfront_connection_whitelist_content" class="hide bg-dark pl-4 pr-4 pt-4 pb-4 ">
-                @Html.EditorFor(model => model.WebfrontConnectionWhitelist, new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mb-2" } })
-                <div class="btn btn-primary btn-block">@addText</div>
-            </div>
-
-            <div class="bg-primary mt-4">
-                <div class="p-2 pl-4">@advancedText</div>
-            </div>
-            <div class="bg-dark pl-4 pr-4 pt-2 pb-2">
-                <div class="form-group">
-                    <label asp-for="CustomParserEncoding" class="control-label"></label>
-                    <input asp-for="CustomParserEncoding" placeholder="@optionalText" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="CustomParserEncoding" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="CustomLocale" class="control-label"></label>
-                    <input asp-for="CustomLocale" placeholder="@optionalText" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="CustomLocale" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="DatabaseProvider" class="control-label"></label>
-                    <input asp-for="DatabaseProvider" placeholder="@optionalText" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="DatabaseProvider" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="ConnectionString" class="control-label"></label>
-                    <input asp-for="ConnectionString" placeholder="@optionalText" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="ConnectionString" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="RConPollRate" class="control-label"></label>
-                    <input asp-for="RConPollRate" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="RConPollRate" class="text-danger"></span>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="MaximumTempBanTime" class="control-label"></label>
-                    <input asp-for="MaximumTempBanTime" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="MaximumTempBanTime" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="AutoMessagePeriod" class="control-label"></label>
-                    <input asp-for="AutoMessagePeriod" class="form-control bg-dark text-white-50" />
-                    <span asp-validation-for="AutoMessagePeriod" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary btn-block" />
-            </div>
+            <button asp-controller="Configuration" asp-action="Edit" class="btn btn-primary btn-block">@saveText</button>
         </form>
     </div>
 </div>

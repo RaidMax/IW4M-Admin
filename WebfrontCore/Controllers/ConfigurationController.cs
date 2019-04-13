@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
@@ -18,9 +20,24 @@ namespace WebfrontCore.Controllers
         }
 
         [HttpPost]
-        public IActionResult Edit(ApplicationConfiguration config)
+        public async Task<IActionResult> Edit(ApplicationConfiguration newConfiguration)
         {
-            return View("Index", Manager.GetApplicationSettings().Configuration());
+            var currentConfiguration = Manager.GetApplicationSettings().Configuration();
+
+            var newConfigurationProperties = newConfiguration.GetType().GetProperties();
+            foreach (var property in currentConfiguration.GetType().GetProperties())
+            {
+                var newProp = newConfigurationProperties.First(_prop => _prop.Name == property.Name);
+                var newPropValue = newProp.GetValue(newConfiguration);
+
+                if (newPropValue != null && newProp.CanWrite)
+                {
+                    property.SetValue(currentConfiguration, newPropValue);
+                }
+            }
+
+            await Manager.GetApplicationSettings().Save();
+            return View("Index", newConfiguration);
         }
 
         public IActionResult GetNewListItem(string propertyName, int itemCount)
@@ -31,7 +48,7 @@ namespace WebfrontCore.Controllers
             var configInfo = new ConfigurationInfo()
             {
                 Configuration = config,
-                PropertyValue = (IList)propertyInfo.GetValue(config),
+                PropertyValue = (IList)propertyInfo.GetValue(config) ?? new List<string>(),
                 PropertyInfo = propertyInfo,
                 NewItemCount = itemCount
             };

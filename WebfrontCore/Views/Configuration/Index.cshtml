@@ -1,4 +1,5 @@
-﻿@model SharedLibraryCore.Configuration.ApplicationConfiguration
+﻿@using SharedLibraryCore.Configuration.Attributes
+@model SharedLibraryCore.Configuration.ApplicationConfiguration
 
 @{
     ViewData["Title"] = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_TITLE"];
@@ -6,25 +7,27 @@
     string advancedText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADVANCED"];
     string addText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADD"];
     string saveText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVE"];
+    string noticeText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVING_CHANGES"];
+    string addServerText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SERVER_ADD"];
 
     var properties = Model.GetType().GetProperties();
 
     string[] getLinkedPropertyName(System.Reflection.PropertyInfo info)
     {
         var test = (info.GetCustomAttributes(false)
-             .Where(_attr => _attr.GetType() == typeof(SharedLibraryCore.Helpers.LinkedConfiguration))
-             .FirstOrDefault() as SharedLibraryCore.Helpers.LinkedConfiguration);
+             .Where(_attr => _attr.GetType() == typeof(ConfiguratinLinked))
+             .FirstOrDefault() as ConfiguratinLinked);
 
         return test?.LinkedPropertyNames ?? new string[0];
     }
 
     bool shouldIgnore(System.Reflection.PropertyInfo info) => (info.GetCustomAttributes(false)
-             .Where(_attr => _attr.GetType() == typeof(SharedLibraryCore.Helpers.ConfigurationIgnore))
-             .FirstOrDefault() as SharedLibraryCore.Helpers.ConfigurationIgnore) != null;
+             .Where(_attr => _attr.GetType() == typeof(ConfigurationIgnore))
+             .FirstOrDefault() as ConfigurationIgnore) != null;
 
     bool isOptional(System.Reflection.PropertyInfo info) => (info.GetCustomAttributes(false)
-             .Where(_attr => _attr.GetType() == typeof(SharedLibraryCore.Helpers.ConfigurationOptional))
-             .FirstOrDefault() as SharedLibraryCore.Helpers.ConfigurationOptional) != null;
+             .Where(_attr => _attr.GetType() == typeof(ConfigurationOptional))
+             .FirstOrDefault() as ConfigurationOptional) != null;
 
     bool hasLinkedParent(System.Reflection.PropertyInfo info)
     {
@@ -34,9 +37,9 @@
 
 <div class="row">
     <div class="col-12 text-white-50 ">
+        <h3 class="text-white">@ViewData["Title"]</h3>
+        <h5 class="mb-4">@noticeText</h5>
         <form method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
             @foreach (var property in properties)
             {
                 if (shouldIgnore(property))
@@ -59,12 +62,13 @@
                 {
                     if (hasLinkedParent(property))
                     {
-                        <div id="@($"{property.Name}_content")" class="@(linkedPropertyNames.Length == 0 ? "" : "hide") bg-dark pl-3 pr-3">
+                        <div id="@($"{property.Name}_content")" class="@(linkedPropertyNames.Length == 0 ? "hide" : "hide") bg-dark pl-3 pr-3 pb-2">
                             @if (linkedPropertyNames.Length == 0)
                             {
-                                @Html.Label(property.Name, null, new { @class = "" })
+                                @Html.Label(property.Name, null, new { @class = "mt-2" })
                             }
                             @Html.Editor(property.Name, new { htmlAttributes = new { @class = $"form-group form-control bg-dark text-white-50 {(linkedPropertyNames.Length == 0 ? "mb-3" : "mb-0")}" } })
+                            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new">@addText</a>
                         </div>
                     }
 
@@ -73,7 +77,14 @@
                         @Html.Label(property.Name, null, new { @class = "bg-primary pl-3 pr-3 p-2 mb-0 w-100" })
                         <div id="@($"{property.Name}_content")" class="pl-3 pr-3 pt-2 pb-3 bg-dark">
                             @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mt-3 mb-3", placeholder = isOptional(property) ? optionalText : "" } })
-                            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new mt-2">@addText</a>
+                            @if (property.PropertyType.GenericTypeArguments[0].Name == "ServerConfiguration")
+                            {
+                                <button asp-action="Edit" asp-route-addNewServer="true" class="btn btn-primary">@addServerText</button>
+                            }
+                            else
+                            {
+                                <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new">@addText</a>
+                            }
                         </div>
                     }
                 }
@@ -97,7 +108,7 @@
                     }
                 }
             }
-            <button asp-controller="Configuration" asp-action="Edit" class="btn btn-primary btn-block">@saveText</button>
+            <button asp-controller="Configuration" asp-action="Edit" asp-route-shouldSave="true" class="btn btn-primary btn-block">@saveText</button>
         </form>
     </div>
 </div>

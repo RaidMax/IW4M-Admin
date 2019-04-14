@@ -25,14 +25,14 @@ namespace WebfrontCore.Controllers
 
             try
             {
-#if DEBUG == true
-                var client = Utilities.IW4MAdminClient();
-                bool loginSuccess = true;
-#else
+//#if DEBUG == true
+//                var client = Utilities.IW4MAdminClient();
+//                bool loginSuccess = true;
+//#else
                 var client = Manager.GetPrivilegedClients()[clientId];
                 bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(client.NetworkId, password) ||
                     (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt)))[0] == client.Password;
-#endif
+//#endif
 
                 if (loginSuccess)
                 {

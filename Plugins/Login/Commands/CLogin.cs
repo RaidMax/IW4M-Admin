@@ -24,12 +24,12 @@ namespace IW4MAdmin.Plugins.Login.Commands
             if (!success)
             {
                 string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(E.Data, client.PasswordSalt));
+                success = hashedPassword[0] == client.Password;
+            }
 
-                if (hashedPassword[0] == client.Password)
-                {
-                    success = true;
-                    Plugin.AuthorizedClients[E.Origin.ClientId] = true;
-                }
+            if (success)
+            {
+                Plugin.AuthorizedClients[E.Origin.ClientId] = true;
             }
 
             _ = success ?

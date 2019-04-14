@@ -1,6 +1,3 @@
 ﻿@model WebfrontCore.ViewModels.ConfigurationInfo
-@{
-    int index = Model.PropertyValue.Count + (Model.NewItemCount - Model.PropertyValue.Count);
-}
 
-<input class="form-control bg-dark text-white-50 mb-2 text-box single-line" id="@($"{Model.PropertyName}_{index}_")" name="@($"{Model.PropertyName}[{index}]")" type="text" />
+<input class="form-control bg-dark text-white-50 mb-2 text-box single-line" id="@($"{Model.PropertyName.Replace('[', '_').Replace(']', '_').Replace('.', '_')}_{Model.NewItemCount - 1}_")" name="@($"{Model.PropertyName}[{Model.NewItemCount- 1}]")" type="text" />

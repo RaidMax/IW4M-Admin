@@ -1,13 +1,13 @@
 ﻿using System;
 
-namespace SharedLibraryCore.Helpers
+namespace SharedLibraryCore.Configuration.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = false)]
-    public class LinkedConfiguration : Attribute
+    public class ConfiguratinLinked : Attribute
     {
         public string[] LinkedPropertyNames { get; set; }
 
-        public LinkedConfiguration(params string[] linkedPropertyNames)
+        public ConfiguratinLinked(params string[] linkedPropertyNames)
         {
             LinkedPropertyNames = linkedPropertyNames;
         }

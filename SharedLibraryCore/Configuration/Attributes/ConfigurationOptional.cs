@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SharedLibraryCore.Helpers
+namespace SharedLibraryCore.Configuration.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = false)]
     public class ConfigurationOptional : Attribute

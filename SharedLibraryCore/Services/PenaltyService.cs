@@ -31,7 +31,6 @@ namespace SharedLibraryCore.Services
                     IsEvadedOffense = newEntity.IsEvadedOffense
                 };
 
-                newEntity.Offender.ReceivedPenalties?.Add(penalty);
                 context.Penalties.Add(penalty);
                 await context.SaveChangesAsync();
 
@@ -40,11 +39,13 @@ namespace SharedLibraryCore.Services
                 {
                     var iqLinkedProfiles = context.Clients
                         .Where(_client => _client.AliasLinkId == newEntity.Link.AliasLinkId)
+                        .Where(_client => _client.Level != EFClient.Permission.Banned)
                         // prevent adding the penalty twice to the same profile
                         .Where(_client => _client.ClientId != penalty.OffenderId);
 
                     await iqLinkedProfiles.ForEachAsync(_client =>
                     {
+                        
                         var linkedPenalty = new EFPenalty()
                         {
                             OffenderId = _client.ClientId,

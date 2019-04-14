@@ -1,6 +1,52 @@
-﻿@model List<SharedLibraryCore.Configuration.ServerConfiguration>
-@Html.EditorFor(s => s)
-@*@foreach (var server in Model)
+﻿@model IList<SharedLibraryCore.Configuration.ServerConfiguration>
+@{
+    string labelClass = "mb-2 mt-1";
+    string editorClass = "form-control bg-dark text-white-50 text-box single-line mb-2 mt-0";
+    string addText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_ADD"];
+    string optionalText = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["COMMAND_HELP_OPTIONAL"];
+    int startAt = ViewBag.AddNew ?? false ? Model.Count - 1 : 0;
+}
+
+@for (int i = startAt; i < Model.Count; i++)
 {
-    @Html.EditorFor(s => server.EventParserVersion);
-}*@
+    <div class="h4 text-white mb-0">@Model[i].IPAddress:@Model[i].Port</div>
+    <div class="border-bottom mb-3">
+        @Html.LabelFor(model => model[i].IPAddress, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].IPAddress, new { htmlAttributes = new { @class = editorClass } })
+
+        @Html.LabelFor(model => model[i].Port, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].Port, new { htmlAttributes = new { @class = editorClass } })
+
+        @Html.LabelFor(model => model[i].Password, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].Password, new { htmlAttributes = new { @class = editorClass } })
+
+        @Html.LabelFor(model => model[i].ManualLogPath, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].ManualLogPath, new { htmlAttributes = new { @class = editorClass, placeholder = optionalText } })
+
+        @Html.LabelFor(model => model[i].GameLogServerUrl, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].GameLogServerUrl, new { htmlAttributes = new { @class = editorClass, placeholder = optionalText } })
+
+        @Html.LabelFor(model => model[i].RConParserVersion, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].RConParserVersion, new { htmlAttributes = new { @class = editorClass } })
+
+        @Html.LabelFor(model => model[i].EventParserVersion, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].EventParserVersion, new { htmlAttributes = new { @class = editorClass } })
+
+        @Html.LabelFor(model => model[i].ReservedSlotNumber, null, new { @class = labelClass })
+        @Html.EditorFor(model => model[i].ReservedSlotNumber, new { htmlAttributes = new { @class = editorClass } })
+
+        <div>
+            @Html.LabelFor(model => model[i].Rules, null, new { @class = "bg-primary pl-3 pr-3 p-2 w-100 mt-3" })
+            @Html.EditorFor(model => model[i].Rules, new { htmlAttributes = new { @class = editorClass } })
+            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@($"Servers[{i}].Rules")" class="btn btn-primary configuration-add-new mt-2">@addText</a>
+        </div>
+
+        <div class="mb-3">
+            @Html.LabelFor(model => model[i].AutoMessages, null, new { @class = "bg-primary pl-3 pr-3 p-2 w-100 mt-3" })
+            @Html.EditorFor(model => model[i].AutoMessages, new { htmlAttributes = new { @class = editorClass } })
+            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@($"Servers[{i}].Automessages")" class="btn btn-primary configuration-add-new mt-2">@addText</a>
+        </div>
+    </div>
+}
+
+@*<button asp-controller="Configuration" asp-action="Edit" asp-route-addNewServer="true" class="btn btn-primary">@addServerText</button>*@

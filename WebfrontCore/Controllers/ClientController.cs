@@ -53,6 +53,16 @@ namespace WebfrontCore.Controllers
             };
 
             var meta = await MetaService.GetRuntimeMeta(client.ClientId, 0, 1, DateTime.UtcNow);
+            var gravatar = await new MetaService().GetPersistentMeta("GravatarEmail", client);
+            if (gravatar != null)
+            {
+                clientDto.Meta.Add(new ProfileMeta()
+                {
+                    Key = "GravatarEmail",
+                    Type = ProfileMeta.MetaType.Other,
+                    Value = gravatar.Value
+                });
+            }
 
             var currentPenalty = activePenalties.FirstOrDefault();
 
@@ -67,7 +77,7 @@ namespace WebfrontCore.Controllers
             }
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
-  
+
             ViewBag.Title = clientDto.Name.Substring(clientDto.Name.Length - 1).ToLower()[0] == 's' ?
                 clientDto.Name + "'" :
                 clientDto.Name + "'s";

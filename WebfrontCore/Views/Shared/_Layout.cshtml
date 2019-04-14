@@ -55,22 +55,11 @@
                             <a href="#" class="nav-link oi oi-person dropdown-toggle oi-fix-navbar w-100" id="account_dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
 
                             <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
-                                @Html.ActionLink(loc["WEBFRONT_NAV_CONSOLE"], "Index", "Console", new { area = "" }, new
-                           {
-                               @class = "dropdown-item bg-dark text-muted text-center text-lg-left",
-                               title = "Web Console"
-                           })
-                                @Html.ActionLink(loc["WEBFRONT_NAV_PROFILE"], "ProfileAsync", "Client", new { id = ViewBag.User.ClientId }, new
-                           {
-                               @class = "dropdown-item bg-dark text-muted text-center text-lg-left",
-                               title = "Client Profile",
-                           })
-                                @Html.ActionLink(loc["WEBFRONT_NAV_LOGOUT"], "LogoutAsync", "Account", new { area = "" }, new
-                           {
-                               @class = "dropdown-item bg-dark text-muted text-center text-lg-left",
-                               title = "Logout of account"
-                           })
-                                <a class="dropdown-item bg-dark text-muted text-center text-lg-left profile-action" href="#" data-action="GenerateLoginToken" aria-hidden="true" title="@loc["WEBFRONT_ACTION_TOKEN"]">@loc["WEBFRONT_ACTION_TOKEN"]</a>
+                                <a asp-controller="Console" asp-action="Index" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_CONSOLE"]</a>
+                                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@ViewBag.User.ClientId" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_PROFILE"]</a>
+                                <a asp-controller="Configuration" asp-action="Edit" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_EDIT_CONFIGURATION"]</a>
+                                <a class="dropdown-item bg-dark text-muted text-center text-lg-left profile-action" href="#" data-action="GenerateLoginToken" title="@loc["WEBFRONT_ACTION_TOKEN"]">@loc["WEBFRONT_ACTION_TOKEN"]</a>
+                                <a asp-controller="Account" asp-action="LogoutAsync" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_LOGOUT"]</a>
                             </div>
                         </li>
                     }

@@ -186,7 +186,15 @@ namespace IW4MAdmin
 
                 else
                 {
-                    Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
+                    if (Manager.GetPrivilegedClients().ContainsKey(E.Target.ClientId))
+                    {
+                        Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
+                    }
+
+                    else
+                    {
+                        Manager.GetPrivilegedClients().Add(E.Target.ClientId, E.Target);
+                    }
                 }
 
                 Logger.WriteInfo($"{E.Origin} is setting {E.Target} to permission level {newPermission}");
@@ -1002,10 +1010,11 @@ namespace IW4MAdmin
                 Link = targetClient.AliasLink,
                 AutomatedOffense = originClient.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
                 IsEvadedOffense = isEvade
+
             };
 
-            await Manager.GetPenaltyService().Create(newPenalty);
             targetClient.SetLevel(Permission.Banned, originClient);
+            await Manager.GetPenaltyService().Create(newPenalty);
         }
 
         override public async Task Unban(string reason, EFClient Target, EFClient Origin)

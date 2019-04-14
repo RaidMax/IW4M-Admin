@@ -10,7 +10,7 @@ namespace WebfrontCore.ViewModels
 {
     public class ConfigurationInfo
     {
-        public string PropertyName => PropertyInfo.Name;
+        public string PropertyName { get; set; }
         public PropertyInfo PropertyInfo { get; set; }
         public IList PropertyValue { get; set; }
         public IBaseConfiguration Configuration { get; set; }

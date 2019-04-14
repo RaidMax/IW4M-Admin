@@ -1,4 +1,4 @@
-﻿using SharedLibraryCore.Helpers;
+﻿using SharedLibraryCore.Configuration.Attributes;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Configuration
     {
 
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
-        [LinkedConfiguration("WebfrontBindUrl", "ManualWebfrontUrl")]
+        [ConfiguratinLinked("WebfrontBindUrl", "ManualWebfrontUrl")]
         public bool EnableWebFront { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BIND_URL")]
         public string WebfrontBindUrl { get; set; }
@@ -27,14 +27,14 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_IGNORE_BOTS")]
         public bool IgnoreBots { get; set; }
 
-        [LinkedConfiguration("CustomSayName")]
+        [ConfiguratinLinked("CustomSayName")]
         [LocalizedDisplayName("SETUP_ENABLE_CUSTOMSAY")]
         public bool EnableCustomSayName { get; set; }
         [LocalizedDisplayName("SETUP_SAY_NAME")]
         public string CustomSayName { get; set; }
 
         [LocalizedDisplayName("SETUP_DISPLAY_SOCIAL")]
-        [LinkedConfiguration("SocialLinkAddress", "SocialLinkTitle")]
+        [ConfiguratinLinked("SocialLinkAddress", "SocialLinkTitle")]
         public bool EnableSocialLink { get; set; }
         [LocalizedDisplayName("SETUP_SOCIAL_LINK")]
         public string SocialLinkAddress { get; set; }
@@ -42,18 +42,19 @@ namespace SharedLibraryCore.Configuration
         public string SocialLinkTitle { get; set; }
 
         [LocalizedDisplayName("SETUP_USE_CUSTOMENCODING")]
-        [LinkedConfiguration("CustomParserEncoding")]
+        [ConfiguratinLinked("CustomParserEncoding")]
         public bool EnableCustomParserEncoding { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENCODING")]
         public string CustomParserEncoding { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_WHITELIST")]
-        [LinkedConfiguration("WebfrontConnectionWhitelist")]
+        [ConfiguratinLinked("WebfrontConnectionWhitelist")]
         public bool EnableWebfrontConnectionWhitelist { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_WHITELIST_LIST")]
         public List<string> WebfrontConnectionWhitelist { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
-        [LinkedConfiguration("CustomLocale")]
+        [ConfiguratinLinked("CustomLocale")]
         public bool EnableCustomLocale { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         public string CustomLocale { get; set; }
@@ -119,14 +120,7 @@ namespace SharedLibraryCore.Configuration
             }
 
             RConPollRate = 5000;
-            DisallowedClientNames = new List<string>()
-            {
-                "Unknown Soldier",
-                "UnknownSoldier",
-                "CHEATER",
-                "VickNet"
-            };
-
+            AutoMessagePeriod = 60;
             return this;
         }
 

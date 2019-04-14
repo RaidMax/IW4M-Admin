@@ -152,6 +152,7 @@
 #profile_avatar {
     min-width: 8rem;
     min-height: 8rem;
+    background-size: contain;
 }
 
 .profile-shortcode {
@@ -181,7 +182,7 @@
     cursor: pointer;
 }
 
-    .profile-action:hover {
+    .profile-action.oi:hover {
         opacity: 0.75;
     }
 

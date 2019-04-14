@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Configuration.Attributes;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,15 +8,27 @@ namespace SharedLibraryCore.Configuration
 {
     public class ServerConfiguration : IBaseConfiguration
     {
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_IP")]
         public string IPAddress { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PORT")]
         public int Port { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PASSWORD")]
         public string Password { get; set; }
-        public IList<string> Rules { get; set; }
-        public IList<string> AutoMessages { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RULES")]
+        public List<string> Rules { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_AUTO_MESSAGES")]
+        public List<string> AutoMessages { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PATH")]
+        [ConfigurationOptional]
         public string ManualLogPath { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RCON_PARSER")]
         public string RConParserVersion { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_EVENT_PARSER")]
         public string EventParserVersion { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RESERVED_SLOT")]
         public int ReservedSlotNumber { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_GAME_LOG_SERVER")]
+        [ConfigurationOptional]
         public Uri GameLogServerUrl { get; set; }
 
         private readonly IList<IRConParser> rconParsers;
@@ -25,6 +38,8 @@ namespace SharedLibraryCore.Configuration
         {
             rconParsers = new List<IRConParser>();
             eventParsers = new List<IEventParser>();
+            Rules = new List<string>();
+            AutoMessages = new List<string>();
         }
 
         public void AddRConParser(IRConParser parser)

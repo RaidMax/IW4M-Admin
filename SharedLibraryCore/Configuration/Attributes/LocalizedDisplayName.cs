@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 
-namespace SharedLibraryCore.Configuration
+namespace SharedLibraryCore.Configuration.Attributes
 {
-    class LocalizedDisplayNameAttribute : DisplayNameAttribute
+    class LocalizedDisplayName : DisplayNameAttribute
     {
         private readonly string _localizationKey;
-        public LocalizedDisplayNameAttribute(string localizationKey)
+        public LocalizedDisplayName(string localizationKey)
         {
             _localizationKey = localizationKey;
         }

@@ -13,16 +13,11 @@
 
     $('.configuration-add-new').click(function (e) {
         e.preventDefault();
-        //let totalItems = $(this).siblings().length;
-        //let inputHtml = $(this).siblings().last().get(0).outerHTML;
-        //inputHtml = inputHtml.replace('_' + totalItems - 1 + '_', '_' + totalItems + '_');
-        //inputHtml = inputHtml.replace('[' + totalItems - 1 + ']', '[' + totalItems + ']');
-        //$(this).parent().prepend(inputHtml);
-
+ 
         let parentElement = $(this).parent();
 
         $.get($(this).attr('href') + '&itemCount=' + $(this).siblings().length, function (response) {
-            parentElement.prepend(response);
+            $(response).insertBefore(parentElement.children().last());
         });
     });
 });

@@ -244,19 +244,9 @@ namespace SharedLibraryCore.Services
 
                     // this updates the level for all the clients with the same LinkId
                     // only if their new level is flagged or banned
-                    await iqMatchingClients.ForEachAsync(async (_client) =>
+                    await iqMatchingClients.ForEachAsync(_client =>
                     {
                         _client.Level = newPermission;
-
-                        // hack this saves our change to the change history log
-                        await changeSvc.Add(new GameEvent()
-                        {
-                            Type = GameEvent.EventType.ChangePermission,
-                            Extra = newPermission,
-                            Origin = origin,
-                            Owner = temporalClient.CurrentServer,
-                            Target = _client
-                        }, ctx);
 #if DEBUG == true
                         temporalClient.CurrentServer.Logger.WriteDebug($"Updated linked {_client.ClientId} to {newPermission}");
 #endif
@@ -451,7 +441,7 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<EFClient>> FindClientsByIdentifier(string identifier)
         {
-            if (identifier.Length < 3)
+            if (identifier?.Length < 3)
             {
                 return new List<EFClient>();
             }
@@ -468,7 +458,7 @@ namespace SharedLibraryCore.Services
                                 alias.Name.ToLower().Contains(identifier)
                                  select alias.LinkId).Distinct();
 
-                var linkIds = iqLinkIds.ToList();
+                var linkIds = await iqLinkIds.ToListAsync();
 
                 var iqClients = context.Clients
                     .Where(c => linkIds.Contains(c.AliasLinkId) ||

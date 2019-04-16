@@ -573,7 +573,7 @@ namespace IW4MAdmin.Application
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
 
-            if (failedServers > 0 && successServers > 0)
+            if (successServers - failedServers <= 0)
             {
                 if (!Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_START_WITH_ERRORS"]))
                 {

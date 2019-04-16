@@ -48,11 +48,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                 if (containsObjectionalWord)
                 {
-                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, new EFClient()
-                    {
-                        ClientId = 1,
-                        CurrentServer = E.Owner
-                    });
+                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, Utilities.IW4MAdminClient(E.Owner));
                 };
             }
 

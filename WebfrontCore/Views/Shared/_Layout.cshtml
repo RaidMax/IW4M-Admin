@@ -57,7 +57,10 @@
                             <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
                                 <a asp-controller="Console" asp-action="Index" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_CONSOLE"]</a>
                                 <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@ViewBag.User.ClientId" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_PROFILE"]</a>
-                                <a asp-controller="Configuration" asp-action="Edit" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_EDIT_CONFIGURATION"]</a>
+                                @if (ViewBag.User.Level == SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+                                {
+                                    <a asp-controller="Configuration" asp-action="Edit" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_EDIT_CONFIGURATION"]</a>
+                                }
                                 <a class="dropdown-item bg-dark text-muted text-center text-lg-left profile-action" href="#" data-action="GenerateLoginToken" title="@loc["WEBFRONT_ACTION_TOKEN"]">@loc["WEBFRONT_ACTION_TOKEN"]</a>
                                 <a asp-controller="Account" asp-action="LogoutAsync" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_LOGOUT"]</a>
                             </div>
@@ -76,6 +79,7 @@
             </div>
         </nav>
     </header>
+
     <!-- loading icon -->
     <div class="oi oi-loop-circular layout-loading-icon"></div>
 

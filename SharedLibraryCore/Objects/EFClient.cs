@@ -412,6 +412,16 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
+            else if (Level == newPermission)
+            {
+                e.FailReason = GameEvent.EventFailReason.Invalid;
+            }
+
+            else
+            {
+                Level = newPermission;
+            }
+
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }

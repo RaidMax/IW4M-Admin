@@ -12,12 +12,22 @@ namespace WebfrontCore.Controllers
     {
         public IActionResult Edit()
         {
+            if (Client.Level != SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            {
+                return Unauthorized();
+            }
+
             return View("Index", Manager.GetApplicationSettings().Configuration());
         }
 
         [HttpPost]
         public async Task<IActionResult> Edit(ApplicationConfiguration newConfiguration, bool addNewServer = false, bool shouldSave = false)
         {
+            if (Client.Level != SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            {
+                return Unauthorized();
+            }
+
             if (shouldSave)
             {
                 var currentConfiguration = Manager.GetApplicationSettings().Configuration();
@@ -48,6 +58,11 @@ namespace WebfrontCore.Controllers
 
         public IActionResult GetNewListItem(string propertyName, int itemCount)
         {
+            if (Client.Level != SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            {
+                return Unauthorized();
+            }
+
             var configInfo = new ConfigurationInfo()
             {
                 NewItemCount = itemCount,

@@ -140,9 +140,14 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> Meta(int id, int count, int offset, DateTime? startAt)
         {
-            var meta = await MetaService.GetRuntimeMeta(id, startAt == null ? offset : 0, count, startAt ?? DateTime.UtcNow);
+            IEnumerable<ProfileMeta> meta = await MetaService.GetRuntimeMeta(id, startAt == null ? offset : 0, count, startAt ?? DateTime.UtcNow);
 
-            if (meta.Count == 0)
+            if (!Authorized)
+            {
+                meta = meta.Where(_meta => !_meta.Sensitive);
+            }
+            
+            if (meta.Count() == 0)
             {
                 return Ok();
             }

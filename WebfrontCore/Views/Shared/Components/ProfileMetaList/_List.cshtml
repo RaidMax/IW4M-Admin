@@ -1,4 +1,4 @@
-﻿@model List<SharedLibraryCore.Dtos.ProfileMeta>
+﻿@model IEnumerable<SharedLibraryCore.Dtos.ProfileMeta>
 @{
     Layout = null;
 
@@ -33,7 +33,7 @@
     }
 }
 
-@if (Model.Count == 0)
+@if (Model.Count() == 0)
 {
     <div class="p2 text-muted profile-event-timestep">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_NONE"]</div>
 }

@@ -1278,8 +1278,8 @@ namespace SharedLibraryCore.Commands
         public CNextMap() : base("nextmap", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_DESC"], "nm", EFClient.Permission.User, false) { }
         public static async Task<string> GetNextMap(Server s)
         {
-            string mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value.ToLower();
-            var regexMatches = Regex.Matches(mapRotation, @"(gametype +([a-z]{1,4}))? *map ([a-z|_]+)", RegexOptions.IgnoreCase).ToList();
+            string mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value?.ToLower() ?? "";
+            var regexMatches = Regex.Matches(mapRotation, @"((?:gametype|exec) +(?:([a-z]{1,4})(?:.cfg)?))? *map ([a-z|_|\d]+)", RegexOptions.IgnoreCase).ToList();
 
             // find the current map in the rotation
             var currentMap = regexMatches.Where(m => m.Groups[3].ToString() == s.CurrentMap.Name);
@@ -1289,7 +1289,7 @@ namespace SharedLibraryCore.Commands
             // no maprotation at all
             if (regexMatches.Count() == 0)
             {
-                return $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(s.CurrentMap.Alias)}/{Utilities.GetLocalizedGametype(s.Gametype)}";
+                return Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(s.CurrentMap.Alias, Utilities.GetLocalizedGametype(s.Gametype));
             }
 
             // the current map is not in rotation
@@ -1318,12 +1318,14 @@ namespace SharedLibraryCore.Commands
                regexMatches[regexMatches.IndexOf(currentMap.First()) + 1] :
                regexMatches.First();
 
-            nextMap = s.Maps.FirstOrDefault(m => m.Name == nextMapMatch.Groups[3].ToString()) ?? nextMap;
+            string nextMapName = nextMapMatch.Groups[3].ToString();
+
+            nextMap = s.Maps.FirstOrDefault(m => m.Name == nextMapMatch.Groups[3].ToString()) ?? new Map() { Alias = nextMapName, Name = nextMapName };
             string nextGametype = nextMapMatch.Groups[2].ToString().Length == 0 ?
                 Utilities.GetLocalizedGametype(s.Gametype) :
                 Utilities.GetLocalizedGametype(nextMapMatch.Groups[2].ToString());
 
-            return $"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"]} ^5{nextMap.Alias}/{nextGametype}";
+            return Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(nextMap.Alias, nextGametype);
         }
 
         public override async Task ExecuteAsync(GameEvent E)

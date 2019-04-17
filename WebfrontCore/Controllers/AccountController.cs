@@ -29,19 +29,19 @@ namespace WebfrontCore.Controllers
 //                var client = Utilities.IW4MAdminClient();
 //                bool loginSuccess = true;
 //#else
-                var client = Manager.GetPrivilegedClients()[clientId];
-                bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(client.NetworkId, password) ||
-                    (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, client.PasswordSalt)))[0] == client.Password;
+                var privilegedClient = Manager.GetPrivilegedClients()[clientId];
+                bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(privilegedClient.NetworkId, password) ||
+                    (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
 //#endif
 
                 if (loginSuccess)
                 {
                     var claims = new[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, client.Name),
-                        new Claim(ClaimTypes.Role, client.Level.ToString()),
-                        new Claim(ClaimTypes.Sid, client.ClientId.ToString()),
-                        new Claim(ClaimTypes.PrimarySid, client.NetworkId.ToString())
+                        new Claim(ClaimTypes.NameIdentifier, privilegedClient.Name),
+                        new Claim(ClaimTypes.Role, privilegedClient.Level.ToString()),
+                        new Claim(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
+                        new Claim(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X"))
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");

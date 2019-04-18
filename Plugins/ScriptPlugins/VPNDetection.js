@@ -1,6 +1,6 @@
 var plugin = {
     author: 'RaidMax',
-    version: 1.0,
+    version: 1.1,
     name: 'VPN Detection Plugin',
 
     manager: null,
@@ -33,7 +33,7 @@ var plugin = {
             cl.Dispose();
             usingVPN = parsedJSON.success && parsedJSON.proxy;
         } catch (e) {
-            this.logger.WriteError(e.message);
+            this.logger.WriteWarning('There was a problem checking client IP for VPN ' + e.message);
         }
 
         if (usingVPN) {

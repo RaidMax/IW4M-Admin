@@ -92,7 +92,7 @@ namespace SharedLibraryCore.Configuration
                 }
             }
 
-            Port = Utilities.PromptInt(Utilities.PromptString(loc["SETUP_SERVER_PORT"]), null, 1, ushort.MaxValue);
+            Port = Utilities.PromptInt(loc["SETUP_SERVER_PORT"], null, 1, ushort.MaxValue);
             Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
             AutoMessages = new List<string>();
             Rules = new List<string>();

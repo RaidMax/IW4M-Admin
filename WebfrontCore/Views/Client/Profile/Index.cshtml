@@ -86,7 +86,7 @@
         <div class="text-center text-lg-left mr-0 mr-lg-4">
             @foreach (var meta in metaColumn)
             {
-                <div class="profile-meta-entry">
+                <div class="profile-meta-entry" title="@(string.IsNullOrEmpty(meta.Extra) ? meta.Key : meta.Extra)">
                     <span class="profile-meta-value text-primary">@meta.Value</span>
                     <span class="profile-meta-title text-muted"> @meta.Key</span>
                 </div>

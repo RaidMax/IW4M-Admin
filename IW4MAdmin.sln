@@ -41,6 +41,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 		Plugins\ScriptPlugins\ParserCoD4x.js = Plugins\ScriptPlugins\ParserCoD4x.js
 		Plugins\ScriptPlugins\ParserIW4x.js = Plugins\ScriptPlugins\ParserIW4x.js
 		Plugins\ScriptPlugins\ParserPT6.js = Plugins\ScriptPlugins\ParserPT6.js
+		Plugins\ScriptPlugins\ParserRektT5M.js = Plugins\ScriptPlugins\ParserRektT5M.js
 		Plugins\ScriptPlugins\ParserTeknoMW3.js = Plugins\ScriptPlugins\ParserTeknoMW3.js
 		Plugins\ScriptPlugins\SharedGUIDKick.js = Plugins\ScriptPlugins\SharedGUIDKick.js
 		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js
@@ -52,7 +53,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{A848FCF1-852
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StatsWeb", "Plugins\Web\StatsWeb\StatsWeb.csproj", "{776B348B-F818-4A0F-A625-D0AF8BAD3E9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutomessageFeed", "Plugins\AutomessageFeed\AutomessageFeed.csproj", "{F5815359-CFC7-44B4-9A3B-C04BACAD5836}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomessageFeed", "Plugins\AutomessageFeed\AutomessageFeed.csproj", "{F5815359-CFC7-44B4-9A3B-C04BACAD5836}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

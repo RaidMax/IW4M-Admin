@@ -88,9 +88,10 @@ namespace SharedLibraryCore.Plugins
                             }
                         }
 
-                        catch (Exception E)
+                        catch (Exception e)
                         {
-                            Manager.GetLogger(0).WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"]} {Plugin.Location} - {E.Message}");
+                            Manager.GetLogger(0).WriteWarning(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"].FormatExt(Plugin.Location));
+                            Manager.GetLogger(0).WriteDebug(e.GetExceptionInfo());
                         }
                     }
                 }

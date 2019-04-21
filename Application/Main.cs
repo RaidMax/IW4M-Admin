@@ -34,10 +34,11 @@ namespace IW4MAdmin.Application
             try
             {
                 ServerManager = ApplicationManager.GetInstance();
+                var configuration = ServerManager.GetApplicationSettings().Configuration();
 
-                if (ServerManager.GetApplicationSettings().Configuration() != null)
+                if (configuration != null)
                 {
-                    Localization.Configure.Initialize(ServerManager.GetApplicationSettings().Configuration().CustomLocale);
+                    Localization.Configure.Initialize(configuration.EnableCustomLocale ? (configuration.CustomLocale ?? "windows-1252") : "windows-1252");
                 }
 
                 else

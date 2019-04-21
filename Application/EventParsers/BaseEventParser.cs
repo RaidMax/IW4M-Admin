@@ -17,26 +17,26 @@ namespace IW4MAdmin.Application.EventParsers
                 GameDirectory = "main",
             };
 
-            Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{8,32});([0-9]+);(.+);(.*)$";
+            Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{1,32});([0-9]+);(.+);(.*)$";
             Configuration.Say.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginName, 4);
             Configuration.Say.AddMapping(ParserRegex.GroupType.Message, 5);
 
-            Configuration.Quit.Pattern = @"^(Q);(-?[A-Fa-f0-9_]{8,32}|bot[0-9]+);([0-9]+);(.*)$";
+            Configuration.Quit.Pattern = @"^(Q);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);([0-9]+);(.*)$";
             Configuration.Quit.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
-            Configuration.Join.Pattern = @"^(J);(-?[A-Fa-f0-9_]{8,32}|bot[0-9]+);([0-9]+);(.*)$";
+            Configuration.Join.Pattern = @"^(J);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);([0-9]+);(.*)$";
             Configuration.Join.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
-            Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{8,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world);(.{1,24});(-?[A-Fa-f0-9_]{8,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world);(.{1,24})?;((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world);(.{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world);(.{1,24})?;((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Damage.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);
@@ -51,7 +51,7 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Damage.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.HitLocation, 13);
 
-            Configuration.Kill.Pattern = @"^(K);(-?[A-Fa-f0-9_]{8,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world);(.{1,24});(-?[A-Fa-f0-9_]{8,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world);(.{1,24})?;((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            Configuration.Kill.Pattern = @"^(K);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world);(.{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world);(.{1,24})?;((?:[0-9]+|[a-z]+|_)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Kill.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);

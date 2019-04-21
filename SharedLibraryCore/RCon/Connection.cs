@@ -156,7 +156,7 @@ namespace SharedLibraryCore.RCon
 
                     connectionState.OnComplete.Release(1);
                     //Log.WriteDebug(ex.GetExceptionInfo());
-                    throw new NetworkException($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}]");
+                    throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"].FormatExt(Endpoint));
                 }
             }
 

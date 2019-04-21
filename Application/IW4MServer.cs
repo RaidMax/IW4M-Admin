@@ -715,7 +715,7 @@ namespace IW4MAdmin
             {
                 if (e is NetworkException)
                 {
-                    Logger.WriteError($"{loc["SERVER_ERROR_COMMUNICATION"]} {IP}:{Port}");
+                    Logger.WriteError(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"[{IP}:{Port}]"));
                     Logger.WriteDebug(e.GetExceptionInfo());
                 }
 
@@ -724,7 +724,7 @@ namespace IW4MAdmin
 
             catch (Exception E)
             {
-                Logger.WriteError($"{loc["SERVER_ERROR_EXCEPTION"]} {IP}:{Port}");
+                Logger.WriteError(loc["SERVER_ERROR_EXCEPTION"].FormatExt($"[{IP}:{Port}]"));
                 Logger.WriteDebug(E.GetExceptionInfo());
                 return false;
             }

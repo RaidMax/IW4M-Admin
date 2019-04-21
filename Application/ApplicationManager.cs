@@ -554,7 +554,7 @@ namespace IW4MAdmin.Application
 
                 catch (ServerException e)
                 {
-                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"]} [{Conf.IPAddress}:{Conf.Port}]");
+                    Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"].FormatExt($"[{Conf.IPAddress}:{Conf.Port}]"));
 
                     if (e.GetType() == typeof(DvarException))
                     {

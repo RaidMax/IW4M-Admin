@@ -102,7 +102,10 @@ namespace SharedLibraryCore.Configuration
             EnableCustomSayName = Utilities.PromptBool(loc["SETUP_ENABLE_CUSTOMSAY"]);
 
             bool useCustomParserEncoding = Utilities.PromptBool(loc["SETUP_USE_CUSTOMENCODING"]);
-            CustomParserEncoding = useCustomParserEncoding ? Utilities.PromptString(loc["SETUP_ENCODING_STRING"]) : "windows-1252";
+            if (useCustomParserEncoding)
+            {
+                CustomParserEncoding = Utilities.PromptString(loc["SETUP_ENCODING_STRING"]);
+            }
 
             WebfrontBindUrl = "http://0.0.0.0:1624";
 

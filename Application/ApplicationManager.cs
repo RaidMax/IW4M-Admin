@@ -60,6 +60,7 @@ namespace IW4MAdmin.Application
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
         readonly ITokenAuthentication _authenticator;
         private readonly MetaService _metaService;
+        private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
 
         private ApplicationManager()
         {
@@ -193,7 +194,11 @@ namespace IW4MAdmin.Application
                     {
                         try
                         {
-                            await server.ProcessUpdatesAsync(new CancellationToken());
+                            await server.ProcessUpdatesAsync(token);
+                            if (server.Throttled)
+                            {
+                                await Task.Delay((int)_throttleTimeout.TotalMilliseconds);
+                            }
                         }
 
                         catch (Exception e)

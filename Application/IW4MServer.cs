@@ -27,6 +27,7 @@ namespace IW4MAdmin
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
         private DateTime SessionStart;
+
         public int Id { get; private set; }
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
@@ -174,6 +175,24 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task<bool> ProcessEvent(GameEvent E)
         {
+            if (E.Type == GameEvent.EventType.ConnectionLost)
+            {
+                var exception = E.Extra as Exception;
+                Logger.WriteError(exception.Message);
+                if (exception.Data["internal_exception"] != null)
+                {
+                    Logger.WriteDebug($"Internal Exception: {exception.Data["internal_exception"]}");
+                }
+                Logger.WriteInfo("Connection lost to server, so we are throttling the poll rate");
+                Throttled = true;
+            }
+
+            if (E.Type == GameEvent.EventType.ConnectionRestored)
+            {
+                Logger.WriteInfo("Connection restored to server, so we are no longer throttling the poll rate");
+                Throttled = false;
+            }
+
             if (E.Type == GameEvent.EventType.ChangePermission)
             {
                 var newPermission = (Permission)E.Extra;
@@ -515,8 +534,6 @@ namespace IW4MAdmin
 #if DEBUG
             Logger.WriteInfo($"Polling players took {(DateTime.Now - now).TotalMilliseconds}ms");
 #endif
-            Throttled = false;
-
             var disconnectingClients = currentClients.Except(polledClients);
             var connectingClients = polledClients.Except(currentClients);
             var updatedClients = polledClients.Except(connectingClients).Except(disconnectingClients);
@@ -632,7 +649,7 @@ namespace IW4MAdmin
 
                     if (ConnectionErrors > 0)
                     {
-                        Logger.WriteVerbose(loc["MANAGER_CONNECTION_REST"].FormatExt($"{IP}:{Port}"));
+                        Logger.WriteVerbose(loc["MANAGER_CONNECTION_REST"].FormatExt($"[{IP}:{Port}]"));
 
                         var _event = new GameEvent()
                         {
@@ -643,8 +660,6 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(_event);
-
-                        Throttled = false;
                     }
 
                     ConnectionErrors = 0;
@@ -656,9 +671,6 @@ namespace IW4MAdmin
                     ConnectionErrors++;
                     if (ConnectionErrors == 3)
                     {
-                        Logger.WriteError($"{e.Message} {IP}:{Port}, {loc["SERVER_ERROR_POLLING"]}");
-                        Logger.WriteDebug($"Internal Exception: {e.Data["internal_exception"]}");
-
                         var _event = new GameEvent()
                         {
                             Type = GameEvent.EventType.ConnectionLost,
@@ -670,8 +682,6 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(_event);
-
-                        Throttled = true;
                     }
                     return true;
                 }
@@ -713,9 +723,9 @@ namespace IW4MAdmin
             // this one is ok
             catch (ServerException e)
             {
-                if (e is NetworkException)
+                if (e is NetworkException && !Throttled)
                 {
-                    Logger.WriteError(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"[{IP}:{Port}]"));
+                    Logger.WriteError(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{IP}:{Port}"));
                     Logger.WriteDebug(e.GetExceptionInfo());
                 }
 

@@ -408,11 +408,36 @@ namespace IW4MAdmin.Plugins.Stats
                     messageMeta = await messages.Select(m => new ProfileMeta()
                     {
                         Key = null,
-                        Value = m.Message,
+                        Value = new { m.Message, m.Server.GameName },
                         When = m.TimeSent,
                         Extra = m.ServerId.ToString(),
                         Type = ProfileMeta.MetaType.ChatMessage
                     }).ToListAsync();
+
+                    foreach (var message in messageMeta)
+                    {
+                        if ((message.Value.Message as string).IsQuickMessage())
+                        {
+                            try
+                            {
+                                var quickMessages = ServerManager.GetApplicationSettings().Configuration()
+                                    .QuickMessages
+                                    .First(_qm => _qm.Game == message.Value.GameName);
+                                message.Value = quickMessages.Messages[(message.Value.Message as string).Substring(1)];
+                                message.Type = ProfileMeta.MetaType.QuickMessage;
+                            }
+                            catch
+                            {
+                                message.Value = message.Value.Message;
+                            }
+                        }
+
+                        else
+                        {
+                            message.Value = message.Value.Message;
+                        }
+                    }
+
                 }
 
                 return messageMeta;

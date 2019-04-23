@@ -71,14 +71,31 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                                      ClientId = message.ClientId,
                                      Message = message.Message,
                                      Name = message.Client.CurrentAlias.Name,
-                                     Time = message.TimeSent
+                                     Time = message.TimeSent,
+                                     ServerGame = message.Server.GameName ?? Server.Game.IW4
                                  };
 
 #if DEBUG == true
                 var messagesSql = iqMessages.ToSql();
 #endif
-
                 var messages = await iqMessages.ToListAsync();
+
+                foreach (var message in messages)
+                {
+                    if (message.Message.IsQuickMessage())
+                    {
+                        try
+                        {
+                            var quickMessages = Manager.GetApplicationSettings().Configuration()
+                                .QuickMessages
+                                .First(_qm => _qm.Game == message.ServerGame);
+                            message.Message = quickMessages.Messages[message.Message.Substring(1)];
+                            message.IsQuickMessage = true;
+
+                        }
+                        catch { }
+                    }
+                }
 
                 return View("_MessageContext", messages);
             }

@@ -4,7 +4,6 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -45,8 +44,9 @@ namespace SharedLibraryCore.Database
         public override void Dispose()
         {
 #if DEBUG == true
-            activeContextCount--;
+
             Console.WriteLine($"Disposed DB Context #{activeContextCount}");
+            activeContextCount--;
 #endif
         }
 

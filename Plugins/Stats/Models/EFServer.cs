@@ -2,6 +2,7 @@
 using SharedLibraryCore.Database.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Plugins.Stats.Models
 {
@@ -13,5 +14,6 @@ namespace IW4MAdmin.Plugins.Stats.Models
         [Required]
         public int Port { get; set; }
         public string EndPoint { get; set; }
+        public Game? GameName { get; set; }
     }
 }

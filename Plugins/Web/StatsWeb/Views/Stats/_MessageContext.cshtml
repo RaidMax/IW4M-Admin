@@ -8,7 +8,7 @@
     <div class="bg-dark p-3 mb-2 border-bottom">
         @foreach (var message in Model)
         {
-            <span class="text-white">@message.Name</span><span> &mdash; @message.Message</span><br />
+            <span class="text-white">@message.Name</span><span> &mdash; <span class="@(message.IsQuickMessage ? "font-italic" : "")">@message.Message</span></span><br />
         }
     </div>
 </div>

@@ -222,11 +222,20 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         {
                             Port = sv.GetPort(),
                             EndPoint = sv.ToString(),
-                            ServerId = serverId
+                            ServerId = serverId,
+                            GameName = sv.GameName
                         };
 
                         server = serverSet.Add(server).Entity;
                         // this doesn't need to be async as it's during initialization
+                        ctx.SaveChanges();
+                    }
+
+                    // we want to set the gamename up if it's never been set, or it changed
+                    else if (!server.GameName.HasValue || server.GameName.HasValue && server.GameName.Value != sv.GameName)
+                    {
+                        server.GameName = sv.GameName;
+                        ctx.Entry(server).Property(_prop => _prop.GameName).IsModified = true;
                         ctx.SaveChanges();
                     }
                 }

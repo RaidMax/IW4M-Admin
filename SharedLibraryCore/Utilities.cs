@@ -782,6 +782,11 @@ namespace SharedLibraryCore
             }
         }
 
+        public static bool IsQuickMessage(this string message)
+        {
+            return Regex.IsMatch(message, @"^\u0014(?:[A-Z]|_)+$");
+        }
+
 #if DEBUG == true
 
         private static readonly TypeInfo QueryCompilerTypeInfo = typeof(QueryCompiler).GetTypeInfo();

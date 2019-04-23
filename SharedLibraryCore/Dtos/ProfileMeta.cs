@@ -16,6 +16,7 @@ namespace SharedLibraryCore.Dtos
             ChatMessage,
             Penalized,
             ReceivedPenalty,
+            QuickMessage
         }
 
         public DateTime When { get; set; }

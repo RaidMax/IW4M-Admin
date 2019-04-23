@@ -1,4 +1,5 @@
 ﻿using System;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Dtos
 {
@@ -8,5 +9,7 @@ namespace SharedLibraryCore.Dtos
         public string Message { get; set; }
         public DateTime Time { get; set; }
         public string Name { get; set; }
+        public Game ServerGame { get; set; }
+        public bool IsQuickMessage { get; set; }
     }
 }

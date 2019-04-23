@@ -120,7 +120,7 @@ namespace SharedLibraryCore.RCon
         retrySend:
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
             {
-                //DontFragment = true,
+                DontFragment = true,
                 Ttl = 100,
                 ExclusiveAddressUse = true,
             })
@@ -138,7 +138,7 @@ namespace SharedLibraryCore.RCon
 
                     if (response.Length == 0 && waitForResponse)
                     {
-                        throw new Exception();
+                        throw new NetworkException("Expected response but got 0 bytes back");
                     }
 
                     connectionState.OnComplete.Release(1);
@@ -149,18 +149,16 @@ namespace SharedLibraryCore.RCon
                 {
                     if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
                     {
-                        // Log.WriteWarning($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"]} [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
                         await Task.Delay(StaticHelpers.FloodProtectionInterval);
                         goto retrySend;
                     }
 
                     connectionState.OnComplete.Release(1);
-                    //Log.WriteDebug(ex.GetExceptionInfo());
                     throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"].FormatExt(Endpoint));
                 }
             }
 
-            string responseString = Encoding.GetEncoding("windows-1252").GetString(response, 0, response.Length) + '\n';
+            string responseString = defaultEncoding.GetString(response, 0, response.Length) + '\n';
 
             if (responseString.Contains("Invalid password"))
             {
@@ -228,6 +226,8 @@ namespace SharedLibraryCore.RCon
                     throw new NetworkException("Timed out waiting for response", rconSocket);
                 }
             }
+
+            rconSocket.Close();
 
             byte[] response = connectionState.ReceiveBuffer
                 .Take(connectionState.ReceiveEventArgs.BytesTransferred)

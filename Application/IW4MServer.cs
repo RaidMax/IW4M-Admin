@@ -189,6 +189,10 @@ namespace IW4MAdmin
 
             if (E.Type == GameEvent.EventType.ConnectionRestored)
             {
+                if (Throttled)
+                {
+                    Logger.WriteVerbose(loc["MANAGER_CONNECTION_REST"].FormatExt($"[{IP}:{Port}]"));
+                }
                 Logger.WriteInfo("Connection restored to server, so we are no longer throttling the poll rate");
                 Throttled = false;
             }
@@ -390,18 +394,27 @@ namespace IW4MAdmin
             {
                 E.Data = E.Data.StripColors();
 
-                if (E.Data.Length > 0)
+                if (E.Data?.Length > 0)
                 {
-                    // this may be a fix for a hard to reproduce null exception error
-                    lock (ChatHistory)
+                    string message = E.Data;
+                    if (E.Data.IsQuickMessage())
                     {
-                        ChatHistory.Add(new ChatInfo()
+                        try
                         {
-                            Name = E.Origin.Name,
-                            Message = E.Data ?? "NULL",
-                            Time = DateTime.UtcNow
-                        });
+                            message = Manager.GetApplicationSettings().Configuration()
+                                .QuickMessages
+                                .First(_qm => _qm.Game == GameName)
+                                .Messages[E.Data.Substring(1)];
+                        }
+                        catch { }
                     }
+
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = message,
+                        Time = DateTime.UtcNow
+                    });
                 }
             }
 
@@ -649,8 +662,6 @@ namespace IW4MAdmin
 
                     if (ConnectionErrors > 0)
                     {
-                        Logger.WriteVerbose(loc["MANAGER_CONNECTION_REST"].FormatExt($"[{IP}:{Port}]"));
-
                         var _event = new GameEvent()
                         {
                             Type = GameEvent.EventType.ConnectionRestored,
@@ -921,7 +932,7 @@ namespace IW4MAdmin
 #if !DEBUG
             else
             {
-                string formattedKick = String.Format(RconParser.Configuration.CommandPrefixes.Kick, Target.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
+                string formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, Target.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
                 await Target.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
 #endif

@@ -13,7 +13,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -537,7 +536,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            // incase the add palyer event get delayed
+            // incase the add player event get delayed
             if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
             {
                 await AddPlayer(attacker);
@@ -571,7 +570,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Set<EFClientKill>().Add(hit);
                     }
 
-                    if (Plugin.Config.Configuration().EnableAntiCheat)
+                    if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot)
                     {
                         if (clientDetection.QueuedHits.Count > Detection.QUEUE_COUNT)
                         {
@@ -580,7 +579,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 clientDetection.QueuedHits = clientDetection.QueuedHits.OrderBy(_hits => _hits.TimeOffset).ToList();
                                 var oldestHit = clientDetection.QueuedHits.First();
                                 clientDetection.QueuedHits.RemoveAt(0);
-                                ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage), clientDetection, attacker, ctx);
+                                await ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage), clientDetection, attacker, ctx);
                             }
                         }
 
@@ -589,7 +588,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             clientDetection.QueuedHits.Add(hit);
                         }
 
-                        ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
+                        await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
                     }
 
                     ctx.Set<EFHitLocationCount>().UpdateRange(clientStats.HitLocations);
@@ -607,8 +606,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        void ApplyPenalty(DetectionPenaltyResult penalty, Detection clientDetection, EFClient attacker, DatabaseContext ctx)
+        async Task ApplyPenalty(DetectionPenaltyResult penalty, Detection clientDetection, EFClient attacker, DatabaseContext ctx)
         {
+            var penaltyClient = Utilities.IW4MAdminClient(attacker.CurrentServer);
             switch (penalty.ClientPenalty)
             {
                 case Penalty.PenaltyType.Ban:
@@ -616,22 +616,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         break;
                     }
-                    attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], new EFClient()
-                    {
-                        ClientId = 1,
-                        AdministeredPenalties = new List<EFPenalty>()
-                                    {
-                                        new EFPenalty()
-                                        {
-                                            AutomatedOffense = penalty.Type == Cheat.Detection.DetectionType.Bone ?
-                                                $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
-                                                $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
-                                        }
-                                    },
-                        Level = EFClient.Permission.Console,
-                        CurrentServer = attacker.CurrentServer,
 
-                    }, false);
+                    penaltyClient.AdministeredPenalties = new List<EFPenalty>()
+                    {
+                        new EFPenalty()
+                        {
+                            AutomatedOffense = penalty.Type == Detection.DetectionType.Bone ?
+                                $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
+                                $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
+                        }
+                    };
+
+                    await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], penaltyClient, false).WaitAsync();
+
                     if (clientDetection.Tracker.HasChanges)
                     {
                         SaveTrackedSnapshots(clientDetection, ctx);
@@ -647,23 +644,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
                             $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
 
-                    attacker.Flag(flagReason, new EFClient()
-                    {
-                        ClientId = 1,
-                        Level = EFClient.Permission.Console,
-                        CurrentServer = attacker.CurrentServer,
-                    });
+                    await attacker.Flag(flagReason, penaltyClient).WaitAsync();
 
                     if (clientDetection.Tracker.HasChanges)
                     {
                         SaveTrackedSnapshots(clientDetection, ctx);
                     }
-
                     break;
             }
         }
 
-        void SaveTrackedSnapshots(Cheat.Detection clientDetection, DatabaseContext ctx)
+        void SaveTrackedSnapshots(Detection clientDetection, DatabaseContext ctx)
         {
             // todo: why does this cause duplicate primary key
             var change = clientDetection.Tracker.GetNextChange();

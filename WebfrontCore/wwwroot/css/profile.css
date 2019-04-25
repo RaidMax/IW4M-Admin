@@ -153,6 +153,8 @@
     min-width: 8rem;
     min-height: 8rem;
     background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .profile-shortcode {

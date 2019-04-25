@@ -269,6 +269,7 @@ namespace SharedLibraryCore
         public static long ConvertLong(this string str)
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
+            int maxBots = 18;
             long id;
 
             if (str.Length <= 11) // 10 numeric characters + signed character
@@ -288,7 +289,7 @@ namespace SharedLibraryCore
             if (!string.IsNullOrEmpty(bot))
             {
                 // should set their GUID to the negation of their 1 based index  (-1 - -18)
-                return -(Convert.ToInt64(bot.Substring(3)) + 1);
+                return -(Convert.ToInt64(bot.Substring(3)) + 1) % maxBots;
             }
 
             return long.MinValue;

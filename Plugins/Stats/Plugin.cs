@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -76,13 +77,8 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 14)
+                    if (killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
-                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
-                        {
-                            return;
-                        }
-
                         // this treats "world" damage as self damage
                         if (E.Origin.ClientId <= 1)
                         {
@@ -99,13 +95,8 @@ namespace IW4MAdmin.Plugins.Stats
                     }
                     break;
                 case GameEvent.EventType.Kill:
-                    if (!E.Owner.CustomCallback)
+                    if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
-                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
-                        {
-                            return;
-                        }
-
                         // this treats "world" damage as self damage
                         if (E.Origin.ClientId <= 1)
                         {
@@ -121,13 +112,8 @@ namespace IW4MAdmin.Plugins.Stats
                     }
                     break;
                 case GameEvent.EventType.Damage:
-                    if (!E.Owner.CustomCallback)
+                    if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
-                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
-                        {
-                            return;
-                        }
-
                         // this treats "world" damage as self damage
                         if (E.Origin.ClientId <= 1)
                         {
@@ -144,13 +130,8 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (killInfo.Length >= 14)
+                    if (killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
-                        if (E.Origin.ClientId <= 1 && E.Target.ClientId <= 1)
-                        {
-                            return;
-                        }
-
                         // this treats "world" damage as self damage
                         if (E.Origin.ClientId <= 1)
                         {
@@ -499,6 +480,18 @@ namespace IW4MAdmin.Plugins.Stats
             {
                 await Manager.Sync(sv);
             }
+        }
+
+        /// <summary>
+        /// Indicates if the event should be ignored 
+        /// (If the client id or target id is not a real client or the target/origin is a bot and ignore bots is turned on)
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
+        {
+            return ((origin.ClientId <= 1 && target.ClientId <= 1) || (target.IsBot || origin.IsBot) && ServerManager.GetApplicationSettings().Configuration().IgnoreBots);
         }
     }
 }

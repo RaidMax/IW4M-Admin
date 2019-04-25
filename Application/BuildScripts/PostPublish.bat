@@ -97,6 +97,16 @@ if "%CurrentConfiguration%" == "Release" (
 	if exist "%SolutionDir%Publish\Windows\refs" move "%SolutionDir%Publish\Windows\refs" "%SolutionDir%Publish\Windows\Lib\refs"
 )
 
+if "%CurrentConfiguration%" == "Prerelease" (
+	echo PR-LOC
+	if not exist  "%SolutionDir%Publish\WindowsPrerelease\Localization" md "%SolutionDir%Publish\WindowsPrerelease\Localization"
+)
+
+if "%CurrentConfiguration%" == "Release" (
+	echo R-LOC
+	if not exist  "%SolutionDir%Publish\Windows\Localization" md "%SolutionDir%Publish\Windows\Localization"
+)
+
 echo making start scripts
 @(echo @echo off && echo @title IW4MAdmin && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
 @(echo @echo off && echo @title IW4MAdmin && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"

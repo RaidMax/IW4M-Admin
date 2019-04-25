@@ -91,7 +91,6 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                                 .First(_qm => _qm.Game == message.ServerGame);
                             message.Message = quickMessages.Messages[message.Message.Substring(1)];
                             message.IsQuickMessage = true;
-
                         }
                         catch { }
                     }

@@ -267,7 +267,7 @@ namespace SharedLibraryCore
 
         public override string ToString()
         {
-            return $"{IP}-{Port}";
+            return $"{IP}:{Port}";
         }
 
         protected async Task<bool> ScriptLoaded()

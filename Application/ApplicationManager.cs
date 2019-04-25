@@ -133,7 +133,7 @@ namespace IW4MAdmin.Application
             catch (Exception ex)
             {
                 newEvent.FailReason = GameEvent.EventFailReason.Exception;
-                Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]} {newEvent.Owner}");
+                Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"].FormatExt(newEvent.Owner));
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
 

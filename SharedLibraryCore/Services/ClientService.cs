@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
@@ -439,11 +440,11 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<IList<EFClient>> FindClientsByIdentifier(string identifier)
+        public async Task<IList<PlayerInfo>> FindClientsByIdentifier(string identifier)
         {
             if (identifier?.Length < 3)
             {
-                return new List<EFClient>();
+                return new List<PlayerInfo>();
             }
 
             identifier = identifier.ToLower();
@@ -453,24 +454,59 @@ namespace SharedLibraryCore.Services
                 long networkId = identifier.ConvertLong();
                 int? ipAddress = identifier.ConvertToIP();
 
-                var iqLinkIds = (from alias in context.Aliases
-                                 where (alias.IPAddress != null && alias.IPAddress == ipAddress) ||
-                                alias.Name.ToLower().Contains(identifier)
-                                 select alias.LinkId).Distinct();
+                IQueryable<EFAlias> iqLinkIds = context.Aliases.Where(_alias => _alias.Active);
 
-                var linkIds = await iqLinkIds.ToListAsync();
+                // we want to query for the IP ADdress
+                if (ipAddress != null)
+                {
+                    iqLinkIds = iqLinkIds.Where(_alias => _alias.IPAddress == ipAddress);
+                }
 
+                // want to find them by name (wildcard)
+                // todo maybe not make it start with wildcard?
+                else
+                {
+                    iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.Name, $"%{identifier}%"));
+                }
+
+                var linkIds = await iqLinkIds
+                    .Select(_alias => _alias.LinkId)
+                    .ToListAsync();
+
+                // get all the clients that match the alias link or the network id
                 var iqClients = context.Clients
-                    .Where(c => linkIds.Contains(c.AliasLinkId) ||
-                        networkId == c.NetworkId)
-                    .Include(c => c.CurrentAlias)
-                    .Include(c => c.AliasLink.Children);
+                    .Where(_client => _client.Active);
 
+                if (networkId != long.MinValue)
+                {
+                    iqClients = iqClients.Where(_client => networkId == _client.NetworkId);
+                }
+                else
+                {
+                    iqClients = iqClients.Where(_client => linkIds.Contains(_client.AliasLinkId));
+                }
+                    
+                // we want to project our results 
+                var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)
+                    .Select(_client => new PlayerInfo()
+                    {
+                        Name = _client.CurrentAlias.Name,
+                        LevelInt = (int)_client.Level,
+                        LastConnection = _client.LastConnection,
+                        ClientId = _client.ClientId,
+                    });
 #if DEBUG == true
                 var iqClientsSql = iqClients.ToSql();
 #endif
+                var clients = await iqClientProjection.ToListAsync();
+                
+                // this is so we don't try to evaluate this in the linq to entities query
+                foreach (var client in clients)
+                {
+                    client.Level = ((Permission)client.LevelInt).ToLocalizedLevelName();
+                }
 
-                return await iqClients.ToListAsync();
+                return clients;
             }
         }
 

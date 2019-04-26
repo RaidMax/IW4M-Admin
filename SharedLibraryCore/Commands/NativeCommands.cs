@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Commands
 {
@@ -619,10 +620,7 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            IList<EFClient> db_players = (await (E.Owner.Manager.GetClientService() as ClientService)
-                .FindClientsByIdentifier(E.Data))
-                .OrderByDescending(p => p.LastConnection)
-                .ToList();
+            var db_players = (await (E.Owner.Manager.GetClientService() as ClientService).FindClientsByIdentifier(E.Data));
 
             if (db_players.Count == 0)
             {
@@ -632,11 +630,11 @@ namespace SharedLibraryCore.Commands
 
             foreach (var P in db_players)
             {
-                string localizedLevel = Utilities.CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{P.Level.ToString().ToUpper()}"];
                 // they're not going by another alias
+                // /*P.AliasLink.Children.FirstOrDefault(a => a.Name.ToLower().Contains(E.Data.ToLower()))?.Name*/
                 string msg = P.Name.ToLower().Contains(E.Data.ToLower()) ?
-                    $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
-                    $"({P.AliasLink.Children.FirstOrDefault(a => a.Name.ToLower().Contains(E.Data.ToLower()))?.Name})->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor(P.Level, localizedLevel)}^7] - {P.IPAddressString} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
+                    $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor((Permission)P.LevelInt, P.Level)}^7] - {P.IPAddress} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
+                    $"()->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor((Permission)P.LevelInt, P.Level)}^7] - {P.IPAddress} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
                 E.Origin.Tell(msg);
             }
         }

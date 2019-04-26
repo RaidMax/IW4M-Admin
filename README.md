@@ -1,6 +1,6 @@
 # IW4MAdmin
 ### Quick Start Guide
-### Version 2.2
+### Version 2.3
 _______
 ### About
 **IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6), ~~[Pluto IW5](https://forum.plutonium.pw/category/5/plutonium-iw5)~~, and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.

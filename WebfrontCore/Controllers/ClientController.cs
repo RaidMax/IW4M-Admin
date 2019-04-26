@@ -121,18 +121,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> FindAsync(string clientName)
         {
-            var clients = (await Manager.GetClientService().FindClientsByIdentifier(clientName))
-                            .OrderByDescending(c => c.LastConnection);
-
-            var clientsDto = clients.Select(c => new PlayerInfo()
-            {
-                Name = c.Name,
-                Level = c.Level.ToLocalizedLevelName(),
-                LevelInt = (int)c.Level,
-                LastConnection = c.LastConnection,
-                ClientId = c.ClientId
-            })
-            .ToList();
+            var clientsDto = await Manager.GetClientService().FindClientsByIdentifier(clientName);
 
             ViewBag.Title = $"{clientsDto.Count} {Localization["WEBFRONT_CLIENT_SEARCH_MATCHING"]} \"{clientName}\"";
             return View("Find/Index", clientsDto);

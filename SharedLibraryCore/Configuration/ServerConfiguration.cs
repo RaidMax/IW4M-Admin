@@ -58,11 +58,11 @@ namespace SharedLibraryCore.Configuration
             var parserVersions = rconParsers.Select(_parser => _parser.Version).ToArray();
             var selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_RCON_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
 
-            if (selection.Item1 > 0)
+            if (selection.Item1 >= 0)
             {
                 RConParserVersion = selection.Item2;
 
-                if (!rconParsers[selection.Item1 - 1].CanGenerateLogPath)
+                if (selection.Item1 > 0 && !rconParsers[selection.Item1 - 1].CanGenerateLogPath)
                 {
                     Console.WriteLine(loc["SETUP_SERVER_NO_LOG"]);
                     ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_LOG_PATH"]);
@@ -72,7 +72,7 @@ namespace SharedLibraryCore.Configuration
             parserVersions = eventParsers.Select(_parser => _parser.Version).ToArray();
             selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_EVENT_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
 
-            if (selection.Item1 > 0)
+            if (selection.Item1 >= 0)
             {
                 EventParserVersion = selection.Item2;
             }

@@ -538,7 +538,7 @@ namespace SharedLibraryCore.Database.Models
             // kick them as their level is banned
             if (Level == Permission.Banned)
             {
-                var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active);
+                var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active && _penalty.Type == Penalty.PenaltyType.Ban);
 
                 if (profileBan == null)
                 {

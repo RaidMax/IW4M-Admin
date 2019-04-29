@@ -1135,12 +1135,12 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            if (E.Owner.ServerConfig.ManualLogPath != null)
+            if (E.Owner.ServerConfig.GameLogServerUrl != null)
             {
                 using (var wc = new WebClient())
                 {
                     E.Owner.RestartRequested = true;
-                    var response = await wc.DownloadStringTaskAsync(new Uri($"{E.Owner.ServerConfig.ManualLogPath}/restart"));
+                    var response = await wc.DownloadStringTaskAsync(new Uri($"{E.Owner.ServerConfig.GameLogServerUrl}/restart"));
                 }
             }
 

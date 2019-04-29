@@ -387,7 +387,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CIP());
             Commands.Add(new CMask());
             Commands.Add(new CPruneAdmins());
-            Commands.Add(new CKillServer());
+            //Commands.Add(new CKillServer());
             Commands.Add(new CSetPassword());
             Commands.Add(new CPing());
             Commands.Add(new CSetGravatar());

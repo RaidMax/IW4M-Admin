@@ -18,27 +18,11 @@ namespace SharedLibraryCore.Database
 
         public async Task Seed()
         {
-            // make sure database exists
-            //context.Database.EnsureCreated();
             context.Database.Migrate();
 
             if (context.AliasLinks.Count() == 0)
             {
-                context.AliasLinks.Add(new EFAliasLink()
-                {
-                    AliasLinkId = 1
-                });
-
-                var currentAlias = new EFAlias()
-                {
-                    AliasId = 1,
-                    Active = true,
-                    DateAdded = DateTime.UtcNow,
-                    Name = "IW4MAdmin",
-                    LinkId = 1
-                };
-
-                context.Aliases.Add(currentAlias);
+                var link = new EFAliasLink();
 
                 context.Clients.Add(new EFClient()
                 {
@@ -50,8 +34,14 @@ namespace SharedLibraryCore.Database
                     Level = Permission.Console,
                     Masked = true,
                     NetworkId = 0,
-                    AliasLinkId = 1,
-                    CurrentAliasId = 1,
+                    AliasLink = link,
+                    CurrentAlias = new EFAlias()
+                    {
+                        Link = link,
+                        Active = true,
+                        DateAdded = DateTime.UtcNow,
+                        Name = "IW4MAdmin",
+                    },
                 });
 
                 await context.SaveChangesAsync();

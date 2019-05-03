@@ -103,7 +103,7 @@ namespace SharedLibraryCore.Database.Models
                 Data = message
             };
 
-            this.CurrentServer?.Manager.GetEventHandler().AddEvent(e);
+            CurrentServer?.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
 
@@ -125,14 +125,14 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (this.Level > sender.Level)
+            if (Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
             else
             {
-                this.Warnings++;
+                Warnings++;
             }
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
@@ -156,13 +156,13 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (sender.Level <= this.Level)
+            if (sender.Level <= Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
                 return e;
             }
 
-            this.Warnings = 0;
+            Warnings = 0;
 
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
@@ -188,12 +188,12 @@ namespace SharedLibraryCore.Database.Models
 
             int reportCount = sender.GetAdditionalProperty<int>("_reportCount");
 
-            if (this.Level > sender.Level)
+            if (Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (this.Equals(sender))
+            else if (Equals(sender))
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
@@ -204,7 +204,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             else if (CurrentServer.Reports.Count(report => (report.Origin.NetworkId == sender.NetworkId &&
-                report.Target.NetworkId == this.NetworkId)) > 0)
+                report.Target.NetworkId == NetworkId)) > 0)
             {
                 e.FailReason = GameEvent.EventFailReason.Exception;
             }
@@ -232,12 +232,12 @@ namespace SharedLibraryCore.Database.Models
                 Owner = sender.CurrentServer
             };
 
-            if (this.Level >= sender.Level)
+            if (Level >= sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (this.Level == Permission.Flagged)
+            else if (Level == Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
@@ -264,12 +264,12 @@ namespace SharedLibraryCore.Database.Models
                 Owner = sender.CurrentServer
             };
 
-            if (sender.Level <= this.Level)
+            if (sender.Level <= Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (this.Level != Permission.Flagged)
+            else if (Level != Permission.Flagged)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
@@ -296,7 +296,7 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (this.Level > sender.Level)
+            if (Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
@@ -325,7 +325,7 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (sender.Level <= this.Level)
+            if (sender.Level <= Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
@@ -353,7 +353,7 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (sender.Level <= this.Level)
+            if (sender.Level <= Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
@@ -381,7 +381,7 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (this.Level > sender.Level)
+            if (Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
@@ -407,7 +407,7 @@ namespace SharedLibraryCore.Database.Models
                 Owner = sender.CurrentServer
             };
 
-            if (this.Level > sender.Level)
+            if (Level > sender.Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
@@ -675,7 +675,7 @@ namespace SharedLibraryCore.Database.Models
         }
 
         [NotMapped]
-        Dictionary<string, object> _additionalProperties;
+        readonly Dictionary<string, object> _additionalProperties;
 
         public T GetAdditionalProperty<T>(string name)
         {

@@ -28,7 +28,6 @@ namespace IW4MAdmin.Application
     {
         private List<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
-        public Dictionary<int, EFClient> PrivilegedClients { get; set; }
         public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
         public bool IsInitialized { get; private set; }
@@ -41,8 +40,7 @@ namespace IW4MAdmin.Application
 
         public IList<IRConParser> AdditionalRConParsers { get; }
         public IList<IEventParser> AdditionalEventParsers { get; }
-        public ITokenAuthentication TokenAuthenticator => Authenticator;
-        public ITokenAuthentication Authenticator => _authenticator;
+        public ITokenAuthentication TokenAuthenticator { get; }
         public string ExternalIPAddress { get; private set; }
 
         static ApplicationManager Instance;
@@ -58,7 +56,6 @@ namespace IW4MAdmin.Application
         readonly IPageList PageList;
         readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
-        readonly ITokenAuthentication _authenticator;
         private readonly MetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
 
@@ -79,7 +76,7 @@ namespace IW4MAdmin.Application
             AdditionalRConParsers = new List<IRConParser>();
             OnServerEvent += OnGameEvent;
             OnServerEvent += EventApi.OnGameEvent;
-            _authenticator = new TokenAuthentication();
+            TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
         }
 
@@ -734,10 +731,7 @@ namespace IW4MAdmin.Application
             return ConfigHandler;
         }
 
-        public IDictionary<int, EFClient> GetPrivilegedClients()
-        {
-            return PrivilegedClients;
-        }
+        public IDictionary<int, EFClient> PrivilegedClients { get; private set; }
 
         public bool ShutdownRequested()
         {

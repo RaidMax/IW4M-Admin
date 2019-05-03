@@ -217,7 +217,7 @@ namespace SharedLibraryCore.Services
             using (var ctx = new DatabaseContext())
             {
                 var entity = await ctx.Clients
-                    .Where(_client => _client.AliasLinkId == temporalClient.AliasLinkId)
+                    .Where(_client => _client.ClientId == temporalClient.ClientId)
                     .FirstAsync();
 
                 var oldPermission = entity.Level;
@@ -451,7 +451,7 @@ namespace SharedLibraryCore.Services
 
             using (var context = new DatabaseContext(disableTracking: true))
             {
-                long networkId = identifier.ConvertLong();
+                long networkId = identifier.ConvertGuidToLong();
                 int? ipAddress = identifier.ConvertToIP();
 
                 IQueryable<EFAlias> iqLinkIds = context.Aliases.Where(_alias => _alias.Active);

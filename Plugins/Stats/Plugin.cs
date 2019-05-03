@@ -491,7 +491,7 @@ namespace IW4MAdmin.Plugins.Stats
         /// <returns></returns>
         private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
         {
-            return ((origin.ClientId <= 1 && target.ClientId <= 1) || (target.IsBot || origin.IsBot) && ServerManager.GetApplicationSettings().Configuration().IgnoreBots);
+            return ((origin.ClientId <= 1 && target.ClientId <= 1) || ((target.IsBot || origin.IsBot) && ServerManager.GetApplicationSettings().Configuration().IgnoreBots));
         }
     }
 }

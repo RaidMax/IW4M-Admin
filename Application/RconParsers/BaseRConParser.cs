@@ -139,7 +139,17 @@ namespace IW4MAdmin.Application.RconParsers
                         ping = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Value);
                     }
 
-                    long networkId = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].Value.ConvertLong();
+                    long networkId;
+                    try
+                    {
+                        networkId = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].Value.ConvertGuidToLong();
+                    }
+
+                    catch (FormatException)
+                    {
+                        continue;
+                    }
+
                     string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.StripColors().Trim();
                     int? ip = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Value.Split(':')[0].ConvertToIP();
 

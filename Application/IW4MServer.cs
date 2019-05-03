@@ -95,18 +95,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-            Clients[client.ClientNumber] = null;
-            await client.OnDisconnect();
+                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+                Clients[client.ClientNumber] = null;
+                await client.OnDisconnect();
 
-            var e = new GameEvent()
-            {
-                Origin = client,
-                Owner = this,
-                Type = GameEvent.EventType.Disconnect
-            };
+                var e = new GameEvent()
+                {
+                    Origin = client,
+                    Owner = this,
+                    Type = GameEvent.EventType.Disconnect
+                };
 
-            Manager.GetEventHandler().AddEvent(e);
+                Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -201,22 +201,22 @@ namespace IW4MAdmin
             {
                 var newPermission = (Permission)E.Extra;
 
-                if (newPermission < Permission.Moderator)
+                if (newPermission < Permission.Moderator &&
+                    !Manager.PrivilegedClients.Remove(E.Target.ClientId, out _))
                 {
-                    // remove banned or demoted privileged user
-                    Manager.GetPrivilegedClients().Remove(E.Target.ClientId);
+                    Logger.WriteWarning($"Could not remove {E.Target}-{newPermission} from privileged users");
                 }
 
                 else
                 {
-                    if (Manager.GetPrivilegedClients().ContainsKey(E.Target.ClientId))
+                    if (Manager.PrivilegedClients.ContainsKey(E.Target.ClientId))
                     {
-                        Manager.GetPrivilegedClients()[E.Target.ClientId] = E.Target;
+                        Manager.PrivilegedClients[E.Target.ClientId] = E.Target;
                     }
 
-                    else
+                    else if (!Manager.PrivilegedClients.TryAdd(E.Target.ClientId, E.Target))
                     {
-                        Manager.GetPrivilegedClients().Add(E.Target.ClientId, E.Target);
+                        Logger.WriteWarning($"Could not add {E.Target}-{newPermission} to privileged clients");
                     }
                 }
 

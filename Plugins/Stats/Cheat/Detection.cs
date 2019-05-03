@@ -201,18 +201,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     // ban on headshot
                     if (currentHeadshotRatio > maxHeadshotLerpValueForBan)
                     {
-                        Log.WriteDebug("**Maximum Headshot Ratio Reached For Ban**");
-                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        Log.WriteDebug($"**HitCount: {HitCount}");
-                        Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
-                        Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
-                        var sb = new StringBuilder();
-                        foreach (var kvp in HitLocationCount)
-                        {
-                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        }
+                        //Log.WriteDebug("**Maximum Headshot Ratio Reached For Ban**");
+                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
+                        //Log.WriteDebug($"**HitCount: {HitCount}");
+                        //Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
+                        //Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
+                        //var sb = new StringBuilder();
+                        //foreach (var kvp in HitLocationCount)
+                        //{
+                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        //}
 
-                        Log.WriteDebug(sb.ToString());
+                        //Log.WriteDebug(sb.ToString());
 
                         result = new DetectionPenaltyResult()
                         {
@@ -225,18 +225,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     }
                     else
                     {
-                        Log.WriteDebug("**Maximum Headshot Ratio Reached For Flag**");
-                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        Log.WriteDebug($"**HitCount: {HitCount}");
-                        Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
-                        Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
-                        var sb = new StringBuilder();
-                        foreach (var kvp in HitLocationCount)
-                        {
-                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        }
+                        //Log.WriteDebug("**Maximum Headshot Ratio Reached For Flag**");
+                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
+                        //Log.WriteDebug($"**HitCount: {HitCount}");
+                        //Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
+                        //Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
+                        //var sb = new StringBuilder();
+                        //foreach (var kvp in HitLocationCount)
+                        //{
+                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        //}
 
-                        Log.WriteDebug(sb.ToString());
+                        //Log.WriteDebug(sb.ToString());
 
                         result = new DetectionPenaltyResult()
                         {

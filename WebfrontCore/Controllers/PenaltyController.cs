@@ -22,7 +22,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Title = Localization["WEBFRONT_PENALTY_TITLE"];
             ViewBag.Keywords = "IW4MAdmin, penalties, ban, kick, warns";
 
-            return View((SharedLibraryCore.Objects.Penalty.PenaltyType)showOnly);
+            return View(showOnly);
         }
 
         public async Task<IActionResult> ListAsync(int offset = 0, PenaltyType showOnly = PenaltyType.Any)

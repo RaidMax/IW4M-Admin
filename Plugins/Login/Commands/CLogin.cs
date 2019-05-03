@@ -18,7 +18,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var client = E.Owner.Manager.GetPrivilegedClients()[E.Origin.ClientId];
+            var client = E.Owner.Manager.PrivilegedClients[E.Origin.ClientId];
             bool success = E.Owner.Manager.TokenAuthenticator.AuthorizeToken(E.Origin.NetworkId, E.Data);
 
             if (!success)

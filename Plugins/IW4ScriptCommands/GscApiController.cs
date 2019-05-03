@@ -17,7 +17,7 @@ namespace WebfrontCore.Controllers.API
         public IActionResult ClientInfo(string networkId)
         {
             var clientInfo = Manager.GetActiveClients()
-                .FirstOrDefault(c => c.NetworkId == networkId.ConvertLong());
+                .FirstOrDefault(c => c.NetworkId == networkId.ConvertGuidToLong());
 
             if (clientInfo != null)
             {
@@ -40,7 +40,7 @@ namespace WebfrontCore.Controllers.API
             return Unauthorized();
 
             var client = Manager.GetActiveClients()
-                .FirstOrDefault(c => c.NetworkId == networkId.ConvertLong());
+                .FirstOrDefault(c => c.NetworkId == networkId.ConvertGuidToLong());
 
             var server = Manager.GetServers().First(c => c.EndPoint == serverId);
 

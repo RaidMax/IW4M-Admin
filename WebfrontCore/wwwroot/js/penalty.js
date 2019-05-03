@@ -1,4 +1,4 @@
-﻿let offset = 12;
+﻿let offset = 15;
 let isLoading = false;
 
 function loadMorePenalties() {
@@ -21,17 +21,15 @@ function loadMorePenalties() {
             errorLoader();
             isLoading = false;
         });
-    offset += 12;
+    offset += 15;
 }
 
 if ($('#penalty_table').length === 1) {
     
     $('#penalty_filter_selection').change(function() {
-       // if (offset === 0) {
             location = location.href.split('?')[0] + "?showOnly=" + $('#penalty_filter_selection').val();
-       // }
     });
-/*
+    /*
     https://stackoverflow.com/questions/19731730/jquery-js-detect-users-scroll-attempt-without-any-window-overflow-to-scroll
     */
 

@@ -6,6 +6,7 @@ using SharedLibraryCore.Services;
 using SharedLibraryCore.Configuration;
 using System.Reflection;
 using SharedLibraryCore.Database.Models;
+using System.Collections.Concurrent;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -23,7 +24,7 @@ namespace SharedLibraryCore.Interfaces
         ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
-        IDictionary<int, EFClient> GetPrivilegedClients();
+        IDictionary<int, EFClient> PrivilegedClients { get; }
         /// <summary>
         /// Get the event handlers
         /// </summary>

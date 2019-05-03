@@ -266,33 +266,35 @@ namespace SharedLibraryCore
             }
         }
 
-        public static long ConvertLong(this string str)
+        public static long ConvertGuidToLong(this string str)
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
-            int maxBots = 18;
-            long id;
-
-            if (str.Length <= 11) // 10 numeric characters + signed character
-            {
-                if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
-                {
-                    return (uint)id;
-                }
-            }
-
-            if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
-            {
-                return id;
-            }
-
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
-            if (!string.IsNullOrEmpty(bot))
+            int maxBots = 18;
+
+            // this is a special case for Plutonium T6
+            if (str.Length <= 11 &&
+                long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out long id)) // 10 numeric characters + signed character
+            {
+                id = (uint)id;
+            }
+
+            else if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
+            {
+            }
+
+            else if (!string.IsNullOrEmpty(bot))
             {
                 // should set their GUID to the negation of their 1 based index  (-1 - -18)
-                return -(Convert.ToInt64(bot.Substring(3)) + 1) % maxBots;
+                id = -(Convert.ToInt64(bot.Substring(3)) + 1) % maxBots;
             }
 
-            return long.MinValue;
+            if (id == 0)
+            {
+                throw new FormatException($"Could not parse client GUID - {str}"); 
+            }
+
+            return id;
         }
 
         public static int? ConvertToIP(this string str)

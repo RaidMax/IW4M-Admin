@@ -42,7 +42,7 @@ namespace IW4MAdmin.Plugins.Login
                     E.Origin.Level == EFClient.Permission.Console)
                     return Task.CompletedTask;
 
-                E.Owner.Manager.GetPrivilegedClients().TryGetValue(E.Origin.ClientId, out EFClient client);
+                E.Owner.Manager.PrivilegedClients.TryGetValue(E.Origin.ClientId, out EFClient client);
 
                 if (((Command)E.Extra).Name == new SharedLibraryCore.Commands.CSetPassword().Name &&
                     client?.Password == null)

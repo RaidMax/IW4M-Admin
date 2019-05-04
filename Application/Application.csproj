@@ -34,6 +34,7 @@
     <TieredCompilation>true</TieredCompilation>
     <AssemblyVersion>2.2.7.1</AssemblyVersion>
     <FileVersion>2.2.7.1</FileVersion>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

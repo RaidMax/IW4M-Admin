@@ -6,6 +6,7 @@
     <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
     <ApplicationIcon />
     <StartupObject />
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

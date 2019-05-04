@@ -579,7 +579,6 @@ namespace IW4MAdmin.Application
             }
             #endregion
         }
-
         private async Task SendHeartbeat(object state)
         {
             var heartbeatState = (HeartbeatState)state;

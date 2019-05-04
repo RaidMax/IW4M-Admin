@@ -7,6 +7,7 @@
     <ApplicationIcon />
     <StartupObject />
     <Configurations>Debug;Release;Prerelease</Configurations>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

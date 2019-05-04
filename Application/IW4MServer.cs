@@ -215,7 +215,7 @@ namespace IW4MAdmin
                 var existingClient = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
 
                 // they're already connected
-                if (existingClient != null)
+                if (existingClient != null && !E.Origin.IsBot)
                 {
                     Logger.WriteWarning($"detected preconnect for {E.Origin}, but they are already connected");
                     return false;

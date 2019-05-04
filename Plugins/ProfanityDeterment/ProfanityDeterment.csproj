@@ -13,6 +13,7 @@
     <Description>Warns and kicks players for using profanity</Description>
     <Copyright>2018</Copyright>
     <Configurations>Debug;Release;Prerelease</Configurations>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

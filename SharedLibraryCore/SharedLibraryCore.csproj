@@ -12,6 +12,7 @@
     <Company>Forever None</Company>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

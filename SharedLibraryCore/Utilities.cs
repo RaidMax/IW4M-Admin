@@ -270,7 +270,6 @@ namespace SharedLibraryCore
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
-            int maxBots = 18;
 
             // this is a special case for Plutonium T6
             if (str.Length <= 11 &&
@@ -285,8 +284,7 @@ namespace SharedLibraryCore
 
             else if (!string.IsNullOrEmpty(bot))
             {
-                // should set their GUID to the negation of their 1 based index  (-1 - -18)
-                id = -(Convert.ToInt64(bot.Substring(3)) + 1) % maxBots;
+                id = -1;
             }
 
             if (id == 0)

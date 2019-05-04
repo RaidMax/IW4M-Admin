@@ -27,6 +27,7 @@
   <PropertyGroup>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

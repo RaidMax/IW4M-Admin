@@ -11,6 +11,7 @@
     <Company>Forever None</Company>
     <Product>Login Plugin for IW4MAdmin</Product>
     <Configurations>Debug;Release;Prerelease</Configurations>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

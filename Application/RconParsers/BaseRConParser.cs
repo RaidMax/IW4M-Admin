@@ -159,12 +159,6 @@ namespace IW4MAdmin.Application.RconParsers
                         State = EFClient.ClientState.Connecting
                     };
 
-                    //// they've not fully connected yet
-                    //if (!client.IsBot && ping == 999)
-                    //{
-                    //    continue;
-                    //}
-
                     StatusPlayers.Add(client);
                 }
             }

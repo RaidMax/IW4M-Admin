@@ -730,7 +730,7 @@ namespace SharedLibraryCore.Database.Models
 
         public override int GetHashCode()
         {
-            return (int)NetworkId;
+            return IsBot ? ClientNumber : (int)NetworkId;
         }
     }
 }

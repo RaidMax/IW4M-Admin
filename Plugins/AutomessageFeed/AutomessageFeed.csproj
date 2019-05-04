@@ -3,10 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SyndicationFeed.ReaderWriter" Version="1.0.2"/>
+    <PackageReference Include="Microsoft.SyndicationFeed.ReaderWriter" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -14,8 +15,8 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;"/>
-    <Exec Command="copy &quot;$(TargetDir)Microsoft.SyndicationFeed.ReaderWriter.dll&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;"/>
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="copy &quot;$(TargetDir)Microsoft.SyndicationFeed.ReaderWriter.dll&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
   </Target>
 
 </Project>

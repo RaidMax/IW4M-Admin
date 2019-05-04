@@ -24,7 +24,6 @@ namespace SharedLibraryCore.Interfaces
         ClientService GetClientService();
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
-        IDictionary<int, EFClient> PrivilegedClients { get; }
         /// <summary>
         /// Get the event handlers
         /// </summary>

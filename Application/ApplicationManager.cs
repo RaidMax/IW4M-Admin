@@ -341,9 +341,7 @@ namespace IW4MAdmin.Application
                 GetApplicationSettings().Configuration()?.DatabaseProvider))
             {
                 await new ContextSeed(db).Seed();
-            }
-
-            PrivilegedClients = (await ClientSvc.GetPrivilegedClients()).ToDictionary(_client => _client.ClientId);
+            }           
             #endregion
 
             #region COMMANDS
@@ -520,14 +518,12 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region INIT
-            int failedServers = 0;
             int successServers = 0;
             Exception lastException = null;
 
             async Task Init(ServerConfiguration Conf)
             {
                 // setup the event handler after the class is initialized
-
                 Handler = new GameEventHandler(this);
 
                 try
@@ -560,22 +556,21 @@ namespace IW4MAdmin.Application
 
                     if (e.GetType() == typeof(DvarException))
                     {
-                        Logger.WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"].FormatExt((e as DvarException).Data["dvar_name"])} ({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})");
+                        Logger.WriteDebug($"{e.Message} {(e.GetType() == typeof(DvarException) ? $"({Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR_HELP"]})" : "")}");
                     }
 
-                    else if (e.GetType() == typeof(NetworkException))
-                    {
-                        Logger.WriteDebug(e.Message);
-                    }
-
-                    failedServers++;
                     lastException = e;
                 }
             }
 
             await Task.WhenAll(config.Servers.Select(c => Init(c)).ToArray());
 
-            if (successServers - failedServers <= 0)
+            if (successServers == 0)
+            {
+                throw lastException;
+            }
+
+            if (successServers != config.Servers.Count)
             {
                 if (!Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_START_WITH_ERRORS"]))
                 {
@@ -730,8 +725,6 @@ namespace IW4MAdmin.Application
         {
             return ConfigHandler;
         }
-
-        public IDictionary<int, EFClient> PrivilegedClients { get; private set; }
 
         public bool ShutdownRequested()
         {

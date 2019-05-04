@@ -66,22 +66,13 @@ namespace IW4MAdmin.Application.RconParsers
         {
             string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
             string response = string.Join('\n', lineSplit.Skip(1));
-
-            if (!lineSplit[0].Contains(Configuration.CommandPrefixes.RConResponse))
-            {
-                throw new DvarException($"Could not retrieve DVAR \"{dvarName}\"");
-            }
-
-            if (response.Contains("Unknown command"))
-            {
-                throw new DvarException($"DVAR \"{dvarName}\" does not exist");
-            }
-
             var match = Regex.Match(response, Configuration.Dvar.Pattern);
 
-            if (!match.Success)
+            if (!lineSplit[0].Contains(Configuration.CommandPrefixes.RConResponse) ||
+                response.Contains("Unknown command") ||
+                !match.Success)
             {
-                throw new DvarException($"Could not retrieve DVAR \"{dvarName}\"");
+                throw new DvarException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"].FormatExt(dvarName));
             }
 
             string value = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarValue]].Value.StripColors();
@@ -91,9 +82,9 @@ namespace IW4MAdmin.Application.RconParsers
             return new Dvar<T>()
             {
                 Name = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarName]].Value.StripColors(),
-                Value = string.IsNullOrEmpty(value) ? default(T) : (T)Convert.ChangeType(value, typeof(T)),
-                DefaultValue = string.IsNullOrEmpty(defaultValue) ? default(T) : (T)Convert.ChangeType(defaultValue, typeof(T)),
-                LatchedValue = string.IsNullOrEmpty(latchedValue) ? default(T) : (T)Convert.ChangeType(latchedValue, typeof(T)),
+                Value = string.IsNullOrEmpty(value) ? default : (T)Convert.ChangeType(value, typeof(T)),
+                DefaultValue = string.IsNullOrEmpty(defaultValue) ? default : (T)Convert.ChangeType(defaultValue, typeof(T)),
+                LatchedValue = string.IsNullOrEmpty(latchedValue) ? default : (T)Convert.ChangeType(latchedValue, typeof(T)),
                 Domain = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDomain]].Value.StripColors()
             };
         }

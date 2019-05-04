@@ -18,13 +18,12 @@ namespace IW4MAdmin.Plugins.Login.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var client = E.Owner.Manager.PrivilegedClients[E.Origin.ClientId];
             bool success = E.Owner.Manager.TokenAuthenticator.AuthorizeToken(E.Origin.NetworkId, E.Data);
 
             if (!success)
             {
-                string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(E.Data, client.PasswordSalt));
-                success = hashedPassword[0] == client.Password;
+                string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(E.Data, E.Origin.PasswordSalt));
+                success = hashedPassword[0] == E.Origin.Password;
             }
 
             if (success)

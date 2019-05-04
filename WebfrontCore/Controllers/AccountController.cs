@@ -25,7 +25,7 @@ namespace WebfrontCore.Controllers
 
             try
             {
-                var privilegedClient = Manager.PrivilegedClients[clientId];
+                var privilegedClient = await Manager.GetClientService().Get(clientId);
                 bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(privilegedClient.NetworkId, password) ||
                     (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
 

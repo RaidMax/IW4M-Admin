@@ -257,18 +257,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     // ban on bone ratio
                     if (currentMaxBoneRatio > maxBoneRatioLerpValueForBan)
                     {
-                        Log.WriteDebug("**Maximum Bone Ratio Reached For Ban**");
-                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        Log.WriteDebug($"**HitCount: {HitCount}");
-                        Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
-                        Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForBan}");
-                        var sb = new StringBuilder();
-                        foreach (var kvp in HitLocationCount)
-                        {
-                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        }
+                        //Log.WriteDebug("**Maximum Bone Ratio Reached For Ban**");
+                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
+                        //Log.WriteDebug($"**HitCount: {HitCount}");
+                        //Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
+                        //Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForBan}");
+                        //var sb = new StringBuilder();
+                        //foreach (var kvp in HitLocationCount)
+                        //{
+                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        //}
 
-                        Log.WriteDebug(sb.ToString());
+                        //Log.WriteDebug(sb.ToString());
 
                         result = new DetectionPenaltyResult()
                         {
@@ -281,18 +281,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     }
                     else
                     {
-                        Log.WriteDebug("**Maximum Bone Ratio Reached For Flag**");
-                        Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        Log.WriteDebug($"**HitCount: {HitCount}");
-                        Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
-                        Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForFlag}");
-                        var sb = new StringBuilder();
-                        foreach (var kvp in HitLocationCount)
-                        {
-                            sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        }
+                        //Log.WriteDebug("**Maximum Bone Ratio Reached For Flag**");
+                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
+                        //Log.WriteDebug($"**HitCount: {HitCount}");
+                        //Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
+                        //Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForFlag}");
+                        //var sb = new StringBuilder();
+                        //foreach (var kvp in HitLocationCount)
+                        //{
+                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
+                        //}
 
-                        Log.WriteDebug(sb.ToString());
+                        //Log.WriteDebug(sb.ToString());
 
                         result = new DetectionPenaltyResult()
                         {

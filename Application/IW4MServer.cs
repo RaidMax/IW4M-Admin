@@ -200,26 +200,6 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.ChangePermission)
             {
                 var newPermission = (Permission)E.Extra;
-
-                if (newPermission < Permission.Moderator &&
-                    !Manager.PrivilegedClients.Remove(E.Target.ClientId, out _))
-                {
-                    Logger.WriteWarning($"Could not remove {E.Target}-{newPermission} from privileged users");
-                }
-
-                else
-                {
-                    if (Manager.PrivilegedClients.ContainsKey(E.Target.ClientId))
-                    {
-                        Manager.PrivilegedClients[E.Target.ClientId] = E.Target;
-                    }
-
-                    else if (!Manager.PrivilegedClients.TryAdd(E.Target.ClientId, E.Target))
-                    {
-                        Logger.WriteWarning($"Could not add {E.Target}-{newPermission} to privileged clients");
-                    }
-                }
-
                 Logger.WriteInfo($"{E.Origin} is setting {E.Target} to permission level {newPermission}");
                 await Manager.GetClientService().UpdateLevel(newPermission, E.Target, E.Origin);
             }

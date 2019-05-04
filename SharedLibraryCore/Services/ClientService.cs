@@ -413,7 +413,7 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<List<EFClient>> GetPrivilegedClients()
+        public async Task<List<EFClient>> GetPrivilegedClients(bool includeName = true)
         {
             using (var context = new DatabaseContext(disableTracking: true))
             {
@@ -451,7 +451,13 @@ namespace SharedLibraryCore.Services
 
             using (var context = new DatabaseContext(disableTracking: true))
             {
-                long networkId = identifier.ConvertGuidToLong();
+                long? networkId = null;
+                try
+                {
+                    networkId = identifier.ConvertGuidToLong();
+                }
+                catch { }
+
                 int? ipAddress = identifier.ConvertToIP();
 
                 IQueryable<EFAlias> iqLinkIds = context.Aliases.Where(_alias => _alias.Active);
@@ -477,10 +483,11 @@ namespace SharedLibraryCore.Services
                 var iqClients = context.Clients
                     .Where(_client => _client.Active);
 
-                if (networkId != long.MinValue)
+                if (networkId.HasValue)
                 {
-                    iqClients = iqClients.Where(_client => networkId == _client.NetworkId);
+                    iqClients = iqClients.Where(_client => networkId.Value == _client.NetworkId);
                 }
+
                 else
                 {
                     iqClients = iqClients.Where(_client => linkIds.Contains(_client.AliasLinkId));

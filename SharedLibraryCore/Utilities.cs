@@ -299,7 +299,7 @@ namespace SharedLibraryCore
 
         public static int? ConvertToIP(this string str)
         {
-            bool success = System.Net.IPAddress.TryParse(str, out System.Net.IPAddress ip);
+            bool success = IPAddress.TryParse(str, out IPAddress ip);
             return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4 ?
                 (int?)BitConverter.ToInt32(ip.GetAddressBytes(), 0) :
                 null;
@@ -307,7 +307,7 @@ namespace SharedLibraryCore
 
         public static string ConvertIPtoString(this int? ip)
         {
-            return !ip.HasValue ? "" : new System.Net.IPAddress(BitConverter.GetBytes(ip.Value)).ToString();
+            return !ip.HasValue ? "" : new IPAddress(BitConverter.GetBytes(ip.Value)).ToString();
         }
 
         public static string GetTimePassed(DateTime start)

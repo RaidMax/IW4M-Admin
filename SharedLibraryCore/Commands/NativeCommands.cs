@@ -1119,8 +1119,8 @@ namespace SharedLibraryCore.Commands
             E.Origin.PasswordSalt = hashedPassword[1];
 
             // update the password for the client in privileged
-            E.Owner.Manager.PrivilegedClients[E.Origin.ClientId].Password = hashedPassword[0];
-            E.Owner.Manager.PrivilegedClients[E.Origin.ClientId].PasswordSalt = hashedPassword[1];
+            //E.Owner.Manager.PrivilegedClients[E.Origin.ClientId].Password = hashedPassword[0];
+            //E.Owner.Manager.PrivilegedClients[E.Origin.ClientId].PasswordSalt = hashedPassword[1];
 
             await E.Owner.Manager.GetClientService().Update(E.Origin);
             E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PASSWORD_SUCCESS"]);

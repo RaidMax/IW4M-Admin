@@ -42,7 +42,7 @@ namespace SharedLibraryCore
             }
             catch (Exception ex)
             {
-                Manager.GetLogger(0).WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"]} {Name}");
+                Manager.GetLogger(0).WriteError(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"].FormatExt(Name));
                 Manager.GetLogger(0).WriteDebug(ex.Message);
             }
         }

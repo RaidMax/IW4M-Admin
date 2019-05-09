@@ -16,7 +16,7 @@
     "Keep grenade launcher use to a minimum",
     "Balance teams at ALL times"
   ],
-  "DisallowedClientNames": ["Unknown Soldier", "VickNet", "UnknownSoldier", "CHEATER"],
+  "DisallowedClientNames": [ "Unknown Soldier", "VickNet", "UnknownSoldier", "CHEATER", "Play77" ],
   "QuickMessages": [
     {
       "Game": "IW4",
@@ -516,6 +516,10 @@
         {
           "Alias": "Hanoi",
           "Name": "mp_hanoi"
+        },
+        {
+          "Alias": "Havana",
+          "Name":  "mp_cairo"
         },
         {
           "Alias": "Hazard",

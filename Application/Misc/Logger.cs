@@ -55,6 +55,7 @@ namespace IW4MAdmin.Application
 
         void Write(string msg, LogType type)
         {
+            return;
             OnLogWriting.Wait();
 
             string stringType = type.ToString();

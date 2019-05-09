@@ -7,14 +7,16 @@ using SharedLibraryCore.Configuration;
 using System.Reflection;
 using SharedLibraryCore.Database.Models;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace SharedLibraryCore.Interfaces
 {
     public interface IManager
     {
         Task Init();
-        void Start();
+        Task Start();
         void Stop();
+        void Restart();
         ILogger GetLogger(long serverId);
         IList<Server> GetServers();
         IList<Command> GetCommands();
@@ -29,11 +31,6 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <returns>EventHandler for the manager</returns>
         IEventHandler GetEventHandler();
-        /// <summary>
-        /// Signal to the manager that event(s) needs to be processed
-        /// </summary>
-        void SetHasEvent();
-        bool ShutdownRequested();
         IList<Assembly> GetPluginAssemblies();
         /// <summary>
         /// provides a page list to add and remove from
@@ -47,5 +44,7 @@ namespace SharedLibraryCore.Interfaces
         string Version { get;}
         ITokenAuthentication TokenAuthenticator { get; }
         string ExternalIPAddress { get; }
+        CancellationToken CancellationToken { get; }
+        bool IsRestartRequested { get; }
     }
 }

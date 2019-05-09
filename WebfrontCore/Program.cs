@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using SharedLibraryCore.Interfaces;
@@ -9,18 +11,18 @@ namespace WebfrontCore
     {
         public static IManager Manager;
 
-        static void Main(string[] args)
+        static void Main()
         {
             throw new System.Exception("Webfront core cannot be run as a standalone application");
         }
 
-        public static void Init(IManager mgr)
+        public static Task Init(IManager mgr, CancellationToken cancellationToken)
         {
             Manager = mgr;
-            BuildWebHost().Run();
+            return BuildWebHost().RunAsync(cancellationToken);
         }
 
-        public static IWebHost BuildWebHost()
+        private static IWebHost BuildWebHost()
         {
             var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables()

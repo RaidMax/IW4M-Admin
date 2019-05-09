@@ -546,6 +546,7 @@ namespace SharedLibraryCore.Database.Models
                     profileBan = (await CurrentServer.Manager
                         .GetPenaltyService()
                         .GetActivePenaltiesAsync(AliasLinkId))
+                        .OrderByDescending(_penalty => _penalty.When)
                         .FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.Ban);
 
                     CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but no previous penalty exists for their ban");
@@ -596,18 +597,6 @@ namespace SharedLibraryCore.Database.Models
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
 
-            #region CLIENT_LINKED_TEMPBAN
-            var tempBan = activePenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan);
-
-            // they have an active tempban tied to their AliasLink
-            if (tempBan != null)
-            {
-                CurrentServer.Logger.WriteDebug($"Tempbanning {this} because their AliasLink is temporarily banned, but they are not");
-                TempBan(tempBan.Offense, DateTime.UtcNow - (tempBan.Expires ?? DateTime.UtcNow), autoKickClient);
-                return false;
-            }
-            #endregion
-
             #region CLIENT_LINKED_BAN
             var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban);
 
@@ -638,6 +627,20 @@ namespace SharedLibraryCore.Database.Models
                     CurrentServer.Logger.WriteError($"Banned client {this} is banned but, no ban penalty was found (2)");
                 }
 
+                return false;
+            }
+            #endregion
+
+            #region CLIENT_LINKED_TEMPBAN
+            var tempBan = activePenalties
+                .OrderByDescending(_penalty => _penalty.When)
+                .FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan);
+
+            // they have an active tempban tied to their AliasLink
+            if (tempBan != null)
+            {
+                CurrentServer.Logger.WriteDebug($"Tempbanning {this} because their AliasLink is temporarily banned, but they are not");
+                TempBan(tempBan.Offense, DateTime.UtcNow - (tempBan.Expires ?? DateTime.UtcNow), autoKickClient);
                 return false;
             }
             #endregion

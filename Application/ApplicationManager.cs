@@ -15,6 +15,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -26,7 +27,7 @@ namespace IW4MAdmin.Application
 {
     public class ApplicationManager : IManager
     {
-        private List<Server> _servers;
+        private ConcurrentBag<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
         public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
@@ -41,8 +42,9 @@ namespace IW4MAdmin.Application
         public IList<IRConParser> AdditionalRConParsers { get; }
         public IList<IEventParser> AdditionalEventParsers { get; }
         public ITokenAuthentication TokenAuthenticator { get; }
+        public CancellationToken CancellationToken => _tokenSource.Token;
         public string ExternalIPAddress { get; private set; }
-
+        public bool IsRestartRequested { get; private set; }
         static ApplicationManager Instance;
         readonly List<AsyncStatus> TaskStatuses;
         List<Command> Commands;
@@ -52,16 +54,16 @@ namespace IW4MAdmin.Application
         readonly PenaltyService PenaltySvc;
         public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         GameEventHandler Handler;
-        ManualResetEventSlim OnQuit;
         readonly IPageList PageList;
         readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
         private readonly MetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
+        private readonly CancellationTokenSource _tokenSource;
 
         private ApplicationManager()
         {
-            _servers = new List<Server>();
+            _servers = new ConcurrentBag<Server>();
             Commands = new List<Command>();
             TaskStatuses = new List<AsyncStatus>();
             MessageTokens = new List<MessageToken>();
@@ -70,7 +72,6 @@ namespace IW4MAdmin.Application
             PenaltySvc = new PenaltyService();
             ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             StartTime = DateTime.UtcNow;
-            OnQuit = new ManualResetEventSlim();
             PageList = new PageList();
             AdditionalEventParsers = new List<IEventParser>();
             AdditionalRConParsers = new List<IRConParser>();
@@ -78,6 +79,7 @@ namespace IW4MAdmin.Application
             OnServerEvent += EventApi.OnGameEvent;
             TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
+            _tokenSource = new CancellationTokenSource();
         }
 
         private async void OnGameEvent(object sender, GameEventArgs args)
@@ -155,12 +157,12 @@ namespace IW4MAdmin.Application
             return Instance ?? (Instance = new ApplicationManager());
         }
 
-        public async Task UpdateServerStates(CancellationToken token)
+        public async Task UpdateServerStates()
         {
             // store the server hash code and task for it
             var runningUpdateTasks = new Dictionary<long, Task>();
 
-            while (Running)
+            while (!_tokenSource.IsCancellationRequested)
             {
                 // select the server ids that have completed the update task
                 var serverTasksToRemove = runningUpdateTasks
@@ -191,10 +193,11 @@ namespace IW4MAdmin.Application
                     {
                         try
                         {
-                            await server.ProcessUpdatesAsync(token);
+                            await server.ProcessUpdatesAsync(_tokenSource.Token);
+
                             if (server.Throttled)
                             {
-                                await Task.Delay((int)_throttleTimeout.TotalMilliseconds);
+                                await Task.Delay((int)_throttleTimeout.TotalMilliseconds, _tokenSource.Token);
                             }
                         }
 
@@ -218,7 +221,7 @@ namespace IW4MAdmin.Application
 #endif
                 try
                 {
-                    await Task.Delay(ConfigHandler.Configuration().RConPollRate, token);
+                    await Task.Delay(ConfigHandler.Configuration().RConPollRate, _tokenSource.Token);
                 }
                 // if a cancellation is received, we want to return immediately
                 catch { break; }
@@ -341,7 +344,7 @@ namespace IW4MAdmin.Application
                 GetApplicationSettings().Configuration()?.DatabaseProvider))
             {
                 await new ContextSeed(db).Seed();
-            }           
+            }
             #endregion
 
             #region COMMANDS
@@ -351,6 +354,7 @@ namespace IW4MAdmin.Application
             }
 
             Commands.Add(new CQuit());
+            Commands.Add(new CRestart());
             Commands.Add(new CKick());
             Commands.Add(new CSay());
             Commands.Add(new CTempBan());
@@ -517,7 +521,12 @@ namespace IW4MAdmin.Application
             MetaService.AddRuntimeMeta(getPenaltyMeta);
             #endregion
 
-            #region INIT
+            await InitializeServers();
+        }
+
+        private async Task InitializeServers()
+        {
+            var config = ConfigHandler.Configuration();
             int successServers = 0;
             Exception lastException = null;
 
@@ -531,10 +540,7 @@ namespace IW4MAdmin.Application
                     var ServerInstance = new IW4MServer(this, Conf);
                     await ServerInstance.Initialize();
 
-                    lock (_servers)
-                    {
-                        _servers.Add(ServerInstance);
-                    }
+                    _servers.Add(ServerInstance);
 
                     Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(ServerInstance.Hostname));
                     // add the start event for this server
@@ -577,25 +583,25 @@ namespace IW4MAdmin.Application
                     throw lastException;
                 }
             }
-            #endregion
         }
-        private async Task SendHeartbeat(object state)
-        {
-            var heartbeatState = (HeartbeatState)state;
 
-            while (Running)
+        private async Task SendHeartbeat()
+        {
+            bool connected = false;
+
+            while (!_tokenSource.IsCancellationRequested)
             {
-                if (!heartbeatState.Connected)
+                if (!connected)
                 {
                     try
                     {
                         await Heartbeat.Send(this, true);
-                        heartbeatState.Connected = true;
+                        connected = true;
                     }
 
                     catch (Exception e)
                     {
-                        heartbeatState.Connected = false;
+                        connected = false;
                         Logger.WriteWarning($"Could not connect to heartbeat server - {e.Message}");
                     }
                 }
@@ -621,7 +627,7 @@ namespace IW4MAdmin.Application
                         {
                             if (((RestEase.ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
                             {
-                                heartbeatState.Connected = false;
+                                connected = false;
                             }
                         }
                     }
@@ -631,9 +637,10 @@ namespace IW4MAdmin.Application
                         Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
                         if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         {
-                            heartbeatState.Connected = false;
+                            connected = false;
                         }
                     }
+
                     catch (Exception e)
                     {
                         Logger.WriteWarning($"Could not send heartbeat - {e.Message}");
@@ -643,31 +650,32 @@ namespace IW4MAdmin.Application
 
                 try
                 {
-                    await Task.Delay(30000, heartbeatState.Token);
+                    await Task.Delay(30000, _tokenSource.Token);
                 }
                 catch { break; }
             }
         }
 
-        public void Start()
+        public Task Start()
         {
-            var tokenSource = new CancellationTokenSource();
-            // this needs to be run seperately from the main thread
-            _ = Task.Run(() => SendHeartbeat(new HeartbeatState() { Token = tokenSource.Token }));
-            _ = Task.Run(() => UpdateServerStates(tokenSource.Token));
-
-            while (Running)
+            return Task.WhenAll(new[]
             {
-                OnQuit.Wait();
-                tokenSource.Cancel();
-                OnQuit.Reset();
-            }
+                SendHeartbeat(),
+                UpdateServerStates()
+            });
         }
 
         public void Stop()
         {
+            _tokenSource.Cancel();
             Running = false;
-            OnQuit.Set();
+            Instance = null;
+        }
+
+        public void Restart()
+        {
+            IsRestartRequested = true;
+            Stop();
         }
 
         public ILogger GetLogger(long serverId)
@@ -725,19 +733,9 @@ namespace IW4MAdmin.Application
             return ConfigHandler;
         }
 
-        public bool ShutdownRequested()
-        {
-            return !Running;
-        }
-
         public IEventHandler GetEventHandler()
         {
             return Handler;
-        }
-
-        public void SetHasEvent()
-        {
-            
         }
 
         public IList<Assembly> GetPluginAssemblies()

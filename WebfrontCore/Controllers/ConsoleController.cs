@@ -53,7 +53,7 @@ namespace WebfrontCore.Controllers
             Manager.GetEventHandler().AddEvent(remoteEvent);
             List<CommandResponseInfo> response;
             // wait for the event to process
-            if (!(await remoteEvent.WaitAsync(60 * 1000)).Failed)
+            if (!(await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken)).Failed)
             {
                 response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 

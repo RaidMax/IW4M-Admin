@@ -30,6 +30,8 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
+        public static TimeSpan DefaultCommandTimeout = new TimeSpan(0, 0, 10);
+
         public static EFClient IW4MAdminClient(Server server = null)
         {
             return new EFClient()
@@ -320,7 +322,7 @@ namespace SharedLibraryCore
 
             if (Elapsed.TotalSeconds < 30)
             {
-                return CurrentLocalization.LocalizationIndex["GLOBAL_TIME_JUSTNOW"];
+                return CurrentLocalization.LocalizationIndex["GLOBAL_TIME_JUSTNOW"] + ago;
             }
             if (Elapsed.TotalMinutes < 120)
             {
@@ -783,6 +785,11 @@ namespace SharedLibraryCore
             }
         }
 
+        /// <summary>
+        /// Determines if the given message is a quick message
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns>true if the </returns>
         public static bool IsQuickMessage(this string message)
         {
             return Regex.IsMatch(message, @"^\u0014(?:[A-Z]|_)+$");

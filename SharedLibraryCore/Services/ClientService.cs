@@ -447,8 +447,6 @@ namespace SharedLibraryCore.Services
                 return new List<PlayerInfo>();
             }
 
-            identifier = identifier.ToLower();
-
             using (var context = new DatabaseContext(disableTracking: true))
             {
                 long? networkId = null;
@@ -472,7 +470,7 @@ namespace SharedLibraryCore.Services
                 // todo maybe not make it start with wildcard?
                 else
                 {
-                    iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.Name, $"%{identifier}%"));
+                    iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.Name.ToLower(), $"%{identifier.ToLower()}%"));
                 }
 
                 var linkIds = await iqLinkIds

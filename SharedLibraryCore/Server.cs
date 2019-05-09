@@ -23,10 +23,10 @@ namespace SharedLibraryCore
             IW4 = 2,
             IW5 = 3,
             IW6 = 4,
-            T4  = 5,
-            T5  = 6,
-            T6  = 7,
-            T7  = 8
+            T4 = 5,
+            T5 = 6,
+            T6 = 7,
+            T7 = 8
         }
 
         public Server(IManager mgr, ServerConfiguration config)
@@ -159,14 +159,16 @@ namespace SharedLibraryCore
 
             if (Target.Level == EFClient.Permission.Console)
             {
-                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine(Message.StripColors());
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
 
             // prevent this from queueing up too many command responses
             if (CommandResult.Count > 15)
+            {
                 CommandResult.RemoveAt(0);
+            }
 
             // it was a remote command so we need to add it to the command result queue
             if (Target.ClientNumber < 0)

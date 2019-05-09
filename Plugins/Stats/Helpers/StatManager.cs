@@ -20,25 +20,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 {
     public class StatManager
     {
-        private ConcurrentDictionary<long, ServerStats> Servers;
-        private ILogger Log;
-        private readonly IManager Manager;
-
+        private readonly ConcurrentDictionary<long, ServerStats> _servers;
+        private readonly ILogger _log;
         private readonly SemaphoreSlim OnProcessingPenalty;
         private readonly SemaphoreSlim OnProcessingSensitive;
 
         public StatManager(IManager mgr)
         {
-            Servers = new ConcurrentDictionary<long, ServerStats>();
-            Log = mgr.GetLogger(0);
-            Manager = mgr;
+            _servers = new ConcurrentDictionary<long, ServerStats>();
+            _log = mgr.GetLogger(0);
             OnProcessingPenalty = new SemaphoreSlim(1, 1);
             OnProcessingSensitive = new SemaphoreSlim(1, 1);
         }
 
         public EFClientStatistics GetClientStats(int clientId, long serverId)
         {
-            return Servers[serverId].PlayerStats[clientId];
+            return _servers[serverId].PlayerStats[clientId];
         }
 
         public static Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
@@ -135,6 +132,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
                                    where clientIds.Contains(stat.ClientId)
+                                   where stat.Kills > 0 || stat.Deaths > 0
                                    group stat by stat.ClientId into s
                                    select new
                                    {
@@ -242,7 +240,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // check to see if the stats have ever been initialized
                 var serverStats = InitializeServerStats(server.ServerId);
 
-                Servers.TryAdd(serverId, new ServerStats(server, serverStats)
+                _servers.TryAdd(serverId, new ServerStats(server, serverStats)
                 {
                     IsTeamBased = sv.Gametype != "dm"
                 });
@@ -250,8 +248,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception e)
             {
-                Log.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]} - {e.Message}");
-                Log.WriteDebug(e.GetExceptionInfo());
+                _log.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]} - {e.Message}");
+                _log.WriteDebug(e.GetExceptionInfo());
             }
         }
 
@@ -268,18 +266,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 long serverId = await GetIdForServer(pl.CurrentServer);
 
-                if (!Servers.ContainsKey(serverId))
+                if (!_servers.ContainsKey(serverId))
                 {
-                    Log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
+                    _log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
                     return null;
                 }
 
-                var playerStats = Servers[serverId].PlayerStats;
-                var detectionStats = Servers[serverId].PlayerDetections;
+                var playerStats = _servers[serverId].PlayerStats;
+                var detectionStats = _servers[serverId].PlayerDetections;
 
                 if (playerStats.ContainsKey(pl.ClientId))
                 {
-                    Log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
+                    _log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
                     return playerStats[pl.ClientId];
                 }
 
@@ -321,7 +319,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                         if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
                         {
-                            Log.WriteWarning("Adding new client to stats failed");
+                            _log.WriteWarning("Adding new client to stats failed");
                         }
                     }
 
@@ -329,7 +327,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
                         {
-                            Log.WriteWarning("Adding pre-existing client to stats failed");
+                            _log.WriteWarning("Adding pre-existing client to stats failed");
                         }
                     }
 
@@ -366,9 +364,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     clientStats.SessionScore = pl.Score;
                     clientStats.LastScore = pl.Score;
 
-                    if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(Log, clientStats)))
+                    if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(_log, clientStats)))
                     {
-                        Log.WriteWarning("Could not add client to detection");
+                        _log.WriteWarning("Could not add client to detection");
                     }
 
                     pl.CurrentServer.Logger.WriteInfo($"Adding {pl} to stats");
@@ -379,8 +377,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception ex)
             {
-                Log.WriteWarning("Could not add client to stats");
-                Log.WriteDebug(ex.GetExceptionInfo());
+                _log.WriteWarning("Could not add client to stats");
+                _log.WriteDebug(ex.GetExceptionInfo());
             }
 
             finally
@@ -401,9 +399,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             pl.CurrentServer.Logger.WriteInfo($"Removing {pl} from stats");
 
             long serverId = await GetIdForServer(pl.CurrentServer);
-            var playerStats = Servers[serverId].PlayerStats;
-            var detectionStats = Servers[serverId].PlayerDetections;
-            var serverStats = Servers[serverId].ServerStatistics;
+            var playerStats = _servers[serverId].PlayerStats;
+            var detectionStats = _servers[serverId].PlayerDetections;
+            var serverStats = _servers[serverId].ServerStatistics;
 
             if (!playerStats.ContainsKey(pl.ClientId))
             {
@@ -473,8 +471,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (FormatException)
             {
-                Log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
-                Log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles}");
+                _log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
+                _log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles}");
                 await AddStandardKill(attacker, victim);
                 return;
             }
@@ -491,7 +489,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (FormatException)
             {
-                Log.WriteWarning("Could not parse snapshot angles");
+                _log.WriteWarning("Could not parse snapshot angles");
                 return;
             }
 
@@ -537,13 +535,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // incase the add player event get delayed
-            if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
+            if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
             {
                 await AddPlayer(attacker);
             }
 
-            var clientDetection = Servers[serverId].PlayerDetections[attacker.ClientId];
-            var clientStats = Servers[serverId].PlayerStats[attacker.ClientId];
+            var clientDetection = _servers[serverId].PlayerDetections[attacker.ClientId];
+            var clientStats = _servers[serverId].PlayerStats[attacker.ClientId];
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
@@ -598,8 +596,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 catch (Exception ex)
                 {
-                    Log.WriteError("Could not save hit or AC info");
-                    Log.WriteDebug(ex.GetExceptionInfo());
+                    _log.WriteError("Could not save hit or AC info");
+                    _log.WriteDebug(ex.GetExceptionInfo());
                 }
 
                 OnProcessingPenalty.Release(1);
@@ -627,7 +625,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         }
                     };
 
-                    await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], penaltyClient, false).WaitAsync();
+                    await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], penaltyClient, false).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
 
                     if (clientDetection.Tracker.HasChanges)
                     {
@@ -644,7 +642,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
                             $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
 
-                    await attacker.Flag(flagReason, penaltyClient).WaitAsync();
+                    await attacker.Flag(flagReason, penaltyClient).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
 
                     if (clientDetection.Tracker.HasChanges)
                     {
@@ -714,33 +712,33 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             long serverId = await GetIdForServer(attacker.CurrentServer);
 
             EFClientStatistics attackerStats = null;
-            if (!Servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
+            if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
             {
                 attackerStats = await AddPlayer(attacker);
             }
 
             else
             {
-                attackerStats = Servers[serverId].PlayerStats[attacker.ClientId];
+                attackerStats = _servers[serverId].PlayerStats[attacker.ClientId];
             }
 
             EFClientStatistics victimStats = null;
-            if (!Servers[serverId].PlayerStats.ContainsKey(victim.ClientId))
+            if (!_servers[serverId].PlayerStats.ContainsKey(victim.ClientId))
             {
                 victimStats = await AddPlayer(victim);
             }
 
             else
             {
-                victimStats = Servers[serverId].PlayerStats[victim.ClientId];
+                victimStats = _servers[serverId].PlayerStats[victim.ClientId];
             }
 
 #if DEBUG
-            Log.WriteDebug("Calculating standard kill");
+            _log.WriteDebug("Calculating standard kill");
 #endif
 
             // update the total stats
-            Servers[serverId].ServerStatistics.TotalKills += 1;
+            _servers[serverId].ServerStatistics.TotalKills += 1;
             await Sync(attacker.CurrentServer);
 
             // this happens when the round has changed
@@ -777,14 +775,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // fixme: why?
             if (double.IsNaN(victimStats.SPM) || double.IsNaN(victimStats.Skill))
             {
-                Log.WriteDebug($"[StatManager::AddStandardKill] victim SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
+                _log.WriteDebug($"[StatManager::AddStandardKill] victim SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
                 victimStats.SPM = 0.0;
                 victimStats.Skill = 0.0;
             }
 
             if (double.IsNaN(attackerStats.SPM) || double.IsNaN(attackerStats.Skill))
             {
-                Log.WriteDebug($"[StatManager::AddStandardKill] attacker SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
+                _log.WriteDebug($"[StatManager::AddStandardKill] attacker SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
                 attackerStats.SPM = 0.0;
                 attackerStats.Skill = 0.0;
             }
@@ -1014,7 +1012,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             attackerStats = UpdateStats(attackerStats);
 
             // calulate elo
-            if (Servers[attackerStats.ServerId].PlayerStats.Count > 1)
+            if (_servers[attackerStats.ServerId].PlayerStats.Count > 1)
             {
                 #region DEPRECATED
                 /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
@@ -1095,7 +1093,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             double killSPM = scoreDifference / timeSinceLastCalc;
-            double spmMultiplier = 2.934 * Math.Pow(Servers[clientStats.ServerId].TeamCount(clientStats.Team == IW4Info.Team.Allies ? IW4Info.Team.Axis : IW4Info.Team.Allies), -0.454);
+            double spmMultiplier = 2.934 * Math.Pow(_servers[clientStats.ServerId].TeamCount(clientStats.Team == IW4Info.Team.Allies ? IW4Info.Team.Axis : IW4Info.Team.Allies), -0.454);
             killSPM *= Math.Max(1, spmMultiplier);
 
             // update this for ac tracking
@@ -1120,8 +1118,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (clientStats.SPM < 0)
             {
-                Log.WriteWarning("[StatManager:UpdateStats] clientStats SPM < 0");
-                Log.WriteDebug($"{scoreDifference}-{clientStats.RoundScore} - {clientStats.LastScore} - {clientStats.SessionScore}");
+                _log.WriteWarning("[StatManager:UpdateStats] clientStats SPM < 0");
+                _log.WriteDebug($"{scoreDifference}-{clientStats.RoundScore} - {clientStats.LastScore} - {clientStats.SessionScore}");
                 clientStats.SPM = 0;
             }
 
@@ -1131,8 +1129,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // fixme: how does this happen?
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
             {
-                Log.WriteWarning("[StatManager::UpdateStats] clientStats SPM/Skill NaN");
-                Log.WriteDebug($"{killSPM}-{KDRWeight}-{totalPlayTime}-{SPMAgainstPlayWeight}-{clientStats.SPM}-{clientStats.Skill}-{scoreDifference}");
+                _log.WriteWarning("[StatManager::UpdateStats] clientStats SPM/Skill NaN");
+                _log.WriteDebug($"{killSPM}-{KDRWeight}-{totalPlayTime}-{SPMAgainstPlayWeight}-{clientStats.SPM}-{clientStats.Skill}-{scoreDifference}");
                 clientStats.SPM = 0;
                 clientStats.Skill = 0;
             }
@@ -1154,7 +1152,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 if (serverStats == null)
                 {
-                    Log.WriteDebug($"Initializing server stats for {serverId}");
+                    _log.WriteDebug($"Initializing server stats for {serverId}");
                     // server stats have never been generated before
                     serverStats = new EFServerStatistics()
                     {
@@ -1173,7 +1171,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public void ResetKillstreaks(long serverId)
         {
-            var serverStats = Servers[serverId];
+            var serverStats = _servers[serverId];
 
             foreach (var stat in serverStats.PlayerStats.Values)
             {
@@ -1183,7 +1181,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public void ResetStats(int clientId, long serverId)
         {
-            var stats = Servers[serverId].PlayerStats[clientId];
+            var stats = _servers[serverId].PlayerStats[clientId];
             stats.Kills = 0;
             stats.Deaths = 0;
             stats.SPM = 0;
@@ -1221,10 +1219,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
                 var serverSet = ctx.Set<EFServer>();
-                serverSet.Update(Servers[serverId].Server);
+                serverSet.Update(_servers[serverId].Server);
 
                 var serverStatsSet = ctx.Set<EFServerStatistics>();
-                serverStatsSet.Update(Servers[serverId].ServerStatistics);
+                serverStatsSet.Update(_servers[serverId].ServerStatistics);
 
                 await ctx.SaveChangesAsync();
             }
@@ -1232,7 +1230,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public void SetTeamBased(long serverId, bool isTeamBased)
         {
-            Servers[serverId].IsTeamBased = isTeamBased;
+            _servers[serverId].IsTeamBased = isTeamBased;
         }
 
         public static async Task<long> GetIdForServer(Server server)

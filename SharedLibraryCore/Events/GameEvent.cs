@@ -212,11 +212,11 @@ namespace SharedLibraryCore
         /// asynchronously wait for GameEvent to be processed
         /// </summary>
         /// <returns>waitable task </returns>
-        public Task<GameEvent> WaitAsync(int timeOut = int.MaxValue)
+        public Task<GameEvent> WaitAsync(TimeSpan timeSpan, CancellationToken token)
         {
             return Task.Run(() =>
             {
-                OnProcessed.Wait(timeOut);
+                OnProcessed.Wait(timeSpan, token);
                 return this;
             });
         }

@@ -1,204 +1,221 @@
 ﻿using IW4MAdmin.Application.Migration;
 using SharedLibraryCore;
-using SharedLibraryCore.Localization;
 using System;
-using System.IO;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
     public class Program
     {
-        static public double Version { get; private set; }
-        static public ApplicationManager ServerManager;
-        private static ManualResetEventSlim OnShutdownComplete = new ManualResetEventSlim();
+        public static double Version { get; private set; } = Utilities.GetVersionAsDouble();
+        public static ApplicationManager ServerManager;
+        private static Task ApplicationTask;
 
-        public static void Main(string[] args)
+        /// <summary>
+        /// entrypoint of the application
+        /// </summary>
+        /// <returns></returns>
+        public static async Task Main()
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
+
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 
-            Version = Utilities.GetVersionAsDouble();
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
 
             Console.WriteLine("=====================================================");
-            Console.WriteLine(" IW4M ADMIN");
+            Console.WriteLine(" IW4MAdmin");
             Console.WriteLine(" by RaidMax ");
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
 
-            Index loc = null;
+            await LaunchAsync();
+        }
 
+        /// <summary>
+        /// event callback executed when the control + c combination is detected
+        /// gracefully stops the server manager and waits for all tasks to finish
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
+        {
+            ServerManager?.Stop();
+            await ApplicationTask;
+        }
+
+        /// <summary>
+        /// task that initializes application and starts the application monitoring and runtime tasks
+        /// </summary>
+        /// <returns></returns>
+        private static async Task LaunchAsync()
+        {
+        restart:
             try
             {
                 ServerManager = ApplicationManager.GetInstance();
                 var configuration = ServerManager.GetApplicationSettings().Configuration();
+                Localization.Configure.Initialize(configuration?.EnableCustomLocale ?? false ? (configuration.CustomLocale ?? "windows-1252") : "windows-1252");
 
-                if (configuration != null)
-                {
-                    Localization.Configure.Initialize(configuration.EnableCustomLocale ? (configuration.CustomLocale ?? "windows-1252") : "windows-1252");
-                }
-
-                else
-                {
-                    Localization.Configure.Initialize();
-                }
-
-                loc = Utilities.CurrentLocalization.LocalizationIndex;
-                Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
-
-                CheckDirectories();
-                // do any needed migrations
-                // todo: move out
+                // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
+                ConfigurationMigration.CheckDirectories();
 
-                ServerManager.Logger.WriteInfo($"Version is {Version}");
+                ServerManager.Logger.WriteInfo(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_VERSION"].FormatExt(Version));
 
-                var api = API.Master.Endpoint.Get();
-
-                var version = new API.Master.VersionInfo()
-                {
-                    CurrentVersionStable = 99.99f
-                };
-
-                try
-                {
-                    version = api.GetVersion().Result;
-                }
-
-                catch (Exception e)
-                {
-                    ServerManager.Logger.WriteWarning(loc["MANAGER_VERSION_FAIL"]);
-                    while (e.InnerException != null)
-                    {
-                        e = e.InnerException;
-                    }
-
-                    ServerManager.Logger.WriteDebug(e.Message);
-                }
-
-                if (version.CurrentVersionStable == 99.99f)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(loc["MANAGER_VERSION_FAIL"]);
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                }
-
-#if !PRERELEASE
-                else if (version.CurrentVersionStable > Version)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString("0.0")}]");
-                        Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}]"));
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                }
-#else
-                else if (version.CurrentVersionPrerelease > Version)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
-                    Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}-pr]"));
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                }
-#endif 
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine(loc["MANAGER_VERSION_SUCCESS"]);
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                }
-
-                ServerManager.Init().Wait();
-
-                var consoleTask = Task.Run(async () =>
-                {
-                    string userInput;
-                    var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
-
-                    do
-                    {
-                        userInput = Console.ReadLine();
-
-                        if (userInput?.ToLower() == "quit")
-                        {
-                            ServerManager.Stop();
-                        }
-
-                        if (ServerManager.Servers.Count == 0)
-                        {
-                            Console.WriteLine(loc["MANAGER_CONSOLE_NOSERV"]);
-                            continue;
-                        }
-
-                        if (userInput?.Length > 0)
-                        {
-                            GameEvent E = new GameEvent()
-                            {
-                                Type = GameEvent.EventType.Command,
-                                Data = userInput,
-                                Origin = Origin,
-                                Owner = ServerManager.Servers[0]
-                            };
-
-                            ServerManager.GetEventHandler().AddEvent(E);
-                            await E.WaitAsync(30 * 1000);
-                        }
-                        Console.Write('>');
-
-                    } while (ServerManager.Running);
-                });
+                await CheckVersion();
+                await ServerManager.Init();
             }
 
             catch (Exception e)
             {
+                var loc = Utilities.CurrentLocalization.LocalizationIndex;
                 string failMessage = loc == null ? "Failed to initalize IW4MAdmin" : loc["MANAGER_INIT_FAIL"];
                 string exitMessage = loc == null ? "Press any key to exit..." : loc["MANAGER_EXIT"];
 
                 Console.WriteLine(failMessage);
+
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
                 }
+
                 Console.WriteLine(e.Message);
                 Console.WriteLine(exitMessage);
                 Console.ReadKey();
-                return;
             }
 
-            if (ServerManager.GetApplicationSettings().Configuration().EnableWebFront)
+            try
             {
-                Task.Run(() => WebfrontCore.Program.Init(ServerManager));
+                ApplicationTask = RunApplicationTasksAsync();
+                await ApplicationTask;
             }
 
-            OnShutdownComplete.Reset();
-            ServerManager.Start();
-            ServerManager.Logger.WriteVerbose(loc["MANAGER_SHUTDOWN_SUCCESS"]);
-            OnShutdownComplete.Set();
+            catch { }
+
+            if (ServerManager.IsRestartRequested)
+            {
+                goto restart;
+            }
         }
 
-        private static void OnCancelKey(object sender, ConsoleCancelEventArgs e)
+        /// <summary>
+        /// runs the core application tasks
+        /// </summary>
+        /// <returns></returns>
+        private static async Task RunApplicationTasksAsync()
         {
-            ServerManager.Stop();
-            OnShutdownComplete.Wait();
+            var webfrontTask = ServerManager.GetApplicationSettings().Configuration().EnableWebFront ?
+                WebfrontCore.Program.Init(ServerManager, ServerManager.CancellationToken) :
+                Task.CompletedTask;
+
+            var tasks = new[]
+            {
+                webfrontTask,
+                ReadConsoleInput(),
+                ServerManager.Start(),
+            };
+
+            await Task.WhenAll(tasks);
+
+            ServerManager.Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }
 
-        static void CheckDirectories()
+        /// <summary>
+        /// checks for latest version of the application
+        /// notifies user if an update is available
+        /// </summary>
+        /// <returns></returns>
+        private static async Task CheckVersion()
         {
-            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Plugins")))
+            var api = API.Master.Endpoint.Get();
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+
+            var version = new API.Master.VersionInfo()
             {
-                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Plugins"));
+                CurrentVersionStable = 99.99f
+            };
+
+            try
+            {
+                version = await api.GetVersion();
             }
 
-            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Database")))
+            catch (Exception e)
             {
-                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Database"));
+                ServerManager.Logger.WriteWarning(loc["MANAGER_VERSION_FAIL"]);
+                while (e.InnerException != null)
+                {
+                    e = e.InnerException;
+                }
+
+                ServerManager.Logger.WriteDebug(e.Message);
             }
 
-            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Log")))
+            if (version.CurrentVersionStable == 99.99f)
             {
-                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Log"));
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(loc["MANAGER_VERSION_FAIL"]);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+
+#if !PRERELEASE
+            else if (version.CurrentVersionStable > Version)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString("0.0")}]");
+                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}]"));
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+#else
+            else if (version.CurrentVersionPrerelease > Version)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
+                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}-pr]"));
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+#endif
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(loc["MANAGER_VERSION_SUCCESS"]);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+        }
+
+        /// <summary>
+        /// reads input from the console and executes entered commands on the default server
+        /// </summary>
+        /// <returns></returns>
+        private static async Task ReadConsoleInput()
+        {
+            string lastCommand;
+            var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
+
+            while (!ServerManager.CancellationToken.IsCancellationRequested)
+            {
+                lastCommand = Console.ReadLine();
+
+                if (lastCommand?.Length > 0)
+                {
+                    if (lastCommand?.Length > 0)
+                    {
+                        GameEvent E = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Command,
+                            Data = lastCommand,
+                            Origin = Origin,
+                            Owner = ServerManager.Servers[0]
+                        };
+
+                        ServerManager.GetEventHandler().AddEvent(E);
+                        await E.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
+                        Console.Write('>');
+                    }
+                }
             }
         }
     }

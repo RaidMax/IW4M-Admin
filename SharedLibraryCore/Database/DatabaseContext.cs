@@ -29,7 +29,7 @@ namespace SharedLibraryCore.Database
         {
 #if DEBUG == true
             activeContextCount++;
-            Console.WriteLine($"Initialized DB Context #{activeContextCount}");
+            //Console.WriteLine($"Initialized DB Context #{activeContextCount}");
 #endif
         }
 
@@ -37,7 +37,7 @@ namespace SharedLibraryCore.Database
         {
 #if DEBUG == true
             activeContextCount++;
-            Console.WriteLine($"Initialized DB Context #{activeContextCount}");
+            //Console.WriteLine($"Initialized DB Context #{activeContextCount}");
 #endif
         }
 
@@ -45,7 +45,7 @@ namespace SharedLibraryCore.Database
         {
 #if DEBUG == true
 
-            Console.WriteLine($"Disposed DB Context #{activeContextCount}");
+            //Console.WriteLine($"Disposed DB Context #{activeContextCount}");
             activeContextCount--;
 #endif
         }

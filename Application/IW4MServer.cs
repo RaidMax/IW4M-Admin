@@ -296,6 +296,20 @@ namespace IW4MAdmin
                     Target = E.Target,
                     Reason = E.Data
                 });
+
+                Penalty newReport = new Penalty()
+                {
+                    Type = Penalty.PenaltyType.Report,
+                    Expires = DateTime.UtcNow,
+                    Offender = E.Target,
+                    Offense = E.Message,
+                    Punisher = E.Origin,
+                    Active = true,
+                    When = DateTime.UtcNow,
+                    Link = E.Target.AliasLink
+                };
+
+                await Manager.GetPenaltyService().Create(newReport);
             }
 
             else if (E.Type == GameEvent.EventType.TempBan)
@@ -548,7 +562,7 @@ namespace IW4MAdmin
             try
             {
                 #region SHUTDOWN
-                if (Manager.ShutdownRequested())
+                if (Manager.CancellationToken.IsCancellationRequested)
                 {
                     foreach (var client in GetClientsAsList())
                     {
@@ -560,7 +574,7 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(e);
-                        await e.WaitAsync();
+                        await e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
                     }
 
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
@@ -597,7 +611,7 @@ namespace IW4MAdmin
                         waiterList.Add(e);
                     }
                     // wait for all the disconnect tasks to finish
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken)));
 
                     waiterList.Clear();
                     // this are our new connecting clients
@@ -621,7 +635,7 @@ namespace IW4MAdmin
                     }
 
                     // wait for all the connect tasks to finish
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken)));
 
                     waiterList.Clear();
                     // these are the clients that have updated
@@ -638,7 +652,7 @@ namespace IW4MAdmin
                         waiterList.Add(e);
                     }
 
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(10 * 1000)));
+                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken)));
 
                     if (ConnectionErrors > 0)
                     {

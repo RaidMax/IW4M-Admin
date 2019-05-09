@@ -16,6 +16,27 @@ namespace IW4MAdmin.Application.Migration
     class ConfigurationMigration
     {
         /// <summary>
+        /// ensures required directories are created
+        /// </summary>
+        public static void CheckDirectories()
+        {
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Plugins")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Plugins"));
+            }
+
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Database")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Database"));
+            }
+
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Log")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Log"));
+            }
+        }
+
+        /// <summary>
         /// moves existing configs from the root folder into a configs folder
         /// </summary>
         public static void MoveConfigFolder10518(ILogger log)

@@ -8,10 +8,10 @@ namespace IW4MAdmin.Application.IO
 {
     class GameLogEventDetection
     {
-        Server Server;
-        long PreviousFileSize;
-        IGameLogReader Reader;
-        readonly string GameLogFile;
+        private long previousFileSize;
+        private readonly Server _server;
+        private readonly IGameLogReader _reader;
+        private readonly string _gameLogFile;
 
         class EventState
         {
@@ -21,16 +21,16 @@ namespace IW4MAdmin.Application.IO
 
         public GameLogEventDetection(Server server, string gameLogPath, Uri gameLogServerUri)
         {
-            GameLogFile = gameLogPath;
-            Reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : Reader = new GameLogReader(gameLogPath, server.EventParser); 
-            Server = server;
+            _gameLogFile = gameLogPath;
+            _reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : _reader = new GameLogReader(gameLogPath, server.EventParser); 
+            _server = server;
         }
 
         public async Task PollForChanges()
         {
-            while (!Server.Manager.ShutdownRequested())
+            while (!_server.Manager.CancellationToken.IsCancellationRequested)
             {
-                if (Server.IsInitialized)
+                if (_server.IsInitialized)
                 {
                     try
                     {
@@ -39,39 +39,40 @@ namespace IW4MAdmin.Application.IO
 
                     catch (Exception e)
                     {
-                        Server.Logger.WriteWarning($"Failed to update log event for {Server.EndPoint}");
-                        Server.Logger.WriteDebug($"Exception: {e.Message}");
-                        Server.Logger.WriteDebug($"StackTrace: {e.StackTrace}");
+                        _server.Logger.WriteWarning($"Failed to update log event for {_server.EndPoint}");
+                        _server.Logger.WriteDebug($"Exception: {e.Message}");
+                        _server.Logger.WriteDebug($"StackTrace: {e.StackTrace}");
                     }
                 }
-                Thread.Sleep(Reader.UpdateInterval);
+                
+                await Task.Delay(_reader.UpdateInterval, _server.Manager.CancellationToken);
             }
         }
 
         private async Task UpdateLogEvents()
         {
-            long fileSize = Reader.Length;
+            long fileSize = _reader.Length;
 
-            if (PreviousFileSize == 0)
-                PreviousFileSize = fileSize;
+            if (previousFileSize == 0)
+                previousFileSize = fileSize;
 
-            long fileDiff = fileSize - PreviousFileSize;
+            long fileDiff = fileSize - previousFileSize;
 
             // this makes the http log get pulled
             if (fileDiff < 1 && fileSize != -1)
                 return;
 
-            PreviousFileSize = fileSize;
+            previousFileSize = fileSize;
 
-            var events = await Reader.ReadEventsFromLog(Server, fileDiff, 0);
+            var events = await _reader.ReadEventsFromLog(_server, fileDiff, 0);
 
             foreach (var ev in events)
             {
-                Server.Manager.GetEventHandler().AddEvent(ev);
-                await ev.WaitAsync();
+                _server.Manager.GetEventHandler().AddEvent(ev);
+                await ev.WaitAsync(Utilities.DefaultCommandTimeout, _server.Manager.CancellationToken);
             }
 
-            PreviousFileSize = fileSize;
+            previousFileSize = fileSize;
         }
     }
 }

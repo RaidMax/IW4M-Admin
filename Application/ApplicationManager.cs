@@ -656,9 +656,9 @@ namespace IW4MAdmin.Application
             }
         }
 
-        public Task Start()
+        public async Task Start()
         {
-            return Task.WhenAll(new[]
+            await Task.WhenAll(new[]
             {
                 SendHeartbeat(),
                 UpdateServerStates()

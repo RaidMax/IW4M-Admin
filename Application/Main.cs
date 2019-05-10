@@ -85,6 +85,7 @@ namespace IW4MAdmin.Application
                 Console.WriteLine(e.Message);
                 Console.WriteLine(exitMessage);
                 Console.ReadKey();
+                return;
             }
 
             try
@@ -113,9 +114,9 @@ namespace IW4MAdmin.Application
 
             var tasks = new[]
             {
+                ServerManager.Start(),
                 webfrontTask,
                 ReadConsoleInput(),
-                ServerManager.Start(),
             };
 
             await Task.WhenAll(tasks);

@@ -6,7 +6,7 @@
     <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
     <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
     <PackageId>RaidMax.IW4MAdmin.Application</PackageId>
-    <Version>2.2.7.2</Version>
+    <Version>2.2.7.3</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>IW4MAdmin</Product>
@@ -32,8 +32,8 @@
   <PropertyGroup>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
-    <AssemblyVersion>2.2.7.2</AssemblyVersion>
-    <FileVersion>2.2.7.2</FileVersion>
+    <AssemblyVersion>2.2.7.3</AssemblyVersion>
+    <FileVersion>2.2.7.3</FileVersion>
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
@@ -45,6 +45,12 @@
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="DefaultSettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

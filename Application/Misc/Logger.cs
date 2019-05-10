@@ -1,12 +1,12 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
 namespace IW4MAdmin.Application
 {
-    class Logger : SharedLibraryCore.Interfaces.ILogger
+    class Logger : ILogger
     {
         enum LogType
         {
@@ -55,7 +55,6 @@ namespace IW4MAdmin.Application
 
         void Write(string msg, LogType type)
         {
-            return;
             OnLogWriting.Wait();
 
             string stringType = type.ToString();

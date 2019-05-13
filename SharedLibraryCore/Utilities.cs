@@ -268,10 +268,15 @@ namespace SharedLibraryCore
             }
         }
 
-        public static long ConvertGuidToLong(this string str)
+        public static long ConvertGuidToLong(this string str, long? fallback = null)
         {
             str = str.Substring(0, Math.Min(str.Length, 16));
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
+
+            if (string.IsNullOrWhiteSpace(str) && fallback.HasValue)
+            {
+                return fallback.Value;
+            }
 
             // this is a special case for Plutonium T6
             if (str.Length <= 11 &&

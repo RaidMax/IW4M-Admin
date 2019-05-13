@@ -80,14 +80,9 @@ namespace IW4MAdmin.Plugins.Stats
                     if (killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId <= 1)
+                        if (E.Origin.ClientId == 1)
                         {
                             E.Origin = E.Target;
-                        }
-
-                        if (E.Target.ClientId <= 1)
-                        {
-                            E.Target = E.Origin;
                         }
 
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, await StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
@@ -98,14 +93,9 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId <= 1)
+                        if (E.Origin.ClientId == 1)
                         {
                             E.Origin = E.Target;
-                        }
-
-                        if (E.Target.ClientId <= 1)
-                        {
-                            E.Target = E.Origin;
                         }
 
                         await Manager.AddStandardKill(E.Origin, E.Target);
@@ -115,14 +105,9 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId <= 1)
+                        if (E.Origin.ClientId == 1)
                         {
                             E.Origin = E.Target;
-                        }
-
-                        if (E.Target.ClientId <= 1)
-                        {
-                            E.Target = E.Origin;
                         }
 
                         Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, await StatManager.GetIdForServer(E.Owner));
@@ -133,14 +118,9 @@ namespace IW4MAdmin.Plugins.Stats
                     if (killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId <= 1)
+                        if (E.Origin.ClientId == 1)
                         {
                             E.Origin = E.Target;
-                        }
-
-                        if (E.Target.ClientId <= 1)
-                        {
-                            E.Target = E.Origin;
                         }
 
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, await StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],

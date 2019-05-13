@@ -75,26 +75,11 @@ namespace IW4MAdmin.Application.EventParsers
 
         public string URLProtocolFormat { get; set; } = "CoD://{{ip}}:{{port}}";
 
-        public virtual GameEvent GetEvent(Server server, string logLine)
+        public virtual GameEvent GenerateGameEvent(string logLine)
         {
             logLine = Regex.Replace(logLine, @"([0-9]+:[0-9]+ |^[0-9]+ )", "").Trim();
             string[] lineSplit = logLine.Split(';');
             string eventType = lineSplit[0];
-
-            // this is a "custom callback" event
-            if (eventType == "JoinTeam")
-            {
-                var origin = server.GetClientsAsList()
-                    .FirstOrDefault(c => c.NetworkId == lineSplit[1].ConvertGuidToLong());
-
-                return new GameEvent()
-                {
-                    Type = GameEvent.EventType.JoinTeam,
-                    Data = logLine,
-                    Origin = origin,
-                    Owner = server
-                };
-            }
 
             if (eventType == "say" || eventType == "sayteam")
             {
@@ -110,8 +95,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                     if (message.Length > 0)
                     {
-                        var origin = server.GetClientsAsList()
-                            .First(c => c.NetworkId == matchResult.Groups[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong());
+                        long originId = matchResult.Groups[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong();
 
                         if (message[0] == '!' || message[0] == '@')
                         {
@@ -119,8 +103,8 @@ namespace IW4MAdmin.Application.EventParsers
                             {
                                 Type = GameEvent.EventType.Command,
                                 Data = message,
-                                Origin = origin,
-                                Owner = server,
+                                Origin = new EFClient() { NetworkId = originId },
+                                Target = Utilities.IW4MAdminClient(),
                                 Message = message
                             };
                         }
@@ -129,8 +113,8 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             Type = GameEvent.EventType.Say,
                             Data = message,
-                            Origin = origin,
-                            Owner = server,
+                            Origin = new EFClient() { NetworkId = originId },
+                            Target = Utilities.IW4MAdminClient(),
                             Message = message
                         };
                     }
@@ -139,111 +123,47 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "K")
             {
-                if (!server.CustomCallback)
+
+                var match = Regex.Match(logLine, Configuration.Kill.Pattern);
+
+                if (match.Success)
                 {
-                    var match = Regex.Match(logLine, Configuration.Kill.Pattern);
+                    long originId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].Value.ToString().ConvertGuidToLong(1);
+                    long targetId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].Value.ToString().ConvertGuidToLong();
 
-                    if (match.Success)
+                    return new GameEvent()
                     {
-                        string originId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].Value.ToString();
-                        string targetId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].Value.ToString();
-
-                        var origin = !string.IsNullOrEmpty(originId) ? server.GetClientsAsList()
-                                .First(c => c.NetworkId == originId.ConvertGuidToLong()) :
-                                Utilities.IW4MAdminClient(server);
-
-                        var target = !string.IsNullOrEmpty(targetId) ? server.GetClientsAsList()
-                                .First(c => c.NetworkId == targetId.ConvertGuidToLong()) :
-                                Utilities.IW4MAdminClient(server);
-
-                        return new GameEvent()
-                        {
-                            Type = GameEvent.EventType.Kill,
-                            Data = logLine,
-                            Origin = origin,
-                            Target = target,
-                            Owner = server
-                        };
-                    }
+                        Type = GameEvent.EventType.Kill,
+                        Data = logLine,
+                        Origin = new EFClient() { NetworkId = originId },
+                        Target = new EFClient() { NetworkId = targetId },
+                    };
                 }
             }
 
-            if (eventType == "ScriptKill")
-            {
-                long originId = lineSplit[1].ConvertGuidToLong();
-                long targetId = lineSplit[2].ConvertGuidToLong();
-
-                var origin = originId == long.MinValue ? Utilities.IW4MAdminClient(server) :
-                    server.GetClientsAsList().First(c => c.NetworkId == originId);
-                var target = targetId == long.MinValue ? Utilities.IW4MAdminClient(server) :
-                    server.GetClientsAsList().FirstOrDefault(c => c.NetworkId == targetId) ?? Utilities.IW4MAdminClient(server);
-
-                return new GameEvent()
-                {
-                    Type = GameEvent.EventType.ScriptKill,
-                    Data = logLine,
-                    Origin = origin,
-                    Target = target,
-                    Owner = server
-                };
-            }
-
-            if (eventType == "ScriptDamage")
-            {
-                long originId = lineSplit[1].ConvertGuidToLong();
-                long targetId = lineSplit[2].ConvertGuidToLong();
-
-                var origin = originId == long.MinValue ? Utilities.IW4MAdminClient(server) :
-                    server.GetClientsAsList().First(c => c.NetworkId == originId);
-                var target = targetId == long.MinValue ? Utilities.IW4MAdminClient(server) :
-                    server.GetClientsAsList().FirstOrDefault(c => c.NetworkId == targetId) ?? Utilities.IW4MAdminClient(server);
-
-                return new GameEvent()
-                {
-                    Type = GameEvent.EventType.ScriptDamage,
-                    Data = logLine,
-                    Origin = origin,
-                    Target = target,
-                    Owner = server
-                };
-            }
-
-            // damage
             if (eventType == "D")
             {
-                if (!server.CustomCallback)
-                {
                     var regexMatch = Regex.Match(logLine, Configuration.Damage.Pattern);
 
                     if (regexMatch.Success)
                     {
-                        string originId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
-                        string targetId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString();
-
-                        var origin = !string.IsNullOrEmpty(originId) ? server.GetClientsAsList()
-                            .First(c => c.NetworkId == originId.ConvertGuidToLong()) :
-                            Utilities.IW4MAdminClient(server);
-
-                        var target = !string.IsNullOrEmpty(targetId) ? server.GetClientsAsList()
-                            .First(c => c.NetworkId == targetId.ConvertGuidToLong()) :
-                            Utilities.IW4MAdminClient(server);
+                        long originId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(1);
+                        long targetId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong();
 
                         return new GameEvent()
                         {
                             Type = GameEvent.EventType.Damage,
                             Data = logLine,
-                            Origin = origin,
-                            Target = target,
-                            Owner = server
+                            Origin = new EFClient() { NetworkId = originId },
+                            Target = new EFClient() { NetworkId = targetId }
                         };
                     }
-                }
             }
 
-            // join
             if (eventType == "J")
             {
                 var regexMatch = Regex.Match(logLine, Configuration.Join.Pattern);
+
                 if (regexMatch.Success)
                 {
                     bool isBot = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().Contains("bot");
@@ -252,7 +172,6 @@ namespace IW4MAdmin.Application.EventParsers
                     {
                         Type = GameEvent.EventType.PreConnect,
                         Data = logLine,
-                        Owner = server,
                         Origin = new EFClient()
                         {
                             CurrentAlias = new EFAlias()
@@ -262,9 +181,9 @@ namespace IW4MAdmin.Application.EventParsers
                             NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
-                            CurrentServer = server,
                             IsBot = isBot
-                        }
+                        },
+                        Target = Utilities.IW4MAdminClient()
                     };
                 }
             }
@@ -278,7 +197,6 @@ namespace IW4MAdmin.Application.EventParsers
                     {
                         Type = GameEvent.EventType.PreDisconnect,
                         Data = logLine,
-                        Owner = server,
                         Origin = new EFClient()
                         {
                             CurrentAlias = new EFAlias()
@@ -288,7 +206,8 @@ namespace IW4MAdmin.Application.EventParsers
                             NetworkId = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Disconnecting
-                        }
+                        },
+                        Target = Utilities.IW4MAdminClient()
                     };
                 }
             }
@@ -299,9 +218,8 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.MapEnd,
                     Data = lineSplit[0],
-                    Origin = Utilities.IW4MAdminClient(server),
-                    Target = Utilities.IW4MAdminClient(server),
-                    Owner = server
+                    Origin = Utilities.IW4MAdminClient(),
+                    Target = Utilities.IW4MAdminClient(),
                 };
             }
 
@@ -313,19 +231,59 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.MapChange,
                     Data = lineSplit[0],
-                    Origin = Utilities.IW4MAdminClient(server),
-                    Target = Utilities.IW4MAdminClient(server),
-                    Owner = server,
+                    Origin = Utilities.IW4MAdminClient(),
+                    Target = Utilities.IW4MAdminClient(),
                     Extra = dump.DictionaryFromKeyValue()
+                };
+            }
+
+            // this is a custom event printed out by _customcallbacks.gsc (used for team balance)
+            if (eventType == "JoinTeam")
+            {
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.JoinTeam,
+                    Data = logLine,
+                    Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong() },
+                    Target = Utilities.IW4MAdminClient()
+                };
+            }
+
+            // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
+            if (eventType == "ScriptKill")
+            {
+                long originId = lineSplit[1].ConvertGuidToLong(1);
+                long targetId = lineSplit[2].ConvertGuidToLong();
+
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.ScriptKill,
+                    Data = logLine,
+                    Origin = new EFClient() { NetworkId = originId },
+                    Target = new EFClient() { NetworkId = targetId }
+                };
+            }
+
+            // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
+            if (eventType == "ScriptDamage")
+            {
+                long originId = lineSplit[1].ConvertGuidToLong(1);
+                long targetId = lineSplit[2].ConvertGuidToLong();
+
+                return new GameEvent()
+                {
+                    Type = GameEvent.EventType.ScriptDamage,
+                    Data = logLine,
+                    Origin = new EFClient() { NetworkId = originId },
+                    Target = new EFClient() { NetworkId = targetId }
                 };
             }
 
             return new GameEvent()
             {
                 Type = GameEvent.EventType.Unknown,
-                Origin = Utilities.IW4MAdminClient(server),
-                Target = Utilities.IW4MAdminClient(server),
-                Owner = server
+                Origin = Utilities.IW4MAdminClient(),
+                Target = Utilities.IW4MAdminClient()
             };
         }
     }

@@ -3,7 +3,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
@@ -12,6 +12,7 @@ namespace IW4MAdmin.Application.IO
     {
         IEventParser Parser;
         readonly string LogFile;
+        private bool? ignoreBots;
 
         public long Length => new FileInfo(LogFile).Length;
 
@@ -25,16 +26,20 @@ namespace IW4MAdmin.Application.IO
 
         public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
+            if (!ignoreBots.HasValue)
+            {
+                ignoreBots = server.Manager.GetApplicationSettings().Configuration().IgnoreBots;
+            }
+
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();
 
             // open the file as a stream
             using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
             {
-                // todo: max async
                 // take the old start position and go back the number of new characters
                 rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
-                
+
                 string newLine;
                 while (!string.IsNullOrEmpty(newLine = await rd.ReadLineAsync()))
                 {
@@ -51,10 +56,27 @@ namespace IW4MAdmin.Application.IO
                 {
                     try
                     {
-                        // todo: catch elsewhere
-                        events.Add(Parser.GetEvent(server, eventLine));
+                        var gameEvent = Parser.GenerateGameEvent(eventLine);
+                        // we don't want to add the even if ignoreBots is on and the event comes froma bot
+                        if (!ignoreBots.Value || (ignoreBots.Value && (gameEvent.Origin.NetworkId != -1 || gameEvent.Target.NetworkId != -1)))
+                        {
+                            gameEvent.Owner = server;
+                            // we need to pull the "live" versions of the client (only if the client id isn't IW4MAdmin
+                            gameEvent.Origin = gameEvent.Origin.ClientId == 1 ? gameEvent.Origin : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin.NetworkId);
+                            gameEvent.Target = gameEvent.Target.ClientId == 1 ? gameEvent.Target : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target.NetworkId);
+
+                            events.Add(gameEvent);
+                        }
                     }
-                    
+
+                    catch (InvalidOperationException)
+                    {
+                        if (!ignoreBots.Value)
+                        {
+                            server.Logger.WriteWarning("Could not find client in client list when parsing event line");
+                        }
+                    }
+
                     catch (Exception e)
                     {
                         server.Logger.WriteWarning("Could not properly parse event line");

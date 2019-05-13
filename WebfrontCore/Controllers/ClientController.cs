@@ -121,6 +121,11 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> FindAsync(string clientName)
         {
+            if (string.IsNullOrWhiteSpace(clientName))
+            {
+                return StatusCode(400);
+            }
+
             var clientsDto = await Manager.GetClientService().FindClientsByIdentifier(clientName);
 
             ViewBag.Title = $"{clientsDto.Count} {Localization["WEBFRONT_CLIENT_SEARCH_MATCHING"]} \"{clientName}\"";

@@ -568,7 +568,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Set<EFClientKill>().Add(hit);
                     }
 
-                    if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot)
+                    if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
                     {
                         if (clientDetection.QueuedHits.Count > Detection.QUEUE_COUNT)
                         {
@@ -577,8 +577,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 clientDetection.QueuedHits = clientDetection.QueuedHits.OrderBy(_hits => _hits.TimeOffset).ToList();
                                 var oldestHit = clientDetection.QueuedHits.First();
                                 clientDetection.QueuedHits.RemoveAt(0);
-                                await ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage), clientDetection, attacker, ctx);
+                                await ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage),  attacker, ctx);
                             }
+
+                            await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), attacker, ctx);
                         }
 
                         else
@@ -586,7 +588,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             clientDetection.QueuedHits.Add(hit);
                         }
 
-                        await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), clientDetection, attacker, ctx);
+                        if (clientDetection.Tracker.HasChanges)
+                        {
+                            SaveTrackedSnapshots(clientDetection, ctx);
+                        }
                     }
 
                     ctx.Set<EFHitLocationCount>().UpdateRange(clientStats.HitLocations);
@@ -604,7 +609,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        async Task ApplyPenalty(DetectionPenaltyResult penalty, Detection clientDetection, EFClient attacker, DatabaseContext ctx)
+        async Task ApplyPenalty(DetectionPenaltyResult penalty, EFClient attacker, DatabaseContext ctx)
         {
             var penaltyClient = Utilities.IW4MAdminClient(attacker.CurrentServer);
             switch (penalty.ClientPenalty)
@@ -626,11 +631,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     };
 
                     await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], penaltyClient, false).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
-
-                    if (clientDetection.Tracker.HasChanges)
-                    {
-                        SaveTrackedSnapshots(clientDetection, ctx);
-                    }
                     break;
                 case Penalty.PenaltyType.Flag:
                     if (attacker.Level != EFClient.Permission.User)
@@ -643,11 +643,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
 
                     await attacker.Flag(flagReason, penaltyClient).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
-
-                    if (clientDetection.Tracker.HasChanges)
-                    {
-                        SaveTrackedSnapshots(clientDetection, ctx);
-                    }
                     break;
             }
         }
@@ -655,7 +650,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         void SaveTrackedSnapshots(Detection clientDetection, DatabaseContext ctx)
         {
             // todo: why does this cause duplicate primary key
-            var change = clientDetection.Tracker.GetNextChange();
+            _ = clientDetection.Tracker.GetNextChange();
+            EFACSnapshot change;
             while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
             {
 

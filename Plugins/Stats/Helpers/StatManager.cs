@@ -499,7 +499,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 AttackerId = attacker.ClientId,
                 VictimId = victim.ClientId,
                 ServerId = serverId,
-                Map = ParseEnum<IW4Info.MapName>.Get(map, typeof(IW4Info.MapName)),
+                //Map = ParseEnum<IW4Info.MapName>.Get(map, typeof(IW4Info.MapName)),
                 DeathOrigin = vDeathOrigin,
                 KillOrigin = vKillOrigin,
                 DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
@@ -577,7 +577,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 clientDetection.QueuedHits = clientDetection.QueuedHits.OrderBy(_hits => _hits.TimeOffset).ToList();
                                 var oldestHit = clientDetection.QueuedHits.First();
                                 clientDetection.QueuedHits.RemoveAt(0);
-                                await ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage),  attacker, ctx);
+                                await ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage), attacker, ctx);
                             }
 
                             await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), attacker, ctx);
@@ -1231,43 +1231,24 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public static async Task<long> GetIdForServer(Server server)
         {
-            // hack: my laziness
-            if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28965")
-            {
-                return 886229536;
-            }
+            long id = HashCode.Combine(server.IP, server.GetPort());
+            id = id < 0 ? Math.Abs(id) : id;
+            long? serverId;
 
-            else if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28960")
+            // todo: cache this eventually, as it shouldn't change
+            using (var ctx = new DatabaseContext(disableTracking: true))
             {
-                return 1645744423;
-            }
-
-            else if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28970")
-            {
-                return 1645809959;
-            }
-
-            else
-            {
-                long id = HashCode.Combine(server.IP, server.GetPort());
-                id = id < 0 ? Math.Abs(id) : id;
-                long? serverId;
-
-                // todo: cache this eventually, as it shouldn't change
-                using (var ctx = new DatabaseContext(disableTracking: true))
-                {
-                    serverId = (await ctx.Set<EFServer>().FirstOrDefaultAsync(_server => _server.ServerId == server.EndPoint ||
+                serverId = (await ctx.Set<EFServer>().FirstOrDefaultAsync(_server => _server.ServerId == server.EndPoint ||
                     _server.EndPoint == server.ToString() ||
                     _server.ServerId == id))?.ServerId;
-                }
-
-                if (!serverId.HasValue)
-                {
-                    return id;
-                }
-
-                return serverId.Value;
             }
+
+            if (!serverId.HasValue)
+            {
+                return id;
+            }
+
+            return serverId.Value;
         }
     }
 }

@@ -84,7 +84,7 @@ function refreshClientActivity() {
                 $('#server_clientactivity_' + serverId).html(response);
             })
             .fail(function (jqxhr, textStatus, error) {
-                $('#server_clientactivity_' + serverId).html("  Could not load client activity -  " + error);
+                $('#server_clientactivity_' + serverId).html('');
             });
     });
 }

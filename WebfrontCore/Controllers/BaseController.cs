@@ -105,6 +105,7 @@ namespace WebfrontCore.Controllers
             ViewBag.SocialLink = SocialLink ?? "";
             ViewBag.SocialTitle = SocialTitle;
             ViewBag.Pages = Pages;
+            ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
 
             base.OnActionExecuting(context);
         }

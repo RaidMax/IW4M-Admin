@@ -156,6 +156,13 @@
     <environment include="Production">
         <script type="text/javascript" src="~/js/global.min.js"></script>
     </environment>
+    <script>
+        let _localizationTmp = @Html.Raw(Json.Serialize(ViewBag.Localization));
+        const _localization = [];
+        $.each(_localizationTmp.set, function (key, value) {
+            _localization[key] = value;
+            });
+    </script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

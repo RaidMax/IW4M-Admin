@@ -712,7 +712,7 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public int Score { get; set; }
         [NotMapped]
-        public bool IsBot { get; set; }
+        public bool IsBot => NetworkId == -1;
 
         [NotMapped]
         public ClientState State { get; set; }

@@ -31,7 +31,7 @@
             }
         },
         title: {
-            text: "Performance History",
+            text: _localization['WEBFRONT_STATS_PERFORMANCE_HISTORY'],
             fontSize: 14
         },
         axisX: {
@@ -39,14 +39,14 @@
             lineThickness: 0,
             tickThickness: 0,
             margin: 0,
-            valueFormatString: " ",
+            valueFormatString: ' ',
         },
         axisY: {
             labelFontSize: 12,
             interval: interval,
             gridThickness: 0,
             lineThickness: 0.5,
-            valueFormatString: "#,##0",
+            valueFormatString: '#,##0',
             minimum: min,
             maximum: max
         },
@@ -54,7 +54,7 @@
             dockInsidePlotArea: true
         },
         data: [{
-            type: "splineArea",
+            type: 'splineArea',
             color: 'rgba(0, 122, 204, 0.25)',
             markerSize: 3.5,
             dataPoints: fixedData

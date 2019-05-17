@@ -2,6 +2,7 @@
 using SharedLibraryCore;
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
@@ -112,14 +113,19 @@ namespace IW4MAdmin.Application
                 WebfrontCore.Program.Init(ServerManager, ServerManager.CancellationToken) :
                 Task.CompletedTask;
 
+            // we want to run this one on a manual thread instead of letting the thread pool handle it,
+            // because we can't exit early from waiting on console input, and it prevents us from restarting
+            var inputThread = new Thread(async () => await ReadConsoleInput());
+            inputThread.Start();
+
             var tasks = new[]
             {
                 ServerManager.Start(),
                 webfrontTask,
-                ReadConsoleInput(),
             };
 
             await Task.WhenAll(tasks);
+            inputThread.Abort();
 
             ServerManager.Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }

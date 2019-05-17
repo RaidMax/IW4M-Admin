@@ -7,7 +7,7 @@
     }
 
     if (command[0] !== '!') {
-        $('#console_command_response').text('All commands must start with !').addClass('text-danger');
+        $('#console_command_response').text(_localization['WEBFRONT_CONSOLE_COMMAND']).addClass('text-danger');
         return false;
     }
     showLoader();
@@ -20,7 +20,7 @@
         .fail(function (jqxhr, textStatus, error) {
             errorLoader();
             hideLoader();
-            $('#console_command_response').text('Could not execute command: ' + error).addClass('text-danger');
+            $('#console_command_response').text(_localization['WEBFRONT_CONSOLE_ERROR'] + error).addClass('text-danger');
         });
 }
 

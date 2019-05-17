@@ -155,7 +155,6 @@ namespace IW4MAdmin.Application.RconParsers
                         IPAddress = ip,
                         Ping = ping,
                         Score = score,
-                        IsBot = ip == null,
                         State = EFClient.ClientState.Connecting
                     };
 

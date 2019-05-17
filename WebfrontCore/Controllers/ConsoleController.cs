@@ -52,26 +52,42 @@ namespace WebfrontCore.Controllers
 
             Manager.GetEventHandler().AddEvent(remoteEvent);
             List<CommandResponseInfo> response;
-            // wait for the event to process
-            if (!(await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken)).Failed)
-            {
-                response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
-                // remove the added command response
-                for (int i = 0; i < response.Count; i++)
+            try
+            {
+                // wait for the event to process
+                if (!(await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken)).Failed)
                 {
-                    server.CommandResult.Remove(response[i]);
+                    response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
+
+                    // remove the added command response
+                    for (int i = 0; i < response.Count; i++)
+                    {
+                        server.CommandResult.Remove(response[i]);
+                    }
+                }
+
+                else
+                {
+                    response = new List<CommandResponseInfo>()
+                {
+                    new CommandResponseInfo()
+                    {
+                        ClientId = client.ClientId,
+                        Response = Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]
+                    }
+                };
                 }
             }
 
-            else
+            catch (System.OperationCanceledException)
             {
                 response = new List<CommandResponseInfo>()
                 {
                     new CommandResponseInfo()
                     {
                         ClientId = client.ClientId,
-                        Response = Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]
+                        Response = Utilities.CurrentLocalization.LocalizationIndex["COMMADS_RESTART_SUCCESS"]
                     }
                 };
             }

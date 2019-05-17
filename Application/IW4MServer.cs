@@ -38,55 +38,45 @@ namespace IW4MAdmin
         {
             Logger.WriteDebug($"Client slot #{clientFromLog.ClientNumber} now reserved");
 
-            try
+            EFClient client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId);
+
+            // first time client is connecting to server
+            if (client == null)
             {
-                EFClient client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId);
+                Logger.WriteDebug($"Client {clientFromLog} first time connecting");
+                clientFromLog.CurrentServer = this;
+                client = await Manager.GetClientService().Create(clientFromLog);
+            }
 
-                // first time client is connecting to server
-                if (client == null)
-                {
-                    Logger.WriteDebug($"Client {clientFromLog} first time connecting");
-                    clientFromLog.CurrentServer = this;
-                    client = await Manager.GetClientService().Create(clientFromLog);
-                }
+            /// this is only a temporary version until the IPAddress is transmitted
+            client.CurrentAlias = new EFAlias()
+            {
+                Name = clientFromLog.Name,
+                IPAddress = clientFromLog.IPAddress
+            };
 
-                /// this is only a temporary version until the IPAddress is transmitted
-                client.CurrentAlias = new EFAlias()
-                {
-                    Name = clientFromLog.Name,
-                    IPAddress = clientFromLog.IPAddress
-                };
+            Logger.WriteInfo($"Client {client} connected...");
 
-                Logger.WriteInfo($"Client {client} connected...");
+            // Do the player specific stuff
+            client.ClientNumber = clientFromLog.ClientNumber;
+            client.Score = clientFromLog.Score;
+            client.Ping = clientFromLog.Ping;
+            client.CurrentServer = this;
 
-                // Do the player specific stuff
-                client.ClientNumber = clientFromLog.ClientNumber;
-                client.IsBot = clientFromLog.IsBot;
-                client.Score = clientFromLog.Score;
-                client.Ping = clientFromLog.Ping;
-                client.CurrentServer = this;
-
-                Clients[client.ClientNumber] = client;
+            Clients[client.ClientNumber] = client;
 #if DEBUG == true
-                Logger.WriteDebug($"End PreConnect for {client}");
+            Logger.WriteDebug($"End PreConnect for {client}");
 #endif
-                var e = new GameEvent()
-                {
-                    Origin = client,
-                    Owner = this,
-                    Type = GameEvent.EventType.Connect
-                };
-
-                Manager.GetEventHandler().AddEvent(e);
-                await client.OnJoin(client.IPAddress);
-                client.State = ClientState.Connected;
-            }
-
-            catch (Exception ex)
+            var e = new GameEvent()
             {
-                Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {clientFromLog}");
-                Logger.WriteError(ex.GetExceptionInfo());
-            }
+                Origin = client,
+                Owner = this,
+                Type = GameEvent.EventType.Connect
+            };
+
+            Manager.GetEventHandler().AddEvent(e);
+            await client.OnJoin(client.IPAddress);
+            client.State = ClientState.Connected;
         }
 
         override public async Task OnClientDisconnected(EFClient client)
@@ -229,7 +219,19 @@ namespace IW4MAdmin
 #endif
                     // we can go ahead and put them in so that they don't get re added
                     Clients[E.Origin.ClientNumber] = E.Origin;
-                    await OnClientConnected(E.Origin);
+                    try
+                    {
+                        await OnClientConnected(E.Origin);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        Logger.WriteError($"{loc["SERVER_ERROR_ADDPLAYER"]} {E.Origin}");
+                        Logger.WriteDebug(ex.GetExceptionInfo());
+
+                        Clients[E.Origin.ClientNumber] = null;
+                        return false;
+                    }
 
                     ChatHistory.Add(new ChatInfo()
                     {
@@ -825,7 +827,7 @@ namespace IW4MAdmin
                 // this DVAR isn't set until the a map is loaded
                 await this.SetDvarAsync("logfile", 2);
                 await this.SetDvarAsync("g_logsync", 2); // set to 2 for continous in other games, clamps to 1 for IW4
-                //await this.SetDvarAsync("g_log", "games_mp.log");
+                                                         //await this.SetDvarAsync("g_log", "games_mp.log");
                 Logger.WriteWarning("Game log file not properly initialized, restarting map...");
                 await this.ExecuteCommandAsync("map_restart");
                 logfile = await this.GetDvarAsync<string>("g_log");

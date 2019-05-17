@@ -61,13 +61,13 @@ namespace IW4MAdmin.Application.IO
                     try
                     {
                         var gameEvent = Parser.GenerateGameEvent(eventLine);
-                        // we don't want to add the even if ignoreBots is on and the event comes froma bot
-                        if (!ignoreBots.Value || (ignoreBots.Value && (gameEvent.Origin.NetworkId != -1 || gameEvent.Target.NetworkId != -1)))
+                        // we don't want to add the event if ignoreBots is on and the event comes from a bot
+                        if (!ignoreBots.Value || (ignoreBots.Value && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                         {
                             gameEvent.Owner = server;
-                            // we need to pull the "live" versions of the client (only if the client id isn't IW4MAdmin
-                            gameEvent.Origin = gameEvent.Origin.ClientId == 1 ? gameEvent.Origin : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin.NetworkId);
-                            gameEvent.Target = gameEvent.Target.ClientId == 1 ? gameEvent.Target : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target.NetworkId);
+                            // we need to pull the "live" versions of the client (only if the client id isn't IW4MAdmin)
+                            gameEvent.Origin = gameEvent.Origin == null || gameEvent.Origin.NetworkId == 1 ? gameEvent.Origin : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin.NetworkId);
+                            gameEvent.Target = gameEvent.Target == null || gameEvent.Target.NetworkId == 1 ? gameEvent.Target : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target.NetworkId);
 
                             events.Add(gameEvent);
                         }
@@ -81,6 +81,7 @@ namespace IW4MAdmin.Application.IO
                         if (!ignoreBots.Value)
                         {
                             server.Logger.WriteWarning("Could not find client in client list when parsing event line");
+                            server.Logger.WriteDebug(eventLine);
                         }
                     }
 

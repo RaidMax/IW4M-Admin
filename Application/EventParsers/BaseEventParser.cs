@@ -104,7 +104,6 @@ namespace IW4MAdmin.Application.EventParsers
                                 Type = GameEvent.EventType.Command,
                                 Data = message,
                                 Origin = new EFClient() { NetworkId = originId },
-                                Target = Utilities.IW4MAdminClient(),
                                 Message = message
                             };
                         }
@@ -114,7 +113,6 @@ namespace IW4MAdmin.Application.EventParsers
                             Type = GameEvent.EventType.Say,
                             Data = message,
                             Origin = new EFClient() { NetworkId = originId },
-                            Target = Utilities.IW4MAdminClient(),
                             Message = message
                         };
                     }
@@ -166,8 +164,6 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (regexMatch.Success)
                 {
-                    bool isBot = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().Contains("bot");
-
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.PreConnect,
@@ -181,9 +177,7 @@ namespace IW4MAdmin.Application.EventParsers
                             NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
-                            IsBot = isBot
-                        },
-                        Target = Utilities.IW4MAdminClient()
+                        }
                     };
                 }
             }
@@ -206,8 +200,7 @@ namespace IW4MAdmin.Application.EventParsers
                             NetworkId = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Disconnecting
-                        },
-                        Target = Utilities.IW4MAdminClient()
+                        }
                     };
                 }
             }
@@ -244,8 +237,7 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.JoinTeam,
                     Data = logLine,
-                    Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong() },
-                    Target = Utilities.IW4MAdminClient()
+                    Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong() }
                 };
             }
 

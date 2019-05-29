@@ -1,7 +1,6 @@
 ﻿using IW4ScriptCommands.Commands;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;

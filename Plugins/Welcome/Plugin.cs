@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Services;
 using SharedLibraryCore.Database.Models;
@@ -99,7 +98,7 @@ namespace IW4MAdmin.Plugins.Welcome
                     using (var ctx = new DatabaseContext(disableTracking: true))
                     {
                         penaltyReason = await ctx.Penalties
-                            .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == Penalty.PenaltyType.Flag)
+                            .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == EFPenalty.PenaltyType.Flag)
                             .OrderByDescending(p => p.When)
                             .Select(p => p.AutomatedOffense ?? p.Offense)
                             .FirstOrDefaultAsync();

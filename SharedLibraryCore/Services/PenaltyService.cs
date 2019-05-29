@@ -2,7 +2,6 @@
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +44,7 @@ namespace SharedLibraryCore.Services
 
                     await iqLinkedProfiles.ForEachAsync(_client =>
                     {
-                        
+                        newEntity.Punisher.CurrentServer?.Logger.WriteDebug($"Applying penalty to linked client {_client.ClientId}");
                         var linkedPenalty = new EFPenalty()
                         {
                             OffenderId = _client.ClientId,
@@ -94,12 +93,12 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IList<PenaltyInfo>> GetRecentPenalties(int count, int offset, Penalty.PenaltyType showOnly = Penalty.PenaltyType.Any)
+        public async Task<IList<PenaltyInfo>> GetRecentPenalties(int count, int offset, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any)
         {
             using (var context = new DatabaseContext(true))
             {
                 var iqPenalties = context.Penalties
-                    .Where(p => showOnly == Penalty.PenaltyType.Any ? p.Type != Penalty.PenaltyType.Any : p.Type == showOnly)
+                    .Where(p => showOnly == EFPenalty.PenaltyType.Any ? p.Type != EFPenalty.PenaltyType.Any : p.Type == showOnly)
                     .OrderByDescending(p => p.When)
                     .Skip(offset)
                     .Take(count)
@@ -173,11 +172,11 @@ namespace SharedLibraryCore.Services
         {
             var now = DateTime.UtcNow;
 
-            Expression<Func<EFPenalty, bool>> filter = (p) => new Penalty.PenaltyType[]
+            Expression<Func<EFPenalty, bool>> filter = (p) => new EFPenalty.PenaltyType[]
                          {
-                            Penalty.PenaltyType.TempBan,
-                            Penalty.PenaltyType.Ban,
-                            Penalty.PenaltyType.Flag
+                            EFPenalty.PenaltyType.TempBan,
+                            EFPenalty.PenaltyType.Ban,
+                            EFPenalty.PenaltyType.Flag
                          }.Contains(p.Type) &&
                          p.Active &&
                          (p.Expires == null || p.Expires > now);

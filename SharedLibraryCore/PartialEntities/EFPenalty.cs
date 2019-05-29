@@ -1,9 +1,9 @@
 ﻿using System;
 using SharedLibraryCore;
 
-namespace SharedLibraryCore.Objects
+namespace SharedLibraryCore.Database.Models
 {
-    public class Penalty : Database.Models.EFPenalty
+    public partial class EFPenalty
     {
         public enum PenaltyType
         {

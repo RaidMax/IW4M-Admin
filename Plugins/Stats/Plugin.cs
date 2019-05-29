@@ -80,7 +80,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId == 1)
+                        if (IsWorldDamage(E.Origin))
                         {
                             E.Origin = E.Target;
                         }
@@ -93,7 +93,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId == 1)
+                        if (IsWorldDamage(E.Origin))
                         {
                             E.Origin = E.Target;
                         }
@@ -105,7 +105,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId == 1)
+                        if (IsWorldDamage(E.Origin))
                         {
                             E.Origin = E.Target;
                         }
@@ -118,7 +118,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
-                        if (E.Origin.ClientId == 1)
+                        if (IsWorldDamage(E.Origin))
                         {
                             E.Origin = E.Target;
                         }
@@ -471,7 +471,14 @@ namespace IW4MAdmin.Plugins.Stats
         /// <returns></returns>
         private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
         {
-            return (origin.ClientId <= 1 && target.ClientId <= 1);
+            return ((origin?.NetworkId <= 1 && target?.NetworkId <= 1) || (origin?.ClientId <=1 && target?.ClientId <= 1));
         }
+
+        /// <summary>
+        /// Indicates if the damage occurs from world (fall damage/certain killstreaks)
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <returns></returns>
+        private bool IsWorldDamage(EFClient origin) => origin?.NetworkId == 1;
     }
 }

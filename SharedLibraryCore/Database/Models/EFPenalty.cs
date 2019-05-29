@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SharedLibraryCore.Database.Models
 {
-    public class EFPenalty : SharedEntity
+    public partial class EFPenalty : SharedEntity
     {
         [Key]
         public int PenaltyId { get; set; }
@@ -29,6 +29,6 @@ namespace SharedLibraryCore.Database.Models
         public string AutomatedOffense { get; set; }
         [Required]
         public bool IsEvadedOffense { get; set; }
-        public Objects.Penalty.PenaltyType Type { get; set; }
+        public PenaltyType Type { get; set; }
     }
 }

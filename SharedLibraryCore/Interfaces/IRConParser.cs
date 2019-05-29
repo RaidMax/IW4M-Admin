@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
 using SharedLibraryCore.RCon;
 using static SharedLibraryCore.Server;
 

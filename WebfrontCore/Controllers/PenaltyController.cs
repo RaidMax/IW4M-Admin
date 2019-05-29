@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebfrontCore.ViewComponents;
-using static SharedLibraryCore.Objects.Penalty;
+using static SharedLibraryCore.Database.Models.EFPenalty;
 
 namespace WebfrontCore.Controllers
 {

@@ -1,6 +1,6 @@
 ﻿using static SharedLibraryCore.Database.Models.EFClient;
 
-namespace SharedLibraryCore.Objects
+namespace SharedLibraryCore.Localization
 {
     public sealed class ClientPermission
     {

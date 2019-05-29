@@ -7,7 +7,6 @@ using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -614,7 +613,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var penaltyClient = Utilities.IW4MAdminClient(attacker.CurrentServer);
             switch (penalty.ClientPenalty)
             {
-                case Penalty.PenaltyType.Ban:
+                case EFPenalty.PenaltyType.Ban:
                     if (attacker.Level == EFClient.Permission.Banned)
                     {
                         break;
@@ -632,7 +631,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     await attacker.Ban(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_CHEAT_DETECTED"], penaltyClient, false).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
                     break;
-                case Penalty.PenaltyType.Flag:
+                case EFPenalty.PenaltyType.Flag:
                     if (attacker.Level != EFClient.Permission.User)
                     {
                         break;
@@ -1231,6 +1230,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public static async Task<long> GetIdForServer(Server server)
         {
+            if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28965")
+            {
+                return 886229536;
+            }
+
             long id = HashCode.Combine(server.IP, server.GetPort());
             id = id < 0 ? Math.Abs(id) : id;
             long? serverId;

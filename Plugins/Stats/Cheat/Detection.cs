@@ -1,7 +1,7 @@
 ﻿using IW4MAdmin.Plugins.Stats.Models;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,7 +65,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 return new DetectionPenaltyResult()
                 {
-                    ClientPenalty = Penalty.PenaltyType.Any,
+                    ClientPenalty = EFPenalty.PenaltyType.Any,
                 };
             }
 
@@ -104,7 +104,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     result = new DetectionPenaltyResult()
                     {
-                        ClientPenalty = Penalty.PenaltyType.Ban,
+                        ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = hitLoc.HitOffsetAverage,
                         HitCount = hitLoc.HitCount,
                         Type = DetectionType.Offset
@@ -125,7 +125,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     result = new DetectionPenaltyResult()
                     {
-                        ClientPenalty = Penalty.PenaltyType.Ban,
+                        ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = sessAverage,
                         HitCount = HitCount,
                         Type = DetectionType.Offset,
@@ -154,7 +154,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 result = new DetectionPenaltyResult()
                 {
-                    ClientPenalty = Penalty.PenaltyType.Flag,
+                    ClientPenalty = EFPenalty.PenaltyType.Flag,
                     Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
@@ -167,7 +167,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 result = new DetectionPenaltyResult()
                 {
-                    ClientPenalty = Penalty.PenaltyType.Ban,
+                    ClientPenalty = EFPenalty.PenaltyType.Ban,
                     Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
@@ -216,7 +216,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         result = new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentHeadshotRatio,
                             Location = IW4Info.HitLocation.head,
                             HitCount = HitCount,
@@ -240,7 +240,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         result = new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentHeadshotRatio,
                             Location = IW4Info.HitLocation.head,
                             HitCount = HitCount,
@@ -272,7 +272,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         result = new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentMaxBoneRatio,
                             Location = bone,
                             HitCount = HitCount,
@@ -296,7 +296,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         result = new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentMaxBoneRatio,
                             Location = bone,
                             HitCount = HitCount,
@@ -337,7 +337,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         result = new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentChestAbdomenRatio,
                             Location = IW4Info.HitLocation.torso_upper,
                             Type = DetectionType.Chest,
@@ -358,7 +358,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         result = new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentChestAbdomenRatio,
                             Location = IW4Info.HitLocation.torso_upper,
                             Type = DetectionType.Chest,
@@ -401,7 +401,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             return result ?? new DetectionPenaltyResult()
             {
-                ClientPenalty = Penalty.PenaltyType.Any,
+                ClientPenalty = EFPenalty.PenaltyType.Any,
             };
         }
 
@@ -437,7 +437,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         return new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Ban,
+                            ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentChestAbdomenRatio,
                             Location = IW4Info.HitLocation.torso_upper,
                             HitCount = totalChestHits,
@@ -458,7 +458,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         return new DetectionPenaltyResult()
                         {
-                            ClientPenalty = Penalty.PenaltyType.Flag,
+                            ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentChestAbdomenRatio,
                             Location = IW4Info.HitLocation.torso_upper,
                             HitCount = totalChestHits,
@@ -470,7 +470,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             return new DetectionPenaltyResult()
             {
-                ClientPenalty = Penalty.PenaltyType.Any
+                ClientPenalty = EFPenalty.PenaltyType.Any
             };
         }
     }

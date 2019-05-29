@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
@@ -284,7 +284,7 @@ namespace SharedLibraryCore.Commands
         {
             // todo: don't do the lookup here
             var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId);
-            if (penalties.Where(p => p.Type == Penalty.PenaltyType.Ban || p.Type == Penalty.PenaltyType.TempBan).FirstOrDefault() != null)
+            if (penalties.Where(p => p.Type == EFPenalty.PenaltyType.Ban || p.Type == EFPenalty.PenaltyType.TempBan).FirstOrDefault() != null)
             {
                 switch ((await E.Target.Unban(E.Data, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
                 {
@@ -957,7 +957,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var existingPenalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.IPAddress);
-            var penalty = existingPenalties.FirstOrDefault(b => b.Type > Penalty.PenaltyType.Kick);
+            var penalty = existingPenalties.FirstOrDefault(b => b.Type > EFPenalty.PenaltyType.Kick);
 
             if (penalty == null)
             {
@@ -965,7 +965,7 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            if (penalty.Type == Penalty.PenaltyType.Ban)
+            if (penalty.Type == EFPenalty.PenaltyType.Ban)
             {
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_BANINFO_SUCCESS"].FormatExt(E.Target.Name, penalty.Offense));
             }

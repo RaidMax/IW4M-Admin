@@ -61,9 +61,26 @@ namespace IW4MAdmin.Application.IO
                         if (!ignoreBots.Value || (ignoreBots.Value && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                         {
                             gameEvent.Owner = server;
-                            // we need to pull the "live" versions of the client (only if the client id isn't IW4MAdmin)
-                            gameEvent.Origin = gameEvent.Origin == null || gameEvent.Origin.NetworkId == 1 ? gameEvent.Origin : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin.NetworkId);
-                            gameEvent.Target = gameEvent.Target == null || gameEvent.Target.NetworkId == 1 ? gameEvent.Target : server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target.NetworkId);
+
+                            if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
+                            {
+                                gameEvent.Origin = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
+                            }
+
+                            if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
+                            {
+                                gameEvent.Target = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
+                            }
+
+                            if (gameEvent.Origin != null)
+                            {
+                                gameEvent.Origin.CurrentServer = server;
+                            }
+
+                            if (gameEvent.Target != null)
+                            {
+                                gameEvent.Target.CurrentServer = server;
+                            }
 
                             events.Add(gameEvent);
                         }

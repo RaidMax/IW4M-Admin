@@ -12,7 +12,6 @@ using SharedLibraryCore.Events;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Concurrent;

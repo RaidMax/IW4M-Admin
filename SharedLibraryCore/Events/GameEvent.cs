@@ -181,6 +181,14 @@ namespace SharedLibraryCore
             Other
         }
 
+        [Flags]
+        public enum EventRequiredEntity
+        {
+            None = 1,
+            Origin = 2,
+            Target = 4
+        }
+
         static long NextEventId;
         static long GetNextEventId()
         {
@@ -195,6 +203,7 @@ namespace SharedLibraryCore
         }
 
         public EventType Type;
+        public EventRequiredEntity RequiredEntity { get; set; }
         public string Data; // Data is usually the message sent by player
         public string Message;
         public EFClient Origin;

@@ -1,7 +1,6 @@
 ﻿using IW4MAdmin.Application;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
 using Xunit;
 
 namespace Tests

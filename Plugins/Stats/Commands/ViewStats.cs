@@ -1,5 +1,4 @@
 ﻿using SharedLibraryCore;
-using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Models;
 using System;

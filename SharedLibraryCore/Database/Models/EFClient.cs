@@ -35,26 +35,7 @@ namespace SharedLibraryCore.Database.Models
         public string Password { get; set; }
         public string PasswordSalt { get; set; }
         // list of meta for the client
-        public virtual ICollection<EFMeta> Meta { get; set; } 
-
-        [NotMapped]
-        public virtual string Name
-        {
-            get { return CurrentAlias?.Name ?? "--"; }
-            set { if (CurrentAlias != null) CurrentAlias.Name = value; }
-        }
-        [NotMapped]
-        public virtual int? IPAddress
-        {
-            get { return CurrentAlias.IPAddress; }
-            set { CurrentAlias.IPAddress = value;  }
-        }
-
-        [NotMapped]
-        public string IPAddressString => IPAddress.ConvertIPtoString();
-        [NotMapped]
-        public virtual IDictionary<int, long> LinkedAccounts { get; set; }
-
+        public virtual ICollection<EFMeta> Meta { get; set; }        
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }
     }

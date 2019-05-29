@@ -148,11 +148,11 @@ namespace IW4MAdmin.Application.RconParsers
                     {
                         CurrentAlias = new EFAlias()
                         {
-                            Name = name
+                            Name = name,
+                            IPAddress = ip
                         },
                         NetworkId = networkId,
                         ClientNumber = clientNumber,
-                        IPAddress = ip,
                         Ping = ping,
                         Score = score,
                         State = EFClient.ClientState.Connecting

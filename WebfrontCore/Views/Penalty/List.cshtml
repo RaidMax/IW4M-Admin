@@ -1,4 +1,4 @@
-﻿@model SharedLibraryCore.Objects.Penalty.PenaltyType
+﻿@model SharedLibraryCore.Database.Models.EFPenalty.PenaltyType
 @{
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
@@ -6,11 +6,11 @@
 <div class="row">
     <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
         @{
-            foreach (var penaltyType in Enum.GetValues(typeof(SharedLibraryCore.Objects.Penalty.PenaltyType)))
+            foreach (var penaltyType in Enum.GetValues(typeof(SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)))
             {
-                if ((SharedLibraryCore.Objects.Penalty.PenaltyType)penaltyType == SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
+                if ((SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)penaltyType == SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Any)
                 {
-                    if (Model == SharedLibraryCore.Objects.Penalty.PenaltyType.Any)
+                    if (Model == SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Any)
                     {
                         <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"] @penaltyType.ToString()</option>
                     }
@@ -21,7 +21,7 @@
                 }
                 else
                 {
-                    if ((SharedLibraryCore.Objects.Penalty.PenaltyType)penaltyType == Model)
+                    if ((SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)penaltyType == Model)
                     {
                         <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
                     }

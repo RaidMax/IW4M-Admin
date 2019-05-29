@@ -1,6 +1,6 @@
 ﻿using System;
 using static SharedLibraryCore.Database.Models.EFClient;
-using static SharedLibraryCore.Objects.Penalty;
+using static SharedLibraryCore.Database.Models.EFPenalty;
 
 namespace SharedLibraryCore.Dtos
 {

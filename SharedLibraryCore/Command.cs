@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
 
 namespace SharedLibraryCore
 {

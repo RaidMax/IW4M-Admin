@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharedLibraryCore.Objects
+namespace SharedLibraryCore.Helpers
 {
     public class Report
     {

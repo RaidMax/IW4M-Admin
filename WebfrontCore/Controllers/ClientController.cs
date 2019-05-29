@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Database.Models.EFPenalty;
 
 namespace WebfrontCore.Controllers
 {
@@ -66,7 +67,7 @@ namespace WebfrontCore.Controllers
 
             var currentPenalty = activePenalties.FirstOrDefault();
 
-            if (currentPenalty != null && currentPenalty.Type == SharedLibraryCore.Objects.Penalty.PenaltyType.TempBan)
+            if (currentPenalty != null && currentPenalty.Type == PenaltyType.TempBan)
             {
                 clientDto.Meta.Add(new ProfileMeta()
                 {

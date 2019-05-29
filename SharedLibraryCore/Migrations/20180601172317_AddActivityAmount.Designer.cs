@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using SharedLibraryCore.Database;
-using SharedLibraryCore.Objects;
 using System;
 
 namespace SharedLibraryCore.Migrations

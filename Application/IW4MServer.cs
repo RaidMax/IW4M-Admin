@@ -6,9 +6,9 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Localization;
-using SharedLibraryCore.Objects;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
@@ -74,9 +74,9 @@ namespace IW4MAdmin
                 Type = GameEvent.EventType.Connect
             };
 
-            Manager.GetEventHandler().AddEvent(e);
             await client.OnJoin(client.IPAddress);
             client.State = ClientState.Connected;
+            Manager.GetEventHandler().AddEvent(e);
         }
 
         override public async Task OnClientDisconnected(EFClient client)
@@ -249,7 +249,7 @@ namespace IW4MAdmin
                 // for some reason there's still a client in the spot
                 else
                 {
-                    Logger.WriteWarning($"{E.Origin} is connecteding but {Clients[E.Origin.ClientNumber]} is currently in that client slot");
+                    Logger.WriteWarning($"{E.Origin} is connecting but {Clients[E.Origin.ClientNumber]} is currently in that client slot");
                     await OnClientDisconnected(Clients[E.Origin.ClientNumber]);
                     goto CONNECT;
                 }
@@ -258,9 +258,9 @@ namespace IW4MAdmin
             else if (E.Type == GameEvent.EventType.Flag)
             {
                 // todo: maybe move this to a seperate function
-                Penalty newPenalty = new Penalty()
+                var newPenalty = new EFPenalty()
                 {
-                    Type = Penalty.PenaltyType.Flag,
+                    Type = EFPenalty.PenaltyType.Flag,
                     Expires = DateTime.UtcNow,
                     Offender = E.Target,
                     Offense = E.Data,
@@ -275,9 +275,9 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Unflag)
             {
-                var unflagPenalty = new Penalty()
+                var unflagPenalty = new EFPenalty()
                 {
-                    Type = Penalty.PenaltyType.Unflag,
+                    Type = EFPenalty.PenaltyType.Unflag,
                     Expires = DateTime.UtcNow,
                     Offender = E.Target,
                     Offense = E.Data,
@@ -299,9 +299,9 @@ namespace IW4MAdmin
                     Reason = E.Data
                 });
 
-                Penalty newReport = new Penalty()
+                var newReport = new EFPenalty()
                 {
-                    Type = Penalty.PenaltyType.Report,
+                    Type = EFPenalty.PenaltyType.Report,
                     Expires = DateTime.UtcNow,
                     Offender = E.Target,
                     Offense = E.Message,
@@ -620,7 +620,7 @@ namespace IW4MAdmin
                     foreach (var client in polledClients[0])
                     {
                         // note: this prevents players in ZMBI state from being registered with no name
-                        if (string.IsNullOrEmpty(client.Name))
+                        if (string.IsNullOrEmpty(client.Name) || client.Ping == 999)
                         {
                             continue;
                         }
@@ -898,9 +898,9 @@ namespace IW4MAdmin
                 Target.CurrentServer.Broadcast(message);
             }
 
-            Penalty newPenalty = new Penalty()
+            var newPenalty = new EFPenalty()
             {
-                Type = Penalty.PenaltyType.Warning,
+                Type = EFPenalty.PenaltyType.Warning,
                 Expires = DateTime.UtcNow,
                 Offender = Target,
                 Punisher = Origin,
@@ -937,9 +937,9 @@ namespace IW4MAdmin
             await Target.CurrentServer.OnClientDisconnected(Target);
 #endif
 
-            var newPenalty = new Penalty()
+            var newPenalty = new EFPenalty()
             {
-                Type = Penalty.PenaltyType.Kick,
+                Type = EFPenalty.PenaltyType.Kick,
                 Expires = DateTime.UtcNow,
                 Offender = Target,
                 Offense = Reason,
@@ -974,9 +974,9 @@ namespace IW4MAdmin
             await Target.CurrentServer.OnClientDisconnected(Target);
 #endif
 
-            Penalty newPenalty = new Penalty()
+            var newPenalty = new EFPenalty()
             {
-                Type = Penalty.PenaltyType.TempBan,
+                Type = EFPenalty.PenaltyType.TempBan,
                 Expires = DateTime.UtcNow + length,
                 Offender = Target,
                 Offense = Reason,
@@ -1008,7 +1008,6 @@ namespace IW4MAdmin
 
             else
             {
-
 #if !DEBUG
                 string formattedString = String.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7{loc["SERVER_BAN_APPEAL"].FormatExt(Website)}^7");
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
@@ -1017,9 +1016,9 @@ namespace IW4MAdmin
 #endif
             }
 
-            Penalty newPenalty = new Penalty()
+            EFPenalty newPenalty = new EFPenalty()
             {
-                Type = Penalty.PenaltyType.Ban,
+                Type = EFPenalty.PenaltyType.Ban,
                 Expires = null,
                 Offender = targetClient,
                 Offense = reason,
@@ -1027,7 +1026,6 @@ namespace IW4MAdmin
                 Link = targetClient.AliasLink,
                 AutomatedOffense = originClient.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
                 IsEvadedOffense = isEvade
-
             };
 
             targetClient.SetLevel(Permission.Banned, originClient);
@@ -1036,9 +1034,9 @@ namespace IW4MAdmin
 
         override public async Task Unban(string reason, EFClient Target, EFClient Origin)
         {
-            var unbanPenalty = new Penalty()
+            var unbanPenalty = new EFPenalty()
             {
-                Type = Penalty.PenaltyType.Unban,
+                Type = EFPenalty.PenaltyType.Unban,
                 Expires = null,
                 Offender = Target,
                 Offense = reason,

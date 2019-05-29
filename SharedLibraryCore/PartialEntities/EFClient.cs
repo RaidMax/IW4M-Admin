@@ -1,4 +1,4 @@
-﻿using SharedLibraryCore.Objects;
+﻿using SharedLibraryCore.Localization;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -88,6 +88,24 @@ namespace SharedLibraryCore.Database.Models
             return $"{CurrentAlias?.Name ?? "--"}::{NetworkId}";
         }
 
+        [NotMapped]
+        public virtual string Name
+        {
+            get { return CurrentAlias?.Name ?? "--"; }
+            set { if (CurrentAlias != null) CurrentAlias.Name = value; }
+        }
+        [NotMapped]
+        public virtual int? IPAddress
+        {
+            get { return CurrentAlias.IPAddress; }
+            set { CurrentAlias.IPAddress = value; }
+        }
+
+        [NotMapped]
+        public string IPAddressString => IPAddress.ConvertIPtoString();
+        [NotMapped]
+        public virtual IDictionary<int, long> LinkedAccounts { get; set; }
+
         /// <summary>
         /// send a message directly to the connected client
         /// </summary>
@@ -138,7 +156,6 @@ namespace SharedLibraryCore.Database.Models
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
-
 
         /// <summary>
         /// clear all warnings for a client
@@ -429,7 +446,7 @@ namespace SharedLibraryCore.Database.Models
         /// <summary>
         /// Handles any client related logic on connection
         /// </summary>
-        public void OnConnect()
+        public bool OnConnect()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
@@ -440,7 +457,7 @@ namespace SharedLibraryCore.Database.Models
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
                 Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
-                return;
+                return false;
             }
 
             if (CurrentServer.Manager.GetApplicationSettings().Configuration()
@@ -449,14 +466,14 @@ namespace SharedLibraryCore.Database.Models
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is generic");
                 Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
-                return;
+                return false;
             }
 
             if (Name.Where(c => char.IsControl(c)).Count() > 0)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name contains control characters");
                 Kick(loc["SERVER_KICK_CONTROLCHARS"], Utilities.IW4MAdminClient(CurrentServer));
-                return;
+                return false;
             }
 
             // reserved slots stuff
@@ -468,8 +485,10 @@ namespace SharedLibraryCore.Database.Models
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
                 Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
-                return;
+                return false;
             }
+
+            return true;
         }
 
         public async Task OnDisconnect()
@@ -498,17 +517,12 @@ namespace SharedLibraryCore.Database.Models
             {
                 IPAddress = ipAddress;
                 await CurrentServer.Manager.GetClientService().UpdateAlias(this);
-            }
+                await CurrentServer.Manager.GetClientService().Update(this);
 
-            // we want to run any non GUID based logic here
-            OnConnect();
+                bool canConnect = await CanConnect(ipAddress);
 
-            if (await CanConnect(ipAddress))
-            {
-                if (IPAddress != null)
+                if (canConnect)
                 {
-                    await CurrentServer.Manager.GetClientService().Update(this);
-
                     var e = new GameEvent()
                     {
                         Type = GameEvent.EventType.Join,
@@ -519,11 +533,16 @@ namespace SharedLibraryCore.Database.Models
 
                     CurrentServer.Manager.GetEventHandler().AddEvent(e);
                 }
+
+                else
+                {
+                    CurrentServer.Logger.WriteDebug($"Client {this} is not allowed to join the server");
+                }
             }
 
             else
             {
-                CurrentServer.Logger.WriteDebug($"Client {this} is not allowed to join the server");
+                CurrentServer.Logger.WriteDebug($"Client {this} does not have an IP yet");
             }
 
             CurrentServer.Logger.WriteDebug($"OnJoin finished for {this}");
@@ -538,7 +557,7 @@ namespace SharedLibraryCore.Database.Models
             // kick them as their level is banned
             if (Level == Permission.Banned)
             {
-                var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active && _penalty.Type == Penalty.PenaltyType.Ban);
+                var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active && _penalty.Type == EFPenalty.PenaltyType.Ban);
 
                 if (profileBan == null)
                 {
@@ -547,7 +566,7 @@ namespace SharedLibraryCore.Database.Models
                         .GetPenaltyService()
                         .GetActivePenaltiesAsync(AliasLinkId))
                         .OrderByDescending(_penalty => _penalty.When)
-                        .FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.Ban);
+                        .FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
 
                     CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but no previous penalty exists for their ban");
 
@@ -580,7 +599,7 @@ namespace SharedLibraryCore.Database.Models
             #region CLIENT_GUID_TEMPBAN
             else
             {
-                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan &&
+                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan &&
                     _penalty.Active &&
                     _penalty.Expires > DateTime.UtcNow);
 
@@ -598,7 +617,7 @@ namespace SharedLibraryCore.Database.Models
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
 
             #region CLIENT_LINKED_BAN
-            var currentBan = activePenalties.FirstOrDefault(p => p.Type == Penalty.PenaltyType.Ban);
+            var currentBan = activePenalties.FirstOrDefault(p => p.Type == EFPenalty.PenaltyType.Ban);
 
             // they have a perm ban tied to their AliasLink/profile
             if (currentBan != null)
@@ -634,7 +653,7 @@ namespace SharedLibraryCore.Database.Models
             #region CLIENT_LINKED_TEMPBAN
             var tempBan = activePenalties
                 .OrderByDescending(_penalty => _penalty.When)
-                .FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.TempBan);
+                .FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
 
             // they have an active tempban tied to their AliasLink
             if (tempBan != null)
@@ -648,7 +667,7 @@ namespace SharedLibraryCore.Database.Models
             #region CLIENT_LINKED_FLAG
             if (Level != Permission.Flagged)
             {
-                var currentFlag = activePenalties.FirstOrDefault(_penalty => _penalty.Type == Penalty.PenaltyType.Flag);
+                var currentFlag = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);
 
                 if (currentFlag != null)
                 {
@@ -661,7 +680,7 @@ namespace SharedLibraryCore.Database.Models
             if (Level == Permission.Flagged)
             {
                 var currentAutoFlag = activePenalties
-                    .Where(p => p.Type == Penalty.PenaltyType.Flag && p.PunisherId == 1)
+                    .Where(p => p.Type == EFPenalty.PenaltyType.Flag && p.PunisherId == 1)
                     .OrderByDescending(p => p.When)
                     .FirstOrDefault();
 
@@ -674,7 +693,7 @@ namespace SharedLibraryCore.Database.Models
                 }
             }
 
-            return true;
+            return true && OnConnect();
         }
 
         [NotMapped]

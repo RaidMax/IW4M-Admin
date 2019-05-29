@@ -2,7 +2,6 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -218,7 +217,7 @@ namespace Tests
                 Owner = client.CurrentServer
             }).Wait();
 
-            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == Penalty.PenaltyType.TempBan) == 1,
+            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.TempBan) == 1,
                 "tempban was not added");
         }
 
@@ -243,7 +242,7 @@ namespace Tests
                 Owner = client.CurrentServer
             }).Wait();
 
-            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == Penalty.PenaltyType.Ban) == 1,
+            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.Ban) == 1,
                 "ban was not added");
 
             var unbanCommand = new CUnban();
@@ -256,7 +255,7 @@ namespace Tests
                 Owner = client.CurrentServer
             }).Wait();
 
-            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == Penalty.PenaltyType.Ban) == 0,
+            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.Ban) == 0,
                 "ban was not removed");
 
         }

@@ -1,6 +1,6 @@
 var plugin = {
     author: 'RaidMax',
-    version: 1.1,
+    version: 1.2,
     name: 'VPN Detection Plugin',
 
     manager: null,
@@ -43,8 +43,8 @@ var plugin = {
     },
 
     onEventAsync: function (gameEvent, server) {
-        // connect event
-        if (gameEvent.Type === 3) {
+        // join event
+        if (gameEvent.Type === 4) {
             this.checkForVpn(gameEvent.Origin);
         }
     },

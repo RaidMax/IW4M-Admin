@@ -22,7 +22,7 @@ namespace WebfrontCore.Controllers
             {
                 Name = s.Hostname,
                 ID = s.EndPoint,
-                Port = s.GetPort(),
+                Port = s.Port,
                 Map = s.CurrentMap.Alias,
                 ClientCount = s.ClientNum,
                 MaxClients = s.MaxClients,

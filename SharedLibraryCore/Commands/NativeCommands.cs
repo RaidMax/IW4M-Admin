@@ -1180,7 +1180,7 @@ namespace SharedLibraryCore.Commands
 
                     var regex = Regex.Match(cmdLine, @".*((?:\+set|\+) net_port) +([0-9]+).*");
 
-                    if (regex.Success && Int32.Parse(regex.Groups[2].Value) == E.Owner.GetPort())
+                    if (regex.Success && Int32.Parse(regex.Groups[2].Value) == E.Owner.Port)
                     {
                         currentProcess = p;
                     }

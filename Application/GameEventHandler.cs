@@ -9,15 +9,15 @@ namespace IW4MAdmin.Application
 {
     class GameEventHandler : IEventHandler
     {
-        readonly IManager Manager;
+        readonly ApplicationManager Manager;
         public GameEventHandler(IManager mgr)
         {
-            Manager = mgr;
+            Manager = (ApplicationManager)mgr;
         }
 
         public void AddEvent(GameEvent gameEvent)
         {
-            ((Manager as ApplicationManager).OnServerEvent)(this, new GameEventArgs(null, false, gameEvent));
+            Manager.OnServerEvent?.Invoke(gameEvent.Owner, new GameEventArgs(null, false, gameEvent));
         }
     }
 }

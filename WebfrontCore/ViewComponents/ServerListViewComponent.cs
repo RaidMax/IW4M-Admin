@@ -16,7 +16,7 @@ namespace WebfrontCore.ViewComponents
             {
                 Name = s.Hostname,
                 ID = s.EndPoint,
-                Port = s.GetPort(),
+                Port = s.Port,
                 Map = s.CurrentMap.Alias,
                 ClientCount = s.ClientNum,
                 MaxClients = s.MaxClients,
@@ -32,8 +32,8 @@ namespace WebfrontCore.ViewComponents
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
                 Online = !s.Throttled,
-                IPAddress = $"{(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP)}:{s.GetPort()}",
-                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP, s.GetPort())
+                IPAddress = $"{(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP)}:{s.Port}",
+                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP, s.Port)
             }).ToList();
             return View("_List", serverInfo);
         }

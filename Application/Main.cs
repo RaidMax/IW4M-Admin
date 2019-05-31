@@ -202,28 +202,33 @@ namespace IW4MAdmin.Application
             string lastCommand;
             var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
 
-            while (!ServerManager.CancellationToken.IsCancellationRequested)
+            try
             {
-                lastCommand = Console.ReadLine();
-
-                if (lastCommand?.Length > 0)
+                while (!ServerManager.CancellationToken.IsCancellationRequested)
                 {
+                    lastCommand = Console.ReadLine();
+
                     if (lastCommand?.Length > 0)
                     {
-                        GameEvent E = new GameEvent()
+                        if (lastCommand?.Length > 0)
                         {
-                            Type = GameEvent.EventType.Command,
-                            Data = lastCommand,
-                            Origin = Origin,
-                            Owner = ServerManager.Servers[0]
-                        };
+                            GameEvent E = new GameEvent()
+                            {
+                                Type = GameEvent.EventType.Command,
+                                Data = lastCommand,
+                                Origin = Origin,
+                                Owner = ServerManager.Servers[0]
+                            };
 
-                        ServerManager.GetEventHandler().AddEvent(E);
-                        await E.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
-                        Console.Write('>');
+                            ServerManager.GetEventHandler().AddEvent(E);
+                            await E.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
+                            Console.Write('>');
+                        }
                     }
                 }
             }
+            catch (OperationCanceledException)
+            { }
         }
     }
 }

@@ -26,7 +26,6 @@ namespace IW4MAdmin
     {
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
-        private DateTime SessionStart;
 
         public int Id { get; private set; }
 
@@ -211,7 +210,7 @@ namespace IW4MAdmin
                     return false;
                 }
 
-            CONNECT:
+            //CONNECT:
                 if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
@@ -250,8 +249,8 @@ namespace IW4MAdmin
                 else
                 {
                     Logger.WriteWarning($"{E.Origin} is connecting but {Clients[E.Origin.ClientNumber]} is currently in that client slot");
-                    await OnClientDisconnected(Clients[E.Origin.ClientNumber]);
-                    goto CONNECT;
+                    //await OnClientDisconnected(Clients[E.Origin.ClientNumber]);
+                    //goto CONNECT;
                 }
             }
 
@@ -457,7 +456,6 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.MapEnd)
             {
                 Logger.WriteInfo("Game ending...");
-                SessionStart = DateTime.UtcNow;
             }
 
             if (E.Type == GameEvent.EventType.Tell)

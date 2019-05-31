@@ -216,7 +216,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         server = new EFServer()
                         {
-                            Port = sv.GetPort(),
+                            Port = sv.Port,
                             EndPoint = sv.ToString(),
                             ServerId = serverId,
                             GameName = sv.GameName
@@ -1230,12 +1230,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public static async Task<long> GetIdForServer(Server server)
         {
-            if ($"{server.IP}:{server.GetPort().ToString()}" == "66.150.121.184:28965")
+            if ($"{server.IP}:{server.Port.ToString()}" == "66.150.121.184:28965")
             {
                 return 886229536;
             }
 
-            long id = HashCode.Combine(server.IP, server.GetPort());
+            long id = HashCode.Combine(server.IP, server.Port);
             id = id < 0 ? Math.Abs(id) : id;
             long? serverId;
 

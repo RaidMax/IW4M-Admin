@@ -6,7 +6,7 @@ class LogReader(object):
     def __init__(self):
         self.log_file_sizes = {}
         # (if the time between checks is greater, ignore ) - in seconds
-        self.max_file_time_change = 30
+        self.max_file_time_change = 60
 
     def read_file(self, path):
         # this removes old entries that are no longer valid

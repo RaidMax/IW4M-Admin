@@ -47,7 +47,7 @@ namespace IW4MAdmin.Application.API.Master
                                 Map = s.CurrentMap.Name,
                                 MaxClientNum = s.MaxClients,
                                 Id = s.EndPoint,
-                                Port = (short)s.GetPort(),
+                                Port = (short)s.Port,
                                 IPAddress = s.IP
                             }).ToList()
             };

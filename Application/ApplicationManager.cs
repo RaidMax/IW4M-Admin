@@ -45,7 +45,7 @@ namespace IW4MAdmin.Application
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
         static ApplicationManager Instance;
-        readonly List<AsyncStatus> TaskStatuses;
+        private readonly List<AsyncStatus> _taskStatuses;
         List<Command> Commands;
         readonly List<MessageToken> MessageTokens;
         ClientService ClientSvc;
@@ -64,7 +64,7 @@ namespace IW4MAdmin.Application
         {
             _servers = new ConcurrentBag<Server>();
             Commands = new List<Command>();
-            TaskStatuses = new List<AsyncStatus>();
+            _taskStatuses = new List<AsyncStatus>();
             MessageTokens = new List<MessageToken>();
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();

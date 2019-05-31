@@ -52,13 +52,10 @@ namespace SharedLibraryCore
 
         public long EndPoint => Convert.ToInt64($"{IP.Replace(".", "")}{Port}");
 
-        //Returns current server port set by `net_port` -- *INT*
-        public int GetPort()
-        {
-            return Port;
-        }
-
-        //Returns list of all current players
+        /// <summary>
+        /// Returns list of all current players
+        /// </summary>
+        /// <returns></returns>
         public List<EFClient> GetClientsAsList()
         {
             return Clients.FindAll(x => x != null && x.NetworkId != 0);
@@ -69,18 +66,18 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="P">EFClient pulled from memory reading</param>
         /// <returns>True if player added sucessfully, false otherwise</returns>
-        abstract public Task OnClientConnected(EFClient P);
+        public abstract Task OnClientConnected(EFClient P);
 
         /// <summary>
         /// Remove player by client number
         /// </summary>
         /// <param name="cNum">Client ID of player to be removed</param>
         /// <returns>true if removal succeded, false otherwise</returns>
-        abstract public Task OnClientDisconnected(EFClient client);
-
+        public abstract Task OnClientDisconnected(EFClient client);
 
         /// <summary>
         /// Get a player by name
+        /// todo: make this an extension
         /// </summary>
         /// <param name="pName">EFClient name to search for</param>
         /// <returns>Matching player if found</returns>
@@ -113,8 +110,8 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="E">Event</param>
         /// <returns>True on sucess</returns>
-        abstract protected Task<bool> ProcessEvent(GameEvent E);
-        abstract public Task ExecuteEvent(GameEvent E);
+        protected abstract Task<bool> ProcessEvent(GameEvent E);
+        public abstract Task ExecuteEvent(GameEvent E);
 
         /// <summary>
         /// Send a message to all players
@@ -233,11 +230,6 @@ namespace SharedLibraryCore
             await this.ExecuteCommandAsync($"map {mapName}");
         }
 
-        public async Task LoadMap(Map newMap)
-        {
-            await this.ExecuteCommandAsync($"map {newMap.Name}");
-        }
-
         /// <summary>
         /// Initalize the macro variables
         /// </summary>
@@ -323,7 +315,7 @@ namespace SharedLibraryCore
         public string Version { get; protected set; }
         public bool IsInitialized { get; set; }
 
-        protected int Port;
+        public int Port { get; private set; }
         protected string FSGame;
         protected int NextMessage;
         protected int ConnectionErrors;

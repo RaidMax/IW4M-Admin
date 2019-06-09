@@ -17,8 +17,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
-    <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj" />
+    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

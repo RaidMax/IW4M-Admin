@@ -36,6 +36,7 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
+            MetaService.Clear();
             E.Owner.Manager.Restart();
             E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RESTART_SUCCESS"]);
             return Task.CompletedTask;

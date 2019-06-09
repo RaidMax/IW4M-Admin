@@ -11,7 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -509,9 +509,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 TimeOffset = Int64.Parse(offset),
                 When = time,
                 IsKillstreakKill = isKillstreakKill[0] != '0',
-                AdsPercent = float.Parse(Ads),
-                Fraction = double.Parse(fraction),
-                VisibilityPercentage = double.Parse(visibilityPercentage),
+                AdsPercent = float.Parse(Ads, System.Globalization.CultureInfo.InvariantCulture),
+                Fraction = double.Parse(fraction, System.Globalization.CultureInfo.InvariantCulture),
+                VisibilityPercentage = double.Parse(visibilityPercentage, System.Globalization.CultureInfo.InvariantCulture),
                 IsKill = !isDamage,
                 AnglesList = snapshotAngles
             };

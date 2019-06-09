@@ -30,7 +30,7 @@ namespace IW4MAdmin.Application.IO
 
         public long Length => -1;
 
-        public int UpdateInterval => 350;
+        public int UpdateInterval => 550;
 
         public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {

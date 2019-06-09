@@ -56,6 +56,11 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        internal static void Clear()
+        {
+            _metaActions.Clear();
+        }
+
         /// <summary>
         /// retrieves meta data for given client and key
         /// </summary>

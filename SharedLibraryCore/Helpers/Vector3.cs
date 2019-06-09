@@ -38,11 +38,16 @@ namespace SharedLibraryCore.Helpers
         {
             bool valid = Regex.Match(s, @"\((-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+),\ (-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+),\ (-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+)\)").Success;
             if (!valid)
+            {
                 throw new FormatException("Vector3 is not in correct format");
+            }
 
             string removeParenthesis = s.Substring(1, s.Length - 2);
             string[] eachPoint = removeParenthesis.Split(',');
-            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any), float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any), float.Parse(eachPoint[2], System.Globalization.NumberStyles.Any));
+
+            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture), 
+                float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture), 
+                float.Parse(eachPoint[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture));
         }
 
         public static double Distance(Vector3 a, Vector3 b)
@@ -54,14 +59,12 @@ namespace SharedLibraryCore.Helpers
         {
             double deltaX = Math.Abs(b.X -a.X);
             double deltaY = Math.Abs(b.Y - a.Y);
-           double deltaZ = Math.Abs(b.Z - a.Z);
 
             // this 'fixes' the roll-over angles
             double dx = deltaX < 360.0 / 2 ? deltaX : 360.0 - deltaX;
             double dy = deltaY < 360.0 / 2 ? deltaY : 360.0 - deltaY;
-            double dz = deltaZ < 360.0 / 2 ? deltaZ : 360.0 - deltaZ;
 
-            return Math.Sqrt((dx * dx) + (dy * dy) /*+ (dz * dz)*/);
+            return Math.Sqrt((dx * dx) + (dy * dy));
         }
 
         public static double ViewAngleDistance(Vector3 a, Vector3 b, Vector3 c)

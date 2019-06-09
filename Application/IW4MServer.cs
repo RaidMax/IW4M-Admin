@@ -164,6 +164,10 @@ namespace IW4MAdmin
         /// <returns></returns>
         override protected async Task<bool> ProcessEvent(GameEvent E)
         {
+#if DEBUG
+            Logger.WriteDebug($"processing event of type {E.Type}");
+#endif
+
             if (E.Type == GameEvent.EventType.ConnectionLost)
             {
                 var exception = E.Extra as Exception;
@@ -204,13 +208,21 @@ namespace IW4MAdmin
                 var existingClient = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
 
                 // they're already connected
-                if (existingClient != null && !E.Origin.IsBot)
+                if (existingClient != null && existingClient.ClientNumber == E.Origin.ClientNumber && !E.Origin.IsBot)
                 {
                     Logger.WriteWarning($"detected preconnect for {E.Origin}, but they are already connected");
                     return false;
                 }
 
-            //CONNECT:
+                // this happens for some reason rarely where the client spots get out of order
+                // possible a connect/reconnect game event before we get to process it here 
+                else if (existingClient != null && existingClient.ClientNumber != E.Origin.ClientNumber)
+                {
+                    Logger.WriteWarning($"client {E.Origin} is trying to connect in client slot {E.Origin.ClientNumber}, but they are already registed in client slot {existingClient.ClientNumber}, swapping...");
+                    // we need to remove them so the client spots can swap
+                    await OnClientDisconnected(Clients[existingClient.ClientNumber]);
+                }
+
                 if (Clients[E.Origin.ClientNumber] == null)
                 {
 #if DEBUG == true
@@ -249,8 +261,6 @@ namespace IW4MAdmin
                 else
                 {
                     Logger.WriteWarning($"{E.Origin} is connecting but {Clients[E.Origin.ClientNumber]} is currently in that client slot");
-                    //await OnClientDisconnected(Clients[E.Origin.ClientNumber]);
-                    //goto CONNECT;
                 }
             }
 
@@ -561,7 +571,7 @@ namespace IW4MAdmin
         {
             try
             {
-                #region SHUTDOWN
+#region SHUTDOWN
                 if (Manager.CancellationToken.IsCancellationRequested)
                 {
                     foreach (var client in GetClientsAsList())
@@ -584,7 +594,7 @@ namespace IW4MAdmin
 
                     return true;
                 }
-                #endregion
+#endregion
 
                 try
                 {

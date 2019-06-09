@@ -15,8 +15,12 @@
   </Target>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
-    <ProjectReference Include="..\Stats\Stats.csproj" />
+    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Stats\Stats.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

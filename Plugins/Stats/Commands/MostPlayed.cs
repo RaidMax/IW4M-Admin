@@ -23,7 +23,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
             };
 
-            using (var db = new DatabaseContext())
+            using (var db = new DatabaseContext(true))
             {
                 db.ChangeTracker.AutoDetectChangesEnabled = false;
                 db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;

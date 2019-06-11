@@ -1115,7 +1115,7 @@ namespace SharedLibraryCore.Commands
                     .Where(c => c.Level > EFClient.Permission.Flagged && c.Level <= EFClient.Permission.Moderator)
                     .Where(c => c.LastConnection < lastActive)
                     .ToListAsync();
-                inactiveUsers.ForEach(c => c.SetLevel(EFClient.Permission.User, E.Origin));
+                inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
                 await context.SaveChangesAsync();
             }
             E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_PRUNE_SUCCESS"].FormatExt(inactiveUsers.Count));

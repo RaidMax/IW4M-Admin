@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'FrenchFry, RaidMax',
-    version: 0.3,
+    version: 0.4,
     name: 'CoD4x Parser',
     isParser: true,
 
@@ -14,7 +14,7 @@ var plugin = {
         rconParser = manager.GenerateDynamicRConParser();
         eventParser = manager.GenerateDynamicEventParser();
 
-        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16}|(?:[a-z]|[0-9]){32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+.\\d+\\:-*\\d{1,5}|0+.0+:-*\\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$'
+        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){16,32}|(?:[a-z]|[0-9]){32}|bot[0-9]+) ([0-9+]) *(.{0,32}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+.\\d+\\:-*\\d{1,5}|0+.0+:-*\\d{1,5}|loopback) +(-*[0-9]+) +([0-9]+) *$'
         rconParser.Configuration.Status.AddMapping(104, 6); // RConName
         rconParser.Configuration.Status.AddMapping(105, 8); // RConIPAddress
 

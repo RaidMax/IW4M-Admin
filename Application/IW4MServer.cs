@@ -84,18 +84,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-                Clients[client.ClientNumber] = null;
-                await client.OnDisconnect();
+            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+            Clients[client.ClientNumber] = null;
+            await client.OnDisconnect();
 
-                var e = new GameEvent()
-                {
-                    Origin = client,
-                    Owner = this,
-                    Type = GameEvent.EventType.Disconnect
-                };
+            var e = new GameEvent()
+            {
+                Origin = client,
+                Owner = this,
+                Type = GameEvent.EventType.Disconnect
+            };
 
-                Manager.GetEventHandler().AddEvent(e);
+            Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -571,22 +571,9 @@ namespace IW4MAdmin
         {
             try
             {
-#region SHUTDOWN
+                #region SHUTDOWN
                 if (Manager.CancellationToken.IsCancellationRequested)
                 {
-                    foreach (var client in GetClientsAsList())
-                    {
-                        var e = new GameEvent()
-                        {
-                            Type = GameEvent.EventType.PreDisconnect,
-                            Origin = client,
-                            Owner = this,
-                        };
-
-                        Manager.GetEventHandler().AddEvent(e);
-                        await e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
-                    }
-
                     foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                     {
                         await plugin.OnUnloadAsync();
@@ -594,7 +581,7 @@ namespace IW4MAdmin
 
                     return true;
                 }
-#endregion
+                #endregion
 
                 try
                 {
@@ -705,14 +692,14 @@ namespace IW4MAdmin
                 lastCount = DateTime.Now;
 
                 // update the player history 
-                if ((lastCount - playerCountStart).TotalMinutes >= SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval)
+                if ((lastCount - playerCountStart).TotalMinutes >= PlayerHistory.UpdateInterval)
                 {
-                    while (ClientHistory.Count > ((60 / SharedLibraryCore.Helpers.PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
+                    while (ClientHistory.Count > ((60 / PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
                     {
                         ClientHistory.Dequeue();
                     }
 
-                    ClientHistory.Enqueue(new SharedLibraryCore.Helpers.PlayerHistory(ClientNum));
+                    ClientHistory.Enqueue(new PlayerHistory(ClientNum));
                     playerCountStart = DateTime.Now;
                 }
 
@@ -1017,11 +1004,18 @@ namespace IW4MAdmin
             else
             {
 #if !DEBUG
-                string formattedString = String.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7{loc["SERVER_BAN_APPEAL"].FormatExt(Website)}^7");
+                string formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7{loc["SERVER_BAN_APPEAL"].FormatExt(Website)}^7");
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
 #else
                 await targetClient.CurrentServer.OnClientDisconnected(targetClient);
 #endif
+            }
+
+            // this should link evading clients
+            if (isEvade)
+            {
+                Logger.WriteInfo($"updating alias for banned client {targetClient}");
+                await Manager.GetClientService().UpdateAlias(targetClient);
             }
 
             EFPenalty newPenalty = new EFPenalty()
@@ -1061,10 +1055,10 @@ namespace IW4MAdmin
 
         override public void InitializeTokens()
         {
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s)));
-            Manager.GetMessageTokens().Add(new SharedLibraryCore.Helpers.MessageToken("ADMINS", (Server s) => Task.FromResult(SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s))));
+            Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
+            Manager.GetMessageTokens().Add(new MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));
+            Manager.GetMessageTokens().Add(new MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s)));
+            Manager.GetMessageTokens().Add(new MessageToken("ADMINS", (Server s) => Task.FromResult(SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s))));
         }
     }
 }

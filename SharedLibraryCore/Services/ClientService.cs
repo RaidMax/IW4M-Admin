@@ -48,7 +48,7 @@ namespace SharedLibraryCore.Services
                 };
 
                 context.Clients.Add(client);
-      
+
                 // they're just using a new GUID
                 if (aliasId.HasValue)
                 {
@@ -272,18 +272,9 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task<IList<EFClient>> Find(Func<EFClient, bool> e)
+        public Task<IList<EFClient>> Find(Func<EFClient, bool> e)
         {
-            return await Task.Run(() =>
-            {
-                using (var context = new DatabaseContext(true))
-                {
-                    return context.Clients
-                         .Include(c => c.CurrentAlias)
-                         .Include(c => c.AliasLink.Children)
-                         .Where(e).ToList();
-                }
-            });
+            throw new NotImplementedException();
         }
 
         public async Task<EFClient> Get(int entityID)
@@ -369,6 +360,11 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
+                if (temporalClient.LastConnection == DateTime.MinValue || temporalClient.Connections == 0 || temporalClient.TotalConnectionTime == 0)
+                {
+                    throw new InvalidOperationException($"client {temporalClient} trying to update but parameters are invalid");
+                }
+
                 // grab the context version of the entity
                 var entity = context.Clients
                     .First(client => client.ClientId == temporalClient.ClientId);
@@ -407,7 +403,7 @@ namespace SharedLibraryCore.Services
         {
             using (var ctx = new DatabaseContext(true))
             {
-                return await ctx.Clients.AsNoTracking()
+                return await ctx.Clients
                     .CountAsync(_client => _client.Level == Permission.Owner);
             }
         }
@@ -489,7 +485,7 @@ namespace SharedLibraryCore.Services
                 {
                     iqClients = iqClients.Where(_client => linkIds.Contains(_client.AliasLinkId));
                 }
-                    
+
                 // we want to project our results 
                 var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)
                     .Select(_client => new PlayerInfo()
@@ -503,7 +499,7 @@ namespace SharedLibraryCore.Services
                 var iqClientsSql = iqClients.ToSql();
 #endif
                 var clients = await iqClientProjection.ToListAsync();
-                
+
                 // this is so we don't try to evaluate this in the linq to entities query
                 foreach (var client in clients)
                 {

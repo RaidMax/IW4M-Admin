@@ -360,7 +360,7 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                if (temporalClient.LastConnection == DateTime.MinValue || temporalClient.Connections == 0 || temporalClient.TotalConnectionTime == 0)
+                if (temporalClient.LastConnection == DateTime.MinValue || temporalClient.FirstConnection == DateTime.MinValue)
                 {
                     throw new InvalidOperationException($"client {temporalClient} trying to update but parameters are invalid");
                 }
@@ -368,6 +368,12 @@ namespace SharedLibraryCore.Services
                 // grab the context version of the entity
                 var entity = context.Clients
                     .First(client => client.ClientId == temporalClient.ClientId);
+
+                if (entity.TotalConnectionTime > temporalClient.TotalConnectionTime || entity.Connections > temporalClient.Connections ||
+                    entity.LastConnection > temporalClient.LastConnection || entity.FirstConnection > temporalClient.FirstConnection)
+                {
+                    throw new InvalidOperationException($"client {temporalClient} trying to update but new parameters don't match saved parameters");
+                }
 
                 entity.LastConnection = temporalClient.LastConnection;
                 entity.Connections = temporalClient.Connections;
@@ -462,7 +468,6 @@ namespace SharedLibraryCore.Services
                 }
 
                 // want to find them by name (wildcard)
-                // todo maybe not make it start with wildcard?
                 else
                 {
                     iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.Name.ToLower(), $"%{identifier.ToLower()}%"));

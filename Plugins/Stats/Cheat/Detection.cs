@@ -25,7 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public List<EFClientKill> QueuedHits { get; set; }
         int Kills;
         int HitCount;
-        Dictionary<IW4Info.HitLocation, int> HitLocationCount;
+        Dictionary<IW4Info.HitLocation, HitInfo> HitLocationCount;
         double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
         long LastOffset;
@@ -34,13 +34,19 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
 
+        private class HitInfo
+        {
+            public int Count { get; set; }
+            public double Offset { get; set; }
+        };
+
         public Detection(ILogger log, EFClientStatistics clientStats)
         {
             Log = log;
-            HitLocationCount = new Dictionary<IW4Info.HitLocation, int>();
+            HitLocationCount = new Dictionary<IW4Info.HitLocation, HitInfo>();
             foreach (var loc in Enum.GetValues(typeof(IW4Info.HitLocation)))
             {
-                HitLocationCount.Add((IW4Info.HitLocation)loc, 0);
+                HitLocationCount.Add((IW4Info.HitLocation)loc, new HitInfo());
             }
 
             ClientStats = clientStats;
@@ -72,7 +78,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             DetectionPenaltyResult result = null;
             LastWeapon = hit.Weapon;
 
-            HitLocationCount[hit.HitLoc]++;
+            HitLocationCount[hit.HitLoc].Count++;
             HitCount++;
 
             if (!isDamage)
@@ -93,14 +99,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double newAverage = (previousAverage * (hitLoc.HitCount - 1) + realAgainstPredict) / hitLoc.HitCount;
                 hitLoc.HitOffsetAverage = (float)newAverage;
 
-                if (hitLoc.HitOffsetAverage > Thresholds.MaxOffset(hitLoc.HitCount) &&
+                int totalHits = ClientStats.HitLocations.Sum(_hit => _hit.HitCount);
+                var weightedLifetimeAverage = ClientStats.HitLocations.Where(_hit => _hit.HitCount > 0)
+                    .Sum(_hit => _hit.HitOffsetAverage * _hit.HitCount) / totalHits;
+
+                if (weightedLifetimeAverage > Thresholds.MaxOffset(totalHits) &&
                     hitLoc.HitCount > 100)
                 {
-                    //Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
-                    //Log.WriteDebug($"Lifetime Average = {newAverage}");
-                    //Log.WriteDebug($"Bone = {hitLoc.Location}");
-                    //Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
-                    //Log.WriteDebug($"ID = {hit.AttackerId}");
+                    Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
+                    Log.WriteDebug($"Lifetime Average = {newAverage}");
+                    Log.WriteDebug($"Bone = {hitLoc.Location}");
+                    Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
+                    Log.WriteDebug($"ID = {hit.AttackerId}");
 
                     result = new DetectionPenaltyResult()
                     {
@@ -112,21 +122,25 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 }
 
                 // SESSION
-                double sessAverage = (AngleDifferenceAverage * (HitCount - 1) + realAgainstPredict) / HitCount;
-                AngleDifferenceAverage = sessAverage;
+                var sessionHitLoc = HitLocationCount[hit.HitLoc];
+                sessionHitLoc.Offset = (sessionHitLoc.Offset * (sessionHitLoc.Count - 1) + realAgainstPredict) / sessionHitLoc.Count;
 
-                if (sessAverage > Thresholds.MaxOffset(HitCount) &&
-                    HitCount > 30)
+                int totalSessionHits = HitLocationCount.Sum(_hit => _hit.Value.Count);
+                var weightedSessionAverage = HitLocationCount.Where(_hit => _hit.Value.Count > 0)
+                    .Sum(_hit => _hit.Value.Offset * _hit.Value.Count) / totalHits;
+
+                if (weightedSessionAverage > Thresholds.MaxOffset(totalSessionHits) &&
+                    totalSessionHits > 40)
                 {
-                    //Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
-                    //Log.WriteDebug($"Session Average = {sessAverage}");
-                    //Log.WriteDebug($"HitCount = {HitCount}");
-                    //Log.WriteDebug($"ID = {hit.AttackerId}");
+                    Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
+                    Log.WriteDebug($"Session Average = {weightedSessionAverage}");
+                    Log.WriteDebug($"HitCount = {HitCount}");
+                    Log.WriteDebug($"ID = {hit.AttackerId}");
 
                     result = new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
-                        Value = sessAverage,
+                        Value = weightedSessionAverage,
                         HitCount = HitCount,
                         Type = DetectionType.Offset,
                         Location = hitLoc.Location
@@ -188,10 +202,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double maxBoneRatioLerpValueForBan = Thresholds.Lerp(Thresholds.BoneRatioThresholdLowSample(3.25), Thresholds.BoneRatioThresholdHighSample(3.25), lerpAmount) + marginOfError;
 
                 // calculate headshot ratio
-                double currentHeadshotRatio = ((HitLocationCount[IW4Info.HitLocation.head] + HitLocationCount[IW4Info.HitLocation.helmet] + HitLocationCount[IW4Info.HitLocation.neck]) / (double)HitCount);
+                double currentHeadshotRatio = ((HitLocationCount[IW4Info.HitLocation.head].Count + HitLocationCount[IW4Info.HitLocation.helmet].Count + HitLocationCount[IW4Info.HitLocation.neck].Count) / (double)HitCount);
 
                 // calculate maximum bone 
-                double currentMaxBoneRatio = (HitLocationCount.Values.Select(v => v / (double)HitCount).Max());
+                double currentMaxBoneRatio = (HitLocationCount.Values.Select(v => v.Count / (double)HitCount).Max());
                 var bone = HitLocationCount.FirstOrDefault(b => b.Value == HitLocationCount.Values.Max()).Key;
 
                 #region HEADSHOT_RATIO
@@ -308,7 +322,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             #region CHEST_ABDOMEN_RATIO_SESSION
-            int chestHits = HitLocationCount[IW4Info.HitLocation.torso_upper];
+            int chestHits = HitLocationCount[IW4Info.HitLocation.torso_upper].Count;
 
             if (chestHits >= Thresholds.MediumSampleMinKills)
             {
@@ -318,7 +332,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(3), Thresholds.ChestAbdomenRatioThresholdHighSample(3), lerpAmount) + marginOfError;
                 double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdLowSample(4), Thresholds.ChestAbdomenRatioThresholdHighSample(4), lerpAmount) + marginOfError;
 
-                double currentChestAbdomenRatio = HitLocationCount[IW4Info.HitLocation.torso_upper] / (double)HitLocationCount[IW4Info.HitLocation.torso_lower];
+                double currentChestAbdomenRatio = HitLocationCount[IW4Info.HitLocation.torso_upper].Count / (double)HitLocationCount[IW4Info.HitLocation.torso_lower].Count;
 
                 if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)
                 {

@@ -29,7 +29,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
         public const double MaxStrainBan = 0.9;
 
-        public static double MaxOffset(int sampleSize) => Math.Exp(Math.Max(-3.07 + (-3.07 / Math.Sqrt(sampleSize)), -3.07 - (-3.07 / Math.Sqrt(sampleSize))) + 4 * (0.869));
+        private const double _offsetMeanLog = -2.727273;
+        private const double _offsetSdLog = 0.458325;
+
+        public static double MaxOffset(int sampleSize) => Math.Exp(Math.Max(_offsetMeanLog + (_offsetMeanLog / Math.Sqrt(sampleSize)), _offsetMeanLog - (_offsetMeanLog / Math.Sqrt(sampleSize))) + 4 * (_offsetSdLog));
         public const double MaxStrainFlag = 0.36;
 
         public static double GetMarginOfError(int numKills) => 1.6455 / Math.Sqrt(numKills);

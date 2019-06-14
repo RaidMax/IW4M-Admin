@@ -13,6 +13,14 @@
     <Configurations>Debug;Release;Prerelease</Configurations>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
     <LangVersion>7.1</LangVersion>
+    <PackageTags>IW4MAdmin</PackageTags>
+    <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin/</RepositoryUrl>
+    <PackageProjectUrl>https://www.raidmax.org/IW4MAdmin/</PackageProjectUrl>
+    <PackageIconUrl>https://www.raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
+    <Copyright>2019</Copyright>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

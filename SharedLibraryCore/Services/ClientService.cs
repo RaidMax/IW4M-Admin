@@ -360,28 +360,36 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext())
             {
-                if (temporalClient.LastConnection == DateTime.MinValue || temporalClient.FirstConnection == DateTime.MinValue)
-                {
-                    throw new InvalidOperationException($"client {temporalClient} trying to update but parameters are invalid");
-                }
-
                 // grab the context version of the entity
                 var entity = context.Clients
                     .First(client => client.ClientId == temporalClient.ClientId);
 
-                if (entity.TotalConnectionTime > temporalClient.TotalConnectionTime || entity.Connections > temporalClient.Connections ||
-                    entity.LastConnection > temporalClient.LastConnection || entity.FirstConnection > temporalClient.FirstConnection)
+                if (temporalClient.LastConnection > entity.LastConnection)
                 {
-                    throw new InvalidOperationException($"client {temporalClient} trying to update but new parameters don't match saved parameters");
+                    entity.LastConnection = temporalClient.LastConnection;
                 }
 
-                entity.LastConnection = temporalClient.LastConnection;
-                entity.Connections = temporalClient.Connections;
-                entity.FirstConnection = temporalClient.FirstConnection;
+                if (temporalClient.Connections > entity.Connections)
+                {
+                    entity.Connections = temporalClient.Connections;
+                }
+
                 entity.Masked = temporalClient.Masked;
-                entity.TotalConnectionTime = temporalClient.TotalConnectionTime;
-                entity.Password = temporalClient.Password;
-                entity.PasswordSalt = temporalClient.PasswordSalt;
+
+                if (temporalClient.TotalConnectionTime > entity.TotalConnectionTime)
+                {
+                    entity.TotalConnectionTime = temporalClient.TotalConnectionTime;
+                }
+
+                if (temporalClient.Password != null)
+                {
+                    entity.Password = temporalClient.Password;
+                }
+
+                if (temporalClient.PasswordSalt != null)
+                {
+                    entity.PasswordSalt = temporalClient.PasswordSalt;
+                }
 
                 // update in database
                 await context.SaveChangesAsync();

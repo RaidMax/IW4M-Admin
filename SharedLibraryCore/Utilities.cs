@@ -271,7 +271,7 @@ namespace SharedLibraryCore
 
         public static long ConvertGuidToLong(this string str, long? fallback = null)
         {
-            str = str.Substring(0, Math.Min(str.Length, 16));
+            str = str.Substring(0, Math.Min(str.Length, 19));
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
 
             if (string.IsNullOrWhiteSpace(str) && fallback.HasValue)
@@ -279,11 +279,10 @@ namespace SharedLibraryCore
                 return fallback.Value;
             }
 
-            // this is a special case for Plutonium T6
-            if (str.Length <= 11 &&
-                long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out long id)) // 10 numeric characters + signed character
+            // this is a special case for Plutonium T6 and CoD4x
+            if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out long id))
             {
-                id = (uint)id;
+            
             }
 
             else if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))

@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'FrenchFry, RaidMax',
-    version: 0.4,
+    version: 0.5,
     name: 'CoD4x Parser',
     isParser: true,
 
@@ -21,11 +21,11 @@ var plugin = {
         rconParser.Configuration.Dvar.Pattern = '^"(.+)" is: "(.+)?" default: "(.+)?" info: "(.+)?"$';
         rconParser.Configuration.Dvar.AddMapping(109, 2); // DVAR latched value
         rconParser.Configuration.Dvar.AddMapping(110, 4); // dvar info
-        rconParser.Version = 'CoD4 X 1.8 win_mingw-x86 build 2055 May  2 2017';
+        rconParser.Version = 'CoD4 X - win_mingw-x86 build 963 Mar 12 2019';
         rconParser.GameName = 1; // IW3
 
         eventParser.Configuration.GameDirectory = 'main';
-        eventParser.Version = 'CoD4 X 1.8 win_mingw-x86 build 2055 May  2 2017';
+        eventParser.Version = 'CoD4 X - win_mingw-x86 build 963 Mar 12 2019';
         eventParser.GameName = 1; // IW3
         eventParser.URLProtocolFormat = 'cod4://{{ip}}:{{port}}';
     },

@@ -19,7 +19,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Kick    = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban     = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"';
-        eventParser.Configuration.GameDirectory = 'userraw';
+        eventParser.Configuration.GameDirectory          = 'userraw';
 
         rconParser.Version = 'IW4x (v0.6.0)';
         rconParser.GameName = 2; // IW4x

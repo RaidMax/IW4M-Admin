@@ -127,7 +127,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                 int totalSessionHits = HitLocationCount.Sum(_hit => _hit.Value.Count);
                 var weightedSessionAverage = HitLocationCount.Where(_hit => _hit.Value.Count > 0)
-                    .Sum(_hit => _hit.Value.Offset * _hit.Value.Count) / totalHits;
+                    .Sum(_hit => _hit.Value.Offset * _hit.Value.Count) / totalSessionHits;
 
                 if (weightedSessionAverage > Thresholds.MaxOffset(totalSessionHits) &&
                     totalSessionHits > 40)
@@ -206,7 +206,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                 // calculate maximum bone 
                 double currentMaxBoneRatio = (HitLocationCount.Values.Select(v => v.Count / (double)HitCount).Max());
-                var bone = HitLocationCount.FirstOrDefault(b => b.Value == HitLocationCount.Values.Max()).Key;
+                var bone = HitLocationCount.FirstOrDefault(b => b.Value.Count == HitLocationCount.Values.Max(_hit => _hit.Count)).Key;
 
                 #region HEADSHOT_RATIO
                 // flag on headshot

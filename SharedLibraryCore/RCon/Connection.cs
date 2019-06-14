@@ -160,7 +160,7 @@ namespace SharedLibraryCore.RCon
 
             string responseString = defaultEncoding.GetString(response, 0, response.Length) + '\n';
 
-            if (responseString.Contains("Invalid password"))
+            if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
             {
                 throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_INVALID"]);
             }

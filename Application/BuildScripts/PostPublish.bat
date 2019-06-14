@@ -111,5 +111,11 @@ echo making start scripts
 @(echo @echo off && echo @title IW4MAdmin && echo set DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.cmd"
 @(echo @echo off && echo @title IW4MAdmin && echo set DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.cmd"
 
-@(echo #!/bin/bash && echo export DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib/IW4MAdmin.dll) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
-@(echo #!/bin/bash && echo export DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib/IW4MAdmin.dll) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"
+@(echo #!/bin/bash&& echo export DOTNET_CLI_TELEMETRY_OPTOUT=1&& echo dotnet Lib/IW4MAdmin.dll) > "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
+dos2unix "%SolutionDir%Publish\WindowsPrerelease\StartIW4MAdmin.sh"
+@(echo #!/bin/bash&& echo export DOTNET_CLI_TELEMETRY_OPTOUT=1&& echo dotnet Lib/IW4MAdmin.dll) > "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"
+dos2unix "%SolutionDir%Publish\Windows\StartIW4MAdmin.sh"
+
+echo setting permissions...
+cacls "%SolutionDir%Publish\WindowsPrerelease" /t /e /p Everyone:F
+cacls "%SolutionDir%Publish\Windows" /t /e /p Everyone:F

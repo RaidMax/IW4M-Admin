@@ -569,7 +569,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
                     {
+#if DEBUG
+                        if (clientDetection.QueuedHits.Count > 0)
+#else
                         if (clientDetection.QueuedHits.Count > Detection.QUEUE_COUNT)
+#endif
                         {
                             while (clientDetection.QueuedHits.Count > 0)
                             {
@@ -847,7 +851,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ctx.Add(clientHistory);
                 }
 
-                #region INDIVIDUAL_SERVER_PERFORMANCE
+#region INDIVIDUAL_SERVER_PERFORMANCE
                 // get the client ranking for the current server
                 int individualClientRanking = await ctx.Set<EFRating>()
                     .Where(GetRankingFunc(clientStats.ServerId))
@@ -898,8 +902,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // add new rating for current server
                 ctx.Add(newServerRating);
 
-                #endregion
-                #region OVERALL_RATING
+#endregion
+#region OVERALL_RATING
                 // select all performance & time played for current client
                 var iqClientStats = from stats in ctx.Set<EFClientStatistics>()
                                     where stats.ClientId == client.ClientId
@@ -974,7 +978,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 };
 
                 ctx.Add(averageRating);
-                #endregion
+#endregion
 
                 await ctx.SaveChangesAsync();
             }
@@ -1009,7 +1013,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // calulate elo
             if (_servers[attackerStats.ServerId].PlayerStats.Count > 1)
             {
-                #region DEPRECATED
+#region DEPRECATED
                 /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
                      .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
                      .Where(cs =>
@@ -1033,7 +1037,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                  double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
                      validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
                      victimStats.EloRating;*/
-                #endregion
+#endregion
 
                 double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
                 double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));

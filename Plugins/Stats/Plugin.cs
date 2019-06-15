@@ -244,6 +244,7 @@ namespace IW4MAdmin.Plugins.Stats
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
+                double averageRecoilAmount = 0;
                 double maxStrain = clientStats.Count(c => c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
 
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
@@ -266,6 +267,7 @@ namespace IW4MAdmin.Plugins.Stats
 
                     var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0).SelectMany(hl => hl.HitLocations);
                     hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
+                    averageRecoilAmount = clientStats.Average(_stat => _stat.AverageRecoilOffset);
                 }
 
                 return new List<ProfileMeta>()
@@ -329,6 +331,16 @@ namespace IW4MAdmin.Plugins.Stats
                         Column = 2,
                         Order = 5,
                         Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM6"],
+                        Sensitive = true
+                    },
+                    new ProfileMeta()
+                    {
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 7",
+                        Value = Math.Round(averageRecoilAmount, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 5,
+                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
                         Sensitive = true
                     },
                 };

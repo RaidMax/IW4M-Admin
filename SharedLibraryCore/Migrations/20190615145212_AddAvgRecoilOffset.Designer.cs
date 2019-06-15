@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SharedLibraryCore.Database;
 
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20190615145212_AddAvgRecoilOffset")]
+    partial class AddAvgRecoilOffset
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,8 +52,6 @@ namespace SharedLibraryCore.Migrations
                     b.Property<int>("Kills");
 
                     b.Property<int>("LastStrainAngleId");
-
-                    b.Property<double>("RecoilOffset");
 
                     b.Property<double>("SessionAngleOffset");
 

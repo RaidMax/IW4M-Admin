@@ -615,7 +615,7 @@ namespace IW4MAdmin
                     foreach (var client in polledClients[0])
                     {
                         // note: this prevents players in ZMBI state from being registered with no name
-                        if (string.IsNullOrEmpty(client.Name) || client.Ping == 999)
+                        if (string.IsNullOrEmpty(client.Name) || (client.Ping == 999 && !client.IsBot))
                         {
                             continue;
                         }

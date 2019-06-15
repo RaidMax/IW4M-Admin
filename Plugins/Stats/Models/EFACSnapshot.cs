@@ -30,6 +30,7 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public double CurrentStrain { get; set; }
         public double StrainAngleBetween { get; set; }
         public double SessionAngleOffset { get; set; }
+        public double RecoilOffset { get; set; }
         public int LastStrainAngleId { get; set; }
         [ForeignKey("LastStrainAngleId")]
         public Vector3 LastStrainAngle { get; set; }

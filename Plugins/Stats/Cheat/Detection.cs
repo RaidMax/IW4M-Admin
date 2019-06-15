@@ -16,7 +16,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Bone,
             Chest,
             Offset,
-            Strain
+            Strain,
+            Recoil
         };
 
         public ChangeTracking<EFACSnapshot> Tracker { get; private set; }
@@ -33,6 +34,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         ILogger Log;
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
+        private double sessionAverageRecoilAmount;
 
         private class HitInfo
         {
@@ -62,6 +64,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         /// <returns>true if detection reached thresholds, false otherwise</returns>
         public DetectionPenaltyResult ProcessHit(EFClientKill hit, bool isDamage)
         {
+            var results = new List<DetectionPenaltyResult>();
+
             if ((hit.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
                 hit.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
                 hit.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
@@ -75,11 +79,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 };
             }
 
-            DetectionPenaltyResult result = null;
             LastWeapon = hit.Weapon;
 
             HitLocationCount[hit.HitLoc].Count++;
             HitCount++;
+
 
             if (!isDamage)
             {
@@ -112,13 +116,13 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
                     Log.WriteDebug($"ID = {hit.AttackerId}");
 
-                    result = new DetectionPenaltyResult()
+                    results.Add(new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = hitLoc.HitOffsetAverage,
                         HitCount = hitLoc.HitCount,
                         Type = DetectionType.Offset
-                    };
+                    });
                 }
 
                 // SESSION
@@ -137,14 +141,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     Log.WriteDebug($"HitCount = {HitCount}");
                     Log.WriteDebug($"ID = {hit.AttackerId}");
 
-                    result = new DetectionPenaltyResult()
+                    results.Add(new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = weightedSessionAverage,
                         HitCount = HitCount,
                         Type = DetectionType.Offset,
                         Location = hitLoc.Location
-                    };
+                    });
                 }
 
 #if DEBUG
@@ -166,26 +170,56 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             // flag
             if (currentStrain > Thresholds.MaxStrainFlag)
             {
-                result = new DetectionPenaltyResult()
+                results.Add(new DetectionPenaltyResult()
                 {
                     ClientPenalty = EFPenalty.PenaltyType.Flag,
                     Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
-                };
+                });
             }
 
             // ban
             if (currentStrain > Thresholds.MaxStrainBan &&
                 HitCount >= 5)
             {
-                result = new DetectionPenaltyResult()
+                results.Add(new DetectionPenaltyResult()
                 {
                     ClientPenalty = EFPenalty.PenaltyType.Ban,
                     Value = currentStrain,
                     HitCount = HitCount,
                     Type = DetectionType.Strain
-                };
+                });
+            }
+            #endregion
+
+            #region RECOIL
+            var hitRecoilAverage = (hit.AnglesList.Sum(_angle => _angle.Z) + hit.ViewAngles.Z) / (hit.AnglesList.Count + 1);
+            sessionAverageRecoilAmount = (sessionAverageRecoilAmount * (HitCount - 1) + hitRecoilAverage) / HitCount;
+
+            var lifeTimeHits = ClientStats.HitLocations.Sum(_loc => _loc.HitCount);
+            ClientStats.AverageRecoilOffset = (ClientStats.AverageRecoilOffset * (lifeTimeHits - 1) + hitRecoilAverage) / lifeTimeHits;
+
+            if (sessionAverageRecoilAmount == 0 && HitCount > Thresholds.MediumSampleMinKills)
+            {
+                results.Add(new DetectionPenaltyResult()
+                {
+                    ClientPenalty = EFPenalty.PenaltyType.Ban,
+                    Value = sessionAverageRecoilAmount,
+                    HitCount = HitCount,
+                    Type = DetectionType.Recoil
+                });
+            }
+
+            if (ClientStats.AverageRecoilOffset == 0 && HitCount > Thresholds.HighSampleMinKills)
+            {
+                results.Add(new DetectionPenaltyResult()
+                {
+                    ClientPenalty = EFPenalty.PenaltyType.Ban,
+                    Value = ClientStats.AverageRecoilOffset,
+                    HitCount = lifeTimeHits,
+                    Type = DetectionType.Recoil
+                });
             }
             #endregion
 
@@ -228,14 +262,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         //Log.WriteDebug(sb.ToString());
 
-                        result = new DetectionPenaltyResult()
+                        results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentHeadshotRatio,
                             Location = IW4Info.HitLocation.head,
                             HitCount = HitCount,
                             Type = DetectionType.Bone
-                        };
+                        });
                     }
                     else
                     {
@@ -252,14 +286,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         //Log.WriteDebug(sb.ToString());
 
-                        result = new DetectionPenaltyResult()
+                        results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentHeadshotRatio,
                             Location = IW4Info.HitLocation.head,
                             HitCount = HitCount,
                             Type = DetectionType.Bone
-                        };
+                        });
                     }
                 }
                 #endregion
@@ -284,14 +318,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         //Log.WriteDebug(sb.ToString());
 
-                        result = new DetectionPenaltyResult()
+                        results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentMaxBoneRatio,
                             Location = bone,
                             HitCount = HitCount,
                             Type = DetectionType.Bone
-                        };
+                        });
                     }
                     else
                     {
@@ -308,14 +342,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                         //Log.WriteDebug(sb.ToString());
 
-                        result = new DetectionPenaltyResult()
+                        results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentMaxBoneRatio,
                             Location = bone,
                             HitCount = HitCount,
                             Type = DetectionType.Bone
-                        };
+                        });
                     }
                 }
                 #endregion
@@ -349,14 +383,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                         //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         //Log.WriteDebug(sb.ToString());
 
-                        result = new DetectionPenaltyResult()
+                        results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = currentChestAbdomenRatio,
                             Location = IW4Info.HitLocation.torso_upper,
                             Type = DetectionType.Chest,
                             HitCount = chestHits
-                        };
+                        });
                     }
                     else
                     {
@@ -370,14 +404,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                         //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
                         //Log.WriteDebug(sb.ToString());
 
-                        result = new DetectionPenaltyResult()
+                        results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = currentChestAbdomenRatio,
                             Location = IW4Info.HitLocation.torso_upper,
                             Type = DetectionType.Chest,
                             HitCount = chestHits
-                        };
+                        });
                     }
                 }
             }
@@ -389,6 +423,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 When = hit.When,
                 ClientId = ClientStats.ClientId,
                 SessionAngleOffset = AngleDifferenceAverage,
+                RecoilOffset = hitRecoilAverage,
                 CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds,
                 CurrentStrain = currentStrain,
                 CurrentViewAngle = hit.ViewAngles,
@@ -413,10 +448,12 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 WeaponId = hit.Weapon
             });
 
-            return result ?? new DetectionPenaltyResult()
-            {
-                ClientPenalty = EFPenalty.PenaltyType.Any,
-            };
+            return results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Ban) ??
+                results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Flag) ??
+                new DetectionPenaltyResult()
+                {
+                    ClientPenalty = EFPenalty.PenaltyType.Any,
+                };
         }
 
         public DetectionPenaltyResult ProcessTotalRatio(EFClientStatistics stats)

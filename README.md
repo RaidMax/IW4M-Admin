@@ -1,9 +1,10 @@
+
 # IW4MAdmin
 ### Quick Start Guide
 ### Version 2.3
 _______
 ### About
-**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6), ~~[Pluto IW5](https://forum.plutonium.pw/category/5/plutonium-iw5)~~, and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
+**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://www.teknomw3.pw/), and most Call of DutyÂ® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
 Latest binary builds are always available at:
 - [RaidMax](https://raidmax.org/IW4MAdmin)  
@@ -13,17 +14,26 @@ Latest binary builds are always available at:
 ### Setup
 **IW4MAdmin** requires minimal effort to get up and running.
 #### Prerequisites
-* [.NET Core 2.1.5 Runtime](https://www.microsoft.com/net/download) *or newer*  
+* [.NET Core 2.2.2 Runtime](https://www.microsoft.com/net/download) *or newer*  
 #### Installation
 1. Install .NET Core Runtime
 2.  Extract `IW4MAdmin-<version>.zip`  
 #### Launching
-1. Run `StartIW4MAdmin.cmd` (Windows)
-2. Run `StartIW4MAdmin.sh` (Linux)
+Windows
+1. Run `StartIW4MAdmin.cmd`
 2. Configure **IW4MAdmin**
+
+Linux
+1. Execute `chmod +x StartIW4MAdmin.sh`  
+2. Run `StartIW4MAdmin.sh`
+3. Configure **IW4MAdmin**
+
 ### Updating
-1. Extract newer version of **IW4MAdmin** into pre-existing **IW4MAdmin** folder and overwrite existing files
-- _Your configuration and database will be saved_
+1. Download the latest version of **IW4MAdmin**
+2. Extract the newer version of **IW4MAdmin** into pre-existing **IW4MAdmin** folder and overwrite existing files
+
+    _Your configuration and database will be saved_
+
 ---
 ### Help
 Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)  
@@ -75,29 +85,22 @@ After initial configuration is finished, you will be prompted to configure your 
 * The *\(R\)emote (Con)sole* password set in your server configuration (can be obtained via `rcon_password`)
 * Default &mdash; `n/a`
  
-`Use Pluto T6 parser`
-* Used if setting up a server for Plutonium T6 (BO2)
-* Default &mdash; `false`
- 
-`Use Pluto IW5 parser`
-* Used if setting a server for Plutonium IW5 (MW3)
-* Default &mdash; `false`
- 
 `Enter number of reserved slots`
-* The number of client slots reserver for privileged players (unavailable for regular users to occupy)
+* The number of client slots reserved for privileged players (unavailable for regular users to occupy)
+* For example, if you enter **2** reserved slots on an **18** slot server, you will have **16** publicly available slots
 * Default &mdash; `0`
 
 #### Advanced Configuration
 If you wish to further customize your experience of **IW4MAdmin**, the following configuration file(s) will allow you to changes core options using any text-editor.
 
-#### `IW4MAdminSettings.json`-- _this file is created after initial setup_
-* This file uses the [JSON](https://en.wikipedia.org/wiki/JSON#JSON_sample) specification, so please validate it before running **IW4MAdmin**
+#### `IW4MAdminSettings.json`-- this file is created after initial setup
+* This file uses the [JSON](https://en.wikipedia.org/wiki/JSON#JSON_sample) specification, so please validate your configuration before running **IW4MAdmin**
 
 `WebfrontBindUrl`
 * Specifies the address and port the webfront will listen on.
 * The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port
 * Example http://gameserver.com:8080
-* Default &mdash; `http://0.0.0.0:1624`
+* Default &mdash; `http://0.0.0.0:1624` (indicates that it will listen on all IP Addresses available to the default interface)
 
 `CustomLocale`
 * Specifies a [locale name](https://msdn.microsoft.com/en-us/library/39cwe7zf.aspx) to use instead of system default
@@ -114,7 +117,7 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 * Default &mdash; `sqlite`
 
 `Ignore Bots`
-* Disables bots from being registered by **IW4MAdmin**
+* Disables bots from being registered and tracked by **IW4MAdmin**
  
 `RConPollRate`
 * Specifies (in milliseconds) how often to poll each server for updates
@@ -136,15 +139,19 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
     * Specifies the log path to be used instead of the automatically generated one
     * To use the `GameLogServer`, this should be set to the http address that the `GameLogServer` is listening on
     * Example &mdash; http://gamelogserver.com/
+    * Default &mdash; `null`
 * `AutoMessages`
 	* Specifies the list of messages that are broadcasted to the particular server
-	* Default &mdash; `null`
+	* Default &mdash; `[]`
 * `Rules`
 	* Specifies the list of rules that apply to the particular server
-	* Default &mdash; `null`
+	* Default &mdash; `[]`
 * `ReservedSlotNumber`
     * Specifies the number of client slots to reserve for privileged users 
     * Default &mdash; `0`
+* `GameLogServerUrl`
+    * Specifies the HTTP Url for the Game Log Server
+    * Default &mdash; `null`
 
 `AutoMessagePeriod`
 * Specifies (in seconds) how often messages should be broadcasted to each server
@@ -309,7 +316,7 @@ ___
 #### VPN Detection [Script Plugin]
 - This plugin detects if a client is using a VPN and kicks them if they are
 - To disable this plugin, delete `Plugins\VPNDetection.js`
-- Adding ClientIds to `vpnExceptionIds` will prevent a client from being kicked.
+- Adding **Client IDs** to the `vpnExceptionIds`  array will prevent a client from being kicked.
 
 #### Shared GUID Kicker [Script Plugin]
 - This plugin kicks users using a specific GUID
@@ -359,6 +366,10 @@ Werkzeug>=0.14.1
     ```console
     pip install -r requirements.txt
     ```
+    If this fails, you can alternatively try installing with:
+    ```console
+    python -m pip install -r requirements.txt
+    ```
 2. Allow TCP port 1625 through firewall  
     * [Windows Instructions](https://www.tomshardware.com/news/how-to-open-firewall-ports-in-windows-10,36451.html)
     * [Linux Instructions (iptables)](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-basic-iptables-firewall-on-centos-6#open-up-ports-for-selected-services)
@@ -367,14 +378,20 @@ With Python 3 installed, open a terminal/command prompt window open in the `Game
 ```console
 python runserver.py
 ```
+The Game Log Server window will need to remain running/open as long as **IW4MAdmin** is running
+
 ---
 ### Extending Plugins
+
+#### NuGet Package
+The NuGet package for **IW4MAdmin's** "Shared Library" can be obtained from the [NuGet Gallery](https://www.nuget.org/packages/RaidMax.IW4MAdmin.SharedLibraryCore)
+Referencing this package will give you the ability to write plugins against **IW4MAdmin's** core library.
 #### Code
-IW4Madmin functionality can be extended by writing additional plugins in C#.  
+**IW4MAdmin's** functionality can be extended by writing additional plugins in C#.  
 Each class library must implement the `IPlugin` interface.   
-See the existing plugins for examples.
+See the existing [plugins](https://github.com/RaidMax/IW4M-Admin/tree/master/Plugins) for examples.
 #### JavaScript
-IW4MAdmin functionality can be extended using JavaScript.
+**IW4MAdmin** functionality can also be extended using JavaScript.
 The JavaScript parser supports [ECMA 5.1](https://ecma-international.org/ecma-262/5.1/) standards.
 #### Plugin Object Template
 In order to be properly parsed by the JavaScript engine, every plugin must conform to the following template.
@@ -407,37 +424,10 @@ var plugin = {
 - `onLoadAsync` &mdash; [function] Handler executed when the plugin is loaded by code
     - `manager` &mdash; [parameter object] Object reference to the application manager (see the IManager interface definition) 
 - `onUnloadAsync` &mdash; [function] Handler executed when the plugin is unloaded by code (see live reloading)
-- `onTickAsync` &mdash; [function] Handler executed approximately once per second by code *(unimplemented as of version 2.1)*
+- `onTickAsync` &mdash; [function] Handler executed approximately once per second by code *(unimplemented as of version 2.\*)*
     - `server` &mdash; [parameter object] Object containing information and methods about the server the event occured on (see the Server class declaration) 
 ### Live Reloading
 Thanks to JavaScript's flexibility and parsability, the plugin importer scans the plugins folder and reloads the JavaScript plugins on demand as they're modified. This allows faster development/testing/debugging.
-
----
-### Discord Webhook
-If you'd like to receive notifications on your Discord guild, configure and start `DiscordWebhook.py`
-#### Requirements
-- [Python 3.6](https://www.python.org/downloads/) or newer
-- The following [PIP](https://pypi.org/project/pip/) packages (provided in `requirements.txt`)
- ```certifi>=2018.4.16
-chardet>=3.0.4
-idna>=2.7
-pip>=18.0
-requests>=2.19.1
-setuptools>=39.0.1
-urllib3>=1.23
-``` 
-#### Configuration Options
-- `IW4MAdminUrl` &mdash; Base url corresponding to your IW4MAdmin `WebfrontBindUrl`.  
-Example http://127.0.0.1
-- `DiscordWebhookNotificationUrl` &mdash; [required] Discord generated URL to send notifications/alerts to; this includes **Reports** and **Bans**  
-Example https://discordapp.com/api/webhooks/id/token
-- `DiscordWebhookInformationUrl` &mdash; [optional] Discord generated URL to send information to; this includes information such as player messages
-- `NotifyRoleIds` &mdash; [optional] List of [discord role ids](https://discordhelp.net/role-id) to mention when notification hook is sent
-#### Launching
-With Python installed, open a terminal/command prompt window open in the `Webhook`  folder and execute:
-```console
-python DiscordWebhook.py
-```
 
 ---
 ### Misc
@@ -453,4 +443,4 @@ Should you need to reset your database, this file can simply be deleted.
 Additionally, this file should be preserved during updates to retain client information.   
 
 Setting the `ConnectionString` and `DatabaseProvider` properties in `IW4MAdminSettings.json`  
-will allow **IW4MAdmin** to use alternate methods for database storage. 
+will allow **IW4MAdmin** to use alternate methods for database storage

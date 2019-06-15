@@ -282,7 +282,10 @@ namespace SharedLibraryCore
             // this is a special case for Plutonium T6 and CoD4x
             if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out long id))
             {
-            
+                if (id < 0)
+                {
+                    id = (uint)id;
+                }
             }
 
             else if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
@@ -296,7 +299,7 @@ namespace SharedLibraryCore
 
             if (id == 0)
             {
-                throw new FormatException($"Could not parse client GUID - {str}"); 
+                throw new FormatException($"Could not parse client GUID - {str}");
             }
 
             return id;

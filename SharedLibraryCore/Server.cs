@@ -295,7 +295,7 @@ namespace SharedLibraryCore
         {
             get
             {
-                return Clients.Where(p => p != null).Count();
+                return Clients.Where(p => p != null && !p.IsBot).Count();
             }
         }
         public int MaxClients { get; protected set; }

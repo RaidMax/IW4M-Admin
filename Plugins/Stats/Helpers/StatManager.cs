@@ -569,6 +569,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
                     {
+                        DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
 #if DEBUG
                         if (clientDetection.QueuedHits.Count > 0)
 #else
@@ -580,10 +581,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 clientDetection.QueuedHits = clientDetection.QueuedHits.OrderBy(_hits => _hits.TimeOffset).ToList();
                                 var oldestHit = clientDetection.QueuedHits.First();
                                 clientDetection.QueuedHits.RemoveAt(0);
-                                await ApplyPenalty(clientDetection.ProcessHit(oldestHit, isDamage), attacker, ctx);
+                                result = clientDetection.ProcessHit(oldestHit, isDamage);
+                                await ApplyPenalty(result, attacker, ctx);
                             }
 
-                            await ApplyPenalty(clientDetection.ProcessTotalRatio(clientStats), attacker, ctx);
+                            result = clientDetection.ProcessTotalRatio(clientStats);
+                            await ApplyPenalty(result , attacker, ctx);
                         }
 
                         else
@@ -591,7 +594,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             clientDetection.QueuedHits.Add(hit);
                         }
 
-                        if (clientDetection.Tracker.HasChanges)
+                        if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any) 
                         {
                             SaveTrackedSnapshots(clientDetection, ctx);
                         }

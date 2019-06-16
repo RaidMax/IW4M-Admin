@@ -583,20 +583,25 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 clientDetection.QueuedHits.RemoveAt(0);
                                 result = clientDetection.ProcessHit(oldestHit, isDamage);
                                 await ApplyPenalty(result, attacker, ctx);
+
+                                if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
+                                {
+                                    SaveTrackedSnapshots(clientDetection, ctx);
+                                }
                             }
 
                             result = clientDetection.ProcessTotalRatio(clientStats);
                             await ApplyPenalty(result , attacker, ctx);
+
+                            if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
+                            {
+                                SaveTrackedSnapshots(clientDetection, ctx);
+                            }
                         }
 
                         else
                         {
                             clientDetection.QueuedHits.Add(hit);
-                        }
-
-                        if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any) 
-                        {
-                            SaveTrackedSnapshots(clientDetection, ctx);
                         }
                     }
 

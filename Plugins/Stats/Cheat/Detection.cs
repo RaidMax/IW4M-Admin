@@ -21,9 +21,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         };
 
         public ChangeTracking<EFACSnapshot> Tracker { get; private set; }
-        public const int QUEUE_COUNT = 10;
+        public const int MAX_TRACKED_HIT_COUNT = 10;
 
-        public List<EFClientKill> QueuedHits { get; set; }
+        public List<EFClientKill> TrackedHits { get; set; }
         int Kills;
         int HitCount;
         Dictionary<IW4Info.HitLocation, HitInfo> HitLocationCount;
@@ -54,7 +54,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             ClientStats = clientStats;
             Strain = new Strain();
             Tracker = new ChangeTracking<EFACSnapshot>();
-            QueuedHits = new List<EFClientKill>();
+            TrackedHits = new List<EFClientKill>();
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 AngleDifferenceAverage = weightedSessionAverage;
 
                 if (weightedSessionAverage > Thresholds.MaxOffset(totalSessionHits) &&
-                    totalSessionHits > 40)
+                    totalSessionHits >= (Thresholds.MediumSampleMinKills * 2))
                 {
                     Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
                     Log.WriteDebug($"Session Average = {weightedSessionAverage}");
@@ -157,8 +157,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Log.WriteDebug($"PredictVsReal={realAgainstPredict}");
 #endif
             }
+            #endregion
 
-            double currentStrain = Strain.GetStrain(isDamage, hit.Damage, hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, hit.TimeOffset - LastOffset));
+
+            #region STRAIN
+            double currentStrain = Strain.GetStrain(hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, hit.TimeOffset - LastOffset));
 #if DEBUG == true
             Log.WriteDebug($"Current Strain: {currentStrain}");
 #endif
@@ -213,7 +216,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 });
             }
 
-            if (ClientStats.AverageRecoilOffset == 0 && HitCount > Thresholds.HighSampleMinKills)
+            if (ClientStats.AverageRecoilOffset == 0 && HitCount >= Thresholds.LowSampleMinKills)
             {
                 results.Add(new DetectionPenaltyResult()
                 {
@@ -251,19 +254,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     // ban on headshot
                     if (currentHeadshotRatio > maxHeadshotLerpValueForBan)
                     {
-                        //Log.WriteDebug("**Maximum Headshot Ratio Reached For Ban**");
-                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        //Log.WriteDebug($"**HitCount: {HitCount}");
-                        //Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
-                        //Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
-                        //var sb = new StringBuilder();
-                        //foreach (var kvp in HitLocationCount)
-                        //{
-                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        //}
-
-                        //Log.WriteDebug(sb.ToString());
-
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
@@ -275,19 +265,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     }
                     else
                     {
-                        //Log.WriteDebug("**Maximum Headshot Ratio Reached For Flag**");
-                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        //Log.WriteDebug($"**HitCount: {HitCount}");
-                        //Log.WriteDebug($"**Ratio {currentHeadshotRatio}");
-                        //Log.WriteDebug($"**MaxRatio {maxHeadshotLerpValueForFlag}");
-                        //var sb = new StringBuilder();
-                        //foreach (var kvp in HitLocationCount)
-                        //{
-                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        //}
-
-                        //Log.WriteDebug(sb.ToString());
-
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
@@ -307,19 +284,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     // ban on bone ratio
                     if (currentMaxBoneRatio > maxBoneRatioLerpValueForBan)
                     {
-                        //Log.WriteDebug("**Maximum Bone Ratio Reached For Ban**");
-                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        //Log.WriteDebug($"**HitCount: {HitCount}");
-                        //Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
-                        //Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForBan}");
-                        //var sb = new StringBuilder();
-                        //foreach (var kvp in HitLocationCount)
-                        //{
-                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        //}
-
-                        //Log.WriteDebug(sb.ToString());
-
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
@@ -331,19 +295,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     }
                     else
                     {
-                        //Log.WriteDebug("**Maximum Bone Ratio Reached For Flag**");
-                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        //Log.WriteDebug($"**HitCount: {HitCount}");
-                        //Log.WriteDebug($"**Ratio {currentMaxBoneRatio}");
-                        //Log.WriteDebug($"**MaxRatio {maxBoneRatioLerpValueForFlag}");
-                        //var sb = new StringBuilder();
-                        //foreach (var kvp in HitLocationCount)
-                        //{
-                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        //}
-
-                        //Log.WriteDebug(sb.ToString());
-
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
@@ -375,16 +326,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan && chestHits >= Thresholds.MediumSampleMinKills  * 2)
                     {
-                        //Log.WriteDebug("**Maximum Chest/Abdomen Ratio Reached For Ban**");
-                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        //Log.WriteDebug($"**Chest Hits: {chestHits}");
-                        //Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
-                        //Log.WriteDebug($"**MaxRatio {chestAbdomenLerpValueForBan}");
-                        //var sb = new StringBuilder();
-                        //foreach (var kvp in HitLocationCount)
-                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        //Log.WriteDebug(sb.ToString());
-
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
@@ -396,16 +337,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     }
                     else
                     {
-                        //Log.WriteDebug("**Maximum Chest/Abdomen Ratio Reached For Flag**");
-                        //Log.WriteDebug($"ClientId: {hit.AttackerId}");
-                        //Log.WriteDebug($"**Chest Hits: {chestHits}");
-                        //Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
-                        //Log.WriteDebug($"**MaxRatio {chestAbdomenRatioLerpValueForFlag}");
-                        //var sb = new StringBuilder();
-                        //foreach (var kvp in HitLocationCount)
-                        //    sb.Append($"HitLocation: {kvp.Key} -> {kvp.Value}\r\n");
-                        //Log.WriteDebug(sb.ToString());
-
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
@@ -456,78 +387,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 {
                     ClientPenalty = EFPenalty.PenaltyType.Any,
                 };
-        }
-
-        public DetectionPenaltyResult ProcessTotalRatio(EFClientStatistics stats)
-        {
-            int totalChestHits = stats.HitLocations.Single(c => c.Location == IW4Info.HitLocation.torso_upper).HitCount;
-            var results = new List<DetectionPenaltyResult>();
-
-            if (totalChestHits >= Thresholds.MediumSampleMinKills * 2)
-            {
-                double marginOfError = Thresholds.GetMarginOfError(totalChestHits);
-                double lerpAmount = Math.Min(1.0, (totalChestHits - 60) / 250.0);
-                // determine max  acceptable ratio of chest to abdomen kills
-                double chestAbdomenRatioLerpValueForFlag = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), Thresholds.ChestAbdomenRatioThresholdHighSample(2.0), lerpAmount) + marginOfError;
-                double chestAbdomenLerpValueForBan = Thresholds.Lerp(Thresholds.ChestAbdomenRatioThresholdHighSample(4.0), Thresholds.ChestAbdomenRatioThresholdHighSample(3.0), lerpAmount) + marginOfError;
-
-                double currentChestAbdomenRatio = totalChestHits /
-                    stats.HitLocations.Single(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount;
-
-                if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)
-                {
-
-                    if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan)
-                    {
-                        //Log.WriteDebug("**Maximum Lifetime Chest/Abdomen Ratio Reached For Ban**");
-                        //Log.WriteDebug($"ClientId: {stats.ClientId}");
-                        //Log.WriteDebug($"**Total Chest Hits: {totalChestHits}");
-                        //Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
-                        //Log.WriteDebug($"**MaxRatio {chestAbdomenLerpValueForBan}");
-                        //var sb = new StringBuilder();
-                        //foreach (var location in stats.HitLocations)
-                        //    sb.Append($"HitLocation: {location.Location} -> {location.HitCount}\r\n");
-                        //Log.WriteDebug(sb.ToString());
-
-                        results.Add(new DetectionPenaltyResult()
-                        {
-                            ClientPenalty = EFPenalty.PenaltyType.Ban,
-                            Value = currentChestAbdomenRatio,
-                            Location = IW4Info.HitLocation.torso_upper,
-                            HitCount = totalChestHits,
-                            Type = DetectionType.Chest
-                        });
-                    }
-                    else
-                    {
-                        //Log.WriteDebug("**Maximum Lifetime Chest/Abdomen Ratio Reached For Flag**");
-                        //Log.WriteDebug($"ClientId: {stats.ClientId}");
-                        //Log.WriteDebug($"**Total Chest Hits: {totalChestHits}");
-                        //Log.WriteDebug($"**Ratio {currentChestAbdomenRatio}");
-                        //Log.WriteDebug($"**MaxRatio {chestAbdomenRatioLerpValueForFlag}");
-                        //var sb = new StringBuilder();
-                        //foreach (var location in stats.HitLocations)
-                        //    sb.Append($"HitLocation: {location.Location} -> {location.HitCount}\r\n");
-                        //Log.WriteDebug(sb.ToString());
-
-                        results.Add(new DetectionPenaltyResult()
-                        {
-                            ClientPenalty = EFPenalty.PenaltyType.Flag,
-                            Value = currentChestAbdomenRatio,
-                            Location = IW4Info.HitLocation.torso_upper,
-                            HitCount = totalChestHits,
-                            Type = DetectionType.Chest
-                        });
-                    }
-                }
-            }
-
-            return results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Ban) ??
-               results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Flag) ??
-               new DetectionPenaltyResult()
-               {
-                   ClientPenalty = EFPenalty.PenaltyType.Any,
-               };
         }
     }
 }

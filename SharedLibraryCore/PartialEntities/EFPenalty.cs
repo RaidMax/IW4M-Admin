@@ -15,7 +15,8 @@ namespace SharedLibraryCore.Database.Models
             Ban,
             Unban,
             Any,
-            Unflag
+            Unflag,
+            Other = 100
         }
     }
 }

@@ -14,7 +14,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public Vector3 LastAngle { get; private set; }
         public double LastDeltaTime { get; private set; }
 
-        public double GetStrain(bool isDamage, int damage, double killDistance, Vector3 newAngle, double deltaTime)
+        public double GetStrain(double killDistance, Vector3 newAngle, double deltaTime)
         {
             if (LastAngle == null)
                 LastAngle = newAngle;

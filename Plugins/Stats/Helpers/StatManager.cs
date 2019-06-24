@@ -502,11 +502,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 DeathOrigin = vDeathOrigin,
                 KillOrigin = vKillOrigin,
                 DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
-                Damage = Int32.Parse(damage),
+                Damage = int.Parse(damage),
                 HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
                 Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
                 ViewAngles = vViewAngles,
-                TimeOffset = Int64.Parse(offset),
+                TimeOffset = long.Parse(offset),
                 When = time,
                 IsKillstreakKill = isKillstreakKill[0] != '0',
                 AdsPercent = float.Parse(Ads, System.Globalization.CultureInfo.InvariantCulture),
@@ -542,12 +542,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var clientDetection = _servers[serverId].PlayerDetections[attacker.ClientId];
             var clientStats = _servers[serverId].PlayerStats[attacker.ClientId];
 
-            using (var ctx = new DatabaseContext(disableTracking: true))
-            {
-                ctx.Set<EFClientStatistics>().Update(clientStats);
-                await ctx.SaveChangesAsync();
-            }
-
             // increment their hit count
             if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
                 hit.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
@@ -556,10 +550,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
             }
 
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                ctx.Set<EFClientStatistics>().Update(clientStats);
+                await ctx.SaveChangesAsync();
+            }
+
             using (var ctx = new DatabaseContext())
             {
-                await OnProcessingPenalty.WaitAsync();
-
                 try
                 {
                     if (Plugin.Config.Configuration().StoreClientKills)
@@ -573,40 +571,41 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 #if DEBUG
                         if (clientDetection.QueuedHits.Count > 0)
 #else
-                        if (clientDetection.QueuedHits.Count > Detection.QUEUE_COUNT)
+                        if (clientDetection.TrackedHits.Count > Detection.MAX_TRACKED_HIT_COUNT)
 #endif
                         {
-                            while (clientDetection.QueuedHits.Count > 0)
+                            while (clientDetection.TrackedHits.Count > 0)
                             {
-                                clientDetection.QueuedHits = clientDetection.QueuedHits.OrderBy(_hits => _hits.TimeOffset).ToList();
-                                var oldestHit = clientDetection.QueuedHits.First();
-                                clientDetection.QueuedHits.RemoveAt(0);
+                                await OnProcessingPenalty.WaitAsync();
+
+                                var oldestHit = clientDetection.TrackedHits.OrderBy(_hits => _hits.TimeOffset).First();
+                                clientDetection.TrackedHits.Remove(oldestHit);
+
                                 result = clientDetection.ProcessHit(oldestHit, isDamage);
                                 await ApplyPenalty(result, attacker, ctx);
 
                                 if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
                                 {
                                     SaveTrackedSnapshots(clientDetection, ctx);
+
+                                    if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
+                                    {
+                                        OnProcessingPenalty.Release(1);
+                                        break;
+                                    }
                                 }
-                            }
 
-                            result = clientDetection.ProcessTotalRatio(clientStats);
-                            await ApplyPenalty(result , attacker, ctx);
-
-                            if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
-                            {
-                                SaveTrackedSnapshots(clientDetection, ctx);
+                                OnProcessingPenalty.Release(1);
                             }
                         }
 
                         else
                         {
-                            clientDetection.QueuedHits.Add(hit);
+                            clientDetection.TrackedHits.Add(hit);
                         }
                     }
 
                     ctx.Set<EFHitLocationCount>().UpdateRange(clientStats.HitLocations);
-
                     await ctx.SaveChangesAsync();
                 }
 
@@ -615,8 +614,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     _log.WriteError("Could not save hit or AC info");
                     _log.WriteDebug(ex.GetExceptionInfo());
                 }
-
-                OnProcessingPenalty.Release(1);
             }
         }
 
@@ -859,7 +856,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ctx.Add(clientHistory);
                 }
 
-#region INDIVIDUAL_SERVER_PERFORMANCE
+                #region INDIVIDUAL_SERVER_PERFORMANCE
                 // get the client ranking for the current server
                 int individualClientRanking = await ctx.Set<EFRating>()
                     .Where(GetRankingFunc(clientStats.ServerId))
@@ -910,8 +907,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // add new rating for current server
                 ctx.Add(newServerRating);
 
-#endregion
-#region OVERALL_RATING
+                #endregion
+                #region OVERALL_RATING
                 // select all performance & time played for current client
                 var iqClientStats = from stats in ctx.Set<EFClientStatistics>()
                                     where stats.ClientId == client.ClientId
@@ -986,7 +983,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 };
 
                 ctx.Add(averageRating);
-#endregion
+                #endregion
 
                 await ctx.SaveChangesAsync();
             }
@@ -1021,7 +1018,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // calulate elo
             if (_servers[attackerStats.ServerId].PlayerStats.Count > 1)
             {
-#region DEPRECATED
+                #region DEPRECATED
                 /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
                      .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
                      .Where(cs =>
@@ -1045,7 +1042,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                  double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
                      validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
                      victimStats.EloRating;*/
-#endregion
+                #endregion
 
                 double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
                 double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));

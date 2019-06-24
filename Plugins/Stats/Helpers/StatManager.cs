@@ -569,7 +569,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
 #if DEBUG
-                        if (clientDetection.QueuedHits.Count > 0)
+                        if (clientDetection.TrackedHits.Count > 0)
 #else
                         if (clientDetection.TrackedHits.Count > Detection.MAX_TRACKED_HIT_COUNT)
 #endif

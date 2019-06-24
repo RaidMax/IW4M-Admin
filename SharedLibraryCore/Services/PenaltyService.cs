@@ -172,14 +172,14 @@ namespace SharedLibraryCore.Services
         {
             var now = DateTime.UtcNow;
 
-            Expression<Func<EFPenalty, bool>> filter = (p) => new EFPenalty.PenaltyType[]
+            Expression<Func<EFPenalty, bool>> filter = (p) => (new EFPenalty.PenaltyType[]
                          {
                             EFPenalty.PenaltyType.TempBan,
-                            EFPenalty.PenaltyType.Ban,
-                            EFPenalty.PenaltyType.Flag
+                            EFPenalty.PenaltyType.Ban
                          }.Contains(p.Type) &&
                          p.Active &&
-                         (p.Expires == null || p.Expires > now);
+                         (p.Expires == null || p.Expires > now)) ||
+                         (p.Type ==EFPenalty.PenaltyType.Flag && p.Active);
 
             using (var context = new DatabaseContext(true))
             {

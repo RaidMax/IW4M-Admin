@@ -12,7 +12,11 @@ using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Application.RconParsers
 {
+#if DEBUG
+    public class BaseRConParser : IRConParser
+#else
     class BaseRConParser : IRConParser
+#endif
     {
         public BaseRConParser()
         {
@@ -52,7 +56,7 @@ namespace IW4MAdmin.Application.RconParsers
 
         public IRConParserConfiguration Configuration { get; set; }
 
-        public string Version { get; set; } = "CoD";
+        public virtual string Version { get; set; } = "CoD";
         public Game GameName { get; set; } = Game.COD;
         public bool CanGenerateLogPath { get; set; } = true;
 
@@ -89,7 +93,7 @@ namespace IW4MAdmin.Application.RconParsers
             };
         }
 
-        public async Task<List<EFClient>> GetStatusAsync(Connection connection)
+        public virtual async Task<List<EFClient>> GetStatusAsync(Connection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
             return ClientsFromStatus(response);

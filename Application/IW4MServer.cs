@@ -585,6 +585,13 @@ namespace IW4MAdmin
 
                 try
                 {
+#if DEBUG
+                    if (Manager.GetApplicationSettings().Configuration().RConPollRate == int.MaxValue)
+                    {
+                        return true;
+                    }
+#endif
+
                     var polledClients = await PollPlayersAsync();
                     var waiterList = new List<GameEvent>();
 
@@ -766,7 +773,8 @@ namespace IW4MAdmin
 
             if (version?.Value?.Length != 0)
             {
-                RconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? RconParser;
+                var matchedRconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => _parser.Version == version.Value);
+                RconParser.Configuration = matchedRconParser != null ? matchedRconParser.Configuration : RconParser.Configuration;
                 EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? EventParser;
                 Version = RconParser.Version;
             }
@@ -1011,11 +1019,9 @@ namespace IW4MAdmin
 #endif
             }
 
-            // this should link evading clients
             if (isEvade)
             {
                 Logger.WriteInfo($"updating alias for banned client {targetClient}");
-                await Manager.GetClientService().UpdateAlias(targetClient);
             }
 
             EFPenalty newPenalty = new EFPenalty()

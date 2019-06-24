@@ -133,6 +133,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 var weightedSessionAverage = HitLocationCount.Where(_hit => _hit.Value.Count > 0)
                     .Sum(_hit => _hit.Value.Offset * _hit.Value.Count) / totalSessionHits;
 
+                AngleDifferenceAverage = weightedSessionAverage;
+
                 if (weightedSessionAverage > Thresholds.MaxOffset(totalSessionHits) &&
                     totalSessionHits > 40)
                 {

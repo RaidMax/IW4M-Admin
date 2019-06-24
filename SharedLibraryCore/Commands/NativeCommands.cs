@@ -31,7 +31,7 @@ namespace SharedLibraryCore.Commands
     public class CRestart : Command
     {
         public CRestart() :
-            base("restart", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RESTART_DESC"], "rs", EFClient.Permission.Owner, false)
+            base("restart", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RESTART_DESC"], "res", EFClient.Permission.Owner, false)
         { }
 
         public override Task ExecuteAsync(GameEvent E)

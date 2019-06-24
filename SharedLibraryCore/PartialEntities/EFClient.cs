@@ -205,12 +205,7 @@ namespace SharedLibraryCore.Database.Models
 
             int reportCount = sender.GetAdditionalProperty<int>("_reportCount");
 
-            if (Level > sender.Level)
-            {
-                e.FailReason = GameEvent.EventFailReason.Permission;
-            }
-
-            else if (Equals(sender))
+            if (Equals(sender))
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }

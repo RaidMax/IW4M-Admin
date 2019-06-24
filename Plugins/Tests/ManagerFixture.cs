@@ -16,9 +16,9 @@ namespace Tests
 
         public ManagerFixture()
         {
-            File.WriteAllText("test_mp.log", "test_log_file");
+            string logFile = @"X:\IW4MAdmin\Plugins\Tests\bin\Debug\netcoreapp2.2\test_mp.log";
 
-            //IW4MAdmin.Application.Localization.Configure.Initialize("en-US");
+            File.WriteAllText(logFile, Environment.NewLine);
 
             Manager = ApplicationManager.GetInstance();
 
@@ -31,18 +31,22 @@ namespace Tests
                         AutoMessages = new List<string>(),
                         IPAddress = "127.0.0.1",
                         Password = "test",
-                        Port = 28963,
+                        Port = 28960,
                         Rules = new List<string>(),
-                        ManualLogPath = "http://google.com"
+                        RConParserVersion = "test",
+                        EventParserVersion = "IW4x (v0.6.0)",
+                        ManualLogPath = logFile
                     }
                 },
                 AutoMessages = new List<string>(),
                 GlobalRules = new List<string>(),
                 Maps = new List<MapConfiguration>(),
-                RConPollRate = 10000
+                RConPollRate = int.MaxValue
             };
+
             Manager.ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("test");
             Manager.ConfigHandler.Set(config);
+            Manager.AdditionalRConParsers.Add(new TestRconParser());
 
             Manager.Init().Wait();
 

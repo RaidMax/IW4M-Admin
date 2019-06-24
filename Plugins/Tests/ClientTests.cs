@@ -2,11 +2,13 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Tests
@@ -14,12 +16,12 @@ namespace Tests
     [Collection("ManagerCollection")]
     public class ClientTests
     {
-        readonly ApplicationManager Manager;
+        private readonly ApplicationManager _manager;
         const int TestTimeout = 10000;
 
         public ClientTests(ManagerFixture fixture)
         {
-            Manager = fixture.Manager;
+            _manager = fixture.Manager;
         }
 
         [Fact]
@@ -41,38 +43,122 @@ namespace Tests
         }
 
         [Fact]
-        public void WarnClientShouldSucceed()
+        public void BanEvasionShouldLink()
         {
-            while (!Manager.IsInitialized)
+            var server = _manager.Servers[0];
+            var waiter = new ManualResetEventSlim();
+
+            _manager.GetApplicationSettings().Configuration().RConPollRate = 5000;
+
+
+            while (!server.IsInitialized)
             {
                 Thread.Sleep(100);
             }
 
-            var client = Manager.Servers.First().GetClientsAsList().FirstOrDefault();
+            var e  = new GameEvent()
+            {
+                Type = GameEvent.EventType.PreConnect,
+                Owner = server,
+                Origin = new EFClient()
+                {
+                    NetworkId = 1337,
+                    ClientNumber = 0,
+                    CurrentAlias = new EFAlias()
+                    {
+                        Name = "Ban Me",
+                        IPAddress = 1337
+                    }
+                }
+            };
 
-            Assert.False(client == null, "no client found to warn");
+            _manager.GetEventHandler().AddEvent(e);
+            e.OnProcessed.Wait();
 
-            var warnEvent = client.Warn("test warn", new EFClient() { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            warnEvent.OnProcessed.Wait();
+            e = new GameEvent()
+            {
+                Type = GameEvent.EventType.PreConnect,
+                Owner = server,
+                Origin = new EFClient()
+                {
+                    NetworkId = 1338,
+                    ClientNumber = 1,
+                    CurrentAlias = new EFAlias()
+                    {
+                        Name = "Ban Me",
+                        IPAddress = null
+                    }
+                }
+            };
 
-            //Assert.True((client.Warnings == 1 ||
-            //    warnEvent.Failed) &&
-            //    Manager.GetPenaltyService().GetClientPenaltiesAsync(client.ClientId).Result.Count(p => p.Type == Penalty.PenaltyType.Warning) == 1,
-            //    "warning did not get applied");
+            _manager.GetEventHandler().AddEvent(e);
+            e.OnProcessed.Wait();
+
+            e = new GameEvent()
+            {
+                Type = GameEvent.EventType.Update,
+                Owner = server,
+                Origin = new EFClient()
+                {
+                    NetworkId = 1338,
+                    ClientNumber = 1,
+                    CurrentAlias = new EFAlias()
+                    {
+                        Name = "Ban Me",
+                        IPAddress = 1337
+                    }
+                }
+            };
+
+            _manager.GetEventHandler().AddEvent(e);
+            e.OnProcessed.Wait();
+
+        }
+
+        [Fact]
+        public void WarnClientShouldSucceed()
+        {
+            var onJoined = new ManualResetEventSlim();
+            var server = _manager.Servers[0];
+
+            while (!server.IsInitialized)
+            {
+                Thread.Sleep(100);
+            }
+
+            _manager.OnServerEvent += (sender, eventArgs) =>
+            {
+                if (eventArgs.Event.Type == GameEvent.EventType.Connect)
+                {
+                    onJoined.Set();
+                }
+            };
+
+            server.EmulateClientJoinLog();
+            onJoined.Wait();
+
+            var client = server.Clients[0];
+
+            var warnEvent = client.Warn("test warn", Utilities.IW4MAdminClient(server));
+            warnEvent.OnProcessed.Wait(5000);
+
+            Assert.False(warnEvent.Failed);
 
             warnEvent = client.Warn("test warn", new EFClient() { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
-            warnEvent.OnProcessed.Wait();
+            warnEvent.OnProcessed.Wait(5000);
 
             Assert.True(warnEvent.FailReason == GameEvent.EventFailReason.Permission &&
                 client.Warnings == 1, "warning was applied without proper permissions");
 
             // warn clear
             var warnClearEvent = client.WarnClear(new EFClient { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
+            warnClearEvent.OnProcessed.Wait(5000);
 
             Assert.True(warnClearEvent.FailReason == GameEvent.EventFailReason.Permission &&
                 client.Warnings == 1, "warning was removed without proper permissions");
 
-            warnClearEvent = client.WarnClear(new EFClient { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
+            warnClearEvent = client.WarnClear(Utilities.IW4MAdminClient(server));
+            warnClearEvent.OnProcessed.Wait(5000);
 
             Assert.True(!warnClearEvent.Failed && client.Warnings == 0, "warning was not cleared");
         }
@@ -80,12 +166,12 @@ namespace Tests
         [Fact]
         public void ReportClientShouldSucceed()
         {
-            while (!Manager.IsInitialized)
+            while (!_manager.IsInitialized)
             {
                 Thread.Sleep(100);
             }
 
-            var client = Manager.Servers.First().GetClientsAsList().FirstOrDefault();
+            var client = _manager.Servers.First().GetClientsAsList().FirstOrDefault();
             Assert.False(client == null, "no client found to report");
 
             // fail
@@ -127,12 +213,12 @@ namespace Tests
         [Fact]
         public void FlagClientShouldSucceed()
         {
-            while (!Manager.IsInitialized)
+            while (!_manager.IsInitialized)
             {
                 Thread.Sleep(100);
             }
 
-            var client = Manager.Servers.First().GetClientsAsList().FirstOrDefault();
+            var client = _manager.Servers.First().GetClientsAsList().FirstOrDefault();
             Assert.False(client == null, "no client found to flag");
 
             var flagEvent = client.Flag("test flag", new EFClient { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
@@ -177,12 +263,12 @@ namespace Tests
         [Fact]
         void KickClientShouldSucceed()
         {
-            while (!Manager.IsInitialized)
+            while (!_manager.IsInitialized)
             {
                 Thread.Sleep(100);
             }
 
-            var client = Manager.Servers.First().GetClientsAsList().FirstOrDefault();
+            var client = _manager.Servers.First().GetClientsAsList().FirstOrDefault();
             Assert.False(client == null, "no client found to kick");
 
             var kickEvent = client.Kick("test kick", new EFClient() { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
@@ -193,18 +279,18 @@ namespace Tests
             kickEvent = client.Kick("test kick", new EFClient() { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
             kickEvent.OnProcessed.Wait();
 
-            Assert.True(Manager.Servers.First().GetClientsAsList().FirstOrDefault(c => c.NetworkId == client.NetworkId) == null, "client was not kicked");
+            Assert.True(_manager.Servers.First().GetClientsAsList().FirstOrDefault(c => c.NetworkId == client.NetworkId) == null, "client was not kicked");
         }
 
         [Fact]
         void TempBanClientShouldSucceed()
         {
-            while (!Manager.IsInitialized)
+            while (!_manager.IsInitialized)
             {
                 Thread.Sleep(100);
             }
 
-            var client = Manager.Servers.First().GetClientsAsList().FirstOrDefault();
+            var client = _manager.Servers.First().GetClientsAsList().FirstOrDefault();
             Assert.False(client == null, "no client found to tempban");
 
             var tbCommand = new CTempBan();
@@ -217,19 +303,19 @@ namespace Tests
                 Owner = client.CurrentServer
             }).Wait();
 
-            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.TempBan) == 1,
+            Assert.True(_manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.TempBan) == 1,
                 "tempban was not added");
         }
 
         [Fact]
         void BanUnbanClientShouldSucceed()
         {
-            while (!Manager.IsInitialized)
+            while (!_manager.IsInitialized)
             {
                 Thread.Sleep(100);
             }
 
-            var client = Manager.Servers.First().GetClientsAsList().FirstOrDefault();
+            var client = _manager.Servers.First().GetClientsAsList().FirstOrDefault();
             Assert.False(client == null, "no client found to ban");
 
             var banCommand = new CBan();
@@ -242,7 +328,7 @@ namespace Tests
                 Owner = client.CurrentServer
             }).Wait();
 
-            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.Ban) == 1,
+            Assert.True(_manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.Ban) == 1,
                 "ban was not added");
 
             var unbanCommand = new CUnban();
@@ -255,7 +341,7 @@ namespace Tests
                 Owner = client.CurrentServer
             }).Wait();
 
-            Assert.True(Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.Ban) == 0,
+            Assert.True(_manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId).Result.Count(p => p.Type == EFPenalty.PenaltyType.Ban) == 0,
                 "ban was not removed");
 
         }

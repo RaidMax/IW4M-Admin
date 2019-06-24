@@ -109,6 +109,20 @@ namespace SharedLibraryCore.Services
             var aliasSql = iqAliases.ToSql();
 #endif
             var aliases = await iqAliases.ToListAsync();
+          
+            // see if they have a matching IP + Name but new NetworkId
+            var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
+            bool hasExactAliasMatch = existingExactAlias != null;
+
+            // if existing alias matches link them
+            var newAliasLink = existingExactAlias?.Link;
+            // if no exact matches find the first IP or LinkId that matches
+            newAliasLink = newAliasLink ?? aliases.OrderBy(_alias => _alias.LinkId).FirstOrDefault()?.Link;
+            // if no matches are found, use our current one ( it will become permanent )
+            newAliasLink = newAliasLink ?? entity.AliasLink;
+
+            bool hasExistingAlias = aliases.Count > 0;
+            bool isAliasLinkUpdated = newAliasLink.AliasLinkId != entity.AliasLink.AliasLinkId;
 
             // update each of the aliases where this is no IP but the name is identical
             foreach (var alias in aliases.Where(_alias => (_alias.IPAddress == null || _alias.IPAddress == 0)))
@@ -117,20 +131,6 @@ namespace SharedLibraryCore.Services
             }
 
             await context.SaveChangesAsync();
-
-            // see if they have a matching IP + Name but new NetworkId
-            var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
-            bool hasExactAliasMatch = existingExactAlias != null;
-
-            // if existing alias matches link them
-            var newAliasLink = existingExactAlias?.Link;
-            // if no exact matches find the first IP or LinkId that matches
-            newAliasLink = newAliasLink ?? aliases.FirstOrDefault()?.Link;
-            // if no matches are found, use our current one ( it will become permanent )
-            newAliasLink = newAliasLink ?? entity.AliasLink;
-
-            bool hasExistingAlias = aliases.Count > 0;
-            bool isAliasLinkUpdated = newAliasLink.AliasLinkId != entity.AliasLink.AliasLinkId;
 
             // this happens when the link we found is different than the one we create before adding an IP
             if (isAliasLinkUpdated)

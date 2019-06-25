@@ -650,7 +650,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
                             $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
 
-                    await attacker.Flag(flagReason, penaltyClient).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
+                    await attacker.Flag(flagReason, penaltyClient, new TimeSpan(168, 0, 0)).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
                     break;
             }
         }

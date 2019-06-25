@@ -205,7 +205,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             var lifeTimeHits = ClientStats.HitLocations.Sum(_loc => _loc.HitCount);
             ClientStats.AverageRecoilOffset = (ClientStats.AverageRecoilOffset * (lifeTimeHits - 1) + hitRecoilAverage) / lifeTimeHits;
 
-            if (sessionAverageRecoilAmount == 0 && HitCount > Thresholds.LowSampleMinKills)
+            if (sessionAverageRecoilAmount == 0 && HitCount >= Thresholds.LowSampleMinKills)
             {
                 results.Add(new DetectionPenaltyResult()
                 {

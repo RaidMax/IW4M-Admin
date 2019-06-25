@@ -266,11 +266,18 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.Flag)
             {
+                DateTime? expires = null;
+
+                if (E.Extra is TimeSpan ts)
+                {
+                    expires = DateTime.UtcNow + ts;
+                }
+
                 // todo: maybe move this to a seperate function
                 var newPenalty = new EFPenalty()
                 {
                     Type = EFPenalty.PenaltyType.Flag,
-                    Expires = DateTime.UtcNow,
+                    Expires = expires,
                     Offender = E.Target,
                     Offense = E.Data,
                     Punisher = E.Origin,

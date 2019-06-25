@@ -232,7 +232,7 @@ namespace SharedLibraryCore.Database.Models
         /// <param name="flagReason">reason for flagging</param>
         /// <param name="sender">client performing the flag</param>
         /// <returns>game event for the flag</returns>
-        public GameEvent Flag(string flagReason, EFClient sender)
+        public GameEvent Flag(string flagReason, EFClient sender, TimeSpan? flagLength = null)
         {
             var e = new GameEvent()
             {
@@ -240,6 +240,7 @@ namespace SharedLibraryCore.Database.Models
                 Origin = sender,
                 Data = flagReason,
                 Message = flagReason,
+                Extra = flagLength,
                 Target = this,
                 Owner = sender.CurrentServer
             };
@@ -667,21 +668,15 @@ namespace SharedLibraryCore.Database.Models
                 if (currentFlag != null)
                 {
                     CurrentServer.Logger.WriteDebug($"Flagging {this} because their AliasLink is flagged, but they are not");
-                    Flag(currentFlag.Offense, autoKickClient);
+                    Flag(currentFlag.Offense, autoKickClient, currentFlag.Expires - DateTime.UtcNow);
                 }
             }
             #endregion
 
             if (Level == Permission.Flagged)
             {
-                var currentAutoFlag = activePenalties
-                    .Where(p => p.Type == EFPenalty.PenaltyType.Flag && p.PunisherId == 1)
-                    .OrderByDescending(p => p.When)
-                    .FirstOrDefault();
-
                 // remove their auto flag status after a week
-                if (currentAutoFlag != null &&
-                    (DateTime.UtcNow - currentAutoFlag.When).TotalDays > 7)
+                if (!activePenalties.Any(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag))
                 {
                     CurrentServer.Logger.WriteInfo($"Unflagging {this} because the auto flag time has expired");
                     Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);

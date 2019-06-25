@@ -22,7 +22,8 @@ namespace WebfrontCore.Controllers
                 return NotFound();
             }
 
-            var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress);
+            var activePenalties = (await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress))
+                .Where(_penalty => _penalty.Type != PenaltyType.Flag);
 
             var clientDto = new PlayerInfo()
             {
@@ -46,8 +47,8 @@ namespace WebfrontCore.Controllers
                     .Distinct()
                     .OrderBy(i => i)
                     .ToList(),
-                HasActivePenalty = activePenalties.Count > 0,
-                ActivePenaltyType = activePenalties.Count > 0 ? activePenalties.First().Type.ToString() : null,
+                HasActivePenalty = activePenalties.Count() > 0,
+                ActivePenaltyType = activePenalties.Count() > 0 ? activePenalties.First().Type.ToString() : null,
                 Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
                 TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText(),
                 LinkedAccounts = client.LinkedAccounts

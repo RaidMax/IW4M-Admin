@@ -31,7 +31,6 @@ namespace SharedLibraryCore
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
         public static TimeSpan DefaultCommandTimeout = new TimeSpan(0, 0, 10);
-        public static CultureInfo BestCulture = CultureInfo.CreateSpecificCulture("en-US");
 
         public static EFClient IW4MAdminClient(Server server = null)
         {
@@ -295,6 +294,9 @@ namespace SharedLibraryCore
             else if (!string.IsNullOrEmpty(bot))
             {
                 id = -1;
+#if DEBUG
+                id = str.Sum(_c => _c);
+#endif
             }
 
             if (id == 0)
@@ -492,13 +494,20 @@ namespace SharedLibraryCore
             return "unknown";
         }
 
-        public static bool ShouldPenaltyApplyToAllProfiles(this PenaltyType penaltyType)
+        /// <summary>
+        /// returns a list of penalty types that should be shown across all profiles
+        /// </summary>
+        /// <returns></returns>
+        public static PenaltyType[] LinkedPenaltyTypes()
         {
-            return penaltyType == PenaltyType.Ban ||
-                penaltyType == PenaltyType.Unban ||
-                penaltyType == PenaltyType.Flag ||
-                penaltyType == PenaltyType.Unflag ||
-                penaltyType == PenaltyType.TempBan;
+            return new PenaltyType[]
+            {
+                PenaltyType.Ban,
+                PenaltyType.Unban,
+                PenaltyType.TempBan,
+                PenaltyType.Flag,
+                PenaltyType.Unflag,
+            };
         }
 
         /// <summary>

@@ -162,6 +162,14 @@ namespace IW4MAdmin.Application.RconParsers
                         State = EFClient.ClientState.Connecting
                     };
 
+#if DEBUG
+                    if (client.NetworkId < 1000)
+                    {
+                        client.IPAddress = 2147483646;
+                        client.Ping = 0;
+                    }
+#endif
+
                     StatusPlayers.Add(client);
                 }
             }

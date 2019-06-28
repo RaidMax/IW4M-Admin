@@ -104,6 +104,8 @@ namespace SharedLibraryCore.Services
         /// <returns></returns>
         public async Task<IList<PenaltyInfo>> GetClientPenaltyForMetaAsync(int clientId, int count, int offset, DateTime? startAt)
         {
+            var linkedPenaltyType = Utilities.LinkedPenaltyTypes();
+
             using (var ctx = new DatabaseContext(true))
             {
                 var linkId = await ctx.Clients.AsNoTracking()
@@ -112,7 +114,7 @@ namespace SharedLibraryCore.Services
                     .FirstOrDefaultAsync();
 
                 var iqPenalties = ctx.Penalties.AsNoTracking()
-                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId || _penalty.LinkId == linkId)
+                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId || (linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId))
                     .Where(_penalty => _penalty.When <= startAt)
                     .OrderByDescending(_penalty => _penalty.When)
                     .Skip(offset)
@@ -136,8 +138,7 @@ namespace SharedLibraryCore.Services
 #if DEBUG == true
                 var querySql = iqPenalties.ToSql();
 #endif
-
-                return await iqPenalties.ToListAsync();
+                return await iqPenalties.Distinct().ToListAsync();
             }
         }
 

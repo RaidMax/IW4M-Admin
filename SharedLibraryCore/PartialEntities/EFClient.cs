@@ -552,7 +552,7 @@ namespace SharedLibraryCore.Database.Models
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
 
-            var banPenalty = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
+            var banPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
             var tempbanPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
             var flagPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);
 
@@ -568,8 +568,9 @@ namespace SharedLibraryCore.Database.Models
 
                 else
                 {
-                    CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but no previous penalty exists for their ban");
-                    Ban(loc["SERVER_BAN_UNKNOWN"], autoKickClient, false);
+                    CurrentServer.Logger.WriteDebug($"Client {this} is banned, but using a new GUID, we we're updating their level and kicking them");
+                    await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout, CurrentServer.Manager.CancellationToken);
+                    Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
                     return false;
                 }
             }
@@ -585,7 +586,8 @@ namespace SharedLibraryCore.Database.Models
             // if we found a flag, we need to make sure all the accounts are flagged
             if (flagPenalty != null && Level != Permission.Flagged)
             {
-                SetLevel(Permission.Flagged, autoKickClient);
+                CurrentServer.Logger.WriteDebug($"Flagged client {this} joining with new GUID, so we are changing their level to flagged");
+                await SetLevel(Permission.Flagged, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout, CurrentServer.Manager.CancellationToken);
             }
 
             // remove their auto flag

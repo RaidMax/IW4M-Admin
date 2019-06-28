@@ -58,7 +58,7 @@ namespace IW4MAdmin.Application
             {
                 ServerManager = ApplicationManager.GetInstance();
                 var configuration = ServerManager.GetApplicationSettings().Configuration();
-                Localization.Configure.Initialize(configuration?.EnableCustomLocale ?? false ? (configuration.CustomLocale ?? "windows-1252") : "windows-1252");
+                Localization.Configure.Initialize(configuration?.EnableCustomLocale ?? false ? (configuration.CustomLocale ?? "en-US") : "en-US");
 
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);

@@ -32,37 +32,6 @@ namespace SharedLibraryCore.Services
 
                 context.Penalties.Add(penalty);
                 await context.SaveChangesAsync();
-
-                // certain penalties we want to save across all profiles
-                if (penalty.Type.ShouldPenaltyApplyToAllProfiles())
-                {
-                    var iqLinkedProfiles = context.Clients
-                        .Where(_client => _client.AliasLinkId == newEntity.Link.AliasLinkId)
-                        .Where(_client => _client.Level != EFClient.Permission.Banned)
-                        // prevent adding the penalty twice to the same profile
-                        .Where(_client => _client.ClientId != penalty.OffenderId);
-
-                    await iqLinkedProfiles.ForEachAsync(_client =>
-                    {
-                        newEntity.Punisher.CurrentServer?.Logger.WriteDebug($"Applying penalty to linked client {_client.ClientId}");
-                        var linkedPenalty = new EFPenalty()
-                        {
-                            OffenderId = _client.ClientId,
-                            PunisherId = newEntity.Punisher.ClientId,
-                            LinkId = newEntity.Link.AliasLinkId,
-                            Type = newEntity.Type,
-                            Expires = newEntity.Expires,
-                            Offense = newEntity.Offense,
-                            When = DateTime.UtcNow,
-                            AutomatedOffense = newEntity.AutomatedOffense,
-                            IsEvadedOffense = newEntity.IsEvadedOffense
-                        };
-
-                        context.Penalties.Add(linkedPenalty);
-                    });
-
-                    await context.SaveChangesAsync();
-                }
             }
 
             return newEntity;
@@ -137,10 +106,14 @@ namespace SharedLibraryCore.Services
         {
             using (var ctx = new DatabaseContext(true))
             {
+                var linkId = await ctx.Clients.AsNoTracking()
+                    .Where(_penalty => _penalty.ClientId == clientId)
+                    .Select(_penalty => _penalty.AliasLinkId)
+                    .FirstOrDefaultAsync();
+
                 var iqPenalties = ctx.Penalties.AsNoTracking()
-                    //.Where(_penalty => _penalty.Active)
-                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId)
-                    .Where(_penalty => _penalty.When < startAt)
+                    .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId || _penalty.LinkId == linkId)
+                    .Where(_penalty => _penalty.When <= startAt)
                     .OrderByDescending(_penalty => _penalty.When)
                     .Skip(offset)
                     .Take(count)
@@ -188,7 +161,7 @@ namespace SharedLibraryCore.Services
                     .Where(filter);
 
                 var iqIPPenalties = context.Aliases
-                    .Where(a => a.IPAddress != null & a.IPAddress == ip)
+                    .Where(a => a.IPAddress != null && a.IPAddress == ip)
                     .SelectMany(a => a.Link.ReceivedPenalties)
                     .Where(filter);
 
@@ -206,21 +179,19 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task RemoveActivePenalties(int aliasLinkId, EFClient origin)
+        public async Task RemoveActivePenalties(int aliasLinkId)
         {
             using (var context = new DatabaseContext())
             {
                 var now = DateTime.UtcNow;
-                var penalties = context.Penalties
-                    .Include(p => p.Link.Children)
+                await context.Penalties
                     .Where(p => p.LinkId == aliasLinkId)
-                    .Where(p => p.Expires > now || p.Expires == null);
-
-                await penalties.ForEachAsync(p =>
-                {
-                    p.Active = false;
-
-                });
+                    .Where(p => p.Expires > now || p.Expires == null)
+                    .ForEachAsync(p =>
+                    {
+                        p.Active = false;
+                        p.Expires = now;
+                    });
 
                 await context.SaveChangesAsync();
             }

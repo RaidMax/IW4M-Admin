@@ -10,6 +10,9 @@
         }
     });
 
+    /* set the end time for initial event query */
+    startAt = $('#profile_events').children().last().data('time');
+
     /*
      * load context of chat 
      */

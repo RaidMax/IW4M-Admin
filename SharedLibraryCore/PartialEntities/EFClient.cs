@@ -549,141 +549,54 @@ namespace SharedLibraryCore.Database.Models
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
 
-            #region CLIENT_GUID_BAN
-            // kick them as their level is banned
-            if (Level == Permission.Banned)
-            {
-                var profileBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Expires == null && _penalty.Active && _penalty.Type == EFPenalty.PenaltyType.Ban);
-
-                if (profileBan == null)
-                {
-                    // this is from the old system before bans were applied to all accounts
-                    profileBan = (await CurrentServer.Manager
-                        .GetPenaltyService()
-                        .GetActivePenaltiesAsync(AliasLinkId))
-                        .OrderByDescending(_penalty => _penalty.When)
-                        .FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
-
-                    CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but no previous penalty exists for their ban");
-
-                    if (profileBan == null)
-                    {
-                        profileBan = new EFPenalty() { Offense = loc["SERVER_BAN_UNKNOWN"] };
-                        CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but we could not find the penalty on any linked accounts");
-                    }
-
-                    // hack: re apply the automated offense to the reban
-                    if (profileBan.AutomatedOffense != null)
-                    {
-                        autoKickClient.AdministeredPenalties?.Add(new EFPenalty()
-                        {
-                            AutomatedOffense = profileBan.AutomatedOffense
-                        });
-                    }
-
-                    // this is a reban of the new GUID and IP
-                    Ban($"{profileBan.Offense}", autoKickClient, false);
-                    return false;
-                }
-
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
-                Kick(loc["SERVER_BAN_PREV"].FormatExt(profileBan?.Offense), autoKickClient);
-                return false;
-            }
-            #endregion
-
-            #region CLIENT_GUID_TEMPBAN
-            else
-            {
-                var profileTempBan = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan &&
-                    _penalty.Active &&
-                    _penalty.Expires > DateTime.UtcNow);
-
-                // they have an active tempban tied to their GUID
-                if (profileTempBan != null)
-                {
-                    CurrentServer.Logger.WriteDebug($"Kicking {this} because their GUID is temporarily banned");
-                    Kick($"{loc["SERVER_TB_REMAIN"]} ({(profileTempBan.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
-                    return false;
-                }
-            }
-            #endregion
-
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
 
-            #region CLIENT_LINKED_BAN
-            var currentBan = activePenalties.FirstOrDefault(p => p.Type == EFPenalty.PenaltyType.Ban);
+            var banPenalty = ReceivedPenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
+            var tempbanPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
+            var flagPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);
 
-            // they have a perm ban tied to their AliasLink/profile
-            if (currentBan != null)
+            // we want to kick them if any account is banned
+            if (banPenalty != null)
             {
-                CurrentServer.Logger.WriteInfo($"Banned client {this} trying to evade...");
-
-                // reban the "evading" guid
-                if (Level != Permission.Banned)
+                if (Level == Permission.Banned)
                 {
-                    CurrentServer.Logger.WriteInfo($"Banned client {this} connected using a new GUID");
-
-                    // hack: re apply the automated offense to the reban
-                    if (currentBan.AutomatedOffense != null)
-                    {
-                        autoKickClient.AdministeredPenalties?.Add(new EFPenalty()
-                        {
-                            AutomatedOffense = currentBan.AutomatedOffense
-                        });
-                    }
-                    // this is a reban of the new GUID and IP
-                    Ban($"{currentBan.Offense}", autoKickClient, true);
+                    CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
+                    Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
+                    return false;
                 }
 
                 else
                 {
-                    CurrentServer.Logger.WriteError($"Banned client {this} is banned but, no ban penalty was found (2)");
-                }
-
-                return false;
-            }
-            #endregion
-
-            #region CLIENT_LINKED_TEMPBAN
-            var tempBan = activePenalties
-                .OrderByDescending(_penalty => _penalty.When)
-                .FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
-
-            // they have an active tempban tied to their AliasLink
-            if (tempBan != null)
-            {
-                CurrentServer.Logger.WriteDebug($"Tempbanning {this} because their AliasLink is temporarily banned, but they are not");
-                TempBan(tempBan.Offense, DateTime.UtcNow - (tempBan.Expires ?? DateTime.UtcNow), autoKickClient);
-                return false;
-            }
-            #endregion
-
-            #region CLIENT_LINKED_FLAG
-            if (Level != Permission.Flagged)
-            {
-                var currentFlag = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);
-
-                if (currentFlag != null)
-                {
-                    CurrentServer.Logger.WriteDebug($"Flagging {this} because their AliasLink is flagged, but they are not");
-                    Flag(currentFlag.Offense, autoKickClient, currentFlag.Expires - DateTime.UtcNow);
+                    CurrentServer.Logger.WriteWarning($"Client {this} is GUID banned, but no previous penalty exists for their ban");
+                    Ban(loc["SERVER_BAN_UNKNOWN"], autoKickClient, false);
+                    return false;
                 }
             }
-            #endregion
 
-            if (Level == Permission.Flagged)
+            // we want to kick them if any account is tempbanned
+            if (tempbanPenalty != null)
+            {
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because their GUID is temporarily banned");
+                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempbanPenalty.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                return false;
+            }
+
+            // if we found a flag, we need to make sure all the accounts are flagged
+            if (flagPenalty != null && Level != Permission.Flagged)
+            {
+                SetLevel(Permission.Flagged, autoKickClient);
+            }
+
+            // remove their auto flag
+            if (Level == Permission.Flagged && !activePenalties.Any(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag))
             {
                 // remove their auto flag status after a week
-                if (!activePenalties.Any(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag))
-                {
-                    CurrentServer.Logger.WriteInfo($"Unflagging {this} because the auto flag time has expired");
-                    Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
-                }
+                CurrentServer.Logger.WriteInfo($"Unflagging {this} because the auto flag time has expired");
+                Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
             }
 
-            return true && OnConnect();
+            return OnConnect();
         }
 
         [NotMapped]

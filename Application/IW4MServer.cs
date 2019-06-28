@@ -84,18 +84,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-            Clients[client.ClientNumber] = null;
-            await client.OnDisconnect();
+                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+                Clients[client.ClientNumber] = null;
+                await client.OnDisconnect();
 
-            var e = new GameEvent()
-            {
-                Origin = client,
-                Owner = this,
-                Type = GameEvent.EventType.Disconnect
-            };
+                var e = new GameEvent()
+                {
+                    Origin = client,
+                    Owner = this,
+                    Type = GameEvent.EventType.Disconnect
+                };
 
-            Manager.GetEventHandler().AddEvent(e);
+                Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -302,8 +302,9 @@ namespace IW4MAdmin
                     Link = E.Target.AliasLink
                 };
 
-                await Manager.GetPenaltyService().Create(unflagPenalty);
                 E.Target.SetLevel(Permission.User, E.Origin);
+                await Manager.GetPenaltyService().RemoveActivePenalties(E.Target.AliasLinkId);
+                await Manager.GetPenaltyService().Create(unflagPenalty);
             }
 
             else if (E.Type == GameEvent.EventType.Report)
@@ -539,8 +540,9 @@ namespace IW4MAdmin
 
         /// <summary>
         /// lists the connecting and disconnecting clients via RCon response
-        /// array index 0 =  connecting clients
+        /// array index 0 = connecting clients
         /// array index 1 = disconnecting clients
+        /// array index 2 = updated clients
         /// </summary>
         /// <returns></returns>
         async Task<IList<EFClient>[]> PollPlayersAsync()
@@ -832,15 +834,31 @@ namespace IW4MAdmin
             this.Gametype = gametype;
             this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
 
-            if ((logsync.Value == 0 || logfile.Value == string.Empty) && RconParser.CanGenerateLogPath)
+            if (RconParser.CanGenerateLogPath)
             {
+                bool needsRestart = false;
+
+                if (logsync.Value == 0)
+                {
+                    await this.SetDvarAsync("g_logsync", 2); // set to 2 for continous in other games, clamps to 1 for IW4
+                    needsRestart = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(logfile.Value))
+                {
+                    logfile.Value = "games_mp.log";
+                    await this.SetDvarAsync("g_log", logfile.Value);
+                    needsRestart = true;
+                }
+
+                if (needsRestart)
+                {
+                    Logger.WriteWarning("Game log file not properly initialized, restarting map...");
+                    await this.ExecuteCommandAsync("map_restart");
+                }
+
                 // this DVAR isn't set until the a map is loaded
                 await this.SetDvarAsync("logfile", 2);
-                await this.SetDvarAsync("g_logsync", 2); // set to 2 for continous in other games, clamps to 1 for IW4
-                                                         //await this.SetDvarAsync("g_log", "games_mp.log");
-                Logger.WriteWarning("Game log file not properly initialized, restarting map...");
-                await this.ExecuteCommandAsync("map_restart");
-                logfile = await this.GetDvarAsync<string>("g_log");
             }
 
             CustomCallback = await ScriptLoaded();
@@ -1026,11 +1044,6 @@ namespace IW4MAdmin
 #endif
             }
 
-            if (isEvade)
-            {
-                Logger.WriteInfo($"updating alias for banned client {targetClient}");
-            }
-
             EFPenalty newPenalty = new EFPenalty()
             {
                 Type = EFPenalty.PenaltyType.Ban,
@@ -1052,7 +1065,7 @@ namespace IW4MAdmin
             var unbanPenalty = new EFPenalty()
             {
                 Type = EFPenalty.PenaltyType.Unban,
-                Expires = null,
+                Expires = DateTime.Now,
                 Offender = Target,
                 Offense = reason,
                 Punisher = Origin,
@@ -1061,9 +1074,9 @@ namespace IW4MAdmin
                 Link = Target.AliasLink
             };
 
-            await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId, Origin);
-            await Manager.GetPenaltyService().Create(unbanPenalty);
             Target.SetLevel(Permission.User, Origin);
+            await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId);
+            await Manager.GetPenaltyService().Create(unbanPenalty);
         }
 
         override public void InitializeTokens()

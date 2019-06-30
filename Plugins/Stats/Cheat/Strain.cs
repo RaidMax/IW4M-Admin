@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Helpers;
+﻿using SharedLibraryCore;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             double decayFactor = GetDecay(deltaTime);
             CurrentStrain *= decayFactor;
-            double[] distance = Helpers.Extensions.AngleStuff(newAngle, LastAngle);
+            double[] distance = Utilities.AngleStuff(newAngle, LastAngle);
             LastDistance = distance[0] + distance[1];
 
 #if DEBUG == true

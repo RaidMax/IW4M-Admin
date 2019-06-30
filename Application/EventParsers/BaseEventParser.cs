@@ -284,6 +284,7 @@ namespace IW4MAdmin.Application.EventParsers
             return new GameEvent()
             {
                 Type = GameEvent.EventType.Unknown,
+                Data = logLine,
                 Origin = Utilities.IW4MAdminClient(),
                 Target = Utilities.IW4MAdminClient(),
                 RequiredEntity = GameEvent.EventRequiredEntity.None

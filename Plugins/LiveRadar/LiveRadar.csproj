@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Version>0.1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Web\wwwroot\images\" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+  </Target>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="xcopy /S /E /H /Y /I &quot;$(ProjectDir)Web\Views\LiveRadar&quot; &quot;$(SolutionDir)WebfrontCore\Views\Plugins\Radar&quot;&#xD;&#xA;xcopy /S /E /H /Y &quot;$(ProjectDir)Web\wwwroot\images&quot; &quot;$(SolutionDir)WebfrontCore\wwwroot\images&quot;" />
+  </Target>
+
+</Project>

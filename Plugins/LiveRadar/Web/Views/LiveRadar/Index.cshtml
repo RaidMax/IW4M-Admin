@@ -1,0 +1,122 @@
+﻿@model IEnumerable<long>
+
+
+
+<canvas id="map_canvas" style="position:absolute; z-index:1"></canvas>
+<div id="map_list" style="position:absolute">
+</div>
+
+@section scripts {
+    <script>
+        let map = undefined;
+        let radarItem = undefined;
+
+        function drawCircle(context, x, y, color) {
+            context.beginPath();
+            context.arc(x, y, 6, 0, 2 * Math.PI, false);
+            context.fillStyle = color;
+            context.fill();
+            context.lineWidth = 3;
+            context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            context.stroke();
+        }
+
+        function drawLine(context, x1, y1, x2, y2, color) {
+            context.beginPath();
+            context.lineWidth = '1';
+            var grad = context.createLinearGradient(x1, y1, x2, y2);
+            grad.addColorStop(0, 'rgba(0, 255, 0, 0.75)');
+            grad.addColorStop(0.75, 'rgba(223, 66, 244, 0.8)');
+            context.strokeStyle = grad;
+            context.moveTo(x1, y1);
+            context.lineTo(x2, y2);
+            context.stroke();
+        }
+
+        function drawTriangle(context, v1, v2, v3, color) {
+            context.beginPath();
+            context.moveTo(v1.x, v1.y);
+            context.lineTo(v2.x, v2.y);
+            context.lineTo(v3.x, v3.y);
+
+            context.closePath();
+
+            context.fillStyle = color;
+            context.fill();
+        }
+
+        function checkCanvasSize(canvas, context, minimap, map) {
+            var height = minimap.height() - map.top - map.bottom;
+            var width = minimap.width() - map.left - map.right;
+            if (context.canvas.height != height || context.canvas.width != width) {
+                context.canvas.height = height;
+                context.canvas.width = width;
+
+                canvas.css('position', 'absolute');
+                canvas.css('left', map.left + minimap.offset().left);
+                canvas.css('top', map.top + minimap.offset().top);
+            }
+        }
+
+        function calculateViewPosition(x, y, distance) {
+            let nx = Math.cos(x) * Math.cos(y);
+            let ny = Math.sin(x) * Math.cos(y);
+            let nz = Math.sin(360.0 - y);
+
+            return { x: nx * distance, y: ny * distance, z: nz * distance};
+        }
+
+        function updateRadarData() {
+            $.getJSON('@Url.Action("Data", "Radar", null)', function (_radarItem) {
+                radarItem = _radarItem;
+            });
+        }
+
+        function updateMap() {
+            let canvas = $('#map_canvas');
+            let ctx = undefined;
+            let mapImage = $('#map_list');
+
+            if (canvas[0].getContext) {
+                ctx = canvas[0].getContext('2d');
+            }
+
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            checkCanvasSize(canvas, ctx, mapImage, map)
+            let forwardDistance = 500.0 / (map.width / canvas.width());
+            let fovWidth = 32.5 / (map.width / canvas.width()) ;
+
+
+            $.each(radarItem, function (index, value) {
+
+                // todo: fix this naming up
+                let xPos = (map.maxLeft - value.location.y) / (map.width / canvas.width());
+                let yPos = (map.maxTop - value.location.x) / (map.height / canvas.height());
+                let color = value.team == 'allies' ? 'rgba(0, 122, 204, 1)' : 'rgba(255,69,69,.85)';
+                let fovColor = value.team == 'allies' ? 'rgba(0, 122, 204, 0.25)' : 'rgba(255,69,69,.25)';
+
+                let firstVertex = calculateViewPosition(((Math.PI * 2 * 0.75) - value.radianAngles.y) - fovWidth, value.radianAngles.x, forwardDistance);
+                let secondVertex = calculateViewPosition(((Math.PI * 2 * 0.75) - value.radianAngles.y) + fovWidth, value.radianAngles.x, forwardDistance);
+
+                drawCircle(ctx, xPos, yPos, color);
+                drawTriangle(ctx, { x: xPos, y: yPos }, { x: xPos + firstVertex.x, y: yPos + firstVertex.y }, { x: xPos + secondVertex.x, y: yPos + secondVertex.y }, fovColor);
+
+                ctx.font = 'bold 24px segoe ui';
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = '0.5';
+                ctx.textAlign = 'center';
+                ctx.fillText(value.name, xPos, yPos - 15);
+                ctx.strokeText(value.name, xPos, yPos - 15);
+            });
+            window.requestAnimationFrame(updateMap);
+        }
+
+    $.getJSON('@Url.Action("Map", "Radar", null)', function (_map) {
+        let div = $('#map_list').append(`<img src=../images/compass_map_${_map.name}@('@')2x.png></img>`);
+        map = _map
+        setInterval(updateRadarData, 250);
+        window.requestAnimationFrame(updateMap);
+    });
+    </script>
+}

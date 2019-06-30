@@ -51,18 +51,7 @@ namespace IW4MAdmin.Plugins.Stats
                         MaxRight = 2447
                     },
 
-                    new MinimapInfo()
-                    {
-                        MapName = "mp_rust",
-                        Top = 122,
-                        Bottom = 104, 
-                        Left = 155,
-                        Right = 82,
-                        MaxRight = -225,
-                        MaxLeft = 1809, 
-                        MaxTop = 1641,
-                        MaxBottom = -469
-                    }
+                    
                 }
             };
         }

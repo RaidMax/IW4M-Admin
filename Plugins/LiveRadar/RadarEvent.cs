@@ -21,6 +21,23 @@ namespace LiveRadar
         public int Health { get; set; }
         public bool IsAlive { get; set; }
         public Vector3 RadianAngles => new Vector3(ViewAngles.X.ToRadians(), ViewAngles.Y.ToRadians(), ViewAngles.Z.ToRadians());
+        public RadarEvent Previous { get; set; }
+        public int Id => GetHashCode();
+
+        public override bool Equals(object obj)
+        {
+            if (obj is RadarEvent re)
+            {
+                return re.ViewAngles.X == ViewAngles.X &&
+                    re.ViewAngles.Y == ViewAngles.Y &&
+                    re.ViewAngles.Z == ViewAngles.Z &&
+                    re.Location.X == Location.X &&
+                    re.Location.Y == Location.Y &&
+                    re.Location.Z == Location.Z;
+            }
+
+            return false;
+        }
 
         public static RadarEvent Parse(string input)
         {
@@ -28,9 +45,9 @@ namespace LiveRadar
 
             var parsedEvent = new RadarEvent()
             {
-                Guid = items[0].ConvertLong(),
+                Guid = items[0].ConvertGuidToLong(),
                 Location = Vector3.Parse(items[1]),
-                ViewAngles = Vector3.Parse(items[2]),
+                ViewAngles = Vector3.Parse(items[2]).FixIW4Angles(),
                 Team = items[3],
                 Kills = int.Parse(items[4]),
                 Deaths = int.Parse(items[5]),

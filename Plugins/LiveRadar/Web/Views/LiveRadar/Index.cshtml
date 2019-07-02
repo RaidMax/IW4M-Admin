@@ -8,8 +8,9 @@
 
 @section scripts {
     <script>
-        let map = undefined;
-        let radarItem = undefined;
+        const textOffset = 15;
+        let previousRadarData = undefined;
+        let newRadarData = undefined;
 
         function drawCircle(context, x, y, color) {
             context.beginPath();
@@ -18,18 +19,16 @@
             context.fill();
             context.lineWidth = 3;
             context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            context.closePath();
             context.stroke();
         }
 
         function drawLine(context, x1, y1, x2, y2, color) {
             context.beginPath();
-            context.lineWidth = '1';
-            var grad = context.createLinearGradient(x1, y1, x2, y2);
-            grad.addColorStop(0, 'rgba(0, 255, 0, 0.75)');
-            grad.addColorStop(0.75, 'rgba(223, 66, 244, 0.8)');
-            context.strokeStyle = grad;
+            context.lineWidth = '3';
             context.moveTo(x1, y1);
             context.lineTo(x2, y2);
+            context.closePath();
             context.stroke();
         }
 
@@ -38,16 +37,27 @@
             context.moveTo(v1.x, v1.y);
             context.lineTo(v2.x, v2.y);
             context.lineTo(v3.x, v3.y);
-
             context.closePath();
-
             context.fillStyle = color;
             context.fill();
+        }
+
+        function drawText(context, x, y, text, size, fillColor, strokeColor) {
+            context.beginPath();
+            context.font = `bold ${size}px open sans`;
+            context.fillStyle = fillColor;
+            context.strokeStyle = strokeColor;
+            context.lineWidth = '0.5';
+            context.textAlign = 'center';
+            context.fillText(text, x, y);
+            context.strokeText(text, x, y);
+            context.closePath();
         }
 
         function checkCanvasSize(canvas, context, minimap, map) {
             var height = minimap.height() - map.top - map.bottom;
             var width = minimap.width() - map.left - map.right;
+
             if (context.canvas.height != height || context.canvas.width != width) {
                 context.canvas.height = height;
                 context.canvas.width = width;
@@ -66,57 +76,147 @@
             return { x: nx * distance, y: ny * distance, z: nz * distance};
         }
 
+        function lerp(start, end, complete) {
+            return (1 - complete) * start + complete * end;
+        }
+
+        function easeLerp(start, end, t) {
+            let t2 = (1 - Math.cos(t * Math.PI)) / 2;
+
+            return (start * (1-t2) + end * t2);
+        }
+
+        function fixRollAngles(oldAngles, newAngles) {
+            let newX = newAngles.x;
+            let newY = newAngles.y;
+
+            let angleDifferenceX = (oldAngles.x - newAngles.x);
+
+            if (angleDifferenceX > Math.PI) {
+                newX = oldAngles.x + (Math.PI * 2) - angleDifferenceX;
+            }
+
+            else if (Math.abs(newAngles.x - oldAngles.x) > Math.PI) {
+                newX = newAngles.x - (Math.PI * 2);
+            }
+
+            let angleDifferenceY = (oldAngles.y - newAngles.y);
+
+            if (angleDifferenceY > Math.PI) {
+                newY = oldAngles.y + (Math.PI * 2) - angleDifferenceY;
+            }
+
+            else if (Math.abs(newAngles.y - oldAngles.y) > Math.PI) {
+                newY = newAngles.y - (Math.PI * 2);
+            }
+
+            return { x: newX, y: newY };
+        }
+
+        const stateInfo = {
+            canvas: $('#map_canvas'),
+            ctx: $('#map_canvas')[0].getContext('2d'),
+            updateFrequency: 500,
+            updateFrameTimeDeviation: 0,
+            forwardDistance: undefined,
+            fovWidth: undefined,
+            mapInfo: undefined,
+            mapScaler: undefined
+        };
+
         function updateRadarData() {
             $.getJSON('@Url.Action("Data", "Radar", null)', function (_radarItem) {
-                radarItem = _radarItem;
+                newRadarData = _radarItem;
             });
+
+            $.each(newRadarData, function (index, value) {
+                if (previousRadarData != undefined && index < previousRadarData.length) {
+
+                  let previous = previousRadarData[index];
+
+                  // this happens when the player has first joined and we haven't gotten two snapshots yet
+                  if (value == null || previous == null) {
+                    return;
+                  }
+
+                  // we haven't gotten a new item, it's just the old one again
+                  if (previous.id === value.id) {
+                      value.animationTime = previous.animationTime;
+                      value.previous = value;
+                  }
+            }});
+
+            // we switch out the items to
+            previousRadarData = newRadarData;
+
+            checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), stateInfo.mapInfo)
+
+            if (stateInfo.forwardDistance == undefined) {
+                stateInfo.mapScaler = stateInfo.mapInfo.width / stateInfo.canvas.width();
+                stateInfo.forwardDistance = 500.0 / stateInfo.mapScaler;
+                stateInfo.fovWidth = 32.5 / stateInfo.mapScaler;
+            }
         }
 
         function updateMap() {
-            let canvas = $('#map_canvas');
-            let ctx = undefined;
-            let mapImage = $('#map_list');
-
-            if (canvas[0].getContext) {
-                ctx = canvas[0].getContext('2d');
-            }
+            let ctx = stateInfo.ctx;
 
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            checkCanvasSize(canvas, ctx, mapImage, map)
-            let forwardDistance = 500.0 / (map.width / canvas.width());
-            let fovWidth = 32.5 / (map.width / canvas.width()) ;
+            now = performance.now();
 
+            $.each(previousRadarData, function (index, value) {
+                if (value == null || value.previous == null) {
+                    console.log("skipping null snapshot");
+                    return;
+                }
 
-            $.each(radarItem, function (index, value) {
+                // this indicates we got a new snapshot to work with so we set the time based off the previous 
+                // frame deviation to have minimal interpolation skipping
+                if (value.animationTime === undefined) {
+                    value.animationTime = now - stateInfo.updateFrameTimeDeviation;
+                }
 
-                // todo: fix this naming up
-                let xPos = (map.maxLeft - value.location.y) / (map.width / canvas.width());
-                let yPos = (map.maxTop - value.location.x) / (map.height / canvas.height());
-                let color = value.team == 'allies' ? 'rgba(0, 122, 204, 1)' : 'rgba(255,69,69,.85)';
+                const elapsedFrameTime = now - value.animationTime;
+                const completionPercent = elapsedFrameTime / stateInfo.updateFrequency;
+
+                const startX = (stateInfo.mapInfo.maxLeft - value.previous.location.y) / stateInfo.mapScaler;
+                const startY = (stateInfo.mapInfo.maxTop - value.previous.location.x) / stateInfo.mapScaler;
+
+                const endX = (stateInfo.mapInfo.maxLeft - value.location.y) / stateInfo.mapScaler;
+                const endY = (stateInfo.mapInfo.maxTop - value.location.x) / stateInfo.mapScaler;
+
+                let teamColor = value.team == 'allies' ? 'rgba(0, 122, 204, 1)' : 'rgba(255,69,69,.85)';
                 let fovColor = value.team == 'allies' ? 'rgba(0, 122, 204, 0.25)' : 'rgba(255,69,69,.25)';
 
-                let firstVertex = calculateViewPosition(((Math.PI * 2 * 0.75) - value.radianAngles.y) - fovWidth, value.radianAngles.x, forwardDistance);
-                let secondVertex = calculateViewPosition(((Math.PI * 2 * 0.75) - value.radianAngles.y) + fovWidth, value.radianAngles.x, forwardDistance);
+                const rollAngleFix = fixRollAngles(value.previous.radianAngles, value.radianAngles);
 
-                drawCircle(ctx, xPos, yPos, color);
-                drawTriangle(ctx, { x: xPos, y: yPos }, { x: xPos + firstVertex.x, y: yPos + firstVertex.y }, { x: xPos + secondVertex.x, y: yPos + secondVertex.y }, fovColor);
+                const radianLerpX = lerp(value.previous.radianAngles.x, rollAngleFix.x, completionPercent);
+                const radianLerpY = lerp(value.previous.radianAngles.y, rollAngleFix.y, completionPercent);
 
-                ctx.font = 'bold 24px segoe ui';
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = color;
-                ctx.lineWidth = '0.5';
-                ctx.textAlign = 'center';
-                ctx.fillText(value.name, xPos, yPos - 15);
-                ctx.strokeText(value.name, xPos, yPos - 15);
+                // this is some jankiness to get the fov to point the right direction
+                let firstVertex = calculateViewPosition((Math.PI * 2 * 0.75) - radianLerpX - (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
+                let secondVertex = calculateViewPosition((Math.PI * 2 * 0.75) - radianLerpX + (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
+
+                let currentX = lerp(startX, endX, completionPercent);
+                let currentY = lerp(startY, endY, completionPercent);
+
+                drawCircle(ctx, currentX, currentY, teamColor);
+                drawTriangle(ctx,
+                    { x: currentX, y: currentY },
+                    { x: currentX + firstVertex.x, y: currentY + firstVertex.y },
+                    { x: currentX + secondVertex.x, y: currentY + secondVertex.y },
+                    fovColor);
+                drawText(ctx, currentX, currentY - textOffset, value.name, 24, 'white', teamColor)
             });
+
             window.requestAnimationFrame(updateMap);
         }
 
-    $.getJSON('@Url.Action("Map", "Radar", null)', function (_map) {
-        let div = $('#map_list').append(`<img src=../images/compass_map_${_map.name}@('@')2x.png></img>`);
-        map = _map
-        setInterval(updateRadarData, 250);
-        window.requestAnimationFrame(updateMap);
-    });
+        $.getJSON('@Url.Action("Map", "Radar", null)', function (_map) {
+            $('#map_list').append(`<img src=../images/compass_map_${_map.name}@('@')2x.png></img>`);
+            stateInfo.mapInfo = _map
+            setInterval(updateRadarData, stateInfo.updateFrequency);
+            window.requestAnimationFrame(updateMap);
+        });
     </script>
 }

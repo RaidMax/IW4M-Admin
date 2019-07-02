@@ -38,20 +38,28 @@ namespace LiveRadar.Web.Controllers
         {
             var server = serverId == null ? Manager.GetServers()[0] : Manager.GetServers().First(_server => _server.GetHashCode() == serverId);
             var radarInfo = server.GetClientsAsList().Select(_client => _client.GetAdditionalProperty<RadarEvent>("LiveRadar"));
-
             return Json(radarInfo);
         }
 
         [HttpGet]
         public IActionResult Update(string payload)
         {
-            return Ok();
-
             var radarUpdate = RadarEvent.Parse(payload);
-            var client = Manager.GetActiveClients().First(_client => _client.NetworkId == radarUpdate.Guid);
-            radarUpdate.Name = client.Name;
+            var client = Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
 
-            client.SetAdditionalProperty("LiveRadar", radarUpdate);
+            if (client != null)
+            {
+                radarUpdate.Name = client.Name;
+                var previous = client.GetAdditionalProperty<RadarEvent>("LiveRadar");
+                // this prevents us from creating a never ending linked list
+                if (previous != null)
+                {
+                    previous.Previous = null;
+                }
+
+                radarUpdate.Previous = previous;
+                client.SetAdditionalProperty("LiveRadar", radarUpdate);
+            }
 
             return Ok();
         }

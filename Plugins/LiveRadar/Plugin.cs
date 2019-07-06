@@ -1,4 +1,6 @@
-﻿using SharedLibraryCore;
+﻿using LiveRadar.Configuration;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
@@ -14,6 +16,8 @@ namespace LiveRadar
 
         public string Author => "RaidMax";
 
+        internal static BaseConfigurationHandler<LiveRadarConfiguration> Config;
+
         public Task OnEventAsync(GameEvent E, Server S)
         {
             if (E.Type == GameEvent.EventType.Unknown)
@@ -21,18 +25,28 @@ namespace LiveRadar
                 if (E.Data?.StartsWith("LiveRadar") ?? false)
                 {
                     var radarUpdate = RadarEvent.Parse(E.Data);
-                    var client = S.GetClientsAsList().First(_client => _client.NetworkId == radarUpdate.Guid);
-                    radarUpdate.Name = client.Name;
-                    client.SetAdditionalProperty("LiveRadar", radarUpdate);
+                    var client = S.Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
+
+                    if (client != null)
+                    {
+                        radarUpdate.Name = client.Name;
+                        client.SetAdditionalProperty("LiveRadar", radarUpdate);
+                    }
                 }
             }
 
             return Task.CompletedTask;
         }
 
-        public Task OnLoadAsync(IManager manager)
+        public async Task OnLoadAsync(IManager manager)
         {
-            return Task.CompletedTask;
+            // load custom configuration
+            Config = new BaseConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
+            if (Config.Configuration() == null)
+            {
+                Config.Set((LiveRadarConfiguration)new LiveRadarConfiguration().Generate());
+                await Config.Save();
+            }
         }
 
         public Task OnTickAsync(Server S)

@@ -11,8 +11,8 @@ var plugin = {
 
         // connect or join event
         if (gameEvent.Type === 3) {
-             // this GUID seems to have been packed in a IW4 torrent and results in an unreasonable amount of people using the same GUID
-            if (gameEvent.Origin.NetworkId === -805366929435212061) {
+            // this GUID seems to have been packed in a IW4 torrent and results in an unreasonable amount of people using the same GUID
+            if (gameEvent.Origin.NetworkId === -805366929435212061 || gameEvent.Origin.NetworkId == -3304388024725980231) {
                 gameEvent.Origin.Kick('Your GUID is generic. Delete players/guids.dat and rejoin', _IW4MAdminClient);
             }
         }

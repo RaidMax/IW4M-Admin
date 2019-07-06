@@ -125,7 +125,7 @@
     </div>
     <!-- End Action Modal -->
 
-    <div class="container p-4">
+    <div class="@(ViewBag.IsFluid ?? false ? "container-fluid" : "container") pt-4 pb-4 pl-3 pr-3 pr-lg-4 pl-lg-4">
         @RenderBody()
         <footer id="footer_text">
             <div class="d-lg-none d-block text-center pt-4 pb-4">

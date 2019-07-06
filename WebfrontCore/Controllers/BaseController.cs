@@ -51,6 +51,7 @@ namespace WebfrontCore.Controllers
                 }).ToList();
 
             ViewBag.Version = Manager.Version;
+            ViewBag.IsFluid = false;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)

@@ -17,11 +17,11 @@ namespace LiveRadar
         public int Kills { get; set; }
         public int Deaths { get; set; }
         public int Score { get; set; }
+        public int PlayTime { get; set; }
         public string Weapon { get; set; }
         public int Health { get; set; }
         public bool IsAlive { get; set; }
         public Vector3 RadianAngles => new Vector3(ViewAngles.X.ToRadians(), ViewAngles.Y.ToRadians(), ViewAngles.Z.ToRadians());
-        public RadarEvent Previous { get; set; }
         public int Id => GetHashCode();
 
         public override bool Equals(object obj)
@@ -41,7 +41,7 @@ namespace LiveRadar
 
         public static RadarEvent Parse(string input)
         {
-            var items = input.Split(';').ToList();
+            var items = input.Split(';').Skip(1).ToList();
 
             var parsedEvent = new RadarEvent()
             {
@@ -54,7 +54,8 @@ namespace LiveRadar
                 Score = int.Parse(items[6]),
                 Weapon = items[7],
                 Health = int.Parse(items[8]),
-                IsAlive = items[9] == "1"
+                IsAlive = items[9] == "1",
+                PlayTime = Convert.ToInt32(items[10])
             };
 
             return parsedEvent;

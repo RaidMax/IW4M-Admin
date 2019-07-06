@@ -7,7 +7,7 @@ namespace SharedLibraryCore.Events
 {
     public class EventApi
     {
-        const int MaxEvents = 100;
+        const int MaxEvents = 25;
         static ConcurrentQueue<EventInfo> RecentEvents = new ConcurrentQueue<EventInfo>();
 
         public static IEnumerable<EventInfo> GetEvents(bool shouldConsume)

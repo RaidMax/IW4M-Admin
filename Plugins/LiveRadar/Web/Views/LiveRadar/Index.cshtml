@@ -28,8 +28,10 @@
 <!-- images used by canvas -->
 <img class="hide" id="hud_death" src="~/images/hud_weapons/hud_death.png" />
 
+
 @section scripts {
-    <script>
+
+    <script defer="defer">
         const textOffset = 15;
         let previousRadarData = undefined;
         let newRadarData = undefined;
@@ -393,8 +395,8 @@
                 const radianLerpY = lerp(value.previous.radianAngles.y, rollAngleFix.y, completionPercent);
 
                 // this is some jankiness to get the fov to point the right direction
-                let firstVertex = calculateViewPosition((Math.PI * 2 * 0.75) + toRadians(stateInfo.mapInfo.rotation) - radianLerpX - (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
-                let secondVertex = calculateViewPosition((Math.PI * 2 * 0.75) + toRadians(stateInfo.mapInfo.rotation) - radianLerpX + (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
+                let firstVertex = calculateViewPosition((Math.PI / 2) + toRadians(stateInfo.mapInfo.rotation + stateInfo.mapInfo.viewPosRotation) - radianLerpX - (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
+                let secondVertex = calculateViewPosition((Math.PI / 2) + toRadians(stateInfo.mapInfo.rotation + stateInfo.mapInfo.viewPosRotation) - radianLerpX + (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
 
                 let currentX = lerp(startX, endX, completionPercent);
                 let currentY = lerp(startY, endY, completionPercent);

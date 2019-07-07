@@ -19,6 +19,7 @@ namespace LiveRadar
         public int MaxLeft { get; set; }
         public int MaxRight { get; set; }
         public float Rotation { get; set; }
+        public float ViewPositionRotation { get; set; }
         public float CenterX { get; set; }
         public float CenterY { get; set; }
         public float Scaler { get; set; } = 1.0f;

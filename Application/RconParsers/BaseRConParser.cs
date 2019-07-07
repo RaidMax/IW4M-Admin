@@ -163,7 +163,7 @@ namespace IW4MAdmin.Application.RconParsers
                     };
 
 #if DEBUG
-                    if (client.NetworkId < 1000)
+                    if (client.NetworkId < 1000 && client.NetworkId > 0)
                     {
                         client.IPAddress = 2147483646;
                         client.Ping = 0;
@@ -182,5 +182,4 @@ namespace IW4MAdmin.Application.RconParsers
 
             return StatusPlayers;
         }
-    }
-}
+    }}

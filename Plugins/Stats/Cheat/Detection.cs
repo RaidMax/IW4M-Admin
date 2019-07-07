@@ -159,7 +159,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
             #endregion
 
-
             #region STRAIN
             double currentStrain = Strain.GetStrain(hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, hit.TimeOffset - LastOffset));
 #if DEBUG == true
@@ -205,24 +204,13 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             var lifeTimeHits = ClientStats.HitLocations.Sum(_loc => _loc.HitCount);
             ClientStats.AverageRecoilOffset = (ClientStats.AverageRecoilOffset * (lifeTimeHits - 1) + hitRecoilAverage) / lifeTimeHits;
 
-            if (sessionAverageRecoilAmount == 0 && HitCount >= Thresholds.LowSampleMinKills)
+            if (HitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && sessionAverageRecoilAmount == 0)
             {
                 results.Add(new DetectionPenaltyResult()
                 {
                     ClientPenalty = EFPenalty.PenaltyType.Ban,
                     Value = sessionAverageRecoilAmount,
                     HitCount = HitCount,
-                    Type = DetectionType.Recoil
-                });
-            }
-
-            if (ClientStats.AverageRecoilOffset == 0 && HitCount >= Thresholds.HighSampleMinKills)
-            {
-                results.Add(new DetectionPenaltyResult()
-                {
-                    ClientPenalty = EFPenalty.PenaltyType.Ban,
-                    Value = ClientStats.AverageRecoilOffset,
-                    HitCount = lifeTimeHits,
                     Type = DetectionType.Recoil
                 });
             }

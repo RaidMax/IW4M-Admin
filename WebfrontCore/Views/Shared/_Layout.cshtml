@@ -57,7 +57,7 @@
                             <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
                                 <a asp-controller="Console" asp-action="Index" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_CONSOLE"]</a>
                                 <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@ViewBag.User.ClientId" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_PROFILE"]</a>
-                                @if (ViewBag.User.Level == SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+                                @if (ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
                                 {
                                     <a asp-controller="Configuration" asp-action="Edit" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_EDIT_CONFIGURATION"]</a>
                                 }

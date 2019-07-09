@@ -7,6 +7,7 @@ namespace LiveRadar
     public class MapInfo
     {
         public string Name { get; set; }
+        public string Alias { get; set; }
         // distance from the edge of the minimap image
         // to the "playable" area
         public int Top { get; set; }

@@ -26,7 +26,7 @@
 </div>
 
 <!-- images used by canvas -->
-<img class="hide" id="hud_death" src="~/images/hud_weapons/hud_death.png" />
+<img class="hide" id="hud_death" src="~/images/death.png" />
 
 
 @section scripts {
@@ -131,13 +131,14 @@
 
         function drawText(context, x, y, text, size, fillColor, strokeColor, alignment = 'left') {
             context.beginPath();
-            context.font = `bold ${size * stateInfo.imageScaler}px verdana`;
+            context.save();
+            context.font = `bold ${Math.max(12, size * stateInfo.imageScaler)}px courier new`;
             context.fillStyle = fillColor;
-            context.strokeStyle = strokeColor;
-            context.lineWidth = 1 * stateInfo.imageScaler;
+            context.shadowColor = strokeColor;
+            context.shadowBlur = 4;
             context.textAlign = alignment;
             context.fillText(text, x, y);
-            context.strokeText(text, x, y);
+            context.restore();
             context.closePath();
         }
 
@@ -163,11 +164,12 @@
             }
 
             stateInfo.imageScaler = (stateInfo.canvas.width() / 1024)
-            stateInfo.mapScaler = ((stateInfo.mapInfo.right - stateInfo.mapInfo.left) / stateInfo.mapInfo.width) * stateInfo.imageScaler;
-            stateInfo.mapScalerY =((stateInfo.mapInfo.bottom - stateInfo.mapInfo.top) / stateInfo.mapInfo.height) * stateInfo.imageScaler;
+            stateInfo.mapScalerX = (((stateInfo.mapInfo.right * stateInfo.imageScaler) - (stateInfo.mapInfo.left * stateInfo.imageScaler)) / stateInfo.mapInfo.width);
+            stateInfo.mapScalerY = (((stateInfo.mapInfo.bottom * stateInfo.imageScaler) - (stateInfo.mapInfo.top * stateInfo.imageScaler)) / stateInfo.mapInfo.height);
+            stateInfo.mapScaler = (stateInfo.mapScalerX + stateInfo.mapScalerY) / 2
 
-            stateInfo.forwardDistance = 500.0 * ((stateInfo.mapInfo.right - stateInfo.mapInfo.left) / stateInfo.mapInfo.width) * stateInfo.imageScaler;
-            stateInfo.fovWidth = 32.5 * ((stateInfo.mapInfo.right - stateInfo.mapInfo.left) / stateInfo.mapInfo.width);
+            stateInfo.forwardDistance = 500.0;
+            stateInfo.fovWidth = 40;
         }
 
         function calculateViewPosition(x, y, distance) {
@@ -175,7 +177,7 @@
             let ny = Math.sin(x) * Math.cos(y);
             let nz = Math.sin(360.0 - y);
 
-            return { x: nx * distance, y: ny * distance, z: nz * distance};
+            return { x: (nx * distance) * stateInfo.mapScaler, y: (ny * distance) * stateInfo.mapScaler, z: (nz * distance)  * stateInfo.mapScaler };
         }
 
         function lerp(start, end, complete) {
@@ -238,7 +240,7 @@
                 name = "none";
             }
 
-            return `../images/hud_weapons/hud_${weapons[name]}.png`;
+            return `../images/radar/hud_weapons/hud_${weapons[name]}.png`;
         }
 
         function updatePlayerData() {
@@ -266,9 +268,8 @@
                                 <span class="align-self-center oi oi-target pr-1"></span>
                                 <div class="pr-3 ">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
                                 <span class="align-self-center oi oi-graph pr-1"></span>
-                                <div>${Math.round(player.score / (player.playTime / 60))}</div>
+                                <div>${ player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
                               </div>`);
-                //<img style="height: 1.5rem;" src="${weaponImageForWeapon(player.weapon)}"/>
             });
 
             $('.player-data-left').delay(1000).animate({opacity: 1}, 500);
@@ -340,11 +341,10 @@
             // we switch out the items to
             previousRadarData = newRadarData;
 
-            $('#map_name').html(stateInfo.mapInfo.name);
-            $('#map_list').css('background-image', `url(../images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@('@')2x.png)`);
+            $('#map_name').html(stateInfo.mapInfo.alias);
+            $('#map_list').css('background-image', `url(../images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@('@')2x.jpg)`);
             checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), stateInfo.mapInfo);
             updatePlayerData();
-            window.requestAnimationFrame(updateMap);
         }
 
         function updateMap() {
@@ -385,8 +385,8 @@
                 const endX = ((stateInfo.mapInfo.maxLeft - rotatedCurrentLocation.y) * stateInfo.mapScaler) + (stateInfo.mapInfo.left * stateInfo.imageScaler);
                 const endY = ((stateInfo.mapInfo.maxTop - rotatedCurrentLocation.x) * stateInfo.mapScalerY) + (stateInfo.mapInfo.top * stateInfo.imageScaler);
 
-                let teamColor = value.team == 'allies' ? 'rgba(0, 122, 204, 1)' : 'rgba(255,69,69,.85)';
-                let fovColor = value.team == 'allies' ? 'rgba(0, 122, 204, 0.2)' : 'rgba(255,69,69,.2)';
+                let teamColor = value.team == 'allies' ? 'rgb(0, 122, 204, 1)' : 'rgb(255, 69, 69)';
+                let fovColor = value.team == 'allies' ? 'rgba(0, 122, 204, 0.2)' : 'rgba(255, 69, 69, 0.2)';
 
                 // this takes care of moving past the roll-over point of yaw/pitch (ie 360->0)
                 const rollAngleFix = fixRollAngles(value.previous.radianAngles, value.radianAngles);
@@ -395,8 +395,8 @@
                 const radianLerpY = lerp(value.previous.radianAngles.y, rollAngleFix.y, completionPercent);
 
                 // this is some jankiness to get the fov to point the right direction
-                let firstVertex = calculateViewPosition((Math.PI / 2) + toRadians(stateInfo.mapInfo.rotation + stateInfo.mapInfo.viewPosRotation) - radianLerpX - (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
-                let secondVertex = calculateViewPosition((Math.PI / 2) + toRadians(stateInfo.mapInfo.rotation + stateInfo.mapInfo.viewPosRotation) - radianLerpX + (Math.PI + stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
+                let firstVertex = calculateViewPosition(toRadians(stateInfo.mapInfo.rotation + stateInfo.mapInfo.viewPositionRotation - 90) - radianLerpX + toRadians(stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
+                let secondVertex = calculateViewPosition(toRadians(stateInfo.mapInfo.rotation + stateInfo.mapInfo.viewPositionRotation - 90) - radianLerpX - toRadians(stateInfo.fovWidth), radianLerpY, stateInfo.forwardDistance);
 
                 let currentX = lerp(startX, endX, completionPercent);
                 let currentY = lerp(startY, endY, completionPercent);
@@ -409,14 +409,13 @@
                 currentX = lerp(centerX, currentX, stateInfo.mapInfo.scaler);
                 currentY = lerp(centerY, currentY, stateInfo.mapInfo.scaler);
 
-                drawCircle(ctx, centerX, centerY, 'green');
                 drawCircle(ctx, currentX, currentY, teamColor);
                 drawTriangle(ctx,
                     { x: currentX, y: currentY },
                     { x: currentX + firstVertex.x, y: currentY + firstVertex.y },
                     { x: currentX + secondVertex.x, y: currentY + secondVertex.y },
                     fovColor);
-                drawText(ctx, currentX, currentY - textOffset, value.name, 24, 'white', teamColor, 'center')
+                drawText(ctx, currentX, currentY - (textOffset * stateInfo.imageScaler), value.name, 16, 'white', teamColor, 'center')
             });
 
             const completedIcons = [];
@@ -449,7 +448,8 @@
              $.getJSON('@Url.Action("Map", "Radar", null)', function (_map) {
                  stateInfo.mapInfo = _map;
                  updateRadarData();
-                setInterval(updateRadarData, stateInfo.updateFrequency);
+                 setInterval(updateRadarData, stateInfo.updateFrequency);
+                 window.requestAnimationFrame(updateMap);
              });
         })
 

@@ -51,8 +51,7 @@ namespace LiveRadar.Configuration
                     Right =  968, // pxmax
                     Bottom =  864, // pymax
                     Top =  160, // pymin
-                    CenterX = 0,
-                    CenterY = 0
+                    ViewPositionRotation = 180,
                 },
 
                 new MapInfo()
@@ -60,12 +59,12 @@ namespace LiveRadar.Configuration
                     Name = "mp_estate",
                     Top = 52,
                     Bottom = 999,
-                    Left= 173,
+                    Left = 173,
                     Right = 942,
-                    MaxTop = 2103,
-                    MaxBottom = -5077,
-                    MaxLeft = 4437,
-                    MaxRight = -1240,
+                    MaxTop = 2103,  // x max
+                    MaxBottom = -5077, //x min
+                    MaxLeft = 4437, // ymax
+                    MaxRight = -1240, // y min
                     Rotation = 143,
                     CenterX = -1440,
                     CenterY = 1920,
@@ -148,8 +147,7 @@ namespace LiveRadar.Configuration
                     Left =  130,
                     Right =  892,
                     Top = 210,
-                    Bottom = 829,
-                    ViewPositionRotation = 180
+                    Bottom = 829
                 },
 
                 new MapInfo()
@@ -215,7 +213,138 @@ namespace LiveRadar.Configuration
                     Right =  978,
                     Top = 157,
                     Bottom = 944
-                }
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_abandon",
+                    MaxBottom = -1290,
+                    MaxTop =    3855,
+                    MaxRight =  -2907,
+                    MaxLeft =   2723,
+                    Left =  6,
+                    Right = 1016,
+                    Top =   32,
+                    Bottom =    945
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_compact",
+                    MaxBottom = 0,
+                    MaxTop =    4264,
+                    MaxRight =  -1552,
+                    MaxLeft =   3344,
+                    Left =  35,
+                    Right = 1003,
+                    Top =   94,
+                    Bottom =    935
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_complex",
+                    MaxBottom = -2869,
+                    MaxTop =    2867,
+                    MaxRight =  -4204,
+                    MaxLeft =   -1218,
+                    Left =  282,
+                    Right = 749,
+                    Top =  48,
+                    Bottom =    991
+                },
+
+
+                new MapInfo()
+                {
+                    Name = "mp_crash",
+                    MaxBottom = -953,
+                    MaxTop =    1811,
+                    MaxRight =  -2129,
+                    MaxLeft =   2277,
+                    Left =  52,
+                    Right = 1017,
+                    Top =   201,
+                    Bottom =    807
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_fuel2",
+                    MaxBottom = -2218,
+                    MaxTop =    4324,
+                    MaxRight =  -3115,
+                    MaxLeft =   3193,
+                    Left =  39,
+                    Right = 888,
+                    Top =   24,
+                    Bottom =    906
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_overgrown",
+                    MaxBottom = -2052,
+                    MaxTop =    3236,
+                    MaxRight =  -5393,
+                    MaxLeft =   808,
+                    Left =  17,
+                    Right = 1024,
+                    Top =   0,
+                    Bottom =    847
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_storm",
+                    MaxBottom = -2317,
+                    MaxTop =    2537,
+                    MaxRight =  -2223,
+                    MaxLeft =   2097,
+                    Left =  79,
+                    Right = 932,
+                    Top =   20,
+                    Bottom =    995
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_strike",
+                    MaxBottom = -2504,
+                    MaxTop =    3359,
+                    MaxRight =  -3105,
+                    MaxLeft =   2822,
+                    Left =  40,
+                    Right = 969,
+                    Top =   36,
+                    Bottom =    955
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_trailerpark",
+                    MaxBottom = -2709,
+                    MaxTop =    2027,
+                    MaxRight =  -1719,
+                    MaxLeft =   1666,
+                    Left =  152,
+                    Right = 785,
+                    Top =   50,
+                    Bottom =    931
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_vacant",
+                    MaxBottom = -2089,
+                    MaxTop =    1652,
+                    MaxRight =  -1393,
+                    MaxLeft =   1789,
+                    Left =  122,
+                    Right = 909,
+                    Top =   16,
+                    Bottom =    951
+                },
             };
 
             return this;

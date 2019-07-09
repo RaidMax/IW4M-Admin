@@ -2,7 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
+    <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <Version>0.1.0.0</Version>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

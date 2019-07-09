@@ -28,6 +28,7 @@ namespace LiveRadar.Web.Controllers
             var server = Manager.GetServers().FirstOrDefault();
 
             var map = Plugin.Config.Configuration().Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
+            map.Alias = server.CurrentMap.Alias;
 
             return Json(map);
         }

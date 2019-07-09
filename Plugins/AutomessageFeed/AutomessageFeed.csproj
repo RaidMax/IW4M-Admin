@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>7.1</LangVersion>
+    <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

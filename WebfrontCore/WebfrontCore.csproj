@@ -80,7 +80,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.2.4">
       <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <IncludeAssets>runtime; build; native; contentfiles;</IncludeAssets>
     </PackageReference>
     <PackageReference Update="Microsoft.NETCore.App" Version="2.2.2" />
     <PackageReference Update="Microsoft.AspNetCore" Version="2.2.0" />

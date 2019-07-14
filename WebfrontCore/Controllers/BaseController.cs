@@ -72,7 +72,7 @@ namespace WebfrontCore.Controllers
                     if (clientId > 0)
                     {
                         Client.ClientId = clientId;
-                        Client.NetworkId = User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value.ConvertGuidToLong();
+                        Client.NetworkId = clientId == 1 ? 0 : User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value.ConvertGuidToLong();
                         Client.Level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
                         Client.CurrentAlias = new EFAlias() { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
                         Authorized = Client.ClientId >= 0;

@@ -5,41 +5,47 @@
 <form class="action-form" action="/Action/@Model.Action">
     @foreach (var input in Model.Inputs)
     {
-    <div class="input-group mb-3">
+        string inputType = input.Type ?? "text";
+        string value = input.Value ?? "";
 
-        <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon-@input.Name">@input.Label</span>
-        </div>
-        @{
-            string inputType = input.Type ?? "text";
-            string value = input.Value ?? "";
+        if (input.Type != "hidden")
+        {
+            <div class="input-group mb-3">
 
-            if (inputType == "select")
-            {
-                <select name="@input.Name" class="form-control" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
-                    @foreach (var item in input.Values)
-                    {
-                        <option value="@item.Key">@item.Value</option>
-                    }
-                </select>
-            }
-
-            else if (inputType == "checkbox")
-            {
-                <div class="btn-group-toggle" data-toggle="buttons">
-                    <label class="btn btn-primary active">
-                        <input type="checkbox" name="@input.Name" @(input.Checked ? "checked" : "") autocomplete="off">@input.Label
-                    </label>
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon-@input.Name">@input.Label</span>
                 </div>
-            }
 
-            else
-            {
-                <input type="@inputType" name="@input.Name" value="@value" class="form-control" placeholder="@input.Placeholder" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
-            }
+                @if (inputType == "select")
+                {
+                    <select name="@input.Name" class="form-control" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
+                        @foreach (var item in input.Values)
+                        {
+                            <option value="@item.Key">@item.Value</option>
+                        }
+                    </select>
+                }
+
+                else if (inputType == "checkbox")
+                {
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-primary active">
+                            <input type="checkbox" name="@input.Name" @(input.Checked ? "checked" : "") autocomplete="off">@input.Label
+                        </label>
+                    </div>
+                }
+
+                else
+                {
+                    <input type="@inputType" name="@input.Name" value="@value" class="form-control" placeholder="@input.Placeholder" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
+                }
+
+            </div>
         }
-
-    </div>
+        else
+        {
+            <input type="@inputType" name="@input.Name" value="@value" hidden="hidden">
+        }
     }
     <button type="submit" class="btn btn-block btn-primary">@Model.ActionButtonLabel</button>
 </form>

@@ -167,6 +167,7 @@ namespace SharedLibraryCore.Commands
         public override Task ExecuteAsync(GameEvent E)
         {
             E.Owner.Broadcast($"{(E.Owner.GameName == Server.Game.IW4 ? "^:" : "")}{E.Origin.Name} - ^6{E.Data}^7", E.Origin);
+            E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SAY_SUCCESS"]);
             return Task.CompletedTask;
         }
     }

@@ -32,7 +32,9 @@ $(document).ready(function () {
      */
     $('.profile-action').click(function (e) {
         const actionType = $(this).data('action');
-        $.get('/Action/' + actionType + 'Form')
+        const actionId = $(this).data('action-id');
+        const actionIdKey = actionId == undefined ? '' : '?id=' + actionId;
+        $.get('/Action/' + actionType + 'Form' + actionIdKey)
             .done(function (response) {
                 $('#actionModal .modal-message').fadeOut('fast');
                 $('#actionModal .modal-body-content').html(response);

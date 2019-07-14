@@ -203,5 +203,43 @@ namespace WebfrontCore.Controllers
             var state = Manager.TokenAuthenticator.GenerateNextToken(Client.NetworkId);
             return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token, $"{state.RemainingTime} {Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}", Client.ClientId);
         }
+
+        public IActionResult ChatForm(long id)
+        {
+            var info = new ActionInfo()
+            {
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_SUBMIT_MESSAGE"],
+                Name = "Chat",
+                Inputs = new List<InputInfo>
+                {
+                    new InputInfo()
+                    {
+                        Name = "message",
+                        Type = "text",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_MESSAGE"]
+                    },
+                    new InputInfo()
+                    {
+                        Name = "id",
+                        Value = id.ToString(),
+                        Type = "hidden"
+                    }
+                },
+                Action = "ChatAsync"
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> ChatAsync(long id, string message)
+        {
+            var server = Manager.GetServers().First(_server => _server.EndPoint == id);
+
+            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            {
+                serverId = server.EndPoint,
+                command = $"!say {message}"
+            }));
+        }
     }
 }

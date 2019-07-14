@@ -53,7 +53,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StatsWeb", "Plugins\Web\Sta
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomessageFeed", "Plugins\AutomessageFeed\AutomessageFeed.csproj", "{F5815359-CFC7-44B4-9A3B-C04BACAD5836}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiveRadar", "Plugins\LiveRadar\LiveRadar.csproj", "{00A1FED2-2254-4AF7-A5DB-2357FA7C88CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiveRadar", "Plugins\LiveRadar\LiveRadar.csproj", "{00A1FED2-2254-4AF7-A5DB-2357FA7C88CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

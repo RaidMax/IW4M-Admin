@@ -241,5 +241,11 @@ namespace WebfrontCore.Controllers
                 command = $"!say {message}"
             }));
         }
+
+        public async Task<IActionResult> RecentClientsForm()
+        {
+            var clients = await Manager.GetClientService().GetRecentClients();
+            return View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
+        }
     }
 }

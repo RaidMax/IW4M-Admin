@@ -1,6 +1,7 @@
 Version 2.4:
 -added "live radar" feature
 -added chat message to server on server list view
+-added recently connected players dropdown option on webfront
 
 Version 2.3:
 -added configuration option to ignore bots

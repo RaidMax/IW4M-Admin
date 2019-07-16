@@ -14,6 +14,7 @@ using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,6 +60,7 @@ namespace IW4MAdmin.Application
         private readonly MetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
         private readonly CancellationTokenSource _tokenSource;
+        private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
 
         private ApplicationManager()
         {
@@ -755,6 +757,17 @@ namespace IW4MAdmin.Application
         public IEventParser GenerateDynamicEventParser()
         {
             return new DynamicEventParser();
+        }
+
+        public async Task<IList<T>> ExecuteSharedDatabaseOperation<T>(string operationName)
+        {
+            var result = await _operationLookup[operationName];
+            return (IList<T>)result;
+        }
+
+        public void RegisterSharedDatabaseOperation(Task<IList> operation, string operationName)
+        {
+            _operationLookup.Add(operationName, operation);
         }
     }
 }

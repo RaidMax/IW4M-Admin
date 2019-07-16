@@ -5,6 +5,7 @@ using SharedLibraryCore.Configuration;
 using System.Reflection;
 using SharedLibraryCore.Database.Models;
 using System.Threading;
+using System.Collections;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -36,6 +37,15 @@ namespace SharedLibraryCore.Interfaces
         IPageList GetPageList();
         IList<IRConParser> AdditionalRConParsers { get; }
         IList<IEventParser> AdditionalEventParsers { get; }
+        /// <summary>
+        /// provides a method to execute database operations by name without exposing the 
+        /// service level methods
+        /// todo: this could be made obsolete by creating a seperate service library with more concrete definitions
+        /// </summary>
+        /// <param name="operationName"></param>
+        /// <returns></returns>
+        Task<IList<T>> ExecuteSharedDatabaseOperation<T>(string operationName);
+        void RegisterSharedDatabaseOperation(Task<IList> operation, string operationName);
         IRConParser GenerateDynamicRConParser();
         IEventParser GenerateDynamicEventParser();
         string Version { get;}

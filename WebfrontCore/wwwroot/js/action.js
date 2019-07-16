@@ -39,6 +39,7 @@ $(document).ready(function () {
                 $('#actionModal .modal-message').fadeOut('fast');
                 $('#actionModal .modal-body-content').html(response);
                 $('#actionModal').modal();
+                $('#actionModal').trigger('action_form_received', actionType);
             })
             .fail(function (jqxhr, textStatus, error) {
                 $('#actionModal .modal-message').text('Error 	— ' + error);
@@ -82,5 +83,21 @@ $(document).ready(function () {
                 }
                 $('#actionModal .modal-message').fadeIn('fast');
             });
+    });
+
+    /*
+     * handle loading of recent clients
+     */
+    $('#actionModal').off('action_form_received');
+    $('#actionModal').on('action_form_received', function (e, actionType) {
+        if (actionType == 'RecentClients') {
+            const ipAddresses = $('.client-location-flag');
+            $.each(ipAddresses, function (index, address) {
+                $.get('https://ip2c.org/' + $(address).data('ip'), function (result) {
+                    const countryCode = result.split(';')[1].toLowerCase();
+                    $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+                });
+            });
+        }
     });
 });

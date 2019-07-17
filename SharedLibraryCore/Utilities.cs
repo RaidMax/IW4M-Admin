@@ -500,7 +500,7 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static PenaltyType[] LinkedPenaltyTypes()
         {
-            return new PenaltyType[]
+            return new[]
             {
                 PenaltyType.Ban,
                 PenaltyType.Unban,

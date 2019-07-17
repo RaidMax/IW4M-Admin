@@ -15,8 +15,8 @@
     string[] getLinkedPropertyName(System.Reflection.PropertyInfo info)
     {
         var test = (info.GetCustomAttributes(false)
-             .Where(_attr => _attr.GetType() == typeof(ConfiguratinLinked))
-             .FirstOrDefault() as ConfiguratinLinked);
+             .Where(_attr => _attr.GetType() == typeof(ConfigurationLinked))
+             .FirstOrDefault() as ConfigurationLinked);
 
         return test?.LinkedPropertyNames ?? new string[0];
     }

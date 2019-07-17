@@ -6,8 +6,8 @@ init()
 {
 	SetDvarIfUninitialized("sv_customcallbacks", true);
 	SetDvarIfUninitialized("sv_framewaittime", 0.05);
-	SetDvarIfUninitialized("sv_additionalwaittime", 0.05);
-	SetDvarIfUninitialized("sv_maxstoredframes", 3);
+	SetDvarIfUninitialized("sv_additionalwaittime", 0.1);
+	SetDvarIfUninitialized("sv_maxstoredframes", 4);
 	
 	level thread onPlayerConnect();
 	

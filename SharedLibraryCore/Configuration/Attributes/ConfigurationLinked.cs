@@ -3,11 +3,11 @@
 namespace SharedLibraryCore.Configuration.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = false)]
-    public class ConfiguratinLinked : Attribute
+    public class ConfigurationLinked : Attribute
     {
         public string[] LinkedPropertyNames { get; set; }
 
-        public ConfiguratinLinked(params string[] linkedPropertyNames)
+        public ConfigurationLinked(params string[] linkedPropertyNames)
         {
             LinkedPropertyNames = linkedPropertyNames;
         }

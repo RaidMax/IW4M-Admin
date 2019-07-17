@@ -55,7 +55,7 @@ namespace SharedLibraryCore.RCon
         /// </summary>
         public static readonly int FloodProtectionInterval = 650;
         /// <summary>
-        /// how mant failed connection attempts before aborting connection
+        /// how many failed connection attempts before aborting connection
         /// </summary>
         public static readonly int AllowedConnectionFails = 3;
     }

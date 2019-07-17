@@ -14,9 +14,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             float X = vector.X >= 0 ? vector.X : 360.0f + vector.X;
             float Y = vector.Y >= 0 ? vector.Y : 360.0f + vector.Y;
-            float Z = vector.Z >= 0 ? vector.Z : 360.0f + vector.Z;
 
-            return new Vector3(Y, X, Z);
+            return new Vector3(Y, X, vector.Z);
         }
 
         public static float ToRadians(this float value) => (float)Math.PI * value / 180.0f;

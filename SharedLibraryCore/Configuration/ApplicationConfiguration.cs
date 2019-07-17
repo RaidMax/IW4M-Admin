@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Configuration
     {
 
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
-        [ConfiguratinLinked("WebfrontBindUrl", "ManualWebfrontUrl")]
+        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl")]
         public bool EnableWebFront { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BIND_URL")]
         public string WebfrontBindUrl { get; set; }
@@ -27,14 +27,14 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_IGNORE_BOTS")]
         public bool IgnoreBots { get; set; }
 
-        [ConfiguratinLinked("CustomSayName")]
+        [ConfigurationLinked("CustomSayName")]
         [LocalizedDisplayName("SETUP_ENABLE_CUSTOMSAY")]
         public bool EnableCustomSayName { get; set; }
         [LocalizedDisplayName("SETUP_SAY_NAME")]
         public string CustomSayName { get; set; }
 
         [LocalizedDisplayName("SETUP_DISPLAY_SOCIAL")]
-        [ConfiguratinLinked("SocialLinkAddress", "SocialLinkTitle")]
+        [ConfigurationLinked("SocialLinkAddress", "SocialLinkTitle")]
         public bool EnableSocialLink { get; set; }
         [LocalizedDisplayName("SETUP_SOCIAL_LINK")]
         public string SocialLinkAddress { get; set; }
@@ -42,19 +42,19 @@ namespace SharedLibraryCore.Configuration
         public string SocialLinkTitle { get; set; }
 
         [LocalizedDisplayName("SETUP_USE_CUSTOMENCODING")]
-        [ConfiguratinLinked("CustomParserEncoding")]
+        [ConfigurationLinked("CustomParserEncoding")]
         public bool EnableCustomParserEncoding { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENCODING")]
         public string CustomParserEncoding { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_WHITELIST")]
-        [ConfiguratinLinked("WebfrontConnectionWhitelist")]
+        [ConfigurationLinked("WebfrontConnectionWhitelist")]
         public bool EnableWebfrontConnectionWhitelist { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_WHITELIST_LIST")]
         public List<string> WebfrontConnectionWhitelist { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
-        [ConfiguratinLinked("CustomLocale")]
+        [ConfigurationLinked("CustomLocale")]
         public bool EnableCustomLocale { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         public string CustomLocale { get; set; }

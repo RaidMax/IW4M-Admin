@@ -17,10 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Web\wwwroot\images\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
   </ItemGroup>
 
@@ -29,7 +25,7 @@
   </Target>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="xcopy /S /E /H /Y /I &quot;$(ProjectDir)Web\Views\LiveRadar&quot; &quot;$(SolutionDir)WebfrontCore\Views\Plugins\Radar&quot;&#xD;&#xA;xcopy /S /E /H /Y /I &quot;$(ProjectDir)Web\wwwroot\images&quot; &quot;$(SolutionDir)WebfrontCore\wwwroot\images\radar&quot;" />
+    <Exec Command="xcopy /S /E /H /Y /I &quot;$(ProjectDir)Views\Radar&quot; &quot;$(SolutionDir)WebfrontCore\Views\Plugins\Radar&quot;&#xD;&#xA;xcopy /S /E /H /Y /I &quot;$(ProjectDir)wwwroot\images&quot; &quot;$(SolutionDir)WebfrontCore\wwwroot\images\radar&quot;" />
   </Target>
 
 </Project>

@@ -226,6 +226,7 @@ bootstrap-custom.css
 **/Master/dev_env
 /WebfrontCore/Views/Plugins/*
 /WebfrontCore/wwwroot/**/dds
+/WebfrontCore/wwwroot/images/radar/*
 
 /DiscordWebhook/env
 /DiscordWebhook/config.dev.json

@@ -289,3 +289,11 @@ form *, select {
 .hide {
     display: none;
 }
+
+.client-location-flag {
+    width: 3rem;
+    height: 1.5rem;
+    background-image: url('/images/radar/hud_weapons/hud_neutral.png');
+    background-size: contain;
+    background-repeat: no-repeat
+}

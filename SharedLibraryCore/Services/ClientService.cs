@@ -109,7 +109,7 @@ namespace SharedLibraryCore.Services
             var aliasSql = iqAliases.ToSql();
 #endif
             var aliases = await iqAliases.ToListAsync();
-          
+
             // see if they have a matching IP + Name but new NetworkId
             var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
             bool hasExactAliasMatch = existingExactAlias != null;
@@ -529,6 +529,32 @@ namespace SharedLibraryCore.Services
             {
                 return await context.Clients
                     .CountAsync();
+            }
+        }
+
+        /// <summary>
+        /// gets the 10 most recently added clients to IW4MAdmin
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IList<PlayerInfo>> GetRecentClients()
+        {
+            using (var context = new DatabaseContext(true))
+            {
+                var iqClients = context.Clients
+                    .Where(_client => _client.CurrentAlias.IPAddress != null)
+                    .Select(_client => new PlayerInfo()
+                    {
+                        ClientId = _client.ClientId,
+                        Name = _client.CurrentAlias.Name,
+                        IPAddress = _client.CurrentAlias.IPAddress.ConvertIPtoString(),
+                        LastConnection = _client.LastConnection
+                    })
+                    .OrderByDescending(_client => _client.ClientId)
+                    .Take(10);
+#if DEBUG
+                var sql = iqClients.ToSql();
+#endif
+                return await iqClients.ToListAsync();
             }
         }
         #endregion

@@ -55,7 +55,7 @@ $('.server-history-row').each(function (index, element) {
     let clientHistory = $(this).data('clienthistory');
     let serverId = $(this).data('serverid');
     let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
-    let color = $(this).data('online') === 'True' ? 'rgba(0, 122, 204, 0.432)' : '#ff6060'
+    let color = $(this).data('online') === 'True' ? 'rgba(0, 122, 204, 0.432)' : '#ff6060';
     let width = $('.server-header').first().width();
     let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color, maxClients);
     historyChart.render();
@@ -89,10 +89,10 @@ function refreshClientActivity() {
     });
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     $('.server-join-button').click(function (e) {
         $(this).children('.server-header-ip-address').show();
     });
-})
+});
 
 setInterval(refreshClientActivity, 2000);

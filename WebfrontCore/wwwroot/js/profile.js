@@ -42,7 +42,7 @@
         showLoader();
         const location = $(this).parent();
         $.get('/Stats/GetAutomatedPenaltyInfoAsync', {
-            'clientId': $(this).data('clientid'),
+            'clientId': $(this).data('clientid')
         })
             .done(function (response) {
                 $('.penalty-info-context').remove();

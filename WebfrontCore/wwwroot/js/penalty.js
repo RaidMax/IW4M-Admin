@@ -1,6 +1,21 @@
 ﻿let offset = 15;
 let isLoading = false;
 
+
+function ScrollHandler(e) {
+    //throttle event:
+    hasScrollBar = true;
+    clearTimeout(_throttleTimer);
+    _throttleTimer = setTimeout(function () {
+
+        //do work
+        if ($window.scrollTop() + $window.height() > $document.height() - 100) {
+            loadMorePenalties();
+        }
+
+    }, _throttleDelay);
+}
+
 function loadMorePenalties() {
     if (isLoading) {
         return false;
@@ -34,7 +49,7 @@ if ($('#penalty_table').length === 1) {
     https://stackoverflow.com/questions/19731730/jquery-js-detect-users-scroll-attempt-without-any-window-overflow-to-scroll
     */
     $('html').bind('mousewheel DOMMouseScroll', function (e) {
-        var delta = (e.originalEvent.wheelDelta || -e.originalEvent.detail);
+        var delta = e.originalEvent.wheelDelta || -e.originalEvent.detail;
 
         if (delta < 0 && !hasScrollBar) {
             loadMorePenalties();
@@ -59,18 +74,4 @@ if ($('#penalty_table').length === 1) {
             loadMorePenalties();
         });
     });
-
-    function ScrollHandler(e) {
-        //throttle event:
-        hasScrollBar = true;
-        clearTimeout(_throttleTimer);
-        _throttleTimer = setTimeout(function () {
-
-            //do work
-            if ($window.scrollTop() + $window.height() > $document.height() - 100) {
-                loadMorePenalties();
-            }
-
-        }, _throttleDelay);
-    }
 }

@@ -33,7 +33,7 @@ $(document).ready(function () {
     $('.profile-action').click(function (e) {
         const actionType = $(this).data('action');
         const actionId = $(this).data('action-id');
-        const actionIdKey = actionId == undefined ? '' : '?id=' + actionId;
+        const actionIdKey = actionId === undefined ? '' : '?id=' + actionId;
         $.get('/Action/' + actionType + 'Form' + actionIdKey)
             .done(function (response) {
                 $('#actionModal .modal-message').fadeOut('fast');
@@ -90,12 +90,12 @@ $(document).ready(function () {
      */
     $('#actionModal').off('action_form_received');
     $('#actionModal').on('action_form_received', function (e, actionType) {
-        if (actionType == 'RecentClients') {
+        if (actionType === 'RecentClients') {
             const ipAddresses = $('.client-location-flag');
             $.each(ipAddresses, function (index, address) {
                 $.get('https://ip2c.org/' + $(address).data('ip'), function (result) {
                     const countryCode = result.split(';')[1].toLowerCase();
-                    if (countryCode != 'zz') {
+                    if (countryCode !== 'zz') {
                         $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
                     }
                 });

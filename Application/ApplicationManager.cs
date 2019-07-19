@@ -27,7 +27,7 @@ namespace IW4MAdmin.Application
 {
     public class ApplicationManager : IManager
     {
-        private ConcurrentBag<Server> _servers;
+        private readonly ConcurrentBag<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
         public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
@@ -46,15 +46,14 @@ namespace IW4MAdmin.Application
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
         static ApplicationManager Instance;
-        List<Command> Commands;
-        readonly List<MessageToken> MessageTokens;
-        ClientService ClientSvc;
+        private readonly List<Command> Commands;
+        private readonly List<MessageToken> MessageTokens;
+        private readonly ClientService ClientSvc;
         readonly AliasService AliasSvc;
         readonly PenaltyService PenaltySvc;
         public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         GameEventHandler Handler;
         readonly IPageList PageList;
-        readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
         private readonly MetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);

@@ -41,6 +41,20 @@ function loadMoreItems() {
     loaderOffset += loadCount;
 }
 
+function ScrollHandler(e) {
+    //throttle event:
+    hasScrollBar = true;
+    clearTimeout(_throttleTimer);
+    _throttleTimer = setTimeout(function () {
+
+        //do work
+        if ($window.scrollTop() + $window.height() > $document.height() - 100) {
+            loadMoreItems();
+        }
+
+    }, _throttleDelay);
+}
+
 function setupListeners() {
     if ($(loaderResponseId).length === 1) {
         /*
@@ -73,21 +87,7 @@ function setupListeners() {
                 if (!isLoaderLoading) {
                     loadMoreItems();
                 }
-            })
+            });
         });
-
-        function ScrollHandler(e) {
-            //throttle event:
-            hasScrollBar = true;
-            clearTimeout(_throttleTimer);
-            _throttleTimer = setTimeout(function () {
-
-                //do work
-                if ($window.scrollTop() + $window.height() > $document.height() - 100) {
-                    loadMoreItems();
-                }
-
-            }, _throttleDelay);
-        }
     }
 }

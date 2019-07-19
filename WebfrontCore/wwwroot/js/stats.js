@@ -39,7 +39,7 @@
             lineThickness: 0,
             tickThickness: 0,
             margin: 0,
-            valueFormatString: ' ',
+            valueFormatString: ' '
         },
         axisY: {
             labelFontSize: 12,

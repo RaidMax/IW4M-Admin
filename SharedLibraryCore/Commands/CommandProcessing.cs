@@ -61,8 +61,7 @@ namespace SharedLibraryCore.Commands
 
                     if (Args[0][0] == '@') // user specifying target by database ID
                     {
-                        int dbID = -1;
-                        int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out dbID);
+                        int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out int dbID);
 
                         var found = await Manager.GetClientService().Get(dbID);
                         if (found != null)

@@ -95,7 +95,9 @@ $(document).ready(function () {
             $.each(ipAddresses, function (index, address) {
                 $.get('https://ip2c.org/' + $(address).data('ip'), function (result) {
                     const countryCode = result.split(';')[1].toLowerCase();
-                    $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+                    if (countryCode != 'zz') {
+                        $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+                    }
                 });
             });
         }

@@ -39,8 +39,6 @@
     <Content Remove="Views\Plugins\Stats\_MessageContext.cshtml" />
     <Content Remove="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
     <Content Remove="Views\Plugins\_ViewImports.cshtml" />
-    <Content Remove="wwwroot\css\bootstrap-custom.css" />
-    <Content Remove="wwwroot\css\bootstrap-custom.min.css" />
   </ItemGroup>
 
   <ItemGroup>

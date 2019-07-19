@@ -11,8 +11,21 @@
         background-size: 1.5rem 1.5rem;
     }
 </style>
+<div class="row p-0 ml-auto mr-auto mb-4">
+    <div class="col-12 col-xl-10 p-0 ml-auto mr-auto p-0 pl-lg-3 pr-lg-3 ">
+        <ul class="nav nav-tabs border-top border-bottom nav-fill" role="tablist">
+            @foreach (SharedLibraryCore.Dtos.ServerInfo server in ViewBag.Servers)
+            {
+                <li class="nav-item">
+                    <a asp-controller="Radar" asp-action="Index" asp-route-serverId="@server.ID" class="nav-link @(server.ID == ViewBag.ActiveServerId ? "active": "")" aria-selected="@(server.ID == ViewBag.ActiveServerId ? "true": "false")">@server.Name</a>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
 <div class="row p-0 ml-auto mr-auto col-12 col-xl-10">
-    <div class="p-0 pl-lg-3 pr-lg-3 m-0 col-lg-3 col-12 text-lg-right text-center player-data-left" style="opacity: 0">
+    <div class="p-0 pl-lg-3 pr-lg-3 m-0 col-lg-3 col-12 text-lg-right text-center player-data-left" style="opacity: 0;">
     </div>
     <div class="pl-0 pr-0 pl-lg-3 pr-lg-3 col-lg-6 col-12 pb-4">
         <div id="map_name" class="h4 text-center pb-2 pt-2 mb-0 bg-primary">&mdash;</div>
@@ -21,12 +34,12 @@
         </div>
     </div>
 
-    <div class="p-0 pl-lg-3 pr-lg-3 m-0 col-lg-3 col-12 text-lg-left text-center player-data-right" style="opacity: 0">
+    <div class="p-0 pl-lg-3 pr-lg-3 m-0 col-lg-3 col-12 text-lg-left text-center player-data-right" style="opacity: 0;">
     </div>
 </div>
 
 <!-- images used by canvas -->
-<img class="hide" id="hud_death" src="~/images/death.png" />
+<img class="hide" id="hud_death" src="~/images/radar/death.png" />
 
 
 @section scripts {
@@ -263,7 +276,7 @@
                                </div>
                                 <div class="player-stat-icon" style="background-image:url('/images/radar/kills.png')"></div>
                                 <div class="pr-2">${player.kills}</div>
-                                <div class="player-stat-icon" style="background-image:url('/images/hud_weapons/hud_death.png')"></div>
+                                <div class="player-stat-icon" style="background-image:url('/images/radar/death.png')"></div>
                                 <div class="pr-3">${player.deaths}</div>
                                 <span class="align-self-center oi oi-target pr-1"></span>
                                 <div class="pr-3 ">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>

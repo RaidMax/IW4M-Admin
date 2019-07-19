@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+using SharedLibraryCore.Dtos;
 using System.Linq;
-using System.Text;
 using WebfrontCore.Controllers;
 
 namespace LiveRadar.Web.Controllers
@@ -17,32 +15,50 @@ namespace LiveRadar.Web.Controllers
         };
 
         [HttpGet]
-        public IActionResult Index()
+        [Route("Radar/{serverId}")]
+        public IActionResult Index(long? serverId = null)
         {
             ViewBag.IsFluid = true;
+            ViewBag.Title = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
+            ViewBag.ActiveServerId = serverId ?? Manager.GetServers().FirstOrDefault()?.EndPoint;
+            ViewBag.Servers = Manager.GetServers().Select(_server => new ServerInfo()
+            {
+                Name = _server.Hostname,
+                ID = _server.EndPoint
+            });
+
             return View();
         }
 
+        [HttpGet]
+        [Route("Radar/{serverId}/Map")]
         public IActionResult Map(long? serverId = null)
         {
-            var server = Manager.GetServers().FirstOrDefault();
-
+            var server = serverId == null ? Manager.GetServers().FirstOrDefault() : Manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
             var map = Plugin.Config.Configuration().Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
-            map.Alias = server.CurrentMap.Alias;
 
-            return Json(map);
+            if (map != null)
+            {
+                map.Alias = server.CurrentMap.Alias;
+                return Json(map);
+            }
+
+            // occurs if we don't recognize the map
+            return StatusCode(500);
         }
 
         [HttpGet]
+        [Route("Radar/{serverId}/Data")]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Data(long? serverId = null)
         {
-            var server = serverId == null ? Manager.GetServers()[0] : Manager.GetServers().First(_server => _server.GetHashCode() == serverId);
+            var server = serverId == null ? Manager.GetServers()[0] : Manager.GetServers().First(_server => _server.EndPoint == serverId);
             var radarInfo = server.GetClientsAsList().Select(_client => _client.GetAdditionalProperty<RadarEvent>("LiveRadar")).ToList();
             return Json(radarInfo);
         }
 
         [HttpGet]
+        [Route("Radar/Update")]
         public IActionResult Update(string payload)
         {
             var radarUpdate = RadarEvent.Parse(payload);

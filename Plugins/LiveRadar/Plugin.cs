@@ -47,6 +47,8 @@ namespace LiveRadar
                 Config.Set((LiveRadarConfiguration)new LiveRadarConfiguration().Generate());
                 await Config.Save();
             }
+
+            manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
         }
 
         public Task OnTickAsync(Server S)

@@ -1,8 +1,5 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Interfaces;
-using System;
+﻿using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
-using System.Text;
 
 namespace LiveRadar.Configuration
 {
@@ -36,8 +33,7 @@ namespace LiveRadar.Configuration
                     MaxRight = -225,
                     MaxLeft = 1809,
                     MaxTop = 1773,
-                    MaxBottom = -469,
-                    ViewPositionRotation = 180
+                    MaxBottom = -469
                 },
 
                 new MapInfo()
@@ -61,10 +57,10 @@ namespace LiveRadar.Configuration
                     Bottom = 999,
                     Left = 173,
                     Right = 942,
-                    MaxTop = 2103,  // x max
-                    MaxBottom = -5077, //x min
-                    MaxLeft = 4437, // ymax
-                    MaxRight = -1240, // y min
+                    MaxTop = 2103,
+                    MaxBottom = -5077,
+                    MaxLeft = 4437,
+                    MaxRight = -1240,
                     Rotation = 143,
                     CenterX = -1440,
                     CenterY = 1920,

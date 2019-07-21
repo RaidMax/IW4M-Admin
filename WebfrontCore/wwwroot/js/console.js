@@ -35,7 +35,7 @@ $(document).ready(function () {
     });
 
     $(document).keydown(function (event) {
-        const keyCode = (event.keyCode ? event.keyCode : event.which);
+        const keyCode = event.keyCode ? event.keyCode : event.which;
         if (keyCode === 13) {
             executeCommand();
         }

@@ -30,7 +30,11 @@ namespace SharedLibraryCore
             /// <summary>
             /// client is doing too much of something
             /// </summary>
-            Throttle
+            Throttle,
+            /// <summary>
+            /// the event timed out before completion
+            /// </summary>
+            Timeout
         }
 
         public enum EventType
@@ -225,7 +229,9 @@ namespace SharedLibraryCore
         {
             return Task.Run(() =>
             {
-                OnProcessed.Wait(timeSpan, token);
+                bool processed = OnProcessed.Wait(timeSpan, token);
+                // this let's us know if the the action timed out
+                FailReason = FailReason == EventFailReason.None & !processed ? EventFailReason.Timeout : FailReason; 
                 return this;
             });
         }

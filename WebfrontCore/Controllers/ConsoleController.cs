@@ -51,12 +51,13 @@ namespace WebfrontCore.Controllers
             };
 
             Manager.GetEventHandler().AddEvent(remoteEvent);
-            List<CommandResponseInfo> response;
+            List<CommandResponseInfo> response = null;
 
             try
             {
+                var completedEvent = await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
                 // wait for the event to process
-                if (!(await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken)).Failed)
+                if (!completedEvent.Failed)
                 {
                     response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
 
@@ -67,16 +68,16 @@ namespace WebfrontCore.Controllers
                     }
                 }
 
-                else
+                else if (completedEvent.FailReason == GameEvent.EventFailReason.Timeout)
                 {
                     response = new List<CommandResponseInfo>()
-                {
-                    new CommandResponseInfo()
                     {
-                        ClientId = client.ClientId,
-                        Response = Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]
-                    }
-                };
+                        new CommandResponseInfo()
+                        {
+                            ClientId = client.ClientId,
+                            Response = Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]
+                        }
+                    };
                 }
             }
 

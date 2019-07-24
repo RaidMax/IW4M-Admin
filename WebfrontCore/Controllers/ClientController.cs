@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.Database.Models.EFPenalty;
 
 namespace WebfrontCore.Controllers
@@ -25,11 +26,20 @@ namespace WebfrontCore.Controllers
             var activePenalties = (await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress))
                 .Where(_penalty => _penalty.Type != PenaltyType.Flag);
 
+            int displayLevelInt = (int)client.Level;
+            string displayLevel = client.Level.ToLocalizedLevelName();
+
+            if (!Authorized && client.Level.ShouldHideLevel())
+            {
+                displayLevelInt = (int)Permission.User;
+                displayLevel = Permission.User.ToLocalizedLevelName();
+            }
+
             var clientDto = new PlayerInfo()
             {
                 Name = client.Name,
-                Level = client.Level.ToLocalizedLevelName(),
-                LevelInt = (int)client.Level,
+                Level = displayLevel,
+                LevelInt = displayLevelInt,
                 ClientId = client.ClientId,
                 IPAddress = client.IPAddressString,
                 NetworkId = client.NetworkId,
@@ -129,6 +139,15 @@ namespace WebfrontCore.Controllers
             }
 
             var clientsDto = await Manager.GetClientService().FindClientsByIdentifier(clientName);
+            
+            foreach(var client in clientsDto)
+            {
+                if (!Authorized && ((Permission)Enum.Parse(typeof(Permission), client.Level)).ShouldHideLevel())
+                {
+                    client.LevelInt = (int)Permission.User;
+                    client.Level = Permission.User.ToLocalizedLevelName();
+                }
+            }
 
             ViewBag.Title = $"{clientsDto.Count} {Localization["WEBFRONT_CLIENT_SEARCH_MATCHING"]} \"{clientName}\"";
             return View("Find/Index", clientsDto);

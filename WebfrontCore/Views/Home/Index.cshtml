@@ -1,4 +1,25 @@
-﻿@await Component.InvokeAsync("ServerList")
+﻿@model SharedLibraryCore.Dtos.IW4MAdminInfo
+@{ 
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+    string formatTranslation(string translationKey, params object[] values)
+    {
+        var split = loc[translationKey].Split("::");
+        return $"<span class='font-weight-bold text-primary'>{SharedLibraryCore.Utilities.FormatExt(split[0], values)}</span><span>{split[1]}</span>";
+    }
+}
+<div class="row mb-4 border-bottom border-top pt-3 pb-3 bg-dark">
+    <div class="col-xl-4 col-12">
+        <div class="text-muted text-center text-xl-left">@Html.Raw(formatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</div>
+    </div>
+    <div class="col-xl-4 col-12">
+        <div class="text-muted text-center">@Html.Raw(formatTranslation("WEBFRONT_HOME_RECENT_CLIENTS", Model.RecentClientCount.ToString("#,##0")))</div>
+    </div>
+    <div class="col-xl-4 col-12">
+        <div class="text-muted text-center text-xl-right">@Html.Raw(formatTranslation("WEBFRONT_HOME_TOTAL_CLIENTS", Model.TotalClientCount.ToString("#,##0")))</div>
+    </div>
+</div>
+
+@await Component.InvokeAsync("ServerList")
 
 @section scripts {
     <environment include="Development">

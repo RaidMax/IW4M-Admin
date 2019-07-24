@@ -533,6 +533,23 @@ namespace SharedLibraryCore.Services
         }
 
         /// <summary>
+        /// Returns the number of clients seen today
+        /// </summary>
+        /// <returns></returns>
+        public async Task<int> GetRecentClientCount()
+        {
+            using (var context = new DatabaseContext(true))
+            {
+                var startOfPeriod = DateTime.UtcNow.AddHours(-24);
+                var iqQuery = context.Clients.Where(_client => _client.LastConnection >= startOfPeriod);
+#if DEBUG
+                string sql = iqQuery.ToSql();
+#endif
+                return await iqQuery.CountAsync();
+            }
+        }
+
+        /// <summary>
         /// gets the 10 most recently added clients to IW4MAdmin
         /// </summary>
         /// <returns></returns>

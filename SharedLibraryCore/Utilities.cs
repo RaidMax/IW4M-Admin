@@ -16,6 +16,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.Database.Models.EFPenalty;
 using static SharedLibraryCore.Server;
 
@@ -833,6 +834,8 @@ namespace SharedLibraryCore
 
             return new[] { deltaX, deltaY };
         }
+
+        public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
 
 #if DEBUG == true
 

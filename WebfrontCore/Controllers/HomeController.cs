@@ -1,17 +1,28 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore.Dtos;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers
 {
     public class HomeController : BaseController
     {
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             ViewBag.Description = "IW4MAdmin is a complete server administration tool for IW4x.";
             ViewBag.Title = Localization["WEBFRONT_HOME_TITLE"];
             ViewBag.Keywords = "IW4MAdmin, server, administration, IW4x, MW2, Modern Warfare 2";
 
-            return View();
+            var model = new IW4MAdminInfo()
+            {
+                TotalAvailableClientSlots = Manager.GetServers().Sum(_server => _server.MaxClients),
+                TotalOccupiedClientSlots = Manager.GetActiveClients().Count,
+                TotalClientCount = await Manager.GetClientService().GetTotalClientsAsync(),
+                RecentClientCount = await Manager.GetClientService().GetRecentClientCount()
+            };
+
+            return View(model);
         }
 
         public IActionResult Error()

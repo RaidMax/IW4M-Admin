@@ -41,7 +41,7 @@ function loadMoreItems() {
     loaderOffset += loadCount;
 }
 
-function ScrollHandler(e) {
+function _ScrollHandler(e) {
     //throttle event:
     hasScrollBar = true;
     clearTimeout(_throttleTimer);
@@ -81,8 +81,8 @@ function setupListeners() {
 
         $document.ready(function () {
             $window
-                .off('scroll', ScrollHandler)
-                .on('scroll', ScrollHandler);
+                .off('scroll', _ScrollHandler)
+                .on('scroll', _ScrollHandler);
             $('.loader-load-more:not(.disabled)').click(function (e) {
                 if (!isLoaderLoading) {
                     loadMoreItems();

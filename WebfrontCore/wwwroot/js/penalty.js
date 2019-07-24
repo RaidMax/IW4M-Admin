@@ -2,7 +2,7 @@
 let isLoading = false;
 
 
-function ScrollHandler(e) {
+function PenaltyScrollHandler(e) {
     //throttle event:
     hasScrollBar = true;
     clearTimeout(_throttleTimer);
@@ -67,8 +67,8 @@ if ($('#penalty_table').length === 1) {
 
     $document.ready(function () {
         $window
-            .off('scroll', ScrollHandler)
-            .on('scroll', ScrollHandler);
+            .off('scroll', PenaltyScrollHandle)
+            .on('scroll', PenaltyScrollHandle);
 
         $('#load_penalties_button').click(function () {
             loadMorePenalties();

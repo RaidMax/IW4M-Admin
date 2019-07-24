@@ -45,7 +45,6 @@ namespace WebfrontCore.Controllers
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
-                // todo: this seems like it's pulling unnecessary info from LINQ to entities.
                 var iqPenalties = ctx.Penalties
                     .AsNoTracking()
                     .Where(p => p.Type == PenaltyType.Ban && p.Active)

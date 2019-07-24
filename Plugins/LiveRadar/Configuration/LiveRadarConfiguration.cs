@@ -23,6 +23,7 @@ namespace LiveRadar.Configuration
                     Bottom =  930, // yxmax
                     Top =  44 // pymin
                 },
+
                 new MapInfo()
                 {
                     Name = "mp_rust",
@@ -38,15 +39,28 @@ namespace LiveRadar.Configuration
 
                 new MapInfo()
                 {
+                    Name = "mp_terminal",
+                    Top = 174,
+                    Bottom = 846,
+                    Left = 18,
+                    Right = 14,
+                    MaxTop = 2929,
+                    MaxBottom = -513,
+                    MaxLeft = 7520,
+                    MaxRight = 2447
+                },
+
+                new MapInfo()
+                {
                     Name = "mp_subbase",
-                    MaxLeft =  1841, // ymax
-                    MaxRight =  -3817, // ymin
-                    MaxBottom =  -1585, // xmin
-                    MaxTop =  2593, // xmax
-                    Left =  18, // pxmin
-                    Right =  968, // pxmax
-                    Bottom =  864, // pymax
-                    Top =  160, // pymin
+                    MaxLeft =  1841,
+                    MaxRight =  -3817,
+                    MaxBottom =  -1585,
+                    MaxTop =  2593,
+                    Left =  18,
+                    Right =  968,
+                    Bottom =  864,
+                    Top =  160,
                     ViewPositionRotation = 180,
                 },
 

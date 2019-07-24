@@ -2,6 +2,8 @@ Version 2.4:
 -added "live radar" feature
 -added chat message to server on server list view
 -added recently connected players dropdown option on webfront
+-added "dashboard" to home view with quick stats
+-hid flagged status of users on webfront unless logged in
 
 Version 2.3:
 -added configuration option to ignore bots

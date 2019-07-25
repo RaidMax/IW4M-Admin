@@ -6,7 +6,7 @@ namespace IW4MAdmin.Application.API.GameLogServer
     [Header("User-Agent", "IW4MAdmin-RestEase")]
     public interface IGameLogServer
     {
-        [Get("log/{path}")]
-        Task<LogInfo> Log([Path] string path);
+        [Get("log/{path}/{key}")]
+        Task<LogInfo> Log([Path] string path, [Path] string key);
     }
 }

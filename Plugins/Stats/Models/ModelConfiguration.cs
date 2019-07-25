@@ -21,13 +21,7 @@ namespace Stats.Models
                 .HasColumnName("EFClientStatistics_ServerId");
 
             builder.Entity<EFRating>()
-                .HasIndex(p => p.Performance);
-
-            builder.Entity<EFRating>()
-                .HasIndex(p => p.Ranking);
-
-            builder.Entity<EFRating>()
-                .HasIndex(p => p.When);
+                .HasIndex(p => new { p.Performance, p.Ranking, p.When });
 
             builder.Entity<EFClientMessage>()
                 .HasIndex(p => p.TimeSent);

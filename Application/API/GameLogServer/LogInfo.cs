@@ -13,5 +13,7 @@ namespace IW4MAdmin.Application.API.GameLogServer
         public int Length { get; set; }
         [JsonProperty("data")]
         public string Data { get; set; }
+        [JsonProperty("next_key")]
+        public string NextKey { get; set; }
     }
 }

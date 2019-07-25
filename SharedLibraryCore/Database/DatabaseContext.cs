@@ -1,5 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -19,6 +21,11 @@ namespace SharedLibraryCore.Database
         public DbSet<EFPenalty> Penalties { get; set; }
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
+
+        [Obsolete]
+        private static readonly ILoggerFactory _loggerFactory = new LoggerFactory(new[] {
+              new ConsoleLoggerProvider((category, level) => level == LogLevel.Information, true)
+        });
 
         static string _ConnectionString;
         static string _provider;
@@ -103,6 +110,13 @@ namespace SharedLibraryCore.Database
                         break;
                 }
             }
+
+#if DEBUG
+#pragma warning disable CS0612 // Type or member is obsolete
+            optionsBuilder.UseLoggerFactory(_loggerFactory)
+#pragma warning restore CS0612 // Type or member is obsolete
+                .EnableSensitiveDataLogging();
+#endif
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

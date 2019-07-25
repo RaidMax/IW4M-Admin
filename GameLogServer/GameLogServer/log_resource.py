@@ -3,12 +3,14 @@ from GameLogServer.log_reader import reader
 from base64 import urlsafe_b64decode
 
 class LogResource(Resource):
-    def get(self, path):
+    def get(self, path, retrieval_key):
         path = urlsafe_b64decode(path).decode('utf-8')
-        log_info = reader.read_file(path)
+        log_info = reader.read_file(path, retrieval_key)
+        content = log_info['content']
 
         return {
-            'success' : log_info is not False,
-            'length':  0 if log_info is False else len(log_info),
-            'data': log_info
+            'success' : content is not None,
+            'length':  0 if content is None else len(content),
+            'data': content,
+            'next_key': log_info['next_key']
         }

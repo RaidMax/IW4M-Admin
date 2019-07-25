@@ -25,7 +25,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>

@@ -10,5 +10,5 @@ def init():
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
     api = Api(app)
-    api.add_resource(LogResource, '/log/<string:path>')
+    api.add_resource(LogResource, '/log/<string:path>/<string:retrieval_key>')
     #api.add_resource(RestartResource, '/restart')

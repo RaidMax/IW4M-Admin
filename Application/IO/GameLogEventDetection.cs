@@ -42,8 +42,7 @@ namespace IW4MAdmin.Application.IO
                     catch (Exception e)
                     {
                         _server.Logger.WriteWarning($"Failed to update log event for {_server.EndPoint}");
-                        _server.Logger.WriteDebug($"Exception: {e.Message}");
-                        _server.Logger.WriteDebug($"StackTrace: {e.StackTrace}");
+                        _server.Logger.WriteDebug(e.GetExceptionInfo());
                     }
                 }
                 

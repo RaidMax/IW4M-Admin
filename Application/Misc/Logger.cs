@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
@@ -54,9 +55,9 @@ namespace IW4MAdmin.Application
             }
         }
 
-        void Write(string msg, LogType type)
+        async Task Write(string msg, LogType type)
         {
-            OnLogWriting.Wait();
+            await OnLogWriting.WaitAsync();
 
             string stringType = type.ToString();
 
@@ -73,14 +74,14 @@ namespace IW4MAdmin.Application
 #if DEBUG
                 // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
                 Console.WriteLine(LogLine);
-                File.AppendAllText(FileName, LogLine + Environment.NewLine);
-                Debug.WriteLine(msg);
+                await File.AppendAllTextAsync(FileName, $"{LogLine}{Environment.NewLine}");
+                //Debug.WriteLine(msg);
 #else
                 if (type == LogType.Error || type == LogType.Verbose)
                 {
                     Console.WriteLine(LogLine);
                 }
-                File.AppendAllText(FileName, $"{LogLine}{Environment.NewLine}");
+                await File.AppendAllTextAsync(FileName, $"{LogLine}{Environment.NewLine}");
 #endif
             }
 

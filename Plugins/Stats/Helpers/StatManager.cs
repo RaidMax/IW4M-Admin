@@ -858,7 +858,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 #region INDIVIDUAL_SERVER_PERFORMANCE
                 // get the client ranking for the current server
-                int individualClientRanking = await ctx.Set<EFRating>()
+                 int individualClientRanking = await ctx.Set<EFRating>()
                     .Where(GetRankingFunc(clientStats.ServerId))
                     // ignore themselves in the query
                     .Where(c => c.RatingHistory.ClientId != client.ClientId)

@@ -20,6 +20,7 @@ namespace IW4MAdmin.Application.IO
         readonly IGameLogServer Api;
         readonly string logPath;
         private bool? ignoreBots;
+        private string lastKey = "next";
 
         public GameLogReaderHttp(Uri gameLogServerUri, string logPath, IEventParser parser)
         {
@@ -30,12 +31,12 @@ namespace IW4MAdmin.Application.IO
 
         public long Length => -1;
 
-        public int UpdateInterval => 550;
+        public int UpdateInterval => 250;
 
         public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
 #if DEBUG == true
-            server.Logger.WriteDebug($"Begin reading from http log");
+            server.Logger.WriteDebug($"Begin reading from http log at {DateTime.Now.Millisecond}");
 #endif
 
             if (!ignoreBots.HasValue)
@@ -45,72 +46,79 @@ namespace IW4MAdmin.Application.IO
 
             var events = new List<GameEvent>();
             string b64Path = logPath;
-            var response = await Api.Log(b64Path);
+            var response = await Api.Log(b64Path, lastKey);
+            lastKey = response.NextKey;
 
-            if (!response.Success)
+            if (!response.Success && string.IsNullOrEmpty(lastKey))
             {
                 server.Logger.WriteError($"Could not get log server info of {logPath}/{b64Path} ({server.LogPath})");
                 return events;
             }
 
-            // parse each line
-            foreach (string eventLine in response.Data.Split(Environment.NewLine))
+            else if (response.Data != null)
             {
-                if (eventLine.Length > 0)
+                // parse each line
+                foreach (string eventLine in response.Data.Split(Environment.NewLine))
                 {
-                    try
+                    if (eventLine.Length > 0)
                     {
-                        var gameEvent = Parser.GenerateGameEvent(eventLine);
-                        // we don't want to add the event if ignoreBots is on and the event comes from a bot
-                        if (!ignoreBots.Value || (ignoreBots.Value && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
+                        try
                         {
-                            gameEvent.Owner = server;
-
-                            if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
+                            var gameEvent = Parser.GenerateGameEvent(eventLine);
+                            // we don't want to add the event if ignoreBots is on and the event comes from a bot
+                            if (!ignoreBots.Value || (ignoreBots.Value && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                             {
-                                gameEvent.Origin = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
-                            }
+                                gameEvent.Owner = server;
 
-                            if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
-                            {
-                                gameEvent.Target = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
-                            }
+                                if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
+                                {
+                                    gameEvent.Origin = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
+                                }
 
-                            if (gameEvent.Origin != null)
-                            {
-                                gameEvent.Origin.CurrentServer = server;
-                            }
+                                if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
+                                {
+                                    gameEvent.Target = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
+                                }
 
-                            if (gameEvent.Target != null)
-                            {
-                                gameEvent.Target.CurrentServer = server;
-                            }
+                                if (gameEvent.Origin != null)
+                                {
+                                    gameEvent.Origin.CurrentServer = server;
+                                }
 
-                            events.Add(gameEvent);
-                        }
+                                if (gameEvent.Target != null)
+                                {
+                                    gameEvent.Target.CurrentServer = server;
+                                }
+
+                                events.Add(gameEvent);
+                            }
 #if DEBUG == true
-                        server.Logger.WriteDebug($"Parsed event with id {gameEvent.Id}  from http");
+                            server.Logger.WriteDebug($"Parsed event with id {gameEvent.Id}  from http");
 #endif
-                    }
+                        }
 
-                    catch (InvalidOperationException)
-                    {
-                        if (!ignoreBots.Value)
+                        catch (InvalidOperationException)
                         {
-                            server.Logger.WriteWarning("Could not find client in client list when parsing event line");
+                            if (!ignoreBots.Value)
+                            {
+                                server.Logger.WriteWarning("Could not find client in client list when parsing event line");
+                                server.Logger.WriteDebug(eventLine);
+                            }
+                        }
+
+                        catch (Exception e)
+                        {
+                            server.Logger.WriteWarning("Could not properly parse remote event line");
+                            server.Logger.WriteDebug(e.Message);
                             server.Logger.WriteDebug(eventLine);
                         }
-                    }
-
-                    catch (Exception e)
-                    {
-                        server.Logger.WriteWarning("Could not properly parse remote event line");
-                        server.Logger.WriteDebug(e.Message);
-                        server.Logger.WriteDebug(eventLine);
                     }
                 }
             }
 
+#if DEBUG == true
+            server.Logger.WriteDebug($"End reading from http log at {DateTime.Now.Millisecond}");
+#endif
             return events;
         }
     }

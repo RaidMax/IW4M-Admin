@@ -35,10 +35,6 @@ namespace IW4MAdmin.Application.IO
 
         public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
-#if DEBUG == true
-            server.Logger.WriteDebug($"Begin reading from http log at {DateTime.Now.Millisecond}");
-#endif
-
             if (!ignoreBots.HasValue)
             {
                 ignoreBots = server.Manager.GetApplicationSettings().Configuration().IgnoreBots;
@@ -55,8 +51,11 @@ namespace IW4MAdmin.Application.IO
                 return events;
             }
 
-            else if (response.Data != null)
+            else if (!string.IsNullOrWhiteSpace(response.Data))
             {
+#if DEBUG
+                server.Manager.GetLogger(0).WriteInfo(response.Data);
+#endif
                 // parse each line
                 foreach (string eventLine in response.Data.Split(Environment.NewLine))
                 {
@@ -116,9 +115,6 @@ namespace IW4MAdmin.Application.IO
                 }
             }
 
-#if DEBUG == true
-            server.Logger.WriteDebug($"End reading from http log at {DateTime.Now.Millisecond}");
-#endif
             return events;
         }
     }

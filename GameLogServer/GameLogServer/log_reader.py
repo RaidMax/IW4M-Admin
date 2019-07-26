@@ -39,50 +39,43 @@ class LogReader(object):
 
         next_retrieval_key = self._generate_key()
 
-        #print('next key is %s' % next_retrieval_key)
-
         # this is the first time the key has been requested, so we need to the next one
         if retrieval_key not in self.log_file_sizes:
-            print ('requested key %s does not exist' % retrieval_key)
-            self.log_file_sizes[next_retrieval_key] = { 
-                'size': new_file_size,
-                'length': 0,
-                'read': time.time(),
-                'next_key': next_retrieval_key, # the key that IW4MAdmin should request next
-                'previous_key': retrieval_key # the old key that can be deleted next
-            }
-            return {
-                'content': None,
-                'next_key': next_retrieval_key
+            print('retrieval key "%s" does not exist' % retrieval_key)
+            last_log_info = {
+                'size' : new_file_size,
+                'previous_key' : None
             }
         else:
-            current_log_info = self.log_file_sizes[retrieval_key]
+            last_log_info = self.log_file_sizes[retrieval_key]
 
-        # grab the previous values
-        last_length = current_log_info['length']
-        last_size = current_log_info['size']
+        print('next key is %s' % next_retrieval_key)
+        expired_key = last_log_info['previous_key']
+        print('expired key is %s' % expired_key)
+
+        # grab the previous value
+        last_size = last_log_info['size']
         file_size_difference = new_file_size - last_size
 
         #print('generating info for next key %s' % next_retrieval_key)
 
-        # update the new size and actually read the data
+        # update the new size
         self.log_file_sizes[next_retrieval_key] = {
             'size' : new_file_size,
-            'length': last_length,
             'read': time.time(),
             'next_key': next_retrieval_key,
             'previous_key': retrieval_key
         }
 
-        if current_log_info['previous_key'] in self.log_file_sizes.keys():
-            #print('deleting old key %s' % current_log_info['previous_key'])
-            del self.log_file_sizes[current_log_info['previous_key']]
+        if expired_key in self.log_file_sizes:
+            print('deleting expired key %s' % expired_key)
+            del self.log_file_sizes[expired_key]
 
         #print('reading %i bytes starting at %i' % (file_size_difference, last_size))
 
-        new_log_info = self.get_file_lines(path, last_size, file_size_difference)
+        new_log_content = self.get_file_lines(path, last_size, file_size_difference)
         return {
-            'content': new_log_info,
+            'content': new_log_content,
             'next_key': next_retrieval_key
         }
 

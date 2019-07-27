@@ -20,6 +20,8 @@
     if (interval < 1)
         interval = 1;
 
+    let primaryColor = document.documentElement.style.getPropertyValue('--primary');
+
     return new CanvasJS.Chart(id, {
         backgroundColor: 'transparent',
         height: height,
@@ -55,7 +57,7 @@
         },
         data: [{
             type: 'splineArea',
-            color: 'rgba(0, 122, 204, 0.25)',
+            color: primaryColor.endsWith('80') ? primaryColor : primaryColor + '40',
             markerSize: 3.5,
             dataPoints: fixedData
         }]

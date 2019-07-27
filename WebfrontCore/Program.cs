@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Middleware;
 
 namespace WebfrontCore
 {
@@ -19,6 +20,8 @@ namespace WebfrontCore
         public static Task Init(IManager mgr, CancellationToken cancellationToken)
         {
             Manager = mgr;
+            var config = Manager.GetApplicationSettings().Configuration();
+            Manager.MiddlewareActionHandler.Register(null, new CustomCssAccentMiddlewareAction("#007ACC", "#fd7e14", config.WebfrontPrimaryColor, config.WebfrontSecondaryColor), "custom_css_accent");
             return BuildWebHost().RunAsync(cancellationToken);
         }
 

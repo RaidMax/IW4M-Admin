@@ -12,7 +12,7 @@ namespace WebfrontCore.Controllers
     {
         public IActionResult Edit()
         {
-            if (Client.Level != SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
             {
                 return Unauthorized();
             }
@@ -23,7 +23,7 @@ namespace WebfrontCore.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(ApplicationConfiguration newConfiguration, bool addNewServer = false, bool shouldSave = false)
         {
-            if (Client.Level != SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
             {
                 return Unauthorized();
             }

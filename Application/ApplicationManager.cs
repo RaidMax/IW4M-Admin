@@ -45,6 +45,7 @@ namespace IW4MAdmin.Application
         public CancellationToken CancellationToken => _tokenSource.Token;
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
+        public IMiddlewareActionHandler MiddlewareActionHandler { get; private set; } = new MiddlewareActionHandler();
         static ApplicationManager Instance;
         private readonly List<Command> Commands;
         private readonly List<MessageToken> MessageTokens;

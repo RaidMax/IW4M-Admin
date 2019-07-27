@@ -10,13 +10,17 @@ namespace SharedLibraryCore.Configuration
     {
 
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
-        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl")]
+        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor")]
         public bool EnableWebFront { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BIND_URL")]
         public string WebfrontBindUrl { get; set; }
         [ConfigurationOptional]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MANUAL_URL")]
         public string ManualWebfrontUrl { get; set; }
+        [ConfigurationOptional]
+        public string WebfrontPrimaryColor { get; set; }
+        [ConfigurationOptional]
+        public string WebfrontSecondaryColor { get; set; }
 
         [LocalizedDisplayName("SETUP_ENABLE_MULTIOWN")]
         public bool EnableMultipleOwners { get; set; }

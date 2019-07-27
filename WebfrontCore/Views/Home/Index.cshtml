@@ -4,7 +4,7 @@
     string formatTranslation(string translationKey, params object[] values)
     {
         var split = loc[translationKey].Split("::");
-        return $"<span class='font-weight-bold text-primary'>{SharedLibraryCore.Utilities.FormatExt(split[0], values)}</span><span>{split[1]}</span>";
+        return split.Count() == 2 ? $"<span class='font-weight-bold text-primary'>{SharedLibraryCore.Utilities.FormatExt(split[0], values)}</span><span>{split[1]}</span>" : translationKey;
     }
 }
 <div class="row mb-4 border-bottom border-top pt-3 pb-3 bg-dark">

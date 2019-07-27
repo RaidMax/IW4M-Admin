@@ -46,6 +46,7 @@ namespace SharedLibraryCore.Interfaces
         /// <returns></returns>
         Task<IList<T>> ExecuteSharedDatabaseOperation<T>(string operationName);
         void RegisterSharedDatabaseOperation(Task<IList> operation, string operationName);
+        IMiddlewareActionHandler MiddlewareActionHandler { get; }
         IRConParser GenerateDynamicRConParser();
         IEventParser GenerateDynamicEventParser();
         string Version { get;}

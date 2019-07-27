@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Configuration
     {
 
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
-        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor")]
+        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor", "WebfrontCustomBranding")]
         public bool EnableWebFront { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BIND_URL")]
         public string WebfrontBindUrl { get; set; }
@@ -18,9 +18,14 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MANUAL_URL")]
         public string ManualWebfrontUrl { get; set; }
         [ConfigurationOptional]
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRIMARY_COLOR")]
         public string WebfrontPrimaryColor { get; set; }
         [ConfigurationOptional]
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SECONDARY_COLOR")]
         public string WebfrontSecondaryColor { get; set; }
+        [ConfigurationOptional]
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_BRANDING")]
+        public string WebfrontCustomBranding { get; set; }
 
         [LocalizedDisplayName("SETUP_ENABLE_MULTIOWN")]
         public bool EnableMultipleOwners { get; set; }

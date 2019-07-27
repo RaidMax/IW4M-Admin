@@ -60,6 +60,7 @@
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\images\icon.png" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\images\icons\**\*.png" CopyToPublishDirectory="Always" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\main.min.css" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.ttf" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.woff" CopyToPublishDirectory="Always" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.otf" CopyToPublishDirectory="Always" />

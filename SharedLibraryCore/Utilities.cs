@@ -672,6 +672,7 @@ namespace SharedLibraryCore
             cmdProcess.WaitForExit();
 
             string[] cmdLine = cmdProcess.StandardOutput.ReadToEnd().Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+            cmdProcess.Dispose();
 
             return cmdLine.Length > 1 ? cmdLine[1] : cmdLine[0];
         }

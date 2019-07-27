@@ -77,7 +77,7 @@
 }
 
 .level-bgcolor-owner, .level-bgcolor-6 {
-    background-color: rgb(0, 122, 204);
+    background-color: $primary;
 }
 
 .level-color-8 {
@@ -140,9 +140,12 @@
 }
 
     #profile_aliases_btn:hover {
-        opacity: 0.75;
         cursor: pointer;
     }
+
+.oi:hover {
+    color: darken($primary, 10%) !important;
+}
 
 #profile_aliases {
     position: relative;

@@ -3,6 +3,7 @@ Version 2.4:
 -added chat message to server on server list view
 -added recently connected players dropdown option on webfront
 -added "dashboard" to home view with quick stats
+-added ability to customize accent color and branding on webfront
 -hid flagged status of users on webfront unless logged in
 
 Version 2.3:

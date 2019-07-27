@@ -107,6 +107,7 @@ namespace WebfrontCore.Controllers
             ViewBag.SocialTitle = SocialTitle;
             ViewBag.Pages = Pages;
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
+            ViewBag.CustomBranding = Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
 
             base.OnActionExecuting(context);
         }

@@ -233,7 +233,7 @@ form *, select {
 }
 
 .nav-tabs .nav-link.active:hover {
-    opacity: 0.75;
+    background-color: darken($primary, 10%);
 }
 
 .nav-tabs .nav-item {

@@ -55,7 +55,7 @@ $('.server-history-row').each(function (index, element) {
     let clientHistory = $(this).data('clienthistory');
     let serverId = $(this).data('serverid');
     let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
-    let primaryColor = document.documentElement.style.getPropertyValue('--primary');
+    let primaryColor = window.getComputedStyle(document.body).getPropertyValue('--primary').trim();
     let color = $(this).data('online') === 'True' ? primaryColor.endsWith('80') ? primaryColor : primaryColor + '80' : '#ff6060';
     let width = $('.server-header').first().width();
     let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color, maxClients);

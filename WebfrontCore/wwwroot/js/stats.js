@@ -20,7 +20,7 @@
     if (interval < 1)
         interval = 1;
 
-    let primaryColor = document.documentElement.style.getPropertyValue('--primary');
+    let primaryColor = window.getComputedStyle(document.body).getPropertyValue('--primary').trim();
 
     return new CanvasJS.Chart(id, {
         backgroundColor: 'transparent',

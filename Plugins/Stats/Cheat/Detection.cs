@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
@@ -198,21 +199,25 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #endregion
 
             #region RECOIL
-            var hitRecoilAverage = (hit.AnglesList.Sum(_angle => _angle.Z) + hit.ViewAngles.Z) / (hit.AnglesList.Count + 1);
-            sessionAverageRecoilAmount = (sessionAverageRecoilAmount * (HitCount - 1) + hitRecoilAverage) / HitCount;
-
-            var lifeTimeHits = ClientStats.HitLocations.Sum(_loc => _loc.HitCount);
-            ClientStats.AverageRecoilOffset = (ClientStats.AverageRecoilOffset * (lifeTimeHits - 1) + hitRecoilAverage) / lifeTimeHits;
-
-            if (HitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && sessionAverageRecoilAmount == 0)
+            float hitRecoilAverage = 0;
+            if (!Plugin.Config.Configuration().RecoilessWeapons.Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex)))
             {
-                results.Add(new DetectionPenaltyResult()
+                hitRecoilAverage = (hit.AnglesList.Sum(_angle => _angle.Z) + hit.ViewAngles.Z) / (hit.AnglesList.Count + 1);
+                sessionAverageRecoilAmount = (sessionAverageRecoilAmount * (HitCount - 1) + hitRecoilAverage) / HitCount;
+
+                var lifeTimeHits = ClientStats.HitLocations.Sum(_loc => _loc.HitCount);
+                ClientStats.AverageRecoilOffset = (ClientStats.AverageRecoilOffset * (lifeTimeHits - 1) + hitRecoilAverage) / lifeTimeHits;
+
+                if (HitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && sessionAverageRecoilAmount == 0)
                 {
-                    ClientPenalty = EFPenalty.PenaltyType.Ban,
-                    Value = sessionAverageRecoilAmount,
-                    HitCount = HitCount,
-                    Type = DetectionType.Recoil
-                });
+                    results.Add(new DetectionPenaltyResult()
+                    {
+                        ClientPenalty = EFPenalty.PenaltyType.Ban,
+                        Value = sessionAverageRecoilAmount,
+                        HitCount = HitCount,
+                        Type = DetectionType.Recoil
+                    });
+                }
             }
             #endregion
 
@@ -312,7 +317,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (currentChestAbdomenRatio > chestAbdomenRatioLerpValueForFlag)
                 {
 
-                    if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan && chestHits >= Thresholds.MediumSampleMinKills  * 2)
+                    if (currentChestAbdomenRatio > chestAbdomenLerpValueForBan && chestHits >= Thresholds.MediumSampleMinKills * 2)
                     {
                         results.Add(new DetectionPenaltyResult()
                         {

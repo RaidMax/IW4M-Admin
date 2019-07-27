@@ -9,6 +9,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public bool EnableAntiCheat { get; set; }
         public List<StreakMessageConfiguration> KillstreakMessages { get; set; }
         public List<StreakMessageConfiguration> DeathstreakMessages { get; set; }
+        public List<string> RecoilessWeapons { get; set; }
         public int TopPlayersMinPlayTime { get; set; }
         public bool StoreClientKills { get; set; }
         public string Name() => "Stats";
@@ -47,6 +48,13 @@ namespace IW4MAdmin.Plugins.Stats.Config
                      Count = 10,
                      Message = "Seriously? ^510 deaths ^7without getting a kill?"
                  },
+            };
+
+            RecoilessWeapons = new List<string>()
+            {
+                "ranger.*_mp",
+                "model1887.*_mp",
+                ".+shotgun.*_mp"
             };
 
             TopPlayersMinPlayTime = 3600 * 3;

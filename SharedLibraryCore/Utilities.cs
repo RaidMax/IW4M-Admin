@@ -287,7 +287,7 @@ namespace SharedLibraryCore
                 }
             }
 
-            else if (long.TryParse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
+            else if (long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
             {
             }
 

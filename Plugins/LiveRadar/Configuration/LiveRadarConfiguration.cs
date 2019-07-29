@@ -14,14 +14,14 @@ namespace LiveRadar.Configuration
                 new MapInfo()
                 {
                     Name = "mp_afghan",
-                    MaxLeft =  4600, // ymax
-                    MaxRight =  -1100, // ymin
-                    MaxBottom =  -1400, // xmin
-                    MaxTop =  4600, // xmax
-                    Left =  52, // pxmin
-                    Right =  898, // pxmax
-                    Bottom =  930, // yxmax
-                    Top =  44 // pymin
+                    MaxLeft = 4600, // ymax
+                    MaxRight = -1100, // ymin
+                    MaxBottom = -1400, // xmin
+                    MaxTop = 4600, // xmax
+                    Left = 52, // pxmin
+                    Right = 898, // pxmax
+                    Bottom = 930, // pymax
+                    Top = 44 // pymin
                 },
 
                 new MapInfo()
@@ -43,10 +43,10 @@ namespace LiveRadar.Configuration
                     Top = 174,
                     Bottom = 846,
                     Left = 18,
-                    Right = 14,
+                    Right = 1011,
                     MaxTop = 2929,
                     MaxBottom = -513,
-                    MaxLeft = 7520,
+                    MaxLeft = 7521,
                     MaxRight = 2447
                 },
 
@@ -355,6 +355,32 @@ namespace LiveRadar.Configuration
                     Top =   16,
                     Bottom =    951
                 },
+
+                new MapInfo()
+                {
+                    Name = "mp_nuked",
+                    MaxLeft = 1211,
+                    MaxRight = -557,
+                    MaxBottom = -2110,
+                    MaxTop = 2092,
+                    Left = 340,
+                    Right = 698,
+                    Bottom = 930, 
+                    Top = 92 
+                },
+
+                new MapInfo()
+                {
+                    Name = "mp_killhouse",
+                    MaxLeft = 4276,
+                    MaxRight = 2973,
+                    MaxBottom = -1164,
+                    MaxTop = 1392,
+                    Left = 319,
+                    Right = 758,
+                    Bottom = 937,
+                    Top = 87
+                }
             };
 
             return this;

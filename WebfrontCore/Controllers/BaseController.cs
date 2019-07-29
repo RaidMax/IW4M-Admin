@@ -98,6 +98,11 @@ namespace WebfrontCore.Controllers
                 Client.Level = EFClient.Permission.Console;
                 Client.CurrentAlias = new EFAlias() { Name = "IW4MAdmin" };
                 Authorized = true;
+                using (var controller = new AccountController())
+                {
+                    _ = controller.LoginAsync(1, "password", HttpContext).Result;
+                }
+
             }
 
             ViewBag.Authorized = Authorized;

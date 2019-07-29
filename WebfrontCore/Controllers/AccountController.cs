@@ -16,7 +16,7 @@ namespace WebfrontCore.Controllers
         private const int COOKIE_LIFESPAN = 3;
 
         [HttpGet]
-        public async Task<IActionResult> LoginAsync(int clientId, string password)
+        public async Task<IActionResult> LoginAsync(int clientId, string password, Microsoft.AspNetCore.Http.HttpContext ctx = null)
         {
             if (clientId == 0 || string.IsNullOrEmpty(password))
             {
@@ -26,8 +26,15 @@ namespace WebfrontCore.Controllers
             try
             {
                 var privilegedClient = await Manager.GetClientService().Get(clientId);
-                bool loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(privilegedClient.NetworkId, password) ||
-                    (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
+                bool loginSuccess = false;
+#if DEBUG
+                loginSuccess = clientId == 1;
+#endif
+                if (!Authorized && !loginSuccess)
+                {
+                    loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(privilegedClient.NetworkId, password) ||
+                        (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
+                }
 
                 if (loginSuccess)
                 {
@@ -41,7 +48,7 @@ namespace WebfrontCore.Controllers
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new AuthenticationProperties()
+                    await (ctx ?? HttpContext).SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new AuthenticationProperties()
                     {
                         AllowRefresh = true,
                         ExpiresUtc = DateTime.UtcNow.AddMonths(COOKIE_LIFESPAN),

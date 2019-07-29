@@ -24,13 +24,22 @@ namespace LiveRadar
             {
                 if (E.Data?.StartsWith("LiveRadar") ?? false)
                 {
-                    var radarUpdate = RadarEvent.Parse(E.Data);
-                    var client = S.Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
-
-                    if (client != null)
+                    try
                     {
-                        radarUpdate.Name = client.Name;
-                        client.SetAdditionalProperty("LiveRadar", radarUpdate);
+                        var radarUpdate = RadarEvent.Parse(E.Data);
+                        var client = S.Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
+
+                        if (client != null)
+                        {
+                            radarUpdate.Name = client.Name;
+                            client.SetAdditionalProperty("LiveRadar", radarUpdate);
+                        }
+                    }
+
+                    catch(Exception e)
+                    {
+                        S.Logger.WriteWarning($"Could not parse live radar output: {e.Data}");
+                        S.Logger.WriteDebug(e.GetExceptionInfo());
                     }
                 }
             }

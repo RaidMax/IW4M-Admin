@@ -709,7 +709,8 @@ namespace IW4MAdmin.Application
 
         public IList<EFClient> GetActiveClients()
         {
-            return _servers.SelectMany(s => s.Clients).Where(p => p != null).ToList();
+            // we're adding another to list here so we don't get a collection modified exception..
+            return _servers.SelectMany(s => s.Clients).ToList().Where(p => p != null).ToList();
         }
 
         public ClientService GetClientService()

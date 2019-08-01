@@ -65,7 +65,7 @@ namespace IW4MAdmin.Application.IO
 
             previousFileSize = fileSize;
 
-            var events = await _reader.ReadEventsFromLog(_server, fileDiff, 0);
+            var events = await _reader.ReadEventsFromLog(_server, fileDiff, fileSize - fileDiff);
 
             foreach (var ev in events)
             {

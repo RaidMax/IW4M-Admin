@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
@@ -37,13 +38,28 @@ namespace IW4MAdmin.Application.IO
             // open the file as a stream
             using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
             {
-                // take the old start position and go back the number of new characters
+                char[] buff = new char[fileSizeDiff];
                 rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
+                await rd.ReadAsync(buff, 0, (int)fileSizeDiff);
 
-                string newLine;
-                while (!string.IsNullOrEmpty(newLine = await rd.ReadLineAsync()))
+                var stringBuilder = new StringBuilder();
+                foreach (char c in buff)
                 {
-                    logLines.Add(newLine);
+                    if (c == '\n')
+                    {
+                        logLines.Add(stringBuilder.ToString());
+                        stringBuilder = new StringBuilder();
+                    }
+
+                    else if (c != '\r')
+                    {
+                        stringBuilder.Append(c);
+                    }
+                }
+
+                if (stringBuilder.Length > 0)
+                {
+                    logLines.Add(stringBuilder.ToString());
                 }
             }
 

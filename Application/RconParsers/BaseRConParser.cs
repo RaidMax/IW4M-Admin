@@ -79,17 +79,24 @@ namespace IW4MAdmin.Application.RconParsers
                 throw new DvarException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"].FormatExt(dvarName));
             }
 
-            string value = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarValue]].Value.StripColors();
-            string defaultValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDefaultValue]].Value.StripColors();
-            string latchedValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarLatchedValue]].Value.StripColors();
+            string value = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarValue]].Value;
+            string defaultValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDefaultValue]].Value;
+            string latchedValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarLatchedValue]].Value;
+
+            string removeTrailingColorCode(string input) => Regex.Replace(input, @"\^7$", "");
+
+
+            value = removeTrailingColorCode(value);
+            defaultValue = removeTrailingColorCode(defaultValue);
+            latchedValue = removeTrailingColorCode(latchedValue);
 
             return new Dvar<T>()
             {
-                Name = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarName]].Value.StripColors(),
+                Name = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarName]].Value,
                 Value = string.IsNullOrEmpty(value) ? default : (T)Convert.ChangeType(value, typeof(T)),
                 DefaultValue = string.IsNullOrEmpty(defaultValue) ? default : (T)Convert.ChangeType(defaultValue, typeof(T)),
                 LatchedValue = string.IsNullOrEmpty(latchedValue) ? default : (T)Convert.ChangeType(latchedValue, typeof(T)),
-                Domain = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDomain]].Value.StripColors()
+                Domain = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDomain]].Value
             };
         }
 
@@ -145,7 +152,7 @@ namespace IW4MAdmin.Application.RconParsers
                         continue;
                     }
 
-                    string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.StripColors().Trim();
+                    string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.Trim();
                     int? ip = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Value.Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()

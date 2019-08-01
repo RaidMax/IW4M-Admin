@@ -498,7 +498,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 AttackerId = attacker.ClientId,
                 VictimId = victim.ClientId,
                 ServerId = serverId,
-                //Map = ParseEnum<IW4Info.MapName>.Get(map, typeof(IW4Info.MapName)),
                 DeathOrigin = vDeathOrigin,
                 KillOrigin = vKillOrigin,
                 DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),

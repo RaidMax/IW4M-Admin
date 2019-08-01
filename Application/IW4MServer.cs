@@ -405,8 +405,6 @@ namespace IW4MAdmin
 
             if (E.Type == GameEvent.EventType.Say)
             {
-                E.Data = E.Data.StripColors();
-
                 if (E.Data?.Length > 0)
                 {
                     string message = E.Data;
@@ -447,10 +445,10 @@ namespace IW4MAdmin
 
                     else
                     {
-                        Gametype = dict["gametype"].StripColors();
-                        Hostname = dict["hostname"]?.StripColors();
+                        Gametype = dict["gametype"];
+                        Hostname = dict["hostname"];
 
-                        string mapname = dict["mapname"]?.StripColors() ?? CurrentMap.Name;
+                        string mapname = dict["mapname"] ?? CurrentMap.Name;
                         CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
                     }
                 }
@@ -458,11 +456,11 @@ namespace IW4MAdmin
                 else
                 {
                     var dict = (Dictionary<string, string>)E.Extra;
-                    Gametype = dict["g_gametype"].StripColors();
-                    Hostname = dict["sv_hostname"].StripColors();
+                    Gametype = dict["g_gametype"];
+                    Hostname = dict["sv_hostname"];
                     MaxClients = int.Parse(dict["sv_maxclients"]);
 
-                    string mapname = dict["mapname"].StripColors();
+                    string mapname = dict["mapname"];
                     CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
                     {
                         Alias = mapname,
@@ -827,7 +825,7 @@ namespace IW4MAdmin
 
             InitializeMaps();
 
-            this.Hostname = hostname.StripColors();
+            this.Hostname = hostname;
             this.CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
             this.MaxClients = maxplayers;
             this.FSGame = game;

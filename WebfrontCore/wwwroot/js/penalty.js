@@ -67,8 +67,8 @@ if ($('#penalty_table').length === 1) {
 
     $document.ready(function () {
         $window
-            .off('scroll', PenaltyScrollHandle)
-            .on('scroll', PenaltyScrollHandle);
+            .off('scroll', PenaltyScrollHandler)
+            .on('scroll', PenaltyScrollHandler);
 
         $('#load_penalties_button').click(function () {
             loadMorePenalties();

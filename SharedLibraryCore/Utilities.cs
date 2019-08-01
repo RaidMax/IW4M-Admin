@@ -138,7 +138,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="str">String containing color codes</param>
         /// <returns></returns>
-        public static String StripColors(this string str)
+        public static string StripColors(this string str)
         {
             if (str == null)
             {
@@ -860,7 +860,7 @@ namespace SharedLibraryCore
             var queryCompilationContext = databaseDependencies.QueryCompilationContextFactory.Create(false);
             var modelVisitor = (RelationalQueryModelVisitor)queryCompilationContext.CreateQueryModelVisitor();
             modelVisitor.CreateQueryExecutor<TEntity>(queryModel);
-            var sql = modelVisitor.Queries.First().ToString().Replace("\"", "`");
+            var sql = modelVisitor.Queries.First().ToString();
 
             return sql;
         }

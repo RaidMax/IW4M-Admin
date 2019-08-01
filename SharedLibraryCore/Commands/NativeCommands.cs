@@ -1032,7 +1032,7 @@ namespace SharedLibraryCore.Commands
             var Response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
             foreach (string S in Response)
             {
-                E.Origin.Tell(S.StripColors());
+                E.Origin.Tell(S);
             }
 
             if (Response.Length == 0)

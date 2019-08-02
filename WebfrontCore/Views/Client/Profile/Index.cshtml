@@ -25,7 +25,7 @@
     <!-- Name/Level Column -->
     <div class="d-block d-lg-inline-flex flex-column flex-fill text-center text-lg-left pb-3 pb-lg-0 pt-3 pt-lg-0 pl-3 pr-3">
         <div class="mt-n2 flex-fill d-block d-lg-inline-flex">
-            <div id="profile_name" class="client-name h1 mb-0">@Model.Name</div>
+            <div id="profile_name" class="client-name h1 mb-0"><color-code value="@Model.Name" allow="@ViewBag.EnableColorCodes"></color-code></div>
             @if (ViewBag.Authorized)
             {
                 <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-lg-2 mb-0 pt-lg-2 mt-lg-1"></div>
@@ -40,7 +40,7 @@
                 }
                 @foreach (string alias in Model.Aliases)
                 {
-                    @alias<br />
+                    <color-code value="@alias" allow="@ViewBag.EnableColorCodes"></color-code><br />
                 }
 
                 @foreach (string ip in Model.IPs)
@@ -89,7 +89,7 @@
             @foreach (var meta in metaColumn)
             {
                 <div class="profile-meta-entry" title="@(string.IsNullOrEmpty(meta.Extra) ? meta.Key : meta.Extra)">
-                    <span class="profile-meta-value text-primary">@meta.Value</span>
+                    <span class="profile-meta-value text-primary"><color-code value="@meta.Value" allow="@ViewBag.EnableColorCodes"></color-code></span>
                     <span class="profile-meta-title text-muted"> @meta.Key</span>
                 </div>
             }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
 using WebfrontCore.Controllers;
@@ -66,7 +67,7 @@ namespace LiveRadar.Web.Controllers
 
             if (client != null)
             {
-                radarUpdate.Name = client.Name;
+                radarUpdate.Name = client.Name.StripColors();
                 client.SetAdditionalProperty("LiveRadar", radarUpdate);
             }
 

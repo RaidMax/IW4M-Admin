@@ -31,7 +31,7 @@ namespace LiveRadar
 
                         if (client != null)
                         {
-                            radarUpdate.Name = client.Name;
+                            radarUpdate.Name = client.Name.StripColors();
                             client.SetAdditionalProperty("LiveRadar", radarUpdate);
                         }
                     }

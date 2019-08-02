@@ -146,11 +146,15 @@ namespace SharedLibraryCore
             }
 
             str = Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "");
-            string str2 = Regex.Match(str, @"(^\/+.*$)|(^.*\/+$)")
-                .Value
-                .Replace("/", " /");
-            return str2.Length > 0 ? str2 : str;
+            return str;
         }
+
+        /// <summary>
+        /// returns a "fixed" string that prevents message truncation in IW4 (and probably other Q3 clients)
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string FixIW4ForwardSlash(this string str) => Regex.Match(str, @"(^\/+.*$)|(^.*\/+$)").Value.Replace("/", " /");
 
         /// <summary>
         /// Get the IW Engine color code corresponding to an admin level

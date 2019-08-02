@@ -51,7 +51,9 @@
                     </div>
                 }
                 <span class="text-muted pl-1 pr-1" style="font-size: 1.25rem;">&mdash;</span>
-                @Html.ActionLink(stat.Name, "ProfileAsync", "Client", new { id = stat.ClientId })
+                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@stat.ClientId">
+                    <color-code value="@stat.Name" allow="ViewBag.EnableColorCodes"></color-code>
+                </a>
             </div>
 
             <span class="text-primary">@stat.Performance</span><span class="text-muted"> @loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"]</span><br />

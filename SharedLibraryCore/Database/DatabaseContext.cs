@@ -157,6 +157,8 @@ namespace SharedLibraryCore.Database
                 ent.HasIndex(a => a.IPAddress);
                 ent.Property(a => a.Name).HasMaxLength(24);
                 ent.HasIndex(a => a.Name);
+                ent.Property(_alias => _alias.SearchableName).HasMaxLength(24);
+                ent.HasIndex(_alias => _alias.SearchableName);
             });
 
             modelBuilder.Entity<EFMeta>(ent =>

@@ -119,7 +119,7 @@ namespace SharedLibraryCore
         /// <param name="message">Message to be sent to all players</param>
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
-            string formattedMessage = String.Format(RconParser.Configuration.CommandPrefixes.Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message}");
+            string formattedMessage = String.Format(RconParser.Configuration.CommandPrefixes.Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
 
 #if DEBUG == true
             Logger.WriteVerbose(message.StripColors());
@@ -140,23 +140,23 @@ namespace SharedLibraryCore
         /// <summary>
         /// Send a message to a particular players
         /// </summary>
-        /// <param name="Message">Message to send</param>
-        /// <param name="Target">EFClient to send message to</param>
-        protected async Task Tell(String Message, EFClient Target)
+        /// <param name="message">Message to send</param>
+        /// <param name="target">EFClient to send message to</param>
+        protected async Task Tell(string message, EFClient target)
         {
 #if !DEBUG
-            string formattedMessage = String.Format(RconParser.Configuration.CommandPrefixes.Tell, Target.ClientNumber, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{Message}");
-            if (Target.ClientNumber > -1 && Message.Length > 0 && Target.Level != EFClient.Permission.Console)
+            string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell, target.ClientNumber, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
+            if (target.ClientNumber > -1 && message.Length > 0 && target.Level != EFClient.Permission.Console)
                 await this.ExecuteCommandAsync(formattedMessage);
 #else
-            Logger.WriteVerbose($"{Target.ClientNumber}->{Message.StripColors()}");
+            Logger.WriteVerbose($"{target.ClientNumber}->{message.StripColors()}");
             await Task.CompletedTask;
 #endif
 
-            if (Target.Level == EFClient.Permission.Console)
+            if (target.Level == EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(Message.StripColors());
+                Console.WriteLine(message.StripColors());
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
 
@@ -167,12 +167,12 @@ namespace SharedLibraryCore
             }
 
             // it was a remote command so we need to add it to the command result queue
-            if (Target.ClientNumber < 0)
+            if (target.ClientNumber < 0)
             {
                 CommandResult.Add(new CommandResponseInfo()
                 {
-                    Response = Message.StripColors(),
-                    ClientId = Target.ClientId
+                    Response = message.StripColors(),
+                    ClientId = target.ClientId
                 });
             }
         }

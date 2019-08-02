@@ -15,7 +15,11 @@
         @foreach (var client in Model)
         {
             <div class="row pt-2 pb-2 bg-dark">
-                <div class="col-5">@Html.ActionLink(client.Name, "ProfileAsync", "Client", new { id = client.ClientId })</div>
+                <div class="col-5">
+                    <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
+                        <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    </a>
+                </div>
                 <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
                 <div class="col-3 text-right">@client.LastConnectionText</div>
             </div>
@@ -32,7 +36,11 @@
             <div class="p-2">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</div>
         </div>
         <div class="col-7 bg-dark border-bottom">
-            <div class="p-2">@Html.ActionLink(client.Name, "ProfileAsync", "Client", new { id = client.ClientId },new { @class = "link-inverse" } )</div>
+            <div class="p-2">
+                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="link-inverse">
+                    <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                </a>
+            </div>
             <div class="p-2 level-color-@client.LevelInt">@client.Level</div>
             <div class="p-2 text-white-50">@client.LastConnectionText</div>
         </div>

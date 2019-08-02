@@ -264,3 +264,73 @@ form *, select {
     background-size: contain;
     background-repeat: no-repeat
 }
+
+.text-color-code-0 {
+    color: $dark;
+}
+
+.text-color-code-1 {
+    color: $red;
+}
+
+.text-color-code-2 {
+    color: $green;
+}
+
+.text-color-code-3 {
+    color: $yellow;
+}
+
+.text-color-code-4 {
+    color: $blue;
+}
+
+.text-color-code-5 {
+    color: $teal;
+}
+
+.text-color-code-5 {
+    color: $purple;
+}
+
+.text-color-code-7 {
+    color: $white;
+}
+
+.text-color-code-8, .text-color-code-9 {
+    color: grey;
+}
+
+.text-color-code-58 {
+    animation: color-change 60s infinite;
+}
+
+@keyframes color-change {
+    0% {
+        color: #ff0000;
+    }
+
+    16.66% {
+        color: #ffff00;
+    }
+
+    33.33% {
+        color: #00ff00;
+    }
+
+    50% {
+        color: #00ffff;
+    }
+
+    66.66% {
+        color: #0000ff;
+    }
+
+    83.33% {
+        color: #ff00ff;
+    }
+
+    100% {
+        color: #ff0000;
+    }
+}

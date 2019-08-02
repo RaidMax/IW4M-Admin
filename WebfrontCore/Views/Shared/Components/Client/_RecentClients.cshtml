@@ -39,7 +39,9 @@
 {
     <div class="p-2 mb-3 border-bottom" style="background-color: #222;">
         <div class="d-flex flex-row">
-            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="h4 mr-auto">@client.Name</a>
+            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="h4 mr-auto">
+                <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+            </a>
             <div class="client-location-flag align-self-center" data-ip="@client.IPAddress"></div>
         </div>
         <div class="d-flex flex-row">

@@ -15,6 +15,8 @@ namespace SharedLibraryCore.Database.Models
         [Required]
         [MaxLength(24)]
         public string Name { get; set; }
+        [MaxLength(24)]
+        public string SearchableName { get; set; }
         [Required]
         public int? IPAddress { get; set; }
         [Required]

@@ -16,16 +16,18 @@ namespace WebfrontCore.Controllers
         {
             if (fileName.EndsWith(".css"))
             {
+#if DEBUG
+                string cssData = await System.IO.File.ReadAllTextAsync($"X:\\IW4MAdmin\\WebfrontCore\\wwwroot\\css\\{fileName}");
+                cssData = await Manager.MiddlewareActionHandler.Execute(cssData, "custom_css_accent");
+                return Content(cssData, "text/css");
+#endif
                 if (!_fileCache.ContainsKey(fileName))
                 {
-#if DEBUG
-                    string path = $"X:\\IW4MAdmin\\WebfrontCore\\wwwroot\\css\\{fileName}";
-#else
+
                     string path = $"wwwroot\\css\\{fileName}";
-#endif
-                    string cssData = await System.IO.File.ReadAllTextAsync(path);
-                    cssData = await Manager.MiddlewareActionHandler.Execute(cssData, "custom_css_accent");
-                    _fileCache.Add(fileName, cssData);
+                    string data = await System.IO.File.ReadAllTextAsync(path);
+                    data = await Manager.MiddlewareActionHandler.Execute(data, "custom_css_accent");
+                    _fileCache.Add(fileName, data);
                 }
 
                 return Content(_fileCache[fileName], "text/css");

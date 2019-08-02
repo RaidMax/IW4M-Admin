@@ -5,7 +5,7 @@
 
 <div class="row server-header pt-1 pb-1 bg-primary " id="server_header_@Model.ID">
     <div class="col-md-4 text-center text-md-left d-inline-flex justify-content-center justify-content-md-start">
-        <span>@Model.Name</span>
+        <color-code value="@Model.Name" allow="@ViewBag.EnableColorCodes"></color-code>
         <a href="@Model.ConnectProtocolUrl" class="ml-2 mr-2 align-self-center d-none d-md-flex server-join-button" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
             <span class="oi oi-play-circle mr-1 align-self-center"></span>
             <span class="server-header-ip-address" style="display:none;">@Model.IPAddress</span>

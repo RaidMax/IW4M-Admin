@@ -90,12 +90,13 @@ namespace WebfrontCore.Controllers
 
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
 
-            ViewBag.Title = clientDto.Name.Substring(clientDto.Name.Length - 1).ToLower()[0] == 's' ?
-                clientDto.Name + "'" :
-                clientDto.Name + "'s";
+            string strippedName = clientDto.Name.StripColors();
+            ViewBag.Title = strippedName.Substring(strippedName.Length - 1).ToLower()[0] == 's' ?
+                strippedName + "'" :
+                strippedName + "'s";
             ViewBag.Title += " " + Localization["WEBFRONT_CLIENT_PROFILE_TITLE"];
-            ViewBag.Description = $"Client information for {clientDto.Name}";
-            ViewBag.Keywords = $"IW4MAdmin, client, profile, {clientDto.Name}";
+            ViewBag.Description = $"Client information for {strippedName}";
+            ViewBag.Keywords = $"IW4MAdmin, client, profile, {strippedName}";
 
             return View("Profile/Index", clientDto);
         }
@@ -129,7 +130,6 @@ namespace WebfrontCore.Controllers
 
             return View("Privileged/Index", adminsDict);
         }
-
 
         public async Task<IActionResult> FindAsync(string clientName)
         {

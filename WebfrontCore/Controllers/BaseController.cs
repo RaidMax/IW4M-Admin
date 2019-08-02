@@ -52,6 +52,7 @@ namespace WebfrontCore.Controllers
 
             ViewBag.Version = Manager.Version;
             ViewBag.IsFluid = false;
+            ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -113,6 +114,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Pages = Pages;
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
             ViewBag.CustomBranding = Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
+            ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
 
             base.OnActionExecuting(context);
         }

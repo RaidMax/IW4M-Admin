@@ -100,10 +100,6 @@ namespace IW4MAdmin.Plugins.Stats
 
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     }
-                    else
-                    {
-                        throw new Exception();
-                    }
                     break;
                 case GameEvent.EventType.Damage:
                     if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))

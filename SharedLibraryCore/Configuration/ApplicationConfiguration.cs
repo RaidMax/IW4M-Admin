@@ -78,7 +78,8 @@ namespace SharedLibraryCore.Configuration
         public int RConPollRate { get; set; } = 5000;
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
         public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
-
+        [LocalizedDisplayName("SETUP_ENABLE_COLOR_CODES")]
+        public bool EnableColorCodes { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
         public int AutoMessagePeriod { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGES")]

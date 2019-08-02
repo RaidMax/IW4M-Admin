@@ -65,6 +65,7 @@ namespace SharedLibraryCore.Services
                     client.CurrentAlias = new EFAlias()
                     {
                         Name = entity.Name,
+                        SearchableName = entity.Name.StripColors().ToLower(),
                         DateAdded = DateTime.UtcNow,
                         IPAddress = entity.IPAddress,
                         LinkId = linkId.Value
@@ -79,6 +80,7 @@ namespace SharedLibraryCore.Services
                     var alias = new EFAlias()
                     {
                         Name = entity.Name,
+                        SearchableName = entity.Name.StripColors().ToLower(),
                         DateAdded = DateTime.UtcNow,
                         IPAddress = entity.IPAddress,
                         Link = link
@@ -194,6 +196,7 @@ namespace SharedLibraryCore.Services
                     IPAddress = ip,
                     LinkId = newAliasLink.AliasLinkId,
                     Name = name,
+                    SearchableName = name.StripColors().ToLower(),
                     Active = true,
                 };
 
@@ -422,6 +425,27 @@ namespace SharedLibraryCore.Services
             }
         }
 
+        public async Task<EFClient> GetClientForLogin(int clientId)
+        {
+            using (var ctx = new DatabaseContext(true))
+            {
+                return await ctx.Clients
+                    .Select(_client => new EFClient()
+                    {
+                        NetworkId = _client.NetworkId,
+                        ClientId = _client.ClientId,
+                        CurrentAlias = new EFAlias()
+                        {
+                            Name = _client.CurrentAlias.Name
+                        },
+                        Password = _client.Password,
+                        PasswordSalt = _client.PasswordSalt,
+                        Level = _client.Level
+                    })
+                    .FirstAsync(_client => _client.ClientId == clientId);
+            }
+        }
+
         public async Task<List<EFClient>> GetPrivilegedClients(bool includeName = true)
         {
             using (var context = new DatabaseContext(disableTracking: true))
@@ -478,7 +502,7 @@ namespace SharedLibraryCore.Services
                 // want to find them by name (wildcard)
                 else
                 {
-                    iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.Name.ToLower(), $"%{identifier.ToLower()}%"));
+                    iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like((_alias.SearchableName ?? _alias.Name.ToLower()), $"%{identifier.ToLower()}%"));
                 }
 
                 var linkIds = await iqLinkIds
@@ -489,7 +513,7 @@ namespace SharedLibraryCore.Services
                 var iqClients = context.Clients
                     .Where(_client => _client.Active);
 
-     
+
                 iqClients = iqClients.Where(_client => networkId == _client.NetworkId || linkIds.Contains(_client.AliasLinkId));
 
                 // we want to project our results 

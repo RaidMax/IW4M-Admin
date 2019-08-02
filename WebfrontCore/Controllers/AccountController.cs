@@ -25,7 +25,7 @@ namespace WebfrontCore.Controllers
 
             try
             {
-                var privilegedClient = await Manager.GetClientService().Get(clientId);
+                var privilegedClient = await Manager.GetClientService().GetClientForLogin(clientId);
                 bool loginSuccess = false;
 #if DEBUG
                 loginSuccess = clientId == 1;

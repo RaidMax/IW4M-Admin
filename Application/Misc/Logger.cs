@@ -73,13 +73,13 @@ namespace IW4MAdmin.Application
             {
 #if DEBUG
                 // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
-                Console.WriteLine(LogLine);
+                Console.WriteLine(LogLine.StripColors());
                 await File.AppendAllTextAsync(FileName, $"{LogLine}{Environment.NewLine}");
                 //Debug.WriteLine(msg);
 #else
                 if (type == LogType.Error || type == LogType.Verbose)
                 {
-                    Console.WriteLine(LogLine);
+                    Console.WriteLine(LogLine.StripColors());
                 }
                 await File.AppendAllTextAsync(FileName, $"{LogLine}{Environment.NewLine}");
 #endif

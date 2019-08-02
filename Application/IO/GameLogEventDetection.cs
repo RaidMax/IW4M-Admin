@@ -55,7 +55,9 @@ namespace IW4MAdmin.Application.IO
             long fileSize = _reader.Length;
 
             if (previousFileSize == 0)
+            {
                 previousFileSize = fileSize;
+            }
 
             long fileDiff = fileSize - previousFileSize;
 
@@ -63,9 +65,7 @@ namespace IW4MAdmin.Application.IO
             if (fileDiff < 1 && fileSize != -1)
                 return;
 
-            previousFileSize = fileSize;
-
-            var events = await _reader.ReadEventsFromLog(_server, fileDiff, fileSize - fileDiff);
+            var events = await _reader.ReadEventsFromLog(_server, fileDiff, previousFileSize);
 
             foreach (var ev in events)
             {

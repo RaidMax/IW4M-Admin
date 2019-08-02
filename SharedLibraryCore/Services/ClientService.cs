@@ -489,15 +489,8 @@ namespace SharedLibraryCore.Services
                 var iqClients = context.Clients
                     .Where(_client => _client.Active);
 
-                if (networkId.HasValue)
-                {
-                    iqClients = iqClients.Where(_client => networkId.Value == _client.NetworkId);
-                }
-
-                else
-                {
-                    iqClients = iqClients.Where(_client => linkIds.Contains(_client.AliasLinkId));
-                }
+     
+                iqClients = iqClients.Where(_client => networkId == _client.NetworkId || linkIds.Contains(_client.AliasLinkId));
 
                 // we want to project our results 
                 var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)

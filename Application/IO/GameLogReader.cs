@@ -39,7 +39,7 @@ namespace IW4MAdmin.Application.IO
             using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
             {
                 char[] buff = new char[fileSizeDiff];
-                rd.BaseStream.Seek(-fileSizeDiff, SeekOrigin.End);
+                rd.BaseStream.Seek(startPosition, SeekOrigin.Begin);
                 await rd.ReadAsync(buff, 0, (int)fileSizeDiff);
 
                 var stringBuilder = new StringBuilder();

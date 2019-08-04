@@ -41,9 +41,19 @@ function loadMoreItems() {
     loaderOffset += loadCount;
 }
 
+var hasScrollBar = false;
+
 function _ScrollHandler(e) {
     //throttle event:
+    /*
+    https://stackoverflow.com/questions/3898130/check-if-a-user-has-scrolled-to-the-bottom
+    */
+    var $window = $(window);
+    var $document = $(document);
     hasScrollBar = true;
+    let _throttleTimer = null;
+    let _throttleDelay = 100;
+
     clearTimeout(_throttleTimer);
     _throttleTimer = setTimeout(function () {
 
@@ -69,18 +79,10 @@ function setupListeners() {
             }
         });
 
-        /*
-        https://stackoverflow.com/questions/3898130/check-if-a-user-has-scrolled-to-the-bottom
-        */
 
-        var _throttleTimer = null;
-        var _throttleDelay = 100;
-        var $window = $(window);
-        var $document = $(document);
-        var hasScrollBar = false;
 
-        $document.ready(function () {
-            $window
+        $(document).ready(function () {
+            $(window)
                 .off('scroll', _ScrollHandler)
                 .on('scroll', _ScrollHandler);
             $('.loader-load-more:not(.disabled)').click(function (e) {

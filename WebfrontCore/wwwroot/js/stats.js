@@ -20,7 +20,7 @@
     if (interval < 1)
         interval = 1;
 
-    let primaryColor = window.getComputedStyle(document.body).getPropertyValue('--primary').trim();
+    //let primaryColor = $('.nav-tabs .nav-link.active').first().css('background-color')
 
     return new CanvasJS.Chart(id, {
         backgroundColor: 'transparent',
@@ -56,10 +56,11 @@
             dockInsidePlotArea: true
         },
         data: [{
-            type: 'splineArea',
-            color: primaryColor.endsWith('80') ? primaryColor : primaryColor + '40',
-            markerSize: 3.5,
-            dataPoints: fixedData
+            type: 'spline',
+            color: '#c0c0c0',
+            markerSize: 0,
+            dataPoints: fixedData,
+            lineThickness: 2
         }]
     });
 }

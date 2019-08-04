@@ -41,7 +41,8 @@ namespace WebfrontCore.Controllers
                         }
                     }
                 },
-                Action = "BanAsync"
+                Action = "BanAsync",
+                ShouldRefresh = true
             };
 
             return View("_ActionForm", info);
@@ -99,7 +100,8 @@ namespace WebfrontCore.Controllers
                       Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     }
                 },
-                Action = "UnbanAsync"
+                Action = "UnbanAsync",
+                ShouldRefresh = true
             };
 
             return View("_ActionForm", info);
@@ -167,7 +169,8 @@ namespace WebfrontCore.Controllers
                             .ToDictionary(p => p.ToString(), p=> p.ToLocalizedLevelName())
                     },
                 },
-                Action = "EditAsync"
+                Action = "EditAsync",
+                ShouldRefresh = true
             };
 
             return View("_ActionForm", info);
@@ -246,6 +249,70 @@ namespace WebfrontCore.Controllers
         {
             var clients = await Manager.GetClientService().GetRecentClients();
             return View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
+        }
+
+        public IActionResult FlagForm()
+        {
+            var info = new ActionInfo()
+            {
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_FLAG_NAME"],
+                Name = "Flag",
+                Inputs = new List<InputInfo>()
+                {
+                    new InputInfo()
+                    {
+                      Name = "reason",
+                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                    }
+                },
+                Action = "FlagAsync",
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> FlagAsync(int targetId, string reason)
+        {
+            var server = Manager.GetServers().First();
+
+            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            {
+                serverId = server.EndPoint,
+                command = $"!flag @{targetId} {reason}"
+            }));
+        }
+
+        public IActionResult UnflagForm()
+        {
+            var info = new ActionInfo()
+            {
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_UNFLAG_NAME"],
+                Name = "Unflag",
+                Inputs = new List<InputInfo>()
+                {
+                    new InputInfo()
+                    {
+                      Name = "reason",
+                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                    }
+                },
+                Action = "UnflagAsync",
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> UnflagAsync(int targetId, string reason)
+        {
+            var server = Manager.GetServers().First();
+
+            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            {
+                serverId = server.EndPoint,
+                command = $"!unflag @{targetId} {reason}"
+            }));
         }
     }
 }

@@ -581,7 +581,7 @@ namespace SharedLibraryCore.Services
                         ClientId = _client.ClientId,
                         Name = _client.CurrentAlias.Name,
                         IPAddress = _client.CurrentAlias.IPAddress.ConvertIPtoString(),
-                        LastConnection = _client.LastConnection
+                        LastConnection = _client.FirstConnection
                     })
                     .OrderByDescending(_client => _client.ClientId)
                     .Take(10);

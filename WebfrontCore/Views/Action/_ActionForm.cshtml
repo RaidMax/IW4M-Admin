@@ -2,7 +2,7 @@
 @{
     Layout = null;
 }
-<form class="action-form" action="/Action/@Model.Action">
+<form class="action-form @(Model.ShouldRefresh ? "refreshable" : "")" action="/Action/@Model.Action">
     @foreach (var input in Model.Inputs)
     {
         string inputType = input.Type ?? "text";

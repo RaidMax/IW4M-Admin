@@ -154,7 +154,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        public static string FixIW4ForwardSlash(this string str) => Regex.Match(str, @"(^\/+.*$)|(^.*\/+$)").Value.Replace("/", " /");
+        public static string FixIW4ForwardSlash(this string str) => str.Replace("/", " /");
 
         /// <summary>
         /// Get the IW Engine color code corresponding to an admin level

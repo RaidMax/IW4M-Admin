@@ -42,6 +42,7 @@ $(document).ready(function () {
                 $('#actionModal').trigger('action_form_received', actionType);
             })
             .fail(function (jqxhr, textStatus, error) {
+                $('#actionModal .modal-body-content').html('');
                 $('#actionModal .modal-message').text('Error 	— ' + error);
                 $('#actionModal').modal();
                 $('#actionModal .modal-message').fadeIn('fast');
@@ -54,6 +55,7 @@ $(document).ready(function () {
     $(document).on('submit', '.action-form', function (e) {
         e.preventDefault();
         $(this).append($('#target_id input'));
+        $('#actionModal').data('should-refresh', $('#actionModal').find('.refreshable').length !== 0);
         const data = $(this).serialize();
         showLoader();
         $.get($(this).attr('action') + '/?' + data)
@@ -100,6 +102,17 @@ $(document).ready(function () {
                     }
                 });
             });
+        }
+    });
+
+    /* 
+     * handle close event to refresh if need be
+     */
+    $("#actionModal").on("hidden.bs.modal", function () {
+        let shouldRefresh = $(this).data('should-refresh');
+
+        if (shouldRefresh !== undefined && shouldRefresh) {
+            location.reload();
         }
     });
 });

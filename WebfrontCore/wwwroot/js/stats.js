@@ -20,8 +20,6 @@
     if (interval < 1)
         interval = 1;
 
-    //let primaryColor = $('.nav-tabs .nav-link.active').first().css('background-color')
-
     return new CanvasJS.Chart(id, {
         backgroundColor: 'transparent',
         height: height,

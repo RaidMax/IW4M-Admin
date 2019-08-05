@@ -8,7 +8,9 @@
     <div class="bg-dark p-3 mb-2 border-bottom">
         @foreach (var message in Model)
         {
-            <span class="text-white">@message.Name</span>
+            <span class="text-white">
+                <color-code value="@message.Name" allow="ViewBag.EnableColorCodes"></color-code>
+            </span>
             <span>
                 &mdash;
                 <span class="@(message.IsQuickMessage ? "font-italic" : "")">

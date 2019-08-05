@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using System;
@@ -10,13 +11,9 @@ namespace WebfrontCore.Controllers
 {
     public class AccountController : BaseController
     {
-        /// <summary>
-        /// life span in months
-        /// </summary>
-        private const int COOKIE_LIFESPAN = 3;
 
         [HttpGet]
-        public async Task<IActionResult> LoginAsync(int clientId, string password, Microsoft.AspNetCore.Http.HttpContext ctx = null)
+        public async Task<IActionResult> LoginAsync(int clientId, string password)
         {
             if (clientId == 0 || string.IsNullOrEmpty(password))
             {
@@ -48,13 +45,7 @@ namespace WebfrontCore.Controllers
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
-                    await (ctx ?? HttpContext).SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new AuthenticationProperties()
-                    {
-                        AllowRefresh = true,
-                        ExpiresUtc = DateTime.UtcNow.AddMonths(COOKIE_LIFESPAN),
-                        IsPersistent = true,
-                        IssuedUtc = DateTime.UtcNow
-                    });
+                    await SignInAsync(claimsPrinciple);
 
                     return Ok();
                 }

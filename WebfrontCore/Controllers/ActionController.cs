@@ -238,6 +238,15 @@ namespace WebfrontCore.Controllers
         {
             var server = Manager.GetServers().First(_server => _server.EndPoint == id);
 
+            server.ChatHistory.Add(new SharedLibraryCore.Dtos.ChatInfo()
+            {
+                ClientId = Client.ClientId,
+                Message = message,
+                Name = Client.Name,
+                ServerGame = server.GameName,
+                Time = DateTime.Now
+            });
+
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,

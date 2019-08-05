@@ -156,6 +156,14 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static string FixIW4ForwardSlash(this string str) => str.Replace("/", " /");
 
+        private static readonly IList<string> _zmGameTypes = new[] { "zclassic", "zstandard", "zcleansed", "zgrief" };
+        /// <summary>
+        /// indicates if the given server is running a zombie game mode
+        /// </summary>
+        /// <param name="server"></param>
+        /// <returns></returns>
+        public static bool IsZombieServer(this Server server) => server.GameName == Game.T6 && _zmGameTypes.Contains(server.Gametype.ToLower());
+
         /// <summary>
         /// Get the IW Engine color code corresponding to an admin level
         /// </summary>

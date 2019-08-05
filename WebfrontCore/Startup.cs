@@ -73,6 +73,8 @@ namespace WebfrontCore
                 mvcBuilder.AddApplicationPart(asm);
             }
 
+            services.AddHttpContextAccessor();
+
             services.AddEntityFrameworkSqlite()
                 .AddDbContext<DatabaseContext>();
 

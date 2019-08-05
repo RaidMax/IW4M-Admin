@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using SharedLibraryCore;
@@ -9,12 +11,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
 {
     public class BaseController : Controller
     {
+        /// <summary>
+        /// life span in months
+        /// </summary>
+        private const int COOKIE_LIFESPAN = 3;
+
         protected IManager Manager;
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; set; }
@@ -53,6 +61,17 @@ namespace WebfrontCore.Controllers
             ViewBag.Version = Manager.Version;
             ViewBag.IsFluid = false;
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+        }
+
+        protected async Task SignInAsync(ClaimsPrincipal claimsPrinciple)
+        {
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple, new AuthenticationProperties()
+            {
+                AllowRefresh = true,
+                ExpiresUtc = DateTime.UtcNow.AddMonths(COOKIE_LIFESPAN),
+                IsPersistent = true,
+                IssuedUtc = DateTime.UtcNow
+            });
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -99,11 +118,15 @@ namespace WebfrontCore.Controllers
                 Client.Level = EFClient.Permission.Console;
                 Client.CurrentAlias = new EFAlias() { Name = "IW4MAdmin" };
                 Authorized = true;
-                using (var controller = new AccountController())
+                var claims = new[]
                 {
-                    _ = controller.LoginAsync(1, "password", HttpContext).Result;
-                }
-
+                    new Claim(ClaimTypes.NameIdentifier, Client.CurrentAlias.Name),
+                   new Claim(ClaimTypes.Role, Client.Level.ToString()),
+                   new Claim(ClaimTypes.Sid, Client.ClientId.ToString()),
+                   new Claim(ClaimTypes.PrimarySid, Client.NetworkId.ToString("X"))
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, "login");
+                SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
             }
 
             ViewBag.Authorized = Authorized;

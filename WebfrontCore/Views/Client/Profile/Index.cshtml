@@ -6,13 +6,12 @@
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     bool isTempBanned = Model.ActivePenaltyType == "TempBan";
     bool isFlagged = Model.LevelInt == (int)SharedLibraryCore.Database.Models.EFClient.Permission.Flagged;
+    bool isPermBanned = Model.LevelInt == (int)SharedLibraryCore.Database.Models.EFClient.Permission.Banned;
     var informationMeta = Model.Meta
         .Where(_meta => _meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Information)
         .OrderBy(_meta => _meta.Order)
         .GroupBy(_meta => _meta.Column)
         .OrderBy(_grouping => _grouping.Key);
-
-
 }
 
 <div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
@@ -57,7 +56,10 @@
     @if (ViewBag.Authorized)
     {
         <div class="pr-lg-0 text-center text-lg-right">
-            <div class="profile-action oi oi-flag h3 ml-2 @(isFlagged ? "text-secondary" : "text-success")" data-action="@(isFlagged ? "unflag" : "flag")" aria-hidden="true"></div>
+            @if (!isPermBanned)
+            {
+                <div class="profile-action oi oi-flag h3 ml-2 @(isFlagged ? "text-secondary" : "text-success")" data-action="@(isFlagged ? "unflag" : "flag")" aria-hidden="true"></div>
+            }
 
             @if (Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty)
             {

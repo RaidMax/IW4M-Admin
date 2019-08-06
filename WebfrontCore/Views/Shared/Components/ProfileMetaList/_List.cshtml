@@ -21,12 +21,12 @@
         return meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized ?
             string.Format(localizationMessage,
             $"<span class='text-highlight'><a class='link-inverse' href='{penalty.OffenderId}'>{penalty.OffenderName}</a></span>",
-            $"<span class='{(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense} {(ViewBag.Authorized ? penalty.AdditionalPenaltyInformation : "")}</span>")
+            $"<span class='{(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white' data-penalty-id='{penalty.Id}'>{penalty.Offense} {(ViewBag.Authorized ? penalty.AdditionalPenaltyInformation : "")}</span>")
             .Replace("{", "")
             .Replace("}", "") :
             string.Format(localizationMessage,
             $"<span class='text-highlight'><a class='link-inverse' href='{penalty.PunisherId}'>{penalty.PunisherName}</a></span>",
-            $"<span class='{(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white' data-clientid='{penalty.OffenderId}'>{penalty.Offense} {(ViewBag.Authorized ? penalty.AdditionalPenaltyInformation : "")}</span>",
+            $"<span class='{(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white' data-penalty-id='{penalty.Id}'>{penalty.Offense} {(ViewBag.Authorized ? penalty.AdditionalPenaltyInformation : "")}</span>",
             penalty.Offense)
             .Replace("{", "")
             .Replace("}", "");

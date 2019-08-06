@@ -102,21 +102,16 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetAutomatedPenaltyInfoAsync(int clientId)
+        public async Task<IActionResult> GetAutomatedPenaltyInfoAsync(int penaltyId)
         {
             using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
             {
-                int linkId = await ctx.Clients
-                    .Where(_client => _client.ClientId == clientId)
-                    .Select(_client => _client.AliasLinkId)
-                    .FirstOrDefaultAsync();
+                var penalty = await ctx.Penalties
+                    .Select(_penalty => new { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
+                    .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
 
-                var clientIds = await ctx.Clients.Where(_client => _client.AliasLinkId == linkId)
-                    .Select(_client => _client.ClientId)
-                    .ToListAsync();
-
-                var iqPenaltyInfo = ctx.Set<Models.EFACSnapshot>()
-                    .Where(s => clientIds.Contains(s.ClientId))
+                var iqSnapshotInfo = ctx.Set<Models.EFACSnapshot>()
+                    .Where(s => s.ClientId == penalty.OffenderId)
                     .Include(s => s.LastStrainAngle)
                     .Include(s => s.HitOrigin)
                     .Include(s => s.HitDestination)
@@ -126,12 +121,28 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .ThenBy(s => s.Hits);
 
 #if DEBUG == true
-                var sql = iqPenaltyInfo.ToSql();
+                var sql = iqSnapshotInfo.ToSql();
 #endif
+                var penaltyInfo = await iqSnapshotInfo.ToListAsync();
 
-                var penaltyInfo = await iqPenaltyInfo.ToListAsync();
+                if (penaltyInfo.Count > 0)
+                {
+                    return View("_PenaltyInfo", penaltyInfo);
+                }
 
-                return View("_PenaltyInfo", penaltyInfo);
+                // we want to show anything related to the automated offense 
+                else
+                {
+                    return View("_MessageContext", new[]
+                    {
+                        new ChatInfo()
+                        {
+                            ClientId = penalty.OffenderId,
+                            Message = penalty.AutomatedOffense,
+                            Time = penalty.When
+                        }
+                    });
+                }
             }
         }
     }

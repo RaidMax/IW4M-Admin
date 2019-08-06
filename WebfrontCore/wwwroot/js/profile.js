@@ -35,14 +35,14 @@
     });
 
     /*
- * load info on ban/flag
- */
+    * load info on ban/flag
+    */
     $(document).off('click', '.automated-penalty-info-detailed');
     $(document).on('click', '.automated-penalty-info-detailed', function (e) {
         showLoader();
         const location = $(this).parent();
         $.get('/Stats/GetAutomatedPenaltyInfoAsync', {
-            'clientId': $(this).data('clientid')
+            'penaltyId': $(this).data('penalty-id')
         })
             .done(function (response) {
                 $('.penalty-info-context').remove();

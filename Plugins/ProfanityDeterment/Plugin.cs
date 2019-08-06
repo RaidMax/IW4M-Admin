@@ -1,9 +1,11 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.ProfanityDeterment
@@ -41,7 +43,15 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                 if (containsObjectionalWord)
                 {
-                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, Utilities.IW4MAdminClient(E.Owner));
+                    var sender = Utilities.IW4MAdminClient(E.Owner);
+                    sender.AdministeredPenalties = new List<EFPenalty>()
+                    {
+                        new EFPenalty()
+                        {
+                            AutomatedOffense = E.Origin.Name
+                        }
+                    };
+                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, sender);
                 };
             }
 
@@ -78,7 +88,16 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     else if (profanityInfringments < Settings.Configuration().KickAfterInfringementCount)
                     {
                         E.Origin.SetAdditionalProperty("_profanityInfringements", profanityInfringments + 1);
-                        E.Origin.Warn(Settings.Configuration().ProfanityWarningMessage, Utilities.IW4MAdminClient(E.Owner));
+
+                        var sender = Utilities.IW4MAdminClient(E.Owner);
+                        sender.AdministeredPenalties = new List<EFPenalty>()
+                        {
+                            new EFPenalty()
+                            {
+                                AutomatedOffense = E.Data
+                            }
+                        };
+                        E.Origin.Warn(Settings.Configuration().ProfanityWarningMessage, sender);
                     }
                 }
             }

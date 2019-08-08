@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SharedLibraryCore;
@@ -31,13 +32,18 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
                 var objectionalWords = Settings.Configuration().OffensiveWords;
                 bool containsObjectionalWord = objectionalWords.FirstOrDefault(w => E.Origin.Name.ToLower().Contains(w)) != null;
+                var matchedFilters = new List<string>();
 
                 // we want to run regex against it just incase
                 if (!containsObjectionalWord)
                 {
                     foreach (string word in objectionalWords)
                     {
-                        containsObjectionalWord |= Regex.IsMatch(E.Origin.Name.ToLower(), word, RegexOptions.IgnoreCase);
+                        if (Regex.IsMatch(E.Origin.Name.ToLower(), word, RegexOptions.IgnoreCase))
+                        {
+                            containsObjectionalWord |= true;
+                            matchedFilters.Add(word);
+                        }
                     }
                 }
 
@@ -48,7 +54,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                     {
                         new EFPenalty()
                         {
-                            AutomatedOffense = E.Origin.Name
+                            AutomatedOffense = $"{E.Origin.Name} - {string.Join(",", matchedFilters)}"
                         }
                     };
                     E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, sender);
@@ -64,15 +70,14 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
             {
                 var objectionalWords = Settings.Configuration().OffensiveWords;
                 bool containsObjectionalWord = false;
+                var matchedFilters = new List<string>();
 
                 foreach (string word in objectionalWords)
                 {
-                    containsObjectionalWord |= Regex.IsMatch(E.Data.ToLower(), word, RegexOptions.IgnoreCase);
-
-                    // break out early because there's at least one objectional word
-                    if (containsObjectionalWord)
+                    if (Regex.IsMatch(E.Data.ToLower(), word, RegexOptions.IgnoreCase))
                     {
-                        break;
+                        containsObjectionalWord |= true;
+                        matchedFilters.Add(word);
                     }
                 }
 
@@ -80,23 +85,23 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                 {
                     int profanityInfringments = E.Origin.GetAdditionalProperty<int>("_profanityInfringements");
 
+                    var sender = Utilities.IW4MAdminClient(E.Owner);
+                    sender.AdministeredPenalties = new List<EFPenalty>()
+                    {
+                        new EFPenalty()
+                        {
+                            AutomatedOffense = $"{E.Data} - {string.Join(",", matchedFilters)}"
+                        }
+                    };
+
                     if (profanityInfringments >= Settings.Configuration().KickAfterInfringementCount)
                     {
-                        E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, Utilities.IW4MAdminClient(E.Owner));
+                        E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, sender);
                     }
 
                     else if (profanityInfringments < Settings.Configuration().KickAfterInfringementCount)
                     {
                         E.Origin.SetAdditionalProperty("_profanityInfringements", profanityInfringments + 1);
-
-                        var sender = Utilities.IW4MAdminClient(E.Owner);
-                        sender.AdministeredPenalties = new List<EFPenalty>()
-                        {
-                            new EFPenalty()
-                            {
-                                AutomatedOffense = E.Data
-                            }
-                        };
                         E.Origin.Warn(Settings.Configuration().ProfanityWarningMessage, sender);
                     }
                 }

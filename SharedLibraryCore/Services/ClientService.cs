@@ -592,5 +592,22 @@ namespace SharedLibraryCore.Services
             }
         }
         #endregion
+
+        /// <summary>
+        /// retrieves the number of time the given client id has been reported
+        /// </summary>
+        /// <param name="clientId">client id to search for report counts of</param>
+        /// <returns></returns>
+        public async Task<int> GetClientReportCount(int clientId)
+        {
+            using (var ctx = new DatabaseContext(true))
+            {
+                return await ctx.Penalties
+                    .Where(_penalty => _penalty.Active)
+                    .Where(_penalty => _penalty.OffenderId == clientId)
+                    .Where(_penalty => _penalty.Type == EFPenalty.PenaltyType.Report)
+                    .CountAsync();
+            }
+        }
     }
 }

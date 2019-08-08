@@ -1050,7 +1050,6 @@ namespace IW4MAdmin
                 Offense = reason,
                 Punisher = originClient,
                 Link = targetClient.AliasLink,
-                AutomatedOffense = originClient.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
                 IsEvadedOffense = isEvade
             };
 

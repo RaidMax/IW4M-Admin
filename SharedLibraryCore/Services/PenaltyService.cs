@@ -26,7 +26,7 @@ namespace SharedLibraryCore.Services
                     Expires = newEntity.Expires,
                     Offense = newEntity.Offense,
                     When = DateTime.UtcNow,
-                    AutomatedOffense = newEntity.AutomatedOffense,
+                    AutomatedOffense = newEntity.AutomatedOffense ?? newEntity.Punisher.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
                     IsEvadedOffense = newEntity.IsEvadedOffense
                 };
 

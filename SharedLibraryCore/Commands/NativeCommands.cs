@@ -490,9 +490,8 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-
-            EFClient.Permission oldPerm = E.Target.Level;
-            EFClient.Permission newPerm = Utilities.MatchPermission(E.Data);
+            Permission oldPerm = E.Target.Level;
+            Permission newPerm = Utilities.MatchPermission(E.Data);
 
             if (E.Target == E.Origin)
             {
@@ -500,8 +499,7 @@ namespace SharedLibraryCore.Commands
                 return Task.CompletedTask;
             }
 
-
-            else if (newPerm == EFClient.Permission.Owner &&
+            else if (newPerm == Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
             {
                 // only one owner is allowed
@@ -509,7 +507,7 @@ namespace SharedLibraryCore.Commands
                 return Task.CompletedTask;
             }
 
-            else if (E.Origin.Level < EFClient.Permission.Owner &&
+            else if (E.Origin.Level < Permission.Owner &&
                 !E.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy)
             {
                 // only the owner is allowed to set levels
@@ -517,15 +515,17 @@ namespace SharedLibraryCore.Commands
                 return Task.CompletedTask;
             }
 
-            else if (E.Origin.Level <= newPerm &&
-                E.Origin.Level < EFClient.Permission.Owner)
+            else if ((E.Origin.Level <= newPerm &&
+                E.Origin.Level < Permission.Owner) ||
+                E.Origin.Level == newPerm)
             {
                 // can't promote a client to higher than your current perms
+                // or your peer
                 E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
                 return Task.CompletedTask;
             }
 
-            else if (newPerm > EFClient.Permission.Banned)
+            else if (newPerm > Permission.Banned)
             {
                 var ActiveClient = E.Owner.Manager.GetActiveClients()
                     .FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);

@@ -51,18 +51,6 @@
 }
 var charts = {};
 
-$('.server-history-row').each(function (index, element) {
-    let clientHistory = $(this).data('clienthistory');
-    let serverId = $(this).data('serverid');
-    let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
-    let primaryColor = window.getComputedStyle(document.body).getPropertyValue('--primary').trim();
-    let color = $(this).data('online') === 'True' ? primaryColor.endsWith('80') ? primaryColor : primaryColor + '80' : '#ff6060';
-    let width = $('.server-header').first().width();
-    let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color, maxClients);
-    historyChart.render();
-    charts[serverId] = historyChart;
-});
-
 $(window).resize(function () {
     $('.server-history-row').each(function (index) {
         let serverId = $(this).data('serverid');
@@ -93,6 +81,18 @@ function refreshClientActivity() {
 $(document).ready(function () {
     $('.server-join-button').click(function (e) {
         $(this).children('.server-header-ip-address').show();
+    });
+
+    $('.server-history-row').each(function (index, element) {
+        let clientHistory = $(this).data('clienthistory');
+        let serverId = $(this).data('serverid');
+        let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
+        let primaryColor = $('style').css('background-color');
+        let color = $(this).data('online') === 'True' ? primaryColor : '#ff6060';
+        let width = $('.server-header').first().width();
+        let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color, maxClients);
+        historyChart.render();
+        charts[serverId] = historyChart;
     });
 });
 

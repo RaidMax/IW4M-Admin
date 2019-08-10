@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SharedLibraryCore;
@@ -31,19 +29,15 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                 E.Origin.SetAdditionalProperty("_profanityInfringements", 0);
 
                 var objectionalWords = Settings.Configuration().OffensiveWords;
-                bool containsObjectionalWord = objectionalWords.FirstOrDefault(w => E.Origin.Name.ToLower().Contains(w)) != null;
                 var matchedFilters = new List<string>();
+                bool containsObjectionalWord = false;
 
-                // we want to run regex against it just incase
-                if (!containsObjectionalWord)
+                foreach (string word in objectionalWords)
                 {
-                    foreach (string word in objectionalWords)
+                    if (Regex.IsMatch(E.Origin.Name.ToLower(), word, RegexOptions.IgnoreCase))
                     {
-                        if (Regex.IsMatch(E.Origin.Name.ToLower(), word, RegexOptions.IgnoreCase))
-                        {
-                            containsObjectionalWord |= true;
-                            matchedFilters.Add(word);
-                        }
+                        containsObjectionalWord |= true;
+                        matchedFilters.Add(word);
                     }
                 }
 

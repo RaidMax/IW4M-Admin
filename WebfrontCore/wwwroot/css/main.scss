@@ -236,6 +236,10 @@ form *, select {
     background-color: darken($primary, 10%);
 }
 
+style {
+    background-color: darken($primary, 20%);
+}
+
 .nav-tabs .nav-item {
     margin-bottom: 0;
 }

@@ -132,6 +132,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
                                    where clientIds.Contains(stat.ClientId)
                                    where stat.Kills > 0 || stat.Deaths > 0
+                                   where serverId == null ? true : stat.ServerId == serverId
                                    group stat by stat.ClientId into s
                                    select new
                                    {
@@ -139,7 +140,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                        Kills = s.Sum(c => c.Kills),
                                        Deaths = s.Sum(c => c.Deaths),
                                        KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) / s.Sum(c => c.TimePlayed),
-                                       TotalTimePlayed = s.Sum(c => c.TimePlayed)
+                                       TotalTimePlayed = s.Sum(c => c.TimePlayed),
                                    });
 
 #if DEBUG == true

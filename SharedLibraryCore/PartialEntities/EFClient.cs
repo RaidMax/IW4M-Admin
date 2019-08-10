@@ -94,6 +94,10 @@ namespace SharedLibraryCore.Database.Models
             get { return CurrentAlias?.Name ?? "--"; }
             set { if (CurrentAlias != null) CurrentAlias.Name = value; }
         }
+
+        [NotMapped]
+        public string CleanedName => Name.StripColors();
+
         [NotMapped]
         public virtual int? IPAddress
         {

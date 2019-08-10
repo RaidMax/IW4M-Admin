@@ -96,7 +96,7 @@ namespace SharedLibraryCore.Commands
                     {
                         E.Target = matchingPlayers.First();
 
-                        string escapedName = Regex.Escape(E.Target.Name);
+                        string escapedName = Regex.Escape(E.Target.CleanedName);
                         var reg = new Regex($"(\"{escapedName}\")|({escapedName})", RegexOptions.IgnoreCase);
                         E.Data = reg.Replace(E.Data, "", 1).Trim();
 
@@ -126,12 +126,12 @@ namespace SharedLibraryCore.Commands
                     {
                         E.Target = matchingPlayers.First();
 
-                        string escapedName = Regex.Escape(E.Target.Name);
+                        string escapedName = Regex.Escape(E.Target.CleanedName);
                         string escapedArg = Regex.Escape(Args[0]);
                         var reg = new Regex($"({escapedName})|({escapedArg})", RegexOptions.IgnoreCase);
                         E.Data = reg.Replace(E.Data, "", 1).Trim();
 
-                        if ((E.Data.Trim() == E.Target.Name.ToLower().Trim() ||
+                        if ((E.Data.Trim() == E.Target.CleanedName.ToLower().Trim() ||
                             E.Data == String.Empty) &&
                             C.RequiresTarget)
                         {

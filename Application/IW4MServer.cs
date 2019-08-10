@@ -26,6 +26,7 @@ namespace IW4MAdmin
     {
         private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
+        private const int REPORT_FLAG_COUNT = 4;
 
         public int Id { get; private set; }
 
@@ -329,6 +330,14 @@ namespace IW4MAdmin
                 };
 
                 await Manager.GetPenaltyService().Create(newReport);
+
+                int reportNum = await Manager.GetClientService().GetClientReportCount(E.Target.ClientId);
+                bool isAutoFlagged = await Manager.GetClientService().IsAutoFlagged(E.Target.ClientId);
+
+                if (reportNum >= REPORT_FLAG_COUNT && !isAutoFlagged)
+                {
+                    E.Target.Flag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTO_FLAG_REPORT"].FormatExt(reportNum), Utilities.IW4MAdminClient(E.Owner));
+                }
             }
 
             else if (E.Type == GameEvent.EventType.TempBan)

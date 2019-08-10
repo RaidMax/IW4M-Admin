@@ -20,13 +20,15 @@ namespace LiveRadar.Web.Controllers
         public IActionResult Index(long? serverId = null)
         {
             ViewBag.IsFluid = true;
-            ViewBag.Title = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
+            ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
             ViewBag.ActiveServerId = serverId ?? Manager.GetServers().FirstOrDefault()?.EndPoint;
-            ViewBag.Servers = Manager.GetServers().Select(_server => new ServerInfo()
-            {
-                Name = _server.Hostname,
-                ID = _server.EndPoint
-            });
+            ViewBag.Servers = Manager.GetServers()
+                .Where(_server => _server.GameName == Server.Game.IW4)
+                .Select(_server => new ServerInfo()
+                {
+                    Name = _server.Hostname,
+                    ID = _server.EndPoint
+                });
 
             return View();
         }

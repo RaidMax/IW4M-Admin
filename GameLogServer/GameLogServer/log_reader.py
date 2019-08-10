@@ -8,7 +8,7 @@ class LogReader(object):
     def __init__(self):
         self.log_file_sizes = {}
         # (if the time between checks is greater, ignore ) - in seconds
-        self.max_file_time_change = 60
+        self.max_file_time_change = 30
 
     def read_file(self, path, retrieval_key):
         # this removes old entries that are no longer valid
@@ -40,8 +40,8 @@ class LogReader(object):
         next_retrieval_key = self._generate_key()
 
         # this is the first time the key has been requested, so we need to the next one
-        if retrieval_key not in self.log_file_sizes:
-            print('retrieval key "%s" does not exist' % retrieval_key)
+        if retrieval_key not in self.log_file_sizes or int(time.time() - self.log_file_sizes[retrieval_key]['read']) > self.max_file_time_change:
+            print('retrieval key "%s" does not exist or is outdated' % retrieval_key)
             last_log_info = {
                 'size' : new_file_size,
                 'previous_key' : None

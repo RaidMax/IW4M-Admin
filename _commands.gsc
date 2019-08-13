@@ -5,13 +5,15 @@
 
 init()
 {
+/*
 	SetDvarIfUninitialized("sv_team_balance_assignments", "");
 	SetDvarIfUninitialized("sv_iw4madmin_serverid", 0);
 	SetDvarIfUninitialized("sv_iw4madmin_apiurl", "http://127.0.0.1:1624/api/gsc/");
 	level.apiUrl = GetDvar("sv_iw4madmin_apiurl");
-	//level thread WaitForCommand();
+	level thread WaitForCommand();
 	level thread onPlayerConnect();
 	level thread onPlayerDisconnect();
+*/
 }
 
 onPlayerConnect()

@@ -250,7 +250,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (Level == Permission.Flagged)
+            else if (Level == Permission.Flagged || Level == Permission.Banned)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
@@ -282,7 +282,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            else if (Level != Permission.Flagged)
+            else if (Level != Permission.Flagged || Level == Permission.Banned)
             {
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }

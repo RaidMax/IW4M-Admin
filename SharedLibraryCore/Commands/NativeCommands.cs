@@ -487,7 +487,7 @@ namespace SharedLibraryCore.Commands
                 })
         { }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
             Permission oldPerm = E.Target.Level;
             Permission newPerm = Utilities.MatchPermission(E.Data);
@@ -495,15 +495,16 @@ namespace SharedLibraryCore.Commands
             if (E.Target == E.Origin)
             {
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_SELF"]);
-                return Task.CompletedTask;
+                return;
             }
 
             else if (newPerm == Permission.Owner &&
-                !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners)
+                !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners &&
+                await E.Owner.Manager.GetClientService().GetOwnerCount() > 0)
             {
                 // only one owner is allowed
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_OWNER"]);
-                return Task.CompletedTask;
+                return;
             }
 
             else if (E.Origin.Level < Permission.Owner &&
@@ -511,7 +512,7 @@ namespace SharedLibraryCore.Commands
             {
                 // only the owner is allowed to set levels
                 E.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{E.Target.Name}");
-                return Task.CompletedTask;
+                return;
             }
 
             else if ((E.Origin.Level <= newPerm &&
@@ -521,7 +522,7 @@ namespace SharedLibraryCore.Commands
                 // can't promote a client to higher than your current perms
                 // or your peer
                 E.Origin.Tell(string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
-                return Task.CompletedTask;
+                return;
             }
 
             else if (newPerm > Permission.Banned)
@@ -556,8 +557,6 @@ namespace SharedLibraryCore.Commands
             {
                 E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_SETLEVEL_FAIL"]);
             }
-
-            return Task.CompletedTask;
         }
     }
 

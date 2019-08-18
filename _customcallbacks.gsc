@@ -4,7 +4,6 @@
 
 init()
 {
-	return;
 	SetDvarIfUninitialized( "sv_customcallbacks", true );
 	SetDvarIfUninitialized( "sv_framewaittime", 0.05 );
 	SetDvarIfUninitialized( "sv_additionalwaittime", 0.05 );
@@ -173,7 +172,7 @@ Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 	location = victim GetTagOrigin( hitLocationToBone( sHitLoc ) );
 	isKillstreakKill = !isPlayer( attacker ) || isKillstreakWeapon( sWeapon );
 
-	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";" + 0 + ";" + 0;
+	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";0;0;";
 	attacker thread waitForAdditionalAngles( logLine );
 }
 

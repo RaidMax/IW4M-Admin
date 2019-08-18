@@ -231,19 +231,13 @@ namespace SharedLibraryCore.Services
                 temporalClient.CurrentServer.Logger.WriteDebug($"Updated {temporalClient.ClientId} to {newPermission}");
 #endif
 
+                var linkedPermissionSet = new[] { Permission.Banned, Permission.Flagged };
                 // if their permission level has been changed to level that needs to be updated on all accounts
-                if ((oldPermission != newPermission) &&
-                    (newPermission == Permission.Banned ||
-                     newPermission == Permission.Flagged ||
-                     newPermission == Permission.User))
+                if (linkedPermissionSet.Contains(newPermission) || linkedPermissionSet.Contains(oldPermission))
                 {
-                    var changeSvc = new ChangeHistoryService();
-
                     //get all clients that have the same linkId
                     var iqMatchingClients = ctx.Clients
                         .Where(_client => _client.AliasLinkId == entity.AliasLinkId);
-                    // make sure we don't select ourselves twice
-                    //.Where(_client => _client.ClientId != temporalClient.ClientId);
 
                     // this updates the level for all the clients with the same LinkId
                     // only if their new level is flagged or banned

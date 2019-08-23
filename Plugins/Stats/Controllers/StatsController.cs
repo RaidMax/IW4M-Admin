@@ -36,7 +36,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
 
             if (server != null)
             {
-                serverId = await StatManager.GetIdForServer(server);
+                serverId = StatManager.GetIdForServer(server);
             }
 
             var results = await Plugin.Manager.GetTopStats(offset, count, serverId);

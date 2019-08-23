@@ -17,7 +17,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             if (E.Origin.ClientNumber >= 0)
             {
 
-                long serverId = await Helpers.StatManager.GetIdForServer(E.Owner);
+                long serverId = Helpers.StatManager.GetIdForServer(E.Owner);
 
                 EFClientStatistics clientStats;
                 using (var ctx = new DatabaseContext(disableTracking: true))

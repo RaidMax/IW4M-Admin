@@ -16,7 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     {
         public static async Task<List<string>> GetMostPlayed(Server s)
         {
-            long serverId = await StatManager.GetIdForServer(s);
+            long serverId = StatManager.GetIdForServer(s);
 
             List<string> mostPlayed = new List<string>()
             {

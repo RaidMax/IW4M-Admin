@@ -22,6 +22,7 @@ namespace SharedLibraryCore.Database
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
+
         [Obsolete]
         private static readonly ILoggerFactory _loggerFactory = new LoggerFactory(new[] {
               new ConsoleLoggerProvider((category, level) => level == LogLevel.Information, true)
@@ -113,9 +114,9 @@ namespace SharedLibraryCore.Database
 
 #if DEBUG
 #pragma warning disable CS0612 // Type or member is obsolete
-            optionsBuilder.UseLoggerFactory(_loggerFactory)
+           // optionsBuilder.UseLoggerFactory(_loggerFactory)
 #pragma warning restore CS0612 // Type or member is obsolete
-                .EnableSensitiveDataLogging();
+              //  .EnableSensitiveDataLogging();
 #endif
         }
 

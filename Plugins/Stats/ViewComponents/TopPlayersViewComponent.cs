@@ -19,7 +19,7 @@ namespace Stats.ViewComponents
 
             if (server != null)
             {
-                serverId = await StatManager.GetIdForServer(server);
+                serverId = StatManager.GetIdForServer(server);
             }
 
             return View("_List", await Plugin.Manager.GetTopStats(offset, count, serverId));

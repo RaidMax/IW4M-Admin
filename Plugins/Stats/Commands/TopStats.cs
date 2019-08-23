@@ -17,7 +17,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     {
         public static async Task<List<string>> GetTopStats(Server s)
         {
-            long serverId = await StatManager.GetIdForServer(s); 
+            long serverId = StatManager.GetIdForServer(s); 
             List<string> topStatsText = new List<string>()
             {
                 $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"

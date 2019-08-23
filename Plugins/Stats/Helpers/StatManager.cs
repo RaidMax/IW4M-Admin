@@ -21,15 +21,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
     {
         private readonly ConcurrentDictionary<long, ServerStats> _servers;
         private readonly ILogger _log;
+        private static List<EFServer> serverModels;
         private readonly SemaphoreSlim OnProcessingPenalty;
         private readonly SemaphoreSlim OnProcessingSensitive;
+        private readonly List<EFClientKill> _hitCache;
 
         public StatManager(IManager mgr)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
+            _hitCache = new List<EFClientKill>();
             _log = mgr.GetLogger(0);
             OnProcessingPenalty = new SemaphoreSlim(1, 1);
             OnProcessingSensitive = new SemaphoreSlim(1, 1);
+        }
+
+        private void SetupServerIds()
+        {
+            using (var ctx = new DatabaseContext(disableTracking: true))
+            {
+                serverModels = ctx.Set<EFServer>().ToList();
+            }
         }
 
         public EFClientStatistics GetClientStats(int clientId, long serverId)
@@ -189,7 +200,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // insert the server if it does not exist
             try
             {
-                long serverId = GetIdForServer(sv).Result;
+                if (serverModels == null)
+                {
+                    SetupServerIds();
+                }
+
+                long serverId = GetIdForServer(sv);
                 EFServer server;
 
                 using (var ctx = new DatabaseContext(disableTracking: true))
@@ -264,7 +280,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             try
             {
-                long serverId = await GetIdForServer(pl.CurrentServer);
+                long serverId = GetIdForServer(pl.CurrentServer);
 
                 if (!_servers.ContainsKey(serverId))
                 {
@@ -364,7 +380,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     clientStats.SessionScore = pl.Score;
                     clientStats.LastScore = pl.Score;
 
-                    if (!detectionStats.TryAdd(pl.ClientId, new Cheat.Detection(_log, clientStats)))
+                    if (!detectionStats.TryAdd(pl.ClientId, new Detection(_log, clientStats)))
                     {
                         _log.WriteWarning("Could not add client to detection");
                     }
@@ -398,7 +414,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             pl.CurrentServer.Logger.WriteInfo($"Removing {pl} from stats");
 
-            long serverId = await GetIdForServer(pl.CurrentServer);
+            long serverId = GetIdForServer(pl.CurrentServer);
             var playerStats = _servers[serverId].PlayerStats;
             var detectionStats = _servers[serverId].PlayerDetections;
             var serverStats = _servers[serverId].ServerStatistics;
@@ -407,8 +423,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 pl.CurrentServer.Logger.WriteWarning($"Client disconnecting not in stats {pl}");
                 // remove the client from the stats dictionary as they're leaving
-                playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue1);
-                detectionStats.TryRemove(pl.ClientId, out Detection removedValue2);
+                playerStats.TryRemove(pl.ClientId, out _);
+                detectionStats.TryRemove(pl.ClientId, out _);
                 return;
             }
 
@@ -416,8 +432,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var clientStats = playerStats[pl.ClientId];
 
             // remove the client from the stats dictionary as they're leaving
-            playerStats.TryRemove(pl.ClientId, out EFClientStatistics removedValue3);
-            detectionStats.TryRemove(pl.ClientId, out Detection removedValue4);
+            playerStats.TryRemove(pl.ClientId, out _);
+            detectionStats.TryRemove(pl.ClientId, out _);
 
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
@@ -434,20 +450,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, long serverId)
         {
-            // todo: maybe do something with this
-            //string regex = @"^(D);(.+);([0-9]+);(allies|axis);(.+);([0-9]+);(allies|axis);(.+);(.+);([0-9]+);(.+);(.+)$";
-            //var match = Regex.Match(eventLine, regex, RegexOptions.IgnoreCase);
-
-            //if (match.Success)
-            //{
-            //    // this gives us what team the player is on
-            //    var attackerStats = Servers[serverId].PlayerStats[attackerClientId];
-            //    var victimStats = Servers[serverId].PlayerStats[victimClientId];
-            //    IW4Info.Team victimTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[4].ToString(), true);
-            //    IW4Info.Team attackerTeam = (IW4Info.Team)Enum.Parse(typeof(IW4Info.Team), match.Groups[7].ToString(), true);
-            //    attackerStats.Team = attackerTeam;
-            //    victimStats.Team = victimTeam;
-            //}
         }
 
         /// <summary>
@@ -516,10 +518,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 AnglesList = snapshotAngles
             };
 
-            if ((hit.DeathType == IW4Info.MeansOfDeath.MOD_SUICIDE &&
-                hit.Damage == 100000) || hit.HitLoc == IW4Info.HitLocation.shield)
+            if (hit.HitLoc == IW4Info.HitLocation.shield)
             {
-                // suicide by switching teams so let's not count it against them
+                // we don't care about shield hits
                 return;
             }
 
@@ -550,74 +551,80 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
             }
 
-            using (var ctx = new DatabaseContext(disableTracking: true))
-            {
-                ctx.Set<EFClientStatistics>().Update(clientStats);
-                await ctx.SaveChangesAsync();
-            }
 
-            using (var ctx = new DatabaseContext())
+            try
             {
-                try
+                if (Plugin.Config.Configuration().StoreClientKills)
                 {
-                    if (Plugin.Config.Configuration().StoreClientKills)
-                    {
-                        ctx.Set<EFClientKill>().Add(hit);
-                    }
+                    _hitCache.Add(hit);
 
-                    if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
+                    if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
                     {
-                        DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
+
+                        using (var ctx = new DatabaseContext())
+                        {
+                            ctx.AddRange(_hitCache);
+                            await ctx.SaveChangesAsync();
+                        }
+
+                        _hitCache.Clear();
+                    }
+                }
+
+
+                if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
+                {
+                    DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
 #if DEBUG
-                        if (clientDetection.TrackedHits.Count > 0)
+                    if (clientDetection.TrackedHits.Count > 0)
 #else
                         if (clientDetection.TrackedHits.Count > Detection.MAX_TRACKED_HIT_COUNT)
 #endif
+                    {
+                        while (clientDetection.TrackedHits.Count > 0)
                         {
-                            while (clientDetection.TrackedHits.Count > 0)
+                            await OnProcessingPenalty.WaitAsync();
+
+                            var oldestHit = clientDetection.TrackedHits.OrderBy(_hits => _hits.TimeOffset).First();
+                            clientDetection.TrackedHits.Remove(oldestHit);
+
+                            result = clientDetection.ProcessHit(oldestHit, isDamage);
+                            await ApplyPenalty(result, attacker);
+
+                            if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
                             {
-                                await OnProcessingPenalty.WaitAsync();
-
-                                var oldestHit = clientDetection.TrackedHits.OrderBy(_hits => _hits.TimeOffset).First();
-                                clientDetection.TrackedHits.Remove(oldestHit);
-
-                                result = clientDetection.ProcessHit(oldestHit, isDamage);
-                                await ApplyPenalty(result, attacker, ctx);
-
-                                if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
+                                using (var ctx = new DatabaseContext())
                                 {
                                     SaveTrackedSnapshots(clientDetection, ctx);
-
-                                    if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
-                                    {
-                                        OnProcessingPenalty.Release(1);
-                                        break;
-                                    }
+                                    await ctx.SaveChangesAsync();
                                 }
 
-                                OnProcessingPenalty.Release(1);
+                                if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
+                                {
+                                    OnProcessingPenalty.Release(1);
+                                    break;
+                                }
                             }
-                        }
 
-                        else
-                        {
-                            clientDetection.TrackedHits.Add(hit);
+                            OnProcessingPenalty.Release(1);
                         }
                     }
 
-                    ctx.Set<EFHitLocationCount>().UpdateRange(clientStats.HitLocations);
-                    await ctx.SaveChangesAsync();
+                    else
+                    {
+                        clientDetection.TrackedHits.Add(hit);
+                    }
                 }
+            }
 
-                catch (Exception ex)
-                {
-                    _log.WriteError("Could not save hit or AC info");
-                    _log.WriteDebug(ex.GetExceptionInfo());
-                }
+            catch (Exception ex)
+            {
+                _log.WriteError("Could not save hit or AC info");
+                _log.WriteDebug(ex.GetExceptionInfo());
             }
         }
 
-        async Task ApplyPenalty(DetectionPenaltyResult penalty, EFClient attacker, DatabaseContext ctx)
+        async Task ApplyPenalty(DetectionPenaltyResult penalty, EFClient attacker)
         {
             var penaltyClient = Utilities.IW4MAdminClient(attacker.CurrentServer);
             switch (penalty.ClientPenalty)
@@ -713,7 +720,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task AddStandardKill(EFClient attacker, EFClient victim)
         {
-            long serverId = await GetIdForServer(attacker.CurrentServer);
+            long serverId = GetIdForServer(attacker.CurrentServer);
 
             EFClientStatistics attackerStats = null;
             if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
@@ -743,7 +750,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
-            await Sync(attacker.CurrentServer);
 
             // this happens when the round has changed
             if (attackerStats.SessionScore == 0)
@@ -801,16 +807,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
                 await UpdateStatHistory(attacker, attackerStats);
             }
-
-            // todo: do we want to save this immediately?
-            using (var ctx = new DatabaseContext(disableTracking: true))
-            {
-                var clientStatsSet = ctx.Set<EFClientStatistics>();
-
-                clientStatsSet.Attach(attackerStats).State = EntityState.Modified;
-                clientStatsSet.Attach(victimStats).State = EntityState.Modified;
-                await ctx.SaveChangesAsync();
-            }
         }
 
         /// <summary>
@@ -824,12 +820,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
 
             // don't update their stat history if they haven't played long
-#if DEBUG == false
+            //#if DEBUG == false
             if (currentSessionTime < 60)
             {
                 return;
             }
-#endif
+            //#endif
 
             int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
@@ -858,12 +854,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 #region INDIVIDUAL_SERVER_PERFORMANCE
                 // get the client ranking for the current server
-                 int individualClientRanking = await ctx.Set<EFRating>()
-                    .Where(GetRankingFunc(clientStats.ServerId))
-                    // ignore themselves in the query
-                    .Where(c => c.RatingHistory.ClientId != client.ClientId)
-                    .Where(c => c.Performance > clientStats.Performance)
-                    .CountAsync() + 1;
+                int individualClientRanking = await ctx.Set<EFRating>()
+                   .Where(GetRankingFunc(clientStats.ServerId))
+                   // ignore themselves in the query
+                   .Where(c => c.RatingHistory.ClientId != client.ClientId)
+                   .Where(c => c.Performance > clientStats.Performance)
+                   .CountAsync() + 1;
 
                 // limit max history per server to 40
                 if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 40)
@@ -1218,7 +1214,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task Sync(Server sv)
         {
-            long serverId = await GetIdForServer(sv);
+            long serverId = GetIdForServer(sv);
 
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
@@ -1237,7 +1233,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             _servers[serverId].IsTeamBased = isTeamBased;
         }
 
-        public static async Task<long> GetIdForServer(Server server)
+        public static long GetIdForServer(Server server)
         {
             if ($"{server.IP}:{server.Port.ToString()}" == "66.150.121.184:28965")
             {
@@ -1248,13 +1244,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             id = id < 0 ? Math.Abs(id) : id;
             long? serverId;
 
-            // todo: cache this eventually, as it shouldn't change
-            using (var ctx = new DatabaseContext(disableTracking: true))
-            {
-                serverId = (await ctx.Set<EFServer>().FirstOrDefaultAsync(_server => _server.ServerId == server.EndPoint ||
-                    _server.EndPoint == server.ToString() ||
-                    _server.ServerId == id))?.ServerId;
-            }
+            serverId = serverModels.FirstOrDefault(_server => _server.ServerId == server.EndPoint ||
+                _server.EndPoint == server.ToString() ||
+                _server.ServerId == id)?.ServerId;
 
             if (!serverId.HasValue)
             {

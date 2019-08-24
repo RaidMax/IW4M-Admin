@@ -551,26 +551,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
             }
 
-
             try
             {
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
-                    lock (_hitCache)
+                    _hitCache.Add(hit);
+
+                    if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
                     {
-                        _hitCache.Add(hit);
-
-                        if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
+                        OnProcessingPenalty.Wait();
+                        using (var ctx = new DatabaseContext())
                         {
-
-                            using (var ctx = new DatabaseContext())
-                            {
-                                ctx.AddRange(_hitCache);
-                                await ctx.SaveChangesAsync();
-                            }
-
-                            _hitCache.Clear();
+                            ctx.AddRange(_hitCache);
+                            await ctx.SaveChangesAsync();
                         }
+
+                        _hitCache.Clear();
+                        OnProcessingPenalty.Release();
                     }
                 }
 

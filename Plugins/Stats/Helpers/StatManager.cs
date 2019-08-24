@@ -556,18 +556,21 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
-                    _hitCache.Add(hit);
-
-                    if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
+                    lock (_hitCache)
                     {
+                        _hitCache.Add(hit);
 
-                        using (var ctx = new DatabaseContext())
+                        if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
                         {
-                            ctx.AddRange(_hitCache);
-                            await ctx.SaveChangesAsync();
-                        }
 
-                        _hitCache.Clear();
+                            using (var ctx = new DatabaseContext())
+                            {
+                                ctx.AddRange(_hitCache);
+                                await ctx.SaveChangesAsync();
+                            }
+
+                            _hitCache.Clear();
+                        }
                     }
                 }
 
@@ -578,7 +581,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 #if DEBUG
                     if (clientDetection.TrackedHits.Count > 0)
 #else
-                        if (clientDetection.TrackedHits.Count > Detection.MAX_TRACKED_HIT_COUNT)
+                    if (clientDetection.TrackedHits.Count > Detection.MAX_TRACKED_HIT_COUNT)
 #endif
                     {
                         while (clientDetection.TrackedHits.Count > 0)

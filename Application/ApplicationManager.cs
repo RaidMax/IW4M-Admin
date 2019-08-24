@@ -222,8 +222,15 @@ namespace IW4MAdmin.Application
                 {
                     await Task.Delay(ConfigHandler.Configuration().RConPollRate, _tokenSource.Token);
                 }
-                // if a cancellation is received, we want to return immediately
-                catch { break; }
+                // if a cancellation is received, we want to return immediately after shutting down
+                catch
+                {
+                    foreach (var server in Servers.Where(s => serverIds.Contains(s.EndPoint)))
+                    {
+                        await server.ProcessUpdatesAsync(_tokenSource.Token);
+                    }
+                    break;
+                }
             }
         }
 

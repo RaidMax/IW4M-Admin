@@ -79,7 +79,7 @@ namespace AutomessageFeed
 
         public Task OnUnloadAsync()
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 }

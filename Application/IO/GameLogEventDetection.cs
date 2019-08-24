@@ -48,6 +48,8 @@ namespace IW4MAdmin.Application.IO
                 
                 await Task.Delay(_reader.UpdateInterval, _server.Manager.CancellationToken);
             }
+
+            _server.Logger.WriteDebug("Stopped polling for changes");
         }
 
         private async Task UpdateLogEvents()

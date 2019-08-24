@@ -564,11 +564,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
+                    OnProcessingPenalty.Wait();
                     _hitCache.Add(hit);
 
                     if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
                     {
-                        OnProcessingPenalty.Wait();
+
                         using (var ctx = new DatabaseContext())
                         {
                             ctx.AddRange(_hitCache);
@@ -576,8 +577,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         }
 
                         _hitCache.Clear();
-                        OnProcessingPenalty.Release();
                     }
+                    OnProcessingPenalty.Release(1);
                 }
 
 
@@ -630,6 +631,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 _log.WriteError("Could not save hit or AC info");
                 _log.WriteDebug(ex.GetExceptionInfo());
+
+                if (OnProcessingPenalty.CurrentCount == 0)
+                {
+                    OnProcessingPenalty.Release();
+                }
             }
         }
 

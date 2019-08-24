@@ -436,15 +436,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
+            await SaveClientStats(clientStats);
 
+            // increment the total play time
+            serverStats.TotalPlayTime += pl.ConnectionLength;
+        }
+
+        private static async Task SaveClientStats(EFClientStatistics clientStats)
+        {
             using (var ctx = new DatabaseContext(disableTracking: true))
             {
                 ctx.Update(clientStats);
                 await ctx.SaveChangesAsync();
             }
-
-            // increment the total play time
-            serverStats.TotalPlayTime += pl.ConnectionLength;
         }
 
         public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, long serverId)
@@ -549,6 +553,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 hit.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
             {
                 clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
+            }
+
+            if (clientStats.SessionKills % Detection.MAX_TRACKED_HIT_COUNT == 0)
+            {
+                await SaveClientStats(clientStats);
             }
 
             try

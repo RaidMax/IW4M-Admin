@@ -572,6 +572,30 @@ namespace IW4MAdmin
             };
         }
 
+        private async Task ShutdownInternal()
+        {
+            foreach (var client in GetClientsAsList())
+            {
+                await client.OnDisconnect();
+
+                var e = new GameEvent()
+                {
+                    Type = GameEvent.EventType.Disconnect,
+                    Owner = this,
+                    Origin = client
+                };
+
+                Manager.GetEventHandler().AddEvent(e);
+
+                await e.WaitAsync(Utilities.DefaultCommandTimeout, new CancellationTokenRegistration().Token);
+            }
+
+            foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+            {
+                await plugin.OnUnloadAsync();
+            }
+        }
+
         DateTime start = DateTime.Now;
         DateTime playerCountStart = DateTime.Now;
         DateTime lastCount = DateTime.Now;
@@ -579,18 +603,12 @@ namespace IW4MAdmin
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
             try
-            {
-                #region SHUTDOWN
-                if (Manager.CancellationToken.IsCancellationRequested)
+            { 
+                if (cts.IsCancellationRequested)
                 {
-                    foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
-                    {
-                        await plugin.OnUnloadAsync();
-                    }
-
+                    await ShutdownInternal();
                     return true;
                 }
-                #endregion
 
                 try
                 {
@@ -735,6 +753,12 @@ namespace IW4MAdmin
                     start = DateTime.Now;
                 }
 
+                return true;
+            }
+
+            catch (TaskCanceledException)
+            {
+                await ShutdownInternal();
                 return true;
             }
 

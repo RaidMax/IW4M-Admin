@@ -430,13 +430,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
 
-            // remove the client from the stats dictionary as they're leaving
-            playerStats.TryRemove(pl.ClientId, out _);
-            detectionStats.TryRemove(pl.ClientId, out _);
-
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
             await SaveClientStats(clientStats);
+
+            // remove the client from the stats dictionary as they're leaving
+            playerStats.TryRemove(pl.ClientId, out _);
+            detectionStats.TryRemove(pl.ClientId, out _);
 
             // increment the total play time
             serverStats.TotalPlayTime += pl.ConnectionLength;
@@ -444,7 +444,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private static async Task SaveClientStats(EFClientStatistics clientStats)
         {
-            using (var ctx = new DatabaseContext(disableTracking: true))
+            using (var ctx = new DatabaseContext())
             {
                 ctx.Update(clientStats);
                 await ctx.SaveChangesAsync();
@@ -533,11 +533,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await AddStandardKill(attacker, victim);
             }
 
-            if (hit.IsKillstreakKill)
-            {
-                return;
-            }
-
             // incase the add player event get delayed
             if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
             {
@@ -558,6 +553,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (clientStats.SessionKills % Detection.MAX_TRACKED_HIT_COUNT == 0)
             {
                 await SaveClientStats(clientStats);
+            }
+
+            if (hit.IsKillstreakKill)
+            {
+                return;
             }
 
             try

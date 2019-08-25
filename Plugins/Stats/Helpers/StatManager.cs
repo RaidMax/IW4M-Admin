@@ -431,13 +431,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // get individual client's stats
             var clientStats = playerStats[pl.ClientId];
 
-            // remove the client from the stats dictionary as they're leaving
-            playerStats.TryRemove(pl.ClientId, out _);
-            detectionStats.TryRemove(pl.ClientId, out _);
-
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
             await SaveClientStats(clientStats);
+
+            // remove the client from the stats dictionary as they're leaving
+            playerStats.TryRemove(pl.ClientId, out _);
+            detectionStats.TryRemove(pl.ClientId, out _);
 
             // increment the total play time
             serverStats.TotalPlayTime += pl.ConnectionLength;
@@ -445,7 +445,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private static async Task SaveClientStats(EFClientStatistics clientStats)
         {
-            using (var ctx = new DatabaseContext(disableTracking: true))
+            using (var ctx = new DatabaseContext())
             {
                 ctx.Update(clientStats);
                 await ctx.SaveChangesAsync();
@@ -533,11 +533,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await AddStandardKill(attacker, victim);
             }
 
-            if (hit.IsKillstreakKill)
-            {
-                return;
-            }
-
             // incase the add player event get delayed
             if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
             {
@@ -560,15 +555,21 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await SaveClientStats(clientStats);
             }
 
+            if (hit.IsKillstreakKill)
+            {
+                return;
+            }
+
             try
             {
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
+                    OnProcessingPenalty.Wait();
                     _hitCache.Add(hit);
 
                     if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
                     {
-                        OnProcessingPenalty.Wait();
+
                         using (var ctx = new DatabaseContext())
                         {
                             ctx.AddRange(_hitCache);
@@ -576,8 +577,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         }
 
                         _hitCache.Clear();
-                        OnProcessingPenalty.Release();
                     }
+                    OnProcessingPenalty.Release(1);
                 }
 
 
@@ -630,6 +631,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 _log.WriteError("Could not save hit or AC info");
                 _log.WriteDebug(ex.GetExceptionInfo());
+
+                if (OnProcessingPenalty.CurrentCount == 0)
+                {
+                    OnProcessingPenalty.Release();
+                }
             }
         }
 

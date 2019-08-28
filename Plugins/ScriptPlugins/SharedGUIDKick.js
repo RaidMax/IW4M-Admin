@@ -16,12 +16,13 @@ var plugin = {
                 gameEvent.Origin.NetworkId === 3150799945255696069 ||
                 gameEvent.Origin.NetworkId === 5859032128210324569 ||
                 gameEvent.Origin.NetworkId === 2908745942105435771 ||
-                gameEvent.Origin.NetworkId === -6492697076432899192) {
+                gameEvent.Origin.NetworkId === -6492697076432899192 ||
+                gameEvent.Origin.NetworkId === 1145760003260769995 ||
+                gameEvent.Origin.NetworkId === -7102887284306116957) {
                 gameEvent.Origin.Kick('Your GUID is generic. Delete players/guids.dat and rejoin', _IW4MAdminClient);
             }
         }
     },
-
     onLoadAsync: function (manager) {
     },
 

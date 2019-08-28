@@ -20,18 +20,19 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet]
-        public IActionResult Status(int id)
+        public IActionResult Status(long? id)
         {
             var serverInfo = Manager.GetServers()
                 .Select(server => new
                 {
                     Id = server.EndPoint,
+                    IsOnline = !server.Throttled,
                     Name = server.Hostname,
                     MaxPlayers = server.MaxClients,
                     CurrentPlayers = server.GetClientsAsList().Count,
                     Map = server.CurrentMap,
                     GameMode = server.Gametype,
-                    Port = server.Port,
+                    server.Port,
                     Game = server.GameName.ToString(),
                     Players = server.GetClientsAsList()
                         .Select(player => new
@@ -46,7 +47,7 @@ namespace WebfrontCore.Controllers.API
                         })
                 });
 
-            if (id != 0)
+            if (id != null)
             {
                 serverInfo = serverInfo.Where(server => server.Id == id);
             }
@@ -64,11 +65,11 @@ namespace WebfrontCore.Controllers.API
                 serverToRestart.RestartRequested = false;
             }
 
-            return serverToRestart != null ? 
+            return serverToRestart != null ?
             (IActionResult)Json(new
             {
                 port = serverToRestart.Port
-            }) : 
+            }) :
             Unauthorized();
         }
     }

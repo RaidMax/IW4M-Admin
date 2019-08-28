@@ -547,12 +547,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 hit.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
                 hit.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
             {
-                clientStats.HitLocations.Single(hl => hl.Location == hit.HitLoc).HitCount += 1;
+                clientStats.HitLocations.First(hl => hl.Location == hit.HitLoc).HitCount += 1;
             }
 
             if (clientStats.SessionKills % Detection.MAX_TRACKED_HIT_COUNT == 0)
             {
+                await OnProcessingPenalty.WaitAsync();
                 await SaveClientStats(clientStats);
+                OnProcessingPenalty.Release(1);
             }
 
             if (hit.IsKillstreakKill)
@@ -564,7 +566,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
-                    OnProcessingPenalty.Wait();
+                    await OnProcessingPenalty.WaitAsync();
                     _hitCache.Add(hit);
 
                     if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
@@ -581,10 +583,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     OnProcessingPenalty.Release(1);
                 }
 
-
                 if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
                 {
                     DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
+                    await OnProcessingPenalty.WaitAsync();
+
 #if DEBUG
                     if (clientDetection.TrackedHits.Count > 0)
 #else
@@ -593,7 +596,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         while (clientDetection.TrackedHits.Count > 0)
                         {
-                            await OnProcessingPenalty.WaitAsync();
+     
 
                             var oldestHit = clientDetection.TrackedHits.OrderBy(_hits => _hits.TimeOffset).First();
                             clientDetection.TrackedHits.Remove(oldestHit);
@@ -611,12 +614,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                                 if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
                                 {
-                                    OnProcessingPenalty.Release(1);
                                     break;
                                 }
                             }
-
-                            OnProcessingPenalty.Release(1);
                         }
                     }
 
@@ -624,6 +624,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         clientDetection.TrackedHits.Add(hit);
                     }
+
+                    OnProcessingPenalty.Release(1);
                 }
             }
 
@@ -634,7 +636,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 if (OnProcessingPenalty.CurrentCount == 0)
                 {
-                    OnProcessingPenalty.Release();
+                    OnProcessingPenalty.Release(1);
                 }
             }
         }

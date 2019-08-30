@@ -86,33 +86,44 @@ namespace SharedLibraryCore.RCon
                 return defaultEncoding.GetString(convertedBytes);
             }
 
-            string convertedRConPassword = convertEncoding(RConPassword);
-            string convertedParameters = convertEncoding(parameters);
-
-            switch (type)
+            try
             {
-                case StaticHelpers.QueryType.GET_DVAR:
-                    waitForResponse |= true;
-                    payload = string.Format(Config.CommandPrefixes.RConGetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
-                    break;
-                case StaticHelpers.QueryType.SET_DVAR:
-                    payload = string.Format(Config.CommandPrefixes.RConSetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
-                    break;
-                case StaticHelpers.QueryType.COMMAND:
-                    payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
-                    break;
-                case StaticHelpers.QueryType.GET_STATUS:
-                    waitForResponse |= true;
-                    payload = (Config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
-                    break;
-                case StaticHelpers.QueryType.GET_INFO:
-                    waitForResponse |= true;
-                    payload = (Config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
-                    break;
-                case StaticHelpers.QueryType.COMMAND_STATUS:
-                    waitForResponse |= true;
-                    payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0").Select(Convert.ToByte).ToArray();
-                    break;
+                string convertedRConPassword = convertEncoding(RConPassword);
+                string convertedParameters = convertEncoding(parameters);
+
+                switch (type)
+                {
+                    case StaticHelpers.QueryType.GET_DVAR:
+                        waitForResponse |= true;
+                        payload = string.Format(Config.CommandPrefixes.RConGetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        break;
+                    case StaticHelpers.QueryType.SET_DVAR:
+                        payload = string.Format(Config.CommandPrefixes.RConSetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        break;
+                    case StaticHelpers.QueryType.COMMAND:
+                        payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        break;
+                    case StaticHelpers.QueryType.GET_STATUS:
+                        waitForResponse |= true;
+                        payload = (Config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
+                        break;
+                    case StaticHelpers.QueryType.GET_INFO:
+                        waitForResponse |= true;
+                        payload = (Config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
+                        break;
+                    case StaticHelpers.QueryType.COMMAND_STATUS:
+                        waitForResponse |= true;
+                        payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0").Select(Convert.ToByte).ToArray();
+                        break;
+                }
+            }
+
+            // this happens when someone tries to send something that can't be converted into a 7 bit character set
+            // e.g: emoji -> windows-1252
+            catch (OverflowException)
+            {
+                connectionState.OnComplete.Release(1);
+                throw new NetworkException($"Invalid character expected when converting encodings - {parameters}");
             }
 
             byte[] response = null;

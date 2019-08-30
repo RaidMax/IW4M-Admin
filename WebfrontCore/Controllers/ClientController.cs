@@ -142,7 +142,7 @@ namespace WebfrontCore.Controllers
             
             foreach(var client in clientsDto)
             {
-                if (!Authorized && ((Permission)Enum.Parse(typeof(Permission), client.Level)).ShouldHideLevel())
+                if (!Authorized && ((Permission)client.LevelInt).ShouldHideLevel())
                 {
                     client.LevelInt = (int)Permission.User;
                     client.Level = Permission.User.ToLocalizedLevelName();

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -449,7 +450,8 @@ namespace SharedLibraryCore.Database.Models
             LastConnection = DateTime.UtcNow;
             Connections += 1;
 
-            if (Name.Length < 3)
+            string strippedName = Name.StripColors();
+            if (string.IsNullOrWhiteSpace(Name) || strippedName.Replace(" ", "").Length < 3)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
                 Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));

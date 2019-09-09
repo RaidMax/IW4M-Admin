@@ -153,6 +153,10 @@ namespace IW4MAdmin.Plugins.Stats
                     {
                         break;
                     }
+                    else
+                    {
+                        break;
+                    }
                     break;
             }
         }

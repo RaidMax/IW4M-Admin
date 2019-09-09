@@ -130,7 +130,7 @@ namespace SharedLibraryCore.RCon
             catch (OverflowException)
             {
                 connectionState.OnComplete.Release(1);
-                throw new NetworkException($"Invalid character expected when converting encodings - {parameters}");
+                throw new NetworkException($"Invalid character encountered when converting encodings - {parameters}");
             }
 
             byte[] response = null;

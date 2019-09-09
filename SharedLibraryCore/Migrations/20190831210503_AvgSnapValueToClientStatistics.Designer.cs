@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SharedLibraryCore.Database;
 
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20190831210503_AvgSnapValueToClientStatistics")]
+    partial class AvgSnapValueToClientStatistics
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,24 +82,6 @@ namespace SharedLibraryCore.Migrations
                     b.HasIndex("LastStrainAngleId");
 
                     b.ToTable("EFACSnapshot");
-                });
-
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshotVector3", b =>
-                {
-                    b.Property<int>("ACSnapshotVector3Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("SnapshotId");
-
-                    b.Property<int>("Vector3Id");
-
-                    b.HasKey("ACSnapshotVector3Id");
-
-                    b.HasIndex("SnapshotId");
-
-                    b.HasIndex("Vector3Id");
-
-                    b.ToTable("EFACSnapshotVector3");
                 });
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFClientKill", b =>
@@ -221,8 +205,6 @@ namespace SharedLibraryCore.Migrations
                     b.Property<double>("SPM");
 
                     b.Property<double>("Skill");
-
-                    b.Property<int>("SnapHitCount");
 
                     b.Property<int>("TimePlayed");
 
@@ -520,6 +502,8 @@ namespace SharedLibraryCore.Migrations
                     b.Property<int>("Vector3Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<int?>("EFACSnapshotSnapshotId");
+
                     b.Property<float>("X");
 
                     b.Property<float>("Y");
@@ -527,6 +511,8 @@ namespace SharedLibraryCore.Migrations
                     b.Property<float>("Z");
 
                     b.HasKey("Vector3Id");
+
+                    b.HasIndex("EFACSnapshotSnapshotId");
 
                     b.ToTable("Vector3");
                 });
@@ -556,19 +542,6 @@ namespace SharedLibraryCore.Migrations
                     b.HasOne("SharedLibraryCore.Helpers.Vector3", "LastStrainAngle")
                         .WithMany()
                         .HasForeignKey("LastStrainAngleId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshotVector3", b =>
-                {
-                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot", "Snapshot")
-                        .WithMany("PredictedViewAngles")
-                        .HasForeignKey("SnapshotId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SharedLibraryCore.Helpers.Vector3", "Vector")
-                        .WithMany()
-                        .HasForeignKey("Vector3Id")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
@@ -719,6 +692,13 @@ namespace SharedLibraryCore.Migrations
                         .WithMany("AdministeredPenalties")
                         .HasForeignKey("PunisherId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("SharedLibraryCore.Helpers.Vector3", b =>
+                {
+                    b.HasOne("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot")
+                        .WithMany("PredictedViewAngles")
+                        .HasForeignKey("EFACSnapshotSnapshotId");
                 });
 #pragma warning restore 612, 618
         }

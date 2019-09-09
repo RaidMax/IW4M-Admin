@@ -1,4 +1,5 @@
 ﻿using IW4MAdmin.Plugins.Stats.Models;
+using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -18,11 +19,13 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Chest,
             Offset,
             Strain,
-            Recoil
+            Recoil,
+            Snap
         };
 
         public ChangeTracking<EFACSnapshot> Tracker { get; private set; }
-        public const int MAX_TRACKED_HIT_COUNT = 10;
+        public const int MIN_HITS_TO_RUN_DETECTION = 5;
+        private const int MIN_ANGLE_COUNT = 5;
 
         public List<EFClientKill> TrackedHits { get; set; }
         int Kills;
@@ -36,6 +39,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
         private double sessionAverageRecoilAmount;
+        private double sessionAverageSnapAmount;
+        private int sessionSnapHits;
+        private EFClientKill lastHit;
 
         private class HitInfo
         {
@@ -91,10 +97,57 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Kills++;
             }
 
-            #region VIEWANGLES   
-            if (hit.AnglesList.Count >= 2)
+            #region SNAP
+            if (hit.AnglesList.Count == MIN_ANGLE_COUNT)
             {
-                double realAgainstPredict = Vector3.ViewAngleDistance(hit.AnglesList[0], hit.AnglesList[1], hit.ViewAngles);
+                if (lastHit == null)
+                {
+                    lastHit = hit;
+                }
+
+                if (lastHit == hit || lastHit.VictimId != hit.VictimId || (hit.TimeOffset - lastHit.TimeOffset) >= 1000)
+                {
+                    ClientStats.SnapHitCount++;
+                    sessionSnapHits++;
+                    var currentSnapDistance = Vector3.SnapDistance(hit.AnglesList[0], hit.AnglesList[1], hit.ViewAngles);
+                    double previousAverage = ClientStats.AverageSnapValue;
+                    ClientStats.AverageSnapValue = (previousAverage * (ClientStats.SnapHitCount - 1) + currentSnapDistance) / ClientStats.SnapHitCount;
+                    double previousSessionAverage = sessionAverageSnapAmount;
+                    sessionAverageSnapAmount = (previousSessionAverage * (sessionSnapHits - 1) + currentSnapDistance) / sessionSnapHits;
+                    lastHit = hit;
+
+                    if (sessionSnapHits > Thresholds.LowSampleMinKills && sessionAverageSnapAmount > Thresholds.SnapFlagValue)
+                    {
+                        results.Add(new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = EFPenalty.PenaltyType.Flag,
+                            Value = sessionAverageSnapAmount,
+                            HitCount = ClientStats.SnapHitCount,
+                            Type = DetectionType.Snap
+                        });
+                    }
+
+                    if (sessionSnapHits > Thresholds.LowSampleMinKills && sessionAverageSnapAmount > Thresholds.SnapBanValue)
+                    {
+                        results.Add(new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = EFPenalty.PenaltyType.Ban,
+                            Value = sessionAverageSnapAmount,
+                            HitCount = ClientStats.SnapHitCount,
+                            Type = DetectionType.Snap
+                        });
+                    }
+                }
+            }
+            #endregion
+
+            #region VIEWANGLES   
+            int totalUsableAngleCount = hit.AnglesList.Count - 1;
+            int angleOffsetIndex = totalUsableAngleCount / 2;
+            if (hit.AnglesList.Count == 5)
+            {
+               
+                double realAgainstPredict = Vector3.ViewAngleDistance(hit.AnglesList[angleOffsetIndex - 1], hit.AnglesList[angleOffsetIndex + 1], hit.ViewAngles);
 
                 // LIFETIME
                 var hitLoc = ClientStats.HitLocations
@@ -119,7 +172,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     results.Add(new DetectionPenaltyResult()
                     {
-                        ClientPenalty = EFPenalty.PenaltyType.Ban,
+                        ClientPenalty = EFPenalty.PenaltyType.Flag,
                         Value = hitLoc.HitOffsetAverage,
                         HitCount = hitLoc.HitCount,
                         Type = DetectionType.Offset
@@ -146,7 +199,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     results.Add(new DetectionPenaltyResult()
                     {
-                        ClientPenalty = EFPenalty.PenaltyType.Ban,
+                        ClientPenalty = EFPenalty.PenaltyType.Flag,
                         Value = weightedSessionAverage,
                         HitCount = HitCount,
                         Type = DetectionType.Offset,
@@ -344,7 +397,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #endregion
             #endregion
 
-            Tracker.OnChange(new EFACSnapshot()
+            var snapshot = new EFACSnapshot()
             {
                 When = hit.When,
                 ClientId = ClientStats.ClientId,
@@ -352,18 +405,16 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 RecoilOffset = hitRecoilAverage,
                 CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds,
                 CurrentStrain = currentStrain,
-                CurrentViewAngle = hit.ViewAngles,
+                CurrentViewAngle = new Vector3(hit.ViewAngles.X, hit.ViewAngles.Y, hit.ViewAngles.Z),
                 Hits = HitCount,
                 Kills = Kills,
                 Deaths = ClientStats.SessionDeaths,
-                HitDestinationId = hit.DeathOrigin.Vector3Id,
-                HitDestination = hit.DeathOrigin,
-                HitOriginId = hit.KillOrigin.Vector3Id,
-                HitOrigin = hit.KillOrigin,
+                //todo[9.1.19]: why does this cause unique failure?
+                HitDestination = new Vector3(hit.DeathOrigin.X, hit.DeathOrigin.Y, hit.DeathOrigin.Z),
+                HitOrigin = new Vector3(hit.KillOrigin.X, hit.KillOrigin.Y, hit.KillOrigin.Z),
                 EloRating = ClientStats.EloRating,
                 HitLocation = hit.HitLoc,
-                LastStrainAngle = Strain.LastAngle,
-                PredictedViewAngles = hit.AnglesList,
+                LastStrainAngle = new Vector3(Strain.LastAngle.X, Strain.LastAngle.Y, Strain.LastAngle.Z),
                 // this is in "meters"
                 Distance = hit.Distance,
                 SessionScore = ClientStats.SessionScore,
@@ -372,7 +423,17 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
                 WeaponId = hit.Weapon
-            });
+            };
+
+            snapshot.PredictedViewAngles = hit.AnglesList
+                .Select(_angle => new EFACSnapshotVector3()
+                {
+                    Vector = _angle,
+                    Snapshot = snapshot
+                })
+                .ToList();
+
+            Tracker.OnChange(snapshot);
 
             return results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Ban) ??
                 results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Flag) ??

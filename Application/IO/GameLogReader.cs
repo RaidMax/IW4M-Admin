@@ -36,14 +36,15 @@ namespace IW4MAdmin.Application.IO
             List<string> logLines = new List<string>();
 
             // open the file as a stream
-            using (var rd = new StreamReader(new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Utilities.EncodingType))
+            using (FileStream fs = new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                char[] buff = new char[fileSizeDiff];
-                rd.BaseStream.Seek(startPosition, SeekOrigin.Begin);
-                await rd.ReadAsync(buff, 0, (int)fileSizeDiff);
-
+                byte[] buff = new byte[fileSizeDiff];
+                fs.Seek(startPosition, SeekOrigin.Begin);
+                await fs.ReadAsync(buff, 0, (int)fileSizeDiff, server.Manager.CancellationToken);
                 var stringBuilder = new StringBuilder();
-                foreach (char c in buff)
+                char[] charBuff = Utilities.EncodingType.GetChars(buff);
+
+                foreach (char c in charBuff)
                 {
                     if (c == '\n')
                     {

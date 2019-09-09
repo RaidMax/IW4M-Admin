@@ -27,6 +27,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public const int HighSampleMinKills = 100;
         public const double KillTimeThreshold = 0.2;
         public const int LowSampleMinKillsRecoil = 5;
+        public const double SnapFlagValue = 6.12;
+        public const double SnapBanValue = 9.67;
 
         public const double MaxStrainBan = 0.9;
 

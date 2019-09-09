@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IW4MAdmin.Plugins.Stats.Models
 {
@@ -47,6 +48,11 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public IW4Info.WeaponName WeaponId { get; set; }
         public IW4Info.HitLocation HitLocation { get; set; }
         public IW4Info.MeansOfDeath HitType { get; set; }
-        public virtual ICollection<Vector3> PredictedViewAngles { get; set; }
+        public virtual ICollection<EFACSnapshotVector3> PredictedViewAngles { get; set; }
+
+        [NotMapped]
+        public string CapturedViewAngles => PredictedViewAngles?.Count > 0 ? 
+            string.Join(", ", PredictedViewAngles.OrderBy(_angle => _angle.ACSnapshotVector3Id).Select(_angle => _angle.Vector.ToString())) :
+            "";
     }
 }

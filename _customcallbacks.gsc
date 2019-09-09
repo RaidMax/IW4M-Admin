@@ -6,8 +6,8 @@ init()
 {
 	SetDvarIfUninitialized( "sv_customcallbacks", true );
 	SetDvarIfUninitialized( "sv_framewaittime", 0.05 );
-	SetDvarIfUninitialized( "sv_additionalwaittime", 0.05 );
-	SetDvarIfUninitialized( "sv_maxstoredframes", 4 );
+	SetDvarIfUninitialized( "sv_additionalwaittime", 0.1 );
+	SetDvarIfUninitialized( "sv_maxstoredframes", 12 );
 	SetDvarIfUninitialized( "sv_printradarupdates", false );
 	SetDvarIfUninitialized( "sv_printradar_updateinterval", 500 );
 	SetDvarIfUninitialized( "sv_iw4madmin_url", "http://127.0.0.1:1624" );
@@ -110,6 +110,11 @@ waitForFrameThread()
 	
 	self.currentAnglePosition = 0;
 	self.anglePositions = [];
+
+	for (i = 0; i < getDvarInt( "sv_maxstoredframes" ); i++)
+	{
+		self.anglePositions[i] = self getPlayerAngles();
+	}
 		
 	for( ;; )
 	{
@@ -119,34 +124,55 @@ waitForFrameThread()
 	}
 }
 
-waitForAdditionalAngles( logString )
+waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 {
-	wait( getDvarFloat( "sv_additionalwaittime" ) );
+	currentIndex = self.currentAnglePosition;
+	wait( 0.05 * afterFrameCount );
 	
 	self.angleSnapshot = [];
 	
-	for( i = 0; i < getDvarInt( "sv_maxstoredframes" ); i++ )
+	for( j = 0; j < self.anglePositions.size; j++ )
 	{
-		self.angleSnapshot[i] = self.anglePositions[i];
+		self.angleSnapshot[j] = self.anglePositions[j];
 	}
 
-	currentPos = self.currentAnglePosition;
 	anglesStr = "";
-	
-	i = 0;
-	
-	if ( currentPos < getDvarInt( "sv_maxstoredframes" ) - 1 )
+	collectedFrames = 0;
+	i = currentIndex - beforeFrameCount;
+
+	while (collectedFrames < beforeFrameCount)
 	{
-		i = currentPos + 1;
+		fixedIndex = i;
+		if (i < 0)
+		{
+			fixedIndex = self.angleSnapshot.size - abs(i);
+		}
+		anglesStr += self.angleSnapshot[fixedIndex] + ":";
+		collectedFrames++;
+		i++;
 	}
-	
-	while( i != currentPos )
+
+	if (i == currentIndex)
 	{
 		anglesStr += self.angleSnapshot[i] + ":";
-		i = (i + 1) % getDvarInt( "sv_maxstoredframes" );
+		i++;
 	}
-	
-	logPrint( logString + ";" + anglesStr + "\n" ); 
+
+	collectedFrames = 0;
+
+	while (collectedFrames < afterFrameCount)
+	{
+		fixedIndex = i;
+		if (i > self.angleSnapshot.size - 1)
+		{
+			fixedIndex = i % self.angleSnapshot.size;
+		}
+		anglesStr += self.angleSnapshot[fixedIndex] + ":";
+		collectedFrames++;
+		i++;
+	}
+
+	logPrint(logString + ";" + anglesStr + "\n" ); 
 }
 
 vectorScale( vector, scale )
@@ -156,6 +182,11 @@ vectorScale( vector, scale )
 
 Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 {
+	if (sMeansOfDeath == "MOD_FALLING" || !isPlayer(attacker))
+	{
+		return;
+	}
+
 	victim = self;
 	_attacker = attacker;
 
@@ -172,8 +203,8 @@ Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 	location = victim GetTagOrigin( hitLocationToBone( sHitLoc ) );
 	isKillstreakKill = !isPlayer( attacker ) || isKillstreakWeapon( sWeapon );
 
-	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";0;0;";
-	attacker thread waitForAdditionalAngles( logLine );
+	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";0;0";
+	attacker thread waitForAdditionalAngles( logLine, 2, 2 );
 }
 
 Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime )

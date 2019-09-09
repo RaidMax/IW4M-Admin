@@ -29,6 +29,10 @@ namespace IW4MAdmin.Plugins.Stats
         public static StatManager Manager { get; private set; }
         public static IManager ServerManager;
         public static BaseConfigurationHandler<StatsConfiguration> Config { get; private set; }
+#if DEBUG
+        int scriptDamageCount;
+        int scriptKillCount;
+#endif
 
         public async Task OnEventAsync(GameEvent E, Server S)
         {
@@ -44,7 +48,6 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
-                    await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.Say:
                     if (!string.IsNullOrEmpty(E.Data) &&
@@ -56,8 +59,10 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.MapChange:
                     Manager.SetTeamBased(StatManager.GetIdForServer(E.Owner), E.Owner.Gametype != "dm");
                     Manager.ResetKillstreaks(StatManager.GetIdForServer(E.Owner));
+                    await Manager.Sync(E.Owner);
                     break;
                 case GameEvent.EventType.MapEnd:
+                    await Manager.Sync(E.Owner);
                     break;
                 case GameEvent.EventType.JoinTeam:
                     break;
@@ -85,8 +90,17 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+#if DEBUG
+                        scriptKillCount++;
+                        S.Logger.WriteInfo($"Start ScriptKill {scriptKillCount}");
+#endif
+
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
+
+#if DEBUG
+                        S.Logger.WriteInfo($"End ScriptKill {scriptKillCount}");
+#endif
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -123,8 +137,21 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+#if DEBUG
+                        scriptDamageCount++;
+                        S.Logger.WriteInfo($"Start ScriptDamage {scriptDamageCount}");
+#endif
+
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
+
+#if DEBUG
+                        S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");
+#endif
+                    }
+                    else
+                    {
+                        break;
                     }
                     break;
             }
@@ -245,6 +272,7 @@ namespace IW4MAdmin.Plugins.Stats
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
                 double averageRecoilAmount = 0;
+                double averageSnapValue = 0;
                 double maxStrain = clientStats.Count(c => c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
 
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
@@ -268,6 +296,7 @@ namespace IW4MAdmin.Plugins.Stats
                     var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0).SelectMany(hl => hl.HitLocations);
                     hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
                     averageRecoilAmount = clientStats.Average(_stat => _stat.AverageRecoilOffset);
+                    averageSnapValue = clientStats.Any(_stats => _stats.AverageSnapValue > 0) ? clientStats.Where(_stats => _stats.AverageSnapValue > 0).Average(_stat => _stat.AverageSnapValue) : 0;
                 }
 
                 return new List<ProfileMeta>()
@@ -343,6 +372,16 @@ namespace IW4MAdmin.Plugins.Stats
                         Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
                         Sensitive = true
                     },
+                    new ProfileMeta()
+                    {
+                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 8",
+                        Value = Math.Round(averageSnapValue, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Type = ProfileMeta.MetaType.Information,
+                        Column = 2,
+                        Order = 6,
+                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM8"],
+                        Sensitive = true
+                    }
                 };
             }
 
@@ -483,7 +522,7 @@ namespace IW4MAdmin.Plugins.Stats
         /// <returns></returns>
         private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
         {
-            return ((origin?.NetworkId <= 1 && target?.NetworkId <= 1) || (origin?.ClientId <=1 && target?.ClientId <= 1));
+            return ((origin?.NetworkId <= 1 && target?.NetworkId <= 1) || (origin?.ClientId <= 1 && target?.ClientId <= 1));
         }
 
         /// <summary>

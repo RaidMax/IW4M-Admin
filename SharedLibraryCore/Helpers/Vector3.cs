@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Helpers
         [Key]
         public int Vector3Id { get; set; }
         public float X { get; protected set; }
-        public  float Y { get; protected set; }
+        public float Y { get; protected set; }
         public float Z { get; protected set; }
 
         // this is for EF and really should be somewhere else
@@ -45,8 +45,8 @@ namespace SharedLibraryCore.Helpers
             string removeParenthesis = s.Substring(1, s.Length - 2);
             string[] eachPoint = removeParenthesis.Split(',');
 
-            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture), 
-                float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture), 
+            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture),
+                float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture),
                 float.Parse(eachPoint[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture));
         }
 
@@ -57,7 +57,7 @@ namespace SharedLibraryCore.Helpers
 
         public static double AbsoluteDistance(Vector3 a, Vector3 b)
         {
-            double deltaX = Math.Abs(b.X -a.X);
+            double deltaX = Math.Abs(b.X - a.X);
             double deltaY = Math.Abs(b.Y - a.Y);
 
             // this 'fixes' the roll-over angles
@@ -65,6 +65,43 @@ namespace SharedLibraryCore.Helpers
             double dy = deltaY < 360.0 / 2 ? deltaY : 360.0 - deltaY;
 
             return Math.Sqrt((dx * dx) + (dy * dy));
+        }
+
+        public static double SnapDistance(Vector3 a, Vector3 b, Vector3 c)
+        {
+            a = a.FixIW4Angles();
+            b = b.FixIW4Angles();
+            c = c.FixIW4Angles();
+
+            float preserveDirectionAngle(float a1, float b1)
+            {
+                float difference = b1 - a1;
+                while (difference < -180) difference += 360;
+                while (difference > 180) difference -= 360;
+                return difference;
+            }
+
+            var directions = new[]
+            {
+                new Vector3()
+                {
+                    X = preserveDirectionAngle(b.X, a.X),
+                    Y = preserveDirectionAngle(b.Y, a.Y)
+                },
+                new Vector3()
+                {
+                    X = preserveDirectionAngle(c.X, b.X),
+                    Y = preserveDirectionAngle(c.Y, b.Y)
+                }
+            };
+
+            var distance = new Vector3
+            {
+                X = Math.Abs(directions[1].X - directions[0].X),
+                Y = Math.Abs(directions[1].Y - directions[0].Y)
+            };
+
+            return Math.Sqrt((distance.X * distance.X) + (distance.Y * distance.Y));
         }
 
         public static double ViewAngleDistance(Vector3 a, Vector3 b, Vector3 c)

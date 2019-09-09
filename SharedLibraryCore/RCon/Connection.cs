@@ -13,6 +13,13 @@ namespace SharedLibraryCore.RCon
 {
     class ConnectionState
     {
+        ~ConnectionState()
+        {
+            OnComplete.Dispose();
+            OnSentData.Dispose();
+            OnReceivedData.Dispose();
+        }
+
         public int ConnectionAttempts { get; set; }
         const int BufferSize = 4096;
         public readonly byte[] ReceiveBuffer = new byte[BufferSize];
@@ -81,7 +88,7 @@ namespace SharedLibraryCore.RCon
             bool waitForResponse = Config.WaitForResponse;
 
             string convertEncoding(string text)
-            {   
+            {
                 byte[] convertedBytes = Utilities.EncodingType.GetBytes(text);
                 return defaultEncoding.GetString(convertedBytes);
             }
@@ -152,7 +159,6 @@ namespace SharedLibraryCore.RCon
                         throw new NetworkException("Expected response but got 0 bytes back");
                     }
 
-                    connectionState.OnComplete.Release(1);
                     connectionState.ConnectionAttempts = 0;
                 }
 
@@ -164,8 +170,15 @@ namespace SharedLibraryCore.RCon
                         goto retrySend;
                     }
 
-                    connectionState.OnComplete.Release(1);
                     throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"].FormatExt(Endpoint));
+                }
+
+                finally
+                {
+                    if (connectionState.OnComplete.CurrentCount == 0)
+                    {
+                        connectionState.OnComplete.Release(1);
+                    }
                 }
             }
 
@@ -258,7 +271,7 @@ namespace SharedLibraryCore.RCon
         private void OnDataSent(object sender, SocketAsyncEventArgs e)
         {
 #if DEBUG == true
-            Log.WriteDebug($"Sent {e.Buffer.Length} bytes to {e.ConnectSocket.RemoteEndPoint.ToString()}");
+            Log.WriteDebug($"Sent {e.Buffer?.Length} bytes to {e.ConnectSocket?.RemoteEndPoint?.ToString()}");
 #endif
             ActiveQueries[this.Endpoint].OnSentData.Set();
         }

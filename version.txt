@@ -6,6 +6,7 @@ Version 2.4:
 -added ability to customize accent color and branding on webfront
 -added flag button to client profile
 -hid flagged status of users on webfront unless logged in
+-added snap anticheat metric 
 
 Version 2.3:
 -added configuration option to ignore bots

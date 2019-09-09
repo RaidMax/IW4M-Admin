@@ -2,6 +2,7 @@
 using IW4MAdmin.Plugins.Stats.Models;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
@@ -9,6 +10,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
     class ServerStats    {
         public ConcurrentDictionary<int, EFClientStatistics> PlayerStats { get; set; }
         public ConcurrentDictionary<int, Detection> PlayerDetections { get; set; }
+        public IList<EFClientKill> HitCache { get; private set; }
         public EFServerStatistics ServerStatistics { get; private set; }
         public EFServer Server { get; private set; }
         public bool IsTeamBased { get; set; }
@@ -17,6 +19,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             PlayerStats = new ConcurrentDictionary<int, EFClientStatistics>();
             PlayerDetections = new ConcurrentDictionary<int, Detection>();
+            HitCache = new List<EFClientKill>();
             ServerStatistics = st;
             Server = sv;
         }

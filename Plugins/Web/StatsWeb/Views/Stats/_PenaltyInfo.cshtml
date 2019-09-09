@@ -13,11 +13,11 @@
             <!-- this is another ugly hack-->
             @if (prop.GetValue(snapshot) is System.Collections.Generic.HashSet<SharedLibraryCore.Helpers.Vector3>)
             {
-                <span class="text-white">@prop.Name </span>
+                @*<span class="text-white">@prop.Name </span>
                 foreach (var v in (System.Collections.Generic.HashSet<SharedLibraryCore.Helpers.Vector3>)prop.GetValue(snapshot))
                 {
                     <span>@v.ToString(),</span><br />
-                }
+                }*@
             }
             else
             {

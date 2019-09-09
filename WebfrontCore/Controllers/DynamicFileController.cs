@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ namespace WebfrontCore.Controllers
                 if (!_fileCache.ContainsKey(fileName))
                 {
 
-                    string path = $"wwwroot\\css\\{fileName}";
+                    string path = $"wwwroot{Path.DirectorySeparatorChar}css{Path.DirectorySeparatorChar}{fileName}";
                     string data = await System.IO.File.ReadAllTextAsync(path);
                     data = await Manager.MiddlewareActionHandler.Execute(data, "custom_css_accent");
                     _fileCache.Add(fileName, data);

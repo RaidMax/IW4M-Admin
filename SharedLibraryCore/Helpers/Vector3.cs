@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Helpers
         [Key]
         public int Vector3Id { get; set; }
         public float X { get; protected set; }
-        public  float Y { get; protected set; }
+        public float Y { get; protected set; }
         public float Z { get; protected set; }
 
         // this is for EF and really should be somewhere else
@@ -45,8 +45,8 @@ namespace SharedLibraryCore.Helpers
             string removeParenthesis = s.Substring(1, s.Length - 2);
             string[] eachPoint = removeParenthesis.Split(',');
 
-            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture), 
-                float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture), 
+            return new Vector3(float.Parse(eachPoint[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture),
+                float.Parse(eachPoint[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture),
                 float.Parse(eachPoint[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture));
         }
 
@@ -57,7 +57,7 @@ namespace SharedLibraryCore.Helpers
 
         public static double AbsoluteDistance(Vector3 a, Vector3 b)
         {
-            double deltaX = Math.Abs(b.X -a.X);
+            double deltaX = Math.Abs(b.X - a.X);
             double deltaY = Math.Abs(b.Y - a.Y);
 
             // this 'fixes' the roll-over angles

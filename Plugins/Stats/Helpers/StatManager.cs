@@ -19,20 +19,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 {
     public class StatManager
     {
+        private const int MAX_CACHED_HITS = 100;
         private readonly ConcurrentDictionary<long, ServerStats> _servers;
         private readonly ILogger _log;
         private static List<EFServer> serverModels;
-        private readonly SemaphoreSlim OnProcessingPenalty;
-        private readonly SemaphoreSlim OnProcessingSensitive;
-        private readonly List<EFClientKill> _hitCache;
 
         public StatManager(IManager mgr)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
-            _hitCache = new List<EFClientKill>();
             _log = mgr.GetLogger(0);
-            OnProcessingPenalty = new SemaphoreSlim(1, 1);
-            OnProcessingSensitive = new SemaphoreSlim(1, 1);
         }
 
         private void SetupServerIds()
@@ -143,6 +138,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
                                    where clientIds.Contains(stat.ClientId)
                                    where stat.Kills > 0 || stat.Deaths > 0
+                                   where serverId == null ? true : stat.ServerId == serverId
                                    group stat by stat.ClientId into s
                                    select new
                                    {
@@ -150,7 +146,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                        Kills = s.Sum(c => c.Kills),
                                        Deaths = s.Sum(c => c.Deaths),
                                        KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) / s.Sum(c => c.TimePlayed),
-                                       TotalTimePlayed = s.Sum(c => c.TimePlayed)
+                                       TotalTimePlayed = s.Sum(c => c.TimePlayed),
                                    });
 
 #if DEBUG == true
@@ -275,8 +271,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns>EFClientStatistic of specified player</returns>
         public async Task<EFClientStatistics> AddPlayer(EFClient pl)
         {
-            await OnProcessingSensitive.WaitAsync();
-
             try
             {
                 long serverId = GetIdForServer(pl.CurrentServer);
@@ -396,11 +390,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 _log.WriteDebug(ex.GetExceptionInfo());
             }
 
-            finally
-            {
-                OnProcessingSensitive.Release(1);
-            }
-
             return null;
         }
 
@@ -466,166 +455,144 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
             Vector3 vViewAngles = null;
+            SemaphoreSlim waiter = null;
 
             try
             {
-                vDeathOrigin = Vector3.Parse(deathOrigin);
-                vKillOrigin = Vector3.Parse(killOrigin);
-                vViewAngles = Vector3.Parse(viewAngles).FixIW4Angles();
-            }
-
-            catch (FormatException)
-            {
-                _log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
-                _log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles}");
-                await AddStandardKill(attacker, victim);
-                return;
-            }
-
-            var snapshotAngles = new List<Vector3>();
-
-            try
-            {
-                foreach (string angle in snapAngles.Split(':', StringSplitOptions.RemoveEmptyEntries))
+                try
                 {
-                    snapshotAngles.Add(Vector3.Parse(angle).FixIW4Angles());
+                    vDeathOrigin = Vector3.Parse(deathOrigin);
+                    vKillOrigin = Vector3.Parse(killOrigin);
+                    vViewAngles = Vector3.Parse(viewAngles).FixIW4Angles();
                 }
-            }
 
-            catch (FormatException)
-            {
-                _log.WriteWarning("Could not parse snapshot angles");
-                return;
-            }
+                catch (FormatException)
+                {
+                    _log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
+                    _log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles}");
+                    await AddStandardKill(attacker, victim);
+                    return;
+                }
 
-            var hit = new EFClientKill()
-            {
-                Active = true,
-                AttackerId = attacker.ClientId,
-                VictimId = victim.ClientId,
-                ServerId = serverId,
-                //Map = ParseEnum<IW4Info.MapName>.Get(map, typeof(IW4Info.MapName)),
-                DeathOrigin = vDeathOrigin,
-                KillOrigin = vKillOrigin,
-                DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
-                Damage = int.Parse(damage),
-                HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
-                Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
-                ViewAngles = vViewAngles,
-                TimeOffset = long.Parse(offset),
-                When = time,
-                IsKillstreakKill = isKillstreakKill[0] != '0',
-                AdsPercent = float.Parse(Ads, System.Globalization.CultureInfo.InvariantCulture),
-                Fraction = double.Parse(fraction, System.Globalization.CultureInfo.InvariantCulture),
-                VisibilityPercentage = double.Parse(visibilityPercentage, System.Globalization.CultureInfo.InvariantCulture),
-                IsKill = !isDamage,
-                AnglesList = snapshotAngles
-            };
+                var snapshotAngles = new List<Vector3>();
 
-            if (hit.HitLoc == IW4Info.HitLocation.shield)
-            {
-                // we don't care about shield hits
-                return;
-            }
+                try
+                {
+                    foreach (string angle in snapAngles.Split(':', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        snapshotAngles.Add(Vector3.Parse(angle).FixIW4Angles());
+                    }
+                }
 
-            if (!isDamage)
-            {
-                await AddStandardKill(attacker, victim);
-            }
+                catch (FormatException)
+                {
+                    _log.WriteWarning("Could not parse snapshot angles");
+                    return;
+                }
 
-            // incase the add player event get delayed
-            if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
-            {
-                await AddPlayer(attacker);
-            }
+                var hit = new EFClientKill()
+                {
+                    Active = true,
+                    AttackerId = attacker.ClientId,
+                    VictimId = victim.ClientId,
+                    ServerId = serverId,
+                    DeathOrigin = vDeathOrigin,
+                    KillOrigin = vKillOrigin,
+                    DeathType = ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
+                    Damage = int.Parse(damage),
+                    HitLoc = ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
+                    Weapon = ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
+                    ViewAngles = vViewAngles,
+                    TimeOffset = long.Parse(offset),
+                    When = time,
+                    IsKillstreakKill = isKillstreakKill[0] != '0',
+                    AdsPercent = float.Parse(Ads, System.Globalization.CultureInfo.InvariantCulture),
+                    Fraction = double.Parse(fraction, System.Globalization.CultureInfo.InvariantCulture),
+                    VisibilityPercentage = double.Parse(visibilityPercentage, System.Globalization.CultureInfo.InvariantCulture),
+                    IsKill = !isDamage,
+                    AnglesList = snapshotAngles
+                };
 
-            var clientDetection = _servers[serverId].PlayerDetections[attacker.ClientId];
-            var clientStats = _servers[serverId].PlayerStats[attacker.ClientId];
+                if (hit.HitLoc == IW4Info.HitLocation.shield)
+                {
+                    // we don't care about shield hits
+                    return;
+                }
 
-            // increment their hit count
-            if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
-                hit.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
-                hit.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
-            {
-                clientStats.HitLocations.First(hl => hl.Location == hit.HitLoc).HitCount += 1;
-            }
+                // incase the add player event get delayed
+                if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
+                {
+                    await AddPlayer(attacker);
+                }
 
-            if (clientStats.SessionKills % Detection.MAX_TRACKED_HIT_COUNT == 0)
-            {
-                await OnProcessingPenalty.WaitAsync();
-                await SaveClientStats(clientStats);
-                OnProcessingPenalty.Release(1);
-            }
+                if (!isDamage)
+                {
+                    await AddStandardKill(attacker, victim);
+                }
 
-            if (hit.IsKillstreakKill)
-            {
-                return;
-            }
+                var clientDetection = _servers[serverId].PlayerDetections[attacker.ClientId];
+                var clientStats = _servers[serverId].PlayerStats[attacker.ClientId];
 
-            try
-            {
+                waiter = clientStats.ProcessingHit;
+                await waiter.WaitAsync();
+
+                // increment their hit count
+                if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
+                    hit.DeathType == IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
+                    hit.DeathType == IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
+                {
+                    clientStats.HitLocations.First(hl => hl.Location == hit.HitLoc).HitCount += 1;
+                }
+
+                if (hit.IsKillstreakKill)
+                {
+                    return;
+                }
+
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
-                    await OnProcessingPenalty.WaitAsync();
-                    _hitCache.Add(hit);
+                    var cache = _servers[serverId].HitCache;
+                    cache.Add(hit);
 
-                    if (_hitCache.Count > Detection.MAX_TRACKED_HIT_COUNT)
+                    if (cache.Count > MAX_CACHED_HITS)
                     {
-
-                        using (var ctx = new DatabaseContext())
-                        {
-                            ctx.AddRange(_hitCache);
-                            await ctx.SaveChangesAsync();
-                        }
-
-                        _hitCache.Clear();
+                        await SaveHitCache(serverId);
                     }
-                    OnProcessingPenalty.Release(1);
                 }
 
                 if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
                 {
                     DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
-                    await OnProcessingPenalty.WaitAsync();
+                    clientDetection.TrackedHits.Add(hit);
 
-#if DEBUG
-                    if (clientDetection.TrackedHits.Count > 0)
-#else
-                    if (clientDetection.TrackedHits.Count > Detection.MAX_TRACKED_HIT_COUNT)
-#endif
+                    if (clientDetection.TrackedHits.Count >= Detection.MIN_HITS_TO_RUN_DETECTION)
                     {
                         while (clientDetection.TrackedHits.Count > 0)
                         {
-     
+                            var oldestHit = clientDetection.TrackedHits
+                                .OrderBy(_hits => _hits.TimeOffset)
+                                .First();
 
-                            var oldestHit = clientDetection.TrackedHits.OrderBy(_hits => _hits.TimeOffset).First();
                             clientDetection.TrackedHits.Remove(oldestHit);
 
                             result = clientDetection.ProcessHit(oldestHit, isDamage);
+#if !DEBUG
                             await ApplyPenalty(result, attacker);
+#endif
 
                             if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
                             {
-                                using (var ctx = new DatabaseContext())
-                                {
-                                    SaveTrackedSnapshots(clientDetection, ctx);
-                                    await ctx.SaveChangesAsync();
-                                }
+                                await SaveTrackedSnapshots(clientDetection);
 
                                 if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
                                 {
+                                    // we don't care about any additional hits now that they're banned
+                                    clientDetection.TrackedHits.Clear();
                                     break;
                                 }
                             }
                         }
                     }
-
-                    else
-                    {
-                        clientDetection.TrackedHits.Add(hit);
-                    }
-
-                    OnProcessingPenalty.Release(1);
                 }
             }
 
@@ -633,11 +600,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 _log.WriteError("Could not save hit or AC info");
                 _log.WriteDebug(ex.GetExceptionInfo());
+            }
 
-                if (OnProcessingPenalty.CurrentCount == 0)
-                {
-                    OnProcessingPenalty.Release(1);
-                }
+            finally
+            {
+                waiter?.Release(1);
+            }
+        }
+
+        public async Task SaveHitCache(long serverId)
+        {
+            using (var ctx = new DatabaseContext(true))
+            {
+                var server = _servers[serverId];
+                ctx.AddRange(server.HitCache);
+                await ctx.SaveChangesAsync();
+                server.HitCache.Clear();
             }
         }
 
@@ -679,59 +657,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        void SaveTrackedSnapshots(Detection clientDetection, DatabaseContext ctx)
+        async Task SaveTrackedSnapshots(Detection clientDetection)
         {
-            // todo: why does this cause duplicate primary key
-            _ = clientDetection.Tracker.GetNextChange();
             EFACSnapshot change;
-            while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
+
+            using (var ctx = new DatabaseContext(true))
             {
-
-                if (change.HitOrigin.Vector3Id > 0)
+                while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
                 {
-                    change.HitOriginId = change.HitOrigin.Vector3Id;
-                    ctx.Attach(change.HitOrigin);
+                    ctx.Add(change);
                 }
-
-                else if (change.HitOrigin.Vector3Id == 0)
-                {
-                    ctx.Add(change.HitOrigin);
-                }
-
-                if (change.HitDestination.Vector3Id > 0)
-                {
-                    change.HitDestinationId = change.HitDestination.Vector3Id;
-                    ctx.Attach(change.HitDestination);
-                }
-
-                else if (change.HitDestination.Vector3Id == 0)
-                {
-                    ctx.Add(change.HitOrigin);
-                }
-
-                if (change.CurrentViewAngle.Vector3Id > 0)
-                {
-                    change.CurrentViewAngleId = change.CurrentViewAngle.Vector3Id;
-                    ctx.Attach(change.CurrentViewAngle);
-                }
-
-                else if (change.CurrentViewAngle.Vector3Id == 0)
-                {
-                    ctx.Add(change.HitOrigin);
-                }
-
-                if (change.LastStrainAngle.Vector3Id > 0)
-                {
-                    change.LastStrainAngleId = change.LastStrainAngle.Vector3Id;
-                    ctx.Attach(change.LastStrainAngle);
-                }
-
-                else if (change.LastStrainAngle.Vector3Id == 0)
-                {
-                    ctx.Add(change.HitOrigin);
-                }
-
-                ctx.Add(change);
+                await ctx.SaveChangesAsync();
             }
         }
 
@@ -815,11 +751,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             // update their performance 
-#if !DEBUG
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
-#else
-            if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 0.1)
-#endif
             {
                 attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
                 await UpdateStatHistory(attacker, attackerStats);
@@ -837,12 +769,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
 
             // don't update their stat history if they haven't played long
-            //#if DEBUG == false
             if (currentSessionTime < 60)
             {
                 return;
             }
-            //#endif
 
             int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
@@ -1240,9 +1170,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var serverStatsSet = ctx.Set<EFServerStatistics>();
                 serverStatsSet.Update(_servers[serverId].ServerStatistics);
-
-                await ctx.SaveChangesAsync();
             }
+
+            foreach (var client in sv.GetClientsAsList())
+            {
+                var stats = GetClientStats(client.ClientId, serverId);
+                if (stats != null)
+                {
+                    await SaveClientStats(stats);
+                }
+            }
+
+            await SaveHitCache(serverId);
         }
 
         public void SetTeamBased(long serverId, bool isTeamBased)

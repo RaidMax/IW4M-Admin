@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using SharedLibraryCore.Database.Models;
@@ -12,6 +13,16 @@ namespace IW4MAdmin.Plugins.Stats.Models
 {
     public class EFClientStatistics : SharedEntity
     {
+        public EFClientStatistics()
+        {
+            ProcessingHit = new SemaphoreSlim(1, 1);
+        }
+
+        ~EFClientStatistics()
+        {
+            ProcessingHit.Dispose();
+        }
+
         public int ClientId { get; set; }
         [ForeignKey("ClientId")]
         public virtual EFClient Client { get; set; }
@@ -96,12 +107,14 @@ namespace IW4MAdmin.Plugins.Stats.Models
             }
         }
         [NotMapped]
-        private List<int> SessionScores = new List<int>() { 0 };
+        private readonly List<int> SessionScores = new List<int>() { 0 };
         [NotMapped]
         public IW4Info.Team Team { get; set; }
         [NotMapped]
         public DateTime LastStatHistoryUpdate { get; set; } = DateTime.UtcNow;
         [NotMapped]
         public double SessionSPM { get; set; }
+        [NotMapped]
+        public SemaphoreSlim ProcessingHit { get; private set; }
     }
 }

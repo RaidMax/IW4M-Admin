@@ -44,25 +44,45 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             long serverId = StatManager.GetIdForServer(E.Owner);
 
-            using (var ctx = new DatabaseContext(disableTracking: true))
-            {
-                if (E.Target != null)
-                {
-                    int performanceRanking = await StatManager.GetClientOverallRanking(E.Target.ClientId);
-                    string performanceRankingString = performanceRanking == 0 ? loc["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{loc["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
 
-                    pStats = (await ctx.Set<EFClientStatistics>().FirstAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId));
-                    statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
+            if (E.Target != null)
+            {
+                int performanceRanking = await StatManager.GetClientOverallRanking(E.Target.ClientId);
+                string performanceRankingString = performanceRanking == 0 ? loc["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{loc["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
+
+                if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Target)))
+                {
+                    pStats = Plugin.Manager.GetClientStats(E.Target.ClientId, serverId);
                 }
 
                 else
                 {
-                    int performanceRanking = await StatManager.GetClientOverallRanking(E.Origin.ClientId);
-                    string performanceRankingString = performanceRanking == 0 ? loc["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{loc["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
-
-                    pStats = (await ctx.Set<EFClientStatistics>().FirstAsync((c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId)));
-                    statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
+                    using (var ctx = new DatabaseContext(true))
+                    {
+                        pStats = (await ctx.Set<EFClientStatistics>().FirstAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId));
+                    }
                 }
+                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
+            }
+
+            else
+            {
+                int performanceRanking = await StatManager.GetClientOverallRanking(E.Origin.ClientId);
+                string performanceRankingString = performanceRanking == 0 ? loc["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{loc["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
+
+                if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Origin)))
+                {
+                    pStats = Plugin.Manager.GetClientStats(E.Origin.ClientId, serverId);
+                }
+
+                else
+                {
+                    using (var ctx = new DatabaseContext(true))
+                    {
+                        pStats = (await ctx.Set<EFClientStatistics>().FirstAsync(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId));
+                    }
+                }
+                statLine = $"^5{pStats.Kills} ^7{loc["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{loc["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
             }
 
             if (E.Message.IsBroadcastCommand())

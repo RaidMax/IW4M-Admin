@@ -29,6 +29,10 @@ namespace IW4MAdmin.Plugins.Stats
         public static StatManager Manager { get; private set; }
         public static IManager ServerManager;
         public static BaseConfigurationHandler<StatsConfiguration> Config { get; private set; }
+#if DEBUG
+        int scriptDamageCount;
+        int scriptKillCount;
+#endif
 
         public async Task OnEventAsync(GameEvent E, Server S)
         {
@@ -44,7 +48,6 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
-                    await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.Say:
                     if (!string.IsNullOrEmpty(E.Data) &&
@@ -56,8 +59,10 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.MapChange:
                     Manager.SetTeamBased(StatManager.GetIdForServer(E.Owner), E.Owner.Gametype != "dm");
                     Manager.ResetKillstreaks(StatManager.GetIdForServer(E.Owner));
+                    await Manager.Sync(E.Owner);
                     break;
                 case GameEvent.EventType.MapEnd:
+                    await Manager.Sync(E.Owner);
                     break;
                 case GameEvent.EventType.JoinTeam:
                     break;
@@ -85,8 +90,17 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+#if DEBUG
+                        scriptKillCount++;
+                        S.Logger.WriteInfo($"Start ScriptKill {scriptKillCount}");
+#endif
+
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
+
+#if DEBUG
+                        S.Logger.WriteInfo($"End ScriptKill {scriptKillCount}");
+#endif
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -123,8 +137,21 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+#if DEBUG
+                        scriptDamageCount++;
+                        S.Logger.WriteInfo($"Start ScriptDamage {scriptDamageCount}");
+#endif
+
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
+
+#if DEBUG
+                        S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");
+#endif
+                    }
+                    else
+                    {
+                        break;
                     }
                     break;
             }
@@ -342,7 +369,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Order = 5,
                         Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
                         Sensitive = true
-                    },
+                    }
                 };
             }
 
@@ -483,7 +510,7 @@ namespace IW4MAdmin.Plugins.Stats
         /// <returns></returns>
         private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
         {
-            return ((origin?.NetworkId <= 1 && target?.NetworkId <= 1) || (origin?.ClientId <=1 && target?.ClientId <= 1));
+            return ((origin?.NetworkId <= 1 && target?.NetworkId <= 1) || (origin?.ClientId <= 1 && target?.ClientId <= 1));
         }
 
         /// <summary>

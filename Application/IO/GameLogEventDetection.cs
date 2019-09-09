@@ -72,6 +72,7 @@ namespace IW4MAdmin.Application.IO
             foreach (var ev in events)
             {
                 _server.Manager.GetEventHandler().AddEvent(ev);
+                await ev.WaitAsync(Utilities.DefaultCommandTimeout, ev.Owner.Manager.CancellationToken);
             }
 
             previousFileSize = fileSize;

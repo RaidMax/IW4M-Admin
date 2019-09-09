@@ -1,4 +1,5 @@
 ﻿using IW4MAdmin.Plugins.Stats.Models;
+using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -22,7 +23,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         };
 
         public ChangeTracking<EFACSnapshot> Tracker { get; private set; }
-        public const int MAX_TRACKED_HIT_COUNT = 10;
+        public const int MIN_HITS_TO_RUN_DETECTION = 5;
+        private const int MIN_ANGLE_COUNT = 5;
 
         public List<EFClientKill> TrackedHits { get; set; }
         int Kills;
@@ -36,6 +38,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
         private double sessionAverageRecoilAmount;
+        private EFClientKill lastHit;
 
         private class HitInfo
         {
@@ -344,7 +347,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #endregion
             #endregion
 
-            Tracker.OnChange(new EFACSnapshot()
+            var snapshot = new EFACSnapshot()
             {
                 When = hit.When,
                 ClientId = ClientStats.ClientId,
@@ -372,7 +375,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
                 WeaponId = hit.Weapon
-            });
+            };
+
+            Tracker.OnChange(snapshot);
 
             return results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Ban) ??
                 results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Flag) ??

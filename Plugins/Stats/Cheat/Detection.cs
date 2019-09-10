@@ -106,7 +106,12 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     lastHit = hit;
                 }
 
-                if (lastHit == hit || lastHit.VictimId != hit.VictimId || (hit.TimeOffset - lastHit.TimeOffset) >= 1000)
+                bool areAnglesInvalid = hit.AnglesList[0].Equals(hit.AnglesList[1]) && hit.AnglesList[3].Equals(hit.AnglesList[4]);
+
+                if ((lastHit == hit ||
+                    lastHit.VictimId != hit.VictimId ||
+                    (hit.TimeOffset - lastHit.TimeOffset) >= 1000) &&
+                    !areAnglesInvalid)
                 {
                     ClientStats.SnapHitCount++;
                     sessionSnapHits++;
@@ -147,7 +152,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             int angleOffsetIndex = totalUsableAngleCount / 2;
             if (hit.AnglesList.Count == 5)
             {
-               
+
                 double realAgainstPredict = Vector3.ViewAngleDistance(hit.AnglesList[angleOffsetIndex - 1], hit.AnglesList[angleOffsetIndex + 1], hit.ViewAngles);
 
                 // LIFETIME

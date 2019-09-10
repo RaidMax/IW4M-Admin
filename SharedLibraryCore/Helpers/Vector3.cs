@@ -34,6 +34,16 @@ namespace SharedLibraryCore.Helpers
             return $"({X}, {Y}, {Z})";
         }
 
+        public override bool Equals(object obj)
+        {
+            if (obj is Vector3 vec)
+            {
+                return vec.X == X && vec.Y == Y && vec.Z == Z;
+            }
+
+            return false;
+        }
+
         public static Vector3 Parse(string s)
         {
             bool valid = Regex.Match(s, @"\((-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+),\ (-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+),\ (-?[0-9]+\.?[0-9]*|-?[0-9]+\.?[0-9]*e-[0-9]+)\)").Success;

@@ -42,6 +42,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         private double sessionAverageSnapAmount;
         private int sessionSnapHits;
         private EFClientKill lastHit;
+        private int validRecoilHitCount;
 
         private class HitInfo
         {
@@ -255,13 +256,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             float hitRecoilAverage = 0;
             if (!Plugin.Config.Configuration().RecoilessWeapons.Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex)))
             {
+                validRecoilHitCount++;
                 hitRecoilAverage = (hit.AnglesList.Sum(_angle => _angle.Z) + hit.ViewAngles.Z) / (hit.AnglesList.Count + 1);
-                sessionAverageRecoilAmount = (sessionAverageRecoilAmount * (HitCount - 1) + hitRecoilAverage) / HitCount;
+                sessionAverageRecoilAmount = (sessionAverageRecoilAmount * (validRecoilHitCount - 1) + hitRecoilAverage) / validRecoilHitCount;
 
-                var lifeTimeHits = ClientStats.HitLocations.Sum(_loc => _loc.HitCount);
-                ClientStats.AverageRecoilOffset = (ClientStats.AverageRecoilOffset * (lifeTimeHits - 1) + hitRecoilAverage) / lifeTimeHits;
-
-                if (HitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && sessionAverageRecoilAmount == 0)
+                if (validRecoilHitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && sessionAverageRecoilAmount == 0)
                 {
                     results.Add(new DetectionPenaltyResult()
                     {

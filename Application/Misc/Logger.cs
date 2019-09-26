@@ -54,9 +54,9 @@ namespace IW4MAdmin.Application
             }
         }
 
-        async Task Write(string msg, LogType type)
+        void Write(string msg, LogType type)
         {
-            await OnLogWriting.WaitAsync();
+            OnLogWriting.Wait();
 
             string stringType = type.ToString();
 
@@ -73,7 +73,7 @@ namespace IW4MAdmin.Application
 #if DEBUG
                 // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
                 Console.WriteLine(LogLine);
-                await File.AppendAllTextAsync(FileName, $"{LogLine}{Environment.NewLine}");
+                File.AppendAllText(FileName, $"{LogLine}{Environment.NewLine}");
                 //Debug.WriteLine(msg);
 #else
                 if (type == LogType.Error || type == LogType.Verbose)

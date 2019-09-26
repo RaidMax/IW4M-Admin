@@ -641,8 +641,12 @@ namespace IW4MAdmin
                         // because we don't want to try to fill up a slot that's not empty yet
                         waiterList.Add(e);
                     }
+
                     // wait for all the disconnect tasks to finish
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken)));
+                    foreach (var waiter in waiterList)
+                    {
+                        waiter.Wait();
+                    }
 
                     waiterList.Clear();
                     // this are our new connecting clients
@@ -666,7 +670,10 @@ namespace IW4MAdmin
                     }
 
                     // wait for all the connect tasks to finish
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken)));
+                    foreach (var waiter in waiterList)
+                    {
+                        waiter.Wait();
+                    }
 
                     waiterList.Clear();
                     // these are the clients that have updated
@@ -683,7 +690,10 @@ namespace IW4MAdmin
                         waiterList.Add(e);
                     }
 
-                    await Task.WhenAll(waiterList.Select(e => e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken)));
+                    foreach (var waiter in waiterList)
+                    {
+                        waiter.Wait();
+                    }
 
                     if (ConnectionErrors > 0)
                     {

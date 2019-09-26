@@ -144,6 +144,19 @@ namespace SharedLibraryCore.Services
                     .Where(_client => _client.AliasLinkId == oldAliasLink.AliasLinkId)
                     .ForEachAsync(_client => _client.AliasLinkId = newAliasLink.AliasLinkId);
 
+                // we also need to update all the penalties or they get deleted
+                // scenario
+                // link1 joins with ip1
+                // link2 joins with ip2,
+                // link2 receives penalty
+                // link2 joins with ip1
+                // pre existing link for link2 detected
+                // link2 is deleted
+                // link2 penalties are orphaned
+                await context.Penalties
+                    .Where(_penalty => _penalty.LinkId == oldAliasLink.AliasLinkId)
+                    .ForEachAsync(_penalty => _penalty.LinkId = newAliasLink.AliasLinkId);
+
                 entity.AliasLink = newAliasLink;
                 entity.AliasLinkId = newAliasLink.AliasLinkId;
 

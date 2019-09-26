@@ -235,5 +235,11 @@ namespace SharedLibraryCore
                 return this;
             });
         }
+
+        public GameEvent Wait()
+        {
+            OnProcessed.Wait();
+            return this;
+        }
     }
 }

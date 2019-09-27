@@ -1,6 +1,8 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
+using Stats.Config;
 using System.Collections.Generic;
+using static IW4MAdmin.Plugins.Stats.Cheat.Detection;
 
 namespace IW4MAdmin.Plugins.Stats.Config
 {
@@ -12,6 +14,8 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public List<string> RecoilessWeapons { get; set; }
         public int TopPlayersMinPlayTime { get; set; }
         public bool StoreClientKills { get; set; }
+        public IDictionary<DetectionType, DistributionConfiguration> DetectionDistributions { get; set; }
+
         public string Name() => "Stats";
         public IBaseConfiguration Generate()
         {
@@ -56,7 +60,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
                 "model1887.*_mp",
                 ".+shotgun.*_mp"
             };
-
+            
             TopPlayersMinPlayTime = 3600 * 3;
             StoreClientKills = false;
 

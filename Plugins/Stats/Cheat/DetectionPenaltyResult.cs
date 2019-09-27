@@ -2,7 +2,7 @@
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
-    class DetectionPenaltyResult
+    public class DetectionPenaltyResult
     {
         public Detection.DetectionType Type { get; set; }
         public EFPenalty.PenaltyType ClientPenalty { get; set; }

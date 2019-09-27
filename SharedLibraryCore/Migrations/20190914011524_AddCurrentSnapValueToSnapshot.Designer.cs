@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SharedLibraryCore.Database;
 
 namespace SharedLibraryCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20190914011524_AddCurrentSnapValueToSnapshot")]
+    partial class AddCurrentSnapValueToSnapshot
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,8 +62,6 @@ namespace SharedLibraryCore.Migrations
                     b.Property<double>("SessionSPM");
 
                     b.Property<int>("SessionScore");
-
-                    b.Property<int>("SessionSnapHits");
 
                     b.Property<double>("StrainAngleBetween");
 

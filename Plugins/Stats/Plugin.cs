@@ -149,14 +149,6 @@ namespace IW4MAdmin.Plugins.Stats
                         S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");
 #endif
                     }
-                    else
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        break;
-                    }
                     break;
             }
         }
@@ -275,7 +267,6 @@ namespace IW4MAdmin.Plugins.Stats
                 double abdomenRatio = 0;
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
-                double averageRecoilAmount = 0;
                 double averageSnapValue = 0;
                 double maxStrain = clientStats.Count(c => c.MaxStrain > 0) == 0 ? 0 : clientStats.Max(cs => cs.MaxStrain);
 
@@ -299,7 +290,6 @@ namespace IW4MAdmin.Plugins.Stats
 
                     var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0).SelectMany(hl => hl.HitLocations);
                     hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
-                    averageRecoilAmount = clientStats.Average(_stat => _stat.AverageRecoilOffset);
                     averageSnapValue = clientStats.Any(_stats => _stats.AverageSnapValue > 0) ? clientStats.Where(_stats => _stats.AverageSnapValue > 0).Average(_stat => _stat.AverageSnapValue) : 0;
                 }
 
@@ -369,21 +359,11 @@ namespace IW4MAdmin.Plugins.Stats
                     new ProfileMeta()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 7",
-                        Value = Math.Round(averageRecoilAmount, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                        Type = ProfileMeta.MetaType.Information,
-                        Column = 2,
-                        Order = 5,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
-                        Sensitive = true
-                    },
-                    new ProfileMeta()
-                    {
-                        Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 8",
                         Value = Math.Round(averageSnapValue, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = ProfileMeta.MetaType.Information,
                         Column = 2,
                         Order = 6,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM8"],
+                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
                         Sensitive = true
                     }
                 };

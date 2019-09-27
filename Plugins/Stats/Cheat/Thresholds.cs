@@ -1,7 +1,28 @@
-﻿using System;
+﻿using Stats.Config;
+using System;
+using static SharedLibraryCore.Database.Models.EFPenalty;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
+    public static class DistributionHelper
+    {
+        public static double CalculateMaxValue(this DistributionConfiguration config, PenaltyType penaltyType, int sampleSize)
+        {
+            switch (config.Type)
+            {
+                case DistributionConfiguration.DistributionType.Normal:
+                    break;
+                case DistributionConfiguration.DistributionType.LogNormal:
+                    double deviationNumber = penaltyType == PenaltyType.Flag ? 3.0 : 4.0;
+                    double marginOfError = 1.644 / (config.StandardDeviation / Math.Sqrt(sampleSize));
+                    double maxValue = (config.StandardDeviation * deviationNumber) + marginOfError;
+                    return maxValue;
+            }
+
+            return double.MaxValue;
+        }
+    }
+
     class Thresholds
     {
         public static double HeadshotRatioThresholdLowSample(double deviations) => HeadshotRatioStandardDeviationLowSample * deviations + HeadshotRatioMean;
@@ -38,7 +59,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public static double MaxOffset(int sampleSize) => Math.Exp(Math.Max(_offsetMeanLog + (_offsetMeanLog / Math.Sqrt(sampleSize)), _offsetMeanLog - (_offsetMeanLog / Math.Sqrt(sampleSize))) + 4 * (_offsetSdLog));
         public const double MaxStrainFlag = 0.36;
 
-        public static double GetMarginOfError(int numKills) => 1.6455 / Math.Sqrt(numKills);
+        public static double GetMarginOfError(int numberOfHits) => 1.6455 / Math.Sqrt(numberOfHits);
 
         public static double Lerp(double v1, double v2, double amount)
         {

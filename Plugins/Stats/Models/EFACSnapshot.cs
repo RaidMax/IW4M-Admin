@@ -42,6 +42,8 @@ namespace IW4MAdmin.Plugins.Stats.Models
         [ForeignKey("HitDestinationId")]
         public Vector3 HitDestination { get; set; }
         public double Distance { get; set; }
+        public double SessionAverageSnapValue { get; set; }
+        public int SessionSnapHits { get; set; }
         public int CurrentViewAngleId { get; set; }
         [ForeignKey("CurrentViewAngleId")]
         public Vector3 CurrentViewAngle { get; set; }

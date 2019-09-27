@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
-    class Detection
+    public class Detection
     {
         public enum DetectionType
         {
@@ -122,7 +122,11 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     sessionAverageSnapAmount = (previousSessionAverage * (sessionSnapHits - 1) + currentSnapDistance) / sessionSnapHits;
                     lastHit = hit;
 
-                    if (sessionSnapHits > Thresholds.LowSampleMinKills && sessionAverageSnapAmount > Thresholds.SnapFlagValue)
+                    //var marginOfError = Thresholds.GetMarginOfError(sessionSnapHits);
+                    //var marginOfErrorLifetime = Thresholds.GetMarginOfError(ClientStats.SnapHitCount);
+
+                    if (sessionSnapHits >= Thresholds.LowSampleMinKills &&
+                        sessionAverageSnapAmount >= Thresholds.SnapFlagValue/* + marginOfError*/)
                     {
                         results.Add(new DetectionPenaltyResult()
                         {
@@ -133,7 +137,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                         });
                     }
 
-                    if (sessionSnapHits > Thresholds.LowSampleMinKills && sessionAverageSnapAmount > Thresholds.SnapBanValue)
+                    if (sessionSnapHits >= Thresholds.LowSampleMinKills &&
+                        sessionAverageSnapAmount >= Thresholds.SnapBanValue/* + marginOfError*/)
                     {
                         results.Add(new DetectionPenaltyResult()
                         {
@@ -143,6 +148,32 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                             Type = DetectionType.Snap
                         });
                     }
+
+                    // lifetime
+                    if (ClientStats.SnapHitCount >= Thresholds.MediumSampleMinKills &&
+                        ClientStats.AverageSnapValue >= Thresholds.SnapFlagValue/* + marginOfErrorLifetime*/)
+                    {
+                        results.Add(new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = EFPenalty.PenaltyType.Flag,
+                            Value = sessionAverageSnapAmount,
+                            HitCount = ClientStats.SnapHitCount,
+                            Type = DetectionType.Snap
+                        });
+                    }
+
+                    if (ClientStats.SnapHitCount >= Thresholds.MediumSampleMinKills &&
+                        ClientStats.AverageSnapValue >= Thresholds.SnapBanValue/* + marginOfErrorLifetime*/)
+                    {
+                        results.Add(new DetectionPenaltyResult()
+                        {
+                            ClientPenalty = EFPenalty.PenaltyType.Ban,
+                            Value = sessionAverageSnapAmount,
+                            HitCount = ClientStats.SnapHitCount,
+                            Type = DetectionType.Snap
+                        });
+                    }
+
                 }
             }
             #endregion
@@ -220,7 +251,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #endregion
 
             #region STRAIN
-            double currentStrain = Strain.GetStrain(hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, hit.TimeOffset - LastOffset));
+            double currentStrain = Strain.GetStrain(hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, LastOffset == 0 ? 50 : (hit.TimeOffset - LastOffset)));
 #if DEBUG == true
             Log.WriteDebug($"Current Strain: {currentStrain}");
 #endif
@@ -426,7 +457,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 SessionSPM = ClientStats.SessionSPM,
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
-                WeaponId = hit.Weapon
+                WeaponId = hit.Weapon,
+                SessionSnapHits = sessionSnapHits,
+                SessionAverageSnapValue = sessionAverageSnapAmount
             };
 
             snapshot.PredictedViewAngles = hit.AnglesList

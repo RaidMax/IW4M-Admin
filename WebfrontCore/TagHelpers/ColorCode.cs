@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using SharedLibraryCore;
-using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace WebfrontCore.TagHelpers
 {
@@ -19,22 +17,28 @@ namespace WebfrontCore.TagHelpers
             output.TagName = "ColorCode";
             output.TagMode = TagMode.StartTagAndEndTag;
 
+
+
             if (Allow)
             {
-                string updated = Value;
-
-                foreach (Match match in Regex.Matches(Value, @"\^([0-9]|\:)([^\^]*)"))
+                var matches = Regex.Matches(Value, @"\^([0-9]|\:)([^\^]*)");
+                foreach (Match match in matches)
                 {
                     char colorCode = match.Groups[1].ToString().Last();
-                    updated = updated.Replace(match.Value, $"<span class='text-color-code-{(colorCode >= 48 && colorCode <= 57 ? colorCode.ToString() : ((int)colorCode).ToString())}'>{match.Groups[2].ToString()}</span>");
+                    output.PreContent.AppendHtml($"<span class='text-color-code-{(colorCode >= 48 && colorCode <= 57 ? colorCode.ToString() : ((int)colorCode).ToString())}'>");
+                    output.PreContent.Append(match.Groups[2].ToString());
+                    output.PreContent.AppendHtml("</span>");
                 }
 
-                output.PreContent.SetHtmlContent(updated);
+                if (matches.Count <= 1)
+                {
+                    output.PreContent.SetContent(Value.StripColors());
+                }
             }
 
             else
             {
-                output.PreContent.SetHtmlContent(Value.StripColors());
+                output.PreContent.SetContent(Value.StripColors());
             }
         }
     }

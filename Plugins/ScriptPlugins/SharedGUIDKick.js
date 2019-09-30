@@ -18,7 +18,11 @@ var plugin = {
                 gameEvent.Origin.NetworkId === 2908745942105435771 ||
                 gameEvent.Origin.NetworkId === -6492697076432899192 ||
                 gameEvent.Origin.NetworkId === 1145760003260769995 ||
-                gameEvent.Origin.NetworkId === -7102887284306116957) {
+                gameEvent.Origin.NetworkId === -7102887284306116957 ||
+                gameEvent.Origin.NetworkId === 3474936520447289592 ||
+                gameEvent.Origin.NetworkId === -1168897558496584395 ||
+                gameEvent.Origin.NetworkId === 8348020621355817691 ||
+                gameEvent.Origin.NetworkId === 3259219574061214058) {
                 gameEvent.Origin.Kick('Your GUID is generic. Delete players/guids.dat and rejoin', _IW4MAdminClient);
             }
         }

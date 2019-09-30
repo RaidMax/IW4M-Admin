@@ -17,8 +17,6 @@ namespace WebfrontCore.TagHelpers
             output.TagName = "ColorCode";
             output.TagMode = TagMode.StartTagAndEndTag;
 
-
-
             if (Allow)
             {
                 var matches = Regex.Matches(Value, @"\^([0-9]|\:)([^\^]*)");

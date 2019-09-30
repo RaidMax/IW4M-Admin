@@ -13,10 +13,10 @@ namespace WebfrontCore
 {
     public class Startup
     {
-        private readonly IHostingEnvironment _appHost;
+        private readonly IWebHostEnvironment _appHost;
         public static IConfigurationRoot Configuration { get; private set; }
 
-        public Startup(IHostingEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .AddEnvironmentVariables();
@@ -37,13 +37,12 @@ namespace WebfrontCore
                     {
                         _builder.AllowAnyOrigin()
                         .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials();
+                        .AllowAnyHeader();
                     });
             });
 
             // Add framework services.
-            var mvcBuilder = services.AddMvc()
+            var mvcBuilder = services.AddMvc(_options => _options.SuppressAsyncSuffixInActionNames = false)
                 .ConfigureApplicationPartManager(_ =>
                 {
                     foreach (var assembly in Program.Manager.GetPluginAssemblies())
@@ -61,7 +60,7 @@ namespace WebfrontCore
                 });
 
 #if DEBUG
-            mvcBuilder = mvcBuilder.AddRazorOptions(options => options.AllowRecompilingViewsOnFileChange = true);
+            mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
             services.Configure<RazorViewEngineOptions>(_options =>
             {
                 _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
@@ -94,9 +93,9 @@ namespace WebfrontCore
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
-            if (env.IsDevelopment())
+            if (env.EnvironmentName == "Development")
             {
                 app.UseDeveloperExceptionPage();
             }
@@ -115,11 +114,10 @@ namespace WebfrontCore
             app.UseAuthentication();
             app.UseCors("AllowAll");
 
-            app.UseMvc(routes =>
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }

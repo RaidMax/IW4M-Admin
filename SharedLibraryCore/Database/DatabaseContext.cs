@@ -23,10 +23,10 @@ namespace SharedLibraryCore.Database
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
 
-        [Obsolete]
-        private static readonly ILoggerFactory _loggerFactory = new LoggerFactory(new[] {
-              new ConsoleLoggerProvider((category, level) => level == LogLevel.Information, true)
-        });
+        //[Obsolete]
+        //private static readonly ILoggerFactory _loggerFactory = new LoggerFactory(new[] {
+        //      new ConsoleLoggerProvider((category, level) => level == LogLevel.Information, true)
+        //});
 
         static string _ConnectionString;
         static string _provider;

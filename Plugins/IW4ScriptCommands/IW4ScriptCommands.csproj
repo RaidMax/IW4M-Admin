@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
-    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
     <Configurations>Debug;Release;Prerelease</Configurations>
@@ -22,9 +21,5 @@
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.NETCore.App" Version="2.2.2" />
-  </ItemGroup>
-
+  
 </Project>

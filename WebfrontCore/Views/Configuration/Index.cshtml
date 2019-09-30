@@ -51,9 +51,8 @@
 
                 if (property.PropertyType.Name == typeof(System.Boolean).Name)
                 {
-                    var attributes = linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class = "has-related-content mb-0", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null;
                     <div class="form-group form-check bg-primary mb-0 pl-3 pr-3 p-2">
-                        @Html.Editor(property.Name, attributes)
+                        @Html.Editor(property.Name, linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class= "has-related-content mb-0", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null)
                         @Html.Label(property.Name, null, new { @class = "form-check-label ml-1" })
                     </div>
                 }

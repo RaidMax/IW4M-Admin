@@ -24,7 +24,7 @@ namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
-        private static readonly Index loc = Utilities.CurrentLocalization.LocalizationIndex;
+        private static readonly SharedLibraryCore.Localization.Index loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
         private const int REPORT_FLAG_COUNT = 4;
 

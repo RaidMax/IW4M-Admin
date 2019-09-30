@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     <Version>0.1.0.0</Version>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <LangVersion>7.1</LangVersion>
@@ -14,10 +15,6 @@
       <Private>false</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

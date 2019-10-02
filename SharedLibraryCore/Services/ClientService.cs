@@ -10,7 +10,6 @@ using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
 {
-
     public class ClientService : Interfaces.IEntityService<EFClient>
     {
         public async Task<EFClient> Create(EFClient entity)
@@ -579,19 +578,20 @@ namespace SharedLibraryCore.Services
         /// <returns></returns>
         public async Task<IList<PlayerInfo>> GetRecentClients()
         {
+            var startOfPeriod = DateTime.UtcNow.AddHours(-24);
+
             using (var context = new DatabaseContext(true))
             {
                 var iqClients = context.Clients
                     .Where(_client => _client.CurrentAlias.IPAddress != null)
+                    .Where(_client => _client.LastConnection >= startOfPeriod)
                     .Select(_client => new PlayerInfo()
                     {
                         ClientId = _client.ClientId,
                         Name = _client.CurrentAlias.Name,
                         IPAddress = _client.CurrentAlias.IPAddress.ConvertIPtoString(),
                         LastConnection = _client.FirstConnection
-                    })
-                    .OrderByDescending(_client => _client.ClientId)
-                    .Take(10);
+                    });
 #if DEBUG
                 var sql = iqClients.ToSql();
 #endif

@@ -584,7 +584,7 @@ namespace SharedLibraryCore.Services
             {
                 var iqClients = context.Clients
                     .Where(_client => _client.CurrentAlias.IPAddress != null)
-                    .Where(_client => _client.LastConnection >= startOfPeriod)
+                    .Where(_client => _client.FirstConnection >= startOfPeriod)
                     .Select(_client => new PlayerInfo()
                     {
                         ClientId = _client.ClientId,

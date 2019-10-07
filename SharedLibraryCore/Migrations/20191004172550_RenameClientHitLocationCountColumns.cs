@@ -77,61 +77,64 @@ PRAGMA foreign_keys = 1;
 ", true);
             }
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_EFHitLocationCounts_EFClients_EFClientStatistics_ClientId",
-                table: "EFHitLocationCounts");
+            else
+            {
+                migrationBuilder.DropForeignKey(
+                    name: "FK_EFHitLocationCounts_EFClients_EFClientStatistics_ClientId",
+                    table: "EFHitLocationCounts");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_EFHitLocationCounts_EFServers_EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts");
+                migrationBuilder.DropForeignKey(
+                    name: "FK_EFHitLocationCounts_EFServers_EFClientStatistics_ServerId",
+                    table: "EFHitLocationCounts");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts");
+                migrationBuilder.DropForeignKey(
+                    name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
+                    table: "EFHitLocationCounts");
 
-            migrationBuilder.RenameColumn(
-                name: "EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts",
-                newName: "EFClientStatisticsServerId");
+                migrationBuilder.RenameColumn(
+                    name: "EFClientStatistics_ServerId",
+                    table: "EFHitLocationCounts",
+                    newName: "EFClientStatisticsServerId");
 
-            migrationBuilder.RenameColumn(
-                name: "EFClientStatistics_ClientId",
-                table: "EFHitLocationCounts",
-                newName: "EFClientStatisticsClientId");
+                migrationBuilder.RenameColumn(
+                    name: "EFClientStatistics_ClientId",
+                    table: "EFHitLocationCounts",
+                    newName: "EFClientStatisticsClientId");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_EFHitLocationCounts_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts",
-                newName: "IX_EFHitLocationCounts_EFClientStatisticsClientId_EFClientStatisticsServerId");
+                migrationBuilder.RenameIndex(
+                    name: "IX_EFHitLocationCounts_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
+                    table: "EFHitLocationCounts",
+                    newName: "IX_EFHitLocationCounts_EFClientStatisticsClientId_EFClientStatisticsServerId");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_EFHitLocationCounts_EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts",
-                newName: "IX_EFHitLocationCounts_EFClientStatisticsServerId");
+                migrationBuilder.RenameIndex(
+                    name: "IX_EFHitLocationCounts_EFClientStatistics_ServerId",
+                    table: "EFHitLocationCounts",
+                    newName: "IX_EFHitLocationCounts_EFClientStatisticsServerId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_EFHitLocationCounts_EFClients_EFClientStatisticsClientId",
-                table: "EFHitLocationCounts",
-                column: "EFClientStatisticsClientId",
-                principalTable: "EFClients",
-                principalColumn: "ClientId",
-                onDelete: ReferentialAction.Cascade);
+                migrationBuilder.AddForeignKey(
+                    name: "FK_EFHitLocationCounts_EFClients_EFClientStatisticsClientId",
+                    table: "EFHitLocationCounts",
+                    column: "EFClientStatisticsClientId",
+                    principalTable: "EFClients",
+                    principalColumn: "ClientId",
+                    onDelete: ReferentialAction.Cascade);
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_EFHitLocationCounts_EFServers_EFClientStatisticsServerId",
-                table: "EFHitLocationCounts",
-                column: "EFClientStatisticsServerId",
-                principalTable: "EFServers",
-                principalColumn: "ServerId",
-                onDelete: ReferentialAction.Cascade);
+                migrationBuilder.AddForeignKey(
+                    name: "FK_EFHitLocationCounts_EFServers_EFClientStatisticsServerId",
+                    table: "EFHitLocationCounts",
+                    column: "EFClientStatisticsServerId",
+                    principalTable: "EFServers",
+                    principalColumn: "ServerId",
+                    onDelete: ReferentialAction.Cascade);
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatisticsClientId_EFClientStatisticsServerId",
-                table: "EFHitLocationCounts",
-                columns: new[] { "EFClientStatisticsClientId", "EFClientStatisticsServerId" },
-                principalTable: "EFClientStatistics",
-                principalColumns: new[] { "ClientId", "ServerId" },
-                onDelete: ReferentialAction.Cascade);
+                migrationBuilder.AddForeignKey(
+                    name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatisticsClientId_EFClientStatisticsServerId",
+                    table: "EFHitLocationCounts",
+                    columns: new[] { "EFClientStatisticsClientId", "EFClientStatisticsServerId" },
+                    principalTable: "EFClientStatistics",
+                    principalColumns: new[] { "ClientId", "ServerId" },
+                    onDelete: ReferentialAction.Cascade);
+            }
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

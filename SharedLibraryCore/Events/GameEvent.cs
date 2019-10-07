@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,9 @@ namespace SharedLibraryCore
 {
     public class GameEvent
     {
+        // define what the delagate function looks like
+        public delegate void OnServerEventEventHandler(object sender, GameEventArgs e);
+
         public enum EventFailReason
         {
             /// <summary>

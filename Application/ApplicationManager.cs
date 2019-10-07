@@ -21,6 +21,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static SharedLibraryCore.GameEvent;
 
 namespace IW4MAdmin.Application
 {
@@ -31,8 +32,6 @@ namespace IW4MAdmin.Application
         public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
         public bool IsInitialized { get; private set; }
-        // define what the delagate function looks like
-        public delegate void OnServerEventEventHandler(object sender, GameEventArgs e);
         // expose the event handler so we can execute the events
         public OnServerEventEventHandler OnServerEvent { get; set; }
         public DateTime StartTime { get; private set; }
@@ -53,7 +52,6 @@ namespace IW4MAdmin.Application
         public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         GameEventHandler Handler;
         readonly IPageList PageList;
-        readonly SemaphoreSlim ProcessingEvent = new SemaphoreSlim(1, 1);
         readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
         private readonly MetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);

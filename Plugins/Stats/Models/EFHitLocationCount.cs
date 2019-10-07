@@ -17,11 +17,13 @@ namespace IW4MAdmin.Plugins.Stats.Models
         [Required]
         public float MaxAngleDistance { get; set; }
         [Required]
-        public int ClientId { get; set; }
-        [ForeignKey("ClientId"), Column(Order = 0 )]
+        [Column("EFClientStatisticsClientId")]
+        public int EFClientStatisticsClientId { get; set; }
+        [ForeignKey("EFClientStatisticsClientId")]
         public EFClient Client { get; set; }
-        public long ServerId { get; set; }
-        [ForeignKey("ServerId"), Column(Order = 1)]
+        [Column("EFClientStatisticsServerId")]
+        public long EFClientStatisticsServerId { get; set; }
+        [ForeignKey("EFClientStatisticsServerId")]
         public EFServer Server { get; set; }
     }
 }

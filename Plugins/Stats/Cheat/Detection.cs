@@ -125,32 +125,32 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                     //var marginOfError = Thresholds.GetMarginOfError(sessionSnapHits);
                     //var marginOfErrorLifetime = Thresholds.GetMarginOfError(ClientStats.SnapHitCount);
 
-                    if (sessionSnapHits >= Thresholds.LowSampleMinKills &&
+                    if (sessionSnapHits >= Thresholds.MediumSampleMinKills &&
                         sessionAverageSnapAmount >= Thresholds.SnapFlagValue/* + marginOfError*/)
                     {
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Flag,
                             Value = sessionAverageSnapAmount,
-                            HitCount = ClientStats.SnapHitCount,
+                            HitCount = sessionSnapHits,
                             Type = DetectionType.Snap
                         });
                     }
 
-                    if (sessionSnapHits >= Thresholds.LowSampleMinKills &&
+                    if (sessionSnapHits >= Thresholds.MediumSampleMinKills &&
                         sessionAverageSnapAmount >= Thresholds.SnapBanValue/* + marginOfError*/)
                     {
                         results.Add(new DetectionPenaltyResult()
                         {
                             ClientPenalty = EFPenalty.PenaltyType.Ban,
                             Value = sessionAverageSnapAmount,
-                            HitCount = ClientStats.SnapHitCount,
+                            HitCount = sessionSnapHits,
                             Type = DetectionType.Snap
                         });
                     }
 
                     // lifetime
-                    if (ClientStats.SnapHitCount >= Thresholds.MediumSampleMinKills &&
+                    if (ClientStats.SnapHitCount >= Thresholds.MediumSampleMinKills * 2 &&
                         ClientStats.AverageSnapValue >= Thresholds.SnapFlagValue/* + marginOfErrorLifetime*/)
                     {
                         results.Add(new DetectionPenaltyResult()
@@ -162,7 +162,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                         });
                     }
 
-                    if (ClientStats.SnapHitCount >= Thresholds.MediumSampleMinKills &&
+                    if (ClientStats.SnapHitCount >= Thresholds.MediumSampleMinKills * 2 &&
                         ClientStats.AverageSnapValue >= Thresholds.SnapBanValue/* + marginOfErrorLifetime*/)
                     {
                         results.Add(new DetectionPenaltyResult()
@@ -183,7 +183,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             int angleOffsetIndex = totalUsableAngleCount / 2;
             if (hit.AnglesList.Count == 5)
             {
-
                 double realAgainstPredict = Vector3.ViewAngleDistance(hit.AnglesList[angleOffsetIndex - 1], hit.AnglesList[angleOffsetIndex + 1], hit.ViewAngles);
 
                 // LIFETIME
@@ -201,15 +200,15 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (weightedLifetimeAverage > Thresholds.MaxOffset(totalHits) &&
                     hitLoc.HitCount > 100)
                 {
-                    Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
-                    Log.WriteDebug($"Lifetime Average = {newAverage}");
-                    Log.WriteDebug($"Bone = {hitLoc.Location}");
-                    Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
-                    Log.WriteDebug($"ID = {hit.AttackerId}");
+                    //Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
+                    //Log.WriteDebug($"Lifetime Average = {newAverage}");
+                    //Log.WriteDebug($"Bone = {hitLoc.Location}");
+                    //Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
+                    //Log.WriteDebug($"ID = {hit.AttackerId}");
 
                     results.Add(new DetectionPenaltyResult()
                     {
-                        ClientPenalty = EFPenalty.PenaltyType.Flag,
+                        ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = hitLoc.HitOffsetAverage,
                         HitCount = hitLoc.HitCount,
                         Type = DetectionType.Offset
@@ -236,7 +235,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
                     results.Add(new DetectionPenaltyResult()
                     {
-                        ClientPenalty = EFPenalty.PenaltyType.Flag,
+                        ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = weightedSessionAverage,
                         HitCount = HitCount,
                         Type = DetectionType.Offset,

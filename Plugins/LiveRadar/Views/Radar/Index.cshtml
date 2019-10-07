@@ -303,12 +303,12 @@
         };
 
         function updateRadarData() {
-            $.getJSON('@Url.Action("Data", "Radar", null)', function (_radarItem) {
+            $.getJSON('@Url.Action("Data", "Radar", new { serverId = ViewBag.ActiveServerId })', function (_radarItem) {
                 newRadarData = _radarItem;
             });
 
 
-             $.getJSON('@Url.Action("Map", "Radar", null)', function (_map) {
+             $.getJSON('@Url.Action("Map", "Radar", new { serverId = ViewBag.ActiveServerId })', function (_map) {
                  stateInfo.mapInfo = _map
              });
 
@@ -458,7 +458,7 @@
         }
 
         $(document).ready(function () {
-             $.getJSON('@Url.Action("Map", "Radar", null)', function (_map) {
+             $.getJSON('@Url.Action("Map", "Radar", new { serverId = ViewBag.ActiveServerId })', function (_map) {
                  stateInfo.mapInfo = _map;
                  updateRadarData();
                  setInterval(updateRadarData, stateInfo.updateFrequency);

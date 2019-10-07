@@ -48,13 +48,13 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         public const int HighSampleMinKills = 100;
         public const double KillTimeThreshold = 0.2;
         public const int LowSampleMinKillsRecoil = 5;
-        public const double SnapFlagValue = 6.12;
-        public const double SnapBanValue = 9.67;
+        public const double SnapFlagValue = 5.5;
+        public const double SnapBanValue = 8.7;
 
         public const double MaxStrainBan = 0.9;
 
-        private const double _offsetMeanLog = -2.727273;
-        private const double _offsetSdLog = 0.458325;
+        private const double _offsetMeanLog = -2.3243889;
+        private const double _offsetSdLog = 0.5851351;
 
         public static double MaxOffset(int sampleSize) => Math.Exp(Math.Max(_offsetMeanLog + (_offsetMeanLog / Math.Sqrt(sampleSize)), _offsetMeanLog - (_offsetMeanLog / Math.Sqrt(sampleSize))) + 4 * (_offsetSdLog));
         public const double MaxStrainFlag = 0.36;

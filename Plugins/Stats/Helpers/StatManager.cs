@@ -843,7 +843,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Active = true,
                     Newest = true,
                     ServerId = clientStats.ServerId,
-                    RatingHistoryId = clientHistory.RatingHistoryId,
+                    RatingHistory = clientHistory,
                     ActivityAmount = currentServerTotalPlaytime,
                 };
 
@@ -921,7 +921,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Performance = performanceAverage,
                     Ranking = overallClientRanking,
                     ServerId = null,
-                    RatingHistoryId = clientHistory.RatingHistoryId,
+                    RatingHistory = clientHistory,
                     ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
                 };
 

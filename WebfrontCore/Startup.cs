@@ -13,7 +13,6 @@ namespace WebfrontCore
 {
     public class Startup
     {
-        private readonly IWebHostEnvironment _appHost;
         public static IConfigurationRoot Configuration { get; private set; }
 
         public Startup(IWebHostEnvironment env)
@@ -22,8 +21,6 @@ namespace WebfrontCore
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
-
-            _appHost = env;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -112,6 +109,7 @@ namespace WebfrontCore
 
             app.UseStaticFiles();
             app.UseAuthentication();
+            app.UseAuthorization();
             app.UseCors("AllowAll");
 
             app.UseRouting();

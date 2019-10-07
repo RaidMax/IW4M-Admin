@@ -290,26 +290,26 @@ namespace SharedLibraryCore.Services
         {
             using (var context = new DatabaseContext(true))
             {
-                var iqClient = from client in context.Clients
+                var iqClient = from _c in context.Clients
                                .Include(c => c.CurrentAlias)
                                .Include(c => c.AliasLink.Children)
                                .Include(c => c.Meta)
-                               where client.ClientId == entityID
-                               select new
-                               {
-                                   Client = client,
-                                   LinkedAccounts = (from linkedClient in context.Clients
-                                                     where client.AliasLinkId == linkedClient.AliasLinkId
-                                                     select new
-                                                     {
-                                                         linkedClient.ClientId,
-                                                         linkedClient.NetworkId
-                                                     })
-                               };
-#if DEBUG == true
-                var clientSql = iqClient.ToSql();
-#endif
-                var foundClient = await iqClient.FirstOrDefaultAsync();
+                               where _c.ClientId == entityID
+                               select _c;
+
+                var client = await iqClient.FirstOrDefaultAsync();
+
+                var foundClient = new
+                {
+                    Client = client,
+                    LinkedAccounts = await context.Clients.Where(_client => _client.AliasLinkId == client.AliasLinkId)
+                    .Select(_linkedClient => new
+                    {
+                        _linkedClient.ClientId,
+                        _linkedClient.NetworkId
+                    })
+                    .ToListAsync()
+                };
 
                 if (foundClient == null)
                 {
@@ -585,6 +585,7 @@ namespace SharedLibraryCore.Services
                 var iqClients = context.Clients
                     .Where(_client => _client.CurrentAlias.IPAddress != null)
                     .Where(_client => _client.FirstConnection >= startOfPeriod)
+                    .OrderByDescending(_client => _client.FirstConnection)
                     .Select(_client => new PlayerInfo()
                     {
                         ClientId = _client.ClientId,
@@ -592,6 +593,7 @@ namespace SharedLibraryCore.Services
                         IPAddress = _client.CurrentAlias.IPAddress.ConvertIPtoString(),
                         LastConnection = _client.FirstConnection
                     });
+                  
 #if DEBUG
                 var sql = iqClients.ToSql();
 #endif

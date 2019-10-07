@@ -111,13 +111,6 @@ namespace SharedLibraryCore.Database
                         break;
                 }
             }
-
-#if DEBUG
-#pragma warning disable CS0612 // Type or member is obsolete
-           // optionsBuilder.UseLoggerFactory(_loggerFactory)
-#pragma warning restore CS0612 // Type or member is obsolete
-              //  .EnableSensitiveDataLogging();
-#endif
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

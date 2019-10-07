@@ -13,12 +13,12 @@ namespace Stats.Models
 
             // fix linking from SQLCe
             builder.Entity<EFHitLocationCount>()
-                .Property(c => c.ClientId)
-                .HasColumnName("EFClientStatistics_ClientId");
+                .Property(c => c.EFClientStatisticsClientId)
+                .HasColumnName("EFClientStatisticsClientId");
 
             builder.Entity<EFHitLocationCount>()
-                .Property(c => c.ServerId)
-                .HasColumnName("EFClientStatistics_ServerId");
+                .Property(c => c.EFClientStatisticsServerId)
+                .HasColumnName("EFClientStatisticsServerId");
 
             builder.Entity<EFRating>()
                 .HasIndex(p => new { p.Performance, p.Ranking, p.When });

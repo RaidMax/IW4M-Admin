@@ -80,7 +80,7 @@ namespace IW4MAdmin.Application
                 {
                     Console.WriteLine(LogLine);
                 }
-                await File.AppendAllTextAsync(FileName, $"{LogLine}{Environment.NewLine}");
+                File.AppendAllText(FileName, $"{LogLine}{Environment.NewLine}");
 #endif
             }
 

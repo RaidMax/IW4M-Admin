@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <PreserveCompilationContext>true</PreserveCompilationContext>
@@ -83,7 +83,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Update="Microsoft.NETCore.App" Version="2.2.2" />
     <PackageReference Update="Microsoft.AspNetCore" Version="2.2.0" />
   </ItemGroup>
 

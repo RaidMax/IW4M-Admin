@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <ApplicationIcon />
     <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.Plugins.Login</PackageId>
@@ -23,11 +23,7 @@
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.NETCore.App" Version="2.2.2" />
-  </ItemGroup>
-
+  
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
   </Target>

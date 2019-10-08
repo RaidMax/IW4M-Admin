@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetLatestRuntimePatch >true</TargetLatestRuntimePatch>
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <Configurations>Debug;Release;Prerelease</Configurations>

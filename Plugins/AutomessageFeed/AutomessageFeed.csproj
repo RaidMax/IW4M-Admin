@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <TargetLatestRuntimePatch >true</TargetLatestRuntimePatch>
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 

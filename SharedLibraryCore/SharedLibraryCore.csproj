@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <ApplicationIcon />
     <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
@@ -51,11 +51,7 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.2.0" />
     <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.NETCore.App" Version="2.2.2" />
-  </ItemGroup>
-
+  
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="if not exist &quot;$(ProjectDir)..\BUILD&quot; (&#xD;&#xA;md &quot;$(ProjectDir)..\BUILD&quot;&#xD;&#xA;)&#xD;&#xA;if not exist &quot;$(ProjectDir)..\BUILD\Plugins&quot; (&#xD;&#xA;md &quot;$(ProjectDir)..\BUILD\Plugins&quot;&#xD;&#xA;)" />
   </Target>

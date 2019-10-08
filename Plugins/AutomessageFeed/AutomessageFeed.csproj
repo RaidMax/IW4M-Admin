@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <TargetLatestRuntimePatch >true</TargetLatestRuntimePatch>
     <LangVersion>7.1</LangVersion>
     <Configurations>Debug;Release;Prerelease</Configurations>
   </PropertyGroup>

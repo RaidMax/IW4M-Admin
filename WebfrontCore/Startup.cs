@@ -112,6 +112,9 @@ namespace WebfrontCore
             app.UseAuthorization();
             app.UseCors("AllowAll");
 
+            // prevents banned/demoted users from keeping their claims
+            app.UseMiddleware<ClaimsPermissionRemoval>(Program.Manager);
+
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {

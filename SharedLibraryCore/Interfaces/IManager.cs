@@ -6,6 +6,7 @@ using System.Reflection;
 using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
+using static SharedLibraryCore.GameEvent;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -54,5 +55,6 @@ namespace SharedLibraryCore.Interfaces
         string ExternalIPAddress { get; }
         CancellationToken CancellationToken { get; }
         bool IsRestartRequested { get; }
+        OnServerEventEventHandler OnServerEvent { get; set; }
     }
 }

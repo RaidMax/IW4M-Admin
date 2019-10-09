@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using SharedLibraryCore;
-using SharedLibraryCore.Services;
 using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Database;
 using System.Collections.Generic;
@@ -26,6 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             using (var db = new DatabaseContext(true))
             {
                 var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+                int minPlayTime = Plugin.Config.Configuration().TopPlayersMinPlayTime;
 
                 var iqStats = (from stats in db.Set<EFClientStatistics>()
                                join client in db.Clients
@@ -33,10 +33,10 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                join alias in db.Aliases
                                on client.CurrentAliasId equals alias.AliasId
                                where stats.ServerId == serverId
-                               where stats.TimePlayed >= Plugin.Config.Configuration().TopPlayersMinPlayTime
+                               where stats.TimePlayed >= minPlayTime
                                where client.Level != EFClient.Permission.Banned
                                where client.LastConnection >= fifteenDaysAgo
-                               orderby stats.Performance descending
+                               orderby (stats.EloRating + stats.Skill) / 2.0d descending
                                select new
                                {
                                    stats.KDR,
@@ -44,10 +44,6 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                                    alias.Name
                                })
                               .Take(5);
-
-#if DEBUG == true
-                var statsSql = iqStats.ToSql();
-#endif
 
                 var statsList = (await iqStats.ToListAsync())
                     .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
@@ -77,7 +73,6 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 foreach (var stat in topStats)
                 {
                     E.Origin.Tell(stat);
-
                 }
             }
             else

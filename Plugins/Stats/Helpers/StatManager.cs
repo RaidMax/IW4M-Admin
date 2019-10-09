@@ -149,9 +149,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                        TotalTimePlayed = s.Sum(c => c.TimePlayed),
                                    });
 
-#if DEBUG == true
-                var statsInfoSql = iqStatsInfo.ToSql();
-#endif
                 var topPlayers = await iqStatsInfo.ToListAsync();
 
                 var clientRatingsDict = clientRatings.ToDictionary(r => r.ClientId);

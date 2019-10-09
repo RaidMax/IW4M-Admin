@@ -30,9 +30,7 @@ namespace IW4MAdmin.Application.IO
         {
             while (!_server.Manager.CancellationToken.IsCancellationRequested)
             {
-#if !DEBUG
                 if (_server.IsInitialized)
-#endif
                 {
                     try
                     {

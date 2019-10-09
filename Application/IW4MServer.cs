@@ -8,7 +8,6 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Localization;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;

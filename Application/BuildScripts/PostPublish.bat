@@ -31,10 +31,10 @@ if exist "%SolutionDir%Publish\WindowsPrerelease\ko\" powershell Remove-Item -Fo
 if exist "%SolutionDir%Publish\WindowsPrerelease\ru\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\ru'
 if exist "%SolutionDir%Publish\WindowsPrerelease\zh-Hans\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\zh-Hans'
 if exist "%SolutionDir%Publish\WindowsPrerelease\zh-Hant\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\zh-Hant'
-if exist "%SolutionDir%Publish\WindowsPrerelease\cs\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\Windows\cs'
-if exist "%SolutionDir%Publish\WindowsPrerelease\pl\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\Windows\pl'
-if exist "%SolutionDir%Publish\WindowsPrerelease\tr\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\Windows\tr'
-if exist "%SolutionDir%Publish\WindowsPrerelease\pt-BR\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\Windows\pt-BR'
+if exist "%SolutionDir%Publish\WindowsPrerelease\cs\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\cs'
+if exist "%SolutionDir%Publish\WindowsPrerelease\pl\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\pl'
+if exist "%SolutionDir%Publish\WindowsPrerelease\tr\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\tr'
+if exist "%SolutionDir%Publish\WindowsPrerelease\pt-BR\" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\WindowsPrerelease\pt-BR'
 
 echo Deleting extra runtime files
 if exist "%SolutionDir%Publish\Windows\runtimes\linux-arm" powershell Remove-Item -Force -Recurse '%SolutionDir%Publish\Windows\runtimes\linux-arm'

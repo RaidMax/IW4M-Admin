@@ -17,7 +17,7 @@ namespace LiveRadar.Web.Controllers
 
         [HttpGet]
         [Route("Radar/{serverId}")]
-        public IActionResult Index([FromQuery] long? serverId = null)
+        public IActionResult Index(long? serverId = null)
         {
             ViewBag.IsFluid = true;
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];

@@ -96,6 +96,7 @@ namespace IW4MAdmin.Application
 
             try
             {
+                await newEvent.Owner.EventProcessing.WaitAsync(CancellationToken);
                 await newEvent.Owner.ExecuteEvent(newEvent);
 
                 // save the event info to the database
@@ -105,6 +106,16 @@ namespace IW4MAdmin.Application
 #if DEBUG
                 Logger.WriteDebug($"Processed event with id {newEvent.Id}");
 #endif
+            }
+
+            catch (TaskCanceledException)
+            {
+                Logger.WriteInfo($"Received quit signal for event id {newEvent.Id}, so we are aborting early");
+            }
+
+            catch (OperationCanceledException)
+            {
+                Logger.WriteInfo($"Received quit signal for event id {newEvent.Id}, so we are aborting early");
             }
 
             // this happens if a plugin requires login
@@ -132,6 +143,18 @@ namespace IW4MAdmin.Application
                 newEvent.FailReason = GameEvent.EventFailReason.Exception;
                 Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"].FormatExt(newEvent.Owner));
                 Logger.WriteDebug(ex.GetExceptionInfo());
+            }
+
+            finally
+            {
+                if (newEvent.Owner.EventProcessing.CurrentCount == 0)
+                {
+                    newEvent.Owner.EventProcessing.Release(1);
+                }
+
+#if DEBUG == true
+                Logger.WriteDebug($"Exiting event process for {args.Event.Id}");
+#endif
             }
 
         skip:

@@ -39,6 +39,7 @@ namespace SharedLibraryCore
             ServerConfig = config;
             RemoteConnection = new RCon.Connection(IP, Port, Password, Logger, null);
 
+            EventProcessing = new SemaphoreSlim(1, 1);
             Clients = new List<EFClient>(new EFClient[18]);
             Reports = new List<Report>();
             ClientHistory = new Queue<PlayerHistory>();
@@ -309,6 +310,7 @@ namespace SharedLibraryCore
         public IEventParser EventParser { get; set; }
         public string LogPath { get; protected set; }
         public bool RestartRequested { get; set; }
+        public SemaphoreSlim EventProcessing { get; private set; }
 
         // Internal
         public string IP { get; protected set; }

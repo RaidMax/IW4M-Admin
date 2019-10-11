@@ -89,6 +89,8 @@ namespace SharedLibraryCore
                 return new List<EFClient>();
             }
 
+            pName = pName.Trim().StripColors();
+
             string[] QuoteSplit = pName.Split('"');
             bool literal = false;
             if (QuoteSplit.Length > 1)

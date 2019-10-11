@@ -638,5 +638,30 @@ namespace SharedLibraryCore.Services
                     .AnyAsync();
             }
         }
+
+        /// <summary>
+        /// Unlinks shared GUID account into its own separate account
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
+        public async Task UnlinkClient(int clientId)
+        {
+            using (var ctx = new DatabaseContext())
+            {
+                var newLink = new EFAliasLink() { Active = true };
+                ctx.AliasLinks.Add(newLink);
+                await ctx.SaveChangesAsync();
+
+                var client = await ctx.Clients.Include(_client => _client.CurrentAlias)
+                    .FirstAsync(_client => _client.ClientId == clientId);
+                client.AliasLinkId = newLink.AliasLinkId;
+                client.Level = Permission.User;
+
+                await ctx.Aliases.Where(_alias => _alias.IPAddress == client.IPAddress)
+                    .ForEachAsync(_alias => _alias.LinkId = newLink.AliasLinkId);
+
+                await ctx.SaveChangesAsync();
+            }
+        }
     }
 }

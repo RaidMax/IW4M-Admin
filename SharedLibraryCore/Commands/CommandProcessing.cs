@@ -86,12 +86,13 @@ namespace SharedLibraryCore.Commands
 
                 if (E.Target == null && C.RequiresTarget) // Find active player including quotes (multiple words)
                 {
-                    matchingPlayers = E.Owner.GetClientByName(E.Data.Trim());
+                    matchingPlayers = E.Owner.GetClientByName(E.Data);
                     if (matchingPlayers.Count > 1)
                     {
                         E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
+
                     else if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();

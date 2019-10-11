@@ -420,6 +420,7 @@ namespace IW4MAdmin.Application
             Commands.Add(new CSetGravatar());
             Commands.Add(new CNextMap());
             Commands.Add(new RequestTokenCommand());
+            Commands.Add(new UnlinkClientCommand());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
             {

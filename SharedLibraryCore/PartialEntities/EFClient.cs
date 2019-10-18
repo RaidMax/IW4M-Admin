@@ -376,6 +376,11 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
+            if (Level == Permission.Banned)
+            {
+                e.FailReason = GameEvent.EventFailReason.Invalid;
+            }
+
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }

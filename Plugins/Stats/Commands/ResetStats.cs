@@ -36,7 +36,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     clientStats.EloRating = 200.0;
 
                     // reset the cached version
-                    Plugin.Manager.ResetStats(E.Origin.ClientId, serverId);
+                    Plugin.Manager.ResetStats(E.Origin);
 
                     // fixme: this doesn't work properly when another context exists
                     await ctx.SaveChangesAsync();

@@ -58,7 +58,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.MapChange:
                     Manager.SetTeamBased(StatManager.GetIdForServer(E.Owner), E.Owner.Gametype != "dm");
-                    Manager.ResetKillstreaks(StatManager.GetIdForServer(E.Owner));
+                    Manager.ResetKillstreaks(E.Owner);
                     await Manager.Sync(E.Owner);
                     break;
                 case GameEvent.EventType.MapEnd:
@@ -104,7 +104,7 @@ namespace IW4MAdmin.Plugins.Stats
                     }
                     break;
                 case GameEvent.EventType.Kill:
-                    if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if (!ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -116,7 +116,7 @@ namespace IW4MAdmin.Plugins.Stats
                     }
                     break;
                 case GameEvent.EventType.Damage:
-                    if (!E.Owner.CustomCallback && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if (!ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))

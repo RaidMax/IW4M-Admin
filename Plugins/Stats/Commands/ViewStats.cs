@@ -52,7 +52,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Target)))
                 {
-                    pStats = Plugin.Manager.GetClientStats(E.Target.ClientId, serverId);
+                    pStats = E.Target.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
                 }
 
                 else
@@ -72,7 +72,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Origin)))
                 {
-                    pStats = Plugin.Manager.GetClientStats(E.Origin.ClientId, serverId);
+                    pStats = E.Origin.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
                 }
 
                 else

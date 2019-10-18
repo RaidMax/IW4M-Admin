@@ -103,6 +103,12 @@ namespace IW4MAdmin.Application.RconParsers
         public virtual async Task<List<EFClient>> GetStatusAsync(Connection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
+#if DEBUG
+            foreach (var line in response)
+            {
+                Console.WriteLine(line);
+            }
+#endif
             return ClientsFromStatus(response);
         }
 

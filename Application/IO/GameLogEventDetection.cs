@@ -1,7 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
@@ -12,6 +12,7 @@ namespace IW4MAdmin.Application.IO
         private readonly Server _server;
         private readonly IGameLogReader _reader;
         private readonly string _gameLogFile;
+        private readonly bool _ignoreBots;
 
         class EventState
         {
@@ -24,6 +25,7 @@ namespace IW4MAdmin.Application.IO
             _gameLogFile = gameLogPath;
             _reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : _reader = new GameLogReader(gameLogPath, server.EventParser); 
             _server = server;
+            _ignoreBots = server.Manager.GetApplicationSettings().Configuration().IgnoreBots;
         }
 
         public async Task PollForChanges()
@@ -67,9 +69,56 @@ namespace IW4MAdmin.Application.IO
 
             var events = await _reader.ReadEventsFromLog(_server, fileDiff, previousFileSize);
 
-            foreach (var ev in events)
+            foreach (var gameEvent in events)
             {
-                _server.Manager.GetEventHandler().AddEvent(ev);
+                try
+                {
+#if DEBUG
+                    _server.Logger.WriteVerbose(gameEvent.Data);
+#endif
+
+                    // we don't want to add the event if ignoreBots is on and the event comes from a bot
+                    if (!_ignoreBots || (_ignoreBots && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
+                    {
+                        gameEvent.Owner = _server;
+
+                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
+                        {
+                            gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
+                        }
+
+                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
+                        {
+                            gameEvent.Target = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
+                        }
+
+                        if (gameEvent.Origin != null)
+                        {
+                            gameEvent.Origin.CurrentServer = _server;
+                        }
+
+                        if (gameEvent.Target != null)
+                        {
+                            gameEvent.Target.CurrentServer = _server;
+                        }
+
+                        _server.Manager.GetEventHandler().AddEvent(gameEvent);
+
+                        if (gameEvent.IsBlocking)
+                        {
+                            await gameEvent.WaitAsync(Utilities.DefaultCommandTimeout, _server.Manager.CancellationToken);
+                        }
+                    }
+                }
+
+                catch (InvalidOperationException)
+                {
+                    if (!_ignoreBots)
+                    {
+                        _server.Logger.WriteWarning("Could not find client in client list when parsing event line");
+                        _server.Logger.WriteDebug(gameEvent.Data);
+                    }
+                }
             }
 
             previousFileSize = fileSize;

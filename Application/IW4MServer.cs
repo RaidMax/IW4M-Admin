@@ -668,7 +668,8 @@ namespace IW4MAdmin
                         {
                             Type = GameEvent.EventType.PreConnect,
                             Origin = client,
-                            Owner = this
+                            Owner = this,
+                            IsBlocking = true
                         };
 
                         Manager.GetEventHandler().AddEvent(e);

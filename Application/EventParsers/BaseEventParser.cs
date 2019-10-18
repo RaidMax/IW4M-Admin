@@ -105,6 +105,7 @@ namespace IW4MAdmin.Application.EventParsers
                                 Data = message,
                                 Origin = new EFClient() { NetworkId = originId },
                                 Message = message,
+                                Extra = logLine,
                                 RequiredEntity = GameEvent.EventRequiredEntity.Origin
                             };
                         }
@@ -115,6 +116,7 @@ namespace IW4MAdmin.Application.EventParsers
                             Data = message,
                             Origin = new EFClient() { NetworkId = originId },
                             Message = message,
+                            Extra = logLine,
                             RequiredEntity = GameEvent.EventRequiredEntity.Origin
                         };
                     }
@@ -181,7 +183,8 @@ namespace IW4MAdmin.Application.EventParsers
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
                         },
-                        RequiredEntity = GameEvent.EventRequiredEntity.None
+                        RequiredEntity = GameEvent.EventRequiredEntity.None,
+                        IsBlocking = true
                     };
                 }
             }
@@ -205,7 +208,8 @@ namespace IW4MAdmin.Application.EventParsers
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Disconnecting
                         },
-                        RequiredEntity = GameEvent.EventRequiredEntity.Origin
+                        RequiredEntity = GameEvent.EventRequiredEntity.None,
+                        IsBlocking = true
                     };
                 }
             }
@@ -215,7 +219,7 @@ namespace IW4MAdmin.Application.EventParsers
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.MapEnd,
-                    Data = lineSplit[0],
+                    Data = logLine,
                     Origin = Utilities.IW4MAdminClient(),
                     Target = Utilities.IW4MAdminClient(),
                     RequiredEntity = GameEvent.EventRequiredEntity.None
@@ -229,7 +233,7 @@ namespace IW4MAdmin.Application.EventParsers
                 return new GameEvent()
                 {
                     Type = GameEvent.EventType.MapChange,
-                    Data = lineSplit[0],
+                    Data = logLine,
                     Origin = Utilities.IW4MAdminClient(),
                     Target = Utilities.IW4MAdminClient(),
                     Extra = dump.DictionaryFromKeyValue(),

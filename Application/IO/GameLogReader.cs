@@ -11,32 +11,26 @@ namespace IW4MAdmin.Application.IO
 {
     class GameLogReader : IGameLogReader
     {
-        IEventParser Parser;
-        readonly string LogFile;
-        private bool? ignoreBots;
+        private readonly IEventParser _parser;
+        private readonly string _logFile;
 
-        public long Length => new FileInfo(LogFile).Length;
+        public long Length => new FileInfo(_logFile).Length;
 
         public int UpdateInterval => 300;
 
         public GameLogReader(string logFile, IEventParser parser)
         {
-            LogFile = logFile;
-            Parser = parser;
+            _logFile = logFile;
+            _parser = parser;
         }
 
         public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
-            if (!ignoreBots.HasValue)
-            {
-                ignoreBots = server.Manager.GetApplicationSettings().Configuration().IgnoreBots;
-            }
-
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();
 
             // open the file as a stream
-            using (FileStream fs = new FileStream(LogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (FileStream fs = new FileStream(_logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 byte[] buff = new byte[fileSizeDiff];
                 fs.Seek(startPosition, SeekOrigin.Begin);
@@ -67,57 +61,19 @@ namespace IW4MAdmin.Application.IO
             List<GameEvent> events = new List<GameEvent>();
 
             // parse each line
-            foreach (string eventLine in logLines)
+            foreach (string eventLine in logLines.Where(_line => _line.Length > 0))
             {
-                if (eventLine.Length > 0)
+                try
                 {
-                    try
-                    {
-                        var gameEvent = Parser.GenerateGameEvent(eventLine);
-                        // we don't want to add the event if ignoreBots is on and the event comes from a bot
-                        if (!ignoreBots.Value || (ignoreBots.Value && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
-                        {
-                            gameEvent.Owner = server;
+                    var gameEvent = _parser.GenerateGameEvent(eventLine);
+                    events.Add(gameEvent);
+                }
 
-                            if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
-                            {
-                                gameEvent.Origin = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
-                            }
-
-                            if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
-                            {
-                                gameEvent.Target = server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
-                            }
-
-                            if (gameEvent.Origin != null)
-                            {
-                                gameEvent.Origin.CurrentServer = server;
-                            }
-
-                            if (gameEvent.Target != null)
-                            {
-                                gameEvent.Target.CurrentServer = server;
-                            }
-
-                            events.Add(gameEvent);
-                        }
-                    }
-
-                    catch (InvalidOperationException)
-                    {
-                        if (!ignoreBots.Value)
-                        {
-                            server.Logger.WriteWarning("Could not find client in client list when parsing event line");
-                            server.Logger.WriteDebug(eventLine);
-                        }
-                    }
-
-                    catch (Exception e)
-                    {
-                        server.Logger.WriteWarning("Could not properly parse event line");
-                        server.Logger.WriteDebug(e.Message);
-                        server.Logger.WriteDebug(eventLine);
-                    }
+                catch (Exception e)
+                {
+                    server.Logger.WriteWarning("Could not properly parse event line");
+                    server.Logger.WriteDebug(e.Message);
+                    server.Logger.WriteDebug(eventLine);
                 }
             }
 

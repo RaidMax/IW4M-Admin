@@ -23,6 +23,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private readonly ConcurrentDictionary<long, ServerStats> _servers;
         private readonly ILogger _log;
         private static List<EFServer> serverModels;
+        public static string CLIENT_STATS_KEY = "ClientStats";
+        public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
 
         public StatManager(IManager mgr)
         {
@@ -36,11 +38,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 serverModels = ctx.Set<EFServer>().ToList();
             }
-        }
-
-        public EFClientStatistics GetClientStats(int clientId, long serverId)
-        {
-            return _servers[serverId].PlayerStats[clientId];
         }
 
         public static Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
@@ -248,7 +245,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // check to see if the stats have ever been initialized
                 var serverStats = InitializeServerStats(server.ServerId);
 
-                _servers.TryAdd(serverId, new ServerStats(server, serverStats)
+                _servers.TryAdd(serverId, new ServerStats(server, serverStats, sv)
                 {
                     IsTeamBased = sv.Gametype != "dm"
                 });
@@ -276,15 +273,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 {
                     _log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
                     return null;
-                }
-
-                var playerStats = _servers[serverId].PlayerStats;
-                var detectionStats = _servers[serverId].PlayerDetections;
-
-                if (playerStats.ContainsKey(pl.ClientId))
-                {
-                    _log.WriteWarning($"Duplicate ClientId in stats {pl.ClientId}");
-                    return playerStats[pl.ClientId];
                 }
 
                 // get the client's stats from the database if it exists, otherwise create and attach a new one
@@ -322,20 +310,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         // insert if they've not been added
                         clientStats = clientStatsSet.Add(clientStats).Entity;
                         await ctx.SaveChangesAsync();
-
-                        if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
-                        {
-                            _log.WriteWarning("Adding new client to stats failed");
-                        }
                     }
 
-                    else
-                    {
-                        if (!playerStats.TryAdd(clientStats.ClientId, clientStats))
-                        {
-                            _log.WriteWarning("Adding pre-existing client to stats failed");
-                        }
-                    }
+                    pl.SetAdditionalProperty(CLIENT_STATS_KEY, clientStats);
 
                     // migration for previous existing stats
                     if (clientStats.HitLocations.Count == 0)
@@ -370,12 +347,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     clientStats.SessionScore = pl.Score;
                     clientStats.LastScore = pl.Score;
 
-                    if (!detectionStats.TryAdd(pl.ClientId, new Detection(_log, clientStats)))
-                    {
-                        _log.WriteWarning("Could not add client to detection");
-                    }
-
-                    pl.CurrentServer.Logger.WriteInfo($"Adding {pl} to stats");
+                    pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats));
+                    pl.CurrentServer.Logger.WriteInfo($"Added {pl} to stats");
                 }
 
                 return clientStats;
@@ -400,29 +373,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             pl.CurrentServer.Logger.WriteInfo($"Removing {pl} from stats");
 
             long serverId = GetIdForServer(pl.CurrentServer);
-            var playerStats = _servers[serverId].PlayerStats;
-            var detectionStats = _servers[serverId].PlayerDetections;
             var serverStats = _servers[serverId].ServerStatistics;
 
-            if (!playerStats.ContainsKey(pl.ClientId))
-            {
-                pl.CurrentServer.Logger.WriteWarning($"Client disconnecting not in stats {pl}");
-                // remove the client from the stats dictionary as they're leaving
-                playerStats.TryRemove(pl.ClientId, out _);
-                detectionStats.TryRemove(pl.ClientId, out _);
-                return;
-            }
-
             // get individual client's stats
-            var clientStats = playerStats[pl.ClientId];
-
+            var clientStats = pl.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             // sync their stats before they leave
             clientStats = UpdateStats(clientStats);
             await SaveClientStats(clientStats);
-
-            // remove the client from the stats dictionary as they're leaving
-            playerStats.TryRemove(pl.ClientId, out _);
-            detectionStats.TryRemove(pl.ClientId, out _);
 
             // increment the total play time
             serverStats.TotalPlayTime += pl.ConnectionLength;
@@ -516,19 +473,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     return;
                 }
 
-                // incase the add player event get delayed
-                if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
-                {
-                    await AddPlayer(attacker);
-                }
-
-                if (!isDamage)
-                {
-                    await AddStandardKill(attacker, victim);
-                }
-
-                var clientDetection = _servers[serverId].PlayerDetections[attacker.ClientId];
-                var clientStats = _servers[serverId].PlayerStats[attacker.ClientId];
+                var clientDetection = attacker.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY);
+                var clientStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
 
                 waiter = clientStats.ProcessingHit;
                 await waiter.WaitAsync();
@@ -591,12 +537,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         }
                     }
                 }
+#if DEBUG
+                await Sync(attacker.CurrentServer);
+#endif
             }
 
             catch (Exception ex)
             {
                 _log.WriteError("Could not save hit or AC info");
                 _log.WriteDebug(ex.GetExceptionInfo());
+                _log.WriteDebug($"Attacker: {attacker} Victim: {victim}, ServerId {serverId}");
             }
 
             finally
@@ -672,32 +622,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             long serverId = GetIdForServer(attacker.CurrentServer);
 
-            EFClientStatistics attackerStats = null;
-            if (!_servers[serverId].PlayerStats.ContainsKey(attacker.ClientId))
-            {
-                attackerStats = await AddPlayer(attacker);
-            }
-
-            else
-            {
-                attackerStats = _servers[serverId].PlayerStats[attacker.ClientId];
-            }
-
-            EFClientStatistics victimStats = null;
-            if (!_servers[serverId].PlayerStats.ContainsKey(victim.ClientId))
-            {
-                victimStats = await AddPlayer(victim);
-            }
-
-            else
-            {
-                victimStats = _servers[serverId].PlayerStats[victim.ClientId];
-            }
+            var attackerStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
+            var victimStats = victim.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
 
 #if DEBUG
-            _log.WriteDebug("Calculating standard kill");
+            _log.WriteDebug("Processing standard kill");
 #endif
-
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
 
@@ -955,47 +885,44 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // process the attacker's stats after the kills
             attackerStats = UpdateStats(attackerStats);
 
-            // calulate elo
-            if (_servers[attackerStats.ServerId].PlayerStats.Count > 1)
-            {
-                #region DEPRECATED
-                /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
-                     .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
-                     .Where(cs =>
-                         Servers[attackerStats.ServerId].IsTeamBased ?
-                         cs.Value.Team != attackerStats.Team :
-                         cs.Value.Team != IW4Info.Team.Spectator)
-                     .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
+            #region DEPRECATED
+            /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
+                 .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
+                 .Where(cs =>
+                     Servers[attackerStats.ServerId].IsTeamBased ?
+                     cs.Value.Team != attackerStats.Team :
+                     cs.Value.Team != IW4Info.Team.Spectator)
+                 .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
 
-                 double attackerLobbyRating = validAttackerLobbyRatings.Count() > 0 ?
-                     validAttackerLobbyRatings.Average(cs => cs.Value.EloRating) :
-                     attackerStats.EloRating;
+             double attackerLobbyRating = validAttackerLobbyRatings.Count() > 0 ?
+                 validAttackerLobbyRatings.Average(cs => cs.Value.EloRating) :
+                 attackerStats.EloRating;
 
-                 var validVictimLobbyRatings = Servers[victimStats.ServerId].PlayerStats
-                     .Where(cs => cs.Value.ClientId != victimStats.ClientId)
-                     .Where(cs =>
-                         Servers[attackerStats.ServerId].IsTeamBased ?
-                         cs.Value.Team != victimStats.Team :
-                         cs.Value.Team != IW4Info.Team.Spectator)
-                      .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
+             var validVictimLobbyRatings = Servers[victimStats.ServerId].PlayerStats
+                 .Where(cs => cs.Value.ClientId != victimStats.ClientId)
+                 .Where(cs =>
+                     Servers[attackerStats.ServerId].IsTeamBased ?
+                     cs.Value.Team != victimStats.Team :
+                     cs.Value.Team != IW4Info.Team.Spectator)
+                  .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
 
-                 double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
-                     validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
-                     victimStats.EloRating;*/
-                #endregion
+             double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
+                 validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
+                 victimStats.EloRating;*/
+            #endregion
 
-                double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
-                double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
+            // calculate elo
+            double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) - Math.Log(Math.Max(1, attackerStats.EloRating));
+            double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
 
-                // double victimEloDifference = Math.Log(Math.Max(1, attackerStats.EloRating)) - Math.Log(Math.Max(1, victimStats.EloRating));
-                // double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference/ Math.E));
+            // double victimEloDifference = Math.Log(Math.Max(1, attackerStats.EloRating)) - Math.Log(Math.Max(1, victimStats.EloRating));
+            // double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference/ Math.E));
 
-                attackerStats.EloRating += 6.0 * (1 - winPercentage);
-                victimStats.EloRating -= 6.0 * (1 - winPercentage);
+            attackerStats.EloRating += 6.0 * (1 - winPercentage);
+            victimStats.EloRating -= 6.0 * (1 - winPercentage);
 
-                attackerStats.EloRating = Math.Max(0, Math.Round(attackerStats.EloRating, 2));
-                victimStats.EloRating = Math.Max(0, Math.Round(victimStats.EloRating, 2));
-            }
+            attackerStats.EloRating = Math.Max(0, Math.Round(attackerStats.EloRating, 2));
+            victimStats.EloRating = Math.Max(0, Math.Round(victimStats.EloRating, 2));
 
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
@@ -1113,19 +1040,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return serverStats;
         }
 
-        public void ResetKillstreaks(long serverId)
+        public void ResetKillstreaks(Server sv)
         {
-            var serverStats = _servers[serverId];
-
-            foreach (var stat in serverStats.PlayerStats.Values)
+            foreach (var stat in sv.GetClientsAsList()
+                .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY)))
             {
                 stat.StartNewSession();
             }
         }
 
-        public void ResetStats(int clientId, long serverId)
+        public void ResetStats(EFClient client)
         {
-            var stats = _servers[serverId].PlayerStats[clientId];
+            var stats = client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             stats.Kills = 0;
             stats.Deaths = 0;
             stats.SPM = 0;
@@ -1160,22 +1086,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             long serverId = GetIdForServer(sv);
 
-            using (var ctx = new DatabaseContext(disableTracking: true))
+            using (var ctx = new DatabaseContext())
             {
-                var serverSet = ctx.Set<EFServer>();
-                serverSet.Update(_servers[serverId].Server);
-
                 var serverStatsSet = ctx.Set<EFServerStatistics>();
                 serverStatsSet.Update(_servers[serverId].ServerStatistics);
+                await ctx.SaveChangesAsync();
             }
 
-            foreach (var client in sv.GetClientsAsList())
+            foreach (var stats in sv.GetClientsAsList()
+                .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
+                .Where(_stats => _stats != null))
             {
-                var stats = GetClientStats(client.ClientId, serverId);
-                if (stats != null)
-                {
-                    await SaveClientStats(stats);
-                }
+                await SaveClientStats(stats);
             }
 
             await SaveHitCache(serverId);

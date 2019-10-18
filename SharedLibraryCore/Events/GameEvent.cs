@@ -224,6 +224,10 @@ namespace SharedLibraryCore
         public long Id { get; private set; }
         public EventFailReason FailReason { get; set; }
         public bool Failed => FailReason != EventFailReason.None;
+        /// <summary>
+        /// Indicates if the event should block until it is complete
+        /// </summary>
+        public bool IsBlocking { get; set; }
 
         /// <summary>
         /// asynchronously wait for GameEvent to be processed

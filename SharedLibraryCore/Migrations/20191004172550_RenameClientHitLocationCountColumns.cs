@@ -77,6 +77,13 @@ PRAGMA foreign_keys = 1;
 ", true);
             }
 
+            else if (migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
+            {
+                migrationBuilder.Sql("ALTER TABLE `EFHitLocationCounts` CHANGE `EFClientStatistics_ClientId` `EFClientStatisticsClientId` INT(11) NOT NULL;");
+                migrationBuilder.Sql("ALTER TABLE `EFHitLocationCounts` CHANGE `EFClientStatistics_ServerId` `EFClientStatisticsServerId` INT(11) NOT NULL;");
+                migrationBuilder.Sql("CREATE INDEX `IX_EFClientStatisticsClientId_EFClientStatisticsServerId` ON `EFHitLocationCounts` (`EFClientStatisticsClientId`, `EFClientStatisticsServerId`);");
+            }
+
             else
             {
                 migrationBuilder.DropForeignKey(
@@ -139,61 +146,6 @@ PRAGMA foreign_keys = 1;
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_EFHitLocationCounts_EFClients_EFClientStatisticsClientId",
-                table: "EFHitLocationCounts");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_EFHitLocationCounts_EFServers_EFClientStatisticsServerId",
-                table: "EFHitLocationCounts");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatisticsClientId_EFClientStatisticsServerId",
-                table: "EFHitLocationCounts");
-
-            migrationBuilder.RenameColumn(
-                name: "EFClientStatisticsServerId",
-                table: "EFHitLocationCounts",
-                newName: "EFClientStatistics_ServerId");
-
-            migrationBuilder.RenameColumn(
-                name: "EFClientStatisticsClientId",
-                table: "EFHitLocationCounts",
-                newName: "EFClientStatistics_ClientId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_EFHitLocationCounts_EFClientStatisticsClientId_EFClientStatisticsServerId",
-                table: "EFHitLocationCounts",
-                newName: "IX_EFHitLocationCounts_EFClientStatistics_ClientId_EFClientStatistics_ServerId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_EFHitLocationCounts_EFClientStatisticsServerId",
-                table: "EFHitLocationCounts",
-                newName: "IX_EFHitLocationCounts_EFClientStatistics_ServerId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_EFHitLocationCounts_EFClients_EFClientStatistics_ClientId",
-                table: "EFHitLocationCounts",
-                column: "EFClientStatistics_ClientId",
-                principalTable: "EFClients",
-                principalColumn: "ClientId",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_EFHitLocationCounts_EFServers_EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts",
-                column: "EFClientStatistics_ServerId",
-                principalTable: "EFServers",
-                principalColumn: "ServerId",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_EFHitLocationCounts_EFClientStatistics_EFClientStatistics_ClientId_EFClientStatistics_ServerId",
-                table: "EFHitLocationCounts",
-                columns: new[] { "EFClientStatistics_ClientId", "EFClientStatistics_ServerId" },
-                principalTable: "EFClientStatistics",
-                principalColumns: new[] { "ClientId", "ServerId" },
-                onDelete: ReferentialAction.Cascade);
         }
     }
 }

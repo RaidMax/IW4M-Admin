@@ -15,6 +15,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public int TopPlayersMinPlayTime { get; set; }
         public bool StoreClientKills { get; set; }
         public IDictionary<DetectionType, DistributionConfiguration> DetectionDistributions { get; set; }
+        public IDictionary<long, DetectionType[]> ServerDetectionTypes { get; set; }
 
         public string Name() => "Stats";
         public IBaseConfiguration Generate()
@@ -63,7 +64,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
             
             TopPlayersMinPlayTime = 3600 * 3;
             StoreClientKills = false;
-
+            
             return this;
         }
     }

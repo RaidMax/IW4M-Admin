@@ -148,12 +148,10 @@ namespace IW4MAdmin
             }
 
             // hack: this prevents commands from getting executing that 'shouldn't' be
-            if (E.Type == GameEvent.EventType.Command &&
-                E.Extra != null &&
-                (canExecuteCommand ||
-                E.Origin?.Level == EFClient.Permission.Console))
+            if (E.Type == GameEvent.EventType.Command && E.Extra is Command command &&
+                (canExecuteCommand || E.Origin?.Level == Permission.Console))
             {
-                await (((Command)E.Extra).ExecuteAsync(E));
+                await command.ExecuteAsync(E);
             }
         }
 
@@ -444,7 +442,7 @@ namespace IW4MAdmin
                 // iw4 doesn't log the game info
                 if (E.Extra == null)
                 {
-                    var dict = await this.GetInfoAsync();
+                    var dict = await this.GetInfoAsync(new TimeSpan(0, 0, 20));
 
                     if (dict == null)
                     {
@@ -609,7 +607,7 @@ namespace IW4MAdmin
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
             try
-            { 
+            {
                 if (cts.IsCancellationRequested)
                 {
                     await ShutdownInternal();

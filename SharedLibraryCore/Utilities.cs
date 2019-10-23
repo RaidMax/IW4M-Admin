@@ -723,19 +723,20 @@ namespace SharedLibraryCore
             return server.RconParser.GetStatusAsync(server.RemoteConnection);
         }
 
-        public static async Task<Dictionary<string, string>> GetInfoAsync(this Server server)
+        /// <summary>
+        /// Retrieves the key value pairs for server information usually checked after map rotation
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="delay">How long to wait after the map has rotated to query</param>
+        /// <returns></returns>
+        public static async Task<IDictionary<string, string>> GetInfoAsync(this Server server, TimeSpan? delay = null)
         {
-            string[] response = new string[0];
-            for (int i = 0; i < 4; i++)
+            if (delay != null)
             {
-                response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
-                if (response.Length == 2)
-                {
-                    break;
-                }
-
-                await Task.Delay(RCon.StaticHelpers.FloodProtectionInterval);
+                await Task.Delay(delay.Value);
             }
+
+            var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
             return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
         }
 

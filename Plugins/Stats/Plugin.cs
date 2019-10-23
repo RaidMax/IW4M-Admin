@@ -82,7 +82,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (E.Owner.CustomCallback && killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -129,7 +129,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if (E.Owner.CustomCallback && killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -515,5 +515,12 @@ namespace IW4MAdmin.Plugins.Stats
         /// <param name="origin"></param>
         /// <returns></returns>
         private bool IsWorldDamage(EFClient origin) => origin?.NetworkId == 1;
+
+        /// <summary>
+        /// Indicates if we should try to use anticheat even if sv_customcallbacks is not defined
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        private bool ShouldOverrideAnticheatSetting(Server s) => Config.Configuration().EnableAntiCheat && s.GameName == Server.Game.IW5;
     }
 }

@@ -14,6 +14,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static IW4MAdmin.Plugins.Stats.Cheat.Detection;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -566,8 +567,31 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
+        private bool ShouldUseDetection(long serverId, DetectionType detectionType)
+        {
+            var detectionTypes = Plugin.Config.Configuration().ServerDetectionTypes;
+
+            if (detectionTypes == null)
+            {
+                return true;
+            }
+
+            if (!detectionTypes.ContainsKey(serverId))
+            {
+                return true;
+            }
+
+            return detectionTypes[serverId].Contains(detectionType);
+        }
+
         async Task ApplyPenalty(DetectionPenaltyResult penalty, EFClient attacker)
         {
+            // allow disabling of certain detection types
+            if (!ShouldUseDetection(attacker.CurrentServer.EndPoint, penalty.Type))
+            {
+                return;
+            }
+
             var penaltyClient = Utilities.IW4MAdminClient(attacker.CurrentServer);
             switch (penalty.ClientPenalty)
             {

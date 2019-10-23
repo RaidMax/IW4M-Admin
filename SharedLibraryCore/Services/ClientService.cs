@@ -299,6 +299,11 @@ namespace SharedLibraryCore.Services
 
                 var client = await iqClient.FirstOrDefaultAsync();
 
+                if (client == null)
+                {
+                    return null;
+                }
+
                 var foundClient = new
                 {
                     Client = client,

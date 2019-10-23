@@ -34,7 +34,12 @@ namespace WebfrontCore.Controllers
 
             ViewBag.Description = Localization["WEBFRONT_ERROR_DESC"];
             ViewBag.Title = Localization["WEBFRONT_ERROR_TITLE"];
-            return View();
+            return View(exceptionFeature.Error);
+        }
+
+        public IActionResult ResponseStatusCode(int? statusCode = null)
+        {
+            return View(statusCode);
         }
     }
 }

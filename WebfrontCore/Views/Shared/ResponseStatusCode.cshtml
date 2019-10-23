@@ -1,6 +1,4 @@
-﻿@model Exception
-@using SharedLibraryCore
-
+﻿@model int
 @{
     ViewData["Title"] = "Error";
 }
@@ -8,8 +6,8 @@
 <h4 class="text-danger">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_TITLE"]</h4>
 <h4 class="text-danger">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_DESC"]</h4>
 <strong class="text-warning">
-    @if (Model != null)
+    @if (Model == 404)
     {
-        @SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_CODE"].FormatExt(Model.Message);
+        @SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_NOTFOUND"]
     }
 </strong>

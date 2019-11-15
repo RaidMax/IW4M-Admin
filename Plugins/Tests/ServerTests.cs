@@ -28,11 +28,11 @@ namespace Tests
             var currentClientCount = server.ClientNum;
             int eventsProcessed = 0;
 
-            _manager.OnServerEvent += (sender, eventArgs) =>
+            /*_manager.OnServerEvent += (sender, eventArgs) =>
             {
                 if (eventArgs.Event.Type == GameEvent.EventType.Connect)
                 {
-                    eventArgs.Event.OnProcessed.Wait();
+                    eventArgs.Event.Complete();
                     Assert.False(eventArgs.Event.Failed, "connect event was not processed");
                     Assert.True(server.ClientNum == currentClientCount  + 1, "client count was not incremented");
                     eventsProcessed++;
@@ -41,13 +41,13 @@ namespace Tests
 
                 if (eventArgs.Event.Type == GameEvent.EventType.Disconnect)
                 {
-                    eventArgs.Event.OnProcessed.Wait();
+                    eventArgs.Event.Complete();
                     Assert.False(eventArgs.Event.Failed, "disconnect event was not processed");
                     Assert.True(server.ClientNum == currentClientCount, "client count was not decremented");
                     eventsProcessed++;
                     resetEvent.Set();
                 }
-            };
+            };*/
 
             server.EmulateClientJoinLog();
 
@@ -73,11 +73,11 @@ namespace Tests
             int eventsProcessed = 0;
 
             _manager.GetApplicationSettings().Configuration().RConPollRate = 5000;
-            _manager.OnServerEvent += (sender, eventArgs) =>
+            /*_manager.OnServerEvent += (sender, eventArgs) =>
             {
                 if (eventArgs.Event.Type == GameEvent.EventType.Connect)
                 {
-                    eventArgs.Event.OnProcessed.Wait();
+                    eventArgs.Event.Complete();
                     Assert.False(eventArgs.Event.Failed, "connect event was not processed");
                     Assert.True(server.ClientNum == currentClientCount + 1, "client count was not incremented");
                     eventsProcessed++;
@@ -86,13 +86,13 @@ namespace Tests
 
                 if (eventArgs.Event.Type == GameEvent.EventType.Disconnect)
                 {
-                    eventArgs.Event.OnProcessed.Wait();
+                    eventArgs.Event.Complete();
                     Assert.False(eventArgs.Event.Failed, "disconnect event was not processed");
                     Assert.True(server.ClientNum == currentClientCount, "client count was not decremented");
                     eventsProcessed++;
                     resetEvent.Set();
                 }
-            };
+            };*/
 
             (server.RconParser as TestRconParser).FakeClientCount = 1;
 

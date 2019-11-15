@@ -33,8 +33,6 @@ namespace IW4MAdmin.Application
         public ILogger Logger => GetLogger(0);
         public bool Running { get; private set; }
         public bool IsInitialized { get; private set; }
-        // expose the event handler so we can execute the events
-        public OnServerEventEventHandler OnServerEvent { get; set; }
         public DateTime StartTime { get; private set; }
         public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
@@ -73,20 +71,18 @@ namespace IW4MAdmin.Application
             PageList = new PageList();
             AdditionalEventParsers = new List<IEventParser>();
             AdditionalRConParsers = new List<IRConParser>();
-            OnServerEvent += OnGameEvent;
-            OnServerEvent += EventApi.OnGameEvent;
+            //OnServerEvent += OnGameEvent;
+            //OnServerEvent += EventApi.OnGameEvent;
             TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();
         }
 
-        private async void OnGameEvent(object sender, GameEventArgs args)
+        public async Task ExecuteEvent(GameEvent newEvent)
         {
 #if DEBUG == true
-            Logger.WriteDebug($"Entering event process for {args.Event.Id}");
+            Logger.WriteDebug($"Entering event process for {newEvent.Id}");
 #endif
-
-            var newEvent = args.Event;
 
             // the event has failed already
             if (newEvent.Failed)
@@ -96,12 +92,11 @@ namespace IW4MAdmin.Application
 
             try
             {
-                await newEvent.Owner.EventProcessing.WaitAsync(CancellationToken);
                 await newEvent.Owner.ExecuteEvent(newEvent);
 
                 // save the event info to the database
                 var changeHistorySvc = new ChangeHistoryService();
-                await changeHistorySvc.Add(args.Event);
+                await changeHistorySvc.Add(newEvent);
 
 #if DEBUG
                 Logger.WriteDebug($"Processed event with id {newEvent.Id}");
@@ -145,22 +140,12 @@ namespace IW4MAdmin.Application
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
 
-            finally
-            {
-                if (newEvent.Owner.EventProcessing.CurrentCount == 0)
-                {
-                    newEvent.Owner.EventProcessing.Release(1);
-                }
-
-#if DEBUG == true
-                Logger.WriteDebug($"Exiting event process for {args.Event.Id}");
-#endif
-            }
-
         skip:
-
             // tell anyone waiting for the output that we're done
-            newEvent.OnProcessed.Set();
+            newEvent.Complete();
+#if DEBUG == true
+            Logger.WriteDebug($"Exiting event process for {newEvent.Id}");
+#endif
         }
 
         public IList<Server> GetServers()

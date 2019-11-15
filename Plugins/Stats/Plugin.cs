@@ -43,7 +43,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Stop:
                     break;
-                case GameEvent.EventType.Connect:
+                case GameEvent.EventType.PreConnect:
                     await Manager.AddPlayer(E.Origin);
                     break;
                 case GameEvent.EventType.Disconnect:

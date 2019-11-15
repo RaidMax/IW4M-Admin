@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -16,6 +17,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public EFServer Server { get; private set; }
         private readonly Server _server;
         public bool IsTeamBased { get; set; }
+        public SemaphoreSlim OnSaving { get; private set; }
 
         public ServerStats(EFServer sv, EFServerStatistics st, Server server)
         {
@@ -23,6 +25,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             ServerStatistics = st;
             Server = sv;
             _server = server;
+            OnSaving = new SemaphoreSlim(1, 1);
+        }
+
+        ~ServerStats()
+        {
+            OnSaving.Dispose();
         }
 
         public int TeamCount(IW4Info.Team teamName)

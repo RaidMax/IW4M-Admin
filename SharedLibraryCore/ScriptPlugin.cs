@@ -19,19 +19,25 @@ namespace SharedLibraryCore
         private Jint.Engine ScriptEngine;
         private readonly string FileName;
         private IManager Manager;
+        private readonly FileSystemWatcher _watcher;
 
         public ScriptPlugin(string fileName)
         {
             FileName = fileName;
-            var watcher = new FileSystemWatcher()
+            _watcher = new FileSystemWatcher()
             {
                 Path = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
                 NotifyFilter = NotifyFilters.Size,
                 Filter = fileName.Split(Path.DirectorySeparatorChar).Last()
             };
 
-            watcher.Changed += Watcher_Changed;
-            watcher.EnableRaisingEvents = true;
+            _watcher.Changed += Watcher_Changed;
+            _watcher.EnableRaisingEvents = true;
+        }
+
+        ~ScriptPlugin()
+        {
+            _watcher.Dispose();
         }
 
         private async void Watcher_Changed(object sender, FileSystemEventArgs e)

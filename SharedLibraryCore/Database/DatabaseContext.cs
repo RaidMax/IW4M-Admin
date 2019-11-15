@@ -22,40 +22,26 @@ namespace SharedLibraryCore.Database
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
-
-        //[Obsolete]
-        //private static readonly ILoggerFactory _loggerFactory = new LoggerFactory(new[] {
-        //      new ConsoleLoggerProvider((category, level) => level == LogLevel.Information, true)
-        //});
-
         static string _ConnectionString;
         static string _provider;
         private static readonly string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins";
-        private static int activeContextCount;
+        private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole()
+            .AddDebug()
+            .AddFilter((category, level) => true);
+        });
 
         public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt)
         {
-#if DEBUG == true
-            activeContextCount++;
-            //Console.WriteLine($"Initialized DB Context #{activeContextCount}");
-#endif
         }
 
         public DatabaseContext()
         {
-#if DEBUG == true
-            activeContextCount++;
-            //Console.WriteLine($"Initialized DB Context #{activeContextCount}");
-#endif
         }
 
         public override void Dispose()
         {
-#if DEBUG == true
-
-            //Console.WriteLine($"Disposed DB Context #{activeContextCount}");
-            activeContextCount--;
-#endif
         }
 
         public DatabaseContext(bool disableTracking) : this()
@@ -83,6 +69,9 @@ namespace SharedLibraryCore.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+          //  optionsBuilder.UseLoggerFactory(_loggerFactory)
+           //     .EnableSensitiveDataLogging();
+
             if (string.IsNullOrEmpty(_ConnectionString))
             {
                 string currentPath = Utilities.OperatingDirectory;
@@ -153,6 +142,7 @@ namespace SharedLibraryCore.Database
                 ent.HasIndex(a => a.Name);
                 ent.Property(_alias => _alias.SearchableName).HasMaxLength(24);
                 ent.HasIndex(_alias => _alias.SearchableName);
+                ent.HasIndex(_alias => new { _alias.Name, _alias.IPAddress }).IsUnique();
             });
 
             modelBuilder.Entity<EFMeta>(ent =>

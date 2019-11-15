@@ -73,7 +73,7 @@ namespace Tests
             };
 
             _manager.GetEventHandler().AddEvent(e);
-            e.OnProcessed.Wait();
+            e.Complete();
 
             e = new GameEvent()
             {
@@ -92,7 +92,7 @@ namespace Tests
             };
 
             _manager.GetEventHandler().AddEvent(e);
-            e.OnProcessed.Wait();
+            e.Complete();
 
             e = new GameEvent()
             {
@@ -111,7 +111,7 @@ namespace Tests
             };
 
             _manager.GetEventHandler().AddEvent(e);
-            e.OnProcessed.Wait();
+            e.Complete();
 
         }
 
@@ -126,13 +126,13 @@ namespace Tests
                 Thread.Sleep(100);
             }
 
-            _manager.OnServerEvent += (sender, eventArgs) =>
-            {
-                if (eventArgs.Event.Type == GameEvent.EventType.Connect)
-                {
-                    onJoined.Set();
-                }
-            };
+            //_manager.OnServerEvent += (sender, eventArgs) =>
+            //{
+            //    if (eventArgs.Event.Type == GameEvent.EventType.Connect)
+            //    {
+            //        onJoined.Set();
+            //    }
+            //};
 
             server.EmulateClientJoinLog();
             onJoined.Wait();
@@ -140,25 +140,25 @@ namespace Tests
             var client = server.Clients[0];
 
             var warnEvent = client.Warn("test warn", Utilities.IW4MAdminClient(server));
-            warnEvent.OnProcessed.Wait(5000);
+            warnEvent.WaitAsync(new TimeSpan(0, 0, 10), new CancellationToken()).Wait();
 
             Assert.False(warnEvent.Failed);
 
             warnEvent = client.Warn("test warn", new EFClient() { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
-            warnEvent.OnProcessed.Wait(5000);
+            warnEvent.WaitAsync(new TimeSpan(0, 0, 10), new CancellationToken()).Wait();
 
             Assert.True(warnEvent.FailReason == GameEvent.EventFailReason.Permission &&
                 client.Warnings == 1, "warning was applied without proper permissions");
 
             // warn clear
             var warnClearEvent = client.WarnClear(new EFClient { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
-            warnClearEvent.OnProcessed.Wait(5000);
+            warnClearEvent.WaitAsync(new TimeSpan(0, 0, 10), new CancellationToken()).Wait();
 
             Assert.True(warnClearEvent.FailReason == GameEvent.EventFailReason.Permission &&
                 client.Warnings == 1, "warning was removed without proper permissions");
 
             warnClearEvent = client.WarnClear(Utilities.IW4MAdminClient(server));
-            warnClearEvent.OnProcessed.Wait(5000);
+            warnClearEvent.WaitAsync(new TimeSpan(0, 0, 10), new CancellationToken()).Wait();
 
             Assert.True(!warnClearEvent.Failed && client.Warnings == 0, "warning was not cleared");
         }
@@ -178,14 +178,14 @@ namespace Tests
             var player = new EFClient() { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer };
             player.SetAdditionalProperty("_reportCount", 3);
             var reportEvent = client.Report("test report", player);
-            reportEvent.OnProcessed.Wait(TestTimeout);
+            reportEvent.WaitAsync(new TimeSpan(0, 0, 10), new CancellationToken()).Wait();
 
             Assert.True(reportEvent.FailReason == GameEvent.EventFailReason.Throttle &
                 client.CurrentServer.Reports.Count(r => r.Target.NetworkId == client.NetworkId) == 0, $"too many reports were applied [{reportEvent.FailReason.ToString()}]");
 
             // succeed
             reportEvent = client.Report("test report", new EFClient() { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            reportEvent.OnProcessed.Wait(TestTimeout);
+            reportEvent.WaitAsync(new TimeSpan(0, 0, 10), new CancellationToken()).Wait();
 
             Assert.True(!reportEvent.Failed &&
                 client.CurrentServer.Reports.Count(r => r.Target.NetworkId == client.NetworkId) == 1, $"report was not applied [{reportEvent.FailReason.ToString()}]");
@@ -222,7 +222,7 @@ namespace Tests
             Assert.False(client == null, "no client found to flag");
 
             var flagEvent = client.Flag("test flag", new EFClient { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            flagEvent.OnProcessed.Wait();
+            flagEvent.Complete();
 
             // succeed 
             Assert.True(!flagEvent.Failed &&
@@ -230,31 +230,31 @@ namespace Tests
             Assert.False(client.ReceivedPenalties.FirstOrDefault(p => p.Offense == "test flag") == null, "flag was not applied");
 
             flagEvent = client.Flag("test flag", new EFClient { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
-            flagEvent.OnProcessed.Wait();
+            flagEvent.Complete();
 
             // fail
             Assert.True(client.ReceivedPenalties.Count == 1, "flag was applied without permisions");
 
             flagEvent = client.Flag("test flag", new EFClient { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            flagEvent.OnProcessed.Wait();
+            flagEvent.Complete();
 
             // fail
             Assert.True(client.ReceivedPenalties.Count == 1, "duplicate flag was applied");
 
             var unflagEvent = client.Unflag("test unflag", new EFClient { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
-            unflagEvent.OnProcessed.Wait();
+            unflagEvent.Complete();
 
             // fail
             Assert.False(client.Level == EFClient.Permission.User, "user was unflagged without permissions");
 
             unflagEvent = client.Unflag("test unflag", new EFClient { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            unflagEvent.OnProcessed.Wait();
+            unflagEvent.Complete();
 
             // succeed
             Assert.True(client.Level == EFClient.Permission.User, "user was not unflagged");
 
             unflagEvent = client.Unflag("test unflag", new EFClient { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            unflagEvent.OnProcessed.Wait();
+            unflagEvent.Complete();
 
             // succeed
             Assert.True(unflagEvent.FailReason == GameEvent.EventFailReason.Invalid, "user was not flagged");
@@ -272,12 +272,12 @@ namespace Tests
             Assert.False(client == null, "no client found to kick");
 
             var kickEvent = client.Kick("test kick", new EFClient() { ClientId = 1, Level = EFClient.Permission.Banned, CurrentServer = client.CurrentServer });
-            kickEvent.OnProcessed.Wait();
+            kickEvent.Complete();
 
             Assert.True(kickEvent.FailReason == GameEvent.EventFailReason.Permission, "client was kicked without permission");
 
             kickEvent = client.Kick("test kick", new EFClient() { ClientId = 1, Level = EFClient.Permission.Console, CurrentServer = client.CurrentServer });
-            kickEvent.OnProcessed.Wait();
+            kickEvent.Complete();
 
             Assert.True(_manager.Servers.First().GetClientsAsList().FirstOrDefault(c => c.NetworkId == client.NetworkId) == null, "client was not kicked");
         }

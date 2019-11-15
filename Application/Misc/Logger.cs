@@ -3,7 +3,6 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
@@ -20,14 +19,19 @@ namespace IW4MAdmin.Application
         }
 
         readonly string FileName;
-        readonly SemaphoreSlim OnLogWriting;
+        readonly ReaderWriterLockSlim WritingLock;
         static readonly short MAX_LOG_FILES = 10;
 
         public Logger(string fn)
         {
             FileName = Path.Join(Utilities.OperatingDirectory, "Log", $"{fn}.log");
-            OnLogWriting = new SemaphoreSlim(1, 1);
+            WritingLock = new ReaderWriterLockSlim();
             RotateLogs();
+        }
+
+        ~Logger()
+        {
+            WritingLock.Dispose();
         }
 
         /// <summary>
@@ -56,7 +60,7 @@ namespace IW4MAdmin.Application
 
         void Write(string msg, LogType type)
         {
-            OnLogWriting.Wait();
+            WritingLock.EnterWriteLock();
 
             string stringType = type.ToString();
             msg = msg.StripColors();
@@ -74,7 +78,7 @@ namespace IW4MAdmin.Application
 #if DEBUG
                 // lets keep it simple and dispose of everything quickly as logging wont be that much (relatively)
                 Console.WriteLine(LogLine);
-                File.AppendAllText(FileName, $"{LogLine}{Environment.NewLine}");
+                //File.AppendAllText(FileName, $"{LogLine}{Environment.NewLine}");
                 //Debug.WriteLine(msg);
 #else
                 if (type == LogType.Error || type == LogType.Verbose)
@@ -91,7 +95,7 @@ namespace IW4MAdmin.Application
                 Console.WriteLine(ex.GetExceptionInfo());
             }
 
-            OnLogWriting.Release(1);
+            WritingLock.ExitWriteLock();
         }
 
         public void WriteVerbose(string msg)

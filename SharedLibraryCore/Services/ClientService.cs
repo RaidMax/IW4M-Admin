@@ -21,19 +21,23 @@ namespace SharedLibraryCore.Services
 
                 if (entity.IPAddress != null)
                 {
-                    var existingAlias = await context.Aliases
+                    var existingAliases = await context.Aliases
                         .Select(_alias => new { _alias.AliasId, _alias.LinkId, _alias.IPAddress, _alias.Name })
-                        .FirstOrDefaultAsync(_alias => _alias.IPAddress == entity.IPAddress);
+                        .Where(_alias => _alias.IPAddress == entity.IPAddress)
+                        .ToListAsync();
 
-                    if (existingAlias != null)
+                    if (existingAliases.Count > 0)
                     {
-                        entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing link {existingAlias.LinkId}");
+                        linkId = existingAliases.First().LinkId;
 
-                        linkId = existingAlias.LinkId;
-                        if (existingAlias.Name == entity.Name)
+                        entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing link {linkId}");
+
+                        var existingExactAlias = existingAliases.FirstOrDefault(_alias => _alias.Name == entity.Name);
+
+                        if (existingExactAlias != null)
                         {
-                            entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing alias {existingAlias.AliasId}");
-                            aliasId = existingAlias.AliasId;
+                            entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing alias {existingExactAlias.AliasId}");
+                            aliasId = existingExactAlias.AliasId;
                         }
                     }
                 }
@@ -99,6 +103,8 @@ namespace SharedLibraryCore.Services
 
         private async Task UpdateAlias(string name, int? ip, EFClient entity, DatabaseContext context)
         {
+            entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"Begin update alias for {entity}");
+
             // entity is the tracked db context item
             // get all aliases by IP address and LinkId
             var iqAliases = context.Aliases
@@ -106,10 +112,32 @@ namespace SharedLibraryCore.Services
                 // we only want alias that have the same IP address or share a link
                 .Where(_alias => _alias.IPAddress == ip || (_alias.LinkId == entity.AliasLinkId));
 
-#if DEBUG == true
-            var aliasSql = iqAliases.ToSql();
-#endif
             var aliases = await iqAliases.ToListAsync();
+
+            //// update each of the aliases where this is no IP but the name is identical
+            //foreach (var alias in aliases.Where(_alias => (_alias.IPAddress == null || _alias.IPAddress == 0)))
+            //{
+            //    alias.IPAddress = ip;
+            //}
+
+            //// remove any possible duplicates after updating
+            //foreach (var aliasGroup in aliases.GroupBy(_alias => new { _alias.IPAddress, _alias.Name })
+            //    .Where(_group => _group.Count() > 1))
+            //{
+            //    var oldestDuplicateAlias = aliasGroup.OrderBy(_alias => _alias.DateAdded).First();
+
+            //    entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"Oldest duplicate is {oldestDuplicateAlias.AliasId}");
+
+            //    await context.Clients.Where(_client => aliasGroup.Select(_grp => _grp.AliasId).Contains(_client.CurrentAliasId))
+            //        .ForEachAsync(_client => _client.CurrentAliasId = oldestDuplicateAlias.AliasId);
+
+            //    var duplicateAliases = aliasGroup.Where(_alias => _alias.AliasId != oldestDuplicateAlias.AliasId);
+            //    context.RemoveRange(duplicateAliases);
+
+            //    await context.SaveChangesAsync();
+
+            //    entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"Removed duplicate aliases {string.Join(",", duplicateAliases.Select(_alias => _alias.AliasId))}");
+            //}
 
             // see if they have a matching IP + Name but new NetworkId
             var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
@@ -124,12 +152,6 @@ namespace SharedLibraryCore.Services
 
             bool hasExistingAlias = aliases.Count > 0;
             bool isAliasLinkUpdated = newAliasLink.AliasLinkId != entity.AliasLink.AliasLinkId;
-
-            // update each of the aliases where this is no IP but the name is identical
-            foreach (var alias in aliases.Where(_alias => (_alias.IPAddress == null || _alias.IPAddress == 0)))
-            {
-                alias.IPAddress = ip;
-            }
 
             await context.SaveChangesAsync();
 
@@ -191,9 +213,12 @@ namespace SharedLibraryCore.Services
 
                     await context.SaveChangesAsync();
 
-                    entity.CurrentServer.Logger.WriteDebug($"[updatealias] {entity} has exact alias match, so we're going to try to remove aliasId {oldAlias.AliasId} with linkId {oldAlias.AliasId}");
-                    context.Aliases.Remove(oldAlias);
-                    await context.SaveChangesAsync();
+                    if (context.Entry(oldAlias).State != EntityState.Deleted)
+                    {
+                        entity.CurrentServer.Logger.WriteDebug($"[updatealias] {entity} has exact alias match, so we're going to try to remove aliasId {oldAlias.AliasId} with linkId {oldAlias.AliasId}");
+                        context.Aliases.Remove(oldAlias);
+                        await context.SaveChangesAsync();
+                    }
                 }
             }
 
@@ -216,6 +241,8 @@ namespace SharedLibraryCore.Services
                 entity.CurrentAliasId = 0;
                 await context.SaveChangesAsync();
             }
+
+            entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"End update alias for {entity}");
         }
 
         /// <summary>
@@ -286,18 +313,41 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<EFClient> Get(int entityID)
+        public async Task<EFClient> Get(int entityId)
         {
+            // todo: this needs to be optimized for large linked accounts
             using (var context = new DatabaseContext(true))
             {
-                var iqClient = from _c in context.Clients
-                               .Include(c => c.CurrentAlias)
-                               .Include(c => c.AliasLink.Children)
-                               .Include(c => c.Meta)
-                               where _c.ClientId == entityID
-                               select _c;
 
-                var client = await iqClient.FirstOrDefaultAsync();
+                var client = context.Clients
+                    .Select(_client => new EFClient()
+                    {
+                        ClientId = _client.ClientId,
+                        AliasLinkId = _client.AliasLinkId,
+                        Level = _client.Level,
+                        Connections = _client.Connections,
+                        FirstConnection = _client.FirstConnection,
+                        LastConnection = _client.LastConnection,
+                        Masked = _client.Masked,
+                        NetworkId = _client.NetworkId,
+                        CurrentAlias = new EFAlias()
+                        {
+                            Name = _client.CurrentAlias.Name,
+                            IPAddress = _client.CurrentAlias.IPAddress
+                        }
+                    })
+                    .FirstOrDefault(_client => _client.ClientId == entityId);
+
+                client.AliasLink = new EFAliasLink()
+                {
+                    Children = await context.Aliases
+                    .Where(_alias => _alias.LinkId == client.AliasLinkId)
+                    .Select(_alias => new EFAlias()
+                    {
+                        Name = _alias.Name,
+                        IPAddress = _alias.IPAddress
+                    }).ToListAsync()
+                };
 
                 if (client == null)
                 {
@@ -337,8 +387,19 @@ namespace SharedLibraryCore.Services
             EF.CompileAsyncQuery((DatabaseContext context, long networkId) =>
                 context.Clients
                 .Include(c => c.CurrentAlias)
-                .Include(c => c.AliasLink.Children)
-                .Include(c => c.ReceivedPenalties)
+                //.Include(c => c.AliasLink.Children)
+                //.Include(c => c.ReceivedPenalties)
+                .Select(_client => new EFClient()
+                {
+                    ClientId = _client.ClientId,
+                    AliasLinkId = _client.AliasLinkId,
+                    Level = _client.Level,
+                    Connections = _client.Connections,
+                    FirstConnection = _client.FirstConnection,
+                    LastConnection = _client.LastConnection,
+                    Masked = _client.Masked,
+                    NetworkId = _client.NetworkId
+                })
                 .FirstOrDefault(c => c.NetworkId == networkId)
         );
 
@@ -598,7 +659,7 @@ namespace SharedLibraryCore.Services
                         IPAddress = _client.CurrentAlias.IPAddress.ConvertIPtoString(),
                         LastConnection = _client.FirstConnection
                     });
-                  
+
 #if DEBUG
                 var sql = iqClients.ToSql();
 #endif

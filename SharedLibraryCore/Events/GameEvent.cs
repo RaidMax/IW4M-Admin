@@ -8,9 +8,6 @@ namespace SharedLibraryCore
 {
     public class GameEvent
     {
-        // define what the delagate function looks like
-        public delegate void OnServerEventEventHandler(object sender, GameEventArgs e);
-
         public enum EventFailReason
         {
             /// <summary>
@@ -205,9 +202,15 @@ namespace SharedLibraryCore
 
         public GameEvent()
         {
-            OnProcessed = new ManualResetEventSlim(false);
+            _eventFinishedWaiter = new ManualResetEvent(false);
             Time = DateTime.UtcNow;
             Id = GetNextEventId();
+        }
+
+        ~GameEvent()
+        {
+            _eventFinishedWaiter.Set();
+            _eventFinishedWaiter.Dispose();
         }
 
         public EventType Type;
@@ -219,34 +222,56 @@ namespace SharedLibraryCore
         public Server Owner;
         public bool IsRemote { get; set; } = false;
         public object Extra { get; set; }
-        public ManualResetEventSlim OnProcessed { get; set; }
+        private readonly ManualResetEvent _eventFinishedWaiter;
         public DateTime Time { get; set; }
         public long Id { get; private set; }
         public EventFailReason FailReason { get; set; }
         public bool Failed => FailReason != EventFailReason.None;
+
         /// <summary>
         /// Indicates if the event should block until it is complete
         /// </summary>
         public bool IsBlocking { get; set; }
 
+        public void Complete()
+        {
+            _eventFinishedWaiter.Set();
+#if DEBUG
+            Owner?.Logger.WriteDebug($"Completed internal for event {Id}");
+#endif
+        }
+
         /// <summary>
         /// asynchronously wait for GameEvent to be processed
         /// </summary>
         /// <returns>waitable task </returns>
-        public Task<GameEvent> WaitAsync(TimeSpan timeSpan, CancellationToken token)
+        public async Task<GameEvent> WaitAsync(TimeSpan timeSpan, CancellationToken token)
         {
-            return Task.Run(() =>
-            {
-                bool processed = OnProcessed.Wait(timeSpan, token);
-                // this let's us know if the the action timed out
-                FailReason = FailReason == EventFailReason.None & !processed ? EventFailReason.Timeout : FailReason; 
-                return this;
-            });
-        }
+            bool processed = false;
 
-        public GameEvent Wait()
-        {
-            OnProcessed.Wait();
+#if DEBUG
+            Owner?.Logger.WriteDebug($"Begin wait for event {Id}");
+#endif
+
+            try
+            {
+                processed = await Task.Run(() => _eventFinishedWaiter.WaitOne(timeSpan), token);
+            }
+            catch { }
+
+
+            if (!processed)
+            {
+#if DEBUG
+                //throw new Exception();
+#endif
+                Owner?.Logger.WriteError("Waiting for event to complete timed out");
+                Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");
+            }
+
+
+            // this lets us know if the the action timed out
+            FailReason = FailReason == EventFailReason.None && !processed ? EventFailReason.Timeout : FailReason;
             return this;
         }
     }

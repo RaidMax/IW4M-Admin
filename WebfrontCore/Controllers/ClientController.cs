@@ -45,17 +45,17 @@ namespace WebfrontCore.Controllers
                 NetworkId = client.NetworkId,
                 Meta = new List<ProfileMeta>(),
                 Aliases = client.AliasLink.Children
-                    .Where(a => a.Name != client.Name)
                     .Select(a => a.Name)
-                    .Distinct()
+                    .Prepend(client.Name)
                     .OrderBy(a => a)
+                    .Distinct()
                     .ToList(),
                 IPs = client.AliasLink.Children
+                    .Where(i => i.IPAddress != null)
+                    .OrderByDescending(i => i.DateAdded)
                     .Select(i => i.IPAddress.ConvertIPtoString())
-                    .Union(new List<string>() { client.CurrentAlias.IPAddress.ConvertIPtoString() })
-                    .Where(i => !string.IsNullOrEmpty(i))
+                    .Prepend(client.CurrentAlias.IPAddress.ConvertIPtoString())
                     .Distinct()
-                    .OrderBy(i => i)
                     .ToList(),
                 HasActivePenalty = activePenalties.Count() > 0,
                 ActivePenaltyType = activePenalties.Count() > 0 ? activePenalties.First().Type.ToString() : null,
@@ -138,8 +138,8 @@ namespace WebfrontCore.Controllers
             }
 
             var clientsDto = await Manager.GetClientService().FindClientsByIdentifier(clientName);
-            
-            foreach(var client in clientsDto)
+
+            foreach (var client in clientsDto)
             {
                 if (!Authorized && ((Permission)client.LevelInt).ShouldHideLevel())
                 {
@@ -152,7 +152,7 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
-        public async Task<IActionResult> Meta(int id, int count, int offset, DateTime? startAt)
+        public async Task<IActionResult> GetMeta(int id, int count, int offset, DateTime? startAt)
         {
             IEnumerable<ProfileMeta> meta = await MetaService.GetRuntimeMeta(id, startAt == null ? offset : 0, count, startAt ?? DateTime.UtcNow);
 
@@ -160,7 +160,7 @@ namespace WebfrontCore.Controllers
             {
                 meta = meta.Where(_meta => !_meta.Sensitive);
             }
-            
+
             if (meta.Count() == 0)
             {
                 return Ok();

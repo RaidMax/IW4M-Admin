@@ -67,7 +67,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="P">EFClient pulled from memory reading</param>
         /// <returns>True if player added sucessfully, false otherwise</returns>
-        public abstract Task OnClientConnected(EFClient P);
+        public abstract Task<EFClient> OnClientConnected(EFClient P);
 
         /// <summary>
         /// Remove player by client number

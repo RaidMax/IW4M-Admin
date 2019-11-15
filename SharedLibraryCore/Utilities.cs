@@ -31,7 +31,7 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
-        public static TimeSpan DefaultCommandTimeout = new TimeSpan(0, 0, 10);
+        public static TimeSpan DefaultCommandTimeout = new TimeSpan(0, 0, 25);
 
         public static EFClient IW4MAdminClient(Server server = null)
         {

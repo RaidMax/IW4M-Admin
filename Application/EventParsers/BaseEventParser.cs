@@ -256,6 +256,7 @@ namespace IW4MAdmin.Application.EventParsers
             // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
             if (eventType == "ScriptKill")
             {
+                
                 long originId = lineSplit[1].ConvertGuidToLong(1);
                 long targetId = lineSplit[2].ConvertGuidToLong(1);
 

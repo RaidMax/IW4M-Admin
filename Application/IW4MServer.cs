@@ -33,7 +33,7 @@ namespace IW4MAdmin
         {
         }
 
-        override public async Task OnClientConnected(EFClient clientFromLog)
+        override public async Task<EFClient> OnClientConnected(EFClient clientFromLog)
         {
             Logger.WriteDebug($"Client slot #{clientFromLog.ClientNumber} now reserved");
 
@@ -57,6 +57,7 @@ namespace IW4MAdmin
             Logger.WriteInfo($"Client {client} connected...");
 
             // Do the player specific stuff
+            client.ProcessingEvent = clientFromLog.ProcessingEvent;
             client.ClientNumber = clientFromLog.ClientNumber;
             client.Score = clientFromLog.Score;
             client.Ping = clientFromLog.Ping;
@@ -73,9 +74,8 @@ namespace IW4MAdmin
                 Type = GameEvent.EventType.Connect
             };
 
-            await client.OnJoin(client.IPAddress);
-            client.State = ClientState.Connected;
             Manager.GetEventHandler().AddEvent(e);
+            return client;
         }
 
         override public async Task OnClientDisconnected(EFClient client)
@@ -103,55 +103,85 @@ namespace IW4MAdmin
 
         public override async Task ExecuteEvent(GameEvent E)
         {
-            bool canExecuteCommand = true;
-
-            if (!await ProcessEvent(E))
+            if (E == null)
             {
+                Logger.WriteError("Received NULL event");
                 return;
             }
 
-            Command C = null;
-            if (E.Type == GameEvent.EventType.Command)
+            if (E.IsBlocking)
             {
-                try
+                await E.Origin?.Lock();
+            }
+
+            bool canExecuteCommand = true;
+            Exception lastException = null;
+
+            try
+            {
+                if (!await ProcessEvent(E))
                 {
-                    C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E);
+                    return;
                 }
 
-                catch (CommandException e)
+                Command C = null;
+                if (E.Type == GameEvent.EventType.Command)
                 {
-                    Logger.WriteInfo(e.Message);
+                    try
+                    {
+                        C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E);
+                    }
+
+                    catch (CommandException e)
+                    {
+                        Logger.WriteInfo(e.Message);
+                    }
+
+                    if (C != null)
+                    {
+                        E.Extra = C;
+                    }
                 }
 
-                if (C != null)
+                foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
                 {
-                    E.Extra = C;
+                    try
+                    {
+                        await plugin.OnEventAsync(E, this);
+                    }
+                    catch (AuthorizationException e)
+                    {
+                        E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
+                        canExecuteCommand = false;
+                    }
+                    catch (Exception Except)
+                    {
+                        Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{plugin.Name}]");
+                        Logger.WriteDebug(Except.GetExceptionInfo());
+                    }
+                }
+
+                // hack: this prevents commands from getting executing that 'shouldn't' be
+                if (E.Type == GameEvent.EventType.Command && E.Extra is Command command &&
+                    (canExecuteCommand || E.Origin?.Level == Permission.Console))
+                {
+                    await command.ExecuteAsync(E);
                 }
             }
 
-            foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+            catch (Exception e)
             {
-                try
-                {
-                    await plugin.OnEventAsync(E, this);
-                }
-                catch (AuthorizationException e)
-                {
-                    E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
-                    canExecuteCommand = false;
-                }
-                catch (Exception Except)
-                {
-                    Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{plugin.Name}]");
-                    Logger.WriteDebug(Except.GetExceptionInfo());
-                }
+                lastException = e;
             }
 
-            // hack: this prevents commands from getting executing that 'shouldn't' be
-            if (E.Type == GameEvent.EventType.Command && E.Extra is Command command &&
-                (canExecuteCommand || E.Origin?.Level == Permission.Console))
+            finally
             {
-                await command.ExecuteAsync(E);
+                E.Origin?.Unlock();
+
+                if (lastException != null)
+                {
+                    throw lastException;
+                }
             }
         }
 
@@ -195,6 +225,25 @@ namespace IW4MAdmin
                 await Manager.GetClientService().UpdateLevel(newPermission, E.Target, E.Origin);
             }
 
+            else if (E.Type == GameEvent.EventType.Connect)
+            {
+                if (E.Origin.State != ClientState.Connected)
+                {
+                    E.Origin.State = ClientState.Connected;
+                    E.Origin.LastConnection = DateTime.UtcNow;
+                    E.Origin.Connections += 1;
+
+                    ChatHistory.Add(new ChatInfo()
+                    {
+                        Name = E.Origin.Name,
+                        Message = "CONNECTED",
+                        Time = DateTime.UtcNow
+                    });
+
+                    await E.Origin.OnJoin(E.Origin.IPAddress);
+                }
+            }
+
             else if (E.Type == GameEvent.EventType.PreConnect)
             {
                 // we don't want to track bots in the database at all if ignore bots is requested
@@ -230,7 +279,8 @@ namespace IW4MAdmin
                     Clients[E.Origin.ClientNumber] = E.Origin;
                     try
                     {
-                        await OnClientConnected(E.Origin);
+                        E.Origin = await OnClientConnected(E.Origin);
+                        E.Target = E.Origin;
                     }
 
                     catch (Exception ex)
@@ -241,13 +291,6 @@ namespace IW4MAdmin
                         Clients[E.Origin.ClientNumber] = null;
                         return false;
                     }
-
-                    ChatHistory.Add(new ChatInfo()
-                    {
-                        Name = E.Origin.Name,
-                        Message = "CONNECTED",
-                        Time = DateTime.UtcNow
-                    });
 
                     if (E.Origin.Level > EFClient.Permission.Moderator)
                     {
@@ -624,7 +667,6 @@ namespace IW4MAdmin
 #endif
 
                     var polledClients = await PollPlayersAsync();
-                    var waiterList = new List<GameEvent>();
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
@@ -641,18 +683,9 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(e);
-                        // wait until the disconnect event is complete
-                        // because we don't want to try to fill up a slot that's not empty yet
-                        waiterList.Add(e);
+                        await e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
                     }
 
-                    // wait for all the disconnect tasks to finish
-                    foreach (var waiter in waiterList)
-                    {
-                        waiter.Wait();
-                    }
-
-                    waiterList.Clear();
                     // this are our new connecting clients
                     foreach (var client in polledClients[0])
                     {
@@ -671,16 +704,9 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(e);
-                        waiterList.Add(e);
+                        await e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
                     }
 
-                    // wait for all the connect tasks to finish
-                    foreach (var waiter in waiterList)
-                    {
-                        waiter.Wait();
-                    }
-
-                    waiterList.Clear();
                     // these are the clients that have updated
                     foreach (var client in polledClients[2])
                     {
@@ -692,12 +718,6 @@ namespace IW4MAdmin
                         };
 
                         Manager.GetEventHandler().AddEvent(e);
-                        waiterList.Add(e);
-                    }
-
-                    foreach (var waiter in waiterList)
-                    {
-                        waiter.Wait();
                     }
 
                     if (ConnectionErrors > 0)

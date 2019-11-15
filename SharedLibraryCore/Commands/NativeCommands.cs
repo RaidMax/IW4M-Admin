@@ -998,7 +998,7 @@ namespace SharedLibraryCore.Commands
             var names = new List<string>(E.Target.AliasLink.Children.Select(a => a.Name));
             var IPs = new List<string>(E.Target.AliasLink.Children.Select(a => a.IPAddress.ConvertIPtoString()).Distinct());
 
-            E.Target.Tell($"[^3{E.Target}^7]");
+            E.Origin.Tell($"[^3{E.Target}^7]");
 
             message.Append($"{Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ALIAS_ALIASES"]}: ");
             message.Append(String.Join(" | ", names));

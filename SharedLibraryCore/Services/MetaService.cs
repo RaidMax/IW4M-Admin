@@ -74,6 +74,13 @@ namespace SharedLibraryCore.Services
                 return await ctx.EFMeta
                     .Where(_meta => _meta.Key == metaKey)
                     .Where(_meta => _meta.ClientId == client.ClientId)
+                    .Select(_meta => new EFMeta()
+                    {
+                        MetaId = _meta.MetaId,
+                        Key = _meta.Key,
+                        ClientId = _meta.ClientId,
+                        Value = _meta.Value
+                    })
                     .FirstOrDefaultAsync();
             }
         }

@@ -76,7 +76,6 @@ namespace IW4MAdmin.Application.IO
 #if DEBUG
                     _server.Logger.WriteVerbose(gameEvent.Data);
 #endif
-
                     // we don't want to add the event if ignoreBots is on and the event comes from a bot
                     if (!_ignoreBots || (_ignoreBots && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                     {
@@ -103,11 +102,6 @@ namespace IW4MAdmin.Application.IO
                         }
 
                         _server.Manager.GetEventHandler().AddEvent(gameEvent);
-
-                        if (gameEvent.IsBlocking)
-                        {
-                            await gameEvent.WaitAsync(Utilities.DefaultCommandTimeout, _server.Manager.CancellationToken);
-                        }
                     }
                 }
 

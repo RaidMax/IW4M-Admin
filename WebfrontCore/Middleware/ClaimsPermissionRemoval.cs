@@ -23,7 +23,7 @@ namespace WebfrontCore.Middleware
         public ClaimsPermissionRemoval(RequestDelegate nextRequest, IManager manager)
         {
             _manager = manager;
-            _manager.OnServerEvent += OnGameEvent;
+            //_manager.OnServerEvent += OnGameEvent;
             _privilegedClientIds = new List<int>();
             _nextRequest = nextRequest;
         }

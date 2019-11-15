@@ -410,6 +410,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
             Vector3 vViewAngles = null;
+            var snapshotAngles = new List<Vector3>();
             SemaphoreSlim waiter = null;
 
             try
@@ -419,20 +420,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     vDeathOrigin = Vector3.Parse(deathOrigin);
                     vKillOrigin = Vector3.Parse(killOrigin);
                     vViewAngles = Vector3.Parse(viewAngles).FixIW4Angles();
-                }
 
-                catch (FormatException)
-                {
-                    _log.WriteWarning("Could not parse kill or death origin or viewangle vectors");
-                    _log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles}");
-                    await AddStandardKill(attacker, victim);
-                    return;
-                }
-
-                var snapshotAngles = new List<Vector3>();
-
-                try
-                {
                     foreach (string angle in snapAngles.Split(':', StringSplitOptions.RemoveEmptyEntries))
                     {
                         snapshotAngles.Add(Vector3.Parse(angle).FixIW4Angles());
@@ -441,7 +429,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 catch (FormatException)
                 {
-                    _log.WriteWarning("Could not parse snapshot angles");
+                    _log.WriteError("Could not parse vector data from hit");
+                    _log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles} Snapshot - {string.Join(",", snapshotAngles.Select(_a => _a.ToString()))}");
                     return;
                 }
 
@@ -478,7 +467,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var clientStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
 
                 waiter = clientStats.ProcessingHit;
-                await waiter.WaitAsync();
+                await waiter.WaitAsync(Utilities.DefaultCommandTimeout, Plugin.ServerManager.CancellationToken);
 
                 // increment their hit count
                 if (hit.DeathType == IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
@@ -495,12 +484,31 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 if (Plugin.Config.Configuration().StoreClientKills)
                 {
-                    var cache = _servers[serverId].HitCache;
-                    cache.Add(hit);
-
-                    if (cache.Count > MAX_CACHED_HITS)
+                    var serverWaiter = _servers[serverId].OnSaving;
+                    try
                     {
-                        await SaveHitCache(serverId);
+                        await serverWaiter.WaitAsync();
+                        var cache = _servers[serverId].HitCache;
+                        cache.Add(hit);
+
+                        if (cache.Count > MAX_CACHED_HITS)
+                        {
+                            await SaveHitCache(serverId);
+                        }
+                    }
+
+                    catch (Exception e)
+                    {
+                        _log.WriteError("Could not store client kills");
+                        _log.WriteDebug(e.GetExceptionInfo());
+                    }
+
+                    finally
+                    {
+                        if (serverWaiter.CurrentCount == 0)
+                        {
+                            serverWaiter.Release(1);
+                        }
                     }
                 }
 
@@ -538,9 +546,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         }
                     }
                 }
-#if DEBUG
-                await Sync(attacker.CurrentServer);
-#endif
             }
 
             catch (Exception ex)
@@ -552,7 +557,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             finally
             {
-                waiter?.Release(1);
+                if (waiter?.CurrentCount == 0)
+                {
+                    waiter.Release();
+                }
             }
         }
 
@@ -561,7 +569,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             using (var ctx = new DatabaseContext(true))
             {
                 var server = _servers[serverId];
-                ctx.AddRange(server.HitCache);
+                ctx.AddRange(server.HitCache.ToList());
                 await ctx.SaveChangesAsync();
                 server.HitCache.Clear();
             }
@@ -1110,21 +1118,41 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             long serverId = GetIdForServer(sv);
 
-            using (var ctx = new DatabaseContext())
+            var waiter = _servers[serverId].OnSaving;
+            try
             {
-                var serverStatsSet = ctx.Set<EFServerStatistics>();
-                serverStatsSet.Update(_servers[serverId].ServerStatistics);
-                await ctx.SaveChangesAsync();
+                await waiter.WaitAsync();
+
+                using (var ctx = new DatabaseContext())
+                {
+                    var serverStatsSet = ctx.Set<EFServerStatistics>();
+                    serverStatsSet.Update(_servers[serverId].ServerStatistics);
+                    await ctx.SaveChangesAsync();
+                }
+
+                foreach (var stats in sv.GetClientsAsList()
+                    .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
+                    .Where(_stats => _stats != null))
+                {
+                    await SaveClientStats(stats);
+                }
+
+                await SaveHitCache(serverId);
             }
 
-            foreach (var stats in sv.GetClientsAsList()
-                .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
-                .Where(_stats => _stats != null))
+            catch (Exception e)
             {
-                await SaveClientStats(stats);
+                _log.WriteError("There was a probably syncing server stats");
+                _log.WriteDebug(e.GetExceptionInfo());
             }
 
-            await SaveHitCache(serverId);
+            finally
+            {
+                if (waiter.CurrentCount == 0)
+                {
+                    waiter.Release(1);
+                }
+            }
         }
 
         public void SetTeamBased(long serverId, bool isTeamBased)

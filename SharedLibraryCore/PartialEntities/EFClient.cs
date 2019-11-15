@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Database.Models
@@ -82,6 +82,12 @@ namespace SharedLibraryCore.Database.Models
                 { "_reportCount", 0 }
             };
             ReceivedPenalties = new List<EFPenalty>();
+            ProcessingEvent = new SemaphoreSlim(1, 1);
+        }
+
+        ~EFClient()
+        {
+            ProcessingEvent.Dispose();
         }
 
         public override string ToString()
@@ -108,6 +114,7 @@ namespace SharedLibraryCore.Database.Models
 
         [NotMapped]
         public string IPAddressString => IPAddress.ConvertIPtoString();
+
         [NotMapped]
         public virtual IDictionary<int, long> LinkedAccounts { get; set; }
 
@@ -452,12 +459,9 @@ namespace SharedLibraryCore.Database.Models
         /// <summary>
         /// Handles any client related logic on connection
         /// </summary>
-        public bool OnConnect()
+        public bool IsAbleToConnectSimple()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-
-            LastConnection = DateTime.UtcNow;
-            Connections += 1;
 
             string strippedName = Name.StripColors();
             if (string.IsNullOrWhiteSpace(Name) || strippedName.Replace(" ", "").Length < 3)
@@ -524,26 +528,28 @@ namespace SharedLibraryCore.Database.Models
             {
                 IPAddress = ipAddress;
                 await CurrentServer.Manager.GetClientService().UpdateAlias(this);
+                CurrentServer.Logger.WriteDebug($"Updated alias for {this}");
                 await CurrentServer.Manager.GetClientService().Update(this);
+                CurrentServer.Logger.WriteDebug($"Updated client for {this}");
 
                 bool canConnect = await CanConnect(ipAddress);
 
-                if (canConnect)
+                if (!canConnect)
+                {
+                    CurrentServer.Logger.WriteDebug($"Client {this} is not allowed to join the server");
+                }
+
+                else
                 {
                     var e = new GameEvent()
                     {
                         Type = GameEvent.EventType.Join,
                         Origin = this,
                         Target = this,
-                        Owner = CurrentServer
+                        Owner = CurrentServer,
                     };
 
                     CurrentServer.Manager.GetEventHandler().AddEvent(e);
-                }
-
-                else
-                {
-                    CurrentServer.Logger.WriteDebug($"Client {this} is not allowed to join the server");
                 }
             }
 
@@ -559,6 +565,13 @@ namespace SharedLibraryCore.Database.Models
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
+
+            bool isAbleToConnectSimple = IsAbleToConnectSimple();
+
+            if (!isAbleToConnectSimple)
+            {
+                return false;
+            }
 
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
@@ -609,7 +622,7 @@ namespace SharedLibraryCore.Database.Models
                 Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
             }
 
-            return OnConnect();
+            return true;
         }
 
         [NotMapped]
@@ -660,6 +673,29 @@ namespace SharedLibraryCore.Database.Models
             Name = Utilities.CurrentLocalization
                 .LocalizationIndex[$"GLOBAL_PERMISSION_{Level.ToString().ToUpper()}"]
         };
+
+        [NotMapped]
+        public SemaphoreSlim ProcessingEvent;
+
+        public async Task Lock()
+        {
+            bool result = await ProcessingEvent.WaitAsync(Utilities.DefaultCommandTimeout);
+
+#if DEBUG
+            if (!result)
+            {
+                throw new InvalidOperationException();
+            }
+#endif 
+        }
+
+        public void Unlock()
+        {
+            if (ProcessingEvent.CurrentCount == 0)
+            {
+                ProcessingEvent.Release(1);
+            }
+        }
 
         public override bool Equals(object obj)
         {

@@ -55,6 +55,7 @@ namespace SharedLibraryCore.Interfaces
         string ExternalIPAddress { get; }
         CancellationToken CancellationToken { get; }
         bool IsRestartRequested { get; }
-        OnServerEventEventHandler OnServerEvent { get; set; }
+        //OnServerEventEventHandler OnServerEvent { get; set; }
+        Task ExecuteEvent(GameEvent gameEvent);
     }
 }

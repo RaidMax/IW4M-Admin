@@ -114,31 +114,6 @@ namespace SharedLibraryCore.Services
 
             var aliases = await iqAliases.ToListAsync();
 
-            //// update each of the aliases where this is no IP but the name is identical
-            //foreach (var alias in aliases.Where(_alias => (_alias.IPAddress == null || _alias.IPAddress == 0)))
-            //{
-            //    alias.IPAddress = ip;
-            //}
-
-            //// remove any possible duplicates after updating
-            //foreach (var aliasGroup in aliases.GroupBy(_alias => new { _alias.IPAddress, _alias.Name })
-            //    .Where(_group => _group.Count() > 1))
-            //{
-            //    var oldestDuplicateAlias = aliasGroup.OrderBy(_alias => _alias.DateAdded).First();
-
-            //    entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"Oldest duplicate is {oldestDuplicateAlias.AliasId}");
-
-            //    await context.Clients.Where(_client => aliasGroup.Select(_grp => _grp.AliasId).Contains(_client.CurrentAliasId))
-            //        .ForEachAsync(_client => _client.CurrentAliasId = oldestDuplicateAlias.AliasId);
-
-            //    var duplicateAliases = aliasGroup.Where(_alias => _alias.AliasId != oldestDuplicateAlias.AliasId);
-            //    context.RemoveRange(duplicateAliases);
-
-            //    await context.SaveChangesAsync();
-
-            //    entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"Removed duplicate aliases {string.Join(",", duplicateAliases.Select(_alias => _alias.AliasId))}");
-            //}
-
             // see if they have a matching IP + Name but new NetworkId
             var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
             bool hasExactAliasMatch = existingExactAlias != null;
@@ -318,7 +293,6 @@ namespace SharedLibraryCore.Services
             // todo: this needs to be optimized for large linked accounts
             using (var context = new DatabaseContext(true))
             {
-
                 var client = context.Clients
                     .Select(_client => new EFClient()
                     {
@@ -338,6 +312,11 @@ namespace SharedLibraryCore.Services
                     })
                     .FirstOrDefault(_client => _client.ClientId == entityId);
 
+                if (client == null)
+                {
+                    return null;
+                }
+
                 client.AliasLink = new EFAliasLink()
                 {
                     AliasLinkId = client.AliasLinkId,
@@ -349,11 +328,6 @@ namespace SharedLibraryCore.Services
                         IPAddress = _alias.IPAddress
                     }).ToListAsync()
                 };
-
-                if (client == null)
-                {
-                    return null;
-                }
 
                 var foundClient = new
                 {

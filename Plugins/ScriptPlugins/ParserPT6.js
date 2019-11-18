@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'Plutonium T6 Parser',
     isParser: true,
 
@@ -26,7 +26,7 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(107, 2);
         rconParser.Configuration.WaitForResponse = false;
 
-        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(.+) +((?:[A-Z]+|[0-9]+)) +((?:[A-Z]|[0-9]){8,16}) +(.{0,16}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(-?[0-9]+) +([0-9]+) *$'
+        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(.+) +((?:[A-Z]+|[0-9]+)) +((?:[A-Z]|[0-9]){1,16}) +(.{0,16}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(-?[0-9]+) +([0-9]+) *$'
         rconParser.Configuration.Status.AddMapping(100, 1);
         rconParser.Configuration.Status.AddMapping(101, 2);
         rconParser.Configuration.Status.AddMapping(102, 4);

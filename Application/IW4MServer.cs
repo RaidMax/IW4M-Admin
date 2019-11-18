@@ -498,7 +498,7 @@ namespace IW4MAdmin
                         Hostname = dict["hostname"];
 
                         string mapname = dict["mapname"] ?? CurrentMap.Name;
-                        CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
+                        UpdateMap(mapname);
                     }
                 }
 
@@ -510,11 +510,7 @@ namespace IW4MAdmin
                     MaxClients = int.Parse(dict["sv_maxclients"]);
 
                     string mapname = dict["mapname"];
-                    CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
-                    {
-                        Alias = mapname,
-                        Name = mapname
-                    };
+                    UpdateMap(mapname);
                 }
             }
 
@@ -598,7 +594,8 @@ namespace IW4MAdmin
             var now = DateTime.Now;
 #endif
             var currentClients = GetClientsAsList();
-            var polledClients = (await this.GetStatusAsync()).AsEnumerable();
+            var statusResponse = (await this.GetStatusAsync());
+            var polledClients = statusResponse.Item1.AsEnumerable();
 
             if (Manager.GetApplicationSettings().Configuration().IgnoreBots)
             {
@@ -611,12 +608,26 @@ namespace IW4MAdmin
             var connectingClients = polledClients.Except(currentClients);
             var updatedClients = polledClients.Except(connectingClients).Except(disconnectingClients);
 
+            UpdateMap(statusResponse.Item2);
+
             return new List<EFClient>[]
             {
                 connectingClients.ToList(),
                 disconnectingClients.ToList(),
                 updatedClients.ToList()
             };
+        }
+
+        private void UpdateMap(string mapname)
+        {
+            if (!string.IsNullOrEmpty(mapname))
+            {
+                CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
+                {
+                    Alias = mapname,
+                    Name = mapname
+                };
+            }
         }
 
         private async Task ShutdownInternal()
@@ -887,11 +898,11 @@ namespace IW4MAdmin
             InitializeMaps();
 
             this.Hostname = hostname;
-            this.CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map() { Alias = mapname, Name = mapname };
             this.MaxClients = maxplayers;
             this.FSGame = game;
             this.Gametype = gametype;
             this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
+            UpdateMap(mapname);
 
             if (RconParser.CanGenerateLogPath)
             {

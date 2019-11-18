@@ -718,7 +718,7 @@ namespace SharedLibraryCore
             return await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
         }
 
-        public static Task<List<EFClient>> GetStatusAsync(this Server server)
+        public static Task<(List<EFClient>, string)> GetStatusAsync(this Server server)
         {
             return server.RconParser.GetStatusAsync(server.RemoteConnection);
         }

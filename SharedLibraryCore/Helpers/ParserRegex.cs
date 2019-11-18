@@ -37,6 +37,7 @@ namespace SharedLibraryCore.Interfaces
             RConDvarDefaultValue = 108,
             RConDvarLatchedValue = 109,
             RConDvarDomain = 110,
+            RConStatusMap = 111,
             AdditionalGroup = 200
         }
 

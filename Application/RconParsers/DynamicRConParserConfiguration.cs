@@ -12,6 +12,7 @@ namespace IW4MAdmin.Application.RconParsers
     {
         public CommandPrefix CommandPrefixes { get; set; }
         public ParserRegex Status { get; set; } = new ParserRegex();
+        public ParserRegex MapStatus { get; set; } = new ParserRegex();
         public ParserRegex Dvar { get; set; } = new ParserRegex();
         public bool WaitForResponse { get; set; } = true;
     }

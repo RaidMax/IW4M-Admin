@@ -52,6 +52,9 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDefaultValue, 3);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarLatchedValue, 4);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDomain, 5);
+
+            Configuration.MapStatus.Pattern = @"map: (([a-z]|_|\d)+)";
+            Configuration.MapStatus.AddMapping(ParserRegex.GroupType.RConStatusMap, 1);
         }
 
         public IRConParserConfiguration Configuration { get; set; }
@@ -100,7 +103,7 @@ namespace IW4MAdmin.Application.RconParsers
             };
         }
 
-        public virtual async Task<List<EFClient>> GetStatusAsync(Connection connection)
+        public virtual async Task<(List<EFClient>, string)> GetStatusAsync(Connection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
 #if DEBUG
@@ -109,7 +112,22 @@ namespace IW4MAdmin.Application.RconParsers
                 Console.WriteLine(line);
             }
 #endif
-            return ClientsFromStatus(response);
+            return (ClientsFromStatus(response), MapFromStatus(response));
+        }
+
+        private string MapFromStatus(string[] response)
+        {
+            string map = null;
+            foreach (var line in response)
+            {
+                var regex = Regex.Match(line, Configuration.MapStatus.Pattern);
+                if (regex.Success)
+                {
+                    map = regex.Groups[Configuration.MapStatus.GroupMapping[ParserRegex.GroupType.RConStatusMap]].ToString();
+                }
+            }
+
+            return map;
         }
 
         public async Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue)
@@ -195,4 +213,5 @@ namespace IW4MAdmin.Application.RconParsers
 
             return StatusPlayers;
         }
-    }}
+    }
+}

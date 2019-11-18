@@ -23,7 +23,7 @@ namespace IW4MAdmin.Application.IO
         public GameLogEventDetection(Server server, string gameLogPath, Uri gameLogServerUri)
         {
             _gameLogFile = gameLogPath;
-            _reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : _reader = new GameLogReader(gameLogPath, server.EventParser); 
+            _reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : _reader = new GameLogReader(gameLogPath, server.EventParser);
             _server = server;
             _ignoreBots = server.Manager.GetApplicationSettings().Configuration().IgnoreBots;
         }
@@ -45,7 +45,7 @@ namespace IW4MAdmin.Application.IO
                         _server.Logger.WriteDebug(e.GetExceptionInfo());
                     }
                 }
-                
+
                 await Task.Delay(_reader.UpdateInterval, _server.Manager.CancellationToken);
             }
 
@@ -76,11 +76,11 @@ namespace IW4MAdmin.Application.IO
 #if DEBUG
                     _server.Logger.WriteVerbose(gameEvent.Data);
 #endif
+                    gameEvent.Owner = _server;
+
                     // we don't want to add the event if ignoreBots is on and the event comes from a bot
                     if (!_ignoreBots || (_ignoreBots && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                     {
-                        gameEvent.Owner = _server;
-
                         if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
                         {
                             gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);

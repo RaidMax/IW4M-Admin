@@ -340,6 +340,7 @@ namespace SharedLibraryCore.Services
 
                 client.AliasLink = new EFAliasLink()
                 {
+                    AliasLinkId = client.AliasLinkId,
                     Children = await context.Aliases
                     .Where(_alias => _alias.LinkId == client.AliasLinkId)
                     .Select(_alias => new EFAlias()

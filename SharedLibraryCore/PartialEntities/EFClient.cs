@@ -103,7 +103,7 @@ namespace SharedLibraryCore.Database.Models
         }
 
         [NotMapped]
-        public string CleanedName => Name.StripColors();
+        public string CleanedName => Name?.StripColors();
 
         [NotMapped]
         public virtual int? IPAddress
@@ -463,8 +463,7 @@ namespace SharedLibraryCore.Database.Models
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
-            string strippedName = Name.StripColors();
-            if (string.IsNullOrWhiteSpace(Name) || strippedName.Replace(" ", "").Length < 3)
+            if (string.IsNullOrWhiteSpace(Name) || CleanedName.Replace(" ", "").Length < 3)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
                 Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
@@ -575,7 +574,6 @@ namespace SharedLibraryCore.Database.Models
 
             // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
             var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
-
             var banPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
             var tempbanPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
             var flagPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);

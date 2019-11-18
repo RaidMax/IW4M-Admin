@@ -116,26 +116,26 @@ namespace IW4MAdmin.Application
             // this happens if a plugin requires login
             catch (AuthorizationException ex)
             {
-                newEvent.FailReason = GameEvent.EventFailReason.Permission;
+                newEvent.FailReason = EventFailReason.Permission;
                 newEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {ex.Message}");
             }
 
             catch (NetworkException ex)
             {
-                newEvent.FailReason = GameEvent.EventFailReason.Exception;
+                newEvent.FailReason = EventFailReason.Exception;
                 Logger.WriteError(ex.Message);
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }
 
             catch (ServerException ex)
             {
-                newEvent.FailReason = GameEvent.EventFailReason.Exception;
+                newEvent.FailReason = EventFailReason.Exception;
                 Logger.WriteWarning(ex.Message);
             }
 
             catch (Exception ex)
             {
-                newEvent.FailReason = GameEvent.EventFailReason.Exception;
+                newEvent.FailReason = EventFailReason.Exception;
                 Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"].FormatExt(newEvent.Owner));
                 Logger.WriteDebug(ex.GetExceptionInfo());
             }

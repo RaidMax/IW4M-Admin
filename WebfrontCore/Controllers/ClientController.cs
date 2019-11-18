@@ -152,7 +152,7 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
-        public async Task<IActionResult> GetMeta(int id, int count, int offset, DateTime? startAt)
+        public async Task<IActionResult> Meta(int id, int count, int offset, DateTime? startAt)
         {
             IEnumerable<ProfileMeta> meta = await MetaService.GetRuntimeMeta(id, startAt == null ? offset : 0, count, startAt ?? DateTime.UtcNow);
 

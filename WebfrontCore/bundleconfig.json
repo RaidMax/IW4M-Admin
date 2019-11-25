@@ -12,10 +12,11 @@
   {
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
-      "wwwroot/lib/jQuery/dist/jquery.min.js",
-      "wwwroot/lib/bootstrap/dist/js/bootstrap.min.js",
-      "wwwroot/lib/moment/min/moment.min.js",
-      "wwwroot/lib/moment-timezone/builds/moment-timezone.min.js",
+      "wwwroot/lib/jquery/jquery.slim.min.js",
+      "wwwroot/lib/popper.js/popper.min.js",
+      "wwwroot/lib/moment.js/moment.min.js",
+      "wwwroot/lib/moment-timezone/moment-timezone.min.js",
+      "wwwroot/lib/bootstrap/dist/js/bootstrap.bundle.min.js",
       "wwwroot/lib/canvasjs/canvasjs.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",

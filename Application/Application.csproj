@@ -65,14 +65,14 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="call $(ProjectDir)BuildScripts\PreBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir)" />
+    <Exec Command="if $(ConfigurationName) == Debug call $(ProjectDir)BuildScripts\PreBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
       <Output TaskParameter="Assemblies" ItemName="CurrentAssembly" />
     </GetAssemblyIdentity>
-    <Exec Command="call $(ProjectDir)BuildScripts\PostBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir) %(CurrentAssembly.Version)" />
+    <Exec Command="if $(ConfigurationName) == Debug call $(ProjectDir)BuildScripts\PostBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir) %25(CurrentAssembly.Version)" />
   </Target>
 
   <Target Name="PostPublish" AfterTargets="Publish">

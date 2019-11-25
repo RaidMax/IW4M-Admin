@@ -21,11 +21,11 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="xcopy /E /K /Y /C /I &quot;$(ProjectDir)wwwroot\images&quot;  &quot;$(SolutionDir)WebfrontCore\wwwroot\images&quot;" />
+    <Exec Command="if $(ConfigurationName) == Debug xcopy /E /K /Y /C /I &quot;$(ProjectDir)wwwroot\images&quot;  &quot;$(SolutionDir)WebfrontCore\wwwroot\images&quot;" />
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="if $(ConfigurationName) == Debug copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
     <Exec Command="copy &quot;$(TargetDir)$(ProjectName).Views$(TargetExt)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
   </Target>
 </Project>

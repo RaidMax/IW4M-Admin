@@ -24,11 +24,11 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;copy  &quot;$(TargetDir)$(TargetName).Views$(TargetExt)&quot; $(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="if $(ConfigurationName) == Debug copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;if $(ConfigurationName) == Debug copy  &quot;$(TargetDir)$(TargetName).Views$(TargetExt)&quot; $(SolutionDir)BUILD\Plugins&quot;" />
   </Target>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="xcopy /S /E /H /Y /I &quot;$(ProjectDir)Views\Radar&quot; &quot;$(SolutionDir)WebfrontCore\Views\Plugins\Radar&quot;&#xD;&#xA;xcopy /S /E /H /Y /I &quot;$(ProjectDir)wwwroot\images&quot; &quot;$(SolutionDir)WebfrontCore\wwwroot\images\radar&quot;" />
+    <Exec Command="if $(ConfigurationName) == Debug xcopy /S /E /H /Y /I &quot;$(ProjectDir)Views\Radar&quot; &quot;$(SolutionDir)WebfrontCore\Views\Plugins\Radar&quot;&#xD;&#xA;if $(ConfigurationName) == Debug xcopy /S /E /H /Y /I &quot;$(ProjectDir)wwwroot\images&quot; &quot;$(SolutionDir)WebfrontCore\wwwroot\images\radar&quot;" />
   </Target>
 
 </Project>

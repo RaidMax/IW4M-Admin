@@ -10,12 +10,12 @@
         var snapProperties = Model.First().GetType().GetProperties();
         foreach (var prop in snapProperties)
         {
-            @if (prop.Name.EndsWith("Id") || new[] { "Active", "Client", "PredictedViewAngles" }.Contains(prop.Name))
+            @if ((prop.Name.EndsWith("Id") && prop.Name != "WeaponId") || new[] { "Active", "Client", "PredictedViewAngles" }.Contains(prop.Name))
             {
                 continue;
             }
 
-            <span class="text-white">@prop.Name </span> <span>&mdash; @prop.GetValue(snapshot)</span><br />
+            <span class="text-white">@prop.Name </span> <span>&mdash; @prop.GetValue(snapshot).ToString()</span><br />
         }
         <div class="w-100 mt-1 mb-1 border-bottom"></div>
     }

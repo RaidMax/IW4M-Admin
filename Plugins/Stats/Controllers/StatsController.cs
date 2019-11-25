@@ -110,6 +110,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .Select(_penalty => new { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
                     .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
 
+                // todo: this can be optimized
                 var iqSnapshotInfo = ctx.Set<Models.EFACSnapshot>()
                     .Where(s => s.ClientId == penalty.OffenderId)
                     .Include(s => s.LastStrainAngle)
@@ -121,9 +122,6 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .OrderBy(s => s.When)
                     .ThenBy(s => s.Hits);
 
-#if DEBUG == true
-                var sql = iqSnapshotInfo.ToSql();
-#endif
                 var penaltyInfo = await iqSnapshotInfo.ToListAsync();
 
                 if (penaltyInfo.Count > 0)

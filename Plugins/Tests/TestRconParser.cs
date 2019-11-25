@@ -14,7 +14,7 @@ namespace Tests
 
         public override string Version => "test";
 
-        public override async Task<List<EFClient>> GetStatusAsync(Connection connection)
+        public override async Task<(List<EFClient>, string)> GetStatusAsync(Connection connection)
         {
             var clientList = new List<EFClient>();
            
@@ -32,7 +32,7 @@ namespace Tests
                 });
             }
 
-            return clientList.Count > 0 ? clientList : FakeClients;
+            return clientList.Count > 0 ? (clientList, "mp_rust") : (FakeClients, "mp_rust");
         }
     }
 }

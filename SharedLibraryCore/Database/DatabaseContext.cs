@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Database
 {
@@ -69,8 +71,8 @@ namespace SharedLibraryCore.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-          //  optionsBuilder.UseLoggerFactory(_loggerFactory)
-           //     .EnableSensitiveDataLogging();
+            //  optionsBuilder.UseLoggerFactory(_loggerFactory)
+            //     .EnableSensitiveDataLogging();
 
             if (string.IsNullOrEmpty(_ConnectionString))
             {
@@ -100,6 +102,41 @@ namespace SharedLibraryCore.Database
                         break;
                 }
             }
+        }
+
+        private void SetAuditColumns()
+        {
+            return;
+            var entries = ChangeTracker
+                .Entries()
+                .Where(e => e.Entity is SharedEntity && (
+                        e.State == EntityState.Added
+                        || e.State == EntityState.Modified)).ToList();
+
+            foreach (var entityEntry in entries)
+            {
+                if (entityEntry.State == EntityState.Added)
+                {
+                    //((SharedEntity)entityEntry.Entity).CreatedDateTime = DateTime.UtcNow;
+                }
+
+                else
+                {
+                    //((SharedEntity)entityEntry.Entity).UpdatedDateTime = DateTime.UtcNow;
+                }
+            }
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            SetAuditColumns();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        public override int SaveChanges()
+        {
+            SetAuditColumns();
+            return base.SaveChanges();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

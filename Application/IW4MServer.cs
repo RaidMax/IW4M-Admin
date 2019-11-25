@@ -84,18 +84,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-                Clients[client.ClientNumber] = null;
-                await client.OnDisconnect();
+            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+            Clients[client.ClientNumber] = null;
+            await client.OnDisconnect();
 
-                var e = new GameEvent()
-                {
-                    Origin = client,
-                    Owner = this,
-                    Type = GameEvent.EventType.Disconnect
-                };
+            var e = new GameEvent()
+            {
+                Origin = client,
+                Owner = this,
+                Type = GameEvent.EventType.Disconnect
+            };
 
-                Manager.GetEventHandler().AddEvent(e);
+            Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -176,10 +176,14 @@ namespace IW4MAdmin
 
             finally
             {
-                E.Origin?.Unlock();
+                if (E.IsBlocking)
+                {
+                    E.Origin?.Unlock();
+                }
 
                 if (lastException != null)
                 {
+                    Logger.WriteDebug("Last Exception is not null");
                     throw lastException;
                 }
             }
@@ -555,28 +559,25 @@ namespace IW4MAdmin
 
         private async Task OnClientUpdate(EFClient origin)
         {
-            var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(origin));
+            var client = GetClientsAsList().First(_client => _client.Equals(origin));
 
-            if (client != null)
+            client.Ping = origin.Ping;
+            client.Score = origin.Score;
+
+            // update their IP if it hasn't been set yet
+            if (client.IPAddress == null &&
+                !client.IsBot &&
+                client.State == ClientState.Connected)
             {
-                client.Ping = origin.Ping;
-                client.Score = origin.Score;
-
-                // update their IP if it hasn't been set yet
-                if (client.IPAddress == null &&
-                    !client.IsBot &&
-                    client.State == ClientState.Connected)
+                try
                 {
-                    try
-                    {
-                        await client.OnJoin(origin.IPAddress);
-                    }
+                    await client.OnJoin(origin.IPAddress);
+                }
 
-                    catch (Exception e)
-                    {
-                        origin.CurrentServer.Logger.WriteWarning($"Could not execute on join for {origin}");
-                        origin.CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
-                    }
+                catch (Exception e)
+                {
+                    origin.CurrentServer.Logger.WriteWarning($"Could not execute on join for {origin}");
+                    origin.CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
                 }
             }
         }

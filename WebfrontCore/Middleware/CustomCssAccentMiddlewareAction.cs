@@ -45,7 +45,7 @@ namespace WebfrontCore.Middleware
             }
         }
 
-        public async Task<string> Invoke(string original)
+        public Task<string> Invoke(string original)
         {
             foreach (var color in ColorReplacements)
             {
@@ -57,7 +57,7 @@ namespace WebfrontCore.Middleware
                 }
             }
 
-            return original;
+            return Task.FromResult(original);
         }
 
         /// <summary>

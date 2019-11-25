@@ -8,11 +8,55 @@ namespace SharedLibraryCore.Migrations
         {
             if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.Sqlite")
             {
-                migrationBuilder.Sql(@"DELETE FROM EFAlias WHERE AliasId IN (
-                                        SELECT AliasId from (
-                                        SELECT AliasId, Name, Min(DateAdded), IPAddress FROM EFAlias where (IPAddress, Name) in (SELECT DISTINCT IPAddress, Name FROM EFAlias GROUP BY EFAlias.IPAddress, Name HAVING count(IPAddress) > 1 AND count(Name) > 1)
-                                        GROUP BY IPAddress ORDER BY IPAddress))", true);
-                migrationBuilder.Sql(@"CREATE UNIQUE INDEX IX_EFAlias_Name_IPAddress ON EFAlias ( IPAddress, Name );", true);
+                migrationBuilder.Sql(@"DROP TABLE IF EXISTS DUPLICATE_ALIASES;
+                CREATE TABLE DUPLICATE_ALIASES AS
+SELECT
+    MIN(AliasId) MIN,
+    MAX(AliasId) MAX,
+    LinkId
+FROM
+    EFAlias
+WHERE
+    (IPAddress, NAME) IN(
+    SELECT DISTINCT
+        IPAddress,
+        NAME
+    FROM
+        EFAlias
+    GROUP BY
+        EFAlias.IPAddress,
+        NAME
+    HAVING
+        COUNT(IPAddress) > 1 AND COUNT(NAME) > 1
+)
+GROUP BY
+    IPAddress
+ORDER BY
+    IPAddress;
+
+                UPDATE
+                    EFClients
+SET CurrentAliasId = (SELECT MAX FROM DUPLICATE_ALIASES WHERE CurrentAliasId = MIN)
+WHERE
+    CurrentAliasId IN(
+    SELECT
+        MIN
+    FROM
+        DUPLICATE_ALIASES
+);
+                DELETE
+                FROM
+    EFAlias
+WHERE
+    AliasId IN(
+    SELECT
+        MIN
+    FROM
+        DUPLICATE_ALIASES
+);
+
+                DROP TABLE
+    DUPLICATE_ALIASES;");
                 return;
             }
 
@@ -77,30 +121,57 @@ DROP TABLE
 
             else
             {
-                migrationBuilder.Sql(@"DELETE 
-FROM ""EFAlias"" 
-WHERE ""AliasId""
-IN
-(
-    SELECT MIN(""AliasId"") AliasId
-
-    FROM ""EFAlias"" WHERE(""IPAddress"", ""Name"")
-
-     IN
-    (
-        SELECT DISTINCT ""IPAddress"", ""Name""
-
-        FROM ""EFAlias""
-
-        GROUP BY ""EFAlias"".""IPAddress"", ""Name""
-
-        HAVING COUNT(""IPAddress"") > 1 AND COUNT(""Name"") > 1
-    )
-
-    GROUP BY ""IPAddress""
-
-    ORDER BY ""IPAddress""
-)", true);
+                migrationBuilder.Sql(@"CREATE TEMPORARY TABLE DUPLICATE_ALIASES AS
+SELECT
+    MIN(""AliasId"") ""MIN"",
+    MAX(""AliasId"") ""MAX"",
+    MIN(""LinkId"") ""LinkId""
+FROM
+    ""EFAlias""
+WHERE
+    (""IPAddress"", ""Name"") IN(
+    SELECT DISTINCT
+        ""IPAddress"",
+        ""Name""
+    FROM
+        ""EFAlias""
+    GROUP BY
+        ""EFAlias"".""IPAddress"",
+        ""Name""
+    HAVING
+        COUNT(""IPAddress"") > 1 AND COUNT(""Name"") > 1
+)
+GROUP BY
+    ""IPAddress""
+ORDER BY
+    ""IPAddress"";
+UPDATE
+    ""EFClients"" AS ""Client""
+SET
+    ""CurrentAliasId"" = ""Duplicate"".""MAX""
+FROM
+    DUPLICATE_ALIASES ""Duplicate""
+WHERE
+    ""Client"".""CurrentAliasId"" IN(
+    SELECT
+        ""MIN""
+    FROM
+        DUPLICATE_ALIASES
+)
+AND
+	""Client"".""CurrentAliasId"" = ""Duplicate"".""MIN"";
+DELETE
+FROM
+    ""EFAlias""
+WHERE
+    ""AliasId"" IN(
+    SELECT
+        ""MIN""
+    FROM
+        DUPLICATE_ALIASES
+);
+DROP TABLE
+    DUPLICATE_ALIASES;");
             }
 
             migrationBuilder.CreateIndex(
@@ -112,9 +183,6 @@ IN
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_EFAlias_Name_IPAddress",
-                table: "EFAlias");
         }
     }
 }

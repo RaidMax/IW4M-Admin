@@ -1,14 +1,11 @@
-﻿using IW4MAdmin.Plugins.Stats.Models;
+﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace IW4MAdmin.Plugins.Stats.Models
 {
-    public class EFACSnapshotVector3
+    public class EFACSnapshotVector3 : SharedEntity
     {
         [Key]
         public int ACSnapshotVector3Id { get; set; }

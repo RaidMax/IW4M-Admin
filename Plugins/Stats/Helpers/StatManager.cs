@@ -548,6 +548,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
             }
 
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 _log.WriteError("Could not save hit or AC info");

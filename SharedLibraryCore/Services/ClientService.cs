@@ -103,8 +103,6 @@ namespace SharedLibraryCore.Services
 
         private async Task UpdateAlias(string name, int? ip, EFClient entity, DatabaseContext context)
         {
-            entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"Begin update alias for {entity}");
-
             // entity is the tracked db context item
             // get all aliases by IP address and LinkId
             var iqAliases = context.Aliases
@@ -216,8 +214,6 @@ namespace SharedLibraryCore.Services
                 entity.CurrentAliasId = 0;
                 await context.SaveChangesAsync();
             }
-
-            entity.CurrentServer.Manager.GetLogger(0).WriteDebug($"End update alias for {entity}");
         }
 
         /// <summary>
@@ -308,7 +304,8 @@ namespace SharedLibraryCore.Services
                         {
                             Name = _client.CurrentAlias.Name,
                             IPAddress = _client.CurrentAlias.IPAddress
-                        }
+                        },
+                        TotalConnectionTime = _client.TotalConnectionTime
                     })
                     .FirstOrDefault(_client => _client.ClientId == entityId);
 
@@ -362,8 +359,6 @@ namespace SharedLibraryCore.Services
             EF.CompileAsyncQuery((DatabaseContext context, long networkId) =>
                 context.Clients
                 .Include(c => c.CurrentAlias)
-                //.Include(c => c.AliasLink.Children)
-                //.Include(c => c.ReceivedPenalties)
                 .Select(_client => new EFClient()
                 {
                     ClientId = _client.ClientId,
@@ -373,7 +368,8 @@ namespace SharedLibraryCore.Services
                     FirstConnection = _client.FirstConnection,
                     LastConnection = _client.LastConnection,
                     Masked = _client.Masked,
-                    NetworkId = _client.NetworkId
+                    NetworkId = _client.NetworkId,
+                    TotalConnectionTime = _client.TotalConnectionTime
                 })
                 .FirstOrDefault(c => c.NetworkId == networkId)
         );

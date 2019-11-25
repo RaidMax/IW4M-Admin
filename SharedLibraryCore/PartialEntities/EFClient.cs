@@ -540,6 +540,7 @@ namespace SharedLibraryCore.Database.Models
 
                 else
                 {
+                    CurrentServer.Logger.WriteDebug($"Creating join event for {this}");
                     var e = new GameEvent()
                     {
                         Type = GameEvent.EventType.Join,

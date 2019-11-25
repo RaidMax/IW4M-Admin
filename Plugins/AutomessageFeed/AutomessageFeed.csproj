@@ -19,8 +19,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
-    <Exec Command="copy &quot;$(TargetDir)Microsoft.SyndicationFeed.ReaderWriter.dll&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="if $(ConfigurationName) == Debug (&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;copy &quot;$(TargetDir)Microsoft.SyndicationFeed.ReaderWriter.dll&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;)" />
   </Target>
 
 </Project>

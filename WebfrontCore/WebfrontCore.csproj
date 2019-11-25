@@ -56,14 +56,12 @@
   <ItemGroup>
     <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
     <Content Update="Views\*.*" CopyToPublishDirectory="Never" />
-    <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="Always" />
-    <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="Always" />
-    <None Include="wwwroot\images\icon.png" CopyToPublishDirectory="Always" />
-    <None Include="wwwroot\images\icons\**\*.png" CopyToPublishDirectory="Always" />
-    <_ContentIncludedByDefault Remove="wwwroot\css\main.min.css" />
-    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.ttf" CopyToPublishDirectory="Always" />
-    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.woff" CopyToPublishDirectory="Always" />
-    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.otf" CopyToPublishDirectory="Always" />
+    <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.ttf" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.woff" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.otf" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -78,5 +76,9 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

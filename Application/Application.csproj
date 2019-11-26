@@ -76,6 +76,6 @@
   </Target>
 
   <Target Name="PostPublish" AfterTargets="Publish">
-    <Exec Command="call $(ProjectDir)BuildScripts\PostPublish.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(ConfigurationName)" />
+    <Exec Command="if $(ConfigurationName) == Debug call $(ProjectDir)BuildScripts\PostPublish.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(ConfigurationName)" />
   </Target>
 </Project>

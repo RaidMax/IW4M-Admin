@@ -58,6 +58,7 @@
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\bootstrap-custom.min.css" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.ttf" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.woff" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\lib\open-iconic\font\fonts\open-iconic.otf" CopyToPublishDirectory="PreserveNewest" />
@@ -65,6 +66,7 @@
 
   <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.435" />
+    <PackageReference Include="BuildWebCompiler" Version="1.12.405" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.0.0" />
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.0.96" />
   </ItemGroup>
@@ -73,6 +75,10 @@
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
       <Private></Private>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\css\src\" />
   </ItemGroup>
 
   <ProjectExtensions>

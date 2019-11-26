@@ -23,7 +23,6 @@ $h5-font-size: $font-size-base * 1.25 !default;
 $h1-font-size: $font-size-base * 2.5 !default;
 $navbar-brand-font-size: $h1-font-size !default;
 $navbar-toggler-font-size: $h5-font-size !default;
-
 $navbar-dark-hover-color: $primary !default;
 
-@import '../lib/bootstrap/scss/bootstrap.scss';
+@import '../../lib/bootstrap/scss/bootstrap.scss';

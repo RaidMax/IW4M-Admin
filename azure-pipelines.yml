@@ -53,6 +53,13 @@ steps:
     arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
     failOnStandardError: true
 
+- task: PowerShell@2
+  inputs:
+    filePath: 'PostPublish.ps1'
+    arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)'
+    
 - task: CmdLine@2
   inputs:
     script: |

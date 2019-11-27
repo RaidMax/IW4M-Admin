@@ -14,6 +14,9 @@ if exist "%PublishDir%\runtimes\linux-musl-x64" powershell Remove-Item -Force -R
 
 echo deleting misc files
 if exist "%PublishDir%\web.config" del "%PublishDir%\web.config"
+if exist "%PublishDir%\libman.json" del "%PublishDir%\libman.json"
+del *.exe
+del *.pdb
 
 echo setting up default folders
 if not exist "%PublishDir%\Configuration" md "%PublishDir%\Configuration"
@@ -24,7 +27,7 @@ move "%PublishDir%\*.json" "%PublishDir%\Lib\"
 move "%PublishDir%\*.pdb" "%PublishDir%\Lib\"
 move "%PublishDir%\runtimes" "%PublishDir%\Lib\runtimes"
 if exist "%PublishDir%\refs" move "%PublishDir%\refs" "%PublishDir%\Lib\refs"
-if not exist  "%PublishDir%\Localization" md "%PublishDir%\Localization"
+if not exist "%PublishDir%\Localization" md "%PublishDir%\Localization"
 
 echo making start scripts
 @(echo @echo off && echo @title IW4MAdmin && echo set DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%PublishDir%\StartIW4MAdmin.cmd"
@@ -33,7 +36,7 @@ echo making start scripts
 echo moving front-end library dependencies
 if not exist "%PublishDir%\wwwroot\fonts" mkdir "%PublishDir%\wwwroot\fonts"
 move "%PublishDir%\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\fonts\"
-rmdir /s "%PublishDir%\wwwroot\lib"
+rd /s /q "%PublishDir%\wwwroot\lib"
 
 echo setting permissions...
 cacls "%PublishDir%" /t /e /p Everyone:F

@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		_commands.gsc = _commands.gsc
 		_customcallbacks.gsc = _customcallbacks.gsc
 		azure-pipelines.yml = azure-pipelines.yml
+		PostPublish.ps1 = PostPublish.ps1
 		README.md = README.md
 		RunPublishPre.cmd = RunPublishPre.cmd
 		RunPublishRelease.cmd = RunPublishRelease.cmd

@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
+    <PreserveCompilationContext Condition="'$(CONFIG)'!='Debug'">false</PreserveCompilationContext>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     <Version>0.1.0.0</Version>
     <Configurations>Debug;Release;Prerelease</Configurations>

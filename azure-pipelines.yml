@@ -39,10 +39,18 @@ steps:
     zipAfterPublish: false
     modifyOutputPath: false
 
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'wget https://raidmax.org/downloads/dos2unix.exe'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+    
 - task: BatchScript@1
   inputs:
     filename: 'Application\BuildScripts\PostPublish.bat'
-    workingFolder: '$(Build.Repository.LocalPath)'
+    workingFolder: '$(Build.Repository.LocalPath)',
+    arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
     failOnStandardError: true
 
 - task: PublishPipelineArtifact@1

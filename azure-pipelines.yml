@@ -21,14 +21,33 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+#- task: VSBuild@1
+#  inputs:
+#    solution: '$(solution)'
+#    msbuildArgs: '/p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+#    platform: '$(buildPlatform)'
+#    configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
+- task: DotNetCoreCLI@2
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'publish'
+    publishWebProjects: false
+    projects: |
+      **/WebfrontCore.csproj
+      **/Application.csproj
+    arguments: '-c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
+- task: BatchScript@1
+  inputs:
+    filename: 'Application\BuildScripts\PostPublish.bat'
+    workingFolder: '$(Build.Repository.LocalPath)'
+    failOnStandardError: true
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    artifact: 'IW4MAdmin.$(buildConfiguration)'
+    publishLocation: 'pipeline'
+

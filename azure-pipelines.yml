@@ -53,6 +53,13 @@ steps:
     arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
     failOnStandardError: true
 
+- task: CmdLine@2
+  inputs:
+    script: |
+      echo changing to encoding for linux start script
+      dos2unix $(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)\StartIW4MAdmin.sh
+    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'

@@ -29,7 +29,6 @@ if not exist  "%PublishDir%\Localization" md "%PublishDir%\Localization"
 echo making start scripts
 @(echo @echo off && echo @title IW4MAdmin && echo set DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%PublishDir%\StartIW4MAdmin.cmd"
 @(echo #!/bin/bash&& echo export DOTNET_CLI_TELEMETRY_OPTOUT=1&& echo dotnet Lib/IW4MAdmin.dll) > "%PublishDir%\StartIW4MAdmin.sh"
-dos2unix "%PublishDir%\StartIW4MAdmin.sh"
 
 echo setting permissions...
 cacls "%PublishDir%" /t /e /p Everyone:F

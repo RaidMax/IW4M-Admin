@@ -15,8 +15,8 @@ if exist "%PublishDir%\runtimes\linux-musl-x64" powershell Remove-Item -Force -R
 echo deleting misc files
 if exist "%PublishDir%\web.config" del "%PublishDir%\web.config"
 if exist "%PublishDir%\libman.json" del "%PublishDir%\libman.json"
-del *.exe
-del *.pdb
+del "%PublisDir%\*.exe"
+del "%PublisDir%\*.pdb"
 
 echo setting up default folders
 if not exist "%PublishDir%\Configuration" md "%PublishDir%\Configuration"
@@ -24,7 +24,6 @@ move "%PublishDir%\DefaultSettings.json" "%PublishDir%\Configuration\"
 if not exist "%PublishDir%\Lib\" md "%PublishDir%\Lib\"
 move "%PublishDir%\*.dll" "%PublishDir%\Lib\"
 move "%PublishDir%\*.json" "%PublishDir%\Lib\"
-move "%PublishDir%\*.pdb" "%PublishDir%\Lib\"
 move "%PublishDir%\runtimes" "%PublishDir%\Lib\runtimes"
 if exist "%PublishDir%\refs" move "%PublishDir%\refs" "%PublishDir%\Lib\refs"
 if not exist "%PublishDir%\Localization" md "%PublishDir%\Localization"

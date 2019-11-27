@@ -49,7 +49,7 @@ steps:
 - task: BatchScript@1
   inputs:
     filename: 'Application\BuildScripts\PostPublish.bat'
-    workingFolder: '$(Build.Repository.LocalPath)',
+    workingFolder: '$(Build.Repository.LocalPath)'
     arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
     failOnStandardError: true
 

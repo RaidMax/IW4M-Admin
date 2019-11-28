@@ -94,4 +94,8 @@
       <UserProperties />
     </VisualStudio>
   </ProjectExtensions>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="if $(ConfigurationName) == Debug ( &#xD;&#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap.scss&#xD;&#xA;)" />
+  </Target>
 </Project>

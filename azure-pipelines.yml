@@ -13,6 +13,7 @@ variables:
   solution: 'IW4MAdmin.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Prerelease'
+  outputFolder: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
 
 steps:
 - task: NuGetToolInstaller@1
@@ -47,7 +48,7 @@ steps:
     projects: |
       **/WebfrontCore.csproj
       **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    arguments: '-c $(buildConfiguration) -o $(outputFolder)'
     zipAfterPublish: false
     modifyOutputPath: false
 
@@ -62,13 +63,13 @@ steps:
   inputs:
     filename: 'Application\BuildScripts\PostPublish.bat'
     workingFolder: '$(Build.Repository.LocalPath)'
-    arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    arguments: '$(outputFolder)'
     failOnStandardError: true
 
 - task: PowerShell@2
   inputs:
     filePath: 'PostPublish.ps1'
-    arguments: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    arguments: '$(outputFolder)'
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)'
     
@@ -76,12 +77,18 @@ steps:
   inputs:
     script: |
       echo changing to encoding for linux start script
-      dos2unix $(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)\StartIW4MAdmin.sh
+      dos2unix $(outputFolder)\StartIW4MAdmin.sh
     workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\Plugins\ScriptPlugins'
+    Contents: '*.js'
+    TargetFolder: '$(outputFolder)\Plugins'
 
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+    targetPath: '$(outputFolder)'
     artifact: 'IW4MAdmin.$(buildConfiguration)'
     publishLocation: 'pipeline'
 

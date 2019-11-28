@@ -55,7 +55,8 @@
 
   <ItemGroup>
     <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
-    <Content Update="wwwroot\css\src\*.*" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\css\src\global.css" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\css\src\global.min.css" CopyToPublishDirectory="Never" />
     <Content Update="Views\*.*" CopyToPublishDirectory="Never" />
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />

@@ -40,7 +40,6 @@
     <Content Remove="Views\Plugins\Stats\_MessageContext.cshtml" />
     <Content Remove="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
     <Content Remove="Views\Plugins\_ViewImports.cshtml" />
-    <Content Remove="wwwroot\css\global.css" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,7 +50,6 @@
     <None Include="Views\Plugins\Stats\_MessageContext.cshtml" />
     <None Include="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
     <None Include="Views\Plugins\_ViewImports.cshtml" />
-    <None Include="wwwroot\css\global.css" />
   </ItemGroup>
 
   <ItemGroup>

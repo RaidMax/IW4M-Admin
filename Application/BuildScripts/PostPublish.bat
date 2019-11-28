@@ -33,8 +33,8 @@ echo making start scripts
 @(echo #!/bin/bash&& echo export DOTNET_CLI_TELEMETRY_OPTOUT=1&& echo dotnet Lib/IW4MAdmin.dll) > "%PublishDir%\StartIW4MAdmin.sh"
 
 echo moving front-end library dependencies
-if not exist "%PublishDir%\wwwroot\fonts" mkdir "%PublishDir%\wwwroot\fonts"
-move "%PublishDir%\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\fonts\"
+if not exist "%PublishDir%\wwwroot\font" mkdir "%PublishDir%\wwwroot\font"
+move "%PublishDir%\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\font\"
 rd /s /q "%PublishDir%\wwwroot\lib"
 
 echo setting permissions...

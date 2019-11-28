@@ -50,10 +50,12 @@
     <None Include="Views\Plugins\Stats\_MessageContext.cshtml" />
     <None Include="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
     <None Include="Views\Plugins\_ViewImports.cshtml" />
+    <None Include="wwwroot\css\src\global.css" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\css\src\*.*" CopyToPublishDirectory="Never" />
     <Content Update="Views\*.*" CopyToPublishDirectory="Never" />
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
@@ -77,7 +79,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\css\src\" />
     <Folder Include="wwwroot\lib\canvas.js\" />
   </ItemGroup>
 

@@ -1,6 +1,9 @@
 ﻿@import 'bootstrap-custom.scss';
 @import 'profile.scss';
 
+$icon-font-path: '/fonts/' !default;
+@import '../../lib/open-iconic/font/css/open-iconic-bootstrap.scss';
+
 .navbar-nav .nav-link:hover {
     background-color: $body-bg;
 }

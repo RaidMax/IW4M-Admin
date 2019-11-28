@@ -34,7 +34,8 @@ steps:
     targetType: 'inline'
     script: |
       mkdir lib\open-iconic
-      mkdir lib\open-iconic\css
+      mkdir lib\open-iconic\font
+      mkdir lib\open-iconic\font\css
       wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'

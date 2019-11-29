@@ -41,7 +41,7 @@ steps:
     projects: |
       **/WebfrontCore.csproj
       **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(outputFolder) --no-build --no-restore'
+    arguments: '-c $(buildConfiguration) -o $(outputFolder)'
     zipAfterPublish: false
     modifyOutputPath: false
 

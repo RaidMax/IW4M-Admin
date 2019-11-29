@@ -1,5 +1,7 @@
 ﻿using IW4MAdmin.Application.Migration;
+using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Text;
 using System.Threading;
@@ -66,6 +68,7 @@ namespace IW4MAdmin.Application
 
                 ServerManager.Logger.WriteInfo(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_VERSION"].FormatExt(Version));
 
+                ConfigureServices();
                 await CheckVersion();
                 await ServerManager.Init();
             }
@@ -229,6 +232,13 @@ namespace IW4MAdmin.Application
             }
             catch (OperationCanceledException)
             { }
+        }
+
+        private static void ConfigureServices()
+        {
+            //var serviceProvider = new ServiceCollection();
+            //serviceProvider.AddSingleton<IManager>(ServerManager);
+            //serviceProvider.BuildServiceProvider();
         }
     }
 }

@@ -2,8 +2,8 @@
 using Newtonsoft.Json;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
-using WebfrontCore.Controllers;
 
 namespace LiveRadar.Web.Controllers
 {
@@ -15,14 +15,21 @@ namespace LiveRadar.Web.Controllers
             ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
         };
 
+        private readonly IManager _manager;
+
+        public RadarController(IManager manager) : base(manager)
+        {
+            _manager = manager;
+        }
+
         [HttpGet]
         [Route("Radar/{serverId}")]
         public IActionResult Index(long? serverId = null)
         {
             ViewBag.IsFluid = true;
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
-            ViewBag.ActiveServerId = serverId ?? Manager.GetServers().FirstOrDefault()?.EndPoint;
-            ViewBag.Servers = Manager.GetServers()
+            ViewBag.ActiveServerId = serverId ?? _manager.GetServers().FirstOrDefault()?.EndPoint;
+            ViewBag.Servers = _manager.GetServers()
                 .Where(_server => _server.GameName == Server.Game.IW4)
                 .Select(_server => new ServerInfo()
                 {
@@ -37,7 +44,7 @@ namespace LiveRadar.Web.Controllers
         [Route("Radar/{serverId}/Map")]
         public IActionResult Map(long? serverId = null)
         {
-            var server = serverId == null ? Manager.GetServers().FirstOrDefault() : Manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
+            var server = serverId == null ? _manager.GetServers().FirstOrDefault() : _manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
             var map = Plugin.Config.Configuration().Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
 
             if (map != null)
@@ -55,7 +62,7 @@ namespace LiveRadar.Web.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Data(long? serverId = null)
         {
-            var server = serverId == null ? Manager.GetServers()[0] : Manager.GetServers().First(_server => _server.EndPoint == serverId);
+            var server = serverId == null ? _manager.GetServers()[0] : _manager.GetServers().First(_server => _server.EndPoint == serverId);
             var radarInfo = server.GetClientsAsList().Select(_client => _client.GetAdditionalProperty<RadarEvent>("LiveRadar")).ToList();
             return Json(radarInfo);
         }
@@ -65,7 +72,7 @@ namespace LiveRadar.Web.Controllers
         public IActionResult Update(string payload)
         {
             var radarUpdate = RadarEvent.Parse(payload);
-            var client = Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
+            var client = _manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
 
             if (client != null)
             {

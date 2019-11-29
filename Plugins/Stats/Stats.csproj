@@ -16,15 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj">
-      <Private>false</Private>
-    </ProjectReference>
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.2.3" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(SolutionDir)Build\Plugins --no-build --no-restore --no-dependencies" />
   </Target>
 </Project>

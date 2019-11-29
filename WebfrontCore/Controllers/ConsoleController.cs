@@ -2,6 +2,7 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +11,11 @@ namespace WebfrontCore.Controllers
 {
     public class ConsoleController : BaseController
     {
+        public ConsoleController(IManager manager) : base(manager)
+        {
+
+        }
+
         public IActionResult Index()
         {
             var activeServers = Manager.GetServers().Select(s => new ServerInfo()

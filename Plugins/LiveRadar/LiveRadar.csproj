@@ -1,21 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <PreserveCompilationContext Condition="'$(CONFIG)'!='Debug'">false</PreserveCompilationContext>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     <Version>0.1.0.0</Version>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <LangVersion>7.1</LangVersion>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\WebfrontCore\WebfrontCore.csproj" />
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.2.3" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,7 +26,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;&#xD;&#xA;if $(ConfigurationName) == Debug copy  &quot;$(TargetDir)$(TargetName).Views$(TargetExt)&quot; $(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(SolutionDir)Build\Plugins --no-build --no-restore --no-dependencies" />
   </Target>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

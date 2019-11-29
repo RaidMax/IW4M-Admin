@@ -1,6 +1,6 @@
 [
   {
-    "outputFile": "wwwroot/css/src/global.css",
+    "outputFile": "wwwroot/css/global.css",
     "inputFile": "wwwroot/css/src/main.scss",
     "sourceMap": false
   }

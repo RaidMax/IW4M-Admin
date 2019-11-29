@@ -1,24 +1,32 @@
-﻿using IW4MAdmin.Plugins.Stats.Helpers;
+﻿using IW4MAdmin.Plugins.Stats;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using WebfrontCore.Controllers;
 
-namespace IW4MAdmin.Plugins.Stats.Web.Controllers
+namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 {
     public class StatsController : BaseController
     {
+        private readonly IManager _manager;
+
+        public StatsController(IManager manager) : base(manager)
+        {
+            _manager = manager;
+        }
+
         [HttpGet]
         public IActionResult TopPlayersAsync()
         {
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_STATS_INDEX_TITLE"];
             ViewBag.Description = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_STATS_INDEX_DESC"];
-            ViewBag.Servers = Manager.GetServers().Select(_server => new ServerInfo() { Name = _server.Hostname, ID = _server.EndPoint });
+            ViewBag.Servers = _manager.GetServers().Select(_server => new ServerInfo() { Name = _server.Hostname, ID = _server.EndPoint });
 
             return View("Index");
         }
@@ -32,7 +40,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                 serverId = null;
             }
 
-            var server = Manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
+            var server = _manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
 
             if (server != null)
             {
@@ -62,7 +70,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
 
             using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
             {
-                var iqMessages = from message in ctx.Set<Models.EFClientMessage>()
+                var iqMessages = from message in ctx.Set<Stats.Models.EFClientMessage>()
                                  where message.ServerId == serverId
                                  where message.TimeSent >= whenLower
                                  where message.TimeSent <= whenUpper
@@ -75,9 +83,6 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                                      ServerGame = message.Server.GameName ?? Server.Game.IW4
                                  };
 
-#if DEBUG == true
-                var messagesSql = iqMessages.ToSql();
-#endif
                 var messages = await iqMessages.ToListAsync();
 
                 foreach (var message in messages)
@@ -86,7 +91,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     {
                         try
                         {
-                            var quickMessages = Manager.GetApplicationSettings().Configuration()
+                            var quickMessages = _manager.GetApplicationSettings().Configuration()
                                 .QuickMessages
                                 .First(_qm => _qm.Game == message.ServerGame);
                             message.Message = quickMessages.Messages[message.Message.Substring(1)];
@@ -110,7 +115,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .Select(_penalty => new { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
                     .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
 
-                var iqSnapshotInfo = ctx.Set<Models.EFACSnapshot>()
+                var iqSnapshotInfo = ctx.Set<Stats.Models.EFACSnapshot>()
                     .Where(s => s.ClientId == penalty.OffenderId)
                     .Include(s => s.LastStrainAngle)
                     .Include(s => s.HitOrigin)
@@ -121,9 +126,6 @@ namespace IW4MAdmin.Plugins.Stats.Web.Controllers
                     .OrderBy(s => s.When)
                     .ThenBy(s => s.Hits);
 
-#if DEBUG == true
-                var sql = iqSnapshotInfo.ToSql();
-#endif
                 var penaltyInfo = await iqSnapshotInfo.ToListAsync();
 
                 if (penaltyInfo.Count > 0)

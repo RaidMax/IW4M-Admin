@@ -72,15 +72,13 @@
   <ItemGroup Condition="'$(CONFIG)'=='Debug'">
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
-      <Private></Private>
-    </ProjectReference>
-  </ItemGroup>
-
+  
   <ItemGroup>
     <Folder Include="wwwroot\lib\canvas.js\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

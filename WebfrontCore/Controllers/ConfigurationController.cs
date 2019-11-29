@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
 using WebfrontCore.ViewModels;
@@ -10,6 +12,11 @@ namespace WebfrontCore.Controllers
     [Authorize]
     public class ConfigurationController : BaseController
     {
+        public ConfigurationController(IManager manager) : base (manager)
+        {
+
+        }
+
         public IActionResult Edit()
         {
             if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)

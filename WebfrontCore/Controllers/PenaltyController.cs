@@ -2,20 +2,22 @@
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Services;
-using System;
+using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using WebfrontCore.ViewComponents;
 using static SharedLibraryCore.Database.Models.EFPenalty;
 
 namespace WebfrontCore.Controllers
 {
     public class PenaltyController : BaseController
     {
+        public PenaltyController(IManager manager) : base(manager)
+        {
+
+        }
+
         public IActionResult List(PenaltyType showOnly = PenaltyType.Any)
         {
             ViewBag.Description = "List of all the recent penalties (bans, kicks, warnings) on IW4MAdmin";

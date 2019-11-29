@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Stats.ViewComponents
+namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 {
     public class TopPlayersViewComponent : ViewComponent
     {

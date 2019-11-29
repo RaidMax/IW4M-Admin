@@ -3,18 +3,17 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using SharedLibraryCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using WebfrontCore.ViewModels;
 
-namespace WebfrontCore.Controllers
+namespace SharedLibraryCore
 {
     public class BaseController : Controller
     {
@@ -23,7 +22,7 @@ namespace WebfrontCore.Controllers
         /// </summary>
         private const int COOKIE_LIFESPAN = 3;
 
-        protected IManager Manager;
+        public IManager Manager { get; private set; }
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; set; }
         protected SharedLibraryCore.Localization.Index Localization { get; private set; }
@@ -33,12 +32,9 @@ namespace WebfrontCore.Controllers
         private static string SocialTitle;
         protected List<Page> Pages;
 
-        public BaseController()
+        public BaseController(IManager manager)
         {
-            if (Manager == null)
-            {
-                Manager = Program.Manager;
-            }
+            Manager = manager;
 
             if (Localization == null)
             {

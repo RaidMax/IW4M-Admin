@@ -22,14 +22,13 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
-#- task: VSBuild@1
-#  inputs:
-#    solution: '$(solution)'
-#    msbuildArgs: '/p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-#    platform: '$(buildPlatform)'
-#    configuration: '$(buildConfiguration)'
+- task: VSBuild@1
+ inputs:
+   solution: '$(solution)'
+   msbuildArgs: '/p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+   platform: '$(buildPlatform)'
+   configuration: '$(buildConfiguration)'
 
-#we need to grab the scss from github so we can modify our font dir
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
@@ -48,7 +47,7 @@ steps:
     projects: |
       **/WebfrontCore.csproj
       **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(outputFolder)'
+    arguments: '-c $(buildConfiguration) -o $(outputFolder) --no-build --no-restore'
     zipAfterPublish: false
     modifyOutputPath: false
 
@@ -85,6 +84,18 @@ steps:
     SourceFolder: '$(Build.Repository.LocalPath)\Plugins\ScriptPlugins'
     Contents: '*.js'
     TargetFolder: '$(outputFolder)\Plugins'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\'
+    Contents: '*.dll'
+    TargetFolder: '$(outputFolder)\Plugins'
+
+- task: CmdLine@2
+  inputs:
+    script: 'move "wwwroot" "$(outputFolder)\wwwroot"'
+    workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+    failOnStderr: true
 
 - task: PublishPipelineArtifact@1
   inputs:

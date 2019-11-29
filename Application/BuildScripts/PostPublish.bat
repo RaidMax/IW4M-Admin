@@ -36,7 +36,7 @@ echo making start scripts
 echo moving front-end library dependencies
 if not exist "%PublishDir%\wwwroot\font" mkdir "%PublishDir%\wwwroot\font"
 move "WebfrontCore\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\font\"
-rd /s /q "%PublishDir%\wwwroot\lib"
+if exist "%PublishDir%\wwwroot\lib" rd /s /q "%PublishDir%\wwwroot\lib"
 
 echo setting permissions...
 cacls "%PublishDir%" /t /e /p Everyone:F

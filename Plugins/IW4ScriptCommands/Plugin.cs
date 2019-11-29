@@ -1,4 +1,4 @@
-﻿using SharedLibraryCore;
+﻿/*using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -47,3 +47,4 @@ namespace IW4ScriptCommands
         public Task OnUnloadAsync() => Task.CompletedTask;
     }
 }
+*/

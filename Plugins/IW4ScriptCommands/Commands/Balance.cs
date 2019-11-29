@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore;
+﻿/*
+using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using System;
 using System.Collections.Generic;
@@ -197,3 +198,4 @@ namespace IW4ScriptCommands.Commands
         }
     }
 }
+*/

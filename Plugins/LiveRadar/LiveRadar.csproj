@@ -29,8 +29,4 @@
     <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(ProjectDir)..\..\Build\Plugins --no-build --no-restore --no-dependencies" />
   </Target>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug xcopy /S /E /H /Y /I &quot;$(ProjectDir)Views\Radar&quot; &quot;$(SolutionDir)WebfrontCore\Views\Plugins\Radar&quot;&#xD;&#xA;if $(ConfigurationName) == Debug xcopy /S /E /H /Y /I &quot;$(ProjectDir)wwwroot\images&quot; &quot;$(SolutionDir)WebfrontCore\wwwroot\images\radar&quot;" />
-  </Target>
-
 </Project>

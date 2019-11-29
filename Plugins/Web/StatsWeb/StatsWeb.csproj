@@ -29,11 +29,7 @@
     </Content>
   </ItemGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug xcopy /E /K /Y /C /I &quot;$(ProjectDir)wwwroot\images&quot;  &quot;$(SolutionDir)WebfrontCore\wwwroot\images&quot;" />
-  </Target>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(SolutionDir)Build\Plugins --no-build --no-restore --no-dependencies" />
+    <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(ProjectDir)..\..\..\BUILD\Plugins --no-build --no-restore --no-dependencies" />
   </Target>
 </Project>

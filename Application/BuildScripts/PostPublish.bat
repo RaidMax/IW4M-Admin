@@ -1,4 +1,5 @@
 set PublishDir=%1
+set SourceDir=%2
 SET COPYCMD=/Y
 
 echo deleting extra runtime files
@@ -34,7 +35,7 @@ echo making start scripts
 
 echo moving front-end library dependencies
 if not exist "%PublishDir%\wwwroot\font" mkdir "%PublishDir%\wwwroot\font"
-move "%PublishDir%\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\font\"
+move "WebfrontCore\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\font\"
 rd /s /q "%PublishDir%\wwwroot\lib"
 
 echo setting permissions...

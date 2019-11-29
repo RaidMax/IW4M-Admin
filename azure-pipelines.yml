@@ -85,11 +85,18 @@ steps:
     Contents: '*.dll'
     TargetFolder: '$(outputFolder)\Plugins'
 
-- task: CmdLine@2
+- task: CopyFiles@2
   inputs:
-    script: 'move "wwwroot" "$(outputFolder)"'
-    workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
-    failOnStderr: true
+    SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\wwwroot'
+    Contents: '*.*'
+    TargetFolder: '$(outputFolder)\wwwroot'
+
+
+#- task: CmdLine@2
+#  inputs:
+#    script: 'move "wwwroot" "$(outputFolder)"'
+#    workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+#    failOnStderr: true
 
 - task: PublishPipelineArtifact@1
   inputs:

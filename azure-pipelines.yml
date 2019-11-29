@@ -85,22 +85,14 @@ steps:
     Contents: '*.dll'
     TargetFolder: '$(outputFolder)\Plugins'
 
-- task: CopyFiles@2
+- task: CmdLine@2
   inputs:
-    SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\wwwroot'
-    Contents: '*.*'
-    TargetFolder: '$(outputFolder)\wwwroot'
-
-
-#- task: CmdLine@2
-#  inputs:
-#    script: 'move "wwwroot" "$(outputFolder)"'
-#    workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
-#    failOnStderr: true
+   script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
+   workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+   failOnStderr: true
 
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(outputFolder)'
     artifact: 'IW4MAdmin.$(buildConfiguration)'
     publishLocation: 'pipeline'
-

@@ -87,7 +87,7 @@ steps:
 
 - task: CmdLine@2
   inputs:
-    script: 'move "wwwroot" "$(outputFolder)\wwwroot"'
+    script: 'move "wwwroot" "$(outputFolder)"'
     workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
     failOnStderr: true
 

@@ -14,6 +14,7 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Prerelease'
   outputFolder: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+  outputFilename: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
 
 steps:
 - task: NuGetToolInstaller@1
@@ -96,3 +97,25 @@ steps:
     targetPath: '$(outputFolder)'
     artifact: 'IW4MAdmin.$(buildConfiguration)'
     publishLocation: 'pipeline'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(outputFolder)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+- task: FtpUpload@2
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(outputFolder)'
+    filePatterns: '$(outputFilename)'
+    remoteDirectory: 'IW4MAdmin/Download'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false

@@ -92,12 +92,6 @@ steps:
    workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
    failOnStderr: true
 
-- task: PublishPipelineArtifact@1
-  inputs:
-    targetPath: '$(outputFolder)'
-    artifact: 'IW4MAdmin.$(buildConfiguration)'
-    publishLocation: 'pipeline'
-
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '$(outputFolder)'
@@ -119,3 +113,9 @@ steps:
     cleanContents: false
     preservePaths: false
     trustSSL: false
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(outputFolder)'
+    artifact: 'IW4MAdmin.$(buildConfiguration)'
+    publishLocation: 'pipeline'

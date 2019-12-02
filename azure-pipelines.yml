@@ -1,0 +1,121 @@
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+
+trigger:
+- deploy/azure-devops-setup
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: 'IW4MAdmin.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Prerelease'
+  outputFolder: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+  outputFilename: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+
+steps:
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: |
+      **/WebfrontCore.csproj
+      **/Application.csproj
+    arguments: '-c $(buildConfiguration) -o $(outputFolder)'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'wget https://raidmax.org/downloads/dos2unix.exe'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
+- task: BatchScript@1
+  inputs:
+    filename: 'Application\BuildScripts\PostPublish.bat'
+    workingFolder: '$(Build.Repository.LocalPath)'
+    arguments: '$(outputFolder)'
+    failOnStandardError: true
+
+- task: PowerShell@2
+  inputs:
+    filePath: 'PostPublish.ps1'
+    arguments: '$(outputFolder)'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)'
+    
+- task: CmdLine@2
+  inputs:
+    script: |
+      echo changing to encoding for linux start script
+      dos2unix $(outputFolder)\StartIW4MAdmin.sh
+    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\Plugins\ScriptPlugins'
+    Contents: '*.js'
+    TargetFolder: '$(outputFolder)\Plugins'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\'
+    Contents: '*.dll'
+    TargetFolder: '$(outputFolder)\Plugins'
+
+- task: CmdLine@2
+  inputs:
+   script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
+   workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+   failOnStderr: true
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(outputFolder)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+- task: FtpUpload@2
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: '*.zip'
+    remoteDirectory: 'IW4MAdmin/Download'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(outputFolder)'
+    artifact: 'IW4MAdmin.$(buildConfiguration)'
+    publishLocation: 'pipeline'

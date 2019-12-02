@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <PackageId>RaidMax.IW4MAdmin.Plugins.Login</PackageId>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
@@ -17,14 +18,12 @@
     <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-  </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(SolutionDir)BUILD\Plugins&quot;" />
+    <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(ProjectDir)..\..\Build\Plugins --no-build --no-restore --no-dependencies" />
   </Target>
+
+  <ItemGroup>
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.2.3" PrivateAssets="All" />
+  </ItemGroup>
 
 </Project>

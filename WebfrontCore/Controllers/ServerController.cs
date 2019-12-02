@@ -1,12 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
 
 namespace WebfrontCore.Controllers
 {
     public class ServerController : BaseController
     {
+        public ServerController(IManager manager) : base(manager)
+        {
+
+        }
+
         [HttpGet]
         [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult ClientActivity(long id)

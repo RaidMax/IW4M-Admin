@@ -1,12 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Events;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
 
 namespace WebfrontCore.Controllers.API
 {
     public class ApiController : BaseController
     {
+        public ApiController(IManager manager) : base(manager)
+        {
+
+        }
         public IActionResult Index()
         {
             return Ok($"IW4MAdmin API");

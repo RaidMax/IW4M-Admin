@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Interfaces;
 using WebfrontCore.Middleware;
 
 namespace WebfrontCore
@@ -57,7 +58,7 @@ namespace WebfrontCore
                 });
 
 #if DEBUG
-            mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
+            //mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
             services.Configure<RazorViewEngineOptions>(_options =>
             {
                 _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
@@ -87,6 +88,8 @@ namespace WebfrontCore
                 _builder.AddDebug();
             });
 #endif
+
+            services.AddSingleton(Program.Manager);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

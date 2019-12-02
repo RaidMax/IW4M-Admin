@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
 using static SharedLibraryCore.Database.Models.EFClient;
 
@@ -12,6 +13,11 @@ namespace WebfrontCore.Controllers
 {
     public class ActionController : BaseController
     {
+        public ActionController(IManager manager) : base(manager)
+        {
+
+        }
+
         public IActionResult BanForm()
         {
             var info = new ActionInfo()

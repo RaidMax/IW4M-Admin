@@ -18,8 +18,7 @@
 
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment include="Development">
-        <link rel="stylesheet" href="~/dynamic/css/main.css" />
-        <link rel="stylesheet" href="~/lib/open-iconic/font/css/open-iconic-bootstrap.css" />
+        <link rel="stylesheet" href="~/dynamic/css/global.css" />
     </environment>
     <environment include="Production">
         <link rel="stylesheet" href="~/dynamic/css/global.min.css" />
@@ -145,9 +144,10 @@
         </footer>
     </div>
     <environment include="Development">
-        <script type="text/javascript" src="~/lib/jQuery/dist/jquery.js"></script>
+        <script type="text/javascript" src="~/lib/jquery/jquery.js"></script>
+        <script type="text/javascript" src="~/lib/popper.js/popper.js"></script>
         <script type="text/javascript" src="~/lib/moment/moment.js"></script>
-        <script type="text/javascript" src="~/lib/moment-timezone/builds/moment-timezone-with-data.js"></script>
+        <script type="text/javascript" src="~/lib/moment-timezone/moment-timezone.js"></script>
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
         <script type="text/javascript" src="~/lib/canvasjs/canvasjs.js"></script>
         <script type="text/javascript" src="~/js/action.js"></script>

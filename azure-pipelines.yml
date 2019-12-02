@@ -106,8 +106,8 @@ steps:
     serverUrl: '$(FTPUrl)'
     username: '$(FTPUsername)'
     password: '$(FTPPassword)'
-    rootDirectory: '$(outputFolder)'
-    filePatterns: '$(outputFilename)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: '*.zip'
     remoteDirectory: 'IW4MAdmin/Download'
     clean: false
     cleanContents: false

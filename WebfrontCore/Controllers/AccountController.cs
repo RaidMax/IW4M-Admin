@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -11,6 +12,10 @@ namespace WebfrontCore.Controllers
 {
     public class AccountController : BaseController
     {
+        public AccountController(IManager manager) : base(manager)
+        {
+
+        }
 
         [HttpGet]
         public async Task<IActionResult> LoginAsync(int clientId, string password)

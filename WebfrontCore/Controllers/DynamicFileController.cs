@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +13,11 @@ namespace WebfrontCore.Controllers
     public class DynamicFileController : BaseController
     {
         private static readonly IDictionary<string, string> _fileCache = new Dictionary<string, string>();
+
+        public DynamicFileController(IManager manager) : base(manager)
+        {
+
+        }
 
         [Route("css/{fileName}")]
         public async Task<IActionResult> Css(string fileName)

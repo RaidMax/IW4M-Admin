@@ -28,6 +28,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.1" />
     <PackageReference Include="RestEase" Version="1.4.10" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.6.0" />
   </ItemGroup>
@@ -39,7 +40,7 @@
     <AssemblyVersion>2.3.1.0</AssemblyVersion>
     <FileVersion>2.3.1.0</FileVersion>
     <LangVersion>7.1</LangVersion>
-    <StartupObject />
+    <StartupObject></StartupObject>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">
@@ -52,10 +53,7 @@
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
       <Private>true</Private>
     </ProjectReference>
-    <ProjectReference Include="..\WebfrontCore\WebfrontCore.csproj">
-      <Private>true</Private>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-    </ProjectReference>
+    <ProjectReference Include="..\WebfrontCore\WebfrontCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -65,17 +63,17 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="call $(ProjectDir)BuildScripts\PreBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir)" />
+    <Exec Command="if $(ConfigurationName) == Debug call $(ProjectDir)BuildScripts\PreBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir)" />
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
       <Output TaskParameter="Assemblies" ItemName="CurrentAssembly" />
     </GetAssemblyIdentity>
-    <Exec Command="call $(ProjectDir)BuildScripts\PostBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir) %(CurrentAssembly.Version)" />
+    <Exec Command="if $(ConfigurationName) == Debug call $(ProjectDir)BuildScripts\PostBuild.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(OutDir) %25(CurrentAssembly.Version)" />
   </Target>
 
   <Target Name="PostPublish" AfterTargets="Publish">
-    <Exec Command="call $(ProjectDir)BuildScripts\PostPublish.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(ConfigurationName)" />
+    <Exec Command="if $(ConfigurationName) == Debug call $(ProjectDir)BuildScripts\PostPublish.bat $(ProjectDir)..\ $(ProjectDir) $(TargetDir) $(ConfigurationName)" />
   </Target>
 </Project>

@@ -2,6 +2,7 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,11 @@ namespace WebfrontCore.Controllers
 {
     public class ClientController : BaseController
     {
+        public ClientController(IManager manager) : base(manager)
+        {
+
+        }
+
         public async Task<IActionResult> ProfileAsync(int id)
         {
             var client = await Manager.GetClientService().Get(id);

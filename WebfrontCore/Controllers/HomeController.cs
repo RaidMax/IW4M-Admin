@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,6 +10,11 @@ namespace WebfrontCore.Controllers
 {
     public class HomeController : BaseController
     {
+        public HomeController(IManager manager) : base(manager)
+        {
+
+        }
+
         public async Task<IActionResult> Index()
         {
             ViewBag.Description = "IW4MAdmin is a complete server administration tool for IW4x.";

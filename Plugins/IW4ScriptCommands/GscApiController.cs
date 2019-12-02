@@ -1,4 +1,4 @@
-﻿using IW4ScriptCommands.Commands;
+﻿/*using IW4ScriptCommands.Commands;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using System;
@@ -51,3 +51,4 @@ namespace WebfrontCore.Controllers.API
         }
     }
 }
+*/

@@ -6,7 +6,7 @@
     <ApplicationIcon />
     <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
-    <Version>2.2.0</Version>
+    <Version>2.2.3</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Configurations>Debug;Release;Prerelease</Configurations>
@@ -19,6 +19,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Shared Library for IW4MAdmin</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">
@@ -44,11 +45,13 @@
 
   <ItemGroup>
     <PackageReference Include="Jint" Version="2.11.58" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.0.1">
       <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <IncludeAssets>runtime; build; native; contentfiles</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.1" />
@@ -64,7 +67,7 @@
   </ItemGroup>
   
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="if not exist &quot;$(ProjectDir)..\BUILD&quot; (&#xD;&#xA;md &quot;$(ProjectDir)..\BUILD&quot;&#xD;&#xA;)&#xD;&#xA;if not exist &quot;$(ProjectDir)..\BUILD\Plugins&quot; (&#xD;&#xA;md &quot;$(ProjectDir)..\BUILD\Plugins&quot;&#xD;&#xA;)" />
+    <Exec Command="if not exist &quot;$(ProjectDir)..\BUILD&quot; (&#xD;&#xA;if $(ConfigurationName) == Debug (&#xD;&#xA;md &quot;$(ProjectDir)..\BUILD&quot;&#xD;&#xA;)&#xD;&#xA;)&#xD;&#xA;if not exist &quot;$(ProjectDir)..\BUILD\Plugins&quot; (&#xD;&#xA;if $(ConfigurationName) == Debug (&#xD;&#xA;md &quot;$(ProjectDir)..\BUILD\Plugins&quot;&#xD;&#xA;)&#xD;&#xA;)" />
   </Target>
 
 </Project>

@@ -98,9 +98,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .OrderByDescending(c => c.Performance)
                     .Skip(start)
                     .Take(count);
-#if DEBUG == true
-                var clientRatingsSql = iqClientRatings.ToSql();
-#endif
+
                 // materialized list
                 var clientRatings = await iqClientRatings.ToListAsync();
 
@@ -120,10 +118,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                        rating.RatingHistory.ClientId,
                                        rating.When
                                    };
-
-#if DEBUG == true
-                var ratingQuery = iqRatingInfo.ToSql();
-#endif
 
                 var ratingInfo = (await iqRatingInfo.ToListAsync())
                     .GroupBy(r => r.ClientId)

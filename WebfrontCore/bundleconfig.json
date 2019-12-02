@@ -5,18 +5,18 @@
     "outputFileName": "wwwroot/css/global.min.css",
     // An array of relative input file paths. Globbing patterns supported
     "inputFiles": [
-      "wwwroot/css/main.css",
-      "wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap.css"
+      "wwwroot/css/global.css"
     ]
   },
   {
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
-      "wwwroot/lib/jQuery/dist/jquery.min.js",
-      "wwwroot/lib/bootstrap/dist/js/bootstrap.min.js",
-      "wwwroot/lib/moment/min/moment.min.js",
-      "wwwroot/lib/moment-timezone/builds/moment-timezone.min.js",
-      "wwwroot/lib/canvasjs/canvasjs.js",
+      "wwwroot/lib/jquery/jquery.min.js",
+      "wwwroot/lib/popper.js/umd/popper.js",
+      "wwwroot/lib/moment.js/moment.min.js",
+      "wwwroot/lib/moment-timezone/moment-timezone.min.js",
+      "wwwroot/lib/bootstrap/dist/js/bootstrap.bundle.min.js",
+      "wwwroot/lib/canvas.js/canvasjs.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",

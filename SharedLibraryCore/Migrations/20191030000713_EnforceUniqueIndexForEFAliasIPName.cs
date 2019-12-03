@@ -62,7 +62,7 @@ WHERE
 
             else if (migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
             {
-                migrationBuilder.Sql(@"CREATE TEMPORARY TABLE DUPLICATE_ALIASES
+                migrationBuilder.Sql(@"CREATE TABLE DUPLICATE_ALIASES
 SELECT
     MIN(`AliasId`) `MIN`,
     MAX(`AliasId`) `MAX`,

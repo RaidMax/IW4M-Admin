@@ -27,6 +27,7 @@ steps:
   inputs:
     command: 'build'
     projects: '**/*.csproj'
+    arguments: '-c $(buildConfiguration)'
 
 - task: PowerShell@2
   inputs:

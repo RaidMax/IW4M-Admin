@@ -116,7 +116,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                     .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
 
                 // todo: this can be optimized
-                var iqSnapshotInfo = ctx.Set<Models.EFACSnapshot>()
+                var iqSnapshotInfo = ctx.Set<Stats.Models.EFACSnapshot>()
                     .Where(s => s.ClientId == penalty.OffenderId)
                     .Include(s => s.LastStrainAngle)
                     .Include(s => s.HitOrigin)

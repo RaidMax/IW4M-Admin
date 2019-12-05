@@ -23,12 +23,6 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '-c $(buildConfiguration)'
-
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
@@ -37,6 +31,12 @@ steps:
             wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '-c $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
   inputs:

@@ -32,11 +32,12 @@ steps:
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
 
-- task: DotNetCoreCLI@2
+- task: VSBuild@1
   inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '-c $(buildConfiguration)'
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
   inputs:

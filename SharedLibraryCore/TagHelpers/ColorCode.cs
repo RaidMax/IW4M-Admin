@@ -1,15 +1,14 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
-using SharedLibraryCore;
 using System.Linq;
-using System.Web;
 using System.Text.RegularExpressions;
 
-namespace WebfrontCore.TagHelpers
+namespace SharedLibraryCore
 {
     [HtmlTargetElement("color-code")]
     public class ColorCode : TagHelper
     {
         public string Value { get; set; }
+
         public bool Allow { get; set; } = false;
 
         public override void Process(TagHelperContext context, TagHelperOutput output)

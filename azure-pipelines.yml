@@ -39,6 +39,12 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+- task: oneLuckiDevJson2Variable@1
+  inputs:
+    jsonFile: '$(build.artifactStagingDirectory)\Application\VersionInformation.json'
+    shouldPrefixVariables: true
+    variablePrefix: 'VersionInformation'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'publish'
@@ -101,7 +107,7 @@ steps:
     rootFolderOrFile: '$(outputFolder)'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-v$(VersionInformation.Major).$(VersionInformation.Minor)-$(configuration)$(VersionInformation.Build)r$(VersionInformation.Revision)-$(Build.BuildId).zip'
     replaceExistingArchive: true
 
 - task: FtpUpload@2

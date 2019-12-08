@@ -10,3 +10,12 @@ foreach($localization in $localizations)
     $response = Invoke-WebRequest $url
     Out-File -FilePath $filePath -InputObject $response.Content -Encoding utf8
 }
+
+$versionInfo = (Get-Command ("{0}\IW4MAdmin.exe" -f $PublishDir)).FileVersionInfo
+$json = @{
+Major = $versionInfo.ProductMajorPart
+Minor = $versionInfo.ProductMinorPart
+Build = $versionInfo.ProductBuildPart  
+Revision = $versionInfo.ProductPrivatePart
+}
+$json | ConvertTo-Json > VersionInformation.json

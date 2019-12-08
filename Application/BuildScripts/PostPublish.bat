@@ -27,7 +27,6 @@ move "%PublishDir%\*.dll" "%PublishDir%\Lib\"
 move "%PublishDir%\*.json" "%PublishDir%\Lib\"
 move "%PublishDir%\runtimes" "%PublishDir%\Lib\runtimes"
 if exist "%PublishDir%\refs" move "%PublishDir%\refs" "%PublishDir%\Lib\refs"
-if not exist "%PublishDir%\Localization" md "%PublishDir%\Localization"
 
 echo making start scripts
 @(echo @echo off && echo @title IW4MAdmin && echo set DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%PublishDir%\StartIW4MAdmin.cmd"

@@ -18,4 +18,4 @@ Minor = $versionInfo.ProductMinorPart
 Build = $versionInfo.ProductBuildPart  
 Revision = $versionInfo.ProductPrivatePart
 }
-$json | ConvertTo-Json > VersionInformation.json
+$json | ConvertTo-Json > ("{0}\VersionInformation.json" -f $PublishDir)

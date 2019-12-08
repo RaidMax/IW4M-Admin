@@ -50,18 +50,25 @@ steps:
     zipAfterPublish: false
     modifyOutputPath: false
     
-- task: oneLuckiDevJson2Variable@1
-  inputs:
-    jsonFile: '$(build.artifactStagingDirectory)\Application\VersionInformation.json'
-    shouldPrefixVariables: true
-    variablePrefix: 'VersionInformation'
-
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
     script: 'wget https://raidmax.org/downloads/dos2unix.exe'
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
+- task: PowerShell@2
+  inputs:
+    filePath: 'PostPublish.ps1'
+    arguments: '$(outputFolder)'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)'
+
+- task: oneLuckiDevJson2Variable@1
+  inputs:
+    jsonFile: '$(build.artifactStagingDirectory)\VersionInformation.json'
+    shouldPrefixVariables: true
+    variablePrefix: 'VersionInformation'
 
 - task: BatchScript@1
   inputs:
@@ -70,12 +77,6 @@ steps:
     arguments: '$(outputFolder)'
     failOnStandardError: true
 
-- task: PowerShell@2
-  inputs:
-    filePath: 'PostPublish.ps1'
-    arguments: '$(outputFolder)'
-    failOnStderr: true
-    workingDirectory: '$(Build.Repository.LocalPath)'
     
 - task: CmdLine@2
   inputs:

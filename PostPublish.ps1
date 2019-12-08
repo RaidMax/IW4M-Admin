@@ -2,7 +2,7 @@ param (
     [string]$PublishDir = $(throw "-PublishDir is required.")
 )
 
-md -Force ("{0}\Localization" -f PublishDir)
+md -Force ("{0}\Localization" -f $PublishDir)
 
 $localizations = @("en-US", "ru-RU", "es-EC", "pt-BR", "de-DE")
 foreach($localization in $localizations)

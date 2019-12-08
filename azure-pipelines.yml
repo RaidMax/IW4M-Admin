@@ -39,12 +39,6 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: oneLuckiDevJson2Variable@1
-  inputs:
-    jsonFile: '$(build.artifactStagingDirectory)\Application\VersionInformation.json'
-    shouldPrefixVariables: true
-    variablePrefix: 'VersionInformation'
-
 - task: DotNetCoreCLI@2
   inputs:
     command: 'publish'
@@ -55,6 +49,12 @@ steps:
     arguments: '-c $(buildConfiguration) -o $(outputFolder)'
     zipAfterPublish: false
     modifyOutputPath: false
+    
+- task: oneLuckiDevJson2Variable@1
+  inputs:
+    jsonFile: '$(build.artifactStagingDirectory)\Application\VersionInformation.json'
+    shouldPrefixVariables: true
+    variablePrefix: 'VersionInformation'
 
 - task: PowerShell@2
   inputs:

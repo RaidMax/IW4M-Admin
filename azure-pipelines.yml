@@ -14,7 +14,6 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Prerelease'
   outputFolder: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
-  outputFilename: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
 
 steps:
 - task: NuGetToolInstaller@1
@@ -64,11 +63,6 @@ steps:
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)'
 
-- task: oneLuckiDevJson2Variable@1
-  inputs:
-    jsonFile: '$(outputFolder)\VersionInformation.json'
-    shouldPrefixVariables: true
-    variablePrefix: 'VersionInformation'
 
 - task: BatchScript@1
   inputs:
@@ -77,7 +71,6 @@ steps:
     arguments: '$(outputFolder)'
     failOnStandardError: true
 
-    
 - task: CmdLine@2
   inputs:
     script: |

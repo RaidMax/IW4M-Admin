@@ -106,7 +106,7 @@ steps:
     rootFolderOrFile: '$(outputFolder)'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-v$(VersionInformation.Major).$(VersionInformation.Minor)-$(configuration)$(VersionInformation.Build)r$(VersionInformation.Revision)-$(Build.BuildId).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-v$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)r$(VersionInformation.Revision)-$(Build.BuildId).zip'
     replaceExistingArchive: true
 
 - task: FtpUpload@2

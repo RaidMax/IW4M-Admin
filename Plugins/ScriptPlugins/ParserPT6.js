@@ -2,8 +2,8 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'RaidMax',
-    version: 0.3,
+    author: 'RaidMax, Xerxes',
+    version: 0.4,
     name: 'Plutonium T6 Parser',
     isParser: true,
 
@@ -26,13 +26,13 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(107, 2);
         rconParser.Configuration.WaitForResponse = false;
 
-        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(.+) +((?:[A-Z]+|[0-9]+)) +((?:[A-Z]|[0-9]){1,16}) +(.{0,16}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(-?[0-9]+) +([0-9]+) *$';
+        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';
         rconParser.Configuration.Status.AddMapping(100, 1);
         rconParser.Configuration.Status.AddMapping(101, 2);
-        rconParser.Configuration.Status.AddMapping(102, 4);
-        rconParser.Configuration.Status.AddMapping(103, 5);
-        rconParser.Configuration.Status.AddMapping(104, 6);
-        rconParser.Configuration.Status.AddMapping(105, 8);
+        rconParser.Configuration.Status.AddMapping(102, 3);
+        rconParser.Configuration.Status.AddMapping(103, 4);
+        rconParser.Configuration.Status.AddMapping(104, 5);
+        rconParser.Configuration.Status.AddMapping(105, 6);
 
         eventParser.Configuration.GameDirectory = 't6r\\data';
 

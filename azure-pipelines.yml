@@ -63,6 +63,11 @@ steps:
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)'
 
+- task: oneLuckiDevJson2Variable@1
+  inputs:
+    jsonFile: '$(outputFolder)\VersionInformation.json'
+    shouldPrefixVariables: true
+    variablePrefix: 'VersionInformation'
 
 - task: BatchScript@1
   inputs:

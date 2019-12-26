@@ -114,13 +114,13 @@ namespace WebfrontCore
 
             app.UseStaticFiles();
             app.UseAuthentication();
-            app.UseAuthorization();
             app.UseCors("AllowAll");
 
             // prevents banned/demoted users from keeping their claims
             app.UseMiddleware<ClaimsPermissionRemoval>(Program.Manager);
 
             app.UseRouting();
+            app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");

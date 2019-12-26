@@ -115,6 +115,11 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                     .Select(_penalty => new { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
                     .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
 
+                if (penalty == null)
+                {
+                    return NotFound();
+                }
+
                 // todo: this can be optimized
                 var iqSnapshotInfo = ctx.Set<Stats.Models.EFACSnapshot>()
                     .Where(s => s.ClientId == penalty.OffenderId)

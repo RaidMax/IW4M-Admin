@@ -50,6 +50,8 @@ namespace SharedLibraryCore.Services
                     NetworkId = entity.NetworkId
                 };
 
+
+                entity.CurrentServer.Logger.WriteDebug($"[create] adding {entity} to context");
                 context.Clients.Add(client);
 
                 // they're just using a new GUID

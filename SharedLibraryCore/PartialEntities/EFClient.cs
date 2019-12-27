@@ -82,12 +82,12 @@ namespace SharedLibraryCore.Database.Models
                 { "_reportCount", 0 }
             };
             ReceivedPenalties = new List<EFPenalty>();
-            ProcessingEvent = new SemaphoreSlim(1, 1);
+            _processingEvent = new SemaphoreSlim(1, 1);
         }
 
         ~EFClient()
         {
-            ProcessingEvent.Dispose();
+            _processingEvent.Dispose();
         }
 
         public override string ToString()
@@ -674,11 +674,11 @@ namespace SharedLibraryCore.Database.Models
         };
 
         [NotMapped]
-        public SemaphoreSlim ProcessingEvent;
+        private readonly SemaphoreSlim _processingEvent;
 
         public async Task Lock()
         {
-            bool result = await ProcessingEvent.WaitAsync(Utilities.DefaultCommandTimeout);
+            bool result = await _processingEvent.WaitAsync(Utilities.DefaultCommandTimeout);
 
 #if DEBUG
             if (!result)
@@ -690,9 +690,9 @@ namespace SharedLibraryCore.Database.Models
 
         public void Unlock()
         {
-            if (ProcessingEvent.CurrentCount == 0)
+            if (_processingEvent.CurrentCount == 0)
             {
-                ProcessingEvent.Release(1);
+                _processingEvent.Release(1);
             }
         }
 

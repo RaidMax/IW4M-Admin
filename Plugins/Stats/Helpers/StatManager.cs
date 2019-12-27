@@ -1072,7 +1072,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             foreach (var stat in sv.GetClientsAsList()
                 .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY)))
             {
-                stat.StartNewSession();
+                stat?.StartNewSession();
             }
         }
 

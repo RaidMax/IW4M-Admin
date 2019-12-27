@@ -57,7 +57,6 @@ namespace IW4MAdmin
             Logger.WriteInfo($"Client {client} connected...");
 
             // Do the player specific stuff
-            client.ProcessingEvent = clientFromLog.ProcessingEvent;
             client.ClientNumber = clientFromLog.ClientNumber;
             client.Score = clientFromLog.Score;
             client.Ping = clientFromLog.Ping;

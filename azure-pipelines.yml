@@ -125,7 +125,7 @@ steps:
 
 - task: GitHubRelease@1
   inputs:
-    gitHubConnection: 'IW4MAdmin'
+    gitHubConnection: 'github.com_RaidMax'
     repositoryName: 'RaidMax/IW4M-Admin'
     action: 'create'
     target: '$(Build.SourceVersion)'

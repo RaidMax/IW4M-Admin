@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "defaultProvider": "cdnjs",
+  "defaultProvider": "jsdelivr",
   "libraries": [
     {
       "library": "jquery@3.3.1",
@@ -24,7 +24,7 @@
       "destination": "wwwroot/lib/bootstrap/"
     },
     {
-      "library": "moment.js@2.24.0",
+      "library": "moment@2.24.0",
       "destination": "wwwroot/lib/moment.js/"
     }
   ]

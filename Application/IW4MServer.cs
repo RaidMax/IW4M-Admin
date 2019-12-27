@@ -558,7 +558,12 @@ namespace IW4MAdmin
 
         private async Task OnClientUpdate(EFClient origin)
         {
-            var client = GetClientsAsList().First(_client => _client.Equals(origin));
+            var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(origin));
+
+            if (client == null)
+            {
+                Logger.WriteWarning($"{origin} expected to exist in client list for update, but they do not");
+            }
 
             client.Ping = origin.Ping;
             client.Score = origin.Score;

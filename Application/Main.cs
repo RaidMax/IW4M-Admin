@@ -236,9 +236,10 @@ namespace IW4MAdmin.Application
 
         private static void ConfigureServices()
         {
-            //var serviceProvider = new ServiceCollection();
-            //serviceProvider.AddSingleton<IManager>(ServerManager);
-            //serviceProvider.BuildServiceProvider();
+            var serviceProvider = new ServiceCollection();
+            serviceProvider.AddSingleton<IManager>(ServerManager);
+            var builder = serviceProvider.BuildServiceProvider();
+            builder.Dispose();
         }
     }
 }

@@ -12,6 +12,7 @@ namespace WebfrontCore.Controllers.API
         {
 
         }
+
         public IActionResult Index()
         {
             return Ok($"IW4MAdmin API");

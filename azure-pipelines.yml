@@ -123,6 +123,21 @@ steps:
     preservePaths: false
     trustSSL: false
 
+- task: GitHubRelease@1
+  inputs:
+    gitHubConnection: 'IW4MAdmin'
+    repositoryName: 'RaidMax/IW4M-Admin'
+    action: 'create'
+    target: '$(Build.SourceVersion)'
+    tagSource: 'userSpecifiedTag'
+    tag: '$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)r$(VersionInformation.Revision)-$(Build.BuildId)'
+    title: 'Version $(VersionInformation.Major).$(VersionInformation.Minor) $(buildConfiguration) $(VersionInformation.Build) Revision $(VersionInformation.Revision) Build $(Build.BuildId)'
+    releaseNotesFilePath: '$(Build.Repository.LocalPath)/version.txt'
+    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
+    isPreRelease: true
+    changeLogCompareToRelease: 'lastFullRelease'
+    changeLogType: 'commitBased'
+
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(outputFolder)'

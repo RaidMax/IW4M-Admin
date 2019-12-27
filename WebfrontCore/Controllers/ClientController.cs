@@ -51,10 +51,12 @@ namespace WebfrontCore.Controllers
                 NetworkId = client.NetworkId,
                 Meta = new List<ProfileMeta>(),
                 Aliases = client.AliasLink.Children
-                    .Select(a => a.Name)
-                    .Prepend(client.Name)
-                    .OrderBy(a => a)
+                    .Select(_alias => _alias.Name)
+                    .GroupBy(_alias => _alias.StripColors())
+                    // we want the longest "duplicate" name
+                    .Select(_grp => _grp.OrderByDescending(_name => _name.Length).First())
                     .Distinct()
+                    .OrderBy(a => a)
                     .ToList(),
                 IPs = client.AliasLink.Children
                     .Where(i => i.IPAddress != null)

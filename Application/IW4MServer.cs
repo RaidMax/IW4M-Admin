@@ -569,6 +569,7 @@ namespace IW4MAdmin
             if (client == null)
             {
                 Logger.WriteWarning($"{origin} expected to exist in client list for update, but they do not");
+                return;
             }
 
             client.Ping = origin.Ping;

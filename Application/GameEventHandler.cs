@@ -34,6 +34,7 @@ namespace IW4MAdmin.Application
         {
             var start = DateTime.Now;
             await Manager.ExecuteEvent(args.Event);
+            EventApi.OnGameEvent(sender, args);
 #if DEBUG
             _profiler.Profile(start, DateTime.Now, args.Event);
 #endif

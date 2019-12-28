@@ -71,8 +71,6 @@ namespace IW4MAdmin.Application
             PageList = new PageList();
             AdditionalEventParsers = new List<IEventParser>();
             AdditionalRConParsers = new List<IRConParser>();
-            //OnServerEvent += OnGameEvent;
-            //OnServerEvent += EventApi.OnGameEvent;
             TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();

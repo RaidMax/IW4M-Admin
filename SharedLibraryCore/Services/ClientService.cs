@@ -406,6 +406,13 @@ namespace SharedLibraryCore.Services
 
         public async Task<EFClient> Update(EFClient temporalClient)
         {
+            if (temporalClient.ClientId < 1)
+            {
+                temporalClient.CurrentServer?.Logger.WriteDebug($"[update] {temporalClient} needs to be updated but they do not have a valid client id, ignoring..");
+                // note: we never do anything with the result of this so we can safely return null
+                return null;
+            }
+
             using (var context = new DatabaseContext())
             {
                 // grab the context version of the entity

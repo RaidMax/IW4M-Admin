@@ -79,6 +79,12 @@ namespace IW4MAdmin
 
         override public async Task OnClientDisconnected(EFClient client)
         {
+            if (!GetClientsAsList().Any(_client => _client.NetworkId == client.NetworkId))
+            {
+                Logger.WriteInfo($"{client} disconnecting, but they are not connected");
+                return;
+            }
+
 #if DEBUG == true
             if (client.ClientNumber >= 0)
             {

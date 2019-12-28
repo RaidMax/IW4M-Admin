@@ -29,6 +29,8 @@ onPlayerConnect( player )
 	for( ;; )
 	{
 		level waittill( "connected", player );	
+		player setClientDvar("cl_autorecord", 1);
+		player setClientDvar("cl_demosKeep", 200);
 		player thread waitForFrameThread();
 	}
 }

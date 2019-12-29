@@ -4,12 +4,12 @@
 }
 @foreach ((var pluginName, var commandList) in Model)
 {
-    <h4 class="text-center">@pluginName</h4>
+    <h4 class="text-center pb-0 pb-xl-3 pt-3 pt-xl-0">@pluginName</h4>
 
     <!-- desktop -->
-    <table class="table table-striped border-bottom col-12 ml-auto mr-auto d-none d-lg-table">
+    <table class="table table-striped border-bottom col-10 ml-auto mr-auto d-none d-lg-table mb-4 text-light">
         <thead>
-            <tr class="bg-primary">
+            <tr class="bg-primary text-white">
                 <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</th>
                 <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</th>
                 <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</th>
@@ -71,5 +71,4 @@
             }
         </tbody>
     </table>
-}
 }

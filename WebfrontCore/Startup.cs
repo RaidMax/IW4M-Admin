@@ -58,7 +58,7 @@ namespace WebfrontCore
                 });
 
 #if DEBUG
-            //mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
+            mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
             services.Configure<RazorViewEngineOptions>(_options =>
             {
                 _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);

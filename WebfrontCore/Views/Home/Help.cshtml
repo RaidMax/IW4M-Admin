@@ -1,0 +1,74 @@
+﻿@model IEnumerable<(string, IEnumerable<Command>)>
+@{
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+}
+@foreach ((var pluginName, var commandList) in Model)
+{
+    <h4 class="text-center pb-0 pb-xl-3 pt-3 pt-xl-0">@pluginName</h4>
+
+    <!-- desktop -->
+    <table class="table table-striped border-bottom col-10 ml-auto mr-auto d-none d-lg-table mb-4 text-light">
+        <thead>
+            <tr class="bg-primary text-white">
+                <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</th>
+                <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</th>
+                <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</th>
+                <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET"]</th>
+                <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</th>
+                <th scope="col">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var command in commandList)
+            {
+                <tr class="bg-dark">
+                    <th scope="row">@command.Name</th>
+                    <td>@command.Alias</td>
+                    <td>@command.Description</td>
+                    <td>@command.RequiresTarget</td>
+                    <td>!@command.Syntax.Split('!')[1]</td>
+                    <td>@command.Permission.ToLocalizedLevelName()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- mobile -->
+    <table class="table border-bottomb d-table d-lg-none">
+        <thead>
+            <tr>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var command in commandList)
+            {
+                <tr>
+                    <td scope="row" class="bg-primary">@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</td>
+                    <td class="bg-dark text-light">@command.Name</td>
+                </tr>
+                <tr>
+                    <td scope="row" class="bg-primary">@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</td>
+                    <td class="bg-dark text-light">@command.Alias</td>
+                </tr>
+                <tr>
+                    <td scope="row" class="bg-primary">@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</td>
+                    <td class="bg-dark text-light">@command.Description</td>
+                </tr>
+                <tr>
+                    <td scope="row" class="bg-primary">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET"]</td>
+                    <td class="bg-dark text-light">@command.RequiresTarget</td>
+                </tr>
+                <tr>
+                    <td scope="row" class="bg-primary">@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</td>
+                    <td class="bg-dark text-light">!@command.Syntax.Split('!')[1]</td>
+                </tr>
+                <tr>
+                    <td scope="row" class="bg-primary" style="border-bottom: #222 1px solid;">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</td>
+                    <td class="bg-dark border-bottom @($"level-color-{(int)command.Permission}")">@command.Permission.ToLocalizedLevelName()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

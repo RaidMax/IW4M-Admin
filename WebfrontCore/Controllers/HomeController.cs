@@ -48,5 +48,28 @@ namespace WebfrontCore.Controllers
         {
             return View(statusCode);
         }
+
+        public IActionResult Help()
+        {
+            ViewBag.IsFluid = true;
+            ViewBag.Title = Localization["WEBFRONT_NAV_HELP"];
+
+            // we don't need to the name of the shared library assembly
+            var excludedAssembly = typeof(BaseController).Assembly;
+            var commands = Manager.GetCommands()
+                .Where(_cmd => _cmd.Permission <= Client.Level)
+                .OrderByDescending(_cmd => _cmd.Permission)
+                .GroupBy(_cmd =>
+                {
+                    // we need the plugin type the command is defined in
+                    var pluginType = _cmd.GetType().Assembly.GetTypes().FirstOrDefault(_type => _type.Assembly != excludedAssembly && typeof(IPlugin).IsAssignableFrom(_type));
+                    return pluginType == null ?
+                        Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HELP_COMMAND_NATIVE"] :
+                        SharedLibraryCore.Plugins.PluginImporter.ActivePlugins.First(_plugin => _plugin.GetType() == pluginType).Name; // for now we're just returning the name of the plugin, maybe later we'll include more info
+                })
+                .Select(_grp => (_grp.Key, _grp.AsEnumerable()));
+
+            return View(commands);
+        }
     }
 }

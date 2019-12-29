@@ -587,8 +587,8 @@ namespace IW4MAdmin
 
                 catch (Exception e)
                 {
-                    origin.CurrentServer.Logger.WriteWarning($"Could not execute on join for {origin}");
-                    origin.CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
+                    Logger.WriteWarning($"Could not execute on join for {origin}");
+                    Logger.WriteDebug(e.GetExceptionInfo());
                 }
             }
         }

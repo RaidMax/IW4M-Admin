@@ -48,5 +48,24 @@ namespace WebfrontCore.Controllers
         {
             return View(statusCode);
         }
+
+        public IActionResult Help()
+        {
+            ViewBag.IsFluid = true;
+            var excludedAssembly = typeof(BaseController).Assembly;
+            var commands = Manager.GetCommands()
+                .OrderByDescending(_cmd => _cmd.Permission)
+                .GroupBy(_cmd =>
+                {
+
+                    var pluginType = _cmd.GetType().Assembly.GetTypes().FirstOrDefault(_type => _type.Assembly != excludedAssembly && typeof(IPlugin).IsAssignableFrom(_type));
+                    return pluginType == null ?
+                    Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HELP_COMMAND_NATIVE"] :
+                    SharedLibraryCore.Plugins.PluginImporter.ActivePlugins.First(_plugin => _plugin.GetType() == pluginType).Name;
+                })
+                .Select(_grp => (_grp.Key, _grp.AsEnumerable()));
+
+            return View(commands);
+        }
     }
 }

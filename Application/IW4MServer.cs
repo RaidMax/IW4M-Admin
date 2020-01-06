@@ -89,18 +89,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-            Clients[client.ClientNumber] = null;
-            await client.OnDisconnect();
+                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+                Clients[client.ClientNumber] = null;
+                await client.OnDisconnect();
 
-            var e = new GameEvent()
-            {
-                Origin = client,
-                Owner = this,
-                Type = GameEvent.EventType.Disconnect
-            };
+                var e = new GameEvent()
+                {
+                    Origin = client,
+                    Owner = this,
+                    Type = GameEvent.EventType.Disconnect
+                };
 
-            Manager.GetEventHandler().AddEvent(e);
+                Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -434,7 +434,13 @@ namespace IW4MAdmin
                 // so we need to disconnect the "full" version of the client
                 var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
 
-                if (client != null)
+                if (client == null)
+                {
+                    Logger.WriteWarning($"Client {E.Origin} detected as disconnecting, but could not find them in the player list");
+                    return false;
+                }
+
+                else if (client.State == ClientState.Connected)
                 {
 #if DEBUG == true
                     Logger.WriteDebug($"Begin PreDisconnect for {client}");
@@ -443,12 +449,12 @@ namespace IW4MAdmin
 #if DEBUG == true
                     Logger.WriteDebug($"End PreDisconnect for {client}");
 #endif
+                    return true;
                 }
 
-                else if (client?.State != ClientState.Disconnecting)
+                else
                 {
-                    Logger.WriteWarning($"Client {E.Origin} detected as disconnecting, but could not find them in the player list");
-                    Logger.WriteDebug($"Expected {E.Origin} but found {GetClientsAsList().FirstOrDefault(_client => _client.ClientNumber == E.Origin.ClientNumber)}");
+                    Logger.WriteWarning($"Expected disconnecting client {client} to be in state {ClientState.Connected.ToString()}, but is in state {client.State}");
                     return false;
                 }
             }
@@ -1044,7 +1050,15 @@ namespace IW4MAdmin
 #endif
 
 #if DEBUG
-            await Target.CurrentServer.OnClientDisconnected(Target);
+            // await Target.CurrentServer.OnClientDisconnected(Target);
+            var e = new GameEvent()
+            {
+                Type = GameEvent.EventType.PreDisconnect,
+                Origin = Target,
+                Owner = this
+            };
+
+            Manager.GetEventHandler().AddEvent(e);
 #endif
 
             var newPenalty = new EFPenalty()

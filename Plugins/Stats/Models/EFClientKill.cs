@@ -44,5 +44,17 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public float AdsPercent { get; set; }
         [NotMapped]
         public List<Vector3> AnglesList { get; set; }
+
+        /// <summary>
+        /// Indicates if the attacker was alive after last captured angle
+        /// </summary>
+        [NotMapped]
+        public bool IsAlive { get; set; }
+
+        /// <summary>
+        /// Specifies the last time the attack button was detected as pressed
+        /// </summary>
+        [NotMapped]
+        public long TimeSinceLastAttack { get; set; }
     }
 }

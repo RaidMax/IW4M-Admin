@@ -399,7 +399,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         public async Task AddScriptHit(bool isDamage, DateTime time, EFClient attacker, EFClient victim, long serverId, string map, string hitLoc, string type,
             string damage, string weapon, string killOrigin, string deathOrigin, string viewAngles, string offset, string isKillstreakKill, string Ads,
-            string fraction, string visibilityPercentage, string snapAngles)
+            string fraction, string visibilityPercentage, string snapAngles, string isAlive, string lastAttackTime)
         {
             Vector3 vDeathOrigin = null;
             Vector3 vKillOrigin = null;
@@ -448,7 +448,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Fraction = double.Parse(fraction, System.Globalization.CultureInfo.InvariantCulture),
                     VisibilityPercentage = double.Parse(visibilityPercentage, System.Globalization.CultureInfo.InvariantCulture),
                     IsKill = !isDamage,
-                    AnglesList = snapshotAngles
+                    AnglesList = snapshotAngles,
+                    IsAlive = isAlive == "1",
+                    TimeSinceLastAttack = long.Parse(lastAttackTime)
                 };
 
                 if (hit.HitLoc == IW4Info.HitLocation.shield)
@@ -511,7 +513,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     DetectionPenaltyResult result = new DetectionPenaltyResult() { ClientPenalty = EFPenalty.PenaltyType.Any };
                     clientDetection.TrackedHits.Add(hit);
 
-                    if (clientDetection.TrackedHits.Count >= Detection.MIN_HITS_TO_RUN_DETECTION)
+                    if (clientDetection.TrackedHits.Count >= MIN_HITS_TO_RUN_DETECTION)
                     {
                         while (clientDetection.TrackedHits.Count > 0)
                         {
@@ -521,20 +523,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                             clientDetection.TrackedHits.Remove(oldestHit);
 
-                            result = clientDetection.ProcessHit(oldestHit, isDamage);
+                            if (oldestHit.IsAlive)
+                            {
+                                result = clientDetection.ProcessHit(oldestHit, isDamage);
 #if !DEBUG
                             await ApplyPenalty(result, attacker);
 #endif
 
-                            if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
-                            {
-                                await SaveTrackedSnapshots(clientDetection);
-
-                                if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
+                                if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
                                 {
-                                    // we don't care about any additional hits now that they're banned
-                                    clientDetection.TrackedHits.Clear();
-                                    break;
+                                    await SaveTrackedSnapshots(clientDetection);
+
+                                    if (result.ClientPenalty == EFPenalty.PenaltyType.Ban)
+                                    {
+                                        // we don't care about any additional hits now that they're banned
+                                        clientDetection.TrackedHits.Clear();
+                                        break;
+                                    }
                                 }
                             }
                         }

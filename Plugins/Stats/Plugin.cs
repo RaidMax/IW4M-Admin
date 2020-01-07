@@ -82,7 +82,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 18 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -96,7 +96,7 @@ namespace IW4MAdmin.Plugins.Stats
 #endif
 
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
 
 #if DEBUG
                         S.Logger.WriteInfo($"End ScriptKill {scriptKillCount}");
@@ -129,7 +129,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 14 && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 18 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -143,7 +143,7 @@ namespace IW4MAdmin.Plugins.Stats
 #endif
 
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
-                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15]);
+                            killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
 
 #if DEBUG
                         S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");

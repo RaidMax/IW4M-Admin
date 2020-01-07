@@ -32,6 +32,22 @@ onPlayerConnect( player )
 		player setClientDvar("cl_autorecord", 1);
 		player setClientDvar("cl_demosKeep", 200);
 		player thread waitForFrameThread();
+		player thread waitForAttack();
+	}
+}
+
+waitForAttack()
+{
+	self endon( "disconnect" );
+	
+	self.lastAttackTime = 0;
+	
+	for( ;; )
+	{
+		self notifyOnPlayerCommand( "player_shot", "+attack" );
+		self waittill( "player_shot" );
+		
+		self.lastAttackTime = getTime();
 	}
 }
 
@@ -149,7 +165,7 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 		{
 			fixedIndex = self.angleSnapshot.size - abs(i);
 		}
-		anglesStr += self.angleSnapshot[fixedIndex] + ":";
+		anglesStr += self.angleSnapshot[int(fixedIndex)] + ":";
 		collectedFrames++;
 		i++;
 	}
@@ -169,12 +185,15 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 		{
 			fixedIndex = i % self.angleSnapshot.size;
 		}
-		anglesStr += self.angleSnapshot[fixedIndex] + ":";
+		anglesStr += self.angleSnapshot[int(fixedIndex)] + ":";
 		collectedFrames++;
 		i++;
 	}
 
-	logPrint(logString + ";" + anglesStr + "\n" ); 
+	lastAttack = int(getTime()) - int(self.lastAttackTime);
+	isAlive = isAlive(self);
+
+	logPrint(logString + ";" + anglesStr + ";" + isAlive + ";" + lastAttack + "\n" ); 
 }
 
 vectorScale( vector, scale )
@@ -205,7 +224,7 @@ Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 	location = victim GetTagOrigin( hitLocationToBone( sHitLoc ) );
 	isKillstreakKill = !isPlayer( attacker ) || isKillstreakWeapon( sWeapon );
 
-	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + gettime() + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";0;0";
+	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + int(gettime()) + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";0;0";
 	attacker thread waitForAdditionalAngles( logLine, 2, 2 );
 }
 

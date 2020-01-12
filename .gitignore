@@ -237,3 +237,4 @@ launchSettings.json
 **/Master/env_master
 /GameLogServer/log_env
 **/*.css
+/Master/master/persistence

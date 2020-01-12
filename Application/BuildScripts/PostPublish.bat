@@ -17,7 +17,7 @@ echo deleting misc files
 if exist "%PublishDir%\web.config" del "%PublishDir%\web.config"
 if exist "%PublishDir%\libman.json" del "%PublishDir%\libman.json"
 del "%PublishDir%\*.exe"
-REM del "%PublishDir%\*.pdb"
+del "%PublishDir%\*.pdb"
 
 echo setting up default folders
 if not exist "%PublishDir%\Configuration" md "%PublishDir%\Configuration"

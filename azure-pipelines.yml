@@ -95,6 +95,12 @@ steps:
     Contents: '*.dll'
     TargetFolder: '$(outputFolder)\Plugins'
 
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\GameFiles'
+    Contents: '*.gsc'
+    TargetFolder: '$(outputFolder)\GameFiles'
+
 - task: CmdLine@2
   inputs:
    script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
@@ -106,7 +112,7 @@ steps:
     rootFolderOrFile: '$(outputFolder)'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)r$(VersionInformation.Revision)-$(Build.BuildId).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)b$(Build.BuildId).zip'
     replaceExistingArchive: true
 
 - task: FtpUpload@2
@@ -130,8 +136,8 @@ steps:
     action: 'create'
     target: '$(Build.SourceVersion)'
     tagSource: 'userSpecifiedTag'
-    tag: '$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)r$(VersionInformation.Revision)-$(Build.BuildId)'
-    title: 'Version $(VersionInformation.Major).$(VersionInformation.Minor) $(buildConfiguration) $(VersionInformation.Build) Revision $(VersionInformation.Revision) Build $(Build.BuildId)'
+    tag: '$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)b$(Build.BuildId)'
+    title: 'Version $(VersionInformation.Major).$(VersionInformation.Minor) $(buildConfiguration) Feature $(VersionInformation.Build) Build $(Build.BuildId)'
     assets: '$(Build.ArtifactStagingDirectory)/*.zip'
     isPreRelease: true
     releaseNotesSource: 'inline'

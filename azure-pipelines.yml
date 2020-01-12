@@ -95,16 +95,16 @@ steps:
     Contents: '*.dll'
     TargetFolder: '$(outputFolder)\Plugins'
 
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '$(Build.Repository.LocalPath)\GameFiles'
-    Contents: '*.gsc'
-    TargetFolder: '$(outputFolder)\GameFiles'
-
 - task: CmdLine@2
   inputs:
    script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
    workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+   failOnStderr: true
+
+- task: CmdLine@2
+  inputs:
+   script: 'xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
+   workingDirectory: '$(Build.Repository.LocalPath)'
    failOnStderr: true
 
 - task: ArchiveFiles@2

@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RestEase;
+using SharedLibraryCore.Helpers;
 
 namespace IW4MAdmin.Application.API.Master
 {
@@ -22,9 +23,12 @@ namespace IW4MAdmin.Application.API.Master
     public class VersionInfo
     {
         [JsonProperty("current-version-stable")]
-        public float CurrentVersionStable { get; set; }
+        [JsonConverter(typeof(BuildNumberJsonConverter))]
+        public BuildNumber CurrentVersionStable { get; set; }
+
         [JsonProperty("current-version-prerelease")]
-        public float CurrentVersionPrerelease { get; set; }
+        [JsonConverter(typeof(BuildNumberJsonConverter))]
+        public BuildNumber CurrentVersionPrerelease { get; set; }
     }
 
     public class ResultMessage
@@ -38,11 +42,14 @@ namespace IW4MAdmin.Application.API.Master
 #if !DEBUG
         private static readonly IMasterApi api = RestClient.For<IMasterApi>("http://api.raidmax.org:5000");
 #else
-        private static IMasterApi api = RestClient.For<IMasterApi>("http://127.0.0.1");
+        private static readonly IMasterApi api = RestClient.For<IMasterApi>("http://127.0.0.1");
 #endif
         public static IMasterApi Get() => api;
     }
 
+    /// <summary>
+    /// Defines the capabilities of the master API
+    /// </summary>
     [Header("User-Agent", "IW4MAdmin-RestEase")]
     public interface IMasterApi
     {
@@ -53,13 +60,15 @@ namespace IW4MAdmin.Application.API.Master
         Task<TokenId> Authenticate([Body] AuthenticationId Id);
 
         [Post("instance/")]
-        Task<ResultMessage> AddInstance([Body] ApiInstance instance);
+        [AllowAnyStatusCode]
+        Task<Response<ResultMessage>> AddInstance([Body] ApiInstance instance);
 
         [Put("instance/{id}")]
-        Task<ResultMessage> UpdateInstance([Path] string id, [Body] ApiInstance instance);
+        [AllowAnyStatusCode]
+        Task<Response<ResultMessage>> UpdateInstance([Path] string id, [Body] ApiInstance instance);
 
-        [Get("version")]
-        Task<VersionInfo> GetVersion();
+        [Get("version/{apiVersion}")]
+        Task<VersionInfo> GetVersion([Path] int apiVersion);
 
         [Get("localization")]
         Task<List<SharedLibraryCore.Localization.Layout>> GetLocalization();

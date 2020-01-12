@@ -1,6 +1,7 @@
 ﻿using IW4MAdmin.Application.Migration;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Text;
@@ -11,9 +12,10 @@ namespace IW4MAdmin.Application
 {
     public class Program
     {
-        public static double Version { get; private set; } = Utilities.GetVersionAsDouble();
+        public static BuildNumber Version { get; private set; } = BuildNumber.Parse(Utilities.GetVersionAsString());
         public static ApplicationManager ServerManager;
         private static Task ApplicationTask;
+        private static readonly BuildNumber _fallbackVersion = BuildNumber.Parse("99.99.99.99");
 
         /// <summary>
         /// entrypoint of the application
@@ -145,12 +147,12 @@ namespace IW4MAdmin.Application
 
             var version = new API.Master.VersionInfo()
             {
-                CurrentVersionStable = 99.99f
+                CurrentVersionStable = _fallbackVersion
             };
 
             try
             {
-                version = await api.GetVersion();
+                version = await api.GetVersion(1);
             }
 
             catch (Exception e)
@@ -164,7 +166,7 @@ namespace IW4MAdmin.Application
                 ServerManager.Logger.WriteDebug(e.Message);
             }
 
-            if (version.CurrentVersionStable == 99.99f)
+            if (version.CurrentVersionStable == _fallbackVersion)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(loc["MANAGER_VERSION_FAIL"]);
@@ -175,16 +177,16 @@ namespace IW4MAdmin.Application
             else if (version.CurrentVersionStable > Version)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString("0.0")}]");
-                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}]"));
+                Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString()}]");
+                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString()}]"));
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
 #else
             else if (version.CurrentVersionPrerelease > Version)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString("0.0")}-pr]");
-                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString("0.0")}-pr]"));
+                Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString()}-pr]");
+                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString()}-pr]"));
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
 #endif

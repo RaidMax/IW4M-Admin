@@ -8,7 +8,7 @@ init()
 	SetDvarIfUninitialized( "sv_framewaittime", 0.05 );
 	SetDvarIfUninitialized( "sv_additionalwaittime", 0.1 );
 	SetDvarIfUninitialized( "sv_maxstoredframes", 12 );
-	SetDvarIfUninitialized( "sv_printradarupdates", false );
+	SetDvarIfUninitialized( "sv_printradarupdates", 0 );
 	SetDvarIfUninitialized( "sv_printradar_updateinterval", 500 );
 	SetDvarIfUninitialized( "sv_iw4madmin_url", "http://127.0.0.1:1624" );
 	

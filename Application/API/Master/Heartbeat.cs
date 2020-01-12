@@ -1,22 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using RestEase;
-using SharedLibraryCore;
 
 namespace IW4MAdmin.Application.API.Master
 {
-    public class HeartbeatState
-    {
-        public bool Connected { get; set; }
-        public CancellationToken Token { get; set; }
-    }
-
+    /// <summary>
+    /// Defines the heartbeat functionality for IW4MAdmin
+    /// </summary>
     public class Heartbeat
     {
+        /// <summary>
+        /// Sends heartbeat to master server
+        /// </summary>
+        /// <param name="mgr"></param>
+        /// <param name="firstHeartbeat"></param>
+        /// <returns></returns>
         public static async Task Send(ApplicationManager mgr, bool firstHeartbeat = false)
         {
             var api = Endpoint.Get();
@@ -35,7 +34,7 @@ namespace IW4MAdmin.Application.API.Master
             {
                 Id = mgr.GetApplicationSettings().Configuration().Id,
                 Uptime = (int)(DateTime.UtcNow - mgr.StartTime).TotalSeconds,
-                Version = (float)Program.Version,
+                Version = Program.Version,
                 Servers = mgr.Servers.Select(s =>
                             new ApiServer()
                             {
@@ -52,14 +51,21 @@ namespace IW4MAdmin.Application.API.Master
                             }).ToList()
             };
 
+            Response<ResultMessage> response = null;
+
             if (firstHeartbeat)
             {
-                var message = await api.AddInstance(instance);
+                response = await api.AddInstance(instance);
             }
 
             else
             {
-                var message = await api.UpdateInstance(instance.Id, instance);
+                response = await api.UpdateInstance(instance.Id, instance);
+            }
+
+            if (response.ResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                mgr.Logger.WriteWarning($"Response code from master is {response.ResponseMessage.StatusCode}, message is {response.StringContent}");
             }
         }
     }

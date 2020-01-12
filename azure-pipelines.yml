@@ -145,23 +145,24 @@ steps:
     changeLogCompareToRelease: 'lastNonDraftRelease'
     changeLogType: 'commitBased'
 
-
-- task: InvokeRESTAPI@1
+- task: PowerShell@2
   inputs:
-    connectionType: 'connectedServiceName'
-    serviceConnection: 'IW4MAdmin-Master'
-    method: 'POST'
-    headers: |
-        {
-        "Content-Type":"application/json", 
-        }
-    body: |
-        {
-        "current-version-prerelease": "$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).0",
-        "jwt-secret" : $(JWTSecret)"
-        }
-    urlSuffix: '/version'
-    waitForCompletion: 'true'
+    targetType: 'inline'
+    script: |
+      $payload = @{
+          'current-version-prerelease' = '$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).0'
+          'jwt-secret' = '$(JWTSecret)'
+      } | ConvertTo-Json
+              
+      
+      $params = @{
+          Uri         = 'http://api.raidmax.org:5000/version'
+          Method      = 'POST'
+          Body        = $payload
+          ContentType = 'application/json'
+      }
+      
+      Invoke-RestMethod @params
 
 - task: PublishPipelineArtifact@1
   inputs:

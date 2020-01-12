@@ -103,7 +103,7 @@ steps:
 
 - task: CmdLine@2
   inputs:
-   script: 'xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
+   script: 'echo d | xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
    workingDirectory: '$(Build.Repository.LocalPath)'
    failOnStderr: true
 

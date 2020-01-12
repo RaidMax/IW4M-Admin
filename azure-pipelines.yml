@@ -145,18 +145,23 @@ steps:
     changeLogCompareToRelease: 'lastNonDraftRelease'
     changeLogType: 'commitBased'
 
+
 - task: InvokeRESTAPI@1
   inputs:
     connectionType: 'connectedServiceName'
     serviceConnection: 'IW4MAdmin-Master'
     method: 'POST'
+    headers: |
+        {
+        "Content-Type":"application/json", 
+        }
     body: |
-      {
-      	"current-version-prerelease": "$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).0",
-      	"jwt-secret" : $(JWTSecret)"
-      }
+        {
+        "current-version-prerelease": "$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).0",
+        "jwt-secret" : $(JWTSecret)"
+        }
     urlSuffix: '/version'
-    waitForCompletion: 'false'
+    waitForCompletion: 'true'
 
 - task: PublishPipelineArtifact@1
   inputs:

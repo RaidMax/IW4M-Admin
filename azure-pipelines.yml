@@ -145,6 +145,19 @@ steps:
     changeLogCompareToRelease: 'lastNonDraftRelease'
     changeLogType: 'commitBased'
 
+- task: InvokeRESTAPI@1
+  inputs:
+    connectionType: 'connectedServiceName'
+    serviceConnection: 'IW4MAdmin-Master'
+    method: 'POST'
+    body: |
+      {
+      	"current-version-prerelease": "$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).0",
+      	"jwt-secret" : $(JWTSecret)"
+      }
+    urlSuffix: '/version'
+    waitForCompletion: 'false'
+
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(outputFolder)'

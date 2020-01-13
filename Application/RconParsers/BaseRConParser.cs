@@ -36,6 +36,7 @@ namespace IW4MAdmin.Application.RconParsers
                     RConGetInfo = "ÿÿÿÿgetinfo",
                     RConResponse = "ÿÿÿÿprint",
                 },
+                ServerNotRunningResponse = "Server is not running."
             };
 
             Configuration.Status.Pattern = @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){8,32}|(?:[a-z]|[0-9]){8,32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback|unknown) +(-*[0-9]+) +([0-9]+) *$";
@@ -141,7 +142,7 @@ namespace IW4MAdmin.Application.RconParsers
 
             if (Status.Length < 4)
             {
-                throw new ServerException("Unexpected status response received");
+                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNEXPECTED_STATUS"]);
             }
 
             int validMatches = 0;
@@ -208,7 +209,7 @@ namespace IW4MAdmin.Application.RconParsers
             // this happens if status is requested while map is rotating
             if (Status.Length > 5 && validMatches == 0)
             {
-                throw new ServerException("Server is rotating map");
+                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_ROTATING_MAP"]);
             }
 
             return StatusPlayers;

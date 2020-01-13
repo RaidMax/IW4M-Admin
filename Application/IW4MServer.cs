@@ -835,6 +835,7 @@ namespace IW4MAdmin
                     Logger.WriteDebug(e.GetExceptionInfo());
                 }
 
+                Logger.WriteError(e.Message);
                 return false;
             }
 
@@ -874,6 +875,13 @@ namespace IW4MAdmin
                 RconParser.Configuration = matchedRconParser != null ? matchedRconParser.Configuration : RconParser.Configuration;
                 EventParser = Manager.AdditionalEventParsers.FirstOrDefault(_parser => _parser.Version == version.Value) ?? EventParser;
                 Version = RconParser.Version;
+            }
+
+            var svRunning = await this.GetDvarAsync<int>("sv_running");
+
+            if (svRunning.Value == 0)
+            {
+                throw new ServerException(loc["SERVER_ERROR_NOT_RUNNING"]);
             }
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;

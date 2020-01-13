@@ -184,14 +184,20 @@ namespace SharedLibraryCore.RCon
 
             string responseString = defaultEncoding.GetString(response, 0, response.Length) + '\n';
 
+            // note: not all games respond if the pasword is wrong or not set
             if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
             {
                 throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_INVALID"]);
             }
 
-            if (responseString.ToString().Contains("rcon_password"))
+            if (responseString.Contains("rcon_password"))
             {
                 throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
+            }
+
+            if (responseString.Contains(Config.ServerNotRunningResponse))
+            {
+                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"].FormatExt(Endpoint.ToString()));
             }
 
             string[] splitResponse = responseString.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)

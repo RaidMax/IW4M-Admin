@@ -130,7 +130,6 @@ namespace IW4MAdmin.Application
             };
 
             await Task.WhenAll(tasks);
-            inputThread.Abort();
 
             ServerManager.Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }

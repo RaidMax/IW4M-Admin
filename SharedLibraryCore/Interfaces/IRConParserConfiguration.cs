@@ -25,6 +25,11 @@ namespace SharedLibraryCore.Interfaces
         ParserRegex Dvar { get; set; }
 
         /// <summary>
+        /// Specifies the expected response message from rcon when the server is not running
+        /// </summary>
+        string ServerNotRunningResponse { get; set; }
+
+        /// <summary>
         /// indicates if the application should wait for response from server
         /// when executing a command
         /// </summary>

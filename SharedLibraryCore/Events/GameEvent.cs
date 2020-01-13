@@ -257,13 +257,16 @@ namespace SharedLibraryCore
             {
                 processed = await Task.Run(() => _eventFinishedWaiter.WaitOne(timeSpan), token);
             }
-            catch { }
 
+            catch (TaskCanceledException)
+            {
+                processed = true;
+            }
 
             if (!processed)
             {
 #if DEBUG
-                //throw new Exception();
+                throw new Exception();
 #endif
                 Owner?.Logger.WriteError("Waiting for event to complete timed out");
                 Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");

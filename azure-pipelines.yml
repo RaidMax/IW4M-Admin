@@ -1,11 +1,5 @@
-# ASP.NET
-# Build and test ASP.NET projects.
-# Add steps that publish symbols, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
-
-trigger: none
-
-pr:
+trigger:
+  batch: true
   branches:
     include:
     - releases/*
@@ -14,6 +8,8 @@ pr:
     exclude:
     - azure-pipelines.yml
     - Master/*
+
+pr: none
 
 pool:
   vmImage: 'windows-latest'
@@ -47,6 +43,12 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+- task: oneLuckiDevJson2Variable@1
+  inputs:
+    jsonFile: '$(outputFolder)\VersionInformation.json'
+    shouldPrefixVariables: true
+    variablePrefix: 'VersionInformation'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'publish'
@@ -54,7 +56,7 @@ steps:
     projects: |
       **/WebfrontCore.csproj
       **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(outputFolder)'
+    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).$(Build.BuildId)'
     zipAfterPublish: false
     modifyOutputPath: false
     
@@ -71,12 +73,6 @@ steps:
     arguments: '$(outputFolder)'
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)'
-
-- task: oneLuckiDevJson2Variable@1
-  inputs:
-    jsonFile: '$(outputFolder)\VersionInformation.json'
-    shouldPrefixVariables: true
-    variablePrefix: 'VersionInformation'
 
 - task: BatchScript@1
   inputs:
@@ -138,21 +134,21 @@ steps:
     preservePaths: false
     trustSSL: false
 
-- task: GitHubRelease@1
-  inputs:
-    gitHubConnection: 'github.com_RaidMax'
-    repositoryName: 'RaidMax/IW4M-Admin'
-    action: 'create'
-    target: '$(Build.SourceVersion)'
-    tagSource: 'userSpecifiedTag'
-    tag: '$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)b$(Build.BuildId)'
-    title: 'Version $(VersionInformation.Major).$(VersionInformation.Minor) $(buildConfiguration) Feature $(VersionInformation.Build) Build $(Build.BuildId)'
-    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
-    isPreRelease: true
-    releaseNotesSource: 'inline'
-    releaseNotesInline: 'todo'
-    changeLogCompareToRelease: 'lastNonDraftRelease'
-    changeLogType: 'commitBased'
+#- task: GitHubRelease@1
+#  inputs:
+#    gitHubConnection: 'github.com_RaidMax'
+#    repositoryName: 'RaidMax/IW4M-Admin'
+#    action: 'create'
+#    target: '$(Build.SourceVersion)'
+#    tagSource: 'userSpecifiedTag'
+#    tag: '$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)b$(Build.BuildId)'
+#    title: 'Version $(VersionInformation.Major).$(VersionInformation.Minor) $(buildConfiguration) Feature $(VersionInformation.Build) Build $(Build.BuildId)'
+#    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
+#    isPreRelease: true
+#    releaseNotesSource: 'inline'
+#    releaseNotesInline: 'todo'
+#    changeLogCompareToRelease: 'lastNonDraftRelease'
+#    changeLogType: 'commitBased'
 
 - task: PowerShell@2
   inputs:

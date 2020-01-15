@@ -3,8 +3,15 @@
 # Add steps that publish symbols, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
-trigger:
-- '2.4-pr'
+pr:
+  branches:
+    include:
+    - releases/*
+    - 2.4-pr
+  paths:
+    exclude:
+    - azure-pipelines.yml
+    - Master/*
 
 pool:
   vmImage: 'windows-latest'
@@ -150,7 +157,7 @@ steps:
     targetType: 'inline'
     script: |
       $payload = @{
-          'current-version-prerelease' = '$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).0'
+          'current-version-prerelease' = '$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).$(Build.BuildId)'
           'jwt-secret' = '$(JWTSecret)'
       } | ConvertTo-Json
               

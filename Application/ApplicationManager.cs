@@ -42,8 +42,7 @@ namespace IW4MAdmin.Application
         public CancellationToken CancellationToken => _tokenSource.Token;
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
-        public IMiddlewareActionHandler MiddlewareActionHandler { get; private set; } = new MiddlewareActionHandler();
-        static ApplicationManager Instance;
+        public IMiddlewareActionHandler MiddlewareActionHandler { get; }
         private readonly List<Command> Commands;
         private readonly List<MessageToken> MessageTokens;
         private readonly ClientService ClientSvc;
@@ -52,14 +51,15 @@ namespace IW4MAdmin.Application
         public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         GameEventHandler Handler;
         readonly IPageList PageList;
-        readonly Dictionary<long, ILogger> Loggers = new Dictionary<long, ILogger>();
+        private readonly Dictionary<long, ILogger> _loggers = new Dictionary<long, ILogger>();
         private readonly MetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
         private readonly CancellationTokenSource _tokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
 
-        private ApplicationManager()
+        public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler)
         {
+            MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
             Commands = new List<Command>();
             MessageTokens = new List<MessageToken>();
@@ -74,6 +74,7 @@ namespace IW4MAdmin.Application
             TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();
+            _loggers.Add(0, logger);
         }
 
         public async Task ExecuteEvent(GameEvent newEvent)
@@ -154,11 +155,6 @@ namespace IW4MAdmin.Application
         public IList<Command> GetCommands()
         {
             return Commands;
-        }
-
-        public static ApplicationManager GetInstance()
-        {
-            return Instance ?? (Instance = new ApplicationManager());
         }
 
         public async Task UpdateServerStates()
@@ -681,7 +677,6 @@ namespace IW4MAdmin.Application
         {
             _tokenSource.Cancel();
             Running = false;
-            Instance = null;
         }
 
         public void Restart()
@@ -692,25 +687,16 @@ namespace IW4MAdmin.Application
 
         public ILogger GetLogger(long serverId)
         {
-            if (Loggers.ContainsKey(serverId))
+            if (_loggers.ContainsKey(serverId))
             {
-                return Loggers[serverId];
+                return _loggers[serverId];
             }
 
             else
             {
-                Logger newLogger;
+                var newLogger = new Logger($"IW4MAdmin-Server-{serverId}");
 
-                if (serverId == 0)
-                {
-                    newLogger = new Logger("IW4MAdmin-Manager");
-                }
-                else
-                {
-                    newLogger = new Logger($"IW4MAdmin-Server-{serverId}");
-                }
-
-                Loggers.Add(serverId, newLogger);
+                _loggers.Add(serverId, newLogger);
                 return newLogger;
             }
         }

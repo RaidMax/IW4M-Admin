@@ -39,12 +39,11 @@ steps:
 - task: projectversionasvariable@1
   inputs:
     path: '$(Build.Repository.LocalPath)\Application\Application.csproj'
-    prefix: 'VersionInfo'
 
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).$(Build.BuildId)'
+    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
@@ -55,7 +54,7 @@ steps:
     projects: |
       **/WebfrontCore.csproj
       **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).$(Build.BuildId)'
+    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId)'
     zipAfterPublish: false
     modifyOutputPath: false
     
@@ -116,7 +115,7 @@ steps:
     rootFolderOrFile: '$(outputFolder)'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)b$(Build.BuildId).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId).zip'
     replaceExistingArchive: true
 
 - task: FtpUpload@2
@@ -140,8 +139,8 @@ steps:
 #    action: 'create'
 #    target: '$(Build.SourceVersion)'
 #    tagSource: 'userSpecifiedTag'
-#    tag: '$(VersionInformation.Major).$(VersionInformation.Minor)-$(buildConfiguration)$(VersionInformation.Build)b$(Build.BuildId)'
-#    title: 'Version $(VersionInformation.Major).$(VersionInformation.Minor) $(buildConfiguration) Feature $(VersionInformation.Build) Build $(Build.BuildId)'
+#    tag: '$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId)'
+#    title: 'Version $(Version.Major).$(Version.Minor) $(buildConfiguration) Feature $(Version.Build) Build $(Build.BuildId)'
 #    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
 #    isPreRelease: true
 #    releaseNotesSource: 'inline'
@@ -154,7 +153,7 @@ steps:
     targetType: 'inline'
     script: |
       $payload = @{
-          'current-version-prerelease' = '$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).$(Build.BuildId)'
+          'current-version-prerelease' = '$(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId)'
           'jwt-secret' = '$(JWTSecret)'
       } | ConvertTo-Json
               

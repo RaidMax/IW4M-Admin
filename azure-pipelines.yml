@@ -84,6 +84,8 @@ steps:
     script: |
       echo changing to encoding for linux start script
       dos2unix $(outputFolder)\StartIW4MAdmin.sh
+      echo creating website version filename
+      echo $(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId) > $(Build.Repository.LocalPath)\version_prerelease.txt
     workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
 
 - task: CopyFiles@2
@@ -125,7 +127,9 @@ steps:
     username: '$(FTPUsername)'
     password: '$(FTPPassword)'
     rootDirectory: '$(Build.ArtifactStagingDirectory)'
-    filePatterns: '*.zip'
+    filePatterns: |
+        '*.zip'
+        version_prerelease.txt
     remoteDirectory: 'IW4MAdmin/Download'
     clean: false
     cleanContents: false

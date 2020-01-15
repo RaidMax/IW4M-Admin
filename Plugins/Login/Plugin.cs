@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using SharedLibraryCore;
+using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
@@ -42,11 +43,14 @@ namespace IW4MAdmin.Plugins.Login
                     E.Origin.Level == EFClient.Permission.Console)
                     return Task.CompletedTask;
 
-                if (((Command)E.Extra).Name == new SharedLibraryCore.Commands.CSetPassword().Name &&
+                if (((Command)E.Extra).Name == new CSetPassword().Name &&
                     E.Origin?.Password == null)
                     return Task.CompletedTask;
 
                 if (((Command)E.Extra).Name == new Commands.CLogin().Name)
+                    return Task.CompletedTask;
+
+                if (E.Extra.GetType() == typeof(RequestTokenCommand))
                     return Task.CompletedTask;
 
                 if (!AuthorizedClients[E.Origin.ClientId])

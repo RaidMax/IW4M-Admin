@@ -1,4 +1,5 @@
 ﻿using IW4MAdmin.Application.Migration;
+using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
 using SharedLibraryCore.Helpers;
@@ -60,7 +61,13 @@ namespace IW4MAdmin.Application
         restart:
             try
             {
-                ServerManager = ApplicationManager.GetInstance();
+                var services = ConfigureServices();
+
+                using (var builder = services.BuildServiceProvider())
+                {
+                    ServerManager = (ApplicationManager)builder.GetRequiredService<IManager>();
+                }
+
                 var configuration = ServerManager.GetApplicationSettings().Configuration();
                 Localization.Configure.Initialize(configuration?.EnableCustomLocale ?? false ? (configuration.CustomLocale ?? "en-US") : "en-US");
 
@@ -70,7 +77,7 @@ namespace IW4MAdmin.Application
 
                 ServerManager.Logger.WriteInfo(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_VERSION"].FormatExt(Version));
 
-                ConfigureServices();
+
                 await CheckVersion();
                 await ServerManager.Init();
             }
@@ -235,12 +242,17 @@ namespace IW4MAdmin.Application
             { }
         }
 
-        private static void ConfigureServices()
+        /// <summary>
+        /// Configures the dependency injection services
+        /// </summary>
+        private static IServiceCollection ConfigureServices()
         {
             var serviceProvider = new ServiceCollection();
-            serviceProvider.AddSingleton<IManager>(ServerManager);
-            var builder = serviceProvider.BuildServiceProvider();
-            builder.Dispose();
+            serviceProvider.AddSingleton<IManager, ApplicationManager>()
+                .AddSingleton<ILogger>(_serviceProvider => new Logger("IW4MAdmin-Manager"))
+                .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>();
+
+            return serviceProvider;
         }
     }
 }

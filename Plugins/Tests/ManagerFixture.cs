@@ -20,7 +20,7 @@ namespace Tests
 
             File.WriteAllText(logFile, Environment.NewLine);
 
-            Manager = ApplicationManager.GetInstance();
+            Manager = null;
 
             var config = new ApplicationConfiguration
             {

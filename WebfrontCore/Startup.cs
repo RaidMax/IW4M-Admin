@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Interfaces;
+using System.Net;
+using System.Threading.Tasks;
 using WebfrontCore.Middleware;
 
 namespace WebfrontCore
@@ -95,7 +98,15 @@ namespace WebfrontCore
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
-            app.UseStatusCodePagesWithRedirects("/Home/ResponseStatusCode?statusCode={0}");
+            app.UseStatusCodePages(_context =>
+            {
+                if (_context.HttpContext.Response.StatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    _context.HttpContext.Response.Redirect($"/Home/ResponseStatusCode?statusCode={_context.HttpContext.Response.StatusCode}");
+                }
+
+                return Task.CompletedTask;
+            });
 
             if (env.EnvironmentName == "Development")
             {

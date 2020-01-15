@@ -36,18 +36,17 @@ steps:
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
 
+- task: projectversionasvariable@1
+  inputs:
+    path: '$(Build.Repository.LocalPath)\Application\Application.csproj'
+    prefix: 'VersionInfo'
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(VersionInformation.Major).$(VersionInformation.Minor).$(VersionInformation.Build).$(Build.BuildId)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
-
-- task: oneLuckiDevJson2Variable@1
-  inputs:
-    jsonFile: '$(outputFolder)\VersionInformation.json'
-    shouldPrefixVariables: true
-    variablePrefix: 'VersionInformation'
 
 - task: DotNetCoreCLI@2
   inputs:

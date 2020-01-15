@@ -127,30 +127,42 @@ steps:
     username: '$(FTPUsername)'
     password: '$(FTPPassword)'
     rootDirectory: '$(Build.ArtifactStagingDirectory)'
-    filePatterns: |
-        '*.zip'
-        version_prerelease.txt
+    filePatterns: '*.zip'
     remoteDirectory: 'IW4MAdmin/Download'
     clean: false
     cleanContents: false
     preservePaths: false
     trustSSL: false
 
-#- task: GitHubRelease@1
-#  inputs:
-#    gitHubConnection: 'github.com_RaidMax'
-#    repositoryName: 'RaidMax/IW4M-Admin'
-#    action: 'create'
-#    target: '$(Build.SourceVersion)'
-#    tagSource: 'userSpecifiedTag'
-#    tag: '$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId)'
-#    title: 'Version $(Version.Major).$(Version.Minor) $(buildConfiguration) Feature $(Version.Build) Build $(Build.BuildId)'
-#    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
-#    isPreRelease: true
-#    releaseNotesSource: 'inline'
-#    releaseNotesInline: 'todo'
-#    changeLogCompareToRelease: 'lastNonDraftRelease'
-#    changeLogType: 'commitBased'
+- task: FtpUpload@2
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: 'version_prerelease.txt'
+    remoteDirectory: 'IW4MAdmin'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false
+
+- task: GitHubRelease@1
+  inputs:
+    gitHubConnection: 'github.com_RaidMax'
+    repositoryName: 'RaidMax/IW4M-Admin'
+    action: 'create'
+    target: '$(Build.SourceVersion)'
+    tagSource: 'userSpecifiedTag'
+    tag: '$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId)'
+    title: 'Version $(Version.Major).$(Version.Minor) $(buildConfiguration) Feature $(Version.Build) Build $(Build.BuildId)'
+    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
+    isPreRelease: true
+    releaseNotesSource: 'inline'
+    releaseNotesInline: 'todo'
+    changeLogCompareToRelease: 'lastNonDraftRelease'
+    changeLogType: 'commitBased'
 
 - task: PowerShell@2
   inputs:

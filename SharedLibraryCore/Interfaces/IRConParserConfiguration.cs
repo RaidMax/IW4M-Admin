@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore.RCon;
+using System.Globalization;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -34,5 +35,10 @@ namespace SharedLibraryCore.Interfaces
         /// when executing a command
         /// </summary>
         bool WaitForResponse { get; set; }
+
+        /// <summary>
+        /// indicates the format expected for parsed guids
+        /// </summary>
+        NumberStyles GuidNumberStyle { get; set; }
     }
 }

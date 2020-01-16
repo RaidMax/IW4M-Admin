@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore.Interfaces;
+using System.Globalization;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -15,5 +16,6 @@ namespace IW4MAdmin.Application.EventParsers
         public ParserRegex Kill { get; set; } = new ParserRegex();
         public ParserRegex Damage { get; set; } = new ParserRegex();
         public ParserRegex Action { get; set; } = new ParserRegex();
+        public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
     }
 }

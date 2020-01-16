@@ -281,7 +281,7 @@ namespace SharedLibraryCore
             }
         }
 
-        public static long ConvertGuidToLong(this string str, long? fallback = null)
+        public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, long? fallback = null)
         {
             str = str.Substring(0, Math.Min(str.Length, 19));
             var bot = Regex.Match(str, @"bot[0-9]+").Value;
@@ -291,20 +291,24 @@ namespace SharedLibraryCore
                 return fallback.Value;
             }
 
-            // this is a special case for Plutonium T6 and CoD4x
-            if (long.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out long id))
+            long id = 0;
+
+            if (numberStyle == NumberStyles.Integer)
             {
+                long.TryParse(str, numberStyle, CultureInfo.InvariantCulture, out id);
+
                 if (id < 0)
                 {
                     id = (uint)id;
                 }
             }
 
-            else if (long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id))
+            else
             {
+                long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, numberStyle, CultureInfo.InvariantCulture, out id);
             }
 
-            else if (!string.IsNullOrEmpty(bot))
+            if (!string.IsNullOrEmpty(bot))
             {
                 id = -1;
 #if DEBUG

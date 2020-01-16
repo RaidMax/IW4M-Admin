@@ -95,7 +95,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                     if (message.Length > 0)
                     {
-                        long originId = matchResult.Groups[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong();
+                        long originId = matchResult.Groups[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle);
 
                         if (message[0] == '!' || message[0] == '@')
                         {
@@ -129,8 +129,8 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (match.Success)
                 {
-                    long originId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].Value.ToString().ConvertGuidToLong(1);
-                    long targetId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].Value.ToString().ConvertGuidToLong(1);
+                    long originId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].Value.ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    long targetId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].Value.ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
 
                     return new GameEvent()
                     {
@@ -149,8 +149,8 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (regexMatch.Success)
                 {
-                    long originId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(1);
-                    long targetId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(1);
+                    long originId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    long targetId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
 
                     return new GameEvent()
                     {
@@ -179,7 +179,7 @@ namespace IW4MAdmin.Application.EventParsers
                             {
                                 Name = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString(),
                             },
-                            NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(),
+                            NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
                         },
@@ -204,7 +204,7 @@ namespace IW4MAdmin.Application.EventParsers
                             {
                                 Name = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString()
                             },
-                            NetworkId = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(),
+                            NetworkId = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Disconnecting
                         },
@@ -248,7 +248,7 @@ namespace IW4MAdmin.Application.EventParsers
                 {
                     Type = GameEvent.EventType.JoinTeam,
                     Data = logLine,
-                    Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong() },
+                    Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle) },
                     RequiredEntity = GameEvent.EventRequiredEntity.Target
                 };
             }
@@ -257,8 +257,8 @@ namespace IW4MAdmin.Application.EventParsers
             if (eventType == "ScriptKill")
             {
                 
-                long originId = lineSplit[1].ConvertGuidToLong(1);
-                long targetId = lineSplit[2].ConvertGuidToLong(1);
+                long originId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                long targetId = lineSplit[2].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
 
                 return new GameEvent()
                 {
@@ -273,8 +273,8 @@ namespace IW4MAdmin.Application.EventParsers
             // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
             if (eventType == "ScriptDamage")
             {
-                long originId = lineSplit[1].ConvertGuidToLong(1);
-                long targetId = lineSplit[2].ConvertGuidToLong(1);
+                long originId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                long targetId = lineSplit[2].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
 
                 return new GameEvent()
                 {

@@ -169,7 +169,7 @@ namespace IW4MAdmin.Application.RconParsers
                     long networkId;
                     try
                     {
-                        networkId = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].Value.ConvertGuidToLong();
+                        networkId = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].Value.ConvertGuidToLong(Configuration.GuidNumberStyle);
                     }
 
                     catch (FormatException)

@@ -537,7 +537,7 @@ namespace SharedLibraryCore.Services
                 long? networkId = null;
                 try
                 {
-                    networkId = identifier.ConvertGuidToLong();
+                    networkId = identifier.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
                 }
                 catch { }
 

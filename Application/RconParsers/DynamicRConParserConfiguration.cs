@@ -1,5 +1,6 @@
 ﻿using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
+using System.Globalization;
 
 namespace IW4MAdmin.Application.RconParsers
 {
@@ -15,5 +16,6 @@ namespace IW4MAdmin.Application.RconParsers
         public ParserRegex Dvar { get; set; } = new ParserRegex();
         public string ServerNotRunningResponse { get; set; }
         public bool WaitForResponse { get; set; } = true;
+        public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
     }
 }

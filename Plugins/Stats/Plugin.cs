@@ -22,7 +22,7 @@ namespace IW4MAdmin.Plugins.Stats
     {
         public string Name => "Simple Stats";
 
-        public float Version => Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
+        public float Version => (float)Utilities.GetVersionAsDouble();
 
         public string Author => "RaidMax";
 
@@ -102,6 +102,11 @@ namespace IW4MAdmin.Plugins.Stats
                         S.Logger.WriteInfo($"End ScriptKill {scriptKillCount}");
 #endif
                     }
+
+                    else
+                    {
+                        E.Owner.Logger.WriteDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
+                    }
                     break;
                 case GameEvent.EventType.Kill:
                     if (!ShouldIgnoreEvent(E.Origin, E.Target))
@@ -148,6 +153,11 @@ namespace IW4MAdmin.Plugins.Stats
 #if DEBUG
                         S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");
 #endif
+                    }
+
+                    else
+                    {
+                        E.Owner.Logger.WriteDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
             }

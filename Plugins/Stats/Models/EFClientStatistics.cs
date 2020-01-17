@@ -92,9 +92,13 @@ namespace IW4MAdmin.Plugins.Stats.Models
             {
                 SessionScores[SessionScores.Count - 1] = value;
             }
+
             get
             {
-                return SessionScores.Sum();
+                lock (SessionScores)
+                {
+                    return SessionScores.Sum();
+                }
             }
         }
         [NotMapped]

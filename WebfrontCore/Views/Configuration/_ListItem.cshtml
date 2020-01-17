@@ -1,3 +1,13 @@
-﻿@model WebfrontCore.ViewModels.ConfigurationInfo
+﻿@model WebfrontCore.ViewModels.BindingHelper
 
-<input class="form-control bg-dark text-white-50 mb-2 text-box single-line" id="@($"{Model.PropertyName.Replace('[', '_').Replace(']', '_').Replace('.', '_')}_{Model.NewItemCount - 1}_")" name="@($"{Model.PropertyName}[{Model.NewItemCount- 1}]")" type="text" />
+@if (Model.Properties.Length == 1)
+{
+    <!-- we're working off that top level model -->
+    @Html.Editor($"{Model.Properties.Last()}[{Model.ItemIndex}]", new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mb-2 text-box single-line" } })
+}
+
+@if (Model.Properties.Length > 1)
+{
+    <!-- we're working off child model -->
+    @Html.Editor($"{Model.Properties.First()}[{Model.ParentItemIndex}].{Model.Properties.Last()}[{Model.ItemIndex}]", new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mb-2 text-box single-line" } })
+}

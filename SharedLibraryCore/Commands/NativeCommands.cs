@@ -701,8 +701,8 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Count < 1 &&
-                E.Owner.ServerConfig.Rules?.Count < 1)
+            if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Length < 1 &&
+                E.Owner.ServerConfig.Rules?.Length < 1)
             {
                 var _ = E.Message.IsBroadcastCommand() ?
                       E.Owner.Broadcast(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RULES_NONE"]) :

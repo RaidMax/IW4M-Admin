@@ -2,6 +2,7 @@
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -96,6 +97,15 @@ namespace IW4MAdmin.Application
                 }
 
                 Console.WriteLine(e.Message);
+
+                if (e is ConfigurationException cfgE)
+                {
+                    foreach (string error in cfgE.Errors)
+                    {
+                        Console.WriteLine(error);
+                    }
+                }
+
                 Console.WriteLine(exitMessage);
                 Console.ReadKey();
                 return;

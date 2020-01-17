@@ -96,7 +96,7 @@ namespace WebfrontCore
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IManager manager)
         {
             app.UseStatusCodePages(_context =>
             {
@@ -120,7 +120,7 @@ namespace WebfrontCore
 
             if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
             {
-                app.UseMiddleware<IPWhitelist>(Program.Manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
+                app.UseMiddleware<IPWhitelist>(manager.GetLogger(0), manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
             }
 
             app.UseStaticFiles();

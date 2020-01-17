@@ -1,14 +1,12 @@
 ﻿using SharedLibraryCore.Configuration.Attributes;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace SharedLibraryCore.Configuration
 {
     public class ApplicationConfiguration : IBaseConfiguration
     {
-
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
         [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor", "WebfrontCustomBranding")]
         public bool EnableWebFront { get; set; }
@@ -60,7 +58,7 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationLinked("WebfrontConnectionWhitelist")]
         public bool EnableWebfrontConnectionWhitelist { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_WHITELIST_LIST")]
-        public List<string> WebfrontConnectionWhitelist { get; set; }
+        public string[] WebfrontConnectionWhitelist { get; set; } = new string[0];
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         [ConfigurationLinked("CustomLocale")]
@@ -68,7 +66,6 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         public string CustomLocale { get; set; }
 
-        [ConfigurationOptional]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_DB_PROVIDER")]
         public string DatabaseProvider { get; set; } = "sqlite";
         [ConfigurationOptional]
@@ -78,26 +75,25 @@ namespace SharedLibraryCore.Configuration
         public int RConPollRate { get; set; } = 5000;
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
         public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
-        [LocalizedDisplayName("SETUP_ENABLE_COLOR_CODES")]
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
         public bool EnableColorCodes { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
         public int AutoMessagePeriod { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGES")]
-        public List<string> AutoMessages { get; set; }
+        public string[] AutoMessages { get; set; } = new string[0];
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_GLOBAL_RULES")]
-        public List<string> GlobalRules { get; set; }
+        public string[] GlobalRules { get; set; } = new string[0];
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_DISALLOWED_NAMES")]
-        public List<string> DisallowedClientNames { get; set; }
+        public string[] DisallowedClientNames { get; set; } = new string[0];
         [UIHint("ServerConfiguration")]
-        public List<ServerConfiguration> Servers { get; set; }
-
+        public ServerConfiguration[] Servers { get; set; }
 
         [ConfigurationIgnore]
         public string Id { get; set; }
         [ConfigurationIgnore]
-        public List<MapConfiguration> Maps { get; set; }
+        public MapConfiguration[] Maps { get; set; }
         [ConfigurationIgnore]
-        public List<QuickMessageConfiguration> QuickMessages { get; set; }
+        public QuickMessageConfiguration[] QuickMessages { get; set; }
         [ConfigurationIgnore]
         public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl) ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1") : ManualWebfrontUrl;
 

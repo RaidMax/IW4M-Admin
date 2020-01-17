@@ -1,4 +1,5 @@
 ﻿@using SharedLibraryCore.Configuration.Attributes
+@using SharedLibraryCore.Configuration;
 @model SharedLibraryCore.Configuration.ApplicationConfiguration
 
 @{
@@ -39,7 +40,7 @@
     <div class="col-12 text-white-50 ">
         <h3 class="text-white">@ViewData["Title"]</h3>
         <h5 class="mb-4">@noticeText</h5>
-        <form method="post">
+        <form id="configurationForm" asp-controller="Configuration" asp-action="Save" method="post">
             @foreach (var property in properties)
             {
                 if (shouldIgnore(property))
@@ -49,22 +50,36 @@
 
                 string[] linkedPropertyNames = getLinkedPropertyName(property);
 
-                if (property.PropertyType.Name == typeof(System.Boolean).Name)
+                // bool type
+                if (property.PropertyType == typeof(bool))
                 {
                     <div class="form-group form-check bg-primary mb-0 pl-3 pr-3 p-2">
-                        @Html.Editor(property.Name, linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class= "has-related-content mb-0", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null)
+                        @Html.Editor(property.Name, linkedPropertyNames.Length > 0 ? new { htmlAttributes = new { @class = "has-related-content mb-0", data_related_content = string.Join(',', linkedPropertyNames.Select(_id => $"#{_id}_content")) } } : null)
                         @Html.Label(property.Name, null, new { @class = "form-check-label ml-1" })
                     </div>
                 }
 
-                else if (property.PropertyType.Name.Contains("List"))
+                // array type
+                else if (property.PropertyType.IsArray)
                 {
-                    if (hasLinkedParent(property))
+                    // special type for server config, I don't like this but for now it's ok
+                    @if (property.PropertyType.GetElementType() == typeof(ServerConfiguration))
+                    {
+                        <div id="@($"{property.Name}_content")" class="pl-3 pr-3 pt-2 pb-3 bg-dark">
+                            @for (int i = 0; i < Model.Servers.Length; i++)
+                            {
+                                @Html.EditorFor(model => model.Servers[i]);
+                            }
+                            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-server-add-new">@addServerText</a>
+                        </div>
+                    }
+
+                    else if (hasLinkedParent(property))
                     {
                         <div id="@($"{property.Name}_content")" class="@(linkedPropertyNames.Length == 0 ? "hide" : "hide") bg-dark pl-3 pr-3 pb-2">
                             @if (linkedPropertyNames.Length == 0)
                             {
-                                @Html.Label(property.Name, null, new { @class = "mt-2" })
+                                @Html.Label(property.Name, null, new { @class = "mt-2 d-block" })
                             }
                             @Html.Editor(property.Name, new { htmlAttributes = new { @class = $"form-group form-control bg-dark text-white-50 {(linkedPropertyNames.Length == 0 ? "mb-3" : "mb-0")}" } })
                             <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new">@addText</a>
@@ -76,14 +91,7 @@
                         @Html.Label(property.Name, null, new { @class = "bg-primary pl-3 pr-3 p-2 mb-0 w-100" })
                         <div id="@($"{property.Name}_content")" class="pl-3 pr-3 pt-2 pb-3 bg-dark">
                             @Html.Editor(property.Name, new { htmlAttributes = new { @class = "form-control bg-dark text-white-50 mt-3 mb-3", placeholder = isOptional(property) ? optionalText : "" } })
-                            @if (property.PropertyType.GenericTypeArguments[0].Name == "ServerConfiguration")
-                            {
-                                <button asp-action="Edit" asp-route-addNewServer="true" class="btn btn-primary">@addServerText</button>
-                            }
-                            else
-                            {
-                                <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new">@addText</a>
-                            }
+                            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="@property.Name" class="btn btn-primary configuration-add-new">@addText</a>
                         </div>
                     }
                 }
@@ -107,7 +115,7 @@
                     }
                 }
             }
-            <button asp-controller="Configuration" asp-action="Edit" asp-route-shouldSave="true" class="btn btn-primary btn-block">@saveText</button>
+            <button class="btn btn-primary btn-block">@saveText</button>
         </form>
     </div>
 </div>

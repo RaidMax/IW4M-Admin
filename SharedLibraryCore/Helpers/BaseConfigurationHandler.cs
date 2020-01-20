@@ -25,6 +25,12 @@ namespace SharedLibraryCore.Configuration
                 var configContent = File.ReadAllText(_configurationPath);
                 _configuration = JsonConvert.DeserializeObject<T>(configContent);
             }
+
+            catch (FileNotFoundException)
+            {
+                _configuration = default;
+            }
+
             catch (Exception e)
             {
                 throw new ConfigurationException("MANAGER_CONFIGURATION_ERROR")

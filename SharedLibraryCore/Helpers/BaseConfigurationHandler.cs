@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.IO;
@@ -24,9 +25,12 @@ namespace SharedLibraryCore.Configuration
                 var configContent = File.ReadAllText(_configurationPath);
                 _configuration = JsonConvert.DeserializeObject<T>(configContent);
             }
-            catch
+            catch (Exception e)
             {
-                _configuration = default(T);
+                throw new ConfigurationException("MANAGER_CONFIGURATION_ERROR")
+                {
+                    Errors = new[] { e.Message }
+                };
             }
         }
 

@@ -104,6 +104,8 @@ namespace SharedLibraryCore
                 {
                     typeof(System.Net.Http.HttpClient).Assembly,
                     typeof(EFClient).Assembly,
+                    typeof(Utilities).Assembly,
+                    typeof(Encoding).Assembly
                 })
                 .CatchClrExceptions());
 

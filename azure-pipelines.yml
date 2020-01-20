@@ -85,7 +85,7 @@ steps:
       echo changing to encoding for linux start script
       dos2unix $(outputFolder)\StartIW4MAdmin.sh
       echo creating website version filename
-      @echo $(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId) > $(Build.ArtifactStagingDirectory)\version_prerelease.txt
+      @echo IW4MAdmin-$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId) > $(Build.ArtifactStagingDirectory)\version_prerelease.txt
     workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
 
 - task: CopyFiles@2

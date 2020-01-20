@@ -92,7 +92,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             HitLocationCount[hit.HitLoc].Count++;
             HitCount++;
 
-
             if (!isDamage)
             {
                 Kills++;
@@ -200,12 +199,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (weightedLifetimeAverage > Thresholds.MaxOffset(totalHits) &&
                     hitLoc.HitCount > 100)
                 {
-                    //Log.WriteDebug("*** Reached Max Lifetime Average for Angle Difference ***");
-                    //Log.WriteDebug($"Lifetime Average = {newAverage}");
-                    //Log.WriteDebug($"Bone = {hitLoc.Location}");
-                    //Log.WriteDebug($"HitCount = {hitLoc.HitCount}");
-                    //Log.WriteDebug($"ID = {hit.AttackerId}");
-
                     results.Add(new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
@@ -437,7 +430,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 ClientId = ClientStats.ClientId,
                 SessionAngleOffset = AngleDifferenceAverage,
                 RecoilOffset = hitRecoilAverage,
-                CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds,
+                CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalMinutes,
                 CurrentStrain = currentStrain,
                 CurrentViewAngle = new Vector3(hit.ViewAngles.X, hit.ViewAngles.Y, hit.ViewAngles.Z),
                 Hits = HitCount,
@@ -453,7 +446,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 Distance = hit.Distance,
                 SessionScore = ClientStats.SessionScore,
                 HitType = hit.DeathType,
-                SessionSPM = ClientStats.SessionSPM,
+                SessionSPM = Math.Round(ClientStats.SessionSPM, 0),
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
                 WeaponId = hit.Weapon,

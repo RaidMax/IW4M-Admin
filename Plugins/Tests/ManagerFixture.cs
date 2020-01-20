@@ -24,23 +24,18 @@ namespace Tests
 
             var config = new ApplicationConfiguration
             {
-                Servers = new List<ServerConfiguration>()
+                Servers = new[]
                 {
                     new ServerConfiguration()
                     {
-                        AutoMessages = new List<string>(),
                         IPAddress = "127.0.0.1",
                         Password = "test",
                         Port = 28960,
-                        Rules = new List<string>(),
                         RConParserVersion = "test",
                         EventParserVersion = "IW4x (v0.6.0)",
                         ManualLogPath = logFile
                     }
                 },
-                AutoMessages = new List<string>(),
-                GlobalRules = new List<string>(),
-                Maps = new List<MapConfiguration>(),
                 RConPollRate = int.MaxValue
             };
 

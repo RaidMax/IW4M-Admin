@@ -70,11 +70,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)'=='Debug'">
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(CONFIG)'=='Debug'">
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.1" />
   </ItemGroup>
   
   <ItemGroup>
@@ -98,6 +94,6 @@
   </ProjectExtensions>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug ( &#xD;&#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap.scss&#xD;&#xA;)" />
+    <Exec Command="if $(ConfigurationName) == Debug ( &#xD;&#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap.scss&#xD;&#xA;echo d | xcopy /f /y $(ProjectDir)wwwroot\lib\open-iconic\font\fonts $(ProjectDir)wwwroot\font\&#xD;&#xA;)" />
   </Target>
 </Project>

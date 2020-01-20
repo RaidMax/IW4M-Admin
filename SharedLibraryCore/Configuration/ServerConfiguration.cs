@@ -15,9 +15,9 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PASSWORD")]
         public string Password { get; set; }
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RULES")]
-        public List<string> Rules { get; set; }
+        public string[] Rules { get; set; } = new string[0];
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_AUTO_MESSAGES")]
-        public List<string> AutoMessages { get; set; }
+        public string[] AutoMessages { get; set; } = new string[0];
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PATH")]
         [ConfigurationOptional]
         public string ManualLogPath { get; set; }
@@ -31,6 +31,9 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationOptional]
         public Uri GameLogServerUrl { get; set; }
 
+        [ConfigurationIgnore]
+        public int Index { get; set; }
+
         private readonly IList<IRConParser> rconParsers;
         private readonly IList<IEventParser> eventParsers;
 
@@ -38,8 +41,8 @@ namespace SharedLibraryCore.Configuration
         {
             rconParsers = new List<IRConParser>();
             eventParsers = new List<IEventParser>();
-            Rules = new List<string>();
-            AutoMessages = new List<string>();
+            Rules = new string[0];
+            AutoMessages = new string[0];
         }
 
         public void AddRConParser(IRConParser parser)
@@ -94,8 +97,8 @@ namespace SharedLibraryCore.Configuration
 
             Port = Utilities.PromptInt(loc["SETUP_SERVER_PORT"], null, 1, ushort.MaxValue);
             Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
-            AutoMessages = new List<string>();
-            Rules = new List<string>();
+            AutoMessages = new string[0];
+            Rules = new string[0];
             ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(null, 0, 32);
             ManualLogPath = null;
 

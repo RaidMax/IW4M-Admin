@@ -238,3 +238,5 @@ launchSettings.json
 /GameLogServer/log_env
 **/*.css
 /Master/master/persistence
+/WebfrontCore/wwwroot/fonts
+/WebfrontCore/wwwroot/font

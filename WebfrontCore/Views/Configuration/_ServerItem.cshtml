@@ -1,0 +1,10 @@
+﻿@model SharedLibraryCore.Configuration.ApplicationConfiguration
+@{
+    int start = Model.Servers.Length - 1;
+    int end = start + 1;
+}
+<!-- this is an ugly hack that allows us to create new server layout with correct array indices -->
+@for (int i = start; i < end; i++)
+{
+    @Html.EditorFor(model => model.Servers[i]);
+}

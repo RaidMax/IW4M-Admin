@@ -45,7 +45,7 @@ namespace LiveRadar
 
             var parsedEvent = new RadarEvent()
             {
-                Guid = items[0].ConvertGuidToLong(),
+                Guid = items[0].ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber),
                 Location = Vector3.Parse(items[1]),
                 ViewAngles = Vector3.Parse(items[2]).FixIW4Angles(),
                 Team = items[3],

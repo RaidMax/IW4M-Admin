@@ -5,6 +5,7 @@ using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Configuration.Validation;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
@@ -277,7 +278,7 @@ namespace IW4MAdmin.Application
                 if (newConfig.Servers == null)
                 {
                     ConfigHandler.Set(newConfig);
-                    newConfig.Servers = new List<ServerConfiguration>();
+                    newConfig.Servers = new ServerConfiguration[1];
 
                     do
                     {
@@ -292,7 +293,7 @@ namespace IW4MAdmin.Application
                             serverConfig.AddEventParser(parser);
                         }
 
-                        newConfig.Servers.Add((ServerConfiguration)serverConfig.Generate());
+                        newConfig.Servers[0] = (ServerConfiguration)serverConfig.Generate();
                     } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["SETUP_SERVER_SAVE"]));
 
                     config = newConfig;
@@ -312,6 +313,17 @@ namespace IW4MAdmin.Application
                 {
                     config.WebfrontBindUrl = "http://0.0.0.0:1624";
                     await ConfigHandler.Save();
+                }
+
+                var validator = new ApplicationConfigurationValidator();
+                var validationResult = validator.Validate(config);
+
+                if (!validationResult.IsValid)
+                {
+                    throw new ConfigurationException(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_CONFIGURATION_ERROR"])
+                    {
+                        Errors = validationResult.Errors.Select(_error => _error.ErrorMessage).ToArray()
+                    };
                 }
 
                 foreach (var serverConfig in config.Servers)
@@ -336,7 +348,7 @@ namespace IW4MAdmin.Application
                 }
             }
 
-            if (config.Servers.Count == 0)
+            if (config.Servers.Length == 0)
             {
                 throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
             }
@@ -584,7 +596,7 @@ namespace IW4MAdmin.Application
                 throw lastException;
             }
 
-            if (successServers != config.Servers.Count)
+            if (successServers != config.Servers.Length)
             {
                 if (!Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_START_WITH_ERRORS"]))
                 {

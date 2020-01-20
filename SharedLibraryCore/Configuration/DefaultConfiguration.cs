@@ -1,17 +1,14 @@
 ﻿using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SharedLibraryCore.Configuration
 {
     public class DefaultConfiguration : IBaseConfiguration
     {
-        public List<string> AutoMessages { get; set; }
-        public List<string> GlobalRules { get; set; }
-        public List<MapConfiguration> Maps { get; set; }
-        public List<QuickMessageConfiguration> QuickMessages {get; set;}
-        public List<string> DisallowedClientNames { get; set; }
+        public string[] AutoMessages { get; set; }
+        public string[] GlobalRules { get; set; }
+        public MapConfiguration[] Maps { get; set; }
+        public QuickMessageConfiguration[] QuickMessages {get; set;}
+        public string[] DisallowedClientNames { get; set; }
 
         public IBaseConfiguration Generate() => this;
 

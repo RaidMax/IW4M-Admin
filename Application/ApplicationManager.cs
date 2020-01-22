@@ -759,14 +759,20 @@ namespace IW4MAdmin.Application
             return PageList;
         }
 
-        public IRConParser GenerateDynamicRConParser()
+        public IRConParser GenerateDynamicRConParser(string name)
         {
-            return new DynamicRConParser();
+            return new DynamicRConParser()
+            {
+                Name = name
+            };
         }
 
-        public IEventParser GenerateDynamicEventParser()
+        public IEventParser GenerateDynamicEventParser(string name)
         {
-            return new DynamicEventParser();
+            return new DynamicEventParser()
+            {
+                Name = name
+            };
         }
 
         public async Task<IList<T>> ExecuteSharedDatabaseOperation<T>(string operationName)

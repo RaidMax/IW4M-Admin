@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'RektT5m Parser',
     isParser: true,
 
@@ -11,12 +11,12 @@ var plugin = {
     },
 
     onLoadAsync: function (manager) {
-        rconParser = manager.GenerateDynamicRConParser();
-        eventParser = manager.GenerateDynamicEventParser();
+        rconParser = manager.GenerateDynamicRConParser(this.name);
+        eventParser = manager.GenerateDynamicEventParser(this.name);
 
         eventParser.Configuration.GameDirectory = 'data';
 
-        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xff\1print';
+        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xff\x01print';
         rconParser.Configuration.CommandPrefixes.Tell = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined;
 

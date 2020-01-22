@@ -6,7 +6,6 @@ using System.Reflection;
 using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
-using static SharedLibraryCore.GameEvent;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -48,8 +47,20 @@ namespace SharedLibraryCore.Interfaces
         Task<IList<T>> ExecuteSharedDatabaseOperation<T>(string operationName);
         void RegisterSharedDatabaseOperation(Task<IList> operation, string operationName);
         IMiddlewareActionHandler MiddlewareActionHandler { get; }
-        IRConParser GenerateDynamicRConParser();
-        IEventParser GenerateDynamicEventParser();
+
+        /// <summary>
+        /// generates an rcon parser that can be configured by script plugins
+        /// </summary>
+        /// <param name="name">name of the RCon parser</param>
+        /// <returns>new rcon parser instance</returns>
+        IRConParser GenerateDynamicRConParser(string name);
+
+        /// <summary>
+        /// Generates an event parser that can be configured by script plugins
+        /// </summary>
+        /// <param name="name">name of the event parser</param>
+        /// <returns>new event parser instance</returns>
+        IEventParser GenerateDynamicEventParser(string name);
         string Version { get;}
         ITokenAuthentication TokenAuthenticator { get; }
         string ExternalIPAddress { get; }

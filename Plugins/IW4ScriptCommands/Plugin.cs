@@ -1,13 +1,10 @@
-﻿/*using SharedLibraryCore;
+﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IW4ScriptCommands
 {
-    class Plugin : IPlugin
+    public class Plugin : IPlugin
     {
         public string Name => "IW4 Script Commands";
 
@@ -15,29 +12,29 @@ namespace IW4ScriptCommands
 
         public string Author => "RaidMax";
 
-        public Task OnEventAsync(GameEvent E, Server S)
+        public async Task OnEventAsync(GameEvent E, Server S)
         {
             if (E.Type == GameEvent.EventType.Start)
             {
-                return S.SetDvarAsync("sv_iw4madmin_serverid", S.EndPoint);
+                await S.SetDvarAsync("sv_iw4madmin_serverid", S.EndPoint);
             }
 
             if (E.Type == GameEvent.EventType.Warn)
             {
-                return S.SetDvarAsync("sv_iw4madmin_command", new CommandInfo()
+                var cmd = new ScriptCommand()
                 {
                     ClientNumber = E.Target.ClientNumber,
-                    Command = "alert",
-                    CommandArguments = new List<string>()
+                    CommandName = "alert",
+                    CommandArguments = new[]
                     {
                         "Warning",
                         "ui_mp_nukebomb_timer",
                         E.Data
                     }
-                }.ToString());
+                };
+                // notifies the player ingame of the warning
+                await cmd.Execute(S);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task OnLoadAsync(IManager manager) => Task.CompletedTask;
@@ -47,4 +44,3 @@ namespace IW4ScriptCommands
         public Task OnUnloadAsync() => Task.CompletedTask;
     }
 }
-*/

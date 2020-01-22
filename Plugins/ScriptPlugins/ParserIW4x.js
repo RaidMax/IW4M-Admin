@@ -3,16 +3,16 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.3,
-    name: 'IW4 Parser',
+    version: 0.4,
+    name: 'IW4x Parser',
     isParser: true,
 
     onEventAsync: function (gameEvent, server) {
     },
 
     onLoadAsync: function (manager) {
-        rconParser = manager.GenerateDynamicRConParser();
-        eventParser = manager.GenerateDynamicEventParser();
+        rconParser = manager.GenerateDynamicRConParser(this.name);
+        eventParser = manager.GenerateDynamicEventParser(this.name);
 
         rconParser.Configuration.CommandPrefixes.Tell    = 'tellraw {0} {1}';
         rconParser.Configuration.CommandPrefixes.Say     = 'sayraw {0}';

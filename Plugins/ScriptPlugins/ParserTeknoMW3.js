@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'Tekno MW3 Parser',
     isParser: true,
 
@@ -11,8 +11,8 @@ var plugin = {
     },
 
     onLoadAsync: function (manager) {
-        rconParser = manager.GenerateDynamicRConParser();
-        eventParser = manager.GenerateDynamicEventParser();
+        rconParser = manager.GenerateDynamicRConParser(this.name);
+        eventParser = manager.GenerateDynamicEventParser(this.name);
 
         rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[A-Z]|[0-9]){16,32})\t +(.{0,16}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+\\:-?\\d{1,5}|loopback) *$';
         rconParser.Configuration.Status.AddMapping(104, 5); // RConName

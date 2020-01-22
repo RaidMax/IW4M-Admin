@@ -2,7 +2,6 @@
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Linq;
 using System.Text.RegularExpressions;
 using static SharedLibraryCore.Server;
 
@@ -74,6 +73,8 @@ namespace IW4MAdmin.Application.EventParsers
         public Game GameName { get; set; } = Game.COD;
 
         public string URLProtocolFormat { get; set; } = "CoD://{{ip}}:{{port}}";
+
+        public string Name { get; set; } = "Call of Duty";
 
         public virtual GameEvent GenerateGameEvent(string logLine)
         {

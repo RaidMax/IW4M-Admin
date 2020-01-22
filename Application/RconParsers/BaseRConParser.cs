@@ -63,6 +63,7 @@ namespace IW4MAdmin.Application.RconParsers
         public virtual string Version { get; set; } = "CoD";
         public Game GameName { get; set; } = Game.COD;
         public bool CanGenerateLogPath { get; set; } = true;
+        public string Name { get; set; } = "Call of Duty";
 
         public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
         {

@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, Xerxes',
-    version: 0.5,
+    version: 0.6,
     name: 'Plutonium T6 Parser',
     isParser: true,
 
@@ -11,8 +11,8 @@ var plugin = {
     },
 
     onLoadAsync: function (manager) {
-        rconParser = manager.GenerateDynamicRConParser();
-        eventParser = manager.GenerateDynamicEventParser();
+        rconParser = manager.GenerateDynamicRConParser(this.name);
+        eventParser = manager.GenerateDynamicEventParser(this.name);
 
         rconParser.Configuration.CommandPrefixes.Tell        = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.Say         = 'say {0}';

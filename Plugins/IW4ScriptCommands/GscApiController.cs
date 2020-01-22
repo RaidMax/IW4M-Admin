@@ -1,17 +1,24 @@
-﻿/*using IW4ScriptCommands.Commands;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using System;
-using System.Collections.Generic;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers.API
 {
     [Route("api/gsc/[action]")]
-    public class GscApiController : ApiController
+    public class GscApiController : BaseController
     {
+        public GscApiController(IManager manager) : base(manager)
+        {
+
+        }
+
+        /// <summary>
+        /// grabs basic info about the client from IW4MAdmin
+        /// </summary>
+        /// <param name="networkId"></param>
+        /// <returns></returns>
         [HttpGet("{networkId}")]
         public IActionResult ClientInfo(string networkId)
         {
@@ -32,23 +39,5 @@ namespace WebfrontCore.Controllers.API
 
             return Content("");
         }
-
-        [HttpGet("{networkId}")]
-        public IActionResult GetTeamAssignments(string networkId, int serverId, string teams = "", bool isDisconnect = false)
-        {
-            return Unauthorized();
-
-            var client = Manager.GetActiveClients()
-                .FirstOrDefault(c => c.NetworkId == networkId.ConvertGuidToLong());
-
-            var server = Manager.GetServers().First(c => c.EndPoint == serverId);
-
-            teams = teams ?? string.Empty;
-
-            string assignments = Balance.GetTeamAssignments(client,  isDisconnect, server, teams);
-
-            return Content(assignments);
-        }
     }
 }
-*/

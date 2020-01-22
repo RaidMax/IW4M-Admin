@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-12">
+    <div class="col-12 col-sm-8 ml-auto mr-auto">
         <figure>
             <div id="history_graph">{{history_graph|safe}}</div>
             <figcaption class="float-right">
@@ -15,10 +15,6 @@
                 <span class="h4 text-muted">&mdash; {{server_count}} servers</span>
             </figcaption>
         </figure>
-
-    </div>
-    <div class="col-12">
-
     </div>
 </div>
 {% endblock %}

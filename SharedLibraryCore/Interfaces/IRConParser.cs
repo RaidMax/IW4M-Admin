@@ -61,5 +61,10 @@ namespace SharedLibraryCore.Interfaces
         /// of fs_game, fs_basepath, g_log
         /// </summary>
         bool CanGenerateLogPath { get; set; }
+
+        /// <summary>
+        /// Specifies the name of the parser
+        /// </summary>
+        string Name { get; set; }
     }
 }

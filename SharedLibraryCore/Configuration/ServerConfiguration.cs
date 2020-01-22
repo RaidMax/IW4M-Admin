@@ -58,7 +58,7 @@ namespace SharedLibraryCore.Configuration
         public void ModifyParsers()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            var parserVersions = rconParsers.Select(_parser => _parser.Version).ToArray();
+            var parserVersions = rconParsers.Select(_parser => _parser.Name).ToArray();
             var selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_RCON_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
 
             if (selection.Item1 >= 0)

@@ -28,7 +28,7 @@ namespace SharedLibraryCore.Services
 
                     if (existingAliases.Count > 0)
                     {
-                        linkId = existingAliases.First().LinkId;
+                        linkId = existingAliases.OrderBy(_alias => _alias.LinkId).First().LinkId;
 
                         entity.CurrentServer.Logger.WriteDebug($"[create] client with new GUID {entity} has existing link {linkId}");
 
@@ -49,7 +49,6 @@ namespace SharedLibraryCore.Services
                     LastConnection = DateTime.UtcNow,
                     NetworkId = entity.NetworkId
                 };
-
 
                 entity.CurrentServer.Logger.WriteDebug($"[create] adding {entity} to context");
                 context.Clients.Add(client);

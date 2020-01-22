@@ -31,5 +31,10 @@ namespace SharedLibraryCore.Interfaces
         /// specifies the connect URI used to join game servers via web browser
         /// </summary>
         string URLProtocolFormat { get; set; }
+
+        /// <summary>
+        /// Specifies the text name of the game the parser is for
+        /// </summary>
+        string Name { get; set; }
     }
 }

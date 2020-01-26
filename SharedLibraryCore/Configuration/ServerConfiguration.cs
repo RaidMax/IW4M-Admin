@@ -31,9 +31,6 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationOptional]
         public Uri GameLogServerUrl { get; set; }
 
-        [ConfigurationIgnore]
-        public int Index { get; set; }
-
         private readonly IList<IRConParser> rconParsers;
         private readonly IList<IEventParser> eventParsers;
 

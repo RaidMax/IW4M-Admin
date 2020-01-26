@@ -293,7 +293,7 @@ namespace IW4MAdmin.Application
                             serverConfig.AddEventParser(parser);
                         }
 
-                        newConfig.Servers[0] = (ServerConfiguration)serverConfig.Generate();
+                        newConfig.Servers = newConfig.Servers.Append((ServerConfiguration)serverConfig.Generate()).ToArray();
                     } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["SETUP_SERVER_SAVE"]));
 
                     config = newConfig;

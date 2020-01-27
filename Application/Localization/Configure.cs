@@ -1,30 +1,29 @@
 ﻿using IW4MAdmin.Application.API.Master;
 using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.Localization
 {
     public class Configure
     {
-        public static void Initialize(string customLocale = null)
+        public static ITranslationLookup Initialize(bool useLocalTranslation, string customLocale = null)
         {
             string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
             string[] localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");
 
-            if (!Program.ServerManager.GetApplicationSettings()?.Configuration()?.UseLocalTranslations ?? false)
+            if (!useLocalTranslation)
             {
                 try
                 {
                     var api = Endpoint.Get();
                     var localization = api.GetLocalization(currentLocale).Result;
                     Utilities.CurrentLocalization = localization;
-                    return;
+                    return localization.LocalizationIndex;
                 }
 
                 catch (Exception)
@@ -73,6 +72,8 @@ namespace IW4MAdmin.Application.Localization
             {
                 LocalizationName = currentLocale,
             };
+
+            return Utilities.CurrentLocalization.LocalizationIndex;
         }
     }
 }

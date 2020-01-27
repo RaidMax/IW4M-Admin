@@ -44,7 +44,7 @@ namespace IW4MAdmin.Application
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
         public IMiddlewareActionHandler MiddlewareActionHandler { get; }
-        private readonly List<Command> Commands;
+        private readonly List<IManagerCommand> _commands;
         private readonly List<MessageToken> MessageTokens;
         private readonly ClientService ClientSvc;
         readonly AliasService AliasSvc;
@@ -57,12 +57,13 @@ namespace IW4MAdmin.Application
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
         private readonly CancellationTokenSource _tokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
+        private readonly ITranslationLookup _translationLookup;
+        private readonly CommandConfiguration _commandConfiguration;
 
-        public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler)
+        public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands, ITranslationLookup translationLookup, CommandConfiguration commandConfiguration)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
-            Commands = new List<Command>();
             MessageTokens = new List<MessageToken>();
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
@@ -76,6 +77,9 @@ namespace IW4MAdmin.Application
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();
             _loggers.Add(0, logger);
+            _commands = commands.ToList();
+            _translationLookup = translationLookup;
+            _commandConfiguration = commandConfiguration;
         }
 
         public async Task ExecuteEvent(GameEvent newEvent)
@@ -155,7 +159,7 @@ namespace IW4MAdmin.Application
 
         public IList<Command> GetCommands()
         {
-            return Commands;
+            return new List<Command>();
         }
 
         public async Task UpdateServerStates()
@@ -293,7 +297,7 @@ namespace IW4MAdmin.Application
                             serverConfig.AddEventParser(parser);
                         }
 
-                        newConfig.Servers[0] = (ServerConfiguration)serverConfig.Generate();
+                        newConfig.Servers = newConfig.Servers.Append((ServerConfiguration)serverConfig.Generate()).ToArray();
                     } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["SETUP_SERVER_SAVE"]));
 
                     config = newConfig;
@@ -367,55 +371,35 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region COMMANDS
-            if (ClientSvc.GetOwners().Result.Count == 0)
+            if (ClientSvc.GetOwners().Result.Count > 0)
             {
-                Commands.Add(new COwner());
+                _commands.RemoveAll(_cmd => _cmd.GetType() == typeof(OwnerCommand));
             }
-
-            Commands.Add(new CQuit());
-            Commands.Add(new CRestart());
-            Commands.Add(new CKick());
-            Commands.Add(new CSay());
-            Commands.Add(new CTempBan());
-            Commands.Add(new CBan());
-            Commands.Add(new CWhoAmI());
-            Commands.Add(new CList());
-            Commands.Add(new CHelp());
-            Commands.Add(new CFastRestart());
-            Commands.Add(new CMapRotate());
-            Commands.Add(new CSetLevel());
-            Commands.Add(new CUsage());
-            Commands.Add(new CUptime());
-            Commands.Add(new CWarn());
-            Commands.Add(new CWarnClear());
-            Commands.Add(new CUnban());
-            Commands.Add(new CListAdmins());
-            Commands.Add(new CLoadMap());
-            Commands.Add(new CFindPlayer());
-            Commands.Add(new CListRules());
-            Commands.Add(new CPrivateMessage());
-            Commands.Add(new CFlag());
-            Commands.Add(new CUnflag());
-            Commands.Add(new CReport());
-            Commands.Add(new CListReports());
-            Commands.Add(new CListBanInfo());
-            Commands.Add(new CListAlias());
-            Commands.Add(new CExecuteRCON());
-            Commands.Add(new CPlugins());
-            Commands.Add(new CIP());
-            Commands.Add(new CMask());
-            Commands.Add(new CPruneAdmins());
-            //Commands.Add(new CKillServer());
-            Commands.Add(new CSetPassword());
-            Commands.Add(new CPing());
-            Commands.Add(new CSetGravatar());
-            Commands.Add(new CNextMap());
-            Commands.Add(new RequestTokenCommand());
-            Commands.Add(new UnlinkClientCommand());
 
             foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
             {
-                Commands.Add(C);
+                _commands.Add(C);
+            }
+
+            if (_commandConfiguration == null)
+            {
+                // todo: this is here for now. it's not the most elegant but currently there's no way to know all the plugin comamnds during DI
+                var handler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
+                var cmdConfig = new CommandConfiguration();
+
+                foreach (var cmd in _commands)
+                {
+                    cmdConfig.Commands.Add(cmd.GetType().Name, 
+                    new CommandProperties()
+                    {
+                        Name = cmd.Name,
+                        Alias = cmd.Alias,
+                        MinimumPermission = cmd.Permission
+                    });
+                }
+
+                handler.Set(cmdConfig);
+                await handler.Save();
             }
             #endregion
 
@@ -557,7 +541,7 @@ namespace IW4MAdmin.Application
 
                 try
                 {
-                    var ServerInstance = new IW4MServer(this, Conf);
+                    var ServerInstance = new IW4MServer(this, Conf, _translationLookup);
                     await ServerInstance.Initialize();
 
                     _servers.Add(ServerInstance);

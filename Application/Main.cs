@@ -2,10 +2,12 @@
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,9 +70,6 @@ namespace IW4MAdmin.Application
                 {
                     ServerManager = (ApplicationManager)builder.GetRequiredService<IManager>();
                 }
-
-                var configuration = ServerManager.GetApplicationSettings().Configuration();
-                Localization.Configure.Initialize(configuration?.EnableCustomLocale ?? false ? (configuration.CustomLocale ?? "en-US") : "en-US");
 
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
@@ -259,8 +258,21 @@ namespace IW4MAdmin.Application
         {
             var serviceProvider = new ServiceCollection();
             serviceProvider.AddSingleton<IManager, ApplicationManager>()
+                .AddSingleton(_serviceProvider => new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings").Configuration())
+                .AddSingleton(_serviceProvider => new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration").Configuration())
                 .AddSingleton<ILogger>(_serviceProvider => new Logger("IW4MAdmin-Manager"))
-                .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>();
+                .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
+                .AddSingleton(_serviceProvider =>
+                {
+                    var config = _serviceProvider.GetRequiredService<ApplicationConfiguration>();
+                    return Localization.Configure.Initialize(config?.UseLocalTranslations ?? false, config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
+                });
+
+
+            foreach (var commandDefinition in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes().Where(_command => _command.BaseType == typeof(Command)))
+            {
+                serviceProvider.AddTransient(typeof(IManagerCommand), commandDefinition);
+            }
 
             return serviceProvider;
         }

@@ -25,7 +25,7 @@ namespace SharedLibraryCore
         public IManager Manager { get; private set; }
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; set; }
-        protected SharedLibraryCore.Localization.Index Localization { get; private set; }
+        protected SharedLibraryCore.Localization.TranslationLookup Localization { get; private set; }
         protected EFClient Client { get; private set; }
         private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
         private static string SocialLink;

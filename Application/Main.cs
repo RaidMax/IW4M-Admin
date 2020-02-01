@@ -268,7 +268,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton(new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings") as IConfigurationHandler<ApplicationConfiguration>)
                 .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration())
-                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration())
+                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
                 .AddSingleton<ILogger>(_serviceProvider => new Logger("IW4MAdmin-Manager"))
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()

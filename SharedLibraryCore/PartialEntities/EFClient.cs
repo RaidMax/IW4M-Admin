@@ -1,8 +1,10 @@
-﻿using SharedLibraryCore.Localization;
+﻿using Newtonsoft.Json.Converters;
+using SharedLibraryCore.Localization;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;

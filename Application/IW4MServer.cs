@@ -23,14 +23,18 @@ namespace IW4MAdmin
 {
     public class IW4MServer : Server
     {
-        private static readonly SharedLibraryCore.Localization.Index loc = Utilities.CurrentLocalization.LocalizationIndex;
+        private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
         private GameLogEventDetection LogEvent;
+        private readonly ITranslationLookup _translationLookup;
         private const int REPORT_FLAG_COUNT = 4;
+        private readonly IPluginImporter _pluginImporter;
 
         public int Id { get; private set; }
 
-        public IW4MServer(IManager mgr, ServerConfiguration cfg) : base(mgr, cfg)
+        public IW4MServer(IManager mgr, ServerConfiguration cfg, ITranslationLookup lookup, IPluginImporter pluginImporter) : base(mgr, cfg)
         {
+            _translationLookup = lookup;
+            _pluginImporter = pluginImporter;
         }
 
         override public async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -148,7 +152,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+                foreach (var plugin in _pluginImporter.ActivePlugins)
                 {
                     try
                     {
@@ -666,7 +670,7 @@ namespace IW4MAdmin
                 await e.WaitAsync(Utilities.DefaultCommandTimeout, new CancellationTokenRegistration().Token);
             }
 
-            foreach (var plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+            foreach (var plugin in _pluginImporter.ActivePlugins)
             {
                 await plugin.OnUnloadAsync();
             }
@@ -1186,8 +1190,8 @@ namespace IW4MAdmin
         {
             Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
             Manager.GetMessageTokens().Add(new MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));
-            Manager.GetMessageTokens().Add(new MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.CNextMap.GetNextMap(s)));
-            Manager.GetMessageTokens().Add(new MessageToken("ADMINS", (Server s) => Task.FromResult(SharedLibraryCore.Commands.CListAdmins.OnlineAdmins(s))));
+            Manager.GetMessageTokens().Add(new MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.NextMapCommand.GetNextMap(s, _translationLookup)));
+            Manager.GetMessageTokens().Add(new MessageToken("ADMINS", (Server s) => Task.FromResult(SharedLibraryCore.Commands.ListAdminsCommand.OnlineAdmins(s, _translationLookup))));
         }
     }
 }

@@ -477,12 +477,14 @@ namespace IW4MAdmin.Plugins.Stats
 
             async Task<string> topStats(Server s)
             {
-                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s));
+                // todo: this needs to needs to be updated when we DI the lookup
+                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s, Utilities.CurrentLocalization.LocalizationIndex));
             }
 
             async Task<string> mostPlayed(Server s)
             {
-                return string.Join(Environment.NewLine, await Commands.MostPlayed.GetMostPlayed(s));
+                // todo: this needs to needs to be updated when we DI the lookup
+                return string.Join(Environment.NewLine, await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex));
             }
 
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));

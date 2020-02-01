@@ -9,12 +9,14 @@ using SharedLibraryCore.Database;
 using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
 using IW4MAdmin.Plugins.Stats.Helpers;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
-    class MostPlayed : Command
+    class MostPlayedCommand : Command
     {
-        public static async Task<List<string>> GetMostPlayed(Server s)
+        public static async Task<List<string>> GetMostPlayed(Server s, ITranslationLookup translationLookup)
         {
             long serverId = StatManager.GetIdForServer(s);
 
@@ -50,18 +52,25 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 var iqList = await iqStats.ToListAsync();
 
                 mostPlayed.AddRange(iqList.Select(stats =>
-                $"^3{stats.Name}^7 - ^5{stats.Kills} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]} | ^5{Utilities.GetTimePassed(DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime), false)} ^7{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"].ToLower()}"));
+                $"^3{stats.Name}^7 - ^5{stats.Kills} ^7{translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{Utilities.GetTimePassed(DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime), false)} ^7{translationLookup["WEBFRONT_PROFILE_PLAYER"].ToLower()}"));
             }
 
 
             return mostPlayed;
         }
 
-        public MostPlayed() : base("mostplayed", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_DESC"], "mp", EFClient.Permission.User, false) { }
+        public MostPlayedCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup) 
+        {
+            Name = "mostplayed";
+            Description = translationLookup["PLUGINS_STATS_COMMANDS_MOSTPLAYED_DESC"];
+            Alias = "mp";
+            Permission = EFClient.Permission.User;
+            RequiresTarget = false;
+        }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var topStats = await GetMostPlayed(E.Owner);
+            var topStats = await GetMostPlayed(E.Owner, _translationLookup);
             if (!E.Message.IsBroadcastCommand())
             {
                 foreach (var stat in topStats)

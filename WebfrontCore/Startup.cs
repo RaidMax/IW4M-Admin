@@ -17,16 +17,6 @@ namespace WebfrontCore
 {
     public class Startup
     {
-        public static IConfigurationRoot Configuration { get; private set; }
-
-        public Startup(IWebHostEnvironment env)
-        {
-            var builder = new ConfigurationBuilder()
-                .AddEnvironmentVariables();
-
-            Configuration = builder.Build();
-        }
-
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -93,6 +83,7 @@ namespace WebfrontCore
 #endif
 
             services.AddSingleton(Program.Manager);
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService(typeof(IPluginImporter)) as IPluginImporter);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

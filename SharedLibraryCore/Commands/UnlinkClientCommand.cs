@@ -1,4 +1,6 @@
-﻿using SharedLibraryCore.Database.Models;
+﻿using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Commands
@@ -12,14 +14,19 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class UnlinkClientCommand : Command
     {
-        public UnlinkClientCommand() :
-            base("unlinkclient", Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNLINK_CLIENT_DESC"], "uc", EFClient.Permission.Administrator, true)
-        { }
+        public UnlinkClientCommand(CommandConfiguration config, ITranslationLookup lookup) : base(config, lookup)
+        {
+            Name = "unlinkclient";
+            Description = lookup["COMMANDS_UNLINK_CLIENT_DESC"];
+            Alias = "uc";
+            Permission = EFClient.Permission.Administrator;
+            RequiresTarget = true;
+        }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             await E.Owner.Manager.GetClientService().UnlinkClient(E.Target.ClientId);
-            E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_UNLINK_CLIENT_SUCCESS"].FormatExt(E.Target));
+            E.Origin.Tell(_translationLookup["COMMANDS_UNLINK_CLIENT_SUCCESS"].FormatExt(E.Target));
         }
     }
 }

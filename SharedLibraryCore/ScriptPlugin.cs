@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibraryCore
 {
-    class ScriptPlugin : IPlugin
+    public class ScriptPlugin : IPlugin
     {
         public string Name { get; set; }
 

@@ -53,7 +53,7 @@ namespace Tests
 
             foreach (var command in Manager.GetCommands().OrderByDescending(c => c.Permission).ThenBy(c => c.Name))
             {
-                sb.AppendLine($"|{command.Name}|{command.Alias}|{command.Description}|{command.RequiresTarget}|{command.Syntax.Substring(8).EscapeMarkdown()}|{command.Permission}|");
+                sb.AppendLine($"|{command.Name}|{command.Alias}|{command.Description}|{((Command)command).RequiresTarget}|{((Command)command).Syntax.Substring(8).EscapeMarkdown()}|{command.Permission}|");
             }
 
             Assert.True(false, sb.ToString());

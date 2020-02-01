@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.2.4" PrivateAssets="All" />
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.2.6" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

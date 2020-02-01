@@ -17,7 +17,7 @@ namespace SharedLibraryCore.Interfaces
         void Restart();
         ILogger GetLogger(long serverId);
         IList<Server> GetServers();
-        IList<Command> GetCommands();
+        IList<IManagerCommand> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();
         IList<EFClient> GetActiveClients();
         IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();

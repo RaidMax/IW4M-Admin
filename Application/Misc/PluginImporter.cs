@@ -4,17 +4,30 @@ using System.Collections.Generic;
 using System.Reflection;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
+using SharedLibraryCore;
 
-namespace SharedLibraryCore.Plugins
+namespace IW4MAdmin.Application.Helpers
 {
-    public class PluginImporter
+    public class PluginImporter : IPluginImporter
     {
-        public static List<Command> ActiveCommands = new List<Command>();
-        public static List<IPlugin> ActivePlugins = new List<IPlugin>();
-        public static List<Assembly> PluginAssemblies = new List<Assembly>();
-        public static List<Assembly> Assemblies = new List<Assembly>();
+        public IList<Type> CommandTypes { get; private set; } = new List<Type>();
+        public IList<IPlugin> ActivePlugins { get; private set; } = new List<IPlugin>();
+        public IList<Assembly> PluginAssemblies { get; private set; } = new List<Assembly>();
+        public IList<Assembly> Assemblies { get; private set; } = new List<Assembly>();
 
-        public static bool Load(IManager Manager)
+        private readonly ILogger _logger;
+        private readonly ITranslationLookup _translationLookup;
+
+        public PluginImporter(ILogger logger, ITranslationLookup translationLookup)
+        {
+            _logger = logger;
+            _translationLookup = translationLookup;
+        }
+
+        /// <summary>
+        /// Loads all the assembly and javascript plugins
+        /// </summary>
+        public void Load()
         {
             string pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
             string[] dllFileNames = null;
@@ -35,16 +48,15 @@ namespace SharedLibraryCore.Plugins
             if (dllFileNames.Length == 0 &&
                 scriptFileNames.Length == 0)
             {
-                Manager.GetLogger(0).WriteDebug(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_NOTFOUND"]);
-                return true;
+                _logger.WriteDebug(_translationLookup["PLUGIN_IMPORTER_NOTFOUND"]);
+                return;
             }
 
             // load up the script plugins
             foreach (string fileName in scriptFileNames)
             {
                 var plugin = new ScriptPlugin(fileName);
-                plugin.Initialize(Manager).Wait();
-                Manager.GetLogger(0).WriteDebug($"Loaded script plugin \"{ plugin.Name }\" [{plugin.Version}]");
+                _logger.WriteDebug($"Loaded script plugin \"{ plugin.Name }\" [{plugin.Version}]");
                 ActivePlugins.Add(plugin);
             }
 
@@ -63,12 +75,10 @@ namespace SharedLibraryCore.Plugins
                     Type[] types = Plugin.GetTypes();
                     foreach (Type assemblyType in types)
                     {
-                        if (assemblyType.IsClass && assemblyType.BaseType.Name == "Command")
+                        if (assemblyType.IsClass && assemblyType.BaseType == typeof(Command))
                         {
-                            Object commandObject = Activator.CreateInstance(assemblyType);
-                            Command newCommand = (Command)commandObject;
-                            ActiveCommands.Add(newCommand);
-                            Manager.GetLogger(0).WriteDebug($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_REGISTERCMD"]} \"{newCommand.Name}\"");
+                            CommandTypes.Add(assemblyType);
+                            _logger.WriteDebug($"{_translationLookup["PLUGIN_IMPORTER_REGISTERCMD"]} \"{assemblyType.Name}\"");
                             LoadedCommands++;
                             continue;
                         }
@@ -78,26 +88,26 @@ namespace SharedLibraryCore.Plugins
                             if (assemblyType.GetInterface("IPlugin", false) == null)
                                 continue;
 
-                            Object notifyObject = Activator.CreateInstance(assemblyType);
+                            var notifyObject = Activator.CreateInstance(assemblyType);
                             IPlugin newNotify = (IPlugin)notifyObject;
-                            if (ActivePlugins.Find(x => x.Name == newNotify.Name) == null)
+                            if (ActivePlugins.FirstOrDefault(x => x.Name == newNotify.Name) == null)
                             {
                                 ActivePlugins.Add(newNotify);
                                 PluginAssemblies.Add(Plugin);
-                                Manager.GetLogger(0).WriteDebug($"Loaded plugin \"{ newNotify.Name }\" [{newNotify.Version}]");
+                                _logger.WriteDebug($"Loaded plugin \"{newNotify.Name}\" [{newNotify.Version}]");
                             }
                         }
 
                         catch (Exception e)
                         {
-                            Manager.GetLogger(0).WriteWarning(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"].FormatExt(Plugin.Location));
-                            Manager.GetLogger(0).WriteDebug(e.GetExceptionInfo());
+                            _logger.WriteWarning(_translationLookup["PLUGIN_IMPORTER_ERROR"].FormatExt(Plugin.Location));
+                            _logger.WriteDebug(e.GetExceptionInfo());
                         }
                     }
                 }
             }
-            Manager.GetLogger(0).WriteInfo($"Loaded {ActivePlugins.Count} plugins and registered {LoadedCommands} commands.");
-            return true;
+
+            _logger.WriteInfo($"Loaded {ActivePlugins.Count} plugins and registered {LoadedCommands} plugin commands.");
         }
     }
 }

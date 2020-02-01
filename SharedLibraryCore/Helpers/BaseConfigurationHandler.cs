@@ -9,20 +9,21 @@ namespace SharedLibraryCore.Configuration
 {
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
-        readonly string _configurationPath;
         T _configuration;
 
         public BaseConfigurationHandler(string fn)
         {
-            _configurationPath = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{fn}.json");
+            FileName = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{fn}.json");
             Build();
         }
+
+        public string FileName { get; }
 
         public void Build()
         {
             try
             {
-                var configContent = File.ReadAllText(_configurationPath);
+                var configContent = File.ReadAllText(FileName);
                 _configuration = JsonConvert.DeserializeObject<T>(configContent);
             }
 
@@ -35,15 +36,22 @@ namespace SharedLibraryCore.Configuration
             {
                 throw new ConfigurationException("MANAGER_CONFIGURATION_ERROR")
                 {
-                    Errors = new[] { e.Message }
+                    Errors = new[] { e.Message },
+                    ConfigurationFileName = FileName
                 };
             }
         }
 
         public Task Save()
         {
-            var appConfigJSON = JsonConvert.SerializeObject(_configuration, Formatting.Indented);
-            return File.WriteAllTextAsync(_configurationPath, appConfigJSON);
+            var settings = new JsonSerializerSettings()
+            {
+                Formatting = Formatting.Indented
+            };
+            settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+
+            var appConfigJSON = JsonConvert.SerializeObject(_configuration, settings);
+            return File.WriteAllTextAsync(FileName, appConfigJSON);
         }
 
         public T Configuration()

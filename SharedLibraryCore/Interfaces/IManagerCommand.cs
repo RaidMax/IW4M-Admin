@@ -34,5 +34,15 @@ namespace SharedLibraryCore.Interfaces
         /// Minimum permission required to execute the command
         /// </summary>
         Permission Permission { get; }
+
+        /// <summary>
+        /// Syntax for using the command
+        /// </summary>
+        string Syntax { get; }
+
+        /// <summary>
+        /// Indicates if target is required
+        /// </summary>
+        bool RequiresTarget { get; }
     }
 }

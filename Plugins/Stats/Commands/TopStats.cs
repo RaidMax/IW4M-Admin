@@ -9,17 +9,19 @@ using SharedLibraryCore.Database;
 using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
 using IW4MAdmin.Plugins.Stats.Helpers;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
     class TopStats : Command
     {
-        public static async Task<List<string>> GetTopStats(Server s)
+        public static async Task<List<string>> GetTopStats(Server s, ITranslationLookup translationLookup)
         {
             long serverId = StatManager.GetIdForServer(s); 
-            List<string> topStatsText = new List<string>()
+            var topStatsText = new List<string>()
             {
-                $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"
+                $"^5--{translationLookup["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"
             };
 
             using (var db = new DatabaseContext(true))
@@ -46,7 +48,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                               .Take(5);
 
                 var statsList = (await iqStats.ToListAsync())
-                    .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
+                    .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{translationLookup["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
 
                 topStatsText.AddRange(statsList);
             }
@@ -56,18 +58,25 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             {
                 topStatsText = new List<string>()
                 {
-                    Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_NOQUALIFY"]
+                    translationLookup["PLUGINS_STATS_TEXT_NOQUALIFY"]
                 };
             }
 
             return topStatsText;
         }
 
-        public TopStats() : base("topstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_DESC"], "ts", EFClient.Permission.User, false) { }
+        public TopStats(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup) 
+        {
+            Name = "topstats";
+            Description = translationLookup["PLUGINS_STATS_COMMANDS_TOP_DESC"];
+            Alias = "ts";
+            Permission = EFClient.Permission.User;
+            RequiresTarget = false;
+        }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var topStats = await GetTopStats(E.Owner);
+            var topStats = await GetTopStats(E.Owner, _translationLookup);
             if (!E.Message.IsBroadcastCommand())
             {
                 foreach (var stat in topStats)

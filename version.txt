@@ -1,16 +1,16 @@
-Version 2.4:
+Version 2.3:
 -added "live radar" feature
 -added chat message to server on server list view
 -added recently connected players dropdown option on webfront
 -added "dashboard" to home view with quick stats
 -added ability to customize accent color and branding on webfront
 -added flag button to client profile
--hid flagged status of users on webfront unless logged in
+-added ability to specify permission levels per command
 -added snap anticheat metric 
-
-Version 2.3:
 -added configuration option to ignore bots
 -updated anticheat slightly
+-hides flagged status of users on webfront unless logged in
+-updated projects to .NET Core 3.1
 -lots more
 
 Version 2.2:

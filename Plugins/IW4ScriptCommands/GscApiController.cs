@@ -23,7 +23,7 @@ namespace WebfrontCore.Controllers.API
         public IActionResult ClientInfo(string networkId)
         {
             var clientInfo = Manager.GetActiveClients()
-                .FirstOrDefault(c => c.NetworkId == networkId.ConvertGuidToLong());
+                .FirstOrDefault(c => c.NetworkId == networkId.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber));
 
             if (clientInfo != null)
             {

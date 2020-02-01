@@ -1,5 +1,8 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Commands;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
 using System.Threading.Tasks;
 
 namespace IW4ScriptCommands.Commands
@@ -9,15 +12,22 @@ namespace IW4ScriptCommands.Commands
     /// </summary>
     public class KillPlayerCommand : Command
     {
-        public KillPlayerCommand() : base("killplayer", "kill a player", "kp", EFClient.Permission.Administrator, true, new[]
+        public KillPlayerCommand(CommandConfiguration config, ITranslationLookup lookup) : base(config, lookup)
         {
-            new CommandArgument()
+            Name = "killplayer";
+            Description = "kill a player";
+            Alias = "kp";
+            Permission = EFClient.Permission.Administrator;
+            RequiresTarget = true;
+            Arguments = new[]
             {
-                Name = "player",
-                Required = true
-            }
-        })
-        { }
+                new CommandArgument()
+                {
+                    Name = "player",
+                    Required = true
+                }
+            };
+        }
 
         public override async Task ExecuteAsync(GameEvent E)
         {

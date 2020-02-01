@@ -9,7 +9,6 @@ using SharedLibraryCore.Configuration.Validation;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Events;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -49,7 +48,7 @@ namespace IW4MAdmin.Application
         private readonly ClientService ClientSvc;
         readonly AliasService AliasSvc;
         readonly PenaltyService PenaltySvc;
-        public BaseConfigurationHandler<ApplicationConfiguration> ConfigHandler;
+        public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         GameEventHandler Handler;
         readonly IPageList PageList;
         private readonly Dictionary<long, ILogger> _loggers = new Dictionary<long, ILogger>();
@@ -58,9 +57,12 @@ namespace IW4MAdmin.Application
         private readonly CancellationTokenSource _tokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
         private readonly ITranslationLookup _translationLookup;
-        private readonly CommandConfiguration _commandConfiguration;
+        private readonly IConfigurationHandler<CommandConfiguration> _commandConfiguration;
+        private readonly IPluginImporter _pluginImporter;
 
-        public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands, ITranslationLookup translationLookup, CommandConfiguration commandConfiguration)
+        public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
+            ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
+            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IPluginImporter pluginImporter)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -68,7 +70,7 @@ namespace IW4MAdmin.Application
             ClientSvc = new ClientService();
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
-            ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
+            ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
             AdditionalEventParsers = new List<IEventParser>();
@@ -80,6 +82,7 @@ namespace IW4MAdmin.Application
             _commands = commands.ToList();
             _translationLookup = translationLookup;
             _commandConfiguration = commandConfiguration;
+            _pluginImporter = pluginImporter;
         }
 
         public async Task ExecuteEvent(GameEvent newEvent)
@@ -157,9 +160,9 @@ namespace IW4MAdmin.Application
             return Servers;
         }
 
-        public IList<Command> GetCommands()
+        public IList<IManagerCommand> GetCommands()
         {
-            return new List<Command>();
+            return _commands;
         }
 
         public async Task UpdateServerStates()
@@ -246,18 +249,21 @@ namespace IW4MAdmin.Application
             ExternalIPAddress = await Utilities.GetExternalIP();
 
             #region PLUGINS
-            SharedLibraryCore.Plugins.PluginImporter.Load(this);
-
-            foreach (var Plugin in SharedLibraryCore.Plugins.PluginImporter.ActivePlugins)
+            foreach (var plugin in _pluginImporter.ActivePlugins)
             {
                 try
                 {
-                    await Plugin.OnLoadAsync(this);
+                    if (plugin is ScriptPlugin scriptPlugin)
+                    {
+                        await scriptPlugin.Initialize(this);
+                    }
+
+                    await plugin.OnLoadAsync(this);
                 }
 
                 catch (Exception ex)
                 {
-                    Logger.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_PLUGIN"]} {Plugin.Name}");
+                    Logger.WriteError($"{_translationLookup["SERVER_ERROR_PLUGIN"]} {plugin.Name}");
                     Logger.WriteDebug(ex.GetExceptionInfo());
                 }
             }
@@ -298,7 +304,7 @@ namespace IW4MAdmin.Application
                         }
 
                         newConfig.Servers = newConfig.Servers.Append((ServerConfiguration)serverConfig.Generate()).ToArray();
-                    } while (Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["SETUP_SERVER_SAVE"]));
+                    } while (Utilities.PromptBool(_translationLookup["SETUP_SERVER_SAVE"]));
 
                     config = newConfig;
                     await ConfigHandler.Save();
@@ -324,9 +330,10 @@ namespace IW4MAdmin.Application
 
                 if (!validationResult.IsValid)
                 {
-                    throw new ConfigurationException(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_CONFIGURATION_ERROR"])
+                    throw new ConfigurationException("MANAGER_CONFIGURATION_ERROR")
                     {
-                        Errors = validationResult.Errors.Select(_error => _error.ErrorMessage).ToArray()
+                        Errors = validationResult.Errors.Select(_error => _error.ErrorMessage).ToArray(),
+                        ConfigurationFileName = ConfigHandler.FileName
                     };
                 }
 
@@ -376,31 +383,34 @@ namespace IW4MAdmin.Application
                 _commands.RemoveAll(_cmd => _cmd.GetType() == typeof(OwnerCommand));
             }
 
-            foreach (Command C in SharedLibraryCore.Plugins.PluginImporter.ActiveCommands)
+            List<IManagerCommand> commandsToAddToConfig = new List<IManagerCommand>();
+            var cmdConfig = _commandConfiguration.Configuration();
+
+            if (cmdConfig == null)
             {
-                _commands.Add(C);
+                cmdConfig = new CommandConfiguration();
+                commandsToAddToConfig.AddRange(_commands);
             }
 
-            if (_commandConfiguration == null)
+            else
             {
-                // todo: this is here for now. it's not the most elegant but currently there's no way to know all the plugin comamnds during DI
-                var handler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
-                var cmdConfig = new CommandConfiguration();
+                var unsavedCommands = _commands.Where(_cmd => !cmdConfig.Commands.Keys.Contains(_cmd.GetType().Name));
+                commandsToAddToConfig.AddRange(unsavedCommands);
+            }
 
-                foreach (var cmd in _commands)
+            foreach (var cmd in commandsToAddToConfig)
+            {
+                cmdConfig.Commands.Add(cmd.GetType().Name,
+                new CommandProperties()
                 {
-                    cmdConfig.Commands.Add(cmd.GetType().Name, 
-                    new CommandProperties()
-                    {
-                        Name = cmd.Name,
-                        Alias = cmd.Alias,
-                        MinimumPermission = cmd.Permission
-                    });
-                }
-
-                handler.Set(cmdConfig);
-                await handler.Save();
+                    Name = cmd.Name,
+                    Alias = cmd.Alias,
+                    MinimumPermission = cmd.Permission
+                });
             }
+
+            _commandConfiguration.Set(cmdConfig);
+            await _commandConfiguration.Save();
             #endregion
 
             #region META
@@ -541,7 +551,7 @@ namespace IW4MAdmin.Application
 
                 try
                 {
-                    var ServerInstance = new IW4MServer(this, Conf, _translationLookup);
+                    var ServerInstance = new IW4MServer(this, Conf, _translationLookup, _pluginImporter);
                     await ServerInstance.Initialize();
 
                     _servers.Add(ServerInstance);
@@ -735,7 +745,7 @@ namespace IW4MAdmin.Application
 
         public IList<Assembly> GetPluginAssemblies()
         {
-            return SharedLibraryCore.Plugins.PluginImporter.PluginAssemblies.Union(SharedLibraryCore.Plugins.PluginImporter.Assemblies).ToList();
+            return _pluginImporter.PluginAssemblies.Union(_pluginImporter.Assemblies).ToList();
         }
 
         public IPageList GetPageList()

@@ -12,5 +12,6 @@ namespace SharedLibraryCore.Interfaces
         void Build();
         T Configuration();
         void Set(T config);
+        string FileName { get; }
     }
 }

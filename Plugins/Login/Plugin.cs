@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Tasks;
+using IW4MAdmin.Plugins.Login.Commands;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
@@ -43,11 +44,11 @@ namespace IW4MAdmin.Plugins.Login
                     E.Origin.Level == EFClient.Permission.Console)
                     return Task.CompletedTask;
 
-                if (((Command)E.Extra).Name == new CSetPassword().Name &&
+                if (E.Extra.GetType() == typeof(SetPasswordCommand) &&
                     E.Origin?.Password == null)
                     return Task.CompletedTask;
 
-                if (((Command)E.Extra).Name == new Commands.CLogin().Name)
+                if (E.Extra.GetType() == typeof(LoginCommand))
                     return Task.CompletedTask;
 
                 if (E.Extra.GetType() == typeof(RequestTokenCommand))

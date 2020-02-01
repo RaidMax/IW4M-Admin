@@ -1317,19 +1317,21 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class ListPluginsCommand : Command
     {
-        public ListPluginsCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly IPluginImporter _pluginImporter;
+        public ListPluginsCommand(CommandConfiguration config, ITranslationLookup translationLookup, IPluginImporter pluginImporter) : base(config, translationLookup)
         {
             Name = "plugins";
             Description = _translationLookup["COMMANDS_PLUGINS_DESC"];
             Alias = "p";
             Permission = Permission.Administrator;
             RequiresTarget = false;
+            _pluginImporter = pluginImporter;
         }
 
         public override Task ExecuteAsync(GameEvent E)
         {
             E.Origin.Tell(_translationLookup["COMMANDS_PLUGINS_LOADED"]);
-            foreach (var P in Plugins.PluginImporter.ActivePlugins)
+            foreach (var P in _pluginImporter.ActivePlugins)
             {
                 E.Origin.Tell(string.Format("^3{0} ^7[v^3{1}^7] by ^5{2}^7", P.Name, P.Version, P.Author));
             }

@@ -1,8 +1,10 @@
 ﻿using IW4MAdmin.Plugins.Stats.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,7 +12,14 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
-        public ResetStats() : base("resetstats", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_DESC"], "rs", EFClient.Permission.User, false) { }
+        public ResetStats(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        {
+            Name = "resetstats";
+            Description = translationLookup["PLUGINS_STATS_COMMANDS_RESET_DESC"];
+            Alias = "rs";
+            Permission = EFClient.Permission.User;
+            RequiresTarget = false;
+        }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
@@ -41,12 +50,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     // fixme: this doesn't work properly when another context exists
                     await ctx.SaveChangesAsync();
                 }
-                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
+                E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 
             else
             {
-                E.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
+                E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
             }
         }
     }

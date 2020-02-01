@@ -28,10 +28,5 @@ namespace SharedLibraryCore.Interfaces
         /// All assemblies in the plugin folder
         /// </summary>
         IList<Assembly> Assemblies { get; }
-        
-        /// <summary>
-        /// Loads in plugin assemblies and script plugins
-        /// </summary>
-        void Load();
     }
 }

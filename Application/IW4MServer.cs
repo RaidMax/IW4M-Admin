@@ -881,9 +881,9 @@ namespace IW4MAdmin
                 Version = RconParser.Version;
             }
 
-            var svRunning = await this.GetDvarAsync<int>("sv_running");
+            var svRunning = await this.GetDvarAsync<string>("sv_running");
 
-            if (svRunning.Value == 0)
+            if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")
             {
                 throw new ServerException(loc["SERVER_ERROR_NOT_RUNNING"]);
             }

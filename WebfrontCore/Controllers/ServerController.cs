@@ -21,7 +21,7 @@ namespace WebfrontCore.Controllers
 
             if (s == null)
             {
-                return View("Error", "Invalid server!");
+                return NotFound();
             }
 
             var serverInfo = new ServerInfo()

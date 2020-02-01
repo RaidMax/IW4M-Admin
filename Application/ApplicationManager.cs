@@ -256,9 +256,25 @@ namespace IW4MAdmin.Application
                     if (plugin is ScriptPlugin scriptPlugin)
                     {
                         await scriptPlugin.Initialize(this);
+                        scriptPlugin.Watcher.Changed += async (sender, e) =>
+                        {
+                            try
+                            {
+                                await scriptPlugin.Initialize(this);
+                            }
+
+                            catch (Exception ex)
+                            {
+                                Logger.WriteError(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"].FormatExt(scriptPlugin.Name));
+                                Logger.WriteDebug(ex.Message);
+                            }
+                        };
                     }
 
-                    await plugin.OnLoadAsync(this);
+                    else
+                    {
+                        await plugin.OnLoadAsync(this);
+                    }
                 }
 
                 catch (Exception ex)

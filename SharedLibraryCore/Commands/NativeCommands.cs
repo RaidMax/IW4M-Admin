@@ -1315,7 +1315,7 @@ namespace SharedLibraryCore.Commands
     /// <summary>
     /// Lists the loaded plugins
     /// </summary>
-    public class ListPluginsCommand : Command
+    /*public class ListPluginsCommand : Command
     {
         private readonly IPluginImporter _pluginImporter;
         public ListPluginsCommand(CommandConfiguration config, ITranslationLookup translationLookup, IPluginImporter pluginImporter) : base(config, translationLookup)
@@ -1337,7 +1337,7 @@ namespace SharedLibraryCore.Commands
             }
             return Task.CompletedTask;
         }
-    }
+    }*/
 
     /// <summary>
     /// Lists external IP

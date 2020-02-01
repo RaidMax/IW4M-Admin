@@ -22,12 +22,14 @@ namespace IW4MAdmin.Application.Helpers
         {
             _logger = logger;
             _translationLookup = translationLookup;
+
+            Load();
         }
 
         /// <summary>
         /// Loads all the assembly and javascript plugins
         /// </summary>
-        public void Load()
+        private void Load()
         {
             string pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
             string[] dllFileNames = null;

@@ -8,6 +8,7 @@ using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -68,30 +69,9 @@ namespace IW4MAdmin.Application
             try
             {
                 var services = ConfigureServices();
-
-                using (var builder = services.BuildServiceProvider())
-                {
-                    translationLookup = builder.GetRequiredService<ITranslationLookup>();
-                    var importer = builder.GetRequiredService<IPluginImporter>();
-                    importer.Load();
-
-                    foreach (var type in importer.CommandTypes)
-                    {
-                        services.AddTransient(typeof(IManagerCommand), type);
-                    }
-
-                    foreach (var commandDefinition in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
-                        .Where(_command => _command.BaseType == typeof(Command)))
-                    {
-                        services.AddTransient(typeof(IManagerCommand), commandDefinition);
-                    }
-                }
-
                 serviceProvider = services.BuildServiceProvider();
-                var pluginImporter = serviceProvider.GetRequiredService<IPluginImporter>();
-                pluginImporter.Load();
-
                 ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
+                translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
 
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
@@ -283,8 +263,8 @@ namespace IW4MAdmin.Application
         /// </summary>
         private static IServiceCollection ConfigureServices()
         {
-            var serviceProvider = new ServiceCollection();
-            serviceProvider.AddSingleton<IManager, ApplicationManager>()
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
                 .AddSingleton(new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings") as IConfigurationHandler<ApplicationConfiguration>)
                 .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration())
@@ -292,14 +272,27 @@ namespace IW4MAdmin.Application
                 .AddSingleton<ILogger>(_serviceProvider => new Logger("IW4MAdmin-Manager"))
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
+                .AddTransient(_serviceProvider =>
+                {
+                    var importer = _serviceProvider.GetRequiredService<IPluginImporter>();
+                    var config = _serviceProvider.GetRequiredService<CommandConfiguration>();
+                    var layout = _serviceProvider.GetRequiredService<ITranslationLookup>();
+
+                    // todo: this is disgusting, but I need it until I can figure out a way to dynamically load the plugins without creating an instance.
+                    return importer.CommandTypes.
+                        Union(typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
+                        .Where(_command => _command.BaseType == typeof(Command)))
+                        .Select(_cmdType => Activator.CreateInstance(_cmdType, config, layout) as IManagerCommand);
+                })
                 .AddSingleton(_serviceProvider =>
                 {
                     var config = _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration();
                     return Localization.Configure.Initialize(useLocalTranslation: config?.UseLocalTranslations ?? false,
                         customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
-                });
+                })
+                .AddSingleton<IManager, ApplicationManager>();
 
-            return serviceProvider;
+            return serviceCollection;
         }
     }
 }

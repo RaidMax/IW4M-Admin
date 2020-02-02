@@ -20,9 +20,9 @@ namespace SharedLibraryCore
 
         public FileSystemWatcher Watcher { get; private set; }
 
-        private Engine ScriptEngine;
+        private Engine _scriptEngine;
         private readonly string _fileName;
-        private readonly SemaphoreSlim _fileChanging;
+        private readonly SemaphoreSlim _onProcessing;
         private bool successfullyLoaded;
 
         public ScriptPlugin(string filename)
@@ -36,19 +36,19 @@ namespace SharedLibraryCore
             };
 
             Watcher.EnableRaisingEvents = true;
-            _fileChanging = new SemaphoreSlim(1, 1);
+            _onProcessing = new SemaphoreSlim(1, 1);
         }
 
         ~ScriptPlugin()
         {
             Watcher.Dispose();
-            _fileChanging.Dispose();
+            _onProcessing.Dispose();
         }
 
 
         public async Task Initialize(IManager manager)
         {
-            await _fileChanging.WaitAsync();
+            await _onProcessing.WaitAsync();
 
             try
             {
@@ -60,7 +60,7 @@ namespace SharedLibraryCore
                     return;
                 }
 
-                bool firstRun = ScriptEngine == null;
+                bool firstRun = _scriptEngine == null;
 
                 // it's been loaded before so we need to call the unload event
                 if (!firstRun)
@@ -79,7 +79,7 @@ namespace SharedLibraryCore
                     }
                 }
 
-                ScriptEngine = new Engine(cfg =>
+                _scriptEngine = new Engine(cfg =>
                     cfg.AllowClr(new[]
                     {
                     typeof(System.Net.Http.HttpClient).Assembly,
@@ -89,9 +89,9 @@ namespace SharedLibraryCore
                     })
                     .CatchClrExceptions());
 
-                ScriptEngine.Execute(script);
-                ScriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
-                dynamic pluginObject = ScriptEngine.GetValue("plugin").ToObject();
+                _scriptEngine.Execute(script);
+                _scriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
+                dynamic pluginObject = _scriptEngine.GetValue("plugin").ToObject();
 
                 Author = pluginObject.author;
                 Name = pluginObject.name;
@@ -102,8 +102,8 @@ namespace SharedLibraryCore
                     if (pluginObject.isParser)
                     {
                         await OnLoadAsync(manager);
-                        IEventParser eventParser = (IEventParser)ScriptEngine.GetValue("eventParser").ToObject();
-                        IRConParser rconParser = (IRConParser)ScriptEngine.GetValue("rconParser").ToObject();
+                        IEventParser eventParser = (IEventParser)_scriptEngine.GetValue("eventParser").ToObject();
+                        IRConParser rconParser = (IRConParser)_scriptEngine.GetValue("rconParser").ToObject();
                         manager.AdditionalEventParsers.Add(eventParser);
                         manager.AdditionalRConParsers.Add(rconParser);
                     }
@@ -126,9 +126,9 @@ namespace SharedLibraryCore
 
             finally
             {
-                if (_fileChanging.CurrentCount == 0)
+                if (_onProcessing.CurrentCount == 0)
                 {
-                    _fileChanging.Release(1);
+                    _onProcessing.Release(1);
                 }
             }
         }
@@ -137,31 +137,49 @@ namespace SharedLibraryCore
         {
             if (successfullyLoaded)
             {
-                ScriptEngine.SetValue("_gameEvent", E);
-                ScriptEngine.SetValue("_server", S);
-                ScriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(S));
-                await Task.FromResult(ScriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue());
+                await _onProcessing.WaitAsync();
+
+                try
+                {
+                    _scriptEngine.SetValue("_gameEvent", E);
+                    _scriptEngine.SetValue("_server", S);
+                    _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(S));
+                    await Task.FromResult(_scriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue());
+                }
+
+                catch
+                {
+                    throw;
+                }
+
+                finally
+                {
+                    if (_onProcessing.CurrentCount == 0)
+                    {
+                        _onProcessing.Release(1);
+                    }
+                }
             }
         }
 
         public Task OnLoadAsync(IManager manager)
         {
             manager.GetLogger(0).WriteDebug($"OnLoad executing for {Name}");
-            ScriptEngine.SetValue("_manager", manager);
-            return Task.FromResult(ScriptEngine.Execute("plugin.onLoadAsync(_manager)").GetCompletionValue());
+            _scriptEngine.SetValue("_manager", manager);
+            return Task.FromResult(_scriptEngine.Execute("plugin.onLoadAsync(_manager)").GetCompletionValue());
         }
 
         public Task OnTickAsync(Server S)
         {
-            ScriptEngine.SetValue("_server", S);
-            return Task.FromResult(ScriptEngine.Execute("plugin.onTickAsync(_server)").GetCompletionValue());
+            _scriptEngine.SetValue("_server", S);
+            return Task.FromResult(_scriptEngine.Execute("plugin.onTickAsync(_server)").GetCompletionValue());
         }
 
         public async Task OnUnloadAsync()
         {
             if (successfullyLoaded)
             {
-                await Task.FromResult(ScriptEngine.Execute("plugin.onUnloadAsync()").GetCompletionValue());
+                await Task.FromResult(_scriptEngine.Execute("plugin.onUnloadAsync()").GetCompletionValue());
             }
         }
     }

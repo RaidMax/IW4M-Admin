@@ -68,14 +68,14 @@ namespace IW4MAdmin.Application
             ITranslationLookup translationLookup = null;
             try
             {
+                // do any needed housekeeping file/folder migrations
+                ConfigurationMigration.MoveConfigFolder10518(null);
+                ConfigurationMigration.CheckDirectories();
+
                 var services = ConfigureServices();
                 serviceProvider = services.BuildServiceProvider();
                 ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
                 translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
-
-                // do any needed housekeeping file/folder migrations
-                ConfigurationMigration.MoveConfigFolder10518(null);
-                ConfigurationMigration.CheckDirectories();
 
                 ServerManager.Logger.WriteInfo(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_VERSION"].FormatExt(Version));
 
@@ -97,7 +97,10 @@ namespace IW4MAdmin.Application
 
                 if (e is ConfigurationException configException)
                 {
-                    Console.WriteLine(translationLookup[configException.Message].FormatExt(configException.ConfigurationFileName));
+                    if (translationLookup != null)
+                    {
+                        Console.WriteLine(translationLookup[configException.Message].FormatExt(configException.ConfigurationFileName));
+                    }
 
                     foreach (string error in configException.Errors)
                     {

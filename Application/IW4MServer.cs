@@ -439,7 +439,7 @@ namespace IW4MAdmin
 
                 if (isPotentialFalseQuit)
                 {
-                    Logger.WriteInfo($"Receive predisconnect event for {E}, but it occured at game time {E.GameTime.Value}, which is the same last map change, so we're ignoring");
+                    Logger.WriteInfo($"Receive predisconnect event for {E.Origin}, but it occured at game time {E.GameTime.Value}, which is the same last map change, so we're ignoring");
                     return false;
                 }
 
@@ -453,7 +453,7 @@ namespace IW4MAdmin
                     return false;
                 }
 
-                else if (client.State == ClientState.Connected)
+                else if (client.State != ClientState.Unknown)
                 {
 #if DEBUG == true
                     Logger.WriteDebug($"Begin PreDisconnect for {client}");
@@ -623,7 +623,7 @@ namespace IW4MAdmin
 
             else if (client.IPAddress != null && client.State == ClientState.Disconnecting)
             {
-                Logger.WriteWarning($"{client} state is Disconnecting (probably kicked), but they are still connected. trying to kick again...");
+                Logger.WriteWarning($"{client} state is Unknown (probably kicked), but they are still connected. trying to kick again...");
                 await client.CanConnect(client.IPAddress);
             }
         }

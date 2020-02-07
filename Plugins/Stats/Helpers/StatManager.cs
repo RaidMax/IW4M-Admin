@@ -367,17 +367,31 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             pl.CurrentServer.Logger.WriteInfo($"Removing {pl} from stats");
 
+            if (pl.CurrentServer == null)
+            {
+                pl.CurrentServer.Logger.WriteWarning($"Disconnecting client {pl} is not on a server, state is {pl.State}");
+                return;
+            }
+
             long serverId = GetIdForServer(pl.CurrentServer);
             var serverStats = _servers[serverId].ServerStatistics;
 
             // get individual client's stats
             var clientStats = pl.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             // sync their stats before they leave
-            clientStats = UpdateStats(clientStats);
-            await SaveClientStats(clientStats);
+            if (clientStats != null)
+            {
+                clientStats = UpdateStats(clientStats);
+                await SaveClientStats(clientStats);
 
-            // increment the total play time
-            serverStats.TotalPlayTime += pl.ConnectionLength;
+                // increment the total play time
+                serverStats.TotalPlayTime += pl.ConnectionLength;
+            }
+
+            else
+            {
+                pl.CurrentServer.Logger.WriteWarning($"Disconnecting client {pl} has not been added to stats, state is {pl.State}");
+            }
         }
 
         private static async Task SaveClientStats(EFClientStatistics clientStats)

@@ -94,18 +94,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-            Clients[client.ClientNumber] = null;
-            await client.OnDisconnect();
+                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+                Clients[client.ClientNumber] = null;
+                await client.OnDisconnect();
 
-            var e = new GameEvent()
-            {
-                Origin = client,
-                Owner = this,
-                Type = GameEvent.EventType.Disconnect
-            };
+                var e = new GameEvent()
+                {
+                    Origin = client,
+                    Owner = this,
+                    Type = GameEvent.EventType.Disconnect
+                };
 
-            Manager.GetEventHandler().AddEvent(e);
+                Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -728,11 +728,6 @@ namespace IW4MAdmin
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
-                        if (disconnectingClient.State == ClientState.Disconnecting)
-                        {
-                            continue;
-                        }
-
                         var e = new GameEvent()
                         {
                             Type = GameEvent.EventType.PreDisconnect,

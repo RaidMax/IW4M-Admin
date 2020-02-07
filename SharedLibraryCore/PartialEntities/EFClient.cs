@@ -16,19 +16,26 @@ namespace SharedLibraryCore.Database.Models
         public enum ClientState
         {
             /// <summary>
+            /// default client state
+            /// </summary>
+            Unknown,
+
+            /// <summary>
             /// represents when the client has been detected as joining
             /// by the log file, but has not be authenticated by RCon
             /// </summary>
             Connecting,
+
             /// <summary>
             /// represents when the client has been authenticated by RCon
             /// and validated by the database
             /// </summary>
             Connected,
+
             /// <summary>
             /// represents when the client is leaving (either through RCon or log file)
             /// </summary>
-            Disconnecting,
+            Disconnecting
         }
 
         public enum Permission
@@ -358,6 +365,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
+            State = ClientState.Disconnecting;
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
@@ -391,6 +399,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
 
+            State = ClientState.Disconnecting;
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
@@ -506,7 +515,6 @@ namespace SharedLibraryCore.Database.Models
 
         public async Task OnDisconnect()
         {
-            State = ClientState.Disconnecting;
             TotalConnectionTime += ConnectionLength;
             LastConnection = DateTime.UtcNow;
 
@@ -519,6 +527,11 @@ namespace SharedLibraryCore.Database.Models
             {
                 CurrentServer.Logger.WriteWarning($"Could not update disconnected player {this}");
                 CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
+            }
+
+            finally
+            {
+                State = ClientState.Unknown;
             }
         }
 

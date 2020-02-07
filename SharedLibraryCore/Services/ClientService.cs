@@ -110,11 +110,14 @@ namespace SharedLibraryCore.Services
                 .Include(a => a.Link)
                 // we only want alias that have the same IP address or share a link
                 .Where(_alias => _alias.IPAddress == ip || (_alias.LinkId == entity.AliasLinkId));
-
+            
             var aliases = await iqAliases.ToListAsync();
+            var currentIPs = aliases.Where(_a2 => _a2.IPAddress != null).Select(_a2 => _a2.IPAddress).Distinct();
+            var floatingIPAliases = await context.Aliases.Where(_alias => currentIPs.Contains(_alias.IPAddress)).ToListAsync();
+             aliases.AddRange(floatingIPAliases);
 
             // see if they have a matching IP + Name but new NetworkId
-            var existingExactAlias = aliases.FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
+            var existingExactAlias = aliases.OrderBy(_alias => _alias.LinkId).FirstOrDefault(a => a.Name == name && a.IPAddress == ip);
             bool hasExactAliasMatch = existingExactAlias != null;
 
             // if existing alias matches link them
@@ -128,17 +131,22 @@ namespace SharedLibraryCore.Services
             bool isAliasLinkUpdated = newAliasLink.AliasLinkId != entity.AliasLink.AliasLinkId;
 
             await context.SaveChangesAsync();
-
+            int distinctLinkCount = aliases.Select(_alias => _alias.LinkId).Distinct().Count();
             // this happens when the link we found is different than the one we create before adding an IP
-            if (isAliasLinkUpdated)
+            if (isAliasLinkUpdated || distinctLinkCount > 1)
             {
                 entity.CurrentServer.Logger.WriteDebug($"[updatealias] found a link for {entity} so we are updating link from {entity.AliasLink.AliasLinkId} to {newAliasLink.AliasLinkId}");
 
-                var oldAliasLink = entity.AliasLink;
+                var completeAliasLinkIds = aliases.Select(_item => _item.LinkId)
+                    .Append(entity.AliasLinkId)
+                    .Distinct()
+                    .ToList();
+
+                entity.CurrentServer.Logger.WriteDebug($"[updatealias] updating aliasLinks {string.Join(',', completeAliasLinkIds)} for IP {ip} to {newAliasLink.AliasLinkId}");
 
                 // update all the clients that have the old alias link
                 await context.Clients
-                    .Where(_client => _client.AliasLinkId == oldAliasLink.AliasLinkId)
+                    .Where(_client => completeAliasLinkIds.Contains(_client.AliasLinkId))
                     .ForEachAsync(_client => _client.AliasLinkId = newAliasLink.AliasLinkId);
 
                 // we also need to update all the penalties or they get deleted
@@ -151,7 +159,7 @@ namespace SharedLibraryCore.Services
                 // link2 is deleted
                 // link2 penalties are orphaned
                 await context.Penalties
-                    .Where(_penalty => _penalty.LinkId == oldAliasLink.AliasLinkId)
+                    .Where(_penalty => completeAliasLinkIds.Contains(_penalty.LinkId))
                     .ForEachAsync(_penalty => _penalty.LinkId = newAliasLink.AliasLinkId);
 
                 entity.AliasLink = newAliasLink;
@@ -159,13 +167,16 @@ namespace SharedLibraryCore.Services
 
                 // update all previous aliases
                 await context.Aliases
-                    .Where(_alias => _alias.LinkId == oldAliasLink.AliasLinkId)
+                    .Where(_alias => completeAliasLinkIds.Contains(_alias.LinkId))
                     .ForEachAsync(_alias => _alias.LinkId = newAliasLink.AliasLinkId);
 
                 await context.SaveChangesAsync();
                 // we want to delete the now inactive alias
-                context.AliasLinks.Remove(oldAliasLink);
-                await context.SaveChangesAsync();
+                if (newAliasLink.AliasLinkId != entity.AliasLinkId)
+                {
+                    context.AliasLinks.Remove(entity.AliasLink);
+                    await context.SaveChangesAsync();
+                }
             }
 
             // the existing alias matches ip and name, so we can just ignore the temporary one

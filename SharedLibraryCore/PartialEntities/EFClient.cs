@@ -328,6 +328,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
+            State = ClientState.Disconnecting;
             sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
             return e;
         }
@@ -563,7 +564,7 @@ namespace SharedLibraryCore.Database.Models
             CurrentServer.Logger.WriteDebug($"OnJoin finished for {this}");
         }
 
-        private async Task<bool> CanConnect(int? ipAddress)
+        public async Task<bool> CanConnect(int? ipAddress)
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);

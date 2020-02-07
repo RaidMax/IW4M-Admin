@@ -28,6 +28,7 @@ namespace IW4MAdmin
         private readonly ITranslationLookup _translationLookup;
         private const int REPORT_FLAG_COUNT = 4;
         private readonly IPluginImporter _pluginImporter;
+        private int lastGameTime = 0;
 
         public int Id { get; private set; }
 
@@ -93,18 +94,18 @@ namespace IW4MAdmin
             if (client.ClientNumber >= 0)
             {
 #endif
-                Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
-                Clients[client.ClientNumber] = null;
-                await client.OnDisconnect();
+            Logger.WriteInfo($"Client {client} [{client.State.ToString().ToLower()}] disconnecting...");
+            Clients[client.ClientNumber] = null;
+            await client.OnDisconnect();
 
-                var e = new GameEvent()
-                {
-                    Origin = client,
-                    Owner = this,
-                    Type = GameEvent.EventType.Disconnect
-                };
+            var e = new GameEvent()
+            {
+                Origin = client,
+                Owner = this,
+                Type = GameEvent.EventType.Disconnect
+            };
 
-                Manager.GetEventHandler().AddEvent(e);
+            Manager.GetEventHandler().AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -434,6 +435,14 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
             {
+                bool isPotentialFalseQuit = E.GameTime.HasValue && E.GameTime.Value == lastGameTime;
+
+                if (isPotentialFalseQuit)
+                {
+                    Logger.WriteInfo($"Receive predisconnect event for {E}, but it occured at game time {E.GameTime.Value}, which is the same last map change, so we're ignoring");
+                    return false;
+                }
+
                 // predisconnect comes from minimal rcon polled players and minimal log players
                 // so we need to disconnect the "full" version of the client
                 var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
@@ -531,11 +540,21 @@ namespace IW4MAdmin
                     string mapname = dict["mapname"];
                     UpdateMap(mapname);
                 }
+
+                if (E.GameTime.HasValue)
+                {
+                    lastGameTime = E.GameTime.Value;
+                }
             }
 
             if (E.Type == GameEvent.EventType.MapEnd)
             {
                 Logger.WriteInfo("Game ending...");
+
+                if (E.GameTime.HasValue)
+                {
+                    lastGameTime = E.GameTime.Value;
+                }
             }
 
             if (E.Type == GameEvent.EventType.Tell)
@@ -600,6 +619,12 @@ namespace IW4MAdmin
                     Logger.WriteWarning($"Could not execute on join for {origin}");
                     Logger.WriteDebug(e.GetExceptionInfo());
                 }
+            }
+
+            else if (client.IPAddress != null && client.State == ClientState.Disconnecting)
+            {
+                Logger.WriteWarning($"{client} state is Disconnecting (probably kicked), but they are still connected. trying to kick again...");
+                await client.CanConnect(client.IPAddress);
             }
         }
 

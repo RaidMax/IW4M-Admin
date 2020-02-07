@@ -217,6 +217,10 @@ namespace SharedLibraryCore
         public EventRequiredEntity RequiredEntity { get; set; }
         public string Data; // Data is usually the message sent by player
         public string Message;
+        /// <summary>
+        /// Specifies the game time offset as printed in the log
+        /// </summary>
+        public int? GameTime { get; set; }
         public EFClient Origin;
         public EFClient Target;
         public Server Owner;

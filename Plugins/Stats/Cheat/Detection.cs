@@ -70,7 +70,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         /// </summary>
         /// <param name="hit">kill performed by the player</param>
         /// <returns>true if detection reached thresholds, false otherwise</returns>
-        public DetectionPenaltyResult ProcessHit(EFClientKill hit, bool isDamage)
+        public IEnumerable<DetectionPenaltyResult> ProcessHit(EFClientKill hit)
         {
             var results = new List<DetectionPenaltyResult>();
 
@@ -81,10 +81,10 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 // hack: prevents false positives
                 (LastWeapon != hit.Weapon && (hit.TimeOffset - LastOffset) == 50))
             {
-                return new DetectionPenaltyResult()
+                return new[] {new DetectionPenaltyResult()
                 {
                     ClientPenalty = EFPenalty.PenaltyType.Any,
-                };
+                }};
             }
 
             LastWeapon = hit.Weapon;
@@ -92,7 +92,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             HitLocationCount[hit.HitLoc].Count++;
             HitCount++;
 
-            if (!isDamage)
+            if (hit.IsKill)
             {
                 Kills++;
             }
@@ -464,12 +464,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             Tracker.OnChange(snapshot);
 
-            return results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Ban) ??
-                results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Flag) ??
-                new DetectionPenaltyResult()
-                {
-                    ClientPenalty = EFPenalty.PenaltyType.Any,
-                };
+            return results;
         }
     }
 }

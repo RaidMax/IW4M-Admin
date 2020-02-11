@@ -5,111 +5,84 @@ using System.Reflection;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using SharedLibraryCore;
+using IW4MAdmin.Application.Misc;
 
 namespace IW4MAdmin.Application.Helpers
 {
+    /// <summary>
+    /// implementation of IPluginImporter
+    /// discovers plugins and script plugins
+    /// </summary>
     public class PluginImporter : IPluginImporter
     {
-        public IList<Type> CommandTypes { get; private set; } = new List<Type>();
-        public IList<IPlugin> ActivePlugins { get; private set; } = new List<IPlugin>();
-        public IList<Assembly> PluginAssemblies { get; private set; } = new List<Assembly>();
-        public IList<Assembly> Assemblies { get; private set; } = new List<Assembly>();
-
+        private static readonly string PLUGIN_DIR = "Plugins";
         private readonly ILogger _logger;
-        private readonly ITranslationLookup _translationLookup;
 
-        public PluginImporter(ILogger logger, ITranslationLookup translationLookup)
+        public PluginImporter(ILogger logger)
         {
             _logger = logger;
-            _translationLookup = translationLookup;
-
-            Load();
         }
 
         /// <summary>
-        /// Loads all the assembly and javascript plugins
+        /// discovers all the script plugins in the plugins dir
         /// </summary>
-        private void Load()
+        /// <returns></returns>
+        public IEnumerable<IPlugin> DiscoverScriptPlugins()
         {
-            string pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
-            string[] dllFileNames = null;
-            string[] scriptFileNames = null;
+            string pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
 
             if (Directory.Exists(pluginDir))
             {
-                dllFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.dll");
-                scriptFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.js");
-            }
+                string[] scriptPluginFiles = Directory.GetFiles(pluginDir, "*.js");
 
-            else
-            {
-                dllFileNames = new string[0];
-                scriptFileNames = new string[0];
-            }
+                _logger.WriteInfo($"Discovered {scriptPluginFiles.Length} potential script plugins");
 
-            if (dllFileNames.Length == 0 &&
-                scriptFileNames.Length == 0)
-            {
-                _logger.WriteDebug(_translationLookup["PLUGIN_IMPORTER_NOTFOUND"]);
-                return;
-            }
-
-            // load up the script plugins
-            foreach (string fileName in scriptFileNames)
-            {
-                var plugin = new ScriptPlugin(fileName);
-                _logger.WriteDebug($"Loaded script plugin \"{ plugin.Name }\" [{plugin.Version}]");
-                ActivePlugins.Add(plugin);
-            }
-
-            ICollection<Assembly> assemblies = new List<Assembly>(dllFileNames.Length);
-            foreach (string dllFile in dllFileNames)
-            {
-                assemblies.Add(Assembly.LoadFrom(dllFile));
-            }
-
-            int LoadedCommands = 0;
-            foreach (Assembly Plugin in assemblies)
-            {
-                if (Plugin != null)
+                if (scriptPluginFiles.Length > 0)
                 {
-                    Assemblies.Add(Plugin);
-                    Type[] types = Plugin.GetTypes();
-                    foreach (Type assemblyType in types)
+                    foreach (string fileName in scriptPluginFiles)
                     {
-                        if (assemblyType.IsClass && assemblyType.BaseType == typeof(Command))
-                        {
-                            CommandTypes.Add(assemblyType);
-                            _logger.WriteDebug($"{_translationLookup["PLUGIN_IMPORTER_REGISTERCMD"]} \"{assemblyType.Name}\"");
-                            LoadedCommands++;
-                            continue;
-                        }
-
-                        try
-                        {
-                            if (assemblyType.GetInterface("IPlugin", false) == null)
-                                continue;
-
-                            var notifyObject = Activator.CreateInstance(assemblyType);
-                            IPlugin newNotify = (IPlugin)notifyObject;
-                            if (ActivePlugins.FirstOrDefault(x => x.Name == newNotify.Name) == null)
-                            {
-                                ActivePlugins.Add(newNotify);
-                                PluginAssemblies.Add(Plugin);
-                                _logger.WriteDebug($"Loaded plugin \"{newNotify.Name}\" [{newNotify.Version}]");
-                            }
-                        }
-
-                        catch (Exception e)
-                        {
-                            _logger.WriteWarning(_translationLookup["PLUGIN_IMPORTER_ERROR"].FormatExt(Plugin.Location));
-                            _logger.WriteDebug(e.GetExceptionInfo());
-                        }
+                        _logger.WriteInfo($"Discovered script plugin {fileName}");
+                        var plugin = new ScriptPlugin(fileName);
+                        yield return plugin;
                     }
                 }
             }
+        }
 
-            _logger.WriteInfo($"Loaded {ActivePlugins.Count} plugins and registered {LoadedCommands} plugin commands.");
+        /// <summary>
+        /// discovers all the C# assembly plugins and commands
+        /// </summary>
+        /// <returns></returns>
+        public (IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
+        {
+            string pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
+            var pluginTypes = Enumerable.Empty<Type>();
+            var commandTypes = Enumerable.Empty<Type>();
+
+            if (Directory.Exists(pluginDir))
+            {
+                var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
+                _logger.WriteInfo($"Discovered {dllFileNames.Length} potential plugin assemblies");
+
+                if (dllFileNames.Length > 0)
+                {
+                    var assemblies = dllFileNames.Select(_name => Assembly.LoadFrom(_name));
+
+                    pluginTypes = assemblies
+                        .SelectMany(_asm => _asm.GetTypes())
+                        .Where(_assemblyType => _assemblyType.GetInterface(nameof(IPlugin), false) != null);
+
+                    _logger.WriteInfo($"Discovered {pluginTypes.Count()} plugin implementations");
+
+                    commandTypes = assemblies
+                        .SelectMany(_asm => _asm.GetTypes())
+                        .Where(_assemblyType => _assemblyType.IsClass && _assemblyType.BaseType == typeof(Command));
+
+                    _logger.WriteInfo($"Discovered {commandTypes.Count()} plugin commands");
+                }
+            }
+
+            return (pluginTypes, commandTypes);
         }
     }
 }

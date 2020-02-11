@@ -20,14 +20,19 @@ namespace AutomessageFeed
 
         public string Author => "RaidMax";
 
-        private Configuration _configuration;
         private int _currentFeedItem;
+        private readonly IConfigurationHandler<Configuration> _configurationHandler;
+
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        {
+            _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<Configuration>("AutomessageFeedPluginSettings");
+        }
 
         private async Task<string> GetNextFeedItem(Server server)
         {
             var items = new List<string>();
 
-            using (var reader = XmlReader.Create(_configuration.FeedUrl, new XmlReaderSettings() { Async = true }))
+            using (var reader = XmlReader.Create(_configurationHandler.Configuration().FeedUrl, new XmlReaderSettings() { Async = true }))
             {
                 var feedReader = new RssFeedReader(reader);
 
@@ -43,7 +48,7 @@ namespace AutomessageFeed
                 }
             }
 
-            if (_currentFeedItem < items.Count && (_configuration.MaxFeedItems == 0 || _currentFeedItem < _configuration.MaxFeedItems))
+            if (_currentFeedItem < items.Count && (_configurationHandler.Configuration().MaxFeedItems == 0 || _currentFeedItem < _configurationHandler.Configuration().MaxFeedItems))
             {
                 _currentFeedItem++;
                 return items[_currentFeedItem - 1];
@@ -60,14 +65,11 @@ namespace AutomessageFeed
 
         public async Task OnLoadAsync(IManager manager)
         {
-            var cfg = new BaseConfigurationHandler<Configuration>("AutomessageFeedPluginSettings");
-            if (cfg.Configuration() == null)
+            if (_configurationHandler.Configuration() == null)
             {
-                cfg.Set((Configuration)new Configuration().Generate());
-                await cfg.Save();
+                _configurationHandler.Set((Configuration)new Configuration().Generate());
+                await _configurationHandler.Save();
             }
-
-            _configuration = cfg.Configuration();
 
             manager.GetMessageTokens().Add(new MessageToken("FEED", GetNextFeedItem));
         }

@@ -16,7 +16,12 @@ namespace LiveRadar
 
         public string Author => "RaidMax";
 
-        internal static BaseConfigurationHandler<LiveRadarConfiguration> Config;
+        private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
+
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        {
+            _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
+        }
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
@@ -36,7 +41,7 @@ namespace LiveRadar
                         }
                     }
 
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         S.Logger.WriteWarning($"Could not parse live radar output: {e.Data}");
                         S.Logger.WriteDebug(e.GetExceptionInfo());
@@ -49,12 +54,10 @@ namespace LiveRadar
 
         public async Task OnLoadAsync(IManager manager)
         {
-            // load custom configuration
-            Config = new BaseConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
-            if (Config.Configuration() == null)
+            if (_configurationHandler.Configuration() == null)
             {
-                Config.Set((LiveRadarConfiguration)new LiveRadarConfiguration().Generate());
-                await Config.Save();
+                _configurationHandler.Set((LiveRadarConfiguration)new LiveRadarConfiguration().Generate());
+                await _configurationHandler.Save();
             }
 
             manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");

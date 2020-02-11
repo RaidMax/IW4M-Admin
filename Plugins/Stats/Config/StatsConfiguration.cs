@@ -17,7 +17,7 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public IDictionary<DetectionType, DistributionConfiguration> DetectionDistributions { get; set; }
         public IDictionary<long, DetectionType[]> ServerDetectionTypes { get; set; }
 
-        public string Name() => "Stats";
+        public string Name() => "StatsPluginSettings";
         public IBaseConfiguration Generate()
         {
             EnableAntiCheat = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_SETUP_ENABLEAC"]);

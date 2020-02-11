@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.RCon;
 using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Interfaces
@@ -15,7 +14,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="connection">RCon connection to retrieve with</param>
         /// <param name="dvarName">name of DVAR</param>
         /// <returns></returns>
-        Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName);
+        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName);
 
         /// <summary>
         /// set value of DVAR by name
@@ -24,7 +23,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="dvarName">name of DVAR to set</param>
         /// <param name="dvarValue">value to set DVAR to</param>
         /// <returns></returns>
-        Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue);
+        Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue);
 
         /// <summary>
         /// executes a console command on the server
@@ -32,14 +31,14 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="connection">RCon connection to use</param>
         /// <param name="command">console command to execute</param>
         /// <returns></returns>
-        Task<string[]> ExecuteCommandAsync(Connection connection, string command);
+        Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command);
 
         /// <summary>
         /// get the list of connected clients from status response
         /// </summary>
         /// <param name="connection">RCon connection to use</param>
         /// <returns>list of clients, and current map</returns>
-        Task<(List<EFClient>, string)> GetStatusAsync(Connection connection);
+        Task<(List<EFClient>, string)> GetStatusAsync(IRConConnection connection);
 
         /// <summary>
         /// stores the RCon configuration

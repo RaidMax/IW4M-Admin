@@ -1,4 +1,6 @@
-﻿using IW4MAdmin.Application.Helpers;
+﻿using IW4MAdmin.Application.Factories;
+using IW4MAdmin.Application.Helpers;
+using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +10,6 @@ using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -266,27 +267,21 @@ namespace IW4MAdmin.Application
         /// </summary>
         private static IServiceCollection ConfigureServices()
         {
+            var defaultLogger = new Logger("IW4MAdmin-Manager");
+            var pluginImporter = new PluginImporter(defaultLogger);
+
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
                 .AddSingleton(new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings") as IConfigurationHandler<ApplicationConfiguration>)
                 .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration())
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
-                .AddSingleton<ILogger>(_serviceProvider => new Logger("IW4MAdmin-Manager"))
+                .AddSingleton<ILogger>(_serviceProvider => defaultLogger)
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
-                .AddTransient(_serviceProvider =>
-                {
-                    var importer = _serviceProvider.GetRequiredService<IPluginImporter>();
-                    var config = _serviceProvider.GetRequiredService<CommandConfiguration>();
-                    var layout = _serviceProvider.GetRequiredService<ITranslationLookup>();
-
-                    // todo: this is disgusting, but I need it until I can figure out a way to dynamically load the plugins without creating an instance.
-                    return importer.CommandTypes.
-                        Union(typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
-                        .Where(_command => _command.BaseType == typeof(Command)))
-                        .Select(_cmdType => Activator.CreateInstance(_cmdType, config, layout) as IManagerCommand);
-                })
+                .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
+                .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
+                .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
                 .AddSingleton(_serviceProvider =>
                 {
                     var config = _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration();
@@ -294,6 +289,35 @@ namespace IW4MAdmin.Application
                         customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
                 })
                 .AddSingleton<IManager, ApplicationManager>();
+
+            // register the native commands
+            foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
+                        .Where(_command => _command.BaseType == typeof(Command)))
+            {
+                defaultLogger.WriteInfo($"Registered native command type {commandType.Name}");
+                serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
+            }
+
+            // register the plugin implementations
+            var pluginImplementations = pluginImporter.DiscoverAssemblyPluginImplementations();
+            foreach (var pluginType in pluginImplementations.Item1)
+            {
+                defaultLogger.WriteInfo($"Registered plugin type {pluginType.FullName}");
+                serviceCollection.AddSingleton(typeof(IPlugin), pluginType);
+            }
+
+            // register the plugin commands
+            foreach (var commandType in pluginImplementations.Item2)
+            {
+                defaultLogger.WriteInfo($"Registered plugin command type {commandType.FullName}");
+                serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
+            }
+
+            // register any script plugins
+            foreach (var scriptPlugin in pluginImporter.DiscoverScriptPlugins())
+            {
+                serviceCollection.AddSingleton(scriptPlugin);
+            }
 
             return serviceCollection;
         }

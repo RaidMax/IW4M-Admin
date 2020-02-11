@@ -17,18 +17,23 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
         public string Author => "RaidMax";
 
-        BaseConfigurationHandler<Configuration> Settings;
+        private readonly IConfigurationHandler<Configuration> _configHandler;
+
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        {
+            _configHandler = configurationHandlerFactory.GetConfigurationHandler<Configuration>("ProfanityDetermentSettings");
+        }
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
-            if (!Settings.Configuration().EnableProfanityDeterment)
+            if (!_configHandler.Configuration().EnableProfanityDeterment)
                 return Task.CompletedTask;
 
             if (E.Type == GameEvent.EventType.Connect)
             {
                 E.Origin.SetAdditionalProperty("_profanityInfringements", 0);
 
-                var objectionalWords = Settings.Configuration().OffensiveWords;
+                var objectionalWords = _configHandler.Configuration().OffensiveWords;
                 var matchedFilters = new List<string>();
                 bool containsObjectionalWord = false;
 
@@ -51,7 +56,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                             AutomatedOffense = $"{E.Origin.Name} - {string.Join(",", matchedFilters)}"
                         }
                     };
-                    E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, sender);
+                    E.Origin.Kick(_configHandler.Configuration().ProfanityKickMessage, sender);
                 };
             }
 
@@ -62,7 +67,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
             if (E.Type == GameEvent.EventType.Say)
             {
-                var objectionalWords = Settings.Configuration().OffensiveWords;
+                var objectionalWords = _configHandler.Configuration().OffensiveWords;
                 bool containsObjectionalWord = false;
                 var matchedFilters = new List<string>();
 
@@ -88,15 +93,15 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
                         }
                     };
 
-                    if (profanityInfringments >= Settings.Configuration().KickAfterInfringementCount)
+                    if (profanityInfringments >= _configHandler.Configuration().KickAfterInfringementCount)
                     {
-                        E.Origin.Kick(Settings.Configuration().ProfanityKickMessage, sender);
+                        E.Origin.Kick(_configHandler.Configuration().ProfanityKickMessage, sender);
                     }
 
-                    else if (profanityInfringments < Settings.Configuration().KickAfterInfringementCount)
+                    else if (profanityInfringments < _configHandler.Configuration().KickAfterInfringementCount)
                     {
                         E.Origin.SetAdditionalProperty("_profanityInfringements", profanityInfringments + 1);
-                        E.Origin.Warn(Settings.Configuration().ProfanityWarningMessage, sender);
+                        E.Origin.Warn(_configHandler.Configuration().ProfanityWarningMessage, sender);
                     }
                 }
             }
@@ -105,12 +110,10 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
         public async Task OnLoadAsync(IManager manager)
         {
-            // load custom configuration
-            Settings = new BaseConfigurationHandler<Configuration>("ProfanityDetermentSettings");
-            if (Settings.Configuration() == null)
+            if (_configHandler.Configuration() == null)
             {
-                Settings.Set((Configuration)new Configuration().Generate());
-                await Settings.Save();
+                _configHandler.Set((Configuration)new Configuration().Generate());
+                await _configHandler.Save();
             }
         }
 

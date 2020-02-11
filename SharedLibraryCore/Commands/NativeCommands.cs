@@ -500,18 +500,18 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            String cmd = E.Data.Trim();
+            string cmd = E.Data.Trim();
 
             if (cmd.Length > 2)
             {
                 bool found = false;
-                foreach (Command C in E.Owner.Manager.GetCommands())
+                foreach (var command in E.Owner.Manager.GetCommands())
                 {
-                    if (C.Name == cmd.ToLower() ||
-                        C.Alias == cmd.ToLower())
+                    if (command.Name == cmd.ToLower() ||
+                        command.Alias == cmd.ToLower())
                     {
-                        E.Origin.Tell($"[^3{C.Name}^7] {C.Description}");
-                        E.Origin.Tell(C.Syntax);
+                        E.Origin.Tell($"[^3{command.Name}^7] {command.Description}");
+                        E.Origin.Tell(command.Syntax);
                         found = true;
                     }
                 }

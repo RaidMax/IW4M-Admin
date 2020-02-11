@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using IW4MAdmin.Plugins.Login.Commands;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
@@ -20,11 +19,16 @@ namespace IW4MAdmin.Plugins.Login
         public string Author => "RaidMax";
 
         public static ConcurrentDictionary<int, bool> AuthorizedClients { get; private set; }
-        private Configuration Config;
+        private readonly IConfigurationHandler<Configuration> _configHandler;
+
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        {
+            _configHandler = configurationHandlerFactory.GetConfigurationHandler<Configuration>("LoginPluginSettings");
+        }
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
-            if (E.IsRemote || Config.RequirePrivilegedClientLogin == false)
+            if (E.IsRemote || _configHandler.Configuration().RequirePrivilegedClientLogin == false)
                 return Task.CompletedTask;
 
             if (E.Type == GameEvent.EventType.Connect)
@@ -72,14 +76,11 @@ namespace IW4MAdmin.Plugins.Login
         {
             AuthorizedClients = new ConcurrentDictionary<int, bool>();
 
-            var cfg = new BaseConfigurationHandler<Configuration>("LoginPluginSettings");
-            if (cfg.Configuration() == null)
+            if (_configHandler.Configuration() == null)
             {
-                cfg.Set((Configuration)new Configuration().Generate());
-                await cfg.Save();
+                _configHandler.Set((Configuration)new Configuration().Generate());
+                await _configHandler.Save();
             }
-
-            Config = cfg.Configuration();
         }
 
         public Task OnTickAsync(Server S) => Task.CompletedTask;

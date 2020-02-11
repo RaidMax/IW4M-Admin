@@ -34,6 +34,11 @@ namespace IW4MAdmin.Application.Migration
             {
                 Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Log"));
             }
+
+            if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Localization")))
+            {
+                Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Localization"));
+            }
         }
 
         /// <summary>

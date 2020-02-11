@@ -56,11 +56,11 @@ namespace SharedLibraryCore.Configuration
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var parserVersions = rconParsers.Select(_parser => _parser.Name).ToArray();
-            var selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_RCON_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
+            var selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_RCON_PARSER_VERSION"]} ({IPAddress}:{Port})", parserVersions[0], null, parserVersions);
 
             if (selection.Item1 >= 0)
             {
-                RConParserVersion = rconParsers.First(_parser => _parser.Name == selection.Item2).Version;
+                RConParserVersion = rconParsers.FirstOrDefault(_parser => _parser.Name == selection.Item2)?.Version;
 
                 if (selection.Item1 > 0 && !rconParsers[selection.Item1 - 1].CanGenerateLogPath)
                 {
@@ -70,11 +70,11 @@ namespace SharedLibraryCore.Configuration
             }
 
             parserVersions = eventParsers.Select(_parser => _parser.Name).ToArray();
-            selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_EVENT_PARSER_VERSION"]} ({IPAddress}:{Port})", $"{loc["SETUP_PROMPT_DEFAULT"]} (Call of Duty)", null, parserVersions);
+            selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_EVENT_PARSER_VERSION"]} ({IPAddress}:{Port})", parserVersions[0], null, parserVersions);
 
             if (selection.Item1 >= 0)
             {
-                EventParserVersion = eventParsers.First(_parser => _parser.Name == selection.Item2).Version;
+                EventParserVersion = eventParsers.FirstOrDefault(_parser => _parser.Name == selection.Item2)?.Version;
             }
         }
 

@@ -7,9 +7,14 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Interfaces;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading.Tasks;
 using WebfrontCore.Middleware;
 
@@ -32,20 +37,33 @@ namespace WebfrontCore
                     });
             });
 
+            IEnumerable<Assembly> pluginAssemblies()
+            {
+                string pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
+
+                if (Directory.Exists(pluginDir))
+                {
+                    var dllFileNames = Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}", "*.dll");
+                    return dllFileNames.Select(_file => Assembly.LoadFrom(_file));
+                }
+
+                return Enumerable.Empty<Assembly>();
+            }
+
             // Add framework services.
             var mvcBuilder = services.AddMvc(_options => _options.SuppressAsyncSuffixInActionNames = false)
-                .ConfigureApplicationPartManager(_ =>
+                .ConfigureApplicationPartManager(_partManager =>
                 {
-                    foreach (var assembly in Program.Manager.GetPluginAssemblies())
+                    foreach (var assembly in pluginAssemblies())
                     {
                         if (assembly.FullName.Contains("Views"))
                         {
-                            _.ApplicationParts.Add(new CompiledRazorAssemblyPart(assembly));
+                            _partManager.ApplicationParts.Add(new CompiledRazorAssemblyPart(assembly));
                         }
 
                         else if (assembly.FullName.Contains("Web"))
                         {
-                            _.ApplicationParts.Add(new AssemblyPart(assembly));
+                            _partManager.ApplicationParts.Add(new AssemblyPart(assembly));
                         }
                     }
                 });
@@ -58,7 +76,7 @@ namespace WebfrontCore
             });
 #endif
 
-            foreach (var asm in Program.Manager.GetPluginAssemblies())
+            foreach (var asm in pluginAssemblies())
             {
                 mvcBuilder.AddApplicationPart(asm);
             }
@@ -83,7 +101,7 @@ namespace WebfrontCore
 #endif
 
             services.AddSingleton(Program.Manager);
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService(typeof(IPluginImporter)) as IPluginImporter);
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

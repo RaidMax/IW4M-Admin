@@ -26,12 +26,6 @@ namespace SharedLibraryCore.Configuration.Validation
             RuleForEach(_server => _server.AutoMessages)
                 .NotEmpty();
 
-            RuleFor(_server => _server.RConParserVersion)
-                .NotEmpty();
-
-            RuleFor(_server => _server.EventParserVersion)
-                .NotEmpty();
-
             RuleFor(_server => _server.ReservedSlotNumber)
                 .InclusiveBetween(0, 32);
         }

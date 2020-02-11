@@ -1,58 +1,41 @@
-﻿using SharedLibraryCore.Exceptions;
+﻿using SharedLibraryCore;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.RCon;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
-namespace SharedLibraryCore.RCon
+namespace IW4MAdmin.Application.RCon
 {
-    class ConnectionState
-    {
-        ~ConnectionState()
-        {
-            OnComplete.Dispose();
-            OnSentData.Dispose();
-            OnReceivedData.Dispose();
-        }
-
-        public int ConnectionAttempts { get; set; }
-        const int BufferSize = 4096;
-        public readonly byte[] ReceiveBuffer = new byte[BufferSize];
-        public readonly SemaphoreSlim OnComplete = new SemaphoreSlim(1, 1);
-        public readonly ManualResetEventSlim OnSentData = new ManualResetEventSlim(false);
-        public readonly ManualResetEventSlim OnReceivedData = new ManualResetEventSlim(false);
-        public SocketAsyncEventArgs SendEventArgs { get; set; } = new SocketAsyncEventArgs();
-        public SocketAsyncEventArgs ReceiveEventArgs { get; set; } = new SocketAsyncEventArgs();
-        public DateTime LastQuery { get; set; } = DateTime.Now;
-    }
-
-    public class Connection
+    /// <summary>
+    /// implementation of IRConConnection
+    /// </summary>
+    public class RConConnection : IRConConnection
     {
         static readonly ConcurrentDictionary<EndPoint, ConnectionState> ActiveQueries = new ConcurrentDictionary<EndPoint, ConnectionState>();
         public IPEndPoint Endpoint { get; private set; }
         public string RConPassword { get; private set; }
 
-        private readonly ILogger Log;
-        private IRConParserConfiguration Config;
-        private readonly Encoding defaultEncoding;
+        private IRConParserConfiguration config;
+        private readonly ILogger _log;
+        private readonly Encoding _gameEncoding;
 
-        public Connection(string ipAddress, int port, string password, ILogger log, IRConParserConfiguration config)
+        public RConConnection(string ipAddress, int port, string password, ILogger log, Encoding gameEncoding)
         {
             Endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
-            defaultEncoding = Encoding.GetEncoding("windows-1252");
+            _gameEncoding = gameEncoding;
             RConPassword = password;
-            Log = log;
-            Config = config;
+            _log = log;
         }
 
         public void SetConfiguration(IRConParserConfiguration config)
         {
-            Config = config;
+            this.config = config;
         }
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
@@ -65,7 +48,7 @@ namespace SharedLibraryCore.RCon
             var connectionState = ActiveQueries[this.Endpoint];
 
 #if DEBUG == true
-            Log.WriteDebug($"Waiting for semaphore to be released [{this.Endpoint}]");
+            _log.WriteDebug($"Waiting for semaphore to be released [{this.Endpoint}]");
 #endif
             // enter the semaphore so only one query is sent at a time per server.
             await connectionState.OnComplete.WaitAsync();
@@ -80,17 +63,17 @@ namespace SharedLibraryCore.RCon
             connectionState.LastQuery = DateTime.Now;
 
 #if DEBUG == true
-            Log.WriteDebug($"Semaphore has been released [{this.Endpoint}]");
-            Log.WriteDebug($"Query [{this.Endpoint},{type.ToString()},{parameters}]");
+            _log.WriteDebug($"Semaphore has been released [{this.Endpoint}]");
+            _log.WriteDebug($"Query [{this.Endpoint},{type.ToString()},{parameters}]");
 #endif
 
             byte[] payload = null;
-            bool waitForResponse = Config.WaitForResponse;
+            bool waitForResponse = config.WaitForResponse;
 
             string convertEncoding(string text)
             {
                 byte[] convertedBytes = Utilities.EncodingType.GetBytes(text);
-                return defaultEncoding.GetString(convertedBytes);
+                return _gameEncoding.GetString(convertedBytes);
             }
 
             try
@@ -102,25 +85,25 @@ namespace SharedLibraryCore.RCon
                 {
                     case StaticHelpers.QueryType.GET_DVAR:
                         waitForResponse |= true;
-                        payload = string.Format(Config.CommandPrefixes.RConGetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        payload = string.Format(config.CommandPrefixes.RConGetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.SET_DVAR:
-                        payload = string.Format(Config.CommandPrefixes.RConSetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        payload = string.Format(config.CommandPrefixes.RConSetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND:
-                        payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        payload = string.Format(config.CommandPrefixes.RConCommand, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_STATUS:
                         waitForResponse |= true;
-                        payload = (Config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
+                        payload = (config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_INFO:
                         waitForResponse |= true;
-                        payload = (Config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
+                        payload = (config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND_STATUS:
                         waitForResponse |= true;
-                        payload = string.Format(Config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0").Select(Convert.ToByte).ToArray();
+                        payload = string.Format(config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0").Select(Convert.ToByte).ToArray();
                         break;
                 }
             }
@@ -148,7 +131,7 @@ namespace SharedLibraryCore.RCon
                 connectionState.OnReceivedData.Reset();
                 connectionState.ConnectionAttempts++;
 #if DEBUG == true
-                Log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
+                _log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
 #endif
                 try
                 {
@@ -182,7 +165,7 @@ namespace SharedLibraryCore.RCon
                 }
             }
 
-            string responseString = defaultEncoding.GetString(response, 0, response.Length) + '\n';
+            string responseString = _gameEncoding.GetString(response, 0, response.Length) + '\n';
 
             // note: not all games respond if the pasword is wrong or not set
             if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
@@ -195,7 +178,7 @@ namespace SharedLibraryCore.RCon
                 throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
             }
 
-            if (responseString.Contains(Config.ServerNotRunningResponse))
+            if (responseString.Contains(config.ServerNotRunningResponse))
             {
                 throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"].FormatExt(Endpoint.ToString()));
             }
@@ -269,7 +252,7 @@ namespace SharedLibraryCore.RCon
         private void OnDataReceived(object sender, SocketAsyncEventArgs e)
         {
 #if DEBUG == true
-            Log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint.ToString()}");
+            _log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint.ToString()}");
 #endif
             ActiveQueries[this.Endpoint].OnReceivedData.Set();
         }
@@ -277,7 +260,7 @@ namespace SharedLibraryCore.RCon
         private void OnDataSent(object sender, SocketAsyncEventArgs e)
         {
 #if DEBUG == true
-            Log.WriteDebug($"Sent {e.Buffer?.Length} bytes to {e.ConnectSocket?.RemoteEndPoint?.ToString()}");
+            _log.WriteDebug($"Sent {e.Buffer?.Length} bytes to {e.ConnectSocket?.RemoteEndPoint?.ToString()}");
 #endif
             ActiveQueries[this.Endpoint].OnSentData.Set();
         }

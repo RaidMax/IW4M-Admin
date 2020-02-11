@@ -28,7 +28,7 @@ namespace SharedLibraryCore
             T7 = 8
         }
 
-        public Server(IManager mgr, ServerConfiguration config)
+        public Server(IManager mgr, IRConConnectionFactory rconConnectionFactory, ServerConfiguration config)
         {
             Password = config.Password;
             IP = config.IPAddress;
@@ -37,8 +37,7 @@ namespace SharedLibraryCore
             Logger = Manager.GetLogger(this.EndPoint);
             Logger.WriteInfo(this.ToString());
             ServerConfig = config;
-            RemoteConnection = new RCon.Connection(IP, Port, Password, Logger, null);
-
+            RemoteConnection = rconConnectionFactory.CreateConnection(IP, Port, Password);
             EventProcessing = new SemaphoreSlim(1, 1);
             Clients = new List<EFClient>(new EFClient[18]);
             Reports = new List<Report>();
@@ -283,7 +282,7 @@ namespace SharedLibraryCore
         public IManager Manager { get; protected set; }
         public ILogger Logger { get; private set; }
         public ServerConfiguration ServerConfig { get; private set; }
-        public List<Map> Maps { get; protected set; }
+        public List<Map> Maps { get; protected set; } = new List<Map>();
         public List<Report> Reports { get; set; }
         public List<ChatInfo> ChatHistory { get; protected set; }
         public Queue<PlayerHistory> ClientHistory { get; private set; }
@@ -307,7 +306,7 @@ namespace SharedLibraryCore
         public bool Throttled { get; protected set; }
         public bool CustomCallback { get; protected set; }
         public string WorkingDirectory { get; protected set; }
-        public RCon.Connection RemoteConnection { get; protected set; }
+        public IRConConnection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; protected set; }
         public IEventParser EventParser { get; set; }
         public string LogPath { get; protected set; }

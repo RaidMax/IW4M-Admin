@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharedLibraryCore.RCon
+﻿namespace SharedLibraryCore.RCon
 {
     public class CommandPrefix
     {

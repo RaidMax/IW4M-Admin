@@ -58,11 +58,12 @@ namespace IW4MAdmin.Application
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
         private readonly ITranslationLookup _translationLookup;
         private readonly IConfigurationHandler<CommandConfiguration> _commandConfiguration;
-        private readonly IPluginImporter _pluginImporter;
+        private readonly IGameServerInstanceFactory _serverInstanceFactory;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
-            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IPluginImporter pluginImporter)
+            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory, 
+            IEnumerable<IPlugin> plugins)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -73,8 +74,8 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser>();
-            AdditionalRConParsers = new List<IRConParser>();
+            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser() };
+            AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser() };
             TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();
@@ -82,8 +83,11 @@ namespace IW4MAdmin.Application
             _commands = commands.ToList();
             _translationLookup = translationLookup;
             _commandConfiguration = commandConfiguration;
-            _pluginImporter = pluginImporter;
+            _serverInstanceFactory = serverInstanceFactory;
+            Plugins = plugins;
         }
+
+        public IEnumerable<IPlugin> Plugins { get; }
 
         public async Task ExecuteEvent(GameEvent newEvent)
         {
@@ -249,7 +253,7 @@ namespace IW4MAdmin.Application
             ExternalIPAddress = await Utilities.GetExternalIP();
 
             #region PLUGINS
-            foreach (var plugin in _pluginImporter.ActivePlugins)
+            foreach (var plugin in Plugins)
             {
                 try
                 {
@@ -567,7 +571,8 @@ namespace IW4MAdmin.Application
 
                 try
                 {
-                    var ServerInstance = new IW4MServer(this, Conf, _translationLookup, _pluginImporter);
+                    // todo: this might not always be an IW4MServer
+                    var ServerInstance = _serverInstanceFactory.CreateServer(Conf, this) as IW4MServer;
                     await ServerInstance.Initialize();
 
                     _servers.Add(ServerInstance);
@@ -757,11 +762,6 @@ namespace IW4MAdmin.Application
         public IEventHandler GetEventHandler()
         {
             return Handler;
-        }
-
-        public IList<Assembly> GetPluginAssemblies()
-        {
-            return _pluginImporter.PluginAssemblies.Union(_pluginImporter.Assemblies).ToList();
         }
 
         public IPageList GetPageList()

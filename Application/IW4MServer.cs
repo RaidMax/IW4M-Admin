@@ -27,15 +27,14 @@ namespace IW4MAdmin
         private GameLogEventDetection LogEvent;
         private readonly ITranslationLookup _translationLookup;
         private const int REPORT_FLAG_COUNT = 4;
-        private readonly IPluginImporter _pluginImporter;
         private int lastGameTime = 0;
 
         public int Id { get; private set; }
 
-        public IW4MServer(IManager mgr, ServerConfiguration cfg, ITranslationLookup lookup, IPluginImporter pluginImporter) : base(mgr, cfg)
+        public IW4MServer(IManager mgr, ServerConfiguration cfg, ITranslationLookup lookup,
+            IRConConnectionFactory connectionFactory) : base(mgr, connectionFactory, cfg)
         {
             _translationLookup = lookup;
-            _pluginImporter = pluginImporter;
         }
 
         override public async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -66,6 +65,7 @@ namespace IW4MAdmin
             client.Score = clientFromLog.Score;
             client.Ping = clientFromLog.Ping;
             client.CurrentServer = this;
+            client.State = ClientState.Connecting;
 
             Clients[client.ClientNumber] = client;
 #if DEBUG == true
@@ -153,7 +153,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                foreach (var plugin in _pluginImporter.ActivePlugins)
+                foreach (var plugin in Manager.Plugins)
                 {
                     try
                     {
@@ -182,6 +182,11 @@ namespace IW4MAdmin
             catch (Exception e)
             {
                 lastException = e;
+
+                if (E.Origin != null)
+                {
+                    E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                }
             }
 
             finally
@@ -695,7 +700,7 @@ namespace IW4MAdmin
                 await e.WaitAsync(Utilities.DefaultCommandTimeout, new CancellationTokenRegistration().Token);
             }
 
-            foreach (var plugin in _pluginImporter.ActivePlugins)
+            foreach (var plugin in Manager.Plugins)
             {
                 await plugin.OnUnloadAsync();
             }

@@ -1,12 +1,17 @@
 ﻿using Newtonsoft.Json;
+using SharedLibraryCore;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace SharedLibraryCore.Configuration
+namespace IW4MAdmin.Application.Misc
 {
+    /// <summary>
+    /// default implementation of IConfigurationHandler
+    /// </summary>
+    /// <typeparam name="T">base configuration type</typeparam>
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
         T _configuration;

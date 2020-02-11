@@ -65,13 +65,13 @@ namespace IW4MAdmin.Application.RconParsers
         public bool CanGenerateLogPath { get; set; } = true;
         public string Name { get; set; } = "Call of Duty";
 
-        public async Task<string[]> ExecuteCommandAsync(Connection connection, string command)
+        public async Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command)
         {
             var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
             return response.Skip(1).ToArray();
         }
 
-        public async Task<Dvar<T>> GetDvarAsync<T>(Connection connection, string dvarName)
+        public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName)
         {
             string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
             string response = string.Join('\n', lineSplit.Skip(1));
@@ -105,7 +105,7 @@ namespace IW4MAdmin.Application.RconParsers
             };
         }
 
-        public virtual async Task<(List<EFClient>, string)> GetStatusAsync(Connection connection)
+        public virtual async Task<(List<EFClient>, string)> GetStatusAsync(IRConConnection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
 #if DEBUG
@@ -132,7 +132,7 @@ namespace IW4MAdmin.Application.RconParsers
             return map;
         }
 
-        public async Task<bool> SetDvarAsync(Connection connection, string dvarName, object dvarValue)
+        public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue)
         {
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, $"{dvarName} {dvarValue}")).Length > 0;
         }

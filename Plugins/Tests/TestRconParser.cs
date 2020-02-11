@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ namespace Tests
 
         public override string Version => "test";
 
-        public override async Task<(List<EFClient>, string)> GetStatusAsync(Connection connection)
+        public override async Task<(List<EFClient>, string)> GetStatusAsync(IRConConnection connection)
         {
             var clientList = new List<EFClient>();
            

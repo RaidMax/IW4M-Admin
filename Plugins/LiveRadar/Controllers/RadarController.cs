@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using LiveRadar.Configuration;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -16,10 +17,12 @@ namespace LiveRadar.Web.Controllers
         };
 
         private readonly IManager _manager;
+        private readonly LiveRadarConfiguration _config;
 
-        public RadarController(IManager manager) : base(manager)
+        public RadarController(IManager manager, IConfigurationHandlerFactory configurationHandlerFactory) : base(manager)
         {
             _manager = manager;
+            _config = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration").Configuration() ?? new LiveRadarConfiguration();
         }
 
         [HttpGet]
@@ -45,7 +48,7 @@ namespace LiveRadar.Web.Controllers
         public IActionResult Map(long? serverId = null)
         {
             var server = serverId == null ? _manager.GetServers().FirstOrDefault() : _manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
-            var map = Plugin.Config.Configuration().Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
+            var map = _config.Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
 
             if (map != null)
             {

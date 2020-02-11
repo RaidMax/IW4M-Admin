@@ -21,8 +21,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var killstreakMessage = Plugin.Config.Configuration().KillstreakMessages;
             var deathstreakMessage = Plugin.Config.Configuration().DeathstreakMessages;
 
-            string message = killstreakMessage.FirstOrDefault(m => m.Count == killStreak)?.Message;
-            message = message ?? deathstreakMessage.FirstOrDefault(m => m.Count == deathStreak)?.Message;
+            string message = killstreakMessage?.FirstOrDefault(m => m.Count == killStreak)?.Message;
+            message = message ?? deathstreakMessage?.FirstOrDefault(m => m.Count == deathStreak)?.Message;
             return message ?? "";
         }
     }

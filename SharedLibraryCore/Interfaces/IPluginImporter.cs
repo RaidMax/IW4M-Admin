@@ -1,32 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace SharedLibraryCore.Interfaces
 {
     /// <summary>
-    /// Defines the capabilities of the plugin importer
+    /// defines the capabilities of the plugin importer
     /// </summary>
     public interface IPluginImporter
-    {
+    {    
         /// <summary>
-        /// Command types that are defined in plugin assemblies
+        /// discovers C# assembly plugin and command types
         /// </summary>
-        IList<Type> CommandTypes { get; }
+        /// <returns>tuple of IPlugin implementation type definitions, and IManagerCommand type definitions</returns>
+        (IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations();
 
         /// <summary>
-        /// The loaded plugins from plugin assemblies
+        /// discovers the script plugins
         /// </summary>
-        IList<IPlugin> ActivePlugins { get; }
-
-        /// <summary>
-        /// Assemblies that contain plugins
-        /// </summary>
-        IList<Assembly> PluginAssemblies { get; }
-
-        /// <summary>
-        /// All assemblies in the plugin folder
-        /// </summary>
-        IList<Assembly> Assemblies { get; }
+        /// <returns>initialized script plugin collection</returns>
+        IEnumerable<IPlugin> DiscoverScriptPlugins();
     }
 }

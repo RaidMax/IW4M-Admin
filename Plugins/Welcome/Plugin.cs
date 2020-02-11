@@ -64,16 +64,19 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public string Name => "Welcome Plugin";
 
-        private BaseConfigurationHandler<WelcomeConfiguration> Config;
+        private readonly IConfigurationHandler<WelcomeConfiguration> _configHandler;
+
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        {
+            _configHandler = configurationHandlerFactory.GetConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
+        }
 
         public async Task OnLoadAsync(IManager manager)
         {
-            // load custom configuration
-            Config = new BaseConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
-            if (Config.Configuration() == null)
+            if (_configHandler.Configuration() == null)
             {
-                Config.Set((WelcomeConfiguration)new WelcomeConfiguration().Generate());
-                await Config.Save();
+                _configHandler.Set((WelcomeConfiguration)new WelcomeConfiguration().Generate());
+                await _configHandler.Save();
             }
         }
 
@@ -87,9 +90,9 @@ namespace IW4MAdmin.Plugins.Welcome
             {
                 EFClient newPlayer = E.Origin;
                 if (newPlayer.Level >= Permission.Trusted && !E.Origin.Masked)
-                    E.Owner.Broadcast(await ProcessAnnouncement(Config.Configuration().PrivilegedAnnouncementMessage, newPlayer));
+                    E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().PrivilegedAnnouncementMessage, newPlayer));
 
-                newPlayer.Tell(await ProcessAnnouncement(Config.Configuration().UserWelcomeMessage, newPlayer));
+                newPlayer.Tell(await ProcessAnnouncement(_configHandler.Configuration().UserWelcomeMessage, newPlayer));
 
                 if (newPlayer.Level == Permission.Flagged)
                 {
@@ -107,7 +110,7 @@ namespace IW4MAdmin.Plugins.Welcome
                     E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penaltyReason}) has joined!");
                 }
                 else
-                    E.Owner.Broadcast(await ProcessAnnouncement(Config.Configuration().UserAnnouncementMessage, newPlayer));
+                    E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().UserAnnouncementMessage, newPlayer));
             }
         }
 

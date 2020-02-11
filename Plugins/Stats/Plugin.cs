@@ -3,7 +3,6 @@ using IW4MAdmin.Plugins.Stats.Helpers;
 using IW4MAdmin.Plugins.Stats.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
@@ -13,7 +12,6 @@ using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Plugins.Stats
@@ -28,11 +26,16 @@ namespace IW4MAdmin.Plugins.Stats
 
         public static StatManager Manager { get; private set; }
         public static IManager ServerManager;
-        public static BaseConfigurationHandler<StatsConfiguration> Config { get; private set; }
+        public static IConfigurationHandler<StatsConfiguration> Config { get; private set; }
 #if DEBUG
         int scriptDamageCount;
         int scriptKillCount;
 #endif
+
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        {
+            Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
+        }
 
         public async Task OnEventAsync(GameEvent E, Server S)
         {
@@ -53,16 +56,16 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!string.IsNullOrEmpty(E.Data) &&
                         E.Origin.ClientId > 1)
                     {
-                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(E.Owner), E.Data);
+                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), E.Data);
                     }
                     break;
                 case GameEvent.EventType.MapChange:
-                    Manager.SetTeamBased(StatManager.GetIdForServer(E.Owner), E.Owner.Gametype != "dm");
-                    Manager.ResetKillstreaks(E.Owner);
-                    await Manager.Sync(E.Owner);
+                    Manager.SetTeamBased(StatManager.GetIdForServer(S), S.Gametype != "dm");
+                    Manager.ResetKillstreaks(S);
+                    await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.MapEnd:
-                    await Manager.Sync(E.Owner);
+                    await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.JoinTeam:
                     break;
@@ -82,7 +85,7 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 18 && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if ((S.CustomCallback || ShouldOverrideAnticheatSetting(S)) && killInfo.Length >= 18 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -95,7 +98,7 @@ namespace IW4MAdmin.Plugins.Stats
                         S.Logger.WriteInfo($"Start ScriptKill {scriptKillCount}");
 #endif
 
-                        await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                        await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
 
 #if DEBUG
@@ -105,7 +108,7 @@ namespace IW4MAdmin.Plugins.Stats
 
                     else
                     {
-                        E.Owner.Logger.WriteDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
+                        S.Logger.WriteDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -129,12 +132,12 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
-                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, StatManager.GetIdForServer(E.Owner));
+                        Manager.AddDamageEvent(E.Data, E.Origin.ClientId, E.Target.ClientId, StatManager.GetIdForServer(S));
                     }
                     break;
                 case GameEvent.EventType.ScriptDamage:
                     killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
-                    if ((E.Owner.CustomCallback || ShouldOverrideAnticheatSetting(E.Owner)) && killInfo.Length >= 18 && !ShouldIgnoreEvent(E.Origin, E.Target))
+                    if ((S.CustomCallback || ShouldOverrideAnticheatSetting(S)) && killInfo.Length >= 18 && !ShouldIgnoreEvent(E.Origin, E.Target))
                     {
                         // this treats "world" damage as self damage
                         if (IsWorldDamage(E.Origin))
@@ -147,7 +150,7 @@ namespace IW4MAdmin.Plugins.Stats
                         S.Logger.WriteInfo($"Start ScriptDamage {scriptDamageCount}");
 #endif
 
-                        await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(E.Owner), S.CurrentMap.Name, killInfo[7], killInfo[8],
+                        await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
 
 #if DEBUG
@@ -157,7 +160,7 @@ namespace IW4MAdmin.Plugins.Stats
 
                     else
                     {
-                        E.Owner.Logger.WriteDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
+                        S.Logger.WriteDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
             }
@@ -166,7 +169,6 @@ namespace IW4MAdmin.Plugins.Stats
         public async Task OnLoadAsync(IManager manager)
         {
             // load custom configuration
-            Config = new BaseConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             if (Config.Configuration() == null)
             {
                 Config.Set((StatsConfiguration)new StatsConfiguration().Generate());
@@ -518,7 +520,7 @@ namespace IW4MAdmin.Plugins.Stats
         /// <returns></returns>
         private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
         {
-            return ((origin?.NetworkId == 1 && target?.NetworkId == 1) || (origin?.ClientId <= 1 && target?.ClientId <= 1));
+            return ((origin?.NetworkId == 1 && target?.NetworkId == 1));
         }
 
         /// <summary>

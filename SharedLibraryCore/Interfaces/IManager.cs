@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using SharedLibraryCore.Services;
 using SharedLibraryCore.Configuration;
-using System.Reflection;
 using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
@@ -29,7 +28,10 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <returns>EventHandler for the manager</returns>
         IEventHandler GetEventHandler();
-        IList<Assembly> GetPluginAssemblies();
+        /// <summary>
+        /// enumerates the registered plugin instances
+        /// </summary>
+        IEnumerable<IPlugin> Plugins { get; }
         /// <summary>
         /// provides a page list to add and remove from
         /// </summary>

@@ -1,15 +1,19 @@
 ﻿using Jint;
+using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
-using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SharedLibraryCore
+namespace IW4MAdmin.Application.Misc
 {
+    /// <summary>
+    /// implementation of IPlugin
+    /// used to proxy script plugin requests
+    /// </summary>
     public class ScriptPlugin : IPlugin
     {
         public string Name { get; set; }
@@ -44,7 +48,6 @@ namespace SharedLibraryCore
             Watcher.Dispose();
             _onProcessing.Dispose();
         }
-
 
         public async Task Initialize(IManager manager)
         {

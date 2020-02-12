@@ -1,4 +1,5 @@
 ﻿using Jint;
+using Microsoft.CSharp.RuntimeBinder;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
@@ -100,19 +101,20 @@ namespace IW4MAdmin.Application.Misc
                 Name = pluginObject.name;
                 Version = (float)pluginObject.version;
 
+                await OnLoadAsync(manager);
+
                 try
                 {
                     if (pluginObject.isParser)
                     {
-                        await OnLoadAsync(manager);
                         IEventParser eventParser = (IEventParser)_scriptEngine.GetValue("eventParser").ToObject();
                         IRConParser rconParser = (IRConParser)_scriptEngine.GetValue("rconParser").ToObject();
                         manager.AdditionalEventParsers.Add(eventParser);
                         manager.AdditionalRConParsers.Add(rconParser);
                     }
                 }
-                catch { }
 
+                catch (RuntimeBinderException) { }
 
                 if (!firstRun)
                 {

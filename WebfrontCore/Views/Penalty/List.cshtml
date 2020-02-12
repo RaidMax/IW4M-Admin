@@ -4,35 +4,54 @@
 }
 <h4 class="pb-3 text-center">@ViewBag.Title</h4>
 <div class="row">
-    <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
-        @{
-            foreach (var penaltyType in Enum.GetValues(typeof(SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)))
-            {
-                if ((SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)penaltyType == SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Any)
+    <div class="d-block d-md-flex w-100 pb-2">
+        <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
+            @{
+                foreach (var penaltyType in Enum.GetValues(typeof(SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)))
                 {
-                    if (Model == SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Any)
+                    if ((SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)penaltyType == SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Any)
                     {
-                        <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"] @penaltyType.ToString()</option>
+                        if (Model == SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Any)
+                        {
+                            <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"] @penaltyType.ToString()</option>
+                        }
+                        else
+                        {
+                            <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"]  @penaltyType.ToString()</option>
+                        }
                     }
                     else
                     {
-                        <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"]  @penaltyType.ToString()</option>
-                    }
-                }
-                else
-                {
-                    if ((SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)penaltyType == Model)
-                    {
-                        <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
-                    }
-                    else
-                    {
-                        <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
+                        if ((SharedLibraryCore.Database.Models.EFPenalty.PenaltyType)penaltyType == Model)
+                        {
+                            <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
+                        }
+                        else
+                        {
+                            <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
+                        }
                     }
                 }
             }
-        }
-    </select>
+        </select>
+        <div class="pl-md-2 pr-md-2 pt-2 pt-md-0">
+            <label class="toggle-switch">
+                @if (ViewBag.HideAutomatedPenalties)
+                {
+                    <input type="checkbox" id="hide_automated_penalties_checkbox" checked="checked" />
+                }
+
+                else
+                {
+                    <input type="checkbox" id="hide_automated_penalties_checkbox" />
+                }
+                <span class="toggle-switch-slider"></span>
+            </label>
+        </div>
+        <div class="align-self-center">
+            <span class="text-light text-nowrap">@loc["WEBFRONT_PENALTY_HIDE_AUTOMATED"]</span>
+        </div>
+    </div>
 </div>
 <div class="row">
     <table class="table table-striped">
@@ -49,7 +68,8 @@
             @await Component.InvokeAsync("PenaltyList", new WebfrontCore.ViewModels.PenaltyFilterInfo()
             {
                 Offset = 0,
-                ShowOnly = Model
+                ShowOnly = Model,
+                IgnoreAutomated = ViewBag.HideAutomatedPenalties
             })
         </tbody>
     </table>

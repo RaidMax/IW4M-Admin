@@ -112,7 +112,7 @@ form *, select {
     border-left: none !important;
     border-right: none !important;
     border-bottom: none !important;
-    border-top: 2px solid $blue !important;
+    border-top: 1px solid $text-muted;
 }
 
 .oi-fix-navbar {
@@ -340,4 +340,54 @@ title {
     100% {
         color: #ff0000;
     }
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin:0;
+    padding: 0;
+}
+label.toggle-switch {
+    margin: 0;
+}
+
+.toggle-switch {
+    position: relative;
+    height: calc(1.5em + 0.75rem + 2px);
+    width: 6rem;
+    border: 1px solid $text-muted;
+}
+
+.toggle-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: $dark;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.toggle-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: calc(1.5em + 0.75rem);
+    width: 3em;
+    background-color: $light;
+    -webkit-transition: 0.25s;
+    transition: 0.25s;
+}
+
+input:checked + .toggle-switch-slider {
+    background-color: $primary;
+}
+
+input:checked + .toggle-switch-slider:before {
+    -webkit-transform: translateX(3em);
+    -ms-transform: translateX(3em);
+    transform: translateX(3em);
 }

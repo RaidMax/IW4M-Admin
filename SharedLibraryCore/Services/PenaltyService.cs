@@ -62,12 +62,13 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IList<PenaltyInfo>> GetRecentPenalties(int count, int offset, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any)
+        public async Task<IList<PenaltyInfo>> GetRecentPenalties(int count, int offset, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true)
         {
             using (var context = new DatabaseContext(true))
             {
                 var iqPenalties = context.Penalties
                     .Where(p => showOnly == EFPenalty.PenaltyType.Any ? p.Type != EFPenalty.PenaltyType.Any : p.Type == showOnly)
+                    .Where(_penalty => ignoreAutomated ? _penalty.PunisherId != 1 : true)
                     .OrderByDescending(p => p.When)
                     .Skip(offset)
                     .Take(count)

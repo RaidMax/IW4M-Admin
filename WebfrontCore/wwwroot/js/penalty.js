@@ -23,7 +23,11 @@ function loadMorePenalties() {
 
     showLoader();
     isLoading = true;
-    $.get('/Penalty/ListAsync', { offset: offset, showOnly : $('#penalty_filter_selection').val() })
+    $.get('/Penalty/ListAsync', {
+        offset: offset,
+        showOnly: $('#penalty_filter_selection').val(),
+        hideAutomatedPenalties: document.getElementById('hide_automated_penalties_checkbox').checked
+    })
         .done(function (response) {
             $('#penalty_table').append(response);
             if (response.trim().length === 0) {
@@ -40,9 +44,13 @@ function loadMorePenalties() {
 }
 
 if ($('#penalty_table').length === 1) {
-    
-    $('#penalty_filter_selection').change(function() {
-            location = location.href.split('?')[0] + "?showOnly=" + $('#penalty_filter_selection').val();
+
+    $('#penalty_filter_selection').change(function () {
+        location = location.href.split('?')[0] + "?showOnly=" + $('#penalty_filter_selection').val() + '&hideAutomatedPenalties=' + document.getElementById('hide_automated_penalties_checkbox').checked;
+    });
+
+    $('#hide_automated_penalties_checkbox').click(function () {
+        location = location.href.split('?')[0] + "?showOnly=" + $('#penalty_filter_selection').val() + '&hideAutomatedPenalties=' + document.getElementById('hide_automated_penalties_checkbox').checked;
     });
 
     /*

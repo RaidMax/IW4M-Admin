@@ -195,7 +195,7 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             CurrentAlias = new EFAlias()
                             {
-                                Name = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString(),
+                                Name = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine(),
                             },
                             NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
@@ -221,7 +221,7 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             CurrentAlias = new EFAlias()
                             {
-                                Name = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString()
+                                Name = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine()
                             },
                             NetworkId = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
                             ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),

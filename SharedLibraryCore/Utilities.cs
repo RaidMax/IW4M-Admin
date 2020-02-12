@@ -831,6 +831,13 @@ namespace SharedLibraryCore
             return Regex.IsMatch(message, @"^\u0014(?:[A-Z]|_)+$");
         }
 
+        /// <summary>
+        /// trims new line and whitespace from string
+        /// </summary>
+        /// <param name="str">source string</param>
+        /// <returns></returns>
+        public static string TrimNewLine(this string str) => str.Trim().TrimEnd('\r', '\n');
+
         public static Vector3 FixIW4Angles(this Vector3 vector)
         {
             float X = vector.X >= 0 ? vector.X : 360.0f + vector.X;

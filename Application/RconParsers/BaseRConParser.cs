@@ -178,7 +178,7 @@ namespace IW4MAdmin.Application.RconParsers
                         continue;
                     }
 
-                    string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.Trim();
+                    string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.TrimNewLine();
                     int? ip = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Value.Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()

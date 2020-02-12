@@ -18,21 +18,23 @@ namespace WebfrontCore.Controllers
 
         }
 
-        public IActionResult List(PenaltyType showOnly = PenaltyType.Any)
+        public IActionResult List(PenaltyType showOnly = PenaltyType.Any, bool hideAutomatedPenalties = true)
         {
             ViewBag.Description = "List of all the recent penalties (bans, kicks, warnings) on IW4MAdmin";
             ViewBag.Title = Localization["WEBFRONT_PENALTY_TITLE"];
             ViewBag.Keywords = "IW4MAdmin, penalties, ban, kick, warns";
+            ViewBag.HideAutomatedPenalties = hideAutomatedPenalties;
 
             return View(showOnly);
         }
 
-        public async Task<IActionResult> ListAsync(int offset = 0, PenaltyType showOnly = PenaltyType.Any)
+        public async Task<IActionResult> ListAsync(int offset = 0, PenaltyType showOnly = PenaltyType.Any, bool hideAutomatedPenalties = true)
         {
             return await Task.FromResult(View("_List", new ViewModels.PenaltyFilterInfo()
             {
                 Offset = offset,
-                ShowOnly = showOnly
+                ShowOnly = showOnly,
+                IgnoreAutomated = hideAutomatedPenalties
             }));
         }
 

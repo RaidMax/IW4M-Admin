@@ -645,7 +645,7 @@ namespace SharedLibraryCore
             {
                 Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue}]")}: ");
                 response = inputOrDefault();
-            } while (string.IsNullOrWhiteSpace(response));
+            } while (string.IsNullOrWhiteSpace(response) && response != defaultValue);
 
             return response;
         }

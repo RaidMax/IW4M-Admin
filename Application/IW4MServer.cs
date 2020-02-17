@@ -1,5 +1,6 @@
 ﻿using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.IO;
+using IW4MAdmin.Application.Misc;
 using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -157,6 +158,12 @@ namespace IW4MAdmin
                 {
                     try
                     {
+                        // we don't want to run the events on parser plugins
+                        if (plugin is ScriptPlugin scriptPlugin && scriptPlugin.IsParser)
+                        {
+                            continue;
+                        }
+
                         await plugin.OnEventAsync(E, this);
                     }
                     catch (AuthorizationException e)
@@ -183,7 +190,7 @@ namespace IW4MAdmin
             {
                 lastException = e;
 
-                if (E.Origin != null)
+                if (E.Origin != null && E.Type == GameEvent.EventType.Command)
                 {
                     E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                 }

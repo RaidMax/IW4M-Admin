@@ -23,6 +23,11 @@ namespace IW4MAdmin.Application.Misc
 
         public string Author { get; set; }
 
+        /// <summary>
+        /// indicates if the plugin is a parser
+        /// </summary>
+        public bool IsParser { get; private set; }
+
         public FileSystemWatcher Watcher { get; private set; }
 
         private Engine _scriptEngine;
@@ -107,6 +112,7 @@ namespace IW4MAdmin.Application.Misc
                 {
                     if (pluginObject.isParser)
                     {
+                        IsParser = true;
                         IEventParser eventParser = (IEventParser)_scriptEngine.GetValue("eventParser").ToObject();
                         IRConParser rconParser = (IRConParser)_scriptEngine.GetValue("rconParser").ToObject();
                         manager.AdditionalEventParsers.Add(eventParser);
@@ -149,7 +155,7 @@ namespace IW4MAdmin.Application.Misc
                     _scriptEngine.SetValue("_gameEvent", E);
                     _scriptEngine.SetValue("_server", S);
                     _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(S));
-                    await Task.FromResult(_scriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue());
+                    _scriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue();
                 }
 
                 catch

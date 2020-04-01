@@ -1,4 +1,6 @@
-﻿namespace IW4MAdmin.Application.RconParsers
+﻿using SharedLibraryCore.Interfaces;
+
+namespace IW4MAdmin.Application.RconParsers
 {
     /// <summary>
     /// empty implementation of the IW4RConParser
@@ -6,5 +8,8 @@
     /// </summary>
     sealed internal class DynamicRConParser : BaseRConParser
     {
+        public DynamicRConParser(IParserRegexFactory parserRegexFactory) : base(parserRegexFactory)
+        {
+        }
     }
 }

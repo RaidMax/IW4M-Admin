@@ -1,4 +1,5 @@
 ﻿using IW4MAdmin.Application;
+using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Misc;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
@@ -42,7 +43,6 @@ namespace Tests
 
             Manager.ConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("test");
             Manager.ConfigHandler.Set(config);
-            Manager.AdditionalRConParsers.Add(new TestRconParser());
 
             Manager.Init().Wait();
 

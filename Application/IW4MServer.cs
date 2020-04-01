@@ -25,7 +25,7 @@ namespace IW4MAdmin
     public class IW4MServer : Server
     {
         private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
-        private GameLogEventDetection LogEvent;
+        public GameLogEventDetection LogEvent;
         private readonly ITranslationLookup _translationLookup;
         private const int REPORT_FLAG_COUNT = 4;
         private int lastGameTime = 0;
@@ -891,8 +891,8 @@ namespace IW4MAdmin
             EventParser = Manager.AdditionalEventParsers
                 .FirstOrDefault(_parser => _parser.Version == ServerConfig.EventParserVersion);
 
-            RconParser = RconParser ?? new BaseRConParser();
-            EventParser = EventParser ?? new BaseEventParser();
+            RconParser = RconParser ?? Manager.AdditionalRConParsers[0];
+            EventParser = EventParser ?? Manager.AdditionalEventParsers[0];
 
             RemoteConnection.SetConfiguration(RconParser.Configuration);
 
@@ -949,6 +949,14 @@ namespace IW4MAdmin
             try
             {
                 var website = await this.GetDvarAsync<string>("_website");
+                
+                // this occurs for games that don't give us anything back when
+                // the dvar is not set
+                if (string.IsNullOrWhiteSpace(website.Value))
+                {
+                    throw new DvarException("value is empty");
+                }
+
                 Website = website.Value;
             }
 

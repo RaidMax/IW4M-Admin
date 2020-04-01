@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Files\GameEvents.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Files\T6Game.log">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

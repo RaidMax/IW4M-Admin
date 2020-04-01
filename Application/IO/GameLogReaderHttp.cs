@@ -16,27 +16,27 @@ namespace IW4MAdmin.Application.IO
     /// </summary>
     class GameLogReaderHttp : IGameLogReader
     {
-        readonly IEventParser Parser;
-        readonly IGameLogServer Api;
+        private readonly IEventParser _eventParser;
+        private readonly IGameLogServer _logServerApi;
         readonly string logPath;
         private string lastKey = "next";
 
         public GameLogReaderHttp(Uri gameLogServerUri, string logPath, IEventParser parser)
         {
-            this.logPath = logPath.ToBase64UrlSafeString(); ;
-            Parser = parser;
-            Api = RestClient.For<IGameLogServer>(gameLogServerUri);
+            this.logPath = logPath.ToBase64UrlSafeString();
+            _eventParser = parser;
+            _logServerApi = RestClient.For<IGameLogServer>(gameLogServerUri);
         }
 
         public long Length => -1;
 
         public int UpdateInterval => 500;
 
-        public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
             var events = new List<GameEvent>();
             string b64Path = logPath;
-            var response = await Api.Log(b64Path, lastKey);
+            var response = await _logServerApi.Log(b64Path, lastKey);
             lastKey = response.NextKey;
 
             if (!response.Success && string.IsNullOrEmpty(lastKey))
@@ -48,17 +48,17 @@ namespace IW4MAdmin.Application.IO
             else if (!string.IsNullOrWhiteSpace(response.Data))
             {
                 // parse each line
-                foreach (string eventLine in response.Data
-                    .Split(Environment.NewLine)
-                    .Where(_line => _line.Length > 0))
+                var lines = response.Data
+                     .Split(Environment.NewLine)
+                     .Where(_line => _line.Length > 0);
+
+                foreach (string eventLine in lines)
                 {
                     try
                     {
-                        var gameEvent = Parser.GenerateGameEvent(eventLine);
+                        // this trim end should hopefully fix the nasty runaway regex
+                        var gameEvent = _eventParser.GenerateGameEvent(eventLine.TrimEnd('\r'));
                         events.Add(gameEvent);
-#if DEBUG == true
-                        server.Logger.WriteDebug($"Parsed event with id {gameEvent.Id}  from http");
-#endif
                     }
 
                     catch (Exception e)

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -41,10 +40,21 @@ namespace SharedLibraryCore.Interfaces
             AdditionalGroup = 200
         }
 
+        public IParserPatternMatcher PatternMatcher { get; private set; }
+
+        private string pattern;
         /// <summary>
         /// stores the regular expression groups that will be mapped to group types
         /// </summary>
-        public string Pattern { get; set; }
+        public string Pattern
+        {
+            get => pattern;
+            set
+            {
+                pattern = value;
+                PatternMatcher.Compile(value);
+            }
+        }
 
         /// <summary>
         /// stores the mapping from group type to group index in the regular expression
@@ -90,9 +100,10 @@ namespace SharedLibraryCore.Interfaces
             }
         }
 
-        public ParserRegex()
+        public ParserRegex(IParserPatternMatcher pattern)
         {
             GroupMapping = new Dictionary<GroupType, int>();
+            PatternMatcher = pattern;
         }
     }
 }

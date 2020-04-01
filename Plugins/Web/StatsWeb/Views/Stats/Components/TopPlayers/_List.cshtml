@@ -2,7 +2,7 @@
 @{
     Layout = null;
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex.Set;
-    double getDeviation(double deviations) => Math.Pow(Math.E, 5.0813 + (deviations * 0.8694));
+    double getDeviation(double deviations) => Math.Pow(Math.E, 5.259 + (deviations * 0.812));
     string rankIcon(double elo)
     {
         if (elo >= getDeviation(-0.75) && elo < getDeviation(1.25))

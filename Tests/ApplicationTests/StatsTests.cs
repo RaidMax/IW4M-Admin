@@ -56,7 +56,7 @@ namespace ApplicationTests
                 A.Fake<ITranslationLookup>(),
                 A.Fake<IRConConnectionFactory>());
 
-            var parser = new BaseEventParser();
+            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
             var log = System.IO.File.ReadAllLines("Files\\T6GameStats.log");

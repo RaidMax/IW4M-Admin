@@ -2,18 +2,16 @@
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Application.EventParsers
 {
     public class BaseEventParser : IEventParser
     {
-        public BaseEventParser()
+        public BaseEventParser(IParserRegexFactory parserRegexFactory)
         {
-            Configuration = new DynamicEventParserConfiguration()
+            Configuration = new DynamicEventParserConfiguration(parserRegexFactory)
             {
                 GameDirectory = "main",
             };
@@ -66,6 +64,8 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Kill.AddMapping(ParserRegex.GroupType.Damage, 11);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.HitLocation, 13);
+
+            Configuration.Time.Pattern = @"^ *(([0-9]+):([0-9]+) |^[0-9]+ )";
         }
 
         public IEventParserConfiguration Configuration { get; set; }
@@ -80,44 +80,48 @@ namespace IW4MAdmin.Application.EventParsers
 
         public virtual GameEvent GenerateGameEvent(string logLine)
         {
-            var timeMatch = Regex.Match(logLine, @"^ *(([0-9]+):([0-9]+) |^[0-9]+ )");
+            var timeMatch = Configuration.Time.PatternMatcher.Match(logLine);
             int gameTime = 0;
-            
+
             if (timeMatch.Success)
             {
-                gameTime = (timeMatch.Groups.Values as IEnumerable<object>)
+                gameTime = timeMatch
+                    .Values
                     .Skip(2)
-                    .Select(_value => int.Parse(_value.ToString()))
+                    // this converts the timestamp into seconds passed
+                    .Select((_value, index) => int.Parse(_value.ToString()) * (index == 0 ? 60 : 1))
                     .Sum();
-                logLine = logLine.Substring(timeMatch.Value.Length);
-            } 
+                // we want to strip the time from the log line
+                logLine = logLine.Substring(timeMatch.Values.First().Length);
+            }
 
             string[] lineSplit = logLine.Split(';');
             string eventType = lineSplit[0];
 
             if (eventType == "say" || eventType == "sayteam")
             {
-                var matchResult = Regex.Match(logLine, Configuration.Say.Pattern);
+                var matchResult = Configuration.Say.PatternMatcher.Match(logLine);
 
                 if (matchResult.Success)
                 {
-                    string message = matchResult
-                        .Groups[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
+                    string message = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
                         .ToString()
                         .Replace("\x15", "")
                         .Trim();
 
                     if (message.Length > 0)
                     {
-                        long originId = matchResult.Groups[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle);
+                        long originId = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle);
+                        int clientNumber = int.Parse(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
 
+                        // todo: these need to defined outside of here
                         if (message[0] == '!' || message[0] == '@')
                         {
                             return new GameEvent()
                             {
                                 Type = GameEvent.EventType.Command,
                                 Data = message,
-                                Origin = new EFClient() { NetworkId = originId },
+                                Origin = new EFClient() { NetworkId = originId, ClientNumber = clientNumber },
                                 Message = message,
                                 Extra = logLine,
                                 RequiredEntity = GameEvent.EventRequiredEntity.Origin,
@@ -129,7 +133,7 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             Type = GameEvent.EventType.Say,
                             Data = message,
-                            Origin = new EFClient() { NetworkId = originId },
+                            Origin = new EFClient() { NetworkId = originId, ClientNumber = clientNumber },
                             Message = message,
                             Extra = logLine,
                             RequiredEntity = GameEvent.EventRequiredEntity.Origin,
@@ -141,19 +145,21 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "K")
             {
-                var match = Regex.Match(logLine, Configuration.Kill.Pattern);
+                var match = Configuration.Kill.PatternMatcher.Match(logLine);
 
                 if (match.Success)
                 {
-                    long originId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].Value.ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-                    long targetId = match.Groups[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].Value.ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    long originId = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    long targetId = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    int originClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
+                    int targetClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
 
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.Kill,
                         Data = logLine,
-                        Origin = new EFClient() { NetworkId = originId },
-                        Target = new EFClient() { NetworkId = targetId },
+                        Origin = new EFClient() { NetworkId = originId, ClientNumber = originClientNumber },
+                        Target = new EFClient() { NetworkId = targetId, ClientNumber = targetClientNumber },
                         RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
                         GameTime = gameTime
                     };
@@ -162,19 +168,21 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "D")
             {
-                var regexMatch = Regex.Match(logLine, Configuration.Damage.Pattern);
+                var match = Configuration.Damage.PatternMatcher.Match(logLine);
 
-                if (regexMatch.Success)
+                if (match.Success)
                 {
-                    long originId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-                    long targetId = regexMatch.Groups[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    long originId = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    long targetId = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    int originClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
+                    int targetClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
 
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.Damage,
                         Data = logLine,
-                        Origin = new EFClient() { NetworkId = originId },
-                        Target = new EFClient() { NetworkId = targetId },
+                        Origin = new EFClient() { NetworkId = originId, ClientNumber = originClientNumber },
+                        Target = new EFClient() { NetworkId = targetId, ClientNumber = targetClientNumber },
                         RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
                         GameTime = gameTime
                     };
@@ -183,9 +191,9 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "J")
             {
-                var regexMatch = Regex.Match(logLine, Configuration.Join.Pattern);
+                var match = Configuration.Join.PatternMatcher.Match(logLine);
 
-                if (regexMatch.Success)
+                if (match.Success)
                 {
                     return new GameEvent()
                     {
@@ -195,10 +203,10 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             CurrentAlias = new EFAlias()
                             {
-                                Name = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine(),
+                                Name = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine(),
                             },
-                            NetworkId = regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
-                            ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
+                            NetworkId = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
+                            ClientNumber = Convert.ToInt32(match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
                         },
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
@@ -210,8 +218,9 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (eventType == "Q")
             {
-                var regexMatch = Regex.Match(logLine, Configuration.Quit.Pattern);
-                if (regexMatch.Success)
+                var match = Configuration.Quit.PatternMatcher.Match(logLine);
+
+                if (match.Success)
                 {
                     return new GameEvent()
                     {
@@ -221,10 +230,10 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             CurrentAlias = new EFAlias()
                             {
-                                Name = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine()
+                                Name = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine()
                             },
-                            NetworkId = regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
-                            ClientNumber = Convert.ToInt32(regexMatch.Groups[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
+                            NetworkId = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
+                            ClientNumber = Convert.ToInt32(match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Disconnecting
                         },
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
@@ -279,7 +288,6 @@ namespace IW4MAdmin.Application.EventParsers
             // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
             if (eventType == "ScriptKill")
             {
-                
                 long originId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
                 long targetId = lineSplit[2].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
 

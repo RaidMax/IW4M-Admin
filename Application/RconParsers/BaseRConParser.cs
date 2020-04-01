@@ -12,15 +12,11 @@ using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Application.RconParsers
 {
-#if DEBUG
     public class BaseRConParser : IRConParser
-#else
-    class BaseRConParser : IRConParser
-#endif
     {
-        public BaseRConParser()
+        public BaseRConParser(IParserRegexFactory parserRegexFactory)
         {
-            Configuration = new DynamicRConParserConfiguration()
+            Configuration = new DynamicRConParserConfiguration(parserRegexFactory)
             {
                 CommandPrefixes = new CommandPrefix()
                 {
@@ -90,7 +86,6 @@ namespace IW4MAdmin.Application.RconParsers
 
             string removeTrailingColorCode(string input) => Regex.Replace(input, @"\^7$", "");
 
-
             value = removeTrailingColorCode(value);
             defaultValue = removeTrailingColorCode(defaultValue);
             latchedValue = removeTrailingColorCode(latchedValue);
@@ -134,7 +129,11 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue)
         {
-            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, $"{dvarName} {dvarValue}")).Length > 0;
+            string dvarString = (dvarValue is string str)
+                ? $"{dvarName} \"{str}\""
+                : $"{dvarName} {dvarValue.ToString()}";
+
+            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString)).Length > 0;
         }
 
         private List<EFClient> ClientsFromStatus(string[] Status)

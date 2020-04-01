@@ -241,3 +241,4 @@ launchSettings.json
 /WebfrontCore/wwwroot/fonts
 /WebfrontCore/wwwroot/font
 /Plugins/Tests/TestSourceFiles
+/Tests/ApplicationTests/Files/GameEvents.json

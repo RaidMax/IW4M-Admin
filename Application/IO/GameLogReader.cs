@@ -24,7 +24,7 @@ namespace IW4MAdmin.Application.IO
             _parser = parser;
         }
 
-        public async Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
         {
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();

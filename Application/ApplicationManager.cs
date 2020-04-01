@@ -59,11 +59,12 @@ namespace IW4MAdmin.Application
         private readonly ITranslationLookup _translationLookup;
         private readonly IConfigurationHandler<CommandConfiguration> _commandConfiguration;
         private readonly IGameServerInstanceFactory _serverInstanceFactory;
+        private readonly IParserRegexFactory _parserRegexFactory;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory, 
-            IEnumerable<IPlugin> plugins)
+            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -74,8 +75,8 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser() };
-            AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser() };
+            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser(parserRegexFactory) };
+            AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser(parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();
@@ -84,6 +85,7 @@ namespace IW4MAdmin.Application
             _translationLookup = translationLookup;
             _commandConfiguration = commandConfiguration;
             _serverInstanceFactory = serverInstanceFactory;
+            _parserRegexFactory = parserRegexFactory;
             Plugins = plugins;
         }
 
@@ -771,7 +773,7 @@ namespace IW4MAdmin.Application
 
         public IRConParser GenerateDynamicRConParser(string name)
         {
-            return new DynamicRConParser()
+            return new DynamicRConParser(_parserRegexFactory)
             {
                 Name = name
             };
@@ -779,7 +781,7 @@ namespace IW4MAdmin.Application
 
         public IEventParser GenerateDynamicEventParser(string name)
         {
-            return new DynamicEventParser()
+            return new DynamicEventParser(_parserRegexFactory)
             {
                 Name = name
             };

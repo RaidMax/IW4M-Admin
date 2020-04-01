@@ -1,6 +1,6 @@
-﻿using IW4MAdmin.Application.Factories;
+﻿using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Helpers;
-using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,7 +87,7 @@ namespace IW4MAdmin.Application
             catch (Exception e)
             {
                 string failMessage = translationLookup == null ? "Failed to initalize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
-                string exitMessage = translationLookup == null ? "Press any key to exit..." : translationLookup["MANAGER_EXIT"];
+                string exitMessage = translationLookup == null ? "Press enter to exit..." : translationLookup["MANAGER_EXIT"];
 
                 Console.WriteLine(failMessage);
 
@@ -115,7 +115,7 @@ namespace IW4MAdmin.Application
                 }
 
                 Console.WriteLine(exitMessage);
-                Console.ReadKey();
+                await Console.In.ReadAsync(new char[1], 0, 1);
                 return;
             }
 
@@ -237,7 +237,7 @@ namespace IW4MAdmin.Application
             {
                 while (!ServerManager.CancellationToken.IsCancellationRequested)
                 {
-                    lastCommand = Console.ReadLine();
+                    lastCommand = await Console.In.ReadLineAsync();
 
                     if (lastCommand?.Length > 0)
                     {
@@ -282,6 +282,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
                 .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
                 .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
+                .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
+                .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>
                 {
                     var config = _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration();

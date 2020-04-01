@@ -6,12 +6,11 @@ using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.IO
 {
-    class GameLogEventDetection
+    public class GameLogEventDetection
     {
         private long previousFileSize;
         private readonly Server _server;
         private readonly IGameLogReader _reader;
-        private readonly string _gameLogFile;
         private readonly bool _ignoreBots;
 
         class EventState
@@ -20,12 +19,13 @@ namespace IW4MAdmin.Application.IO
             public string ServerId { get; set; }
         }
 
-        public GameLogEventDetection(Server server, string gameLogPath, Uri gameLogServerUri)
+        public GameLogEventDetection(Server server, string gameLogPath, Uri gameLogServerUri, IGameLogReader reader = null)
         {
-            _gameLogFile = gameLogPath;
-            _reader = gameLogServerUri != null ? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) : _reader = new GameLogReader(gameLogPath, server.EventParser);
+            _reader = gameLogServerUri != null 
+                ? reader ?? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) 
+                : reader ?? new GameLogReader(gameLogPath, server.EventParser);
             _server = server;
-            _ignoreBots = server.Manager.GetApplicationSettings().Configuration().IgnoreBots;
+            _ignoreBots = server?.Manager.GetApplicationSettings().Configuration().IgnoreBots ?? false;
         }
 
         public async Task PollForChanges()
@@ -52,7 +52,7 @@ namespace IW4MAdmin.Application.IO
             _server.Logger.WriteDebug("Stopped polling for changes");
         }
 
-        private async Task UpdateLogEvents()
+        public async Task UpdateLogEvents()
         {
             long fileSize = _reader.Length;
 
@@ -65,7 +65,10 @@ namespace IW4MAdmin.Application.IO
 
             // this makes the http log get pulled
             if (fileDiff < 1 && fileSize != -1)
+            {
+                previousFileSize = fileSize;
                 return;
+            }
 
             var events = await _reader.ReadEventsFromLog(_server, fileDiff, previousFileSize);
 

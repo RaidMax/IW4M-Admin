@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Interfaces
@@ -17,11 +15,13 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="fileSizeDiff"></param>
         /// <param name="startPosition"></param>
         /// <returns></returns>
-        Task<ICollection<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition);
+        Task<IEnumerable<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition);
+        
         /// <summary>
         /// how long the log file is
         /// </summary>
         long Length { get; }
+
         /// <summary>
         /// how often to poll the log file
         /// </summary>

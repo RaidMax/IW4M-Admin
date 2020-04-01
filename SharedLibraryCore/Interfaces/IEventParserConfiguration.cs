@@ -40,6 +40,11 @@ namespace SharedLibraryCore.Interfaces
         ParserRegex Action { get; set; }
 
         /// <summary>
+        /// stores the regex information for the time prefix in game log
+        /// </summary>
+        ParserRegex Time { get; set; }
+
+        /// <summary>
         /// indicates the format expected for parsed guids
         /// </summary>
         NumberStyles GuidNumberStyle { get; set; }

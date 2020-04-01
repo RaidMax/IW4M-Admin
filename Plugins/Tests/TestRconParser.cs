@@ -10,6 +10,11 @@ namespace Tests
 {
     class TestRconParser : IW4MAdmin.Application.RconParsers.BaseRConParser
     {
+        public TestRconParser(IParserRegexFactory f) : base(f)
+        {
+
+        }
+
         public int FakeClientCount { get; set; }
         public List<EFClient> FakeClients { get; set; } = new List<EFClient>();
 

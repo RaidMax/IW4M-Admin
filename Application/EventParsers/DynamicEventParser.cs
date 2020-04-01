@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using static SharedLibraryCore.Server;
+﻿using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -11,5 +8,8 @@ namespace IW4MAdmin.Application.EventParsers
     /// </summary>
     sealed internal class DynamicEventParser : BaseEventParser
     {
+        public DynamicEventParser(IParserRegexFactory parserRegexFactory) : base(parserRegexFactory)
+        {
+        }
     }
 }

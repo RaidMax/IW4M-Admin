@@ -18,6 +18,7 @@ namespace SharedLibraryCore.Services
             {
                 int? linkId = null;
                 int? aliasId = null;
+                entity.Name = entity.Name.CapClientName(EFAlias.MAX_NAME_LENGTH);
 
                 if (entity.IPAddress != null)
                 {
@@ -102,19 +103,21 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        private async Task UpdateAlias(string name, int? ip, EFClient entity, DatabaseContext context)
+        private async Task UpdateAlias(string originalName, int? ip, EFClient entity, DatabaseContext context)
         {
+            string name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH); 
+
             // entity is the tracked db context item
             // get all aliases by IP address and LinkId
             var iqAliases = context.Aliases
                 .Include(a => a.Link)
                 // we only want alias that have the same IP address or share a link
                 .Where(_alias => _alias.IPAddress == ip || (_alias.LinkId == entity.AliasLinkId));
-            
+
             var aliases = await iqAliases.ToListAsync();
             var currentIPs = aliases.Where(_a2 => _a2.IPAddress != null).Select(_a2 => _a2.IPAddress).Distinct();
             var floatingIPAliases = await context.Aliases.Where(_alias => currentIPs.Contains(_alias.IPAddress)).ToListAsync();
-             aliases.AddRange(floatingIPAliases);
+            aliases.AddRange(floatingIPAliases);
 
             // see if they have a matching IP + Name but new NetworkId
             var existingExactAlias = aliases.OrderBy(_alias => _alias.LinkId).FirstOrDefault(a => a.Name == name && a.IPAddress == ip);

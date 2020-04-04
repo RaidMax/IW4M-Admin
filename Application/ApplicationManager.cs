@@ -44,6 +44,7 @@ namespace IW4MAdmin.Application
         public bool IsRestartRequested { get; private set; }
         public IMiddlewareActionHandler MiddlewareActionHandler { get; }
         private readonly List<IManagerCommand> _commands;
+        private readonly ILogger _logger;
         private readonly List<MessageToken> MessageTokens;
         private readonly ClientService ClientSvc;
         readonly AliasService AliasSvc;
@@ -60,11 +61,12 @@ namespace IW4MAdmin.Application
         private readonly IConfigurationHandler<CommandConfiguration> _commandConfiguration;
         private readonly IGameServerInstanceFactory _serverInstanceFactory;
         private readonly IParserRegexFactory _parserRegexFactory;
+        private readonly IEnumerable<IRegisterEvent> _customParserEvents;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
-            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory, 
-            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory)
+            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
+            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -75,9 +77,10 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser(parserRegexFactory) };
+            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser(parserRegexFactory, logger) };
             AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser(parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
+            _logger = logger;
             _metaService = new MetaService();
             _tokenSource = new CancellationTokenSource();
             _loggers.Add(0, logger);
@@ -86,6 +89,7 @@ namespace IW4MAdmin.Application
             _commandConfiguration = commandConfiguration;
             _serverInstanceFactory = serverInstanceFactory;
             _parserRegexFactory = parserRegexFactory;
+            _customParserEvents = customParserEvents;
             Plugins = plugins;
         }
 
@@ -557,6 +561,16 @@ namespace IW4MAdmin.Application
             MetaService.AddRuntimeMeta(getPenaltyMeta);
             #endregion
 
+            #region CUSTOM_EVENTS
+            foreach (var customEvent in _customParserEvents.SelectMany(_events => _events.Events))
+            {
+                foreach (var parser in AdditionalEventParsers)
+                {
+                    parser.RegisterCustomEvent(customEvent.Item1, customEvent.Item2, customEvent.Item3);
+                }
+            }
+            #endregion
+
             await InitializeServers();
         }
 
@@ -781,7 +795,7 @@ namespace IW4MAdmin.Application
 
         public IEventParser GenerateDynamicEventParser(string name)
         {
-            return new DynamicEventParser(_parserRegexFactory)
+            return new DynamicEventParser(_parserRegexFactory, _logger)
             {
                 Name = name
             };

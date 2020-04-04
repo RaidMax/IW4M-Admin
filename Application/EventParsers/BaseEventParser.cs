@@ -2,6 +2,7 @@
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using static SharedLibraryCore.Server;
 
@@ -9,8 +10,14 @@ namespace IW4MAdmin.Application.EventParsers
 {
     public class BaseEventParser : IEventParser
     {
-        public BaseEventParser(IParserRegexFactory parserRegexFactory)
+        private readonly Dictionary<string, (string, Func<string, IEventParserConfiguration, GameEvent, GameEvent>)> _customEventRegistrations;
+        private readonly ILogger _logger;
+
+        public BaseEventParser(IParserRegexFactory parserRegexFactory, ILogger logger)
         {
+            _customEventRegistrations = new Dictionary<string, (string, Func<string, IEventParserConfiguration, GameEvent, GameEvent>)>();
+            _logger = logger;
+
             Configuration = new DynamicEventParserConfiguration(parserRegexFactory)
             {
                 GameDirectory = "main",
@@ -272,51 +279,25 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
-            // this is a custom event printed out by _customcallbacks.gsc (used for team balance)
-            if (eventType == "JoinTeam")
+            if (_customEventRegistrations.ContainsKey(eventType))
             {
-                return new GameEvent()
+                var eventModifier = _customEventRegistrations[eventType];
+
+                try
                 {
-                    Type = GameEvent.EventType.JoinTeam,
-                    Data = logLine,
-                    Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle) },
-                    RequiredEntity = GameEvent.EventRequiredEntity.Target,
-                    GameTime = gameTime
-                };
-            }
+                    return eventModifier.Item2(logLine, Configuration, new GameEvent()
+                    {
+                        Type = GameEvent.EventType.Other,
+                        Data = logLine,
+                        Subtype = eventModifier.Item1,
+                        GameTime = gameTime
+                    });
+                }
 
-            // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
-            if (eventType == "ScriptKill")
-            {
-                long originId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-                long targetId = lineSplit[2].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-
-                return new GameEvent()
+                catch (Exception e)
                 {
-                    Type = GameEvent.EventType.ScriptKill,
-                    Data = logLine,
-                    Origin = new EFClient() { NetworkId = originId },
-                    Target = new EFClient() { NetworkId = targetId },
-                    RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
-                    GameTime = gameTime
-                };
-            }
-
-            // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
-            if (eventType == "ScriptDamage")
-            {
-                long originId = lineSplit[1].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-                long targetId = lineSplit[2].ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-
-                return new GameEvent()
-                {
-                    Type = GameEvent.EventType.ScriptDamage,
-                    Data = logLine,
-                    Origin = new EFClient() { NetworkId = originId },
-                    Target = new EFClient() { NetworkId = targetId },
-                    RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
-                    GameTime = gameTime
-                };
+                    _logger.WriteWarning($"Could not handle custom event generation - {e.GetExceptionInfo()}");
+                }
             }
 
             return new GameEvent()
@@ -328,6 +309,32 @@ namespace IW4MAdmin.Application.EventParsers
                 RequiredEntity = GameEvent.EventRequiredEntity.None,
                 GameTime = gameTime
             };
+        }
+
+        /// <inheritdoc/>
+        public void RegisterCustomEvent(string eventSubtype, string eventTriggerValue, Func<string, IEventParserConfiguration, GameEvent, GameEvent> eventModifier)
+        {
+            if (string.IsNullOrWhiteSpace(eventSubtype))
+            {
+                throw new ArgumentException("Event subtype cannot be empty");
+            }
+
+            if (string.IsNullOrWhiteSpace(eventTriggerValue))
+            {
+                throw new ArgumentException("Event trigger value cannot be empty");
+            }
+
+            if (eventModifier == null)
+            {
+                throw new ArgumentException("Event modifier must be specified");
+            }
+
+            if (_customEventRegistrations.ContainsKey(eventTriggerValue))
+            {
+                throw new ArgumentException($"Event trigger value '{eventTriggerValue}' is already registered");
+            }
+
+            _customEventRegistrations.Add(eventTriggerValue, (eventSubtype, eventModifier));
         }
     }
 }

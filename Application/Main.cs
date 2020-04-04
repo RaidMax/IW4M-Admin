@@ -321,6 +321,18 @@ namespace IW4MAdmin.Application
                 serviceCollection.AddSingleton(scriptPlugin);
             }
 
+            // register any eventable types
+            foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
+                .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))
+                .Union(pluginImplementations
+                .Item1.SelectMany(_asm => _asm.Assembly.GetTypes())
+                .Distinct()
+                .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))))
+            {
+                var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
+                serviceCollection.AddSingleton(instance);
+            }
+
             return serviceCollection;
         }
     }

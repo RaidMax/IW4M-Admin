@@ -214,6 +214,10 @@ namespace SharedLibraryCore
         }
 
         public EventType Type;
+        /// <summary>
+        /// suptype of the event for more detailed classification
+        /// </summary>
+        public string Subtype { get; set; }
         public EventRequiredEntity RequiredEntity { get; set; }
         public string Data; // Data is usually the message sent by player
         public string Message;

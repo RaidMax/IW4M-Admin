@@ -13,13 +13,16 @@ namespace SharedLibraryCore.Database.Models
         [ForeignKey("LinkId")]
         public virtual EFAliasLink Link { get; set; }
         [Required]
-        [MaxLength(24)]
+        [MaxLength(MAX_NAME_LENGTH)]
         public string Name { get; set; }
-        [MaxLength(24)]
+        [MaxLength(MAX_NAME_LENGTH)]
         public string SearchableName { get; set; }
         [Required]
         public int? IPAddress { get; set; }
         [Required]
         public DateTime DateAdded { get; set; }
+
+        [NotMapped]
+        public const int MAX_NAME_LENGTH = 24;
     }
 }

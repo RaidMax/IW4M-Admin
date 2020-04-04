@@ -8,7 +8,7 @@ namespace IW4MAdmin.Application.EventParsers
     /// </summary>
     sealed internal class DynamicEventParser : BaseEventParser
     {
-        public DynamicEventParser(IParserRegexFactory parserRegexFactory) : base(parserRegexFactory)
+        public DynamicEventParser(IParserRegexFactory parserRegexFactory, ILogger logger) : base(parserRegexFactory, logger)
         {
         }
     }

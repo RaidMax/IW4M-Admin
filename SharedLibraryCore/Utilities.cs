@@ -95,6 +95,18 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
+        /// caps client name to the specified character length - 3
+        /// and adds ellipses to the end of the reamining client name
+        /// </summary>
+        /// <param name="str">client name</param>
+        /// <param name="maxLength">max number of characters for the name</param>
+        /// <returns></returns>
+        public static string CapClientName(this string str, int maxLength) =>
+            str.Length > maxLength ?
+            $"{str.Substring(0, maxLength - 3)}..." :
+            str;
+
+        /// <summary>
         /// helper method to get the information about an exception and inner exceptions
         /// </summary>
         /// <param name="ex"></param>

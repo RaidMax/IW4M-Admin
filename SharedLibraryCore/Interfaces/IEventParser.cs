@@ -1,4 +1,5 @@
-﻿using static SharedLibraryCore.Server;
+﻿using System;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -33,8 +34,16 @@ namespace SharedLibraryCore.Interfaces
         string URLProtocolFormat { get; set; }
 
         /// <summary>
-        /// Specifies the text name of the game the parser is for
+        /// specifies the text name of the game the parser is for
         /// </summary>
         string Name { get; set; }
+
+        /// <summary>
+        /// registers a custom event subtype to be triggered when a value is detected
+        /// </summary>
+        /// <param name="eventSubtype">subtype assigned to the event when generated</param>
+        /// <param name="eventTriggerValue">event keyword to trigger an event generation</param>
+        /// <param name="eventModifier">function pointer that modifies the generated game event</param>
+        void RegisterCustomEvent(string eventSubtype, string eventTriggerValue, Func<string, IEventParserConfiguration, GameEvent, GameEvent> eventModifier);
     }
 }

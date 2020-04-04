@@ -35,7 +35,7 @@ namespace ApplicationTests
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
                 A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>());
 
-            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>());
+            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
             var log = System.IO.File.ReadAllLines("Files\\T6MapRotation.log");
@@ -61,7 +61,7 @@ namespace ApplicationTests
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
                 A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>());
 
-            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>());
+            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
             var log = System.IO.File.ReadAllLines("Files\\T6Game.log");

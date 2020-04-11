@@ -14,6 +14,8 @@ namespace IW4MAdmin.Application.RconParsers
 {
     public class BaseRConParser : IRConParser
     {
+        private const int MAX_FAULTY_STATUS_LINES = 7;
+
         public BaseRConParser(IParserRegexFactory parserRegexFactory)
         {
             Configuration = new DynamicRConParserConfiguration(parserRegexFactory)
@@ -207,7 +209,7 @@ namespace IW4MAdmin.Application.RconParsers
             }
 
             // this happens if status is requested while map is rotating
-            if (Status.Length > 5 && validMatches == 0)
+            if (Status.Length > MAX_FAULTY_STATUS_LINES && validMatches == 0)
             {
                 throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_ROTATING_MAP"]);
             }

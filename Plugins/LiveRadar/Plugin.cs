@@ -60,7 +60,10 @@ namespace LiveRadar
                 await _configurationHandler.Save();
             }
 
-            manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
+            if (manager.GetServers().Any(_server => _server.GameName == Server.Game.IW4))
+            {
+                manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
+            }
         }
 
         public Task OnTickAsync(Server S)

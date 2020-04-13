@@ -25,7 +25,7 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(106, 2);
         rconParser.Configuration.Dvar.AddMapping(107, 3);
         rconParser.Configuration.WaitForResponse = false;
-		rconParser.Configuration.CanGenerateLogPath = true;
+        rconParser.Configuration.CanGenerateLogPath = true;
 
         rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';
         rconParser.Configuration.Status.AddMapping(100, 1);
@@ -36,9 +36,11 @@ var plugin = {
         rconParser.Configuration.Status.AddMapping(105, 6);
 
         rconParser.Version = 'IW5 MP 1.9 build 388110 Fri Sep 14 00:04:28 2012 win-x86';
-        rconParser.GameName = 3; // T5
+        rconParser.GameName = 3; // IW5
         eventParser.Version = 'IW5 MP 1.9 build 388110 Fri Sep 14 00:04:28 2012 win-x86';
-        eventParser.GameName = 3; // T5
+        eventParser.GameName = 3; // IW5
+
+        eventParser.Configuration.GameDirectory = '';
     },
 
     onUnloadAsync: function () {

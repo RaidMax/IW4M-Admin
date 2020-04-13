@@ -1,7 +1,5 @@
-﻿using IW4MAdmin.Application.EventParsers;
-using IW4MAdmin.Application.IO;
+﻿using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Misc;
-using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
@@ -945,10 +943,6 @@ namespace IW4MAdmin
             var logsync = await this.GetDvarAsync<int>("g_logsync");
             var ip = await this.GetDvarAsync<string>("net_ip");
 
-            WorkingDirectory = Directory.Exists(basegame?.Value ?? "") ?
-                basegame.Value :
-                basepath.Value;
-
             try
             {
                 var website = await this.GetDvarAsync<string>("_website");
@@ -970,6 +964,7 @@ namespace IW4MAdmin
 
             InitializeMaps();
 
+            WorkingDirectory = basepath.Value;
             this.Hostname = hostname;
             this.MaxClients = maxplayers;
             this.FSGame = game;
@@ -1014,17 +1009,7 @@ namespace IW4MAdmin
 
             else
             {
-                string mainPath = EventParser.Configuration.GameDirectory;
-
-                LogPath = string.IsNullOrEmpty(game) ?
-                       $"{WorkingDirectory.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile?.Value}" :
-                       $"{WorkingDirectory.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game?.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile?.Value}";
-
-                // fix wine drive name mangling
-                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    LogPath = Regex.Replace($"{Path.DirectorySeparatorChar}{LogPath}", @"[A-Z]:/", "");
-                }
+                LogPath = GenerateLogPath(basegame.Value, basepath.Value, EventParser.Configuration.GameDirectory, game, logfile.Value);
 
                 if (!File.Exists(LogPath) && ServerConfig.GameLogServerUrl == null)
                 {
@@ -1040,6 +1025,37 @@ namespace IW4MAdmin
 #if !DEBUG
             Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
+        }
+
+        public static string GenerateLogPath(string baseGameDirectory, string basePathDirectory, string gameDirectory, string modDirectory, string logFile)
+        {
+            string logPath;
+            string workingDirectory = basePathDirectory;
+
+            // we want to see if base game is provided and it 'looks' like a directory
+            if (!string.IsNullOrWhiteSpace(baseGameDirectory) && 
+                baseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1)
+            {
+                workingDirectory = baseGameDirectory;
+            }
+
+            if (string.IsNullOrWhiteSpace(modDirectory))
+            {
+                logPath = Path.Combine(workingDirectory, gameDirectory, logFile);
+            }
+
+            else
+            {
+                logPath = Path.Combine(workingDirectory, modDirectory, logFile);
+            }
+
+            // fix wine drive name mangling
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{logPath}", @"[A-Z]:/", "");
+            }
+
+            return logPath.FixDirectoryCharacters();
         }
 
         protected override async Task Warn(String Reason, EFClient Target, EFClient Origin)

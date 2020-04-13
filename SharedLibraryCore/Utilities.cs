@@ -32,6 +32,7 @@ namespace SharedLibraryCore
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
         public static TimeSpan DefaultCommandTimeout = new TimeSpan(0, 0, 25);
+        public static char[] DirectorySeparatorChars = new[] { '\\', '/' };
 
         public static EFClient IW4MAdminClient(Server server = null)
         {
@@ -872,6 +873,21 @@ namespace SharedLibraryCore
         }
 
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
+
+        /// <summary>
+        /// replaces any directory separator chars with the platform specific character
+        /// </summary>
+        /// <param name="path">original file path</param>
+        /// <returns></returns>
+        public static string FixDirectoryCharacters(this string path)
+        {
+            foreach (char separator in DirectorySeparatorChars)
+            {
+                path = path.Replace(separator, Path.DirectorySeparatorChar);
+            }
+
+            return path;
+        }
 
 #if DEBUG == true
         public static string ToSql<TEntity>(this IQueryable<TEntity> query) where TEntity : class

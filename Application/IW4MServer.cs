@@ -937,6 +937,7 @@ namespace IW4MAdmin
                 (await this.GetDvarAsync<string>("g_gametype")).Value :
                 infoResponse.Where(kvp => kvp.Key.Contains("gametype")).Select(kvp => kvp.Value).First();
             var basepath = await this.GetDvarAsync<string>("fs_basepath");
+            var basegame = await this.GetDvarAsync<string>("fs_basegame");
             var game = infoResponse == null || !infoResponse.ContainsKey("fs_game") ?
                 (await this.GetDvarAsync<string>("fs_game")).Value :
                 infoResponse["fs_game"];
@@ -944,7 +945,9 @@ namespace IW4MAdmin
             var logsync = await this.GetDvarAsync<int>("g_logsync");
             var ip = await this.GetDvarAsync<string>("net_ip");
 
-            WorkingDirectory = basepath.Value;
+            WorkingDirectory = Directory.Exists(basegame?.Value ?? "") ?
+                basegame.Value :
+                basepath.Value;
 
             try
             {
@@ -1014,8 +1017,8 @@ namespace IW4MAdmin
                 string mainPath = EventParser.Configuration.GameDirectory;
 
                 LogPath = string.IsNullOrEmpty(game) ?
-                       $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile?.Value}" :
-                       $"{basepath?.Value?.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game?.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile?.Value}";
+                       $"{WorkingDirectory.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{mainPath}{Path.DirectorySeparatorChar}{logfile?.Value}" :
+                       $"{WorkingDirectory.Replace('\\', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{game?.Replace('/', Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}{logfile?.Value}";
 
                 // fix wine drive name mangling
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

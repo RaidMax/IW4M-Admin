@@ -946,7 +946,7 @@ namespace IW4MAdmin
             try
             {
                 var website = await this.GetDvarAsync<string>("_website");
-                
+
                 // this occurs for games that don't give us anything back when
                 // the dvar is not set
                 if (string.IsNullOrWhiteSpace(website.Value))
@@ -1032,9 +1032,14 @@ namespace IW4MAdmin
             string logPath;
             string workingDirectory = basePathDirectory;
 
+            bool baseGameIsDirectory = !string.IsNullOrWhiteSpace(baseGameDirectory) &&
+                baseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
+
+            bool baseGameIsRelative = baseGameDirectory.FixDirectoryCharacters()
+                .Equals(gameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
+
             // we want to see if base game is provided and it 'looks' like a directory
-            if (!string.IsNullOrWhiteSpace(baseGameDirectory) && 
-                baseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1)
+            if (baseGameIsDirectory && !baseGameIsRelative)
             {
                 workingDirectory = baseGameDirectory;
             }

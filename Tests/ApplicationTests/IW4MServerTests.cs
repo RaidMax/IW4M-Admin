@@ -59,5 +59,14 @@ namespace ApplicationTests
 
             Assert.AreEqual(expected, generated);
         }
+
+        [Test]
+        public void Test_GenerateLogPath_RelativeBasePath()
+        {
+            string expected = "C:\\Game\\main\\folder\\log.log";
+            string generated = IW4MServer.GenerateLogPath("main\\folder", "C:\\Game", "main\\folder", null, "log.log");
+
+            Assert.AreEqual(expected, generated);
+        }
     }
 }

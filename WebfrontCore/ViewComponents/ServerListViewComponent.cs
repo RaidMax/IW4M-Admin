@@ -3,14 +3,15 @@ using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
 using System.Net;
+using static SharedLibraryCore.Server;
 
 namespace WebfrontCore.ViewComponents
 {
     public class ServerListViewComponent : ViewComponent
     {
-        public IViewComponentResult Invoke()
+        public IViewComponentResult Invoke(Game? game)
         {
-            var servers = Program.Manager.GetServers();
+            var servers = Program.Manager.GetServers().Where(_server => !game.HasValue ? true : _server.GameName == game);
 
             var serverInfo = servers.Select(s => new ServerInfo()
             {

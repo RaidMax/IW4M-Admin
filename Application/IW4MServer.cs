@@ -1036,7 +1036,7 @@ namespace IW4MAdmin
                 baseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
 
             bool baseGameIsRelative = baseGameDirectory.FixDirectoryCharacters()
-                .Equals(gameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
+                .Equals(gameDirectory?.FixDirectoryCharacters() ?? "", StringComparison.InvariantCultureIgnoreCase);
 
             // we want to see if base game is provided and it 'looks' like a directory
             if (baseGameIsDirectory && !baseGameIsRelative)
@@ -1046,7 +1046,7 @@ namespace IW4MAdmin
 
             if (string.IsNullOrWhiteSpace(modDirectory))
             {
-                logPath = Path.Combine(workingDirectory, gameDirectory, logFile);
+                logPath = Path.Combine(workingDirectory, gameDirectory ?? "", logFile);
             }
 
             else

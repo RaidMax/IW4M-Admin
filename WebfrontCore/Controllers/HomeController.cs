@@ -6,6 +6,7 @@ using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static SharedLibraryCore.Server;
 
 namespace WebfrontCore.Controllers
 {
@@ -15,18 +16,22 @@ namespace WebfrontCore.Controllers
         {
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(Game? game = null)
         {
             ViewBag.Description = "IW4MAdmin is a complete server administration tool for IW4x.";
             ViewBag.Title = Localization["WEBFRONT_HOME_TITLE"];
             ViewBag.Keywords = "IW4MAdmin, server, administration, IW4x, MW2, Modern Warfare 2";
 
+            var servers = Manager.GetServers().Where(_server => !game.HasValue ? true : _server.GameName == game);
+
             var model = new IW4MAdminInfo()
             {
-                TotalAvailableClientSlots = Manager.GetServers().Sum(_server => _server.MaxClients),
-                TotalOccupiedClientSlots = Manager.GetActiveClients().Count,
+                TotalAvailableClientSlots = servers.Sum(_server => _server.MaxClients),
+                TotalOccupiedClientSlots = servers.SelectMany(_server => _server.GetClientsAsList()).Count(),
                 TotalClientCount = await Manager.GetClientService().GetTotalClientsAsync(),
-                RecentClientCount = await Manager.GetClientService().GetRecentClientCount()
+                RecentClientCount = await Manager.GetClientService().GetRecentClientCount(),
+                Game = game,
+                ActiveServerGames = Manager.GetServers().Select(_server => _server.GameName).Distinct().ToArray()
             };
 
             return View(model);

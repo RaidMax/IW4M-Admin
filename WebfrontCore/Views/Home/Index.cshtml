@@ -19,7 +19,23 @@
     </div>
 </div>
 
-@await Component.InvokeAsync("ServerList")
+@if (Model.ActiveServerGames.Length > 1)
+{
+    <ul class="nav nav-tabs border-top border-bottom nav-fill row mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link @(Model.Game.HasValue ? "" : "active")" href="/" role="tab" aria-selected="true">@loc["GAME_ALL"]</a>
+        </li>
+
+        @foreach (var gameName in Model.ActiveServerGames)
+        {
+            <li class="nav-item">
+                <a asp-action="Index" asp-controller="Home" asp-route-game="@gameName" class="nav-link @(Model.Game == gameName ? "active" : "")" role="tab" aria-selected="false">@loc[$"GAME_{gameName}"]</a>
+            </li>
+        }
+    </ul>
+}
+
+@await Component.InvokeAsync("ServerList", Model.Game)
 
 @section scripts {
     <environment include="Development">

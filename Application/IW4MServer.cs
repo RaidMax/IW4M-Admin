@@ -1009,7 +1009,16 @@ namespace IW4MAdmin
 
             else
             {
-                LogPath = GenerateLogPath(basegame.Value, basepath.Value, EventParser.Configuration.GameDirectory, game, logfile.Value);
+                var logInfo = new LogPathGeneratorInfo()
+                {
+                    BaseGameDirectory = basegame.Value,
+                    BasePathDirectory = basepath.Value,
+                    GameDirectory = EventParser.Configuration.GameDirectory ?? "",
+                    ModDirectory = game ?? "",
+                    LogFile = logfile.Value,
+                    IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                };
+                LogPath = GenerateLogPath(logInfo);
 
                 if (!File.Exists(LogPath) && ServerConfig.GameLogServerUrl == null)
                 {
@@ -1027,37 +1036,37 @@ namespace IW4MAdmin
 #endif
         }
 
-        public static string GenerateLogPath(string baseGameDirectory, string basePathDirectory, string gameDirectory, string modDirectory, string logFile)
+        public static string GenerateLogPath(LogPathGeneratorInfo logInfo)
         {
             string logPath;
-            string workingDirectory = basePathDirectory;
+            string workingDirectory = logInfo.BasePathDirectory;
 
-            bool baseGameIsDirectory = !string.IsNullOrWhiteSpace(baseGameDirectory) &&
-                baseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
+            bool baseGameIsDirectory = !string.IsNullOrWhiteSpace(logInfo.BaseGameDirectory) &&
+                logInfo.BaseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
 
-            bool baseGameIsRelative = baseGameDirectory.FixDirectoryCharacters()
-                .Equals(gameDirectory?.FixDirectoryCharacters() ?? "", StringComparison.InvariantCultureIgnoreCase);
+            bool baseGameIsRelative = logInfo.BaseGameDirectory.FixDirectoryCharacters()
+                .Equals(logInfo.GameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
 
             // we want to see if base game is provided and it 'looks' like a directory
             if (baseGameIsDirectory && !baseGameIsRelative)
             {
-                workingDirectory = baseGameDirectory;
+                workingDirectory = logInfo.BaseGameDirectory;
             }
 
-            if (string.IsNullOrWhiteSpace(modDirectory))
+            if (string.IsNullOrWhiteSpace(logInfo.ModDirectory))
             {
-                logPath = Path.Combine(workingDirectory, gameDirectory ?? "", logFile);
+                logPath = Path.Combine(workingDirectory, logInfo.GameDirectory, logInfo.LogFile);
             }
 
             else
             {
-                logPath = Path.Combine(workingDirectory, modDirectory, logFile);
+                logPath = Path.Combine(workingDirectory, logInfo.ModDirectory, logInfo.LogFile);
             }
 
             // fix wine drive name mangling
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!logInfo.IsWindows)
             {
-                logPath = Regex.Replace($"{Path.DirectorySeparatorChar}{logPath}", @"[A-Z]:/", "");
+                logPath = $"{Path.DirectorySeparatorChar}{Regex.Replace(logPath, @"[A-Z]:(\/|\\)", "")}";
             }
 
             return logPath.FixDirectoryCharacters();

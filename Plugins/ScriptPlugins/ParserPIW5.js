@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.1,
     name: 'Plutonium IW5 Parser',
     isParser: true,
 
@@ -14,16 +14,16 @@ var plugin = {
         rconParser = manager.GenerateDynamicRConParser(this.name);
         eventParser = manager.GenerateDynamicEventParser(this.name);
 
-        rconParser.Configuration.CommandPrefixes.Tell        = 'tell {0} {1}';
+       rconParser.Configuration.CommandPrefixes.Tell        = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.Say         = 'say {0}';
         rconParser.Configuration.CommandPrefixes.Kick        = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban         = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.TempBan     = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.RConGetDvar = '\xff\xff\xff\xffrcon {0} get {1}';
 
-        rconParser.Configuration.Dvar.Pattern = '^received "(.+)"\n(.+) is "(.+)?"';
-        rconParser.Configuration.Dvar.AddMapping(106, 2);
-        rconParser.Configuration.Dvar.AddMapping(107, 3);
+        rconParser.Configuration.Dvar.Pattern = '^(.+) is "(.+)?"';
+        rconParser.Configuration.Dvar.AddMapping(106, 1);
+        rconParser.Configuration.Dvar.AddMapping(107, 2);
         rconParser.Configuration.WaitForResponse = false;
         rconParser.Configuration.CanGenerateLogPath = true;
 

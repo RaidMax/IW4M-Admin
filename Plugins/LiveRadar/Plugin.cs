@@ -25,6 +25,15 @@ namespace LiveRadar
 
         public Task OnEventAsync(GameEvent E, Server S)
         {
+            // if it's an IW4 game, with custom callbacks, we want to 
+            // enable the live radar page
+            if (E.Type == GameEvent.EventType.Start && 
+                S.GameName == Server.Game.IW4 &&
+                S.CustomCallback)
+            {
+                E.Owner.Manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
+            }
+
             if (E.Type == GameEvent.EventType.Unknown)
             {
                 if (E.Data?.StartsWith("LiveRadar") ?? false)
@@ -58,11 +67,6 @@ namespace LiveRadar
             {
                 _configurationHandler.Set((LiveRadarConfiguration)new LiveRadarConfiguration().Generate());
                 await _configurationHandler.Save();
-            }
-
-            if (manager.GetServers().Any(_server => _server.GameName == Server.Game.IW4))
-            {
-                manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
             }
         }
 

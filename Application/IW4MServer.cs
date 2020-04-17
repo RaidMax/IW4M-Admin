@@ -911,7 +911,8 @@ namespace IW4MAdmin
                 Version = RconParser.Version;
             }
 
-            var svRunning = await this.GetDvarAsync<string>("sv_running");
+            // these T7 specific things aren't ideal , but it's a quick fix
+            var svRunning = await this.GetDvarAsync("sv_running", GameName == Game.T7 ? "1" : null);
 
             if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")
             {
@@ -924,7 +925,7 @@ namespace IW4MAdmin
                 (await this.GetDvarAsync<string>("sv_hostname")).Value :
                 infoResponse.Where(kvp => kvp.Key.Contains("hostname")).Select(kvp => kvp.Value).First();
             var mapname = infoResponse == null ?
-                (await this.GetDvarAsync<string>("mapname")).Value :
+                (await this.GetDvarAsync("mapname", "Unknown")).Value :
                 infoResponse["mapname"];
             int maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
                 (await this.GetDvarAsync<int>("party_maxplayers")).Value :
@@ -932,12 +933,12 @@ namespace IW4MAdmin
                 (await this.GetDvarAsync<int>("sv_maxclients")).Value :
                 Convert.ToInt32(infoResponse["sv_maxclients"]);
             var gametype = infoResponse == null ?
-                (await this.GetDvarAsync<string>("g_gametype")).Value :
+                (await this.GetDvarAsync("g_gametype", GameName == Game.T7 ? "" : null)).Value :
                 infoResponse.Where(kvp => kvp.Key.Contains("gametype")).Select(kvp => kvp.Value).First();
-            var basepath = await this.GetDvarAsync<string>("fs_basepath");
-            var basegame = await this.GetDvarAsync<string>("fs_basegame");
+            var basepath = await this.GetDvarAsync("fs_basepath", GameName == Game.T7 ? "" : null);
+            var basegame = await this.GetDvarAsync("fs_basegame", GameName == Game.T7 ? "" : null);
             var game = infoResponse == null || !infoResponse.ContainsKey("fs_game") ?
-                (await this.GetDvarAsync<string>("fs_game")).Value :
+                (await this.GetDvarAsync("fs_game", GameName == Game.T7 ? "" : null)).Value :
                 infoResponse["fs_game"];
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
@@ -1002,9 +1003,14 @@ namespace IW4MAdmin
             CustomCallback = await ScriptLoaded();
 
             // they've manually specified the log path
-            if (!string.IsNullOrEmpty(ServerConfig.ManualLogPath))
+            if (!string.IsNullOrEmpty(ServerConfig.ManualLogPath) || !RconParser.CanGenerateLogPath)
             {
                 LogPath = ServerConfig.ManualLogPath;
+
+                if (string.IsNullOrEmpty(LogPath) && !RconParser.CanGenerateLogPath)
+                {
+                    throw new ServerException(loc["SERVER_ERROR_REQUIRES_PATH"].FormatExt(GameName.ToString()));
+                }
             }
 
             else

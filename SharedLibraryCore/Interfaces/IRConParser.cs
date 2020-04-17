@@ -13,8 +13,9 @@ namespace SharedLibraryCore.Interfaces
         /// <typeparam name="T">type of DVAR expected (string, int, float etc...)</typeparam>
         /// <param name="connection">RCon connection to retrieve with</param>
         /// <param name="dvarName">name of DVAR</param>
+        /// <param name="fallbackValue">default value to return if dvar retrieval fails</param>
         /// <returns></returns>
-        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName);
+        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default);
 
         /// <summary>
         /// set value of DVAR by name

@@ -15,6 +15,7 @@ namespace IW4MAdmin.Application.RconParsers
         public ParserRegex Status { get; set; }
         public ParserRegex MapStatus { get; set; }
         public ParserRegex Dvar { get; set; }
+        public ParserRegex StatusHeader { get; set; }
         public string ServerNotRunningResponse { get; set; }
         public bool WaitForResponse { get; set; } = true;
         public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
@@ -24,6 +25,7 @@ namespace IW4MAdmin.Application.RconParsers
             Status = parserRegexFactory.CreateParserRegex();
             MapStatus = parserRegexFactory.CreateParserRegex();
             Dvar = parserRegexFactory.CreateParserRegex();
+            StatusHeader = parserRegexFactory.CreateParserRegex();
         }
     }
 }

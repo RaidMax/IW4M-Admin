@@ -52,6 +52,7 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarLatchedValue, 4);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDomain, 5);
 
+            Configuration.StatusHeader.Pattern = "num +score +ping +guid +name +lastmsg +address +qport +rate *";
             Configuration.MapStatus.Pattern = @"map: (([a-z]|_|\d)+)";
             Configuration.MapStatus.AddMapping(ParserRegex.GroupType.RConStatusMap, 1);
         }
@@ -69,16 +70,24 @@ namespace IW4MAdmin.Application.RconParsers
             return response.Skip(1).ToArray();
         }
 
-        public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName)
+        public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default)
         {
             string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
-            string response = string.Join('\n', lineSplit.Skip(1));
+            string response = string.Join('\n', lineSplit).TrimEnd('\0');
             var match = Regex.Match(response, Configuration.Dvar.Pattern);
 
-            if (!lineSplit[0].Contains(Configuration.CommandPrefixes.RConResponse) ||
-                response.Contains("Unknown command") ||
+            if (response.Contains("Unknown command") ||
                 !match.Success)
             {
+                if (fallbackValue != null)
+                {
+                    return new Dvar<T>()
+                    {
+                        Name = dvarName,
+                        Value = fallbackValue
+                    };
+                }
+
                 throw new DvarException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"].FormatExt(dvarName));
             }
 
@@ -142,36 +151,36 @@ namespace IW4MAdmin.Application.RconParsers
         {
             List<EFClient> StatusPlayers = new List<EFClient>();
 
-            if (Status.Length < 4)
-            {
-                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNEXPECTED_STATUS"]);
-            }
-
-            int validMatches = 0;
+            bool parsedHeader = false;
             foreach (string statusLine in Status)
             {
                 string responseLine = statusLine.Trim();
 
-                var regex = Regex.Match(responseLine, Configuration.Status.Pattern, RegexOptions.IgnoreCase);
-
-                if (regex.Success)
+                if (Configuration.StatusHeader.PatternMatcher.Match(responseLine).Success)
                 {
-                    validMatches++;
-                    int clientNumber = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]].Value);
-                    int score = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]].Value);
+                    parsedHeader = true;
+                    continue;
+                }
+
+                var match = Configuration.Status.PatternMatcher.Match(responseLine);
+
+                if (match.Success)
+                {
+                    int clientNumber = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]]);
+                    int score = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]]);
 
                     int ping = 999;
 
                     // their state can be CNCT, ZMBI etc
-                    if (regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Value.Length <= 3)
+                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Length <= 3)
                     {
-                        ping = int.Parse(regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Value);
+                        ping = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]]);
                     }
 
                     long networkId;
                     try
                     {
-                        networkId = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].Value.ConvertGuidToLong(Configuration.GuidNumberStyle);
+                        networkId = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].ConvertGuidToLong(Configuration.GuidNumberStyle);
                     }
 
                     catch (FormatException)
@@ -179,8 +188,8 @@ namespace IW4MAdmin.Application.RconParsers
                         continue;
                     }
 
-                    string name = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].Value.TrimNewLine();
-                    int? ip = regex.Groups[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Value.Split(':')[0].ConvertToIP();
+                    string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
+                    int? ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()
                     {
@@ -208,10 +217,10 @@ namespace IW4MAdmin.Application.RconParsers
                 }
             }
 
-            // this happens if status is requested while map is rotating
-            if (Status.Length > MAX_FAULTY_STATUS_LINES && validMatches == 0)
+            // this can happen if status is requested while map is rotating and we get a log dump back
+            if (!parsedHeader)
             {
-                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_ROTATING_MAP"]);
+                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNEXPECTED_STATUS"]);
             }
 
             return StatusPlayers;

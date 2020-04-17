@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'Plutonium IW5 Parser',
     isParser: true,
 
@@ -14,7 +14,7 @@ var plugin = {
         rconParser = manager.GenerateDynamicRConParser(this.name);
         eventParser = manager.GenerateDynamicEventParser(this.name);
 
-       rconParser.Configuration.CommandPrefixes.Tell        = 'tell {0} {1}';
+        rconParser.Configuration.CommandPrefixes.Tell        = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.Say         = 'say {0}';
         rconParser.Configuration.CommandPrefixes.Kick        = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban         = 'clientkick {0} "{1}"';
@@ -24,9 +24,10 @@ var plugin = {
         rconParser.Configuration.Dvar.Pattern = '^(.+) is "(.+)?"';
         rconParser.Configuration.Dvar.AddMapping(106, 1);
         rconParser.Configuration.Dvar.AddMapping(107, 2);
-        rconParser.Configuration.WaitForResponse = false;
+        rconParser.Configuration.WaitForResponse = true;
         rconParser.Configuration.CanGenerateLogPath = true;
 
+        rconParser.Configuration.StatusHeader.Pattern = 'num +score +bot +ping +guid +name +lastmsg +address +qport +rate *';
         rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';
         rconParser.Configuration.Status.AddMapping(100, 1);
         rconParser.Configuration.Status.AddMapping(101, 2);

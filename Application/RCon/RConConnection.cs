@@ -4,6 +4,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -116,7 +117,7 @@ namespace IW4MAdmin.Application.RCon
                 throw new NetworkException($"Invalid character encountered when converting encodings - {parameters}");
             }
 
-            byte[] response = null;
+            byte[][] response = null;
 
         retrySend:
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
@@ -130,6 +131,7 @@ namespace IW4MAdmin.Application.RCon
                 connectionState.OnSentData.Reset();
                 connectionState.OnReceivedData.Reset();
                 connectionState.ConnectionAttempts++;
+                connectionState.BytesReadPerSegment.Clear();
 #if DEBUG == true
                 _log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
 #endif
@@ -137,7 +139,7 @@ namespace IW4MAdmin.Application.RCon
                 {
                     response = await SendPayloadAsync(payload, waitForResponse);
 
-                    if (response.Length == 0 && waitForResponse)
+                    if ((response.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
                         throw new NetworkException("Expected response but got 0 bytes back");
                     }
@@ -165,7 +167,9 @@ namespace IW4MAdmin.Application.RCon
                 }
             }
 
-            string responseString = _gameEncoding.GetString(response, 0, response.Length) + '\n';
+            string responseString = type == StaticHelpers.QueryType.COMMAND_STATUS ?
+               ReassembleSegmentedStatus(response) :
+               _gameEncoding.GetString(response[0]) + '\n';
 
             // note: not all games respond if the pasword is wrong or not set
             if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
@@ -183,13 +187,46 @@ namespace IW4MAdmin.Application.RCon
                 throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"].FormatExt(Endpoint.ToString()));
             }
 
-            string[] splitResponse = responseString.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim())
-                .ToArray();
+            string[] headerSplit = responseString.Split(config.CommandPrefixes.RConResponse);
+
+            if (headerSplit.Length != 2 && type != StaticHelpers.QueryType.GET_INFO)
+            {
+                throw new NetworkException("Unexpected response header from server");
+            }
+
+            string[] splitResponse = headerSplit.Last().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
             return splitResponse;
         }
 
-        private async Task<byte[]> SendPayloadAsync(byte[] payload, bool waitForResponse)
+        /// <summary>
+        /// reassembles broken status segments into the 'correct' ordering
+        /// <remarks>this is primarily for T7, and is really only reliable for 2 segments</remarks>
+        /// </summary>
+        /// <param name="segments">array of segmented byte arrays</param>
+        /// <returns></returns>
+        public string ReassembleSegmentedStatus(byte[][] segments)
+        {
+            var splitStatusStrings = new List<string>();
+
+            foreach (byte[] segment in segments)
+            {
+                string responseString = _gameEncoding.GetString(segment, 0, segment.Length);
+                var statusHeaderMatch = config.StatusHeader.PatternMatcher.Match(responseString);
+                if (statusHeaderMatch.Success)
+                {
+                    splitStatusStrings.Insert(0, responseString);
+                }
+
+                else
+                {
+                    splitStatusStrings.Add(responseString.Replace(config.CommandPrefixes.RConResponse, ""));
+                }
+            }
+
+            return string.Join("", splitStatusStrings);
+        }
+
+        private async Task<byte[][]> SendPayloadAsync(byte[] payload, bool waitForResponse)
         {
             var connectionState = ActiveQueries[this.Endpoint];
             var rconSocket = (Socket)connectionState.SendEventArgs.UserToken;
@@ -223,7 +260,7 @@ namespace IW4MAdmin.Application.RCon
 
             if (!waitForResponse)
             {
-                return new byte[0];
+                return new byte[0][];
             }
 
             connectionState.ReceiveEventArgs.SetBuffer(connectionState.ReceiveBuffer);
@@ -233,7 +270,7 @@ namespace IW4MAdmin.Application.RCon
 
             if (receiveDataPending)
             {
-                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(StaticHelpers.SocketTimeout)))
+                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(10000)))
                 {
                     rconSocket.Close();
                     throw new NetworkException("Timed out waiting for response", rconSocket);
@@ -242,11 +279,20 @@ namespace IW4MAdmin.Application.RCon
 
             rconSocket.Close();
 
-            byte[] response = connectionState.ReceiveBuffer
-                .Take(connectionState.ReceiveEventArgs.BytesTransferred)
-                .ToArray();
+            var responseList = new List<byte[]>();
+            int totalBytesRead = 0;
 
-            return response;
+            foreach (int bytesRead in connectionState.BytesReadPerSegment)
+            {
+                responseList.Add(connectionState.ReceiveBuffer
+                    .Skip(totalBytesRead)
+                    .Take(bytesRead)
+                    .ToArray());
+
+                totalBytesRead += bytesRead;
+            }
+
+            return responseList.ToArray();
         }
 
         private void OnDataReceived(object sender, SocketAsyncEventArgs e)
@@ -254,7 +300,48 @@ namespace IW4MAdmin.Application.RCon
 #if DEBUG == true
             _log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint.ToString()}");
 #endif
-            ActiveQueries[this.Endpoint].OnReceivedData.Set();
+
+            // this occurs when we close the socket
+            if (e.BytesTransferred == 0)
+            {
+                ActiveQueries[this.Endpoint].OnReceivedData.Set();
+                return;
+            }
+
+            if (sender is Socket sock)
+            {
+                var state = ActiveQueries[this.Endpoint];
+                state.BytesReadPerSegment.Add(e.BytesTransferred);
+
+                try
+                {
+                    // we still have available data so the payload was segmented
+                    if (sock.Available > 0)
+                    {
+                        state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, e.BytesTransferred, state.ReceiveBuffer.Length - e.BytesTransferred);
+
+                        if (!sock.ReceiveAsync(state.ReceiveEventArgs))
+                        {
+#if DEBUG == true
+                            _log.WriteDebug($"Read {state.ReceiveEventArgs.BytesTransferred} synchronous bytes from {e.RemoteEndPoint.ToString()}");
+#endif
+                            // we need to increment this here because the callback isn't executed if there's no pending IO
+                            state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
+                            ActiveQueries[this.Endpoint].OnReceivedData.Set();
+                        }
+                    }
+
+                    else
+                    {
+                        ActiveQueries[this.Endpoint].OnReceivedData.Set();
+                    }
+                }
+
+                catch (ObjectDisposedException)
+                {
+                    ActiveQueries[this.Endpoint].OnReceivedData.Set();
+                }
+            }
         }
 
         private void OnDataSent(object sender, SocketAsyncEventArgs e)

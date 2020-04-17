@@ -720,9 +720,9 @@ namespace SharedLibraryCore
             return Convert.ToBase64String(src.Select(c => Convert.ToByte(c)).ToArray()).Replace('+', '-').Replace('/', '_');
         }
 
-        public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName)
+        public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName, T fallbackValue = default)
         {
-            return server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName);
+            return server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName, fallbackValue);
         }
 
         public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
@@ -754,7 +754,8 @@ namespace SharedLibraryCore
             }
 
             var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
-            return response.FirstOrDefault(r => r[0] == '\\')?.DictionaryFromKeyValue();
+            string combinedResponse = string.Join('\\', response.Where(r => r.Length > 0 && r[0] == '\\'));
+            return combinedResponse.DictionaryFromKeyValue();
         }
 
         public static double GetVersionAsDouble()
@@ -883,7 +884,7 @@ namespace SharedLibraryCore
         {
             foreach (char separator in DirectorySeparatorChars)
             {
-                path = path.Replace(separator, Path.DirectorySeparatorChar);
+                path = (path ?? "").Replace(separator, Path.DirectorySeparatorChar);
             }
 
             return path;

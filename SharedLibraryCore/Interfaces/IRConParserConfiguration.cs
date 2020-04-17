@@ -26,6 +26,11 @@ namespace SharedLibraryCore.Interfaces
         ParserRegex Dvar { get; set; }
 
         /// <summary>
+        /// stores the regex info for parsing the header of a status response
+        /// </summary>
+        ParserRegex StatusHeader { get; set; }
+
+        /// <summary>
         /// Specifies the expected response message from rcon when the server is not running
         /// </summary>
         string ServerNotRunningResponse { get; set; }

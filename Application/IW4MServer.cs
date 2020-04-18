@@ -929,7 +929,7 @@ namespace IW4MAdmin
                 infoResponse["mapname"];
             int maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
                 (await this.GetDvarAsync<int>("party_maxplayers")).Value :
-                infoResponse == null ?
+                infoResponse == null || !infoResponse.ContainsKey("sv_maxclients") ?
                 (await this.GetDvarAsync<int>("sv_maxclients")).Value :
                 Convert.ToInt32(infoResponse["sv_maxclients"]);
             var gametype = infoResponse == null ?

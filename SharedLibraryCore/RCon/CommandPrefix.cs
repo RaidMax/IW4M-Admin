@@ -15,5 +15,6 @@
         public string RConGetStatus { get; set; }
         public string RConGetInfo { get; set; }
         public string RConResponse { get; set; }
+        public string RconGetInfoResponseHeader { get; set; }
     }
 }

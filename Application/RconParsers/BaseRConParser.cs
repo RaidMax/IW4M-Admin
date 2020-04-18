@@ -33,6 +33,7 @@ namespace IW4MAdmin.Application.RconParsers
                     RConGetStatus = "ÿÿÿÿgetstatus",
                     RConGetInfo = "ÿÿÿÿgetinfo",
                     RConResponse = "ÿÿÿÿprint",
+                    RconGetInfoResponseHeader = "ÿÿÿÿinfoResponse"
                 },
                 ServerNotRunningResponse = "Server is not running."
             };

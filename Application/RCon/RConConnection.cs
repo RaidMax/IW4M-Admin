@@ -167,6 +167,12 @@ namespace IW4MAdmin.Application.RCon
                 }
             }
 
+            if (response.Length == 0)
+            {
+                _log.WriteWarning($"Received empty response for request [{type.ToString()}, {parameters}, {Endpoint.ToString()}]");
+                return new string[0];
+            }
+
             string responseString = type == StaticHelpers.QueryType.COMMAND_STATUS ?
                ReassembleSegmentedStatus(response) :
                _gameEncoding.GetString(response[0]) + '\n';
@@ -187,9 +193,9 @@ namespace IW4MAdmin.Application.RCon
                 throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"].FormatExt(Endpoint.ToString()));
             }
 
-            string[] headerSplit = responseString.Split(config.CommandPrefixes.RConResponse);
+            string[] headerSplit = responseString.Split(type == StaticHelpers.QueryType.GET_INFO ? config.CommandPrefixes.RconGetInfoResponseHeader : config.CommandPrefixes.RConResponse);
 
-            if (headerSplit.Length != 2 && type != StaticHelpers.QueryType.GET_INFO)
+            if (headerSplit.Length != 2)
             {
                 throw new NetworkException("Unexpected response header from server");
             }

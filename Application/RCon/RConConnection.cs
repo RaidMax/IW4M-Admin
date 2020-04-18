@@ -219,7 +219,7 @@ namespace IW4MAdmin.Application.RCon
 
                 else
                 {
-                    splitStatusStrings.Add(responseString.Replace(config.CommandPrefixes.RConResponse, ""));
+                    splitStatusStrings.Add(responseString.Replace(config.CommandPrefixes.RConResponse, "").TrimEnd('\0'));
                 }
             }
 

@@ -669,10 +669,10 @@ namespace SharedLibraryCore
 
             Dictionary<string, string> dict = null;
 
-            if (values.Length % 2 == 0 && values.Length > 1)
+            if (values.Length > 1)
             {
                 dict = new Dictionary<string, string>();
-                for (int i = 0; i < values.Length; i += 2)
+                for (int i = values.Length % 2 == 0 ? 0 : 1; i < values.Length; i += 2)
                 {
                     dict.Add(values[i], values[i + 1]);
                 }
@@ -754,7 +754,9 @@ namespace SharedLibraryCore
             }
 
             var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
-            string combinedResponse = string.Join('\\', response.Where(r => r.Length > 0 && r[0] == '\\'));
+            string combinedResponse = response.Length > 1 ?
+                string.Join('\\', response.Where(r => r.Length > 0 && r[0] == '\\')) :
+                response[0];
             return combinedResponse.DictionaryFromKeyValue();
         }
 

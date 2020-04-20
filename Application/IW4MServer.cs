@@ -152,28 +152,20 @@ namespace IW4MAdmin
                     }
                 }
 
-                foreach (var plugin in Manager.Plugins)
+                try
                 {
-                    try
-                    {
-                        // we don't want to run the events on parser plugins
-                        if (plugin is ScriptPlugin scriptPlugin && scriptPlugin.IsParser)
-                        {
-                            continue;
-                        }
+                    var loginPlugin = Manager.Plugins.FirstOrDefault(_plugin => _plugin.Name == "Login");
 
-                        await plugin.OnEventAsync(E, this);
-                    }
-                    catch (AuthorizationException e)
+                    if (loginPlugin != null)
                     {
-                        E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
-                        canExecuteCommand = false;
+                        await loginPlugin.OnEventAsync(E, this);
                     }
-                    catch (Exception Except)
-                    {
-                        Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{plugin.Name}]");
-                        Logger.WriteDebug(Except.GetExceptionInfo());
-                    }
+                }
+
+                catch (AuthorizationException e)
+                {
+                    E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
+                    canExecuteCommand = false;
                 }
 
                 // hack: this prevents commands from getting executing that 'shouldn't' be
@@ -182,6 +174,27 @@ namespace IW4MAdmin
                 {
                     await command.ExecuteAsync(E);
                 }
+
+                var pluginTasks = Manager.Plugins.Where(_plugin => _plugin.Name != "Login").Select(async _plugin =>
+                {
+                    try
+                    {
+                        // we don't want to run the events on parser plugins
+                        if (_plugin is ScriptPlugin scriptPlugin && scriptPlugin.IsParser)
+                        {
+                            return;
+                        }
+
+                        await _plugin.OnEventAsync(E, this);
+                    }
+                    catch (Exception Except)
+                    {
+                        Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{_plugin.Name}]");
+                        Logger.WriteDebug(Except.GetExceptionInfo());
+                    }
+                });
+
+                Parallel.ForEach(pluginTasks, async (_task) => await _task);
             }
 
             catch (Exception e)
@@ -943,6 +956,11 @@ namespace IW4MAdmin
             var logfile = await this.GetDvarAsync<string>("g_log");
             var logsync = await this.GetDvarAsync<int>("g_logsync");
             var ip = await this.GetDvarAsync<string>("net_ip");
+
+            if (Manager.GetApplicationSettings().Configuration().EnableCustomSayName)
+            {
+                await this.SetDvarAsync("sv_sayname", Manager.GetApplicationSettings().Configuration().CustomSayName);
+            }
 
             try
             {

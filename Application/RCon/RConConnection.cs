@@ -220,7 +220,7 @@ namespace IW4MAdmin.Application.RCon
                 var statusHeaderMatch = config.StatusHeader.PatternMatcher.Match(responseString);
                 if (statusHeaderMatch.Success)
                 {
-                    splitStatusStrings.Insert(0, responseString);
+                    splitStatusStrings.Insert(0, responseString.TrimEnd('\0'));
                 }
 
                 else

@@ -5,6 +5,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
@@ -12,9 +13,6 @@ namespace IW4MAdmin.Application
     {
         readonly ApplicationManager Manager;
         private readonly EventProfiler _profiler;
-        private delegate void GameEventAddedEventHandler(object sender, GameEventArgs args);
-        private event GameEventAddedEventHandler GameEventAdded;
-
         private static readonly GameEvent.EventType[] overrideEvents = new[]
         {
             GameEvent.EventType.Connect,
@@ -27,14 +25,16 @@ namespace IW4MAdmin.Application
         {
             Manager = (ApplicationManager)mgr;
             _profiler = new EventProfiler(mgr.GetLogger(0));
-            GameEventAdded += GameEventHandler_GameEventAdded;
         }
 
-        private async void GameEventHandler_GameEventAdded(object sender, GameEventArgs args)
+        private Task GameEventHandler_GameEventAdded(object sender, GameEventArgs args)
         {
+#if DEBUG
             var start = DateTime.Now;
-            await Manager.ExecuteEvent(args.Event);
+#endif
             EventApi.OnGameEvent(sender, args);
+            return Manager.ExecuteEvent(args.Event);
+
 #if DEBUG
             _profiler.Profile(start, DateTime.Now, args.Event);
 #endif
@@ -53,7 +53,8 @@ namespace IW4MAdmin.Application
 #if DEBUG
                 gameEvent.Owner.Logger.WriteDebug($"Adding event with id {gameEvent.Id}");
 #endif
-                GameEventAdded?.Invoke(this, new GameEventArgs(null, false, gameEvent));
+                //GameEventAdded?.Invoke(this, new GameEventArgs(null, false, gameEvent));
+                Task.Run(() => GameEventHandler_GameEventAdded(this, new GameEventArgs(null, false, gameEvent)));
             }
 #if DEBUG
             else

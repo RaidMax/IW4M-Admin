@@ -147,7 +147,7 @@ namespace SharedLibraryCore
         protected async Task Tell(string message, EFClient target)
         {
 #if !DEBUG
-            string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell, target.ClientNumber, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
+            string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell, target.ClientNumber, $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
             if (target.ClientNumber > -1 && message.Length > 0 && target.Level != EFClient.Permission.Console)
                 await this.ExecuteCommandAsync(formattedMessage);
 #else

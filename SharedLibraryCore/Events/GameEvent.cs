@@ -273,11 +273,11 @@ namespace SharedLibraryCore
 
             if (!processed)
             {
+                Owner?.Logger.WriteError("Waiting for event to complete timed out");
+                Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");
 #if DEBUG
                 throw new Exception();
 #endif
-                Owner?.Logger.WriteError("Waiting for event to complete timed out");
-                Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");
             }
 
 

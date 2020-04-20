@@ -95,10 +95,10 @@ namespace SharedLibraryCore.Database
                 {
                     default:
                     case "mysql":
-                        optionsBuilder.UseMySql(_ConnectionString);
+                        optionsBuilder.UseMySql(_ConnectionString, _options => _options.EnableRetryOnFailure());
                         break;
                     case "postgresql":
-                        optionsBuilder.UseNpgsql(_ConnectionString);
+                        optionsBuilder.UseNpgsql(_ConnectionString, _options => _options.EnableRetryOnFailure());
                         break;
                 }
             }

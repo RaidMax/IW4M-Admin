@@ -125,6 +125,9 @@ namespace SharedLibraryCore.Database.Models
         public string IPAddressString => IPAddress.ConvertIPtoString();
 
         [NotMapped]
+        public bool IsIngame => ClientNumber >= 0;
+
+        [NotMapped]
         public virtual IDictionary<int, long> LinkedAccounts { get; set; }
 
         /// <summary>

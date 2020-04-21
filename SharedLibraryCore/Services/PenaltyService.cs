@@ -12,7 +12,7 @@ namespace SharedLibraryCore.Services
 {
     public class PenaltyService : Interfaces.IEntityService<EFPenalty>
     {
-        public async Task<EFPenalty> Create(EFPenalty newEntity)
+        public virtual async Task<EFPenalty> Create(EFPenalty newEntity)
         {
             using (var context = new DatabaseContext())
             {
@@ -181,7 +181,7 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        public async Task RemoveActivePenalties(int aliasLinkId)
+        public virtual async Task RemoveActivePenalties(int aliasLinkId)
         {
             using (var context = new DatabaseContext())
             {

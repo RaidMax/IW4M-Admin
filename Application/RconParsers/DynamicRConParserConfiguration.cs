@@ -9,7 +9,7 @@ namespace IW4MAdmin.Application.RconParsers
     /// generic implementation of the IRConParserConfiguration
     /// allows script plugins to generate dynamic RCon configurations
     /// </summary>
-    sealed internal class DynamicRConParserConfiguration : IRConParserConfiguration
+    public class DynamicRConParserConfiguration : IRConParserConfiguration
     {
         public CommandPrefix CommandPrefixes { get; set; }
         public ParserRegex Status { get; set; }

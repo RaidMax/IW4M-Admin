@@ -121,8 +121,7 @@ namespace SharedLibraryCore
         /// <param name="message">Message to be sent to all players</param>
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
-            string formattedMessage = String.Format(RconParser.Configuration.CommandPrefixes.Say, $"{(CustomSayEnabled ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
-
+            string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say, $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
 #if DEBUG == true
             Logger.WriteVerbose(message.StripColors());
 #endif
@@ -196,14 +195,14 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="Reason">Reason for kicking</param>
         /// <param name="Target">EFClient to kick</param>
-        abstract protected Task Kick(String Reason, EFClient Target, EFClient Origin);
+        abstract public Task Kick(String Reason, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server
         /// </summary>
         /// <param name="Reason">Reason for banning the player</param>
         /// <param name="Target">The player to ban</param>
-        abstract protected Task TempBan(String Reason, TimeSpan length, EFClient Target, EFClient Origin);
+        abstract public Task TempBan(String Reason, TimeSpan length, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Perm ban a player from the server
@@ -211,9 +210,9 @@ namespace SharedLibraryCore
         /// <param name="Reason">The reason for the ban</param>
         /// <param name="Target">The person to ban</param>
         /// <param name="Origin">The person who banned the target</param>
-        abstract protected Task Ban(String Reason, EFClient Target, EFClient Origin, bool isEvade = false);
+        abstract public Task Ban(String Reason, EFClient Target, EFClient Origin, bool isEvade = false);
 
-        abstract protected Task Warn(String Reason, EFClient Target, EFClient Origin);
+        abstract public Task Warn(String Reason, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Unban a player by npID / GUID
@@ -307,7 +306,7 @@ namespace SharedLibraryCore
         public bool CustomCallback { get; protected set; }
         public string WorkingDirectory { get; protected set; }
         public IRConConnection RemoteConnection { get; protected set; }
-        public IRConParser RconParser { get; protected set; }
+        public IRConParser RconParser { get; set; }
         public IEventParser EventParser { get; set; }
         public string LogPath { get; protected set; }
         public bool RestartRequested { get; set; }

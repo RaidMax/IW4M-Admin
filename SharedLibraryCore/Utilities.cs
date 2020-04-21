@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 #endif
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -873,6 +874,30 @@ namespace SharedLibraryCore
             double deltaY = 180.0 - Math.Abs(Math.Abs(a.Y - b.Y) - 180.0);
 
             return new[] { deltaX, deltaY };
+        }
+
+        /// <summary>
+        /// attempts to create and persist a penalty
+        /// </summary>
+        /// <param name="penalty"></param>
+        /// <param name="penaltyService"></param>
+        /// <param name="logger"></param>
+        /// <returns>true of the creat succeeds, false otherwise</returns>
+        public static async Task<bool> TryCreatePenalty(this EFPenalty penalty, IEntityService<EFPenalty> penaltyService, ILogger logger)
+        {
+            try
+            {
+                await penaltyService.Create(penalty);
+                return true;
+            }
+
+            catch (Exception e)
+            {
+                logger.WriteWarning($"Could not create penalty of type {penalty.Type.ToString()}");
+                logger.WriteDebug(e.GetExceptionInfo());
+            }
+
+            return false;
         }
 
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;

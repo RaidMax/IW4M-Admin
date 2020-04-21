@@ -82,7 +82,10 @@ namespace IW4MAdmin.Plugins.Stats.Models
             KillStreak = 0;
             DeathStreak = 0;
             LastScore = 0;
-            SessionScores.Add(0);
+            lock (SessionScores)
+            {
+                SessionScores.Add(0);
+            }
             Team = IW4Info.Team.None;
         }
         [NotMapped]

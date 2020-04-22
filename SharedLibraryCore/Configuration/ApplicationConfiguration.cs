@@ -96,6 +96,8 @@ namespace SharedLibraryCore.Configuration
         public QuickMessageConfiguration[] QuickMessages { get; set; }
         [ConfigurationIgnore]
         public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl) ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1") : ManualWebfrontUrl;
+        [ConfigurationIgnore]
+        public bool IgnoreServerConnectionLost { get; set; }
 
         public IBaseConfiguration Generate()
         {

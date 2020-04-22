@@ -35,12 +35,12 @@ namespace IW4MAdmin.Application.Misc
         private readonly SemaphoreSlim _onProcessing;
         private bool successfullyLoaded;
 
-        public ScriptPlugin(string filename)
+        public ScriptPlugin(string filename, string workingDirectory = null)
         {
             _fileName = filename;
             Watcher = new FileSystemWatcher()
             {
-                Path = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
+                Path = workingDirectory == null ? $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}" : workingDirectory,
                 NotifyFilter = NotifyFilters.Size,
                 Filter = _fileName.Split(Path.DirectorySeparatorChar).Last()
             };

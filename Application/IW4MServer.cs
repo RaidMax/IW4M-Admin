@@ -236,10 +236,13 @@ namespace IW4MAdmin
             if (E.Type == GameEvent.EventType.ConnectionLost)
             {
                 var exception = E.Extra as Exception;
-                Logger.WriteError(exception.Message);
-                if (exception.Data["internal_exception"] != null)
+                if (!Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                 {
-                    Logger.WriteDebug($"Internal Exception: {exception.Data["internal_exception"]}");
+                    Logger.WriteError(exception.Message);
+                    if (exception.Data["internal_exception"] != null)
+                    {
+                        Logger.WriteDebug($"Internal Exception: {exception.Data["internal_exception"]}");
+                    }
                 }
                 Logger.WriteInfo("Connection lost to server, so we are throttling the poll rate");
                 Throttled = true;
@@ -730,6 +733,7 @@ namespace IW4MAdmin
 
         override public async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
+            bool notifyDisconnects = !Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost;
             try
             {
                 if (cts.IsCancellationRequested)
@@ -796,7 +800,7 @@ namespace IW4MAdmin
                         Manager.GetEventHandler().AddEvent(e);
                     }
 
-                    if (ConnectionErrors > 0)
+                    if (ConnectionErrors > 0 && notifyDisconnects)
                     {
                         var _event = new GameEvent()
                         {
@@ -816,7 +820,7 @@ namespace IW4MAdmin
                 catch (NetworkException e)
                 {
                     ConnectionErrors++;
-                    if (ConnectionErrors == 3)
+                    if (ConnectionErrors == 3 && notifyDisconnects)
                     {
                         var _event = new GameEvent()
                         {

@@ -374,6 +374,7 @@ namespace SharedLibraryCore.Services
             EF.CompileAsyncQuery((DatabaseContext context, long networkId) =>
                 context.Clients
                 .Include(c => c.CurrentAlias)
+                .Include(c => c.AliasLink)
                 .Select(_client => new EFClient()
                 {
                     ClientId = _client.ClientId,
@@ -389,7 +390,7 @@ namespace SharedLibraryCore.Services
                 .FirstOrDefault(c => c.NetworkId == networkId)
         );
 
-        public async Task<EFClient> GetUnique(long entityAttribute)
+        public virtual async Task<EFClient> GetUnique(long entityAttribute)
         {
             using (var context = new DatabaseContext(true))
             {

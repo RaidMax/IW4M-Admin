@@ -11,6 +11,9 @@ using SharedLibraryCore.Database.Models;
 using System.Threading.Tasks;
 using ApplicationTests.Mocks;
 using System.Linq;
+using SharedLibraryCore;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Configuration;
 
 namespace ApplicationTests
 {
@@ -27,29 +30,28 @@ namespace ApplicationTests
         [SetUp]
         public void Setup()
         {
-            fakeLogger = A.Fake<ILogger>();
-            fakeManager = A.Fake<IManager>();
-            fakeRConConnection = A.Fake<IRConConnection>();
-            var rconConnectionFactory = A.Fake<IRConConnectionFactory>();
+            serviceProvider = new ServiceCollection().BuildBase().BuildServiceProvider();
+
+            fakeLogger = serviceProvider.GetRequiredService<ILogger>();
+            fakeManager = serviceProvider.GetRequiredService<IManager>();
+            fakeRConConnection = serviceProvider.GetRequiredService<IRConConnection>();
+            fakeRConParser = serviceProvider.GetRequiredService<IRConParser>();
+
+            var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
+
             A.CallTo(() => rconConnectionFactory.CreateConnection(A<string>.Ignored, A<int>.Ignored, A<string>.Ignored))
                  .Returns(fakeRConConnection);
-            var fakeTranslationLookup = A.Fake<ITranslationLookup>();
-            fakeRConParser = A.Fake<IRConParser>();
+
             A.CallTo(() => fakeRConParser.Configuration)
-                .Returns(ConfigurationGenerators.CreateRConParserConfiguration(A.Fake<IParserRegexFactory>()));
+                .Returns(ConfigurationGenerators.CreateRConParserConfiguration(serviceProvider.GetRequiredService<IParserRegexFactory>()));
+
 
             mockEventHandler = new MockEventHandler();
             A.CallTo(() => fakeManager.GetEventHandler())
                 .Returns(mockEventHandler);
-
-            serviceProvider = new ServiceCollection()
-                .AddSingleton(new IW4MServer(fakeManager, ConfigurationGenerators.CreateServerConfiguration(), fakeTranslationLookup, rconConnectionFactory)
-                {
-                    RconParser = fakeRConParser
-                })
-                .BuildServiceProvider();
         }
 
+        #region LOG
         [Test]
         public void Test_GenerateLogPath_Basic()
         {
@@ -176,6 +178,7 @@ namespace ApplicationTests
 
             Assert.AreEqual(expected, generated);
         }
+        #endregion
 
         #region BAN
         [Test]
@@ -508,5 +511,65 @@ namespace ApplicationTests
                 .MustHaveHappened();
         }
         #endregion
+
+        [Test]
+        public async Task Test_ConnectionLostNotificationDisabled()
+        {
+            var server = serviceProvider.GetService<IW4MServer>();
+            var fakeConfigHandler = A.Fake<IConfigurationHandler<ApplicationConfiguration>>();
+
+            A.CallTo(() => fakeManager.GetApplicationSettings())
+                .Returns(fakeConfigHandler);
+
+            A.CallTo(() => fakeConfigHandler.Configuration())
+                .Returns(new ApplicationConfiguration() { IgnoreServerConnectionLost = true });
+
+            A.CallTo(() => fakeRConParser.GetStatusAsync(A<IRConConnection>.Ignored))
+                .ThrowsAsync(new NetworkException("err"));
+
+            // simulate failed connection attempts
+            for (int i = 0; i < 5; i++)
+            {
+                await server.ProcessUpdatesAsync(new System.Threading.CancellationToken());
+            }
+
+            A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
+              .MustNotHaveHappened();
+            Assert.IsEmpty(mockEventHandler.Events);
+        }
+
+        [Test]
+        public async Task Test_ConnectionLostNotificationEnabled()
+        {
+            var server = serviceProvider.GetService<IW4MServer>();
+            var fakeConfigHandler = A.Fake<IConfigurationHandler<ApplicationConfiguration>>();
+
+            A.CallTo(() => fakeManager.GetApplicationSettings())
+                .Returns(fakeConfigHandler);
+
+            A.CallTo(() => fakeConfigHandler.Configuration())
+                .Returns(new ApplicationConfiguration() { IgnoreServerConnectionLost = false });
+
+            A.CallTo(() => fakeRConParser.GetStatusAsync(A<IRConConnection>.Ignored))
+                .ThrowsAsync(new NetworkException("err"));
+
+            // simulate failed connection attempts
+            for (int i = 0; i < 5; i++)
+            {
+                await server.ProcessUpdatesAsync(new System.Threading.CancellationToken());
+            }
+
+            // execute the connection lost event
+            foreach(var e in mockEventHandler.Events.ToList())
+            {
+                await server.ExecuteEvent(e);
+            }
+
+            A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
+                .MustHaveHappenedOnceExactly();
+
+            Assert.IsNotEmpty(mockEventHandler.Events);
+            Assert.AreEqual("err", (mockEventHandler.Events[0].Extra as NetworkException).Message);
+        }
     }
 }

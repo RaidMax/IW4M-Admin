@@ -82,36 +82,24 @@ namespace IW4MAdmin.Plugins.Stats.Models
             KillStreak = 0;
             DeathStreak = 0;
             LastScore = 0;
-            lock (SessionScores)
-            {
-                SessionScores.Add(0);
-            }
+            SessionScores.Add(0);
             Team = IW4Info.Team.None;
         }
         [NotMapped]
         public int SessionScore
         {
-            set
-            {
-                SessionScores[SessionScores.Count - 1] = value;
-            }
+            set => SessionScores[SessionScores.Count - 1] = value;
 
             get
             {
                 lock (SessionScores)
                 {
-                    return SessionScores.Sum();
+                    return new List<int>(SessionScores).Sum();
                 }
             }
         }
         [NotMapped]
-        public int RoundScore
-        {
-            get
-            {
-                return SessionScores[SessionScores.Count - 1];
-            }
-        }
+        public int RoundScore => SessionScores[SessionScores.Count - 1];
         [NotMapped]
         private readonly List<int> SessionScores = new List<int>() { 0 };
         [NotMapped]

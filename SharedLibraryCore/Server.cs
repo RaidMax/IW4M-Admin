@@ -285,7 +285,7 @@ namespace SharedLibraryCore
         public List<Report> Reports { get; set; }
         public List<ChatInfo> ChatHistory { get; protected set; }
         public Queue<PlayerHistory> ClientHistory { get; private set; }
-        public Game GameName { get; protected set; }
+        public Game GameName { get; set; }
 
         // Info
         public string Hostname { get; protected set; }

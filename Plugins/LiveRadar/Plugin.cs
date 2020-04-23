@@ -18,7 +18,7 @@ namespace LiveRadar
 
         private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
         private bool addedPage;
-        private object lockObject;
+        private readonly object lockObject = new object();
 
         public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
         {

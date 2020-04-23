@@ -373,8 +373,6 @@ namespace SharedLibraryCore.Services
         private static readonly Func<DatabaseContext, long, Task<EFClient>> _getUniqueQuery =
             EF.CompileAsyncQuery((DatabaseContext context, long networkId) =>
                 context.Clients
-                .Include(c => c.CurrentAlias)
-                .Include(c => c.AliasLink)
                 .Select(_client => new EFClient()
                 {
                     ClientId = _client.ClientId,
@@ -385,7 +383,8 @@ namespace SharedLibraryCore.Services
                     LastConnection = _client.LastConnection,
                     Masked = _client.Masked,
                     NetworkId = _client.NetworkId,
-                    TotalConnectionTime = _client.TotalConnectionTime
+                    TotalConnectionTime = _client.TotalConnectionTime,
+                    AliasLink = _client.AliasLink
                 })
                 .FirstOrDefault(c => c.NetworkId == networkId)
         );

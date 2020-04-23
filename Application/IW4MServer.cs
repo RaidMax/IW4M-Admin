@@ -880,13 +880,15 @@ namespace IW4MAdmin
             // this one is ok
             catch (ServerException e)
             {
-                if (e is NetworkException && !Throttled)
+                if (e is NetworkException && !Throttled && notifyDisconnects)
                 {
                     Logger.WriteError(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{IP}:{Port}"));
                     Logger.WriteDebug(e.GetExceptionInfo());
                 }
-
-                Logger.WriteError(e.Message);
+                else
+                {
+                    Logger.WriteError(e.Message);
+                }
                 return false;
             }
 

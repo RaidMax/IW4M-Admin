@@ -18,6 +18,7 @@ namespace LiveRadar
 
         private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
         private bool addedPage;
+        private object lockObject;
 
         public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
         {
@@ -28,13 +29,16 @@ namespace LiveRadar
         {
             // if it's an IW4 game, with custom callbacks, we want to 
             // enable the live radar page
-            if (E.Type == GameEvent.EventType.Start &&
-                S.GameName == Server.Game.IW4 &&
-                S.CustomCallback &&
-                !addedPage)
+            lock (lockObject)
             {
-                E.Owner.Manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
-                addedPage = true;
+                if (E.Type == GameEvent.EventType.Start &&
+                    S.GameName == Server.Game.IW4 &&
+                    S.CustomCallback &&
+                    !addedPage)
+                {
+                    E.Owner.Manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
+                    addedPage = true;
+                }
             }
 
             if (E.Type == GameEvent.EventType.Unknown)

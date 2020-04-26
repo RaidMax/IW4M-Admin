@@ -283,6 +283,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
                 .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
                 .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
+                .AddSingleton<IDatabaseContextFactory, DatabaseContextFactory>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>
                 {

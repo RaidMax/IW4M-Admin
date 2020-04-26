@@ -31,10 +31,12 @@ namespace IW4MAdmin.Plugins.Stats
         int scriptDamageCount;
         int scriptKillCount;
 #endif
+        private readonly IDatabaseContextFactory _databaseContextFactory;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
+            _databaseContextFactory = databaseContextFactory;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -209,7 +211,7 @@ namespace IW4MAdmin.Plugins.Stats
                     new ProfileMeta()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
-                        Value = "#" + (await StatManager.GetClientOverallRanking(clientId)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Value = "#" + (await Manager.GetClientOverallRanking(clientId)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 0,
                         Type = ProfileMeta.MetaType.Information
@@ -495,7 +497,7 @@ namespace IW4MAdmin.Plugins.Stats
             manager.GetMessageTokens().Add(new MessageToken("MOSTPLAYED", mostPlayed));
 
             ServerManager = manager;
-            Manager = new StatManager(manager);
+            Manager = new StatManager(manager, _databaseContextFactory, Config);
         }
 
         public Task OnTickAsync(Server S)

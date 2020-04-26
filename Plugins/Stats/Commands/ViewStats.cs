@@ -52,7 +52,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             if (E.Target != null)
             {
-                int performanceRanking = await StatManager.GetClientOverallRanking(E.Target.ClientId);
+                int performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId);
                 string performanceRankingString = performanceRanking == 0 ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
 
                 if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Target)))
@@ -72,7 +72,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             else
             {
-                int performanceRanking = await StatManager.GetClientOverallRanking(E.Origin.ClientId);
+                int performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId);
                 string performanceRankingString = performanceRanking == 0 ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
 
                 if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Origin)))

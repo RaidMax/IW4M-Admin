@@ -480,6 +480,12 @@ namespace IW4MAdmin.Application
 
                 var client = await GetClientService().Get(clientId);
 
+                if (client == null)
+                {
+                    _logger.WriteWarning($"No client found with id {clientId} when generating profile meta");
+                    return metaList;
+                }
+
                 metaList.Add(new ProfileMeta()
                 {
                     Id = client.ClientId,

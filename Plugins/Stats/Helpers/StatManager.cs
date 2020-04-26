@@ -1,4 +1,5 @@
 ﻿using IW4MAdmin.Plugins.Stats.Cheat;
+using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Models;
 using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
@@ -23,32 +24,36 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private const int MAX_CACHED_HITS = 100;
         private readonly ConcurrentDictionary<long, ServerStats> _servers;
         private readonly ILogger _log;
+        private readonly IDatabaseContextFactory _contextFactory;
+        private readonly IConfigurationHandler<StatsConfiguration> _configHandler;
         private static List<EFServer> serverModels;
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
 
-        public StatManager(IManager mgr)
+        public StatManager(IManager mgr, IDatabaseContextFactory contextFactory, IConfigurationHandler<StatsConfiguration> configHandler)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
             _log = mgr.GetLogger(0);
+            _contextFactory = contextFactory;
+            _configHandler = configHandler;
         }
 
         private void SetupServerIds()
         {
-            using (var ctx = new DatabaseContext(disableTracking: true))
+            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
             {
                 serverModels = ctx.Set<EFServer>().ToList();
             }
         }
 
-        public static Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
+        public Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
         {
             var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
             return (r) => r.ServerId == serverId &&
                 r.When > fifteenDaysAgo &&
                 r.RatingHistory.Client.Level != EFClient.Permission.Banned &&
                 r.Newest &&
-                r.ActivityAmount >= Plugin.Config.Configuration().TopPlayersMinPlayTime;
+                r.ActivityAmount >= _configHandler.Configuration().TopPlayersMinPlayTime;
         }
 
         /// <summary>
@@ -56,9 +61,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="clientId">client id of the player</param>
         /// <returns></returns>
-        public static async Task<int> GetClientOverallRanking(int clientId)
+        public async Task<int> GetClientOverallRanking(int clientId)
         {
-            using (var context = new DatabaseContext(true))
+            using (var context = _contextFactory.CreateContext(enableTracking: false))
             {
                 var clientPerformance = await context.Set<EFRating>()
                     .Where(r => r.RatingHistory.ClientId == clientId)
@@ -83,7 +88,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null)
         {
-            using (var context = new DatabaseContext(true))
+            using (var context = _contextFactory.CreateContext(enableTracking: false))
             {
                 // setup the query for the clients within the given rating range
                 var iqClientRatings = (from rating in context.Set<EFRating>()
@@ -192,7 +197,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 long serverId = GetIdForServer(sv);
                 EFServer server;
 
-                using (var ctx = new DatabaseContext(disableTracking: true))
+                using (var ctx = _contextFactory.CreateContext(enableTracking: false))
                 {
                     var serverSet = ctx.Set<EFServer>();
                     // get the server from the database if it exists, otherwise create and insert a new one
@@ -275,7 +280,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 EFClientStatistics clientStats;
 
-                using (var ctx = new DatabaseContext(disableTracking: true))
+                using (var ctx = _contextFactory.CreateContext(enableTracking: false))
                 {
                     var clientStatsSet = ctx.Set<EFClientStatistics>();
                     clientStats = clientStatsSet
@@ -394,9 +399,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        private static async Task SaveClientStats(EFClientStatistics clientStats)
+        private async Task SaveClientStats(EFClientStatistics clientStats)
         {
-            using (var ctx = new DatabaseContext())
+            using (var ctx = _contextFactory.CreateContext())
             {
                 ctx.Update(clientStats);
                 await ctx.SaveChangesAsync();
@@ -591,7 +596,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task SaveHitCache(long serverId)
         {
-            using (var ctx = new DatabaseContext(true))
+            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
             {
                 var server = _servers[serverId];
                 ctx.AddRange(server.HitCache.ToList());
@@ -659,7 +664,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             EFACSnapshot change;
 
-            using (var ctx = new DatabaseContext(true))
+            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
             {
                 while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
                 {
@@ -731,8 +736,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // update their performance 
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >= 2.5)
             {
-                attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
-                await UpdateStatHistory(attacker, attackerStats);
+                try
+                {
+                    // kill event is not designated as blocking, so we should be able to enter and exit
+                    // we need to make this thread safe because we can potentially have kills qualify
+                    // for stat history update, but one is already processing that invalidates the original
+                    await attacker.Lock();
+                    await UpdateStatHistory(attacker, attackerStats);
+                    attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
+                }
+
+                catch (Exception e)
+                {
+                    _log.WriteWarning($"Could not update stat history for {attacker}");
+                    _log.WriteDebug(e.GetExceptionInfo());
+                }
+
+                finally
+                {
+                    attacker.Unlock();
+                }
             }
         }
 
@@ -742,7 +765,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <param name="client">client to update</param>
         /// <param name="clientStats">stats of client that is being updated</param>
         /// <returns></returns>
-        private async Task UpdateStatHistory(EFClient client, EFClientStatistics clientStats)
+        public async Task UpdateStatHistory(EFClient client, EFClientStatistics clientStats)
         {
             int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
 
@@ -754,7 +777,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
-            using (var ctx = new DatabaseContext())
+            using (var ctx = _contextFactory.CreateContext(enableTracking: true))
             {
                 // select the rating history for client
                 var iqHistoryLink = from history in ctx.Set<EFClientRatingHistory>()
@@ -842,7 +865,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var clientStatsList = await iqClientStats.ToListAsync();
 
-                // add the current server's so we don't have to pull it frmo the database
+                // add the current server's so we don't have to pull it from the database
                 clientStatsList.Add(new
                 {
                     clientStats.Performance,
@@ -1067,7 +1090,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             EFServerStatistics serverStats;
 
-            using (var ctx = new DatabaseContext(disableTracking: true))
+            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
             {
                 var serverStatsSet = ctx.Set<EFServerStatistics>();
                 serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
@@ -1119,7 +1142,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            using (var ctx = new DatabaseContext(disableTracking: true))
+            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
             {
                 ctx.Set<EFClientMessage>().Add(new EFClientMessage()
                 {
@@ -1142,7 +1165,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 await waiter.WaitAsync();
 
-                using (var ctx = new DatabaseContext())
+                using (var ctx = _contextFactory.CreateContext())
                 {
                     var serverStatsSet = ctx.Set<EFServerStatistics>();
                     serverStatsSet.Update(_servers[serverId].ServerStatistics);

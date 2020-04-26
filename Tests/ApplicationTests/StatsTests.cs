@@ -10,6 +10,10 @@ using IW4MAdmin.Application.Helpers;
 using IW4MAdmin.Plugins.Stats.Config;
 using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
+using IW4MAdmin.Plugins.Stats.Helpers;
+using ApplicationTests.Fixtures;
+using System.Threading.Tasks;
 
 namespace ApplicationTests
 {
@@ -17,11 +21,16 @@ namespace ApplicationTests
     public class StatsTests
     {
         ILogger logger;
+        private IServiceProvider serviceProvider;
 
         [SetUp]
         public void Setup()
         {
             logger = A.Fake<ILogger>();
+
+            serviceProvider = new ServiceCollection()
+                .BuildBase()
+                .BuildServiceProvider();
 
             void testLog(string msg) => Console.WriteLine(msg);
 
@@ -37,7 +46,7 @@ namespace ApplicationTests
             var mgr = A.Fake<IManager>();
             var handlerFactory = A.Fake<IConfigurationHandlerFactory>();
             var config = A.Fake<IConfigurationHandler<StatsConfiguration>>();
-            var plugin = new IW4MAdmin.Plugins.Stats.Plugin(handlerFactory);
+            var plugin = new IW4MAdmin.Plugins.Stats.Plugin(handlerFactory, null);
 
             A.CallTo(() => config.Configuration())
                 .Returns(new StatsConfiguration()
@@ -113,5 +122,36 @@ namespace ApplicationTests
             public string BasePath => @"X:\IW4MAdmin\BUILD\Plugins";
         }
 
+        [Test]
+        public async Task Test_ConcurrentCallsToUpdateStatHistoryDoesNotCauseException()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var configHandler = A.Fake<IConfigurationHandler<StatsConfiguration>>();
+            var mgr = new StatManager(serviceProvider.GetRequiredService<IManager>(), serviceProvider.GetRequiredService<IDatabaseContextFactory>(), configHandler);
+            var target = ClientGenerators.CreateDatabaseClient();
+            target.CurrentServer = server;
+
+            A.CallTo(() => configHandler.Configuration())
+                .Returns(new StatsConfiguration()
+                {
+                    TopPlayersMinPlayTime = 0
+                });
+
+            var dbFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
+            var db = dbFactory.CreateContext(true);
+            db.Set<EFServer>().Add(new EFServer()
+            {
+                EndPoint = server.EndPoint.ToString()
+            });
+
+            db.Clients.Add(target);
+            db.SaveChanges();
+
+            mgr.AddServer(server);
+            await mgr.AddPlayer(target);
+            var stats = target.GetAdditionalProperty<EFClientStatistics>("ClientStats");
+
+            await mgr.UpdateStatHistory(target, stats);
+        }
     }
 }

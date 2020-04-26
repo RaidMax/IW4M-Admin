@@ -86,7 +86,10 @@ namespace SharedLibraryCore.Database
                 var connectionString = connectionStringBuilder.ToString();
                 var connection = new SqliteConnection(connectionString);
 
-                optionsBuilder.UseSqlite(connection);
+                if (!optionsBuilder.IsConfigured)
+                {
+                    optionsBuilder.UseSqlite(connection);
+                }
             }
 
             else

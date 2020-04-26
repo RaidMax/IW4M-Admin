@@ -1,7 +1,9 @@
 ﻿using ApplicationTests.Fixtures;
+using ApplicationTests.Mocks;
 using FakeItEasy;
 using IW4MAdmin;
 using Microsoft.Extensions.DependencyInjection;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 
@@ -13,11 +15,13 @@ namespace ApplicationTests
         {
             var manager = A.Fake<IManager>();
             var logger = A.Fake<ILogger>();
+
             A.CallTo(() => manager.GetLogger(A<long>.Ignored))
                 .Returns(logger);
 
             serviceCollection.AddSingleton(logger)
                 .AddSingleton(manager)
+                .AddSingleton<IDatabaseContextFactory, DatabaseContextFactoryMock>()
                 .AddSingleton(A.Fake<IRConConnectionFactory>())
                 .AddSingleton(A.Fake<IRConConnection>())
                 .AddSingleton(A.Fake<ITranslationLookup>())

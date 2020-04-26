@@ -29,7 +29,7 @@ namespace ApplicationTests.Fixtures
             Level = EFClient.Permission.User,
             Connections = 1,
             FirstConnection = DateTime.UtcNow.AddDays(-1),
-            LastConnection = DateTime.UtcNow,
+            LastConnection = DateTime.UtcNow.AddMinutes(-5),
             NetworkId = 1,
             TotalConnectionTime = 100,
             CurrentAlias = new EFAlias()

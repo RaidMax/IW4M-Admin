@@ -86,10 +86,7 @@ namespace SharedLibraryCore.Database.Models
         {
             ConnectionTime = DateTime.UtcNow;
             ClientNumber = -1;
-            _additionalProperties = new Dictionary<string, object>
-            {
-                { "_reportCount", 0 }
-            };
+            SetAdditionalProperty("_reportCount", 0);
             ReceivedPenalties = new List<EFPenalty>();
             _processingEvent = new SemaphoreSlim(1, 1);
         }
@@ -101,7 +98,7 @@ namespace SharedLibraryCore.Database.Models
 
         public override string ToString()
         {
-            return $"{CurrentAlias?.Name ?? "--"}::{NetworkId}";
+            return $"[Name={CurrentAlias?.Name ?? "--"}, NetworkId={NetworkId.ToString("X")}, IP={(string.IsNullOrEmpty(IPAddressString) ? "--" : IPAddressString)}, ClientSlot={ClientNumber}]";
         }
 
         [NotMapped]
@@ -641,26 +638,6 @@ namespace SharedLibraryCore.Database.Models
             }
 
             return true;
-        }
-
-        [NotMapped]
-        readonly Dictionary<string, object> _additionalProperties;
-
-        public T GetAdditionalProperty<T>(string name)
-        {
-            return _additionalProperties.ContainsKey(name) ? (T)_additionalProperties[name] : default(T);
-        }
-
-        public void SetAdditionalProperty(string name, object value)
-        {
-            if (_additionalProperties.ContainsKey(name))
-            {
-                _additionalProperties[name] = value;
-            }
-            else
-            {
-                _additionalProperties.Add(name, value);
-            }
         }
 
         [NotMapped]

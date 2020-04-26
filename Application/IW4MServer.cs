@@ -216,8 +216,11 @@ namespace IW4MAdmin
 
                 if (lastException != null)
                 {
-                    Logger.WriteDebug("Last Exception is not null");
-                    throw lastException;
+                    bool notifyDisconnects = !Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost;
+                    if (notifyDisconnects || (!notifyDisconnects && lastException as NetworkException == null))
+                    {
+                        throw lastException;
+                    }
                 }
             }
         }
@@ -250,7 +253,7 @@ namespace IW4MAdmin
 
             if (E.Type == GameEvent.EventType.ConnectionRestored)
             {
-                if (Throttled)
+                if (Throttled && !Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                 {
                     Logger.WriteVerbose(loc["MANAGER_CONNECTION_REST"].FormatExt($"[{IP}:{Port}]"));
                 }
@@ -290,6 +293,12 @@ namespace IW4MAdmin
                 if (E.Origin.IsBot && Manager.GetApplicationSettings().Configuration().IgnoreBots)
                 {
                     return false;
+                }
+
+                if (E.Origin.CurrentServer == null)
+                {
+                    Logger.WriteWarning($"preconnecting client {E.Origin} did not have a current server specified");
+                    E.Origin.CurrentServer = this;
                 }
 
                 var existingClient = GetClientsAsList().FirstOrDefault(_client => _client.Equals(E.Origin));
@@ -800,7 +809,7 @@ namespace IW4MAdmin
                         Manager.GetEventHandler().AddEvent(e);
                     }
 
-                    if (ConnectionErrors > 0 && notifyDisconnects)
+                    if (ConnectionErrors > 0)
                     {
                         var _event = new GameEvent()
                         {
@@ -820,7 +829,7 @@ namespace IW4MAdmin
                 catch (NetworkException e)
                 {
                     ConnectionErrors++;
-                    if (ConnectionErrors == 3 && notifyDisconnects)
+                    if (ConnectionErrors == 3)
                     {
                         var _event = new GameEvent()
                         {

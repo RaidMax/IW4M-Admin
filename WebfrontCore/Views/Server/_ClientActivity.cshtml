@@ -36,7 +36,7 @@
                 </span>
                 <span>
                     &mdash;
-                    <color-code value="@Model.ChatHistory[i].Message.Substring(0, Math.Min(40, Model.ChatHistory[i].Message.Length))" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Message.CapClientName(48)" allow="@ViewBag.EnableColorCodes"></color-code>
                 </span><br />
             }
         }
@@ -113,7 +113,7 @@
                     <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
                 </span>
                 <span> &mdash; 
-                    <color-code value="@Model.ChatHistory[i].Message.Substring(0, Math.Min(40, Model.ChatHistory[i].Message.Length))" allow="@ViewBag.EnableColorCodes"></color-code> 
+                    <color-code value="@Model.ChatHistory[i].Message.CapClientName(48)" allow="@ViewBag.EnableColorCodes"></color-code> 
                 </span><br />
             }
         }

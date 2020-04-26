@@ -741,7 +741,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     // kill event is not designated as blocking, so we should be able to enter and exit
                     // we need to make this thread safe because we can potentially have kills qualify
                     // for stat history update, but one is already processing that invalidates the original
-                    await attacker.Lock();
+                    await attackerStats.ProcessingHit.WaitAsync(Utilities.DefaultCommandTimeout, Plugin.ServerManager.CancellationToken);
                     await UpdateStatHistory(attacker, attackerStats);
                     attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
                 }
@@ -754,7 +754,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 finally
                 {
-                    attacker.Unlock();
+                    if (attackerStats.ProcessingHit.CurrentCount == 0)
+                    {
+                        attackerStats.ProcessingHit.Release(1);
+                    }
                 }
             }
         }

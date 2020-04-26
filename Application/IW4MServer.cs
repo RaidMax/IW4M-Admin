@@ -312,6 +312,7 @@ namespace IW4MAdmin
 
                 // this happens for some reason rarely where the client spots get out of order
                 // possible a connect/reconnect game event before we get to process it here 
+                // it appears that new games decide to switch client slots between maps (even if the clients aren't disconnecting)
                 else if (existingClient != null && existingClient.ClientNumber != E.Origin.ClientNumber)
                 {
                     Logger.WriteWarning($"client {E.Origin} is trying to connect in client slot {E.Origin.ClientNumber}, but they are already registed in client slot {existingClient.ClientNumber}, swapping...");
@@ -764,6 +765,7 @@ namespace IW4MAdmin
 
                     foreach (var disconnectingClient in polledClients[1])
                     {
+                        disconnectingClient.CurrentServer = this;
                         var e = new GameEvent()
                         {
                             Type = GameEvent.EventType.PreDisconnect,
@@ -784,6 +786,7 @@ namespace IW4MAdmin
                             continue;
                         }
 
+                        client.CurrentServer = this;
                         var e = new GameEvent()
                         {
                             Type = GameEvent.EventType.PreConnect,
@@ -799,6 +802,7 @@ namespace IW4MAdmin
                     // these are the clients that have updated
                     foreach (var client in polledClients[2])
                     {
+                        client.CurrentServer = this;
                         var e = new GameEvent()
                         {
                             Type = GameEvent.EventType.Update,

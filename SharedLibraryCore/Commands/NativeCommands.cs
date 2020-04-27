@@ -1434,6 +1434,7 @@ namespace SharedLibraryCore.Commands
             Alias = "sp";
             Permission = Permission.Moderator;
             RequiresTarget = false;
+            AllowImpersonation = true;
             Arguments = new[]
             {
                 new CommandArgument()

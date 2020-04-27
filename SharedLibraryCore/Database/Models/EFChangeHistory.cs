@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace SharedLibraryCore.Database.Models
 {
@@ -22,6 +19,7 @@ namespace SharedLibraryCore.Database.Models
         public int ChangeHistoryId { get; set; }
         public int OriginEntityId { get; set; }
         public int TargetEntityId { get; set; }
+        public int? ImpersonationEntityId { get; set; }
         public ChangeType TypeOfChange { get; set; }
         public DateTime TimeChanged { get; set; } = DateTime.UtcNow;
         [MaxLength(128)]

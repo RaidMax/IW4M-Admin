@@ -26,6 +26,7 @@ namespace SharedLibraryCore.Services
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target.ClientId,
+                        ImpersonationEntityId = e.ImpersonationOrigin?.ClientId,
                         TypeOfChange = EFChangeHistory.ChangeType.Ban,
                         Comment = e.Data
                     };
@@ -43,6 +44,7 @@ namespace SharedLibraryCore.Services
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target?.ClientId ?? 0,
+                        ImpersonationEntityId = e.ImpersonationOrigin?.ClientId,
                         Comment = "Executed command",
                         CurrentValue = e.Message,
                         TypeOfChange = EFChangeHistory.ChangeType.Command
@@ -53,6 +55,7 @@ namespace SharedLibraryCore.Services
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target.ClientId,
+                        ImpersonationEntityId = e.ImpersonationOrigin?.ClientId,
                         Comment = "Changed permission level",
                         TypeOfChange = EFChangeHistory.ChangeType.Permission,
                         CurrentValue = ((EFClient.Permission)e.Extra).ToString()

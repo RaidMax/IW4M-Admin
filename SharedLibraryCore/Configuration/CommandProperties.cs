@@ -24,5 +24,10 @@ namespace SharedLibraryCore.Configuration
         /// </summary>
         [JsonConverter(typeof(StringEnumConverter))]
         public Permission MinimumPermission { get; set; }
+
+        /// <summary>
+        /// Indicates if the command can be run by another user (impersonation)
+        /// </summary>
+        public bool AllowImpersonation { get; set; }
     }
 }

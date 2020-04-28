@@ -227,6 +227,7 @@ namespace SharedLibraryCore
         public int? GameTime { get; set; }
         public EFClient Origin;
         public EFClient Target;
+        public EFClient ImpersonationOrigin { get; set; }
         public Server Owner;
         public bool IsRemote { get; set; } = false;
         public object Extra { get; set; }
@@ -276,7 +277,7 @@ namespace SharedLibraryCore
                 Owner?.Logger.WriteError("Waiting for event to complete timed out");
                 Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");
 #if DEBUG
-                throw new Exception();
+                //throw new Exception();
 #endif
             }
 

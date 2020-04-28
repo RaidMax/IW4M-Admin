@@ -431,7 +431,8 @@ namespace IW4MAdmin.Application
                 {
                     Name = cmd.Name,
                     Alias = cmd.Alias,
-                    MinimumPermission = cmd.Permission
+                    MinimumPermission = cmd.Permission,
+                    AllowImpersonation = cmd.AllowImpersonation
                 });
             }
 

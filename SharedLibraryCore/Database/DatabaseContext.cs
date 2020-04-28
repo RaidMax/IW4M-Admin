@@ -71,8 +71,8 @@ namespace SharedLibraryCore.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //  optionsBuilder.UseLoggerFactory(_loggerFactory)
-            //     .EnableSensitiveDataLogging();
+            optionsBuilder.UseLoggerFactory(_loggerFactory)
+               .EnableSensitiveDataLogging();
 
             if (string.IsNullOrEmpty(_ConnectionString))
             {

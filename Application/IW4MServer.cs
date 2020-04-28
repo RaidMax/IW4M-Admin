@@ -144,6 +144,7 @@ namespace IW4MAdmin
                     catch (CommandException e)
                     {
                         Logger.WriteInfo(e.Message);
+                        E.FailReason = GameEvent.EventFailReason.Invalid;
                     }
 
                     if (C != null)
@@ -342,7 +343,7 @@ namespace IW4MAdmin
                         return false;
                     }
 
-                    if (E.Origin.Level > EFClient.Permission.Moderator)
+                    if (E.Origin.Level > Permission.Moderator)
                     {
                         E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
                     }
@@ -371,7 +372,7 @@ namespace IW4MAdmin
                     Expires = expires,
                     Offender = E.Target,
                     Offense = E.Data,
-                    Punisher = E.Origin,
+                    Punisher = E.ImpersonationOrigin ?? E.Origin,
                     When = DateTime.UtcNow,
                     Link = E.Target.AliasLink
                 };
@@ -388,7 +389,7 @@ namespace IW4MAdmin
                     Expires = DateTime.UtcNow,
                     Offender = E.Target,
                     Offense = E.Data,
-                    Punisher = E.Origin,
+                    Punisher = E.ImpersonationOrigin ?? E.Origin,
                     When = DateTime.UtcNow,
                     Link = E.Target.AliasLink
                 };
@@ -413,7 +414,7 @@ namespace IW4MAdmin
                     Expires = DateTime.UtcNow,
                     Offender = E.Target,
                     Offense = E.Message,
-                    Punisher = E.Origin,
+                    Punisher = E.ImpersonationOrigin ?? E.Origin,
                     Active = true,
                     When = DateTime.UtcNow,
                     Link = E.Target.AliasLink
@@ -432,28 +433,28 @@ namespace IW4MAdmin
 
             else if (E.Type == GameEvent.EventType.TempBan)
             {
-                await TempBan(E.Data, (TimeSpan)E.Extra, E.Target, E.Origin); ;
+                await TempBan(E.Data, (TimeSpan)E.Extra, E.Target, E.ImpersonationOrigin ?? E.Origin); ;
             }
 
             else if (E.Type == GameEvent.EventType.Ban)
             {
                 bool isEvade = E.Extra != null ? (bool)E.Extra : false;
-                await Ban(E.Data, E.Target, E.Origin, isEvade);
+                await Ban(E.Data, E.Target, E.ImpersonationOrigin ?? E.Origin, isEvade);
             }
 
             else if (E.Type == GameEvent.EventType.Unban)
             {
-                await Unban(E.Data, E.Target, E.Origin);
+                await Unban(E.Data, E.Target, E.ImpersonationOrigin ?? E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Kick)
             {
-                await Kick(E.Data, E.Target, E.Origin);
+                await Kick(E.Data, E.Target, E.ImpersonationOrigin ?? E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Warn)
             {
-                await Warn(E.Data, E.Target, E.Origin);
+                await Warn(E.Data, E.Target, E.ImpersonationOrigin ?? E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.Disconnect)

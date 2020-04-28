@@ -19,6 +19,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             Alias = "rs";
             Permission = EFClient.Permission.User;
             RequiresTarget = false;
+            //AllowImpersonation = true;
         }
 
         public override async Task ExecuteAsync(GameEvent E)

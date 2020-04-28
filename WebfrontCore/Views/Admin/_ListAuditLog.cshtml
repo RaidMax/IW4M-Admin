@@ -1,0 +1,99 @@
+﻿@using SharedLibraryCore.Dtos
+@model IEnumerable<AuditInfo>
+@{
+    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+}
+
+@foreach (var info in Model)
+{
+    <!-- mobile -->
+    <tr class="d-table-row d-lg-none bg-dark">
+        <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
+        <td class="text-light">
+            @info.Action
+        </td>
+    </tr>
+    <tr class="d-table-row d-lg-none bg-dark">
+        <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
+        <td>
+            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.OriginId" class="link-inverse">
+                <color-code value="@info.OriginName" allow="@ViewBag.EnableColorCodes"></color-code>
+            </a>
+        </td>
+    </tr>
+    <tr class="d-table-row d-lg-none bg-dark">
+        <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
+        <td>
+            @if (info.TargetId != null)
+            {
+                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.TargetId" class="link-inverse">
+                    <color-code value="@info.TargetName" allow="@ViewBag.EnableColorCodes"></color-code>
+                </a>
+            }
+            else
+            {
+                <span>--</span>
+            }
+        </td>
+    </tr>
+    <tr class="d-table-row d-lg-none bg-dark">
+        <th scope="row" class="bg-primary">@loc["WEBFRONT_ADMIN_AUDIT_LOG_INFO"]</th>
+        <td class="text-light">
+            @info.Data
+        </td>
+    </tr>
+    @*<tr class="d-table-row d-lg-none bg-dark">
+            <th scope="row" class="bg-primary">@loc["WEBFRONT_ADMIN_AUDIT_LOG_PREVIOUS"]</th>
+            <td class="text-light">
+                @info.OldValue
+            </td>
+        </tr>*@
+    <tr class="d-table-row d-lg-none bg-dark">
+        <th scope="row" class="bg-primary">@loc["WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"]</th>
+        <td class="text-light">
+            @info.NewValue
+        </td>
+    </tr>
+    <tr class="d-table-row d-lg-none bg-dark">
+        <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">@loc["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</th>
+        <td class="text-light mb-2 border-bottom">
+            @info.When.ToString()
+        </td>
+    </tr>
+
+    <!-- desktop -->
+    <tr class="d-none d-lg-table-row">
+        <td class="text-light font-weight-bold">
+            @info.Action
+        </td>
+        <td>
+            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.OriginId" class="link-inverse">
+                <color-code value="@info.OriginName" allow="@ViewBag.EnableColorCodes"></color-code>
+            </a>
+        </td>
+        <td>
+            @if (info.TargetId != null)
+            {
+                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.TargetId" class="link-inverse">
+                    <color-code value="@info.TargetName" allow="@ViewBag.EnableColorCodes"></color-code>
+                </a>
+            }
+            else
+            {
+                <span>--</span>
+            }
+        </td>
+        <td class="text-light">
+            @info.Data
+
+            @*<td class="text-light">
+                    @info.OldValue
+                </td>*@
+        <td class="text-light">
+            @info.NewValue
+        </td>
+        <td class="text-light text-right">
+            @info.When.ToString()
+        </td>
+    </tr>
+}

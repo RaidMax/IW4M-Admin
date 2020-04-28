@@ -44,5 +44,10 @@ namespace SharedLibraryCore.Interfaces
         /// Indicates if target is required
         /// </summary>
         bool RequiresTarget { get; }
+
+        /// <summary>
+        /// Indicates if the commands can be run as another client
+        /// </summary>
+        bool AllowImpersonation { get; }
     }
 }

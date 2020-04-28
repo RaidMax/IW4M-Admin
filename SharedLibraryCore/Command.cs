@@ -117,5 +117,10 @@ namespace SharedLibraryCore
         /// Argument list for the command
         /// </summary>
         public CommandArgument[] Arguments { get; protected set; } = new CommandArgument[0];
+
+        /// <summary>
+        /// indicates if this command allows impersonation (run as)
+        /// </summary>
+        public bool AllowImpersonation { get; set; }
     }
 }

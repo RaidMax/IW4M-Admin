@@ -21,7 +21,8 @@ namespace SharedLibraryCore.Commands
             Command C = null;
             foreach (Command cmd in Manager.GetCommands())
             {
-                if (cmd.Name == CommandString.ToLower() || cmd.Alias == CommandString.ToLower())
+                if (cmd.Name.Equals(CommandString, StringComparison.OrdinalIgnoreCase) || 
+                    (cmd.Alias ?? "").Equals(CommandString, StringComparison.OrdinalIgnoreCase))
                 {
                     C = cmd;
                 }
@@ -31,6 +32,12 @@ namespace SharedLibraryCore.Commands
             {
                 E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
                 throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
+            }
+
+            if (!C.AllowImpersonation && E.ImpersonationOrigin != null)
+            {
+                E.ImpersonationOrigin.Tell(loc["COMMANDS_RUN_AS_FAIL"]);
+                throw new CommandException($"Command {C.Name} cannot be run as another client");
             }
 
             E.Data = E.Data.RemoveWords(1);

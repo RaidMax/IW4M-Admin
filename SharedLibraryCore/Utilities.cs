@@ -32,9 +32,9 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
-        public static TimeSpan DefaultCommandTimeout = new TimeSpan(0, 0, 25);
+        public static TimeSpan DefaultCommandTimeout { get; set; } = new TimeSpan(0, 0, 25);
         public static char[] DirectorySeparatorChars = new[] { '\\', '/' };
-
+        public static char CommandPrefix { get; set; } = '!';
         public static EFClient IW4MAdminClient(Server server = null)
         {
             return new EFClient()

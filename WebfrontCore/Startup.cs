@@ -101,7 +101,12 @@ namespace WebfrontCore
 #endif
 
             services.AddSingleton(Program.Manager);
+
+            // todo: this needs to be handled more gracefully
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IDatabaseContextFactory>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IAuditInformationRepository>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

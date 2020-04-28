@@ -9,6 +9,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Repositories;
 using System;
 using System.Linq;
 using System.Text;
@@ -284,6 +285,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
                 .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
                 .AddSingleton<IDatabaseContextFactory, DatabaseContextFactory>()
+                .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>
                 {

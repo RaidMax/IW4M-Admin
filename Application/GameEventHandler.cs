@@ -11,8 +11,10 @@ namespace IW4MAdmin.Application
 {
     class GameEventHandler : IEventHandler
     {
-        readonly ApplicationManager Manager;
+        private const int MAX_CONCURRENT_EVENTS = 10;
+        private readonly ApplicationManager _manager;
         private readonly EventProfiler _profiler;
+        private readonly SemaphoreSlim _processingEvents;
         private static readonly GameEvent.EventType[] overrideEvents = new[]
         {
             GameEvent.EventType.Connect,
@@ -23,8 +25,9 @@ namespace IW4MAdmin.Application
 
         public GameEventHandler(IManager mgr)
         {
-            Manager = (ApplicationManager)mgr;
+            _manager = (ApplicationManager)mgr;
             _profiler = new EventProfiler(mgr.GetLogger(0));
+            _processingEvents = new SemaphoreSlim(0, MAX_CONCURRENT_EVENTS);
         }
 
         private Task GameEventHandler_GameEventAdded(object sender, GameEventArgs args)
@@ -32,12 +35,32 @@ namespace IW4MAdmin.Application
 #if DEBUG
             var start = DateTime.Now;
 #endif
-            EventApi.OnGameEvent(sender, args);
-            return Manager.ExecuteEvent(args.Event);
-
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    // this is not elegant and there's probably a much better way to do it, but it works for now
+                    await _processingEvents.WaitAsync();
+                    EventApi.OnGameEvent(sender, args);
+                    await _manager.ExecuteEvent(args.Event);
 #if DEBUG
-            _profiler.Profile(start, DateTime.Now, args.Event);
+                    _profiler.Profile(start, DateTime.Now, args.Event);
 #endif
+                }
+
+                catch
+                {
+
+                }
+
+                finally
+                {
+                    if (_processingEvents.CurrentCount < MAX_CONCURRENT_EVENTS)
+                    {
+                        _processingEvents.Release();
+                    }
+                }
+            });
         }
 
         public void AddEvent(GameEvent gameEvent)
@@ -48,12 +71,11 @@ namespace IW4MAdmin.Application
             gameEvent.Owner.Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 
 #endif
-            if (Manager.Running || overrideEvents.Contains(gameEvent.Type))
+            if (_manager.Running || overrideEvents.Contains(gameEvent.Type))
             {
 #if DEBUG
                 gameEvent.Owner.Logger.WriteDebug($"Adding event with id {gameEvent.Id}");
 #endif
-                //GameEventAdded?.Invoke(this, new GameEventArgs(null, false, gameEvent));
                 Task.Run(() => GameEventHandler_GameEventAdded(this, new GameEventArgs(null, false, gameEvent)));
             }
 #if DEBUG

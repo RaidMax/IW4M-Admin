@@ -13,7 +13,6 @@ namespace IW4MAdmin.Application
     {
         private const int MAX_CONCURRENT_EVENTS = 10;
         private readonly ApplicationManager _manager;
-        private readonly EventProfiler _profiler;
         private readonly SemaphoreSlim _processingEvents;
         private static readonly GameEvent.EventType[] overrideEvents = new[]
         {
@@ -26,41 +25,33 @@ namespace IW4MAdmin.Application
         public GameEventHandler(IManager mgr)
         {
             _manager = (ApplicationManager)mgr;
-            _profiler = new EventProfiler(mgr.GetLogger(0));
-            _processingEvents = new SemaphoreSlim(0, MAX_CONCURRENT_EVENTS);
+            _processingEvents = new SemaphoreSlim(MAX_CONCURRENT_EVENTS, MAX_CONCURRENT_EVENTS);
         }
 
         private Task GameEventHandler_GameEventAdded(object sender, GameEventArgs args)
         {
-#if DEBUG
-            var start = DateTime.Now;
-#endif
-            return Task.Run(async () =>
+            try
             {
-                try
-                {
-                    // this is not elegant and there's probably a much better way to do it, but it works for now
-                    await _processingEvents.WaitAsync();
-                    EventApi.OnGameEvent(sender, args);
-                    await _manager.ExecuteEvent(args.Event);
-#if DEBUG
-                    _profiler.Profile(start, DateTime.Now, args.Event);
-#endif
-                }
+                // this is not elegant and there's probably a much better way to do it, but it works for now
+                _processingEvents.Wait();
+                EventApi.OnGameEvent(sender, args);
+                return _manager.ExecuteEvent(args.Event);
+            }
 
-                catch
-                {
+            catch
+            {
 
-                }
+            }
 
-                finally
+            finally
+            {
+                if (_processingEvents.CurrentCount < MAX_CONCURRENT_EVENTS)
                 {
-                    if (_processingEvents.CurrentCount < MAX_CONCURRENT_EVENTS)
-                    {
-                        _processingEvents.Release();
-                    }
+                    _processingEvents.Release();
                 }
-            });
+            }
+
+            return Task.CompletedTask;
         }
 
         public void AddEvent(GameEvent gameEvent)

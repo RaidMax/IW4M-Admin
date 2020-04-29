@@ -384,7 +384,9 @@ namespace SharedLibraryCore.Services
                     Masked = _client.Masked,
                     NetworkId = _client.NetworkId,
                     TotalConnectionTime = _client.TotalConnectionTime,
-                    AliasLink = _client.AliasLink
+                    AliasLink = _client.AliasLink,
+                    Password = _client.Password,
+                    PasswordSalt = _client.PasswordSalt
                 })
                 .FirstOrDefault(c => c.NetworkId == networkId)
         );

@@ -31,9 +31,7 @@ namespace ApplicationTests
         {
             serviceProvider = new ServiceCollection().BuildBase().BuildServiceProvider();
             fakeManager = serviceProvider.GetRequiredService<IManager>();
-            mockEventHandler = new MockEventHandler();
-            A.CallTo(() => fakeManager.GetEventHandler())
-                .Returns(mockEventHandler);
+            mockEventHandler = serviceProvider.GetRequiredService<MockEventHandler>();
 
             var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
 
@@ -42,6 +40,9 @@ namespace ApplicationTests
 
             A.CallTo(() => serviceProvider.GetRequiredService<IRConParser>().Configuration)
                 .Returns(ConfigurationGenerators.CreateRConParserConfiguration(serviceProvider.GetRequiredService<IParserRegexFactory>()));
+
+            A.CallTo(() => fakeManager.AddEvent(A<GameEvent>.Ignored))
+                .Invokes((fakeCall) => mockEventHandler.HandleEvent(fakeManager, fakeCall.Arguments[0] as GameEvent));
         }
 
         [Test]

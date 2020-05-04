@@ -33,7 +33,7 @@ namespace ApplicationTests
             var mgr = A.Fake<IManager>();
             var server = new IW4MServer(mgr,
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>());
+                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>());
 
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
@@ -59,7 +59,7 @@ namespace ApplicationTests
 
             var server = new IW4MServer(mgr,
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>());
+                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>());
 
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;

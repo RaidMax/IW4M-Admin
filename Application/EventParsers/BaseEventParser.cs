@@ -23,26 +23,26 @@ namespace IW4MAdmin.Application.EventParsers
                 GameDirectory = "main",
             };
 
-            Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{1,32});([0-9]+);(.+);(.*)$";
+            Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);(.+);(.*)$";
             Configuration.Say.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginName, 4);
             Configuration.Say.AddMapping(ParserRegex.GroupType.Message, 5);
 
-            Configuration.Quit.Pattern = @"^(Q);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);([0-9]+);(.*)$";
+            Configuration.Quit.Pattern = @"^(Q);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);(.*)$";
             Configuration.Quit.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Quit.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
-            Configuration.Join.Pattern = @"^(J);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);([0-9]+);(.*)$";
+            Configuration.Join.Pattern = @"^(J);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);(.*)$";
             Configuration.Join.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
-            Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world)?;([^;]{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world)?;([^;]{1,24})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world)?;([^;]{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world)?;([^;]{1,24})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Damage.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);
@@ -57,7 +57,7 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Damage.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.HitLocation, 13);
 
-            Configuration.Kill.Pattern = @"^(K);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+);(-?[0-9]+);(axis|allies|world)?;([^;]{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+)?;-?([0-9]+);(axis|allies|world)?;([^;]{1,24})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            Configuration.Kill.Pattern = @"^(K);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world)?;([^;]{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world)?;([^;]{1,24})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Kill.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);
@@ -118,7 +118,13 @@ namespace IW4MAdmin.Application.EventParsers
 
                     if (message.Length > 0)
                     {
-                        long originId = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle);
+                        string originIdString = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
+                        string originName = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+
+                        long originId = originIdString.IsBotGuid() ?
+                            originName.GenerateGuidFromString() :
+                            originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
+
                         int clientNumber = int.Parse(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
 
                         // todo: these need to defined outside of here
@@ -132,7 +138,8 @@ namespace IW4MAdmin.Application.EventParsers
                                 Message = message,
                                 Extra = logLine,
                                 RequiredEntity = GameEvent.EventRequiredEntity.Origin,
-                                GameTime = gameTime
+                                GameTime = gameTime,
+                                Source = GameEvent.EventSource.Log
                             };
                         }
 
@@ -144,7 +151,8 @@ namespace IW4MAdmin.Application.EventParsers
                             Message = message,
                             Extra = logLine,
                             RequiredEntity = GameEvent.EventRequiredEntity.Origin,
-                            GameTime = gameTime
+                            GameTime = gameTime,
+                            Source = GameEvent.EventSource.Log
                         };
                     }
                 }
@@ -156,8 +164,18 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (match.Success)
                 {
-                    long originId = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-                    long targetId = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    string originIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
+                    string targetIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString();
+                    string originName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+                    string targetName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetName]].ToString();
+
+                    long originId = originIdString.IsBotGuid() ?
+                        originName.GenerateGuidFromString() :
+                        originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
+                    long targetId = targetIdString.IsBotGuid() ?
+                        targetName.GenerateGuidFromString() :
+                        targetIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
+
                     int originClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
                     int targetClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
 
@@ -168,7 +186,8 @@ namespace IW4MAdmin.Application.EventParsers
                         Origin = new EFClient() { NetworkId = originId, ClientNumber = originClientNumber },
                         Target = new EFClient() { NetworkId = targetId, ClientNumber = targetClientNumber },
                         RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
-                        GameTime = gameTime
+                        GameTime = gameTime,
+                        Source = GameEvent.EventSource.Log
                     };
                 }
             }
@@ -179,8 +198,18 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (match.Success)
                 {
-                    long originId = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
-                    long targetId = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle, 1);
+                    string originIdString = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
+                    string targetIdString = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString();
+                    string originName = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+                    string targetName = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetName]].ToString();
+
+                    long originId = originIdString.IsBotGuid() ?
+                        originName.GenerateGuidFromString() :
+                        originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
+                    long targetId = targetIdString.IsBotGuid() ?
+                        targetName.GenerateGuidFromString() :
+                        targetIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
+
                     int originClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
                     int targetClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
 
@@ -191,7 +220,8 @@ namespace IW4MAdmin.Application.EventParsers
                         Origin = new EFClient() { NetworkId = originId, ClientNumber = originClientNumber },
                         Target = new EFClient() { NetworkId = targetId, ClientNumber = targetClientNumber },
                         RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
-                        GameTime = gameTime
+                        GameTime = gameTime,
+                        Source = GameEvent.EventSource.Log
                     };
                 }
             }
@@ -202,6 +232,13 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (match.Success)
                 {
+                    string originIdString = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
+                    string originName = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+
+                    long networkId = originIdString.IsBotGuid() ?
+                        originName.GenerateGuidFromString() :
+                        originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
+
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.PreConnect,
@@ -212,13 +249,14 @@ namespace IW4MAdmin.Application.EventParsers
                             {
                                 Name = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine(),
                             },
-                            NetworkId = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
+                            NetworkId = networkId,
                             ClientNumber = Convert.ToInt32(match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
                         },
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
                         IsBlocking = true,
-                        GameTime = gameTime
+                        GameTime = gameTime,
+                        Source = GameEvent.EventSource.Log
                     };
                 }
             }
@@ -229,6 +267,13 @@ namespace IW4MAdmin.Application.EventParsers
 
                 if (match.Success)
                 {
+                    string originIdString = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
+                    string originName = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+
+                    long networkId = originIdString.IsBotGuid() ?
+                        originName.GenerateGuidFromString() :
+                        originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
+
                     return new GameEvent()
                     {
                         Type = GameEvent.EventType.PreDisconnect,
@@ -239,13 +284,14 @@ namespace IW4MAdmin.Application.EventParsers
                             {
                                 Name = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine()
                             },
-                            NetworkId = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString().ConvertGuidToLong(Configuration.GuidNumberStyle),
+                            NetworkId = networkId,
                             ClientNumber = Convert.ToInt32(match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Disconnecting
                         },
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
                         IsBlocking = true,
-                        GameTime = gameTime
+                        GameTime = gameTime,
+                        Source = GameEvent.EventSource.Log
                     };
                 }
             }
@@ -259,7 +305,8 @@ namespace IW4MAdmin.Application.EventParsers
                     Origin = Utilities.IW4MAdminClient(),
                     Target = Utilities.IW4MAdminClient(),
                     RequiredEntity = GameEvent.EventRequiredEntity.None,
-                    GameTime = gameTime
+                    GameTime = gameTime,
+                    Source = GameEvent.EventSource.Log
                 };
             }
 
@@ -275,7 +322,8 @@ namespace IW4MAdmin.Application.EventParsers
                     Target = Utilities.IW4MAdminClient(),
                     Extra = dump.DictionaryFromKeyValue(),
                     RequiredEntity = GameEvent.EventRequiredEntity.None,
-                    GameTime = gameTime
+                    GameTime = gameTime,
+                    Source = GameEvent.EventSource.Log
                 };
             }
 
@@ -290,7 +338,8 @@ namespace IW4MAdmin.Application.EventParsers
                         Type = GameEvent.EventType.Other,
                         Data = logLine,
                         Subtype = eventModifier.Item1,
-                        GameTime = gameTime
+                        GameTime = gameTime,
+                        Source = GameEvent.EventSource.Log
                     });
                 }
 
@@ -307,7 +356,8 @@ namespace IW4MAdmin.Application.EventParsers
                 Origin = Utilities.IW4MAdminClient(),
                 Target = Utilities.IW4MAdminClient(),
                 RequiredEntity = GameEvent.EventRequiredEntity.None,
-                GameTime = gameTime
+                GameTime = gameTime,
+                Source = GameEvent.EventSource.Log
             };
         }
 

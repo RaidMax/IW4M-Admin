@@ -28,7 +28,7 @@ namespace SharedLibraryCore
             T7 = 8
         }
 
-        public Server(IManager mgr, IRConConnectionFactory rconConnectionFactory, ServerConfiguration config)
+        public Server(ServerConfiguration config, IManager mgr, IRConConnectionFactory rconConnectionFactory, IGameLogReaderFactory gameLogReaderFactory)
         {
             Password = config.Password;
             IP = config.IPAddress;
@@ -46,6 +46,7 @@ namespace SharedLibraryCore
             NextMessage = 0;
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
             CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
+            this.gameLogReaderFactory = gameLogReaderFactory;
             InitializeTokens();
             InitializeAutoMessages();
         }
@@ -134,7 +135,7 @@ namespace SharedLibraryCore
                 Origin = sender,
             };
 
-            Manager.GetEventHandler().AddEvent(e);
+            Manager.AddEvent(e);
             return e;
         }
 
@@ -296,7 +297,7 @@ namespace SharedLibraryCore
         {
             get
             {
-                return Clients.Where(p => p != null && !p.IsBot).Count();
+                return Clients.Where(p => p != null/* && !p.IsBot*/).Count();
             }
         }
         public int MaxClients { get; protected set; }
@@ -325,6 +326,7 @@ namespace SharedLibraryCore
         protected TimeSpan LastMessage;
         protected DateTime LastPoll;
         protected ManualResetEventSlim OnRemoteCommandResponse;
+        protected IGameLogReaderFactory gameLogReaderFactory;
 
         // only here for performance
         private readonly bool CustomSayEnabled;

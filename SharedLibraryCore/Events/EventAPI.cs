@@ -23,9 +23,9 @@ namespace SharedLibraryCore.Events
             return eventList;
         }
 
-        public static void OnGameEvent(object sender, GameEventArgs eventState)
+        public static void OnGameEvent(GameEvent gameEvent)
         {
-            var E = eventState.Event;
+            var E = gameEvent;
             // don't want to clog up the api with unknown events
             if (E.Type == GameEvent.EventType.Unknown)
                 return;

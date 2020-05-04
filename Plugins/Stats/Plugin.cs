@@ -530,7 +530,7 @@ namespace IW4MAdmin.Plugins.Stats
         /// </summary>
         /// <param name="origin"></param>
         /// <returns></returns>
-        private bool IsWorldDamage(EFClient origin) => origin?.NetworkId == 1;
+        private bool IsWorldDamage(EFClient origin) => origin?.NetworkId == Utilities.WORLD_ID || origin?.ClientId == Utilities.WORLD_ID;
 
         /// <summary>
         /// Indicates if we should try to use anticheat even if sv_customcallbacks is not defined

@@ -36,6 +36,7 @@ namespace ApplicationTests
             fakeManager = serviceProvider.GetRequiredService<IManager>();
             fakeRConConnection = serviceProvider.GetRequiredService<IRConConnection>();
             fakeRConParser = serviceProvider.GetRequiredService<IRConParser>();
+            mockEventHandler = serviceProvider.GetRequiredService<MockEventHandler>();
 
             var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
 
@@ -45,10 +46,9 @@ namespace ApplicationTests
             A.CallTo(() => fakeRConParser.Configuration)
                 .Returns(ConfigurationGenerators.CreateRConParserConfiguration(serviceProvider.GetRequiredService<IParserRegexFactory>()));
 
-
-            mockEventHandler = new MockEventHandler();
-            A.CallTo(() => fakeManager.GetEventHandler())
-                .Returns(mockEventHandler);
+            A.CallTo(() => fakeManager.AddEvent(A<GameEvent>.Ignored))
+                .Invokes((fakeCall) => mockEventHandler.HandleEvent(fakeManager, fakeCall.Arguments[0] as GameEvent));
+            
         }
 
         #region LOG

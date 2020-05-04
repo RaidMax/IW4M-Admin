@@ -49,7 +49,7 @@ namespace SharedLibraryCore.Commands
                 Data = cmd,
                 Owner = E.Owner
             };
-            E.Owner.Manager.GetEventHandler().AddEvent(impersonatedCommandEvent);
+            E.Owner.Manager.AddEvent(impersonatedCommandEvent);
 
             var result = await impersonatedCommandEvent.WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken);
             var response = E.Owner.CommandResult.Where(c => c.ClientId == E.Target.ClientId).ToList();

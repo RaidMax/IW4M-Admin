@@ -5,43 +5,42 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
-using static SharedLibraryCore.Utilities;
 
 namespace IW4MAdmin.Application.IO
 {
     /// <summary>
-    /// provides capibility of reading log files over HTTP
+    /// provides capability of reading log files over HTTP
     /// </summary>
     class GameLogReaderHttp : IGameLogReader
     {
         private readonly IEventParser _eventParser;
         private readonly IGameLogServer _logServerApi;
-        readonly string logPath;
+        private readonly ILogger _logger;
+        private readonly string _safeLogPath;
         private string lastKey = "next";
 
-        public GameLogReaderHttp(Uri gameLogServerUri, string logPath, IEventParser parser)
+        public GameLogReaderHttp(Uri[] gameLogServerUris, IEventParser parser, ILogger logger)
         {
-            this.logPath = logPath.ToBase64UrlSafeString();
             _eventParser = parser;
-            _logServerApi = RestClient.For<IGameLogServer>(gameLogServerUri);
+            _logServerApi = RestClient.For<IGameLogServer>(gameLogServerUris[0].ToString());
+            _safeLogPath = gameLogServerUris[1].LocalPath.ToBase64UrlSafeString();
+            _logger = logger;
         }
 
         public long Length => -1;
 
         public int UpdateInterval => 500;
 
-        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition)
         {
             var events = new List<GameEvent>();
-            string b64Path = logPath;
-            var response = await _logServerApi.Log(b64Path, lastKey);
+            var response = await _logServerApi.Log(_safeLogPath, lastKey);
             lastKey = response.NextKey;
 
             if (!response.Success && string.IsNullOrEmpty(lastKey))
             {
-                server.Logger.WriteError($"Could not get log server info of {logPath}/{b64Path} ({server.LogPath})");
+                _logger.WriteError($"Could not get log server info of {_safeLogPath}");
                 return events;
             }
 
@@ -63,9 +62,9 @@ namespace IW4MAdmin.Application.IO
 
                     catch (Exception e)
                     {
-                        server.Logger.WriteError("Could not properly parse event line from http");
-                        server.Logger.WriteDebug(e.Message);
-                        server.Logger.WriteDebug(eventLine);
+                        _logger.WriteError("Could not properly parse event line from http");
+                        _logger.WriteDebug(e.Message);
+                        _logger.WriteDebug(eventLine);
                     }
                 }
             }

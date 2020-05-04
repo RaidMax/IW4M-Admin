@@ -37,12 +37,10 @@ namespace ApplicationTests
             cmdConfig = new CommandConfiguration();
 
             serviceProvider = new ServiceCollection()
-                .BuildBase()
+                .BuildBase(new MockEventHandler(true))
                 .BuildServiceProvider();
 
-            mockEventHandler = new MockEventHandler(true);
-            A.CallTo(() => serviceProvider.GetRequiredService<IManager>().GetEventHandler())
-                .Returns(mockEventHandler);
+            mockEventHandler = serviceProvider.GetRequiredService<MockEventHandler>();
 
             var mgr = serviceProvider.GetRequiredService<IManager>();
             transLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
@@ -54,7 +52,9 @@ namespace ApplicationTests
                     new NonImpersonatableCommand(cmdConfig, transLookup)
                 });
 
-            //Utilities.DefaultCommandTimeout = new TimeSpan(0, 0, 2);
+            A.CallTo(() => mgr.AddEvent(A<GameEvent>.Ignored))
+               .Invokes((fakeCall) => mockEventHandler.HandleEvent(mgr, fakeCall.Arguments[0] as GameEvent));
+
         }
 
         #region RUNAS

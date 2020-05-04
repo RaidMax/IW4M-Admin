@@ -4,18 +4,17 @@ using System.Threading.Tasks;
 namespace SharedLibraryCore.Interfaces
 {
     /// <summary>
-    /// represents the abtraction of game log reading
+    /// represents the abstraction of game log reading
     /// </summary>
     public interface IGameLogReader
     {
         /// <summary>
         /// get new events that have occured since the last poll
         /// </summary>
-        /// <param name="server"></param>
         /// <param name="fileSizeDiff"></param>
         /// <param name="startPosition"></param>
         /// <returns></returns>
-        Task<IEnumerable<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition);
+        Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition);
         
         /// <summary>
         /// how long the log file is

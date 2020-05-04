@@ -1,19 +1,19 @@
 ﻿using IW4MAdmin.Application.Misc;
+using Newtonsoft.Json;
 using SharedLibraryCore;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application
 {
-    class GameEventHandler : IEventHandler
+    public class GameEventHandler : IEventHandler
     {
-        private const int MAX_CONCURRENT_EVENTS = 10;
-        private readonly ApplicationManager _manager;
-        private readonly SemaphoreSlim _processingEvents;
+        private readonly EventLog _eventLog;
         private static readonly GameEvent.EventType[] overrideEvents = new[]
         {
             GameEvent.EventType.Connect,
@@ -22,39 +22,12 @@ namespace IW4MAdmin.Application
             GameEvent.EventType.Stop
         };
 
-        public GameEventHandler(IManager mgr)
+        public GameEventHandler()
         {
-            _manager = (ApplicationManager)mgr;
-            _processingEvents = new SemaphoreSlim(MAX_CONCURRENT_EVENTS, MAX_CONCURRENT_EVENTS);
+            _eventLog = new EventLog();
         }
 
-        private Task GameEventHandler_GameEventAdded(object sender, GameEventArgs args)
-        {
-            try
-            {
-                // this is not elegant and there's probably a much better way to do it, but it works for now
-                _processingEvents.Wait();
-                EventApi.OnGameEvent(sender, args);
-                return _manager.ExecuteEvent(args.Event);
-            }
-
-            catch
-            {
-
-            }
-
-            finally
-            {
-                if (_processingEvents.CurrentCount < MAX_CONCURRENT_EVENTS)
-                {
-                    _processingEvents.Release();
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public void AddEvent(GameEvent gameEvent)
+        public void HandleEvent(IManager manager, GameEvent gameEvent)
         {
 #if DEBUG
             ThreadPool.GetMaxThreads(out int workerThreads, out int n);
@@ -62,12 +35,23 @@ namespace IW4MAdmin.Application
             gameEvent.Owner.Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
 
 #endif
-            if (_manager.Running || overrideEvents.Contains(gameEvent.Type))
+            if (manager.IsRunning || overrideEvents.Contains(gameEvent.Type))
             {
 #if DEBUG
                 gameEvent.Owner.Logger.WriteDebug($"Adding event with id {gameEvent.Id}");
 #endif
-                Task.Run(() => GameEventHandler_GameEventAdded(this, new GameEventArgs(null, false, gameEvent)));
+
+                EventApi.OnGameEvent(gameEvent);
+                Task.Factory.StartNew(() => manager.ExecuteEvent(gameEvent));
+
+                /*if (!_eventLog.ContainsKey(gameEvent.Owner.EndPoint))
+                {
+                    _eventLog.Add(gameEvent.Owner.EndPoint,new List<GameEvent>());
+                }
+                _eventLog[gameEvent.Owner.EndPoint].Add(gameEvent);
+                string serializedEvents = JsonConvert.SerializeObject(_eventLog, EventLog.BuildVcrSerializationSettings());
+                System.IO.File.WriteAllText("output.json", serializedEvents);*/
+                //Task.Run(() => GameEventHandler_GameEventAdded(this, new GameEventArgs(null, false, gameEvent)));
             }
 #if DEBUG
             else

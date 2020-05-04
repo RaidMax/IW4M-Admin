@@ -14,7 +14,7 @@ namespace ApplicationTests.Mocks
             _autoExecute = autoExecute;
         }
 
-        public void AddEvent(GameEvent gameEvent)
+        public void HandleEvent(IManager manager, GameEvent gameEvent)
         {
             Events.Add(gameEvent);
 

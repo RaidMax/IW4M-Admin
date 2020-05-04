@@ -30,7 +30,7 @@ namespace Tests
                 Owner = Manager.GetServers()[0]
             };
 
-            Manager.GetEventHandler().AddEvent(e);
+            Manager.AddEvent(e);
             e.Complete();
 
             var client = Manager.GetServers()[0].Clients[0];
@@ -43,7 +43,7 @@ namespace Tests
                 Owner = e.Owner
             };
 
-            Manager.GetEventHandler().AddEvent(e);
+            Manager.AddEvent(e);
             e.Complete();
 
             Assert.True(client.Warnings == 1, "client wasn't warned for objectional language");

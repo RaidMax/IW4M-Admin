@@ -24,6 +24,12 @@ namespace IW4MAdmin.Plugins.Stats.Events
             return (EVENT_SCRIPTKILL, EVENT_SCRIPTKILL, (string eventLine, IEventParserConfiguration config, GameEvent autoEvent) =>
             {
                 string[] lineSplit = eventLine.Split(";");
+
+                if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
+                {
+                    return autoEvent;
+                }
+
                 long originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
                 long targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
 
@@ -48,6 +54,12 @@ namespace IW4MAdmin.Plugins.Stats.Events
             return (EVENT_SCRIPTDAMAGE, EVENT_SCRIPTDAMAGE, (string eventLine, IEventParserConfiguration config, GameEvent autoEvent) =>
             {
                 string[] lineSplit = eventLine.Split(";");
+
+                if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
+                {
+                    return autoEvent;
+                }
+
                 long originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
                 long targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
 
@@ -71,6 +83,12 @@ namespace IW4MAdmin.Plugins.Stats.Events
             return (EVENT_JOINTEAM, EVENT_JOINTEAM, (string eventLine, IEventParserConfiguration config, GameEvent autoEvent) =>
             {
                 string[] lineSplit = eventLine.Split(";");
+
+                if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
+                {
+                    return autoEvent;
+                }
+
                 long originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
                 long targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
 

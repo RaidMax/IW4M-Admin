@@ -31,7 +31,7 @@ namespace IW4MAdmin.Application
         private readonly ConcurrentBag<Server> _servers;
         public List<Server> Servers => _servers.OrderByDescending(s => s.ClientNum).ToList();
         public ILogger Logger => GetLogger(0);
-        public bool Running { get; private set; }
+        public bool IsRunning { get; private set; }
         public bool IsInitialized { get; private set; }
         public DateTime StartTime { get; private set; }
         public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
@@ -50,7 +50,6 @@ namespace IW4MAdmin.Application
         readonly AliasService AliasSvc;
         readonly PenaltyService PenaltySvc;
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
-        GameEventHandler Handler;
         readonly IPageList PageList;
         private readonly Dictionary<long, ILogger> _loggers = new Dictionary<long, ILogger>();
         private readonly MetaService _metaService;
@@ -62,11 +61,13 @@ namespace IW4MAdmin.Application
         private readonly IGameServerInstanceFactory _serverInstanceFactory;
         private readonly IParserRegexFactory _parserRegexFactory;
         private readonly IEnumerable<IRegisterEvent> _customParserEvents;
+        private readonly IEventHandler _eventHandler;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
-            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents)
+            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
+            IEventHandler eventHandler)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -90,6 +91,7 @@ namespace IW4MAdmin.Application
             _serverInstanceFactory = serverInstanceFactory;
             _parserRegexFactory = parserRegexFactory;
             _customParserEvents = customParserEvents;
+            _eventHandler = eventHandler;
             Plugins = plugins;
         }
 
@@ -255,7 +257,7 @@ namespace IW4MAdmin.Application
 
         public async Task Init()
         {
-            Running = true;
+            IsRunning = true;
             ExternalIPAddress = await Utilities.GetExternalIP();
 
             #region PLUGINS
@@ -589,9 +591,6 @@ namespace IW4MAdmin.Application
 
             async Task Init(ServerConfiguration Conf)
             {
-                // setup the event handler after the class is initialized
-                Handler = new GameEventHandler(this);
-
                 try
                 {
                     // todo: this might not always be an IW4MServer
@@ -610,7 +609,7 @@ namespace IW4MAdmin.Application
                         Owner = ServerInstance
                     };
 
-                    Handler.AddEvent(e);
+                    AddEvent(e);
                     successServers++;
                 }
 
@@ -726,7 +725,7 @@ namespace IW4MAdmin.Application
         public void Stop()
         {
             _tokenSource.Cancel();
-            Running = false;
+            IsRunning = false;
         }
 
         public void Restart()
@@ -782,9 +781,9 @@ namespace IW4MAdmin.Application
             return ConfigHandler;
         }
 
-        public IEventHandler GetEventHandler()
+        public void AddEvent(GameEvent gameEvent)
         {
-            return Handler;
+            _eventHandler.HandleEvent(this, gameEvent);
         }
 
         public IPageList GetPageList()

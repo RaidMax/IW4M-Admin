@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace IW4MAdmin
         public int Id { get; private set; }
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg, ITranslationLookup lookup,
-            IRConConnectionFactory connectionFactory) : base(mgr, connectionFactory, cfg)
+            IRConConnectionFactory connectionFactory, IGameLogReaderFactory gameLogReaderFactory) : base(cfg, mgr, connectionFactory, gameLogReaderFactory)
         {
             _translationLookup = lookup;
         }
@@ -77,7 +78,7 @@ namespace IW4MAdmin
                 Type = GameEvent.EventType.Connect
             };
 
-            Manager.GetEventHandler().AddEvent(e);
+            Manager.AddEvent(e);
             return client;
         }
 
@@ -104,7 +105,7 @@ namespace IW4MAdmin
                     Type = GameEvent.EventType.Disconnect
                 };
 
-                Manager.GetEventHandler().AddEvent(e);
+                Manager.AddEvent(e);
 #if DEBUG == true
             }
 #endif
@@ -176,6 +177,8 @@ namespace IW4MAdmin
                     await command.ExecuteAsync(E);
                 }
 
+      
+
                 var pluginTasks = Manager.Plugins.Where(_plugin => _plugin.Name != "Login").Select(async _plugin =>
                 {
                     try
@@ -186,7 +189,11 @@ namespace IW4MAdmin
                             return;
                         }
 
-                        await _plugin.OnEventAsync(E, this);
+                        using (var tokenSource = new CancellationTokenSource())
+                        {
+                            tokenSource.CancelAfter(Utilities.DefaultCommandTimeout);
+                            await (_plugin.OnEventAsync(E, this)).WithWaitCancellation(tokenSource.Token);
+                        }
                     }
                     catch (Exception Except)
                     {
@@ -195,7 +202,7 @@ namespace IW4MAdmin
                     }
                 });
 
-                Parallel.ForEach(pluginTasks, async (_task) => await _task);
+                await Task.WhenAny(pluginTasks);
             }
 
             catch (Exception e)
@@ -314,7 +321,8 @@ namespace IW4MAdmin
                 // this happens for some reason rarely where the client spots get out of order
                 // possible a connect/reconnect game event before we get to process it here 
                 // it appears that new games decide to switch client slots between maps (even if the clients aren't disconnecting)
-                else if (existingClient != null && existingClient.ClientNumber != E.Origin.ClientNumber)
+                // bots can have duplicate names which causes conflicting GUIDs
+                else if (existingClient != null && existingClient.ClientNumber != E.Origin.ClientNumber && !E.Origin.IsBot)
                 {
                     Logger.WriteWarning($"client {E.Origin} is trying to connect in client slot {E.Origin.ClientNumber}, but they are already registed in client slot {existingClient.ClientNumber}, swapping...");
                     // we need to remove them so the client spots can swap
@@ -727,7 +735,7 @@ namespace IW4MAdmin
                     Origin = client
                 };
 
-                Manager.GetEventHandler().AddEvent(e);
+                Manager.AddEvent(e);
 
                 await e.WaitAsync(Utilities.DefaultCommandTimeout, new CancellationTokenRegistration().Token);
             }
@@ -771,10 +779,11 @@ namespace IW4MAdmin
                         {
                             Type = GameEvent.EventType.PreDisconnect,
                             Origin = disconnectingClient,
-                            Owner = this
+                            Owner = this,
+                            Source = GameEvent.EventSource.Status
                         };
 
-                        Manager.GetEventHandler().AddEvent(e);
+                        Manager.AddEvent(e);
                         await e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
                     }
 
@@ -793,10 +802,11 @@ namespace IW4MAdmin
                             Type = GameEvent.EventType.PreConnect,
                             Origin = client,
                             Owner = this,
-                            IsBlocking = true
+                            IsBlocking = true,
+                            Source = GameEvent.EventSource.Status
                         };
 
-                        Manager.GetEventHandler().AddEvent(e);
+                        Manager.AddEvent(e);
                         await e.WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
                     }
 
@@ -811,7 +821,7 @@ namespace IW4MAdmin
                             Owner = this
                         };
 
-                        Manager.GetEventHandler().AddEvent(e);
+                        Manager.AddEvent(e);
                     }
 
                     if (ConnectionErrors > 0)
@@ -824,7 +834,7 @@ namespace IW4MAdmin
                             Target = Utilities.IW4MAdminClient(this)
                         };
 
-                        Manager.GetEventHandler().AddEvent(_event);
+                        Manager.AddEvent(_event);
                     }
 
                     ConnectionErrors = 0;
@@ -846,7 +856,7 @@ namespace IW4MAdmin
                             Data = ConnectionErrors.ToString()
                         };
 
-                        Manager.GetEventHandler().AddEvent(_event);
+                        Manager.AddEvent(_event);
                     }
                     return true;
                 }
@@ -1071,13 +1081,28 @@ namespace IW4MAdmin
                 }
             }
 
-            LogEvent = new GameLogEventDetection(this, LogPath, ServerConfig.GameLogServerUrl);
+            LogEvent = new GameLogEventDetection(this, GenerateUriForLog(LogPath, ServerConfig.GameLogServerUrl?.AbsoluteUri), gameLogReaderFactory);
             Logger.WriteInfo($"Log file is {LogPath}");
 
             _ = Task.Run(() => LogEvent.PollForChanges());
 #if !DEBUG
             Broadcast(loc["BROADCAST_ONLINE"]);
 #endif
+        }
+
+        public Uri[] GenerateUriForLog(string logPath, string gameLogServerUrl)
+        {
+            var logUri = new Uri(logPath);
+
+            if (string.IsNullOrEmpty(gameLogServerUrl))
+            {
+                return new[] { logUri };
+            }
+
+            else
+            {
+                return new[] { new Uri(gameLogServerUrl), logUri };
+            }
         }
 
         public static string GenerateLogPath(LogPathGeneratorInfo logInfo)
@@ -1179,7 +1204,7 @@ namespace IW4MAdmin
                     Owner = this
                 };
 
-                Manager.GetEventHandler().AddEvent(e);
+                Manager.AddEvent(e);
 
                 string formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);

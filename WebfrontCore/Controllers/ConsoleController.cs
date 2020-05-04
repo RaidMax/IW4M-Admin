@@ -56,7 +56,7 @@ namespace WebfrontCore.Controllers
                 IsRemote = true
             };
 
-            Manager.GetEventHandler().AddEvent(remoteEvent);
+            Manager.AddEvent(remoteEvent);
             List<CommandResponseInfo> response = null;
 
             try

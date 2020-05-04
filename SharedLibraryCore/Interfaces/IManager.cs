@@ -24,11 +24,6 @@ namespace SharedLibraryCore.Interfaces
         AliasService GetAliasService();
         PenaltyService GetPenaltyService();
         /// <summary>
-        /// Get the event handlers
-        /// </summary>
-        /// <returns>EventHandler for the manager</returns>
-        IEventHandler GetEventHandler();
-        /// <summary>
         /// enumerates the registered plugin instances
         /// </summary>
         IEnumerable<IPlugin> Plugins { get; }
@@ -68,7 +63,12 @@ namespace SharedLibraryCore.Interfaces
         string ExternalIPAddress { get; }
         CancellationToken CancellationToken { get; }
         bool IsRestartRequested { get; }
-        //OnServerEventEventHandler OnServerEvent { get; set; }
+        bool IsRunning { get; }
         Task ExecuteEvent(GameEvent gameEvent);
+        /// <summary>
+        /// queues an event for processing
+        /// </summary>
+        /// <param name="gameEvent">event to be processed</param>
+        void AddEvent(GameEvent gameEvent);
     }
 }

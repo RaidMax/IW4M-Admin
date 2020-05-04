@@ -179,9 +179,15 @@ namespace IW4MAdmin.Application.RconParsers
                     }
 
                     long networkId;
+                    string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
+
                     try
                     {
-                        networkId = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]].ConvertGuidToLong(Configuration.GuidNumberStyle);
+                        string networkIdString = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]];
+
+                        networkId = networkIdString.IsBotGuid() ?
+                            name.GenerateGuidFromString() :
+                            networkIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
                     }
 
                     catch (FormatException)
@@ -189,7 +195,6 @@ namespace IW4MAdmin.Application.RconParsers
                         continue;
                     }
 
-                    string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
                     int? ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()
@@ -206,13 +211,13 @@ namespace IW4MAdmin.Application.RconParsers
                         State = EFClient.ClientState.Connecting
                     };
 
-#if DEBUG
-                    if (client.NetworkId < 1000 && client.NetworkId > 0)
-                    {
-                        client.IPAddress = 2147483646;
-                        client.Ping = 0;
-                    }
-#endif
+//#if DEBUG
+//                    if (client.NetworkId < 1000 && client.NetworkId > 0)
+//                    {
+//                        client.IPAddress = 2147483646;
+//                        client.Ping = 0;
+//                    }
+//#endif
 
                     StatusPlayers.Add(client);
                 }

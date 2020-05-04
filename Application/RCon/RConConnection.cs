@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.RCon
@@ -193,7 +194,8 @@ namespace IW4MAdmin.Application.RCon
                 throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"].FormatExt(Endpoint.ToString()));
             }
 
-            string[] headerSplit = responseString.Split(type == StaticHelpers.QueryType.GET_INFO ? config.CommandPrefixes.RconGetInfoResponseHeader : config.CommandPrefixes.RConResponse);
+            string responseHeaderMatch = Regex.Match(responseString, config.CommandPrefixes.RConResponse).Value;
+            string[] headerSplit = responseString.Split(type == StaticHelpers.QueryType.GET_INFO ? config.CommandPrefixes.RconGetInfoResponseHeader : responseHeaderMatch);
 
             if (headerSplit.Length != 2)
             {

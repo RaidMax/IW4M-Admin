@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.3,
+    version: 0.4,
     name: 'Tekno MW3 Parser',
     isParser: true,
 
@@ -14,11 +14,11 @@ var plugin = {
         rconParser = manager.GenerateDynamicRConParser(this.name);
         eventParser = manager.GenerateDynamicEventParser(this.name);
 
-        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[A-Z]|[0-9]){16,32})\t +(.{0,16}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+\\:-?\\d{1,5}|loopback) *$';
+        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[A-Z]|[0-9]){16,32}|0)\t +(.{0,16}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+\\:-?\\d{1,5}|loopback) *$';
         rconParser.Configuration.Status.AddMapping(104, 5); // RConName
         rconParser.Configuration.Status.AddMapping(103, 4); // RConNetworkId
         rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined;
-        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xff';
+        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xff(print)?';
         rconParser.Configuration.CommandPrefixes.Tell = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.Say = 'say {0}';
         rconParser.Configuration.CommandPrefixes.Kick = 'dropclient {0} "{1}"';

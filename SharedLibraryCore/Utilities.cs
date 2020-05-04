@@ -16,6 +16,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.Database.Models.EFPenalty;
@@ -50,6 +51,10 @@ namespace SharedLibraryCore
                 AdministeredPenalties = new List<EFPenalty>()
             };
         }
+        /// <summary>
+        /// fallback id for world events
+        /// </summary>
+        public const long WORLD_ID = -1;
 
         public static string HttpRequest(string location, string header, string headerValue)
         {
@@ -295,39 +300,46 @@ namespace SharedLibraryCore
             }
         }
 
+        /// <summary>
+        /// converts a string to numerical guid
+        /// </summary>
+        /// <param name="str">source string for guid</param>
+        /// <param name="numberStyle">how to parse the guid</param>
+        /// <param name="fallback">value to use if string is empty</param>
+        /// <returns></returns>
         public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, long? fallback = null)
         {
             str = str.Substring(0, Math.Min(str.Length, 19));
-            var bot = Regex.Match(str, @"bot[0-9]+").Value;
+            var parsableAsNumber = Regex.Match(str, @"([A-F]|[a-f]|[0-9])+").Value;
 
             if (string.IsNullOrWhiteSpace(str) && fallback.HasValue)
             {
                 return fallback.Value;
             }
 
-            long id = 0;
-
-            if (numberStyle == NumberStyles.Integer)
+            long id;
+            if (!string.IsNullOrEmpty(parsableAsNumber))
             {
-                long.TryParse(str, numberStyle, CultureInfo.InvariantCulture, out id);
-
-                if (id < 0)
+                if (numberStyle == NumberStyles.Integer)
                 {
-                    id = (uint)id;
+                    long.TryParse(str, numberStyle, CultureInfo.InvariantCulture, out id);
+
+                    if (id < 0)
+                    {
+                        id = (uint)id;
+                    }
+                }
+
+                else
+                {
+                    long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, numberStyle, CultureInfo.InvariantCulture, out id);
                 }
             }
 
             else
             {
-                long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, numberStyle, CultureInfo.InvariantCulture, out id);
-            }
-
-            if (!string.IsNullOrEmpty(bot))
-            {
-                id = -1;
-#if DEBUG
-                id = str.Sum(_c => _c);
-#endif
+                // this is a special case for when a real guid is not provided, so we generated it from another source
+                id = str.GenerateGuidFromString();
             }
 
             if (id == 0)
@@ -337,6 +349,23 @@ namespace SharedLibraryCore
 
             return id;
         }
+
+        /// <summary>
+        /// determines if the guid provided appears to be a bot guid
+        /// </summary>
+        /// <param name="guid">value of the guid</param>
+        /// <returns>true if is bot guid, otherwise false</returns>
+        public static bool IsBotGuid(this string guid)
+        {
+            return guid.Contains("bot") || guid == "0";
+        }
+
+        /// <summary>
+        /// generates a numerical hashcode from a string value
+        /// </summary>
+        /// <param name="value">value string</param>
+        /// <returns></returns>
+        public static long GenerateGuidFromString(this string value) => string.IsNullOrEmpty(value) ? -1 : HashCode.Combine(value.StripColors());
 
         public static int? ConvertToIP(this string str)
         {
@@ -898,6 +927,24 @@ namespace SharedLibraryCore
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// https://www.planetgeek.ch/2016/12/08/async-method-without-cancellation-support-do-it-my-way/
+        /// </summary>
+        public static async Task WithWaitCancellation(this Task task,
+              CancellationToken cancellationToken)
+        {
+            Task completedTask = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cancellationToken));
+            if (completedTask == task)
+            {
+                await task;
+            }
+            else
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                throw new InvalidOperationException("Infinite delay task completed.");
+            }
         }
 
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;

@@ -142,7 +142,7 @@ namespace SharedLibraryCore.Database.Models
                 Data = message
             };
 
-            CurrentServer?.Manager.GetEventHandler().AddEvent(e);
+            CurrentServer?.Manager.AddEvent(e);
             return e;
         }
 
@@ -174,7 +174,7 @@ namespace SharedLibraryCore.Database.Models
                 Warnings++;
             }
 
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -202,7 +202,7 @@ namespace SharedLibraryCore.Database.Models
 
             Warnings = 0;
 
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -243,7 +243,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             sender.SetAdditionalProperty("_reportCount", reportCount + 1);
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -276,7 +276,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
 
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -308,7 +308,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Invalid;
             }
 
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -336,7 +336,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             State = ClientState.Disconnecting;
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -366,7 +366,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             State = ClientState.Disconnecting;
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -400,7 +400,7 @@ namespace SharedLibraryCore.Database.Models
             }
 
             State = ClientState.Disconnecting;
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -428,7 +428,7 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -464,7 +464,7 @@ namespace SharedLibraryCore.Database.Models
                 Level = newPermission;
             }
 
-            sender.CurrentServer.Manager.GetEventHandler().AddEvent(e);
+            sender.CurrentServer.Manager.AddEvent(e);
             return e;
         }
 
@@ -565,7 +565,7 @@ namespace SharedLibraryCore.Database.Models
                         Owner = CurrentServer,
                     };
 
-                    CurrentServer.Manager.GetEventHandler().AddEvent(e);
+                    CurrentServer.Manager.AddEvent(e);
                 }
             }
 
@@ -655,7 +655,7 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public int Score { get; set; }
         [NotMapped]
-        public bool IsBot => NetworkId == -1;
+        public bool IsBot => NetworkId == Name.GenerateGuidFromString();
 
         [NotMapped]
         public ClientState State { get; set; }
@@ -694,7 +694,7 @@ namespace SharedLibraryCore.Database.Models
 
         public override bool Equals(object obj)
         {
-            return ((EFClient)obj).NetworkId == this.NetworkId;
+            return obj.GetType() == typeof(EFClient) && ((EFClient)obj).NetworkId == this.NetworkId;
         }
 
         public override int GetHashCode()

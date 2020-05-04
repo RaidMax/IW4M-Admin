@@ -13,17 +13,9 @@ namespace IW4MAdmin.Application.IO
         private readonly IGameLogReader _reader;
         private readonly bool _ignoreBots;
 
-        class EventState
+        public GameLogEventDetection(Server server, Uri[] gameLogUris, IGameLogReaderFactory gameLogReaderFactory)
         {
-            public ILogger Log { get; set; }
-            public string ServerId { get; set; }
-        }
-
-        public GameLogEventDetection(Server server, string gameLogPath, Uri gameLogServerUri, IGameLogReader reader = null)
-        {
-            _reader = gameLogServerUri != null 
-                ? reader ?? new GameLogReaderHttp(gameLogServerUri, gameLogPath, server.EventParser) 
-                : reader ?? new GameLogReader(gameLogPath, server.EventParser);
+            _reader = gameLogReaderFactory.CreateGameLogReader(gameLogUris, server.EventParser);
             _server = server;
             _ignoreBots = server?.Manager.GetApplicationSettings().Configuration().IgnoreBots ?? false;
         }
@@ -70,7 +62,7 @@ namespace IW4MAdmin.Application.IO
                 return;
             }
 
-            var events = await _reader.ReadEventsFromLog(_server, fileDiff, previousFileSize);
+            var events = await _reader.ReadEventsFromLog(fileDiff, previousFileSize);
 
             foreach (var gameEvent in events)
             {
@@ -84,9 +76,9 @@ namespace IW4MAdmin.Application.IO
                     // we don't want to add the event if ignoreBots is on and the event comes from a bot
                     if (!_ignoreBots || (_ignoreBots && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                     {
-                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != 1)
+                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != Utilities.WORLD_ID)
                         {
-                            gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
+                            gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);;
                         }
 
                         if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
@@ -104,7 +96,7 @@ namespace IW4MAdmin.Application.IO
                             gameEvent.Target.CurrentServer = _server;
                         }
 
-                        _server.Manager.GetEventHandler().AddEvent(gameEvent);
+                        _server.Manager.AddEvent(gameEvent);
                     }
                 }
 

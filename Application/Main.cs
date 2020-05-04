@@ -30,7 +30,7 @@ namespace IW4MAdmin.Application
         /// entrypoint of the application
         /// </summary>
         /// <returns></returns>
-        public static async Task Main()
+        public static async Task Main(string[] args)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
 
@@ -45,7 +45,7 @@ namespace IW4MAdmin.Application
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
 
-            await LaunchAsync();
+            await LaunchAsync(args);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace IW4MAdmin.Application
         /// task that initializes application and starts the application monitoring and runtime tasks
         /// </summary>
         /// <returns></returns>
-        private static async Task LaunchAsync()
+        private static async Task LaunchAsync(string[] args)
         {
         restart:
             ITranslationLookup translationLookup = null;
@@ -74,7 +74,7 @@ namespace IW4MAdmin.Application
                 ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
 
-                var services = ConfigureServices();
+                var services = ConfigureServices(args);
                 serviceProvider = services.BuildServiceProvider();
                 ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
                 translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
@@ -252,7 +252,7 @@ namespace IW4MAdmin.Application
                                 Owner = ServerManager.Servers[0]
                             };
 
-                            ServerManager.GetEventHandler().AddEvent(E);
+                            ServerManager.AddEvent(E);
                             await E.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
                             Console.Write('>');
                         }
@@ -266,7 +266,7 @@ namespace IW4MAdmin.Application
         /// <summary>
         /// Configures the dependency injection services
         /// </summary>
-        private static IServiceCollection ConfigureServices()
+        private static IServiceCollection ConfigureServices(string[] args)
         {
             var defaultLogger = new Logger("IW4MAdmin-Manager");
             var pluginImporter = new PluginImporter(defaultLogger);
@@ -285,6 +285,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
                 .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
                 .AddSingleton<IDatabaseContextFactory, DatabaseContextFactory>()
+                .AddSingleton<IGameLogReaderFactory, GameLogReaderFactory>()
                 .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>
@@ -294,6 +295,15 @@ namespace IW4MAdmin.Application
                         customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
                 })
                 .AddSingleton<IManager, ApplicationManager>();
+
+            if (args.Contains("serialevents"))
+            {
+                serviceCollection.AddSingleton<IEventHandler, SerialGameEventHandler>();
+            }
+            else
+            {
+                serviceCollection.AddSingleton<IEventHandler, GameEventHandler>();
+            }
 
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()

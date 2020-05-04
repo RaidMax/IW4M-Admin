@@ -72,7 +72,7 @@ namespace Tests
                 }
             };
 
-            _manager.GetEventHandler().AddEvent(e);
+            _manager.AddEvent(e);
             e.Complete();
 
             e = new GameEvent()
@@ -91,7 +91,7 @@ namespace Tests
                 }
             };
 
-            _manager.GetEventHandler().AddEvent(e);
+            _manager.AddEvent(e);
             e.Complete();
 
             e = new GameEvent()
@@ -110,7 +110,7 @@ namespace Tests
                 }
             };
 
-            _manager.GetEventHandler().AddEvent(e);
+            _manager.AddEvent(e);
             e.Complete();
 
         }

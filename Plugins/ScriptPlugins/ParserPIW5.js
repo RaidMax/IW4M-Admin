@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'Plutonium IW5 Parser',
     isParser: true,
 
@@ -28,7 +28,7 @@ var plugin = {
         rconParser.Configuration.CanGenerateLogPath = true;
 
         rconParser.Configuration.StatusHeader.Pattern = 'num +score +bot +ping +guid +name +lastmsg +address +qport +rate *';
-        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';
+        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+|0) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';
         rconParser.Configuration.Status.AddMapping(100, 1);
         rconParser.Configuration.Status.AddMapping(101, 2);
         rconParser.Configuration.Status.AddMapping(102, 3);

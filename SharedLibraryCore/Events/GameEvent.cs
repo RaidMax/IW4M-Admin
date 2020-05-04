@@ -194,6 +194,14 @@ namespace SharedLibraryCore
             Target = 4
         }
 
+        public enum EventSource
+        {
+            Unspecified,
+            Log,
+            Status,
+            Internal
+        }
+
         static long NextEventId;
         static long GetNextEventId()
         {
@@ -214,6 +222,7 @@ namespace SharedLibraryCore
         }
 
         public EventType Type;
+        public EventSource Source { get; set; }
         /// <summary>
         /// suptype of the event for more detailed classification
         /// </summary>
@@ -229,7 +238,7 @@ namespace SharedLibraryCore
         public EFClient Target;
         public EFClient ImpersonationOrigin { get; set; }
         public Server Owner;
-        public bool IsRemote { get; set; } = false;
+        public bool IsRemote { get; set; }
         public object Extra { get; set; }
         private readonly ManualResetEvent _eventFinishedWaiter;
         public DateTime Time { get; set; }

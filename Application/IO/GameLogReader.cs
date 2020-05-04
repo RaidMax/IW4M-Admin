@@ -13,18 +13,20 @@ namespace IW4MAdmin.Application.IO
     {
         private readonly IEventParser _parser;
         private readonly string _logFile;
+        private readonly ILogger _logger;
 
         public long Length => new FileInfo(_logFile).Length;
 
         public int UpdateInterval => 300;
 
-        public GameLogReader(string logFile, IEventParser parser)
+        public GameLogReader(string logFile, IEventParser parser, ILogger logger)
         {
             _logFile = logFile;
             _parser = parser;
+            _logger = logger;
         }
 
-        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(Server server, long fileSizeDiff, long startPosition)
+        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition)
         {
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();
@@ -34,7 +36,7 @@ namespace IW4MAdmin.Application.IO
             {
                 byte[] buff = new byte[fileSizeDiff];
                 fs.Seek(startPosition, SeekOrigin.Begin);
-                await fs.ReadAsync(buff, 0, (int)fileSizeDiff, server.Manager.CancellationToken);
+                await fs.ReadAsync(buff, 0, (int)fileSizeDiff);
                 var stringBuilder = new StringBuilder();
                 char[] charBuff = Utilities.EncodingType.GetChars(buff);
 
@@ -71,9 +73,9 @@ namespace IW4MAdmin.Application.IO
 
                 catch (Exception e)
                 {
-                    server.Logger.WriteWarning("Could not properly parse event line");
-                    server.Logger.WriteDebug(e.Message);
-                    server.Logger.WriteDebug(eventLine);
+                    _logger.WriteWarning("Could not properly parse event line");
+                    _logger.WriteDebug(e.Message);
+                    _logger.WriteDebug(eventLine);
                 }
             }
 

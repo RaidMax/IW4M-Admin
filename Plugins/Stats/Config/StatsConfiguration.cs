@@ -14,6 +14,8 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public List<string> RecoilessWeapons { get; set; }
         public int TopPlayersMinPlayTime { get; set; }
         public bool StoreClientKills { get; set; }
+        public int MostKillsMaxInactivityDays { get; set; } = 30;
+        public int MostKillsClientLimit { get; set; } = 5;
         public IDictionary<DetectionType, DistributionConfiguration> DetectionDistributions { get; set; }
         public IDictionary<long, DetectionType[]> ServerDetectionTypes { get; set; }
 

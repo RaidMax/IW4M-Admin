@@ -32,11 +32,14 @@ namespace IW4MAdmin.Plugins.Stats
         int scriptKillCount;
 #endif
         private readonly IDatabaseContextFactory _databaseContextFactory;
+        private readonly ITranslationLookup _translationLookup;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory)
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
+            ITranslationLookup translationLookup)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
+            _translationLookup = translationLookup;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -491,10 +494,17 @@ namespace IW4MAdmin.Plugins.Stats
                 return string.Join(Environment.NewLine, await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex));
             }
 
+            async Task<string> mostKills(Server gameServer)
+            {
+                return string.Join(Environment.NewLine,
+                    await Commands.MostKillsCommand.GetMostKills(StatManager.GetIdForServer(gameServer), Config.Configuration(), _databaseContextFactory, _translationLookup));
+            }
+
             manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", totalKills));
             manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", totalPlayTime));
             manager.GetMessageTokens().Add(new MessageToken("TOPSTATS", topStats));
             manager.GetMessageTokens().Add(new MessageToken("MOSTPLAYED", mostPlayed));
+            manager.GetMessageTokens().Add(new MessageToken("MOSTKILLS", mostKills));
 
             ServerManager = manager;
             Manager = new StatManager(manager, _databaseContextFactory, Config);

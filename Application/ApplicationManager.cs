@@ -62,12 +62,13 @@ namespace IW4MAdmin.Application
         private readonly IParserRegexFactory _parserRegexFactory;
         private readonly IEnumerable<IRegisterEvent> _customParserEvents;
         private readonly IEventHandler _eventHandler;
+        private readonly IScriptCommandFactory _scriptCommandFactory;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
-            IEventHandler eventHandler)
+            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -92,6 +93,7 @@ namespace IW4MAdmin.Application
             _parserRegexFactory = parserRegexFactory;
             _customParserEvents = customParserEvents;
             _eventHandler = eventHandler;
+            _scriptCommandFactory = scriptCommandFactory;
             Plugins = plugins;
         }
 
@@ -267,12 +269,12 @@ namespace IW4MAdmin.Application
                 {
                     if (plugin is ScriptPlugin scriptPlugin)
                     {
-                        await scriptPlugin.Initialize(this);
+                        await scriptPlugin.Initialize(this, _scriptCommandFactory);
                         scriptPlugin.Watcher.Changed += async (sender, e) =>
                         {
                             try
                             {
-                                await scriptPlugin.Initialize(this);
+                                await scriptPlugin.Initialize(this, _scriptCommandFactory);
                             }
 
                             catch (Exception ex)
@@ -817,5 +819,17 @@ namespace IW4MAdmin.Application
         {
             _operationLookup.Add(operationName, operation);
         }
+
+        public void AddAdditionalCommand(IManagerCommand command)
+        {
+            if (_commands.Any(_command => _command.Name == command.Name || _command.Alias == command.Alias))
+            {
+                throw new InvalidOperationException($"Duplicate command name or alias ({command.Name}, {command.Alias})");
+            }
+
+            _commands.Add(command);
+        }
+
+        public void RemoveCommandByName(string commandName) => _commands.RemoveAll(_command => _command.Name == commandName);
     }
 }

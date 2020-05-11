@@ -1,8 +1,12 @@
 ﻿using Jint;
+using Jint.Native;
+using Jint.Runtime;
 using Microsoft.CSharp.RuntimeBinder;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -34,6 +38,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly string _fileName;
         private readonly SemaphoreSlim _onProcessing;
         private bool successfullyLoaded;
+        private readonly List<string> _registeredCommandNames;
 
         public ScriptPlugin(string filename, string workingDirectory = null)
         {
@@ -47,6 +52,7 @@ namespace IW4MAdmin.Application.Misc
 
             Watcher.EnableRaisingEvents = true;
             _onProcessing = new SemaphoreSlim(1, 1);
+            _registeredCommandNames = new List<string>();
         }
 
         ~ScriptPlugin()
@@ -55,7 +61,7 @@ namespace IW4MAdmin.Application.Misc
             _onProcessing.Dispose();
         }
 
-        public async Task Initialize(IManager manager)
+        public async Task Initialize(IManager manager, IScriptCommandFactory scriptCommandFactory)
         {
             await _onProcessing.WaitAsync();
 
@@ -75,6 +81,14 @@ namespace IW4MAdmin.Application.Misc
                 if (!firstRun)
                 {
                     await OnUnloadAsync();
+
+                    foreach (string commandName in _registeredCommandNames)
+                    {
+                        manager.GetLogger(0).WriteDebug($"Removing plugin registered command \"{commandName}\"");
+                        manager.RemoveCommandByName(commandName);
+                    }
+
+                    _registeredCommandNames.Clear();
                 }
 
                 successfullyLoaded = false;
@@ -105,6 +119,26 @@ namespace IW4MAdmin.Application.Misc
                 Author = pluginObject.author;
                 Name = pluginObject.name;
                 Version = (float)pluginObject.version;
+
+                var commands = _scriptEngine.GetValue("commands");
+
+                if (commands != JsValue.Undefined)
+                {
+                    try
+                    {
+                        foreach (var command in GenerateScriptCommands(commands, scriptCommandFactory))
+                        {
+                            manager.GetLogger(0).WriteDebug($"Adding plugin registered command \"{command.Name}\"");
+                            manager.AddAdditionalCommand(command);
+                            _registeredCommandNames.Add(command.Name);
+                        }
+                    }
+
+                    catch (RuntimeBinderException e)
+                    {
+                        throw new PluginException($"Not all required fields were found: {e.Message}") { PluginFile = _fileName };
+                    }
+                }
 
                 await OnLoadAsync(manager);
 
@@ -192,6 +226,68 @@ namespace IW4MAdmin.Application.Misc
             {
                 await Task.FromResult(_scriptEngine.Execute("plugin.onUnloadAsync()").GetCompletionValue());
             }
+        }
+
+        /// <summary>
+        /// finds declared script commands in the script plugin
+        /// </summary>
+        /// <param name="commands">commands value from jint parser</param>
+        /// <param name="scriptCommandFactory">factory to create the command from</param>
+        /// <returns></returns>
+        public IEnumerable<IManagerCommand> GenerateScriptCommands(JsValue commands, IScriptCommandFactory scriptCommandFactory)
+        {
+            List<IManagerCommand> commandList = new List<IManagerCommand>();
+
+            // go through each defined command
+            foreach (var command in commands.AsArray())
+            {
+                dynamic dynamicCommand = command.ToObject();
+                string name = dynamicCommand.name;
+                string alias = dynamicCommand.alias;
+                string description = dynamicCommand.description;
+                string permission = dynamicCommand.permission;
+
+                List<(string, bool)> args = new List<(string, bool)>();
+                dynamic arguments = null;
+
+                try
+                {
+                    arguments = dynamicCommand.arguments;
+                }
+
+                catch (RuntimeBinderException)
+                {
+                    // arguments are optional
+                }
+
+                if (arguments != null)
+                {
+                    foreach (var arg in dynamicCommand.arguments)
+                    {
+                        args.Add((arg.name, (bool)arg.required));
+                    }
+                }
+
+                void execute(GameEvent e)
+                {
+                    _scriptEngine.SetValue("_event", e);
+                    var jsEventObject = _scriptEngine.GetValue("_event");
+
+                    try
+                    {
+                        dynamicCommand.execute.Target.Invoke(jsEventObject);
+                    }
+
+                    catch (JavaScriptException ex)
+                    {
+                        throw new PluginException($"An error occured while executing action for script plugin: {ex.Error} (Line: {ex.Location.Start.Line}, Character: {ex.Location.Start.Column})") { PluginFile = _fileName };
+                    }
+                }
+
+                commandList.Add(scriptCommandFactory.CreateScriptCommand(name, alias, description, permission, args, execute));
+            }
+
+            return commandList;
         }
     }
 }

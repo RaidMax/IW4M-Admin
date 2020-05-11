@@ -70,5 +70,15 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="gameEvent">event to be processed</param>
         void AddEvent(GameEvent gameEvent);
+        /// <summary>
+        /// adds an additional (script) command to the command list
+        /// </summary>
+        /// <param name="command"></param>
+        void AddAdditionalCommand(IManagerCommand command);
+        /// <summary>
+        /// removes a command by its name
+        /// </summary>
+        /// <param name="name">name of command</param>
+        void RemoveCommandByName(string name);
     }
 }

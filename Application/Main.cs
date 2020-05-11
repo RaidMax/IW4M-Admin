@@ -286,6 +286,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
                 .AddSingleton<IDatabaseContextFactory, DatabaseContextFactory>()
                 .AddSingleton<IGameLogReaderFactory, GameLogReaderFactory>()
+                .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
                 .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>

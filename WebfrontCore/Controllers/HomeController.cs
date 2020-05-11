@@ -12,8 +12,11 @@ namespace WebfrontCore.Controllers
 {
     public class HomeController : BaseController
     {
-        public HomeController(IManager manager) : base(manager)
+        private readonly ITranslationLookup _translationLookup;
+
+        public HomeController(IManager manager, ITranslationLookup translationLookup) : base(manager)
         {
+            _translationLookup = translationLookup;
         }
 
         public async Task<IActionResult> Index(Game? game = null)
@@ -69,7 +72,8 @@ namespace WebfrontCore.Controllers
                     // we need the plugin type the command is defined in
                     var pluginType = _cmd.GetType().Assembly.GetTypes().FirstOrDefault(_type => _type.Assembly != excludedAssembly && typeof(IPlugin).IsAssignableFrom(_type));
                     return pluginType == null ?
-                        Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HELP_COMMAND_NATIVE"] :
+                        _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"] :
+                        pluginType.Name == "ScriptPlugin" ? _translationLookup["WEBFRONT_HELP_SCRIPT_PLUGIN"] :
                         Manager.Plugins.First(_plugin => _plugin.GetType() == pluginType).Name; // for now we're just returning the name of the plugin, maybe later we'll include more info
                 })
                 .Select(_grp => (_grp.Key, _grp.AsEnumerable()));

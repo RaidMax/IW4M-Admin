@@ -3,21 +3,17 @@ using System;
 using SharedLibraryCore.Interfaces;
 using IW4MAdmin;
 using FakeItEasy;
-using IW4MAdmin.Application.EventParsers;
 using System.Linq;
-using IW4MAdmin.Plugins.Stats.Models;
-using IW4MAdmin.Application.Helpers;
-using IW4MAdmin.Plugins.Stats.Config;
-using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
 using Microsoft.Extensions.DependencyInjection;
-using IW4MAdmin.Plugins.Stats.Helpers;
 using ApplicationTests.Fixtures;
 using System.Threading.Tasks;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore;
 using ApplicationTests.Mocks;
+using SharedLibraryCore.Services;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace ApplicationTests
 {
@@ -28,7 +24,10 @@ namespace ApplicationTests
         private IServiceProvider serviceProvider;
         private ITranslationLookup transLookup;
         private CommandConfiguration cmdConfig;
-        private MockEventHandler mockEventHandler;
+        private ApplicationConfiguration appConfig;
+        private EventHandlerMock mockEventHandler;
+        private ClientService clientService;
+        private IManager manager;
 
         [SetUp]
         public void Setup()
@@ -37,24 +36,31 @@ namespace ApplicationTests
             cmdConfig = new CommandConfiguration();
 
             serviceProvider = new ServiceCollection()
-                .BuildBase(new MockEventHandler(true))
-                .BuildServiceProvider();
+                .BuildBase(new EventHandlerMock(true))
+                .BuildServiceProvider()
+                .SetupTestHooks();
 
-            mockEventHandler = serviceProvider.GetRequiredService<MockEventHandler>();
-
-            var mgr = serviceProvider.GetRequiredService<IManager>();
+            mockEventHandler = serviceProvider.GetRequiredService<EventHandlerMock>();
+            manager = serviceProvider.GetRequiredService<IManager>();
             transLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
+            clientService = serviceProvider.GetRequiredService<ClientService>();
+            appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
 
-            A.CallTo(() => mgr.GetCommands())
+            A.CallTo(() => manager.GetClientService())
+                .Returns(clientService);
+
+            A.CallTo(() => clientService.UpdateLevel(A<Permission>.Ignored, A<EFClient>.Ignored, A<EFClient>.Ignored))
+                .Returns(Task.CompletedTask);
+
+            A.CallTo(() => manager.GetCommands())
                 .Returns(new Command[]
                 {
                     new ImpersonatableCommand(cmdConfig, transLookup),
                     new NonImpersonatableCommand(cmdConfig, transLookup)
                 });
 
-            A.CallTo(() => mgr.AddEvent(A<GameEvent>.Ignored))
-               .Invokes((fakeCall) => mockEventHandler.HandleEvent(mgr, fakeCall.Arguments[0] as GameEvent));
-
+            A.CallTo(() => manager.AddEvent(A<GameEvent>.Ignored))
+               .Invokes((fakeCall) => mockEventHandler.HandleEvent(manager, fakeCall.Arguments[0] as GameEvent));
         }
 
         #region RUNAS
@@ -172,6 +178,344 @@ namespace ApplicationTests
 
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell /*&& _event.Target == origin todo: fake the command result*/ ));
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Command && !_event.Failed));
+        }
+        #endregion
+
+        #region SETLEVEL
+        [Test]
+        public async Task Test_SetLevelFailOnSelf()
+        {
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.Owner;
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = target,
+                Data = "Administrator",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Owner, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
+
+        [Test]
+        public async Task Test_SetLevelFailWithSourcePrivilegeTooLow()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Moderator;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.Administrator;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Administrator",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Administrator, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
+
+        [Test]
+        public async Task Test_SetLevelFailWithExistingOwner_AndOnlyOneOwnerAllowed()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Owner",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.User, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
+
+        [Test]
+        public async Task Test_SetLevelFailWithStepPrivilegesDisabled_AndNonOwner()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.SeniorAdmin;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.Moderator;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Administrator",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Moderator, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
+
+        [Test]
+        public async Task Test_SetLevelFailWithStepPrivilegesEnabled_ButNewPermissionTooHigh()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Moderator;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+            appConfig.EnableSteppedHierarchy = true;
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Moderator",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.User, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
+
+        [Test]
+        public async Task Test_SetLevelFailInvalidGroup()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Banned",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.User, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
+
+        [Test]
+        public async Task Test_SetLevelSucceedWithNoExistingOwner_AndOnlyOneOwnerAllowed()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(0));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Owner",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Owner, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
+        }
+
+        [Test]
+        public async Task Test_SetLevelOwnerSucceedWithMultiOwnerAllowed()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+            appConfig.EnableMultipleOwners = true;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Owner",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Owner, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
+        }
+
+        [Test]
+        public async Task Test_SetLevelOwnerSucceedWithMultiOwnerAllowed_AndSteppedPrivileges()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+            appConfig.EnableMultipleOwners = true;
+            appConfig.EnableSteppedHierarchy = true;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Owner",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Owner, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
+        }
+
+        [Test]
+        public async Task Test_SetLevelSucceedWithSteppedPrivileges()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Moderator;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+            appConfig.EnableSteppedHierarchy = true;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Trusted",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Trusted, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
+        }
+
+        [Test]
+        public async Task Test_SetLevelSucceed()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.User;
+            appConfig.EnableSteppedHierarchy = true;
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Trusted",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Trusted, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
+        }
+
+        [Test]
+        public async Task Test_SetLevelSucceed_AndFindsIngameClient()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var databaseTarget = ClientGenerators.CreateDatabaseClient();
+            databaseTarget.Level = Permission.Administrator;
+
+            var ingameTarget = ClientGenerators.CreateBasicClient(server);
+            ingameTarget.Level = Permission.Administrator;
+
+            A.CallTo(() => manager.GetActiveClients())
+                .Returns(new[] { ingameTarget });
+
+            A.CallTo(() => clientService.GetOwnerCount())
+                .Returns(Task.FromResult(1));
+
+            var gameEvent = new GameEvent()
+            {
+                Target = databaseTarget,
+                Origin = origin,
+                Data = "User",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.User, ingameTarget.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
         }
         #endregion
     }

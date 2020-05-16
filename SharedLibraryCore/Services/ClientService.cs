@@ -239,7 +239,7 @@ namespace SharedLibraryCore.Services
         /// <param name="origin"></param>
         /// <param name="ctx"></param>
         /// <returns></returns>
-        public async Task UpdateLevel(Permission newPermission, EFClient temporalClient, EFClient origin)
+        public virtual async Task UpdateLevel(Permission newPermission, EFClient temporalClient, EFClient origin)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -483,7 +483,7 @@ namespace SharedLibraryCore.Services
         /// (client level is owner)
         /// </summary>
         /// <returns></returns>
-        public async Task<int> GetOwnerCount()
+        public virtual async Task<int> GetOwnerCount()
         {
             using (var ctx = new DatabaseContext(true))
             {

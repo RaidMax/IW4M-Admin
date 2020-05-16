@@ -3,9 +3,11 @@ using ApplicationTests.Mocks;
 using FakeItEasy;
 using IW4MAdmin;
 using Microsoft.Extensions.DependencyInjection;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
+using System;
 
 namespace ApplicationTests
 {
@@ -16,11 +18,11 @@ namespace ApplicationTests
 
             if (eventHandler == null)
             {
-                eventHandler = new MockEventHandler();
-                serviceCollection.AddSingleton(eventHandler as MockEventHandler);
+                eventHandler = new EventHandlerMock();
+                serviceCollection.AddSingleton(eventHandler as EventHandlerMock);
             }
 
-            else if (eventHandler is MockEventHandler mockEventHandler)
+            else if (eventHandler is EventHandlerMock mockEventHandler)
             {
                 serviceCollection.AddSingleton(mockEventHandler);
             }
@@ -42,7 +44,10 @@ namespace ApplicationTests
                 .AddSingleton<DataFileLoader>()
                 .AddSingleton(A.Fake<ClientService>())
                 .AddSingleton(A.Fake<IGameLogReaderFactory>())
-                .AddSingleton(eventHandler);
+                .AddSingleton(eventHandler)
+                .AddSingleton(ConfigurationGenerators.CreateApplicationConfiguration())
+                .AddSingleton(ConfigurationGenerators.CreateCommandConfiguration())
+                .AddSingleton<IConfigurationHandler<ApplicationConfiguration>, ApplicationConfigurationHandlerMock>();
 
             serviceCollection.AddSingleton(_sp => new IW4MServer(_sp.GetRequiredService<IManager>(), ConfigurationGenerators.CreateServerConfiguration(),
                 _sp.GetRequiredService<ITranslationLookup>(), _sp.GetRequiredService<IRConConnectionFactory>(), _sp.GetRequiredService<IGameLogReaderFactory>())
@@ -51,6 +56,15 @@ namespace ApplicationTests
             });
 
             return serviceCollection;
+        }
+
+        public static IServiceProvider SetupTestHooks(this IServiceProvider serviceProvider)
+        {
+            var mgr = serviceProvider.GetRequiredService<IManager>();
+            A.CallTo(() => mgr.GetApplicationSettings())
+                .Returns(serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>());
+
+            return serviceProvider;
         }
     }
 }

@@ -177,8 +177,6 @@ namespace IW4MAdmin
                     await command.ExecuteAsync(E);
                 }
 
-      
-
                 var pluginTasks = Manager.Plugins.Where(_plugin => _plugin.Name != "Login").Select(async _plugin =>
                 {
                     try
@@ -202,7 +200,10 @@ namespace IW4MAdmin
                     }
                 });
 
-                await Task.WhenAny(pluginTasks);
+                if (pluginTasks.Count() > 0)
+                {
+                    await Task.WhenAny(pluginTasks);
+                }
             }
 
             catch (Exception e)

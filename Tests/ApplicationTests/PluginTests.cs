@@ -2,6 +2,7 @@
 using ApplicationTests.Mocks;
 using FakeItEasy;
 using IW4MAdmin;
+using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
@@ -24,14 +25,16 @@ namespace ApplicationTests
         private static string PLUGIN_DIR = @"X:\IW4MAdmin\Plugins\ScriptPlugins";
         private IServiceProvider serviceProvider;
         private IManager fakeManager;
-        private MockEventHandler mockEventHandler;
+        private EventHandlerMock mockEventHandler;
 
         [SetUp]
         public void Setup()
         {
-            serviceProvider = new ServiceCollection().BuildBase().BuildServiceProvider();
+            serviceProvider = new ServiceCollection().BuildBase()
+                .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
+                .BuildServiceProvider();
             fakeManager = serviceProvider.GetRequiredService<IManager>();
-            mockEventHandler = serviceProvider.GetRequiredService<MockEventHandler>();
+            mockEventHandler = serviceProvider.GetRequiredService<EventHandlerMock>();
 
             var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
 
@@ -62,7 +65,7 @@ namespace ApplicationTests
             A.CallTo(() => fakeManager.GetClientService())
                 .Returns(fakeClientService);
 
-            await plugin.Initialize(serviceProvider.GetRequiredService<IManager>());
+            await plugin.Initialize(serviceProvider.GetRequiredService<IManager>(), serviceProvider.GetRequiredService<IScriptCommandFactory>());
 
             var gameEvent = new GameEvent()
             {

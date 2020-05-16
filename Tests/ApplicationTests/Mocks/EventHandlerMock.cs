@@ -4,12 +4,12 @@ using System.Collections.Generic;
 
 namespace ApplicationTests.Mocks
 {
-    class MockEventHandler : IEventHandler
+    class EventHandlerMock : IEventHandler
     {
         public IList<GameEvent> Events = new List<GameEvent>();
         private readonly bool _autoExecute;
 
-        public MockEventHandler(bool autoExecute = false)
+        public EventHandlerMock(bool autoExecute = false)
         {
             _autoExecute = autoExecute;
         }

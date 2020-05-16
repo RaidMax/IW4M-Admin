@@ -76,6 +76,13 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
+            // they're trying to set the console's permission level... sigh... 
+            if (E.Origin.Level == Permission.Console)
+            {
+                E.Origin.Tell(_translationLookup["COMMANDS_OWNER_IDIOT"]);
+                return;
+            }
+
             if (await (E.Owner.Manager.GetClientService() as ClientService).GetOwnerCount() == 0 &&
                 !E.Origin.SetLevel(EFClient.Permission.Owner, Utilities.IW4MAdminClient(E.Owner)).Failed)
             {
@@ -604,7 +611,7 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class SetLevelCommand : Command
     {
-        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup, ILogger logger) : base(config, translationLookup)
         {
             Name = "setlevel";
             Description = _translationLookup["COMMANDS_SETLEVEL_DESC"];
@@ -624,77 +631,95 @@ namespace SharedLibraryCore.Commands
                      Required = true
                  }
             };
+            this.logger = logger;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            Permission oldPerm = E.Target.Level;
-            Permission newPerm = Utilities.MatchPermission(E.Data);
+            Permission oldPerm = gameEvent.Target.Level;
+            Permission newPerm = Utilities.MatchPermission(gameEvent.Data);
+            bool allowMultiOwner = gameEvent.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners;
+            bool steppedPrivileges = gameEvent.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy;
+            var targetClient = gameEvent.Target;
 
-            if (E.Target == E.Origin)
+            // pre setup logic
+            bool canPromoteSteppedPriv = gameEvent.Origin.Level > newPerm || gameEvent.Origin.Level == Permission.Owner;
+            bool hasOwner = await gameEvent.Owner.Manager.GetClientService().GetOwnerCount() > 0;
+
+            // trying to set self
+            if (gameEvent.Target == gameEvent.Origin)
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_SELF"]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_SELF"]);
                 return;
             }
 
-            else if (newPerm == Permission.Owner &&
-                !E.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners &&
-                await E.Owner.Manager.GetClientService().GetOwnerCount() > 0)
+            // origin permission not high enough
+            else if (gameEvent.Origin.Level < gameEvent.Target.Level)
+            {
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_PERMISSION"].FormatExt(gameEvent.Target.Name));
+                return;
+            }
+
+            // trying to set owner without enabling multiple owners
+            else if (newPerm == Permission.Owner && !allowMultiOwner && hasOwner)
             {
                 // only one owner is allowed
-                E.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_OWNER"]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_OWNER"]);
                 return;
             }
 
-            else if (E.Origin.Level < Permission.Owner &&
-                !E.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy)
+            // trying to set level when only owner is allowed to
+            else if (gameEvent.Origin.Level < Permission.Owner && !steppedPrivileges)
             {
                 // only the owner is allowed to set levels
-                E.Origin.Tell($"{_translationLookup["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{E.Target.Name}");
+                gameEvent.Origin.Tell($"{_translationLookup["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{gameEvent.Target.Name}");
                 return;
             }
 
-            else if ((E.Origin.Level <= newPerm &&
-                E.Origin.Level < Permission.Owner) ||
-                E.Origin.Level == newPerm)
+            // stepped privilege is enabled, but the new level is too high
+            else if (steppedPrivileges && !canPromoteSteppedPriv)
             {
                 // can't promote a client to higher than your current perms
                 // or your peer
-                E.Origin.Tell(string.Format(_translationLookup["COMMANDS_SETLEVEL_LEVELTOOHIGH"], E.Target.Name, (E.Origin.Level - 1).ToString()));
+                gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_SETLEVEL_LEVELTOOHIGH"], gameEvent.Target.Name, (gameEvent.Origin.Level - 1).ToString()));
                 return;
             }
 
+            // valid
             else if (newPerm > Permission.Banned)
             {
-                var ActiveClient = E.Owner.Manager.GetActiveClients()
-                    .FirstOrDefault(p => p.NetworkId == E.Target.NetworkId);
+                targetClient = targetClient.ClientNumber < 0 ?
+                    gameEvent.Owner.Manager.GetActiveClients()
+                    .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient : targetClient;
 
-                if (ActiveClient != null)
+                logger.WriteInfo($"Beginning set level of client {gameEvent.Origin} to {newPerm}");
+
+                var result = await targetClient.SetLevel(newPerm, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
+
+                if (result.Failed)
                 {
-                    ActiveClient.SetLevel(newPerm, E.Origin);
-
-                    // inform the client that they were promoted
-                    // we don't really want to tell them if they're demoted haha
-                    if (newPerm > oldPerm)
-                    {
-                        ActiveClient.Tell(_translationLookup["COMMANDS_SETLEVEL_SUCCESS_TARGET"].FormatExt(newPerm));
-                    }
+                    logger.WriteInfo($"Failed to set level of client {gameEvent.Origin}");
+                    gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    return;
                 }
 
-                else
+                // inform the client that they were promoted
+                // we don't really want to tell them if they're demoted haha
+                if (targetClient.IsIngame && newPerm > oldPerm)
                 {
-                    E.Target.SetLevel(newPerm, E.Origin);
+                    targetClient.Tell(_translationLookup["COMMANDS_SETLEVEL_SUCCESS_TARGET"].FormatExt(newPerm));
                 }
 
                 // inform the origin that the client has been updated
                 _ = newPerm < oldPerm ?
-                    E.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"].FormatExt(E.Target.Name)) :
-                    E.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_SUCCESS"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"].FormatExt(targetClient.Name)) :
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_SUCCESS"].FormatExt(targetClient.Name));
             }
 
+            // all other tests failed so it's invalid group
             else
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_FAIL"]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_FAIL"]);
             }
         }
     }

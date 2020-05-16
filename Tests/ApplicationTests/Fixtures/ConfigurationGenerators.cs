@@ -18,5 +18,7 @@ namespace ApplicationTests.Fixtures
                 Say = "say"
             }
         };
+        public static ApplicationConfiguration CreateApplicationConfiguration() => new ApplicationConfiguration() { Servers = new[] { CreateServerConfiguration() } };
+        public static CommandConfiguration CreateCommandConfiguration() => new CommandConfiguration();
     }
 }

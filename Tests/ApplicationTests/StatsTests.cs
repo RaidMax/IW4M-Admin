@@ -22,14 +22,17 @@ namespace ApplicationTests
     {
         ILogger logger;
         private IServiceProvider serviceProvider;
+        private IConfigurationHandlerFactory handlerFactory;
 
         [SetUp]
         public void Setup()
         {
             logger = A.Fake<ILogger>();
+            handlerFactory = A.Fake<IConfigurationHandlerFactory>();
 
             serviceProvider = new ServiceCollection()
                 .BuildBase()
+                .AddSingleton<IW4MAdmin.Plugins.Stats.Plugin>()
                 .BuildServiceProvider();
 
             void testLog(string msg) => Console.WriteLine(msg);
@@ -44,9 +47,8 @@ namespace ApplicationTests
         public void TestKDR()
         {
             var mgr = A.Fake<IManager>();
-            var handlerFactory = A.Fake<IConfigurationHandlerFactory>();
             var config = A.Fake<IConfigurationHandler<StatsConfiguration>>();
-            var plugin = new IW4MAdmin.Plugins.Stats.Plugin(handlerFactory, null);
+            var plugin = serviceProvider.GetRequiredService<IW4MAdmin.Plugins.Stats.Plugin>();
 
             A.CallTo(() => config.Configuration())
                 .Returns(new StatsConfiguration()

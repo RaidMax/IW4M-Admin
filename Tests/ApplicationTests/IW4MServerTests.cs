@@ -25,7 +25,8 @@ namespace ApplicationTests
         private IManager fakeManager;
         private IRConConnection fakeRConConnection;
         private IRConParser fakeRConParser;
-        private MockEventHandler mockEventHandler;
+        private EventHandlerMock mockEventHandler;
+        private ApplicationConfiguration appConfig;
 
         [SetUp]
         public void Setup()
@@ -36,7 +37,8 @@ namespace ApplicationTests
             fakeManager = serviceProvider.GetRequiredService<IManager>();
             fakeRConConnection = serviceProvider.GetRequiredService<IRConConnection>();
             fakeRConParser = serviceProvider.GetRequiredService<IRConParser>();
-            mockEventHandler = serviceProvider.GetRequiredService<MockEventHandler>();
+            mockEventHandler = serviceProvider.GetRequiredService<EventHandlerMock>();
+            appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
 
             var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
 
@@ -517,12 +519,7 @@ namespace ApplicationTests
         {
             var server = serviceProvider.GetService<IW4MServer>();
             var fakeConfigHandler = A.Fake<IConfigurationHandler<ApplicationConfiguration>>();
-
-            A.CallTo(() => fakeManager.GetApplicationSettings())
-                .Returns(fakeConfigHandler);
-
-            A.CallTo(() => fakeConfigHandler.Configuration())
-                .Returns(new ApplicationConfiguration() { IgnoreServerConnectionLost = true });
+            appConfig.IgnoreServerConnectionLost = true;
 
             A.CallTo(() => fakeRConParser.GetStatusAsync(A<IRConConnection>.Ignored))
                 .ThrowsAsync(new NetworkException("err"));
@@ -535,7 +532,6 @@ namespace ApplicationTests
 
             A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
               .MustNotHaveHappened();
-            Assert.IsEmpty(mockEventHandler.Events);
         }
 
         [Test]
@@ -543,12 +539,6 @@ namespace ApplicationTests
         {
             var server = serviceProvider.GetService<IW4MServer>();
             var fakeConfigHandler = A.Fake<IConfigurationHandler<ApplicationConfiguration>>();
-
-            A.CallTo(() => fakeManager.GetApplicationSettings())
-                .Returns(fakeConfigHandler);
-
-            A.CallTo(() => fakeConfigHandler.Configuration())
-                .Returns(new ApplicationConfiguration() { IgnoreServerConnectionLost = false });
 
             A.CallTo(() => fakeRConParser.GetStatusAsync(A<IRConConnection>.Ignored))
                 .ThrowsAsync(new NetworkException("err"));
@@ -568,7 +558,7 @@ namespace ApplicationTests
             A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
                 .MustHaveHappenedOnceExactly();
 
-            Assert.IsNotEmpty(mockEventHandler.Events);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ConnectionLost));
             Assert.AreEqual("err", (mockEventHandler.Events[0].Extra as NetworkException).Message);
         }
     }

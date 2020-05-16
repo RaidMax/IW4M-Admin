@@ -15,6 +15,7 @@ namespace SharedLibraryCore
     {
         private readonly CommandConfiguration _config;
         protected readonly ITranslationLookup _translationLookup;
+        protected ILogger logger;
 
         public Command(CommandConfiguration config, ITranslationLookup layout)
         {

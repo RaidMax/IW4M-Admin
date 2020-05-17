@@ -198,9 +198,9 @@ namespace IW4MAdmin
                         Logger.WriteError($"{loc["SERVER_PLUGIN_ERROR"]} [{_plugin.Name}]");
                         Logger.WriteDebug(Except.GetExceptionInfo());
                     }
-                });
+                }).ToArray();
 
-                if (pluginTasks.Count() > 0)
+                if (pluginTasks.Any())
                 {
                     await Task.WhenAny(pluginTasks);
                 }

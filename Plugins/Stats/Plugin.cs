@@ -532,7 +532,7 @@ namespace IW4MAdmin.Plugins.Stats
         /// <returns></returns>
         private bool ShouldIgnoreEvent(EFClient origin, EFClient target)
         {
-            return ((origin?.NetworkId == 1 && target?.NetworkId == 1));
+            return ((origin?.NetworkId == Utilities.WORLD_ID && target?.NetworkId == Utilities.WORLD_ID));
         }
 
         /// <summary>

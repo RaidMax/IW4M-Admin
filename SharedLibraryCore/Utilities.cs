@@ -1,9 +1,4 @@
-﻿#if DEBUG
-using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Microsoft.EntityFrameworkCore.Storage;
-#endif
-using SharedLibraryCore.Database.Models;
+﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -172,7 +167,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        public static string FixIW4ForwardSlash(this string str) => str.Replace("/", " /");
+        public static string FixIW4ForwardSlash(this string str) => str.Replace("//", "/ /");
 
         private static readonly IList<string> _zmGameTypes = new[] { "zclassic", "zstandard", "zcleansed", "zgrief" };
         /// <summary>

@@ -52,7 +52,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
         {
             using (var ctx = contextFactory.CreateContext(enableTracking: false))
             {
-                var dayInPast = DateTime.UtcNow.AddMonths(-config.MostKillsMaxInactivityDays);
+                var dayInPast = DateTime.UtcNow.AddDays(-config.MostKillsMaxInactivityDays);
 
                 var iqStats = (from stats in ctx.Set<EFClientStatistics>()
                                join client in ctx.Clients

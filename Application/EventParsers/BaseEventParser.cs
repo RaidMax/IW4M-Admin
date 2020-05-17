@@ -23,7 +23,7 @@ namespace IW4MAdmin.Application.EventParsers
                 GameDirectory = "main",
             };
 
-            Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);(.+);(.*)$";
+            Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);([^;]*);(.*)$";
             Configuration.Say.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Say.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);

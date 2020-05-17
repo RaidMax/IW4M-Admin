@@ -667,7 +667,8 @@ namespace IW4MAdmin
                 }
             }
 
-            else if (client.IPAddress != null && client.State == ClientState.Disconnecting)
+            else if ((client.IPAddress != null && client.State == ClientState.Disconnecting) || 
+                client.Level == Permission.Banned)
             {
                 Logger.WriteWarning($"{client} state is Unknown (probably kicked), but they are still connected. trying to kick again...");
                 await client.CanConnect(client.IPAddress);

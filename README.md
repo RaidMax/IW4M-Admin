@@ -1,20 +1,22 @@
 
 # IW4MAdmin
 ### Quick Start Guide
-### Version 2.3
+### Version 2.4
 _______
 ### About
-**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/33/plutonium-t6), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://www.teknomw3.pw/), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
+**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/6/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/14/plutonium-iw5), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://www.teknomw3.pw/), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
 Latest binary builds are always available at:
-- [RaidMax](https://raidmax.org/IW4MAdmin)  
 - [GitHub](https://github.com/RaidMax/IW4M-Admin/releases)
+- [RaidMax](https://raidmax.org/IW4MAdmin)  
 
 ---
 ### Setup
 **IW4MAdmin** requires minimal effort to get up and running.
 #### Prerequisites
-* [.NET Core 2.2.2 Runtime](https://www.microsoft.com/net/download) *or newer*  
+* [.NET Core 3.1.x Runtime](https://www.microsoft.com/net/download) *or newer*
+    * [Direct Download (Windows)](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-aspnetcore-3.1.4-windows-hosting-bundle-installer)
+    * [Package Installation (Linux)](https://docs.microsoft.com/en-us/dotnet/core/install/linux-package-manager-ubuntu-1910)
 #### Installation
 1. Install .NET Core Runtime
 2.  Extract `IW4MAdmin-<version>.zip`  
@@ -25,8 +27,13 @@ Windows
 
 Linux
 1. Execute `chmod +x StartIW4MAdmin.sh`  
-2. Run `StartIW4MAdmin.sh`
+2. Run `./StartIW4MAdmin.sh`
 3. Configure **IW4MAdmin**
+
+### First Steps
+1. Go ingame and type via the **ingame chat** `!owner` to claim ownership (full admin permissions) of the server
+2. Login to the webfront by accessing http://<machine_ip_here>:1624 and clicking on the key icon
+    * You will need to retrieve your login credentials by typing `!rt` ingame
 
 ### Updating
 1. Download the latest version of **IW4MAdmin**
@@ -59,6 +66,7 @@ When **IW4MAdmin** is launched for the _first time_, you will be prompted to set
 `Enable custom say name`
 * Shows a prefix to every message send by **IW4MAdmin** -- `[Admin] message`
 * _This feature requires you specify a custom say name_
+* _This feature only works on games that support the `sv_sayName` dvar_
 * Default &mdash; `false`
 
 `Enable social link`
@@ -343,26 +351,13 @@ ___
 * Allows logged in privileged users to execute commands as if they are in-game
 ---
 ### Game Log Server
-The game log server provides a way to remotely host your server's log over a http rest api. 
-This server is useful if you plan on running IW4MAdmin on a different machine than the game server
+The game log server provides a way to remotely host your server's log over a http rest-ful api. 
+This feature is useful if you plan on running IW4MAdmin on a different machine than the game server.
 #### Requirements
-- [Python 3.6](https://www.python.org/downloads/) or newer
-- The following [PIP](https://pypi.org/project/pip/) packages (provided in `requirements.txt`)
- ```Flask>=1.0.2
-aniso8601>=3.0.2
-click>=6.7
-Flask-RESTful>=0.3.6
-itsdangerous>=0.24
-Jinja2>=2.10
-MarkupSafe>=1.0
-pip>=9.0.3
-pytz>=2018.5
-setuptools>=39.0.1
-six>=1.11.0
-Werkzeug>=0.14.1
-``` 
+- [Python 3.8.x](https://www.python.org/downloads/) or newer
+
 #### Installation
-1. With Python 3 installed, open up a terminal/command prompt window in the `GameLogServer` folder and execute:
+1. With Python 3.x installed, open up a terminal/command prompt window in the `GameLogServer` folder and execute:
     ```console
     pip install -r requirements.txt
     ```
@@ -380,6 +375,9 @@ python runserver.py
 ```
 The Game Log Server window will need to remain running/open as long as **IW4MAdmin** is running
 
+#### Configuring
+* Update your `IW4MAdminSettings.json` by changing the value of `GameLogServerUrl` to "http://<remote_server_ip>:1625"
+* Example &mdash; `"GameLogServerUrl": "http://192.168.1.123:1625",`
 ---
 ### Extending Plugins
 

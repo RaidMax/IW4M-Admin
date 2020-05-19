@@ -17,7 +17,7 @@
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>GameLogServer</Name>
     <RootNamespace>GameLogServer</RootNamespace>
-    <InterpreterId>MSBuild|log_env|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|game_log_server_env|$(MSBuildProjectFullPath)</InterpreterId>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>DEBUG=True</Environment>
   </PropertyGroup>
@@ -62,10 +62,10 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
-    <Interpreter Include="log_env\">
-      <Id>log_env</Id>
-      <Version>3.6</Version>
-      <Description>log_env (Python 3.6 (64-bit))</Description>
+    <Interpreter Include="game_log_server_env\">
+      <Id>game_log_server_env</Id>
+      <Version>3.8</Version>
+      <Description>game_log_server_env (Python 3.8 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

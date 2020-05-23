@@ -43,6 +43,7 @@ namespace IW4MAdmin.Application
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
         public IMiddlewareActionHandler MiddlewareActionHandler { get; }
+        public event EventHandler<GameEvent> OnGameEventExecuted;
         private readonly List<IManagerCommand> _commands;
         private readonly ILogger _logger;
         private readonly List<MessageToken> MessageTokens;
@@ -164,6 +165,8 @@ namespace IW4MAdmin.Application
         skip:
             // tell anyone waiting for the output that we're done
             newEvent.Complete();
+            OnGameEventExecuted?.Invoke(this, newEvent);
+
 #if DEBUG == true
             Logger.WriteDebug($"Exiting event process for {newEvent.Id}");
 #endif

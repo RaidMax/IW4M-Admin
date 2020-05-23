@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using SharedLibraryCore.Events;
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +23,7 @@ namespace WebfrontCore.Middleware
         public ClaimsPermissionRemoval(RequestDelegate nextRequest, IManager manager)
         {
             _manager = manager;
-            //_manager.OnServerEvent += OnGameEvent;
+            _manager.OnGameEventExecuted += OnGameEvent;
             _privilegedClientIds = new List<int>();
             _nextRequest = nextRequest;
         }
@@ -32,27 +32,27 @@ namespace WebfrontCore.Middleware
         /// Callback for the game event 
         /// </summary>
         /// <param name="sender"></param>
-        /// <param name="args"></param>
-        private void OnGameEvent(object sender, GameEventArgs args)
+        /// <param name="gameEvent"></param>
+        private void OnGameEvent(object sender, GameEvent gameEvent)
         {
-            if (args.Event.Type == EventType.ChangePermission &&
-                args.Event.Extra is Permission perm)
+            if (gameEvent.Type == EventType.ChangePermission &&
+                gameEvent.Extra is Permission perm)
             {
                 // we want to remove the claims when the client is demoted
                 if (perm < Permission.Trusted)
                 {
                     lock (_privilegedClientIds)
                     {
-                        _privilegedClientIds.RemoveAll(id => id == args.Event.Target.ClientId);
+                        _privilegedClientIds.RemoveAll(id => id == gameEvent.Target.ClientId);
                     }
                 }
                 // and add if promoted
                 else if (perm > Permission.Trusted &&
-                    !_privilegedClientIds.Contains(args.Event.Target.ClientId))
+                    !_privilegedClientIds.Contains(gameEvent.Target.ClientId))
                 {
                     lock (_privilegedClientIds)
                     {
-                        _privilegedClientIds.Add(args.Event.Target.ClientId);
+                        _privilegedClientIds.Add(gameEvent.Target.ClientId);
                     }
                 }
             }

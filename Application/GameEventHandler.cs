@@ -43,15 +43,6 @@ namespace IW4MAdmin.Application
 
                 EventApi.OnGameEvent(gameEvent);
                 Task.Factory.StartNew(() => manager.ExecuteEvent(gameEvent));
-
-                /*if (!_eventLog.ContainsKey(gameEvent.Owner.EndPoint))
-                {
-                    _eventLog.Add(gameEvent.Owner.EndPoint,new List<GameEvent>());
-                }
-                _eventLog[gameEvent.Owner.EndPoint].Add(gameEvent);
-                string serializedEvents = JsonConvert.SerializeObject(_eventLog, EventLog.BuildVcrSerializationSettings());
-                System.IO.File.WriteAllText("output.json", serializedEvents);*/
-                //Task.Run(() => GameEventHandler_GameEventAdded(this, new GameEventArgs(null, false, gameEvent)));
             }
 #if DEBUG
             else

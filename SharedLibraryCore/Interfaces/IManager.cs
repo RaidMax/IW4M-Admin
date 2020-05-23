@@ -5,6 +5,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
+using System;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -80,5 +81,9 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="name">name of command</param>
         void RemoveCommandByName(string name);
+        /// <summary>
+        /// event executed when event has finished executing 
+        /// </summary>
+        event EventHandler<GameEvent> OnGameEventExecuted;
     }
 }

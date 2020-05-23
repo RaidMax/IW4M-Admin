@@ -15,7 +15,7 @@ namespace SharedLibraryCore.Configuration.Validation
                 .Must(_address => IPAddress.TryParse(_address, out _));
 
             RuleFor(_server => _server.Port)
-                .InclusiveBetween(0, ushort.MaxValue);
+                .InclusiveBetween(1, ushort.MaxValue);
 
             RuleFor(_server => _server.Password)
                 .NotEmpty();
@@ -28,6 +28,10 @@ namespace SharedLibraryCore.Configuration.Validation
 
             RuleFor(_server => _server.ReservedSlotNumber)
                 .InclusiveBetween(0, 32);
+
+            RuleFor(_server => _server.CustomHostname)
+                .MinimumLength(3)
+                .MaximumLength(128);
         }
     }
 }

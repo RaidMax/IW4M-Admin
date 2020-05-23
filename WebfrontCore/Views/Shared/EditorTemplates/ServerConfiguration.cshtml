@@ -37,9 +37,12 @@
         <label asp-for="@Model.ReservedSlotNumber" class="@labelClass"></label>
         <input asp-for="@Model.ReservedSlotNumber" class="@editorClass" />
 
+        <label asp-for="@Model.CustomHostname" class="@labelClass"></label>
+        <input asp-for="@Model.CustomHostname" class="@editorClass" placeholder="@optionalText" />
+
         <div>
             <label asp-for="@Model.Rules" class="bg-primary pl-3 pr-3 p-2 w-100 mt-3"></label>
-            @for(i = 0; i < Model.Rules.Length; i++)
+            @for (i = 0; i < Model.Rules.Length; i++)
             {
                 <input asp-for="@Model.Rules[i]" class="@editorClass" />
             }
@@ -48,11 +51,11 @@
 
         <div class="mb-3">
             <label asp-for="@Model.AutoMessages" class="bg-primary pl-3 pr-3 p-2 w-100 mt-3"></label>
-            @for(i = 0; i < Model.AutoMessages.Length; i++)
+            @for (i = 0; i < Model.AutoMessages.Length; i++)
             {
                 <input asp-for="@Model.AutoMessages[i]" class="@editorClass" />
             }
-        <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="Servers.Automessages" class="btn btn-primary configuration-add-new mt-2">@addText</a>
+            <a asp-controller="Configuration" asp-action="GetNewListItem" asp-route-propertyName="Servers.Automessages" class="btn btn-primary configuration-add-new mt-2">@addText</a>
         </div>
     </div>
 

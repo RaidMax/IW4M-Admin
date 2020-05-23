@@ -30,6 +30,9 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_GAME_LOG_SERVER")]
         [ConfigurationOptional]
         public Uri GameLogServerUrl { get; set; }
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_CUSTOM_HOSTNAME")]
+        [ConfigurationOptional]
+        public string CustomHostname { get; set; }
 
         private readonly IList<IRConParser> rconParsers;
         private readonly IList<IEventParser> eventParsers;

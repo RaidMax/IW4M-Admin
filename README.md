@@ -348,7 +348,24 @@ ___
 * Shows a client's information and history 
 
 `Web Console`
-* Allows logged in privileged users to execute commands as if they are in-game
+* Allows logged in privileged users to execute commands as if they are in-
+
+`Search`
+* Query clients and messages
+
+Advanced filters can be constructed to search for resources using the following filter table.
+| Filter    | Description                                            | Format                | Example             |
+|-----------|--------------------------------------------------------|-----------------------|---------------------|
+| before    | include items occurring on or before the provided date | YYYY-MM-DD hh:mm:ss (UTC inferred) | 2020-05-21 23:00:00 |
+| after     | include items occurring on or after the provided date  | YYYY-MM-DD hh:mm:ss (UTC inferred) | 2015-01-01          |
+| server | include items matching the server id                   | ip:port               | 127.0.0.1:28960     |
+| client | include items matching the client id                   | integer               | 8947                |
+| contains  | include items containing this substring                | string                | hack                |
+| sort      | display results in this order                          | ascending\|descending | descending          |
+
+Any number of filters can be combined in any order.
+Example &mdash; `chat|before 2020-05-21|after 2020-05-01|server 127.0.0.1:28960|client 444|contains cheating|sort descending`
+
 ---
 ### Game Log Server
 The game log server provides a way to remotely host your server's log over a http rest-ful api. 

@@ -15,5 +15,6 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public int Port { get; set; }
         public string EndPoint { get; set; }
         public Game? GameName { get; set; }
+        public string HostName { get; set; }
     }
 }

@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Application\Application.csproj" />
     <ProjectReference Include="..\..\Plugins\Stats\Stats.csproj" />
+    <ProjectReference Include="..\..\Plugins\Web\StatsWeb\StatsWeb.csproj" />
   </ItemGroup>
 
   <ItemGroup>

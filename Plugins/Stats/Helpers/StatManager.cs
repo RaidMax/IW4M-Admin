@@ -225,7 +225,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             Port = sv.Port,
                             EndPoint = sv.ToString(),
                             ServerId = serverId,
-                            GameName = sv.GameName
+                            GameName = sv.GameName,
+                            HostName = sv.Hostname
                         };
 
                         server = serverSet.Add(server).Entity;
@@ -238,6 +239,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     {
                         server.GameName = sv.GameName;
                         ctx.Entry(server).Property(_prop => _prop.GameName).IsModified = true;
+                        ctx.SaveChanges();
+                    }
+
+                    if (server.HostName == null || server.HostName != sv.Hostname)
+                    {
+                        server.HostName = sv.Hostname;
+                        ctx.Entry(server).Property(_prop => _prop.HostName).IsModified = true;
                         ctx.SaveChanges();
                     }
                 }

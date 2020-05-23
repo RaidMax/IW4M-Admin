@@ -5,18 +5,22 @@
             $('#client_search')
                 .addClass('input-text-danger')
                 .delay(25)
-                .queue(function(){
+                .queue(function () {
                     $(this).addClass('input-border-transition').dequeue();
                 })
                 .delay(1000)
-                .queue(function() {
+                .queue(function () {
                     $(this).removeClass('input-text-danger').dequeue();
                 })
                 .delay(500)
-                .queue(function() {
+                .queue(function () {
                     $(this).removeClass('input-border-transition').dequeue();
                 });
-      
+        }
+
+        else if ($('#client_search').val().startsWith("chat|")) {
+            e.preventDefault();
+            window.location = "/Message/Find?query=" + $('#client_search').val();
         }
     });
 });

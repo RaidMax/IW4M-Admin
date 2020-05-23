@@ -9,7 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using StatsWeb;
+using StatsWeb.Dtos;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -101,12 +104,14 @@ namespace WebfrontCore
 #endif
 
             services.AddSingleton(Program.Manager);
+            services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, ChatSearchResult>, ChatResourceQueryHelper>();
 
             // todo: this needs to be handled more gracefully
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IDatabaseContextFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IAuditInformationRepository>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<SharedLibraryCore.Interfaces.ILogger>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

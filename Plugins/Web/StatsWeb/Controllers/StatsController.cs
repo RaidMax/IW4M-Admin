@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
+using StatsWeb.Dtos;
+using StatsWeb.Extensions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,11 +16,18 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 {
     public class StatsController : BaseController
     {
+        private readonly ILogger _logger;
         private readonly IManager _manager;
+        private readonly IResourceQueryHelper<ChatSearchQuery, ChatSearchResult> _chatResourceQueryHelper;
+        private readonly ITranslationLookup _translationLookup;
 
-        public StatsController(IManager manager) : base(manager)
+        public StatsController(ILogger logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, ChatSearchResult> resourceQueryHelper,
+            ITranslationLookup translationLookup) : base(manager)
         {
+            _logger = logger;
             _manager = manager;
+            _chatResourceQueryHelper = resourceQueryHelper;
+            _translationLookup = translationLookup;
         }
 
         [HttpGet]
@@ -103,6 +112,69 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 
                 return View("_MessageContext", messages);
             }
+        }
+
+        [HttpGet("Message/Find")]
+        public async Task<IActionResult> FindMessage([FromQuery]string query)
+        {
+            ViewBag.Localization = _translationLookup;
+            ViewBag.EnableColorCodes = _manager.GetApplicationSettings().Configuration().EnableColorCodes;
+            ViewBag.Query = query;
+            ViewBag.QueryLimit = 100;
+            ViewBag.Title = _translationLookup["WEBFRONT_STATS_MESSAGES_TITLE"];
+            ViewBag.Error = null;
+            ViewBag.IsFluid = true;
+            ChatSearchQuery searchRequest = null;
+
+            try
+            {
+                searchRequest = query.ParseSearchInfo(int.MaxValue, 0);
+            }
+
+            catch (ArgumentException e)
+            {
+                _logger.WriteWarning($"Could not parse chat message search query - {query}");
+                _logger.WriteDebug(e.GetExceptionInfo());
+                ViewBag.Error = e;
+            }
+
+            catch (FormatException e)
+            {
+                _logger.WriteWarning($"Could not parse chat message search query filter format - {query}");
+                _logger.WriteDebug(e.GetExceptionInfo());
+                ViewBag.Error = e;
+            }
+
+            var result = searchRequest != null ? await _chatResourceQueryHelper.QueryResource(searchRequest) : null;
+            return View("Message/Find", result);
+        }
+
+        [HttpGet("Message/FindNext")]
+        public async Task<IActionResult> FindNextMessages([FromQuery]string query, [FromQuery]int count, [FromQuery]int offset)
+        {
+            ChatSearchQuery searchRequest;
+
+            try
+            {
+                searchRequest = query.ParseSearchInfo(count, offset);
+            }
+
+            catch (ArgumentException e)
+            {
+                _logger.WriteWarning($"Could not parse chat message search query - {query}");
+                _logger.WriteDebug(e.GetExceptionInfo());
+                throw;
+            }
+
+            catch (FormatException e)
+            {
+                _logger.WriteWarning($"Could not parse chat message search query filter format - {query}");
+                _logger.WriteDebug(e.GetExceptionInfo());
+                throw;
+            }
+
+            var result = await _chatResourceQueryHelper.QueryResource(searchRequest);
+            return PartialView("Message/_Item", result.Results);
         }
 
         [HttpGet]

@@ -14,6 +14,8 @@ using Microsoft.Extensions.DependencyInjection;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using ApplicationTests.Fixtures;
 using System.Threading.Tasks;
+using Stats.Helpers;
+using Stats.Dtos;
 
 namespace ApplicationTests
 {
@@ -23,6 +25,7 @@ namespace ApplicationTests
         ILogger logger;
         private IServiceProvider serviceProvider;
         private IConfigurationHandlerFactory handlerFactory;
+        private IDatabaseContextFactory contextFactory;
 
         [SetUp]
         public void Setup()
@@ -31,9 +34,12 @@ namespace ApplicationTests
             handlerFactory = A.Fake<IConfigurationHandlerFactory>();
 
             serviceProvider = new ServiceCollection()
+                .AddSingleton<StatsResourceQueryHelper>()
                 .BuildBase()
                 .AddSingleton<IW4MAdmin.Plugins.Stats.Plugin>()
                 .BuildServiceProvider();
+
+            contextFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
 
             void testLog(string msg) => Console.WriteLine(msg);
 
@@ -155,5 +161,55 @@ namespace ApplicationTests
 
             await mgr.UpdateStatHistory(target, stats);
         }
+
+        #region QUERY_HELPER
+        [Test]
+        public async Task Test_StatsQueryHelper_Get()
+        {
+            var queryHelper = serviceProvider.GetRequiredService<StatsResourceQueryHelper>();
+            using var context = contextFactory.CreateContext();
+
+            var server = new EFServer() { ServerId = 1 };
+            var stats = new EFClientStatistics()
+            {
+                Client = ClientGenerators.CreateBasicClient(null),
+                SPM = 100,
+                Server = server
+            };
+
+            var ratingHistory = new EFClientRatingHistory()
+            {
+                Client = stats.Client,
+                Ratings = new[]
+                {
+                    new EFRating()
+                    {
+                        Ranking = 100,
+                        Server = server,
+                        Newest = true
+                    }
+                }
+            };
+
+            context.Set<EFClientStatistics>().Add(stats);
+            context.Set<EFClientRatingHistory>().Add(ratingHistory);
+            await context.SaveChangesAsync();
+
+            var query = new StatsInfoRequest()
+            {
+                ClientId = stats.Client.ClientId
+            };
+            var result = await queryHelper.QueryResource(query);
+
+            Assert.IsNotEmpty(result.Results);
+            Assert.AreEqual(stats.SPM, result.Results.First().ScorePerMinute);
+            Assert.AreEqual(ratingHistory.Ratings.First().Ranking, result.Results.First().Ranking);
+
+            context.Set<EFClientStatistics>().Remove(stats);
+            context.Set<EFClientRatingHistory>().Remove(ratingHistory);
+            context.Set<EFServer>().Remove(server);
+            await context.SaveChangesAsync();
+        }
+        #endregion
     }
 }

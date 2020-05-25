@@ -69,12 +69,12 @@ namespace IW4MAdmin.Application
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
-            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory)
+            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
             MessageTokens = new List<MessageToken>();
-            ClientSvc = new ClientService();
+            ClientSvc = new ClientService(contextFactory);
             AliasSvc = new AliasService();
             PenaltySvc = new PenaltyService();
             ConfigHandler = appConfigHandler;

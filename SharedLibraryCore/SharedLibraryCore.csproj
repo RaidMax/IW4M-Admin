@@ -6,12 +6,12 @@
     <ApplicationIcon />
     <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
-    <Version>2.4.0</Version>
+    <Version>2.4.2</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <PackageTags>IW4MAdmin</PackageTags>
     <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin/</RepositoryUrl>
     <PackageProjectUrl>https://www.raidmax.org/IW4MAdmin/</PackageProjectUrl>
@@ -20,30 +20,12 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Shared Library for IW4MAdmin</Description>
-    <AssemblyVersion>2.4.0.0</AssemblyVersion>
-    <FileVersion>2.4.0.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Migrations\20181126232438_AddEndpointToEFServer.cs" />
-    <Compile Remove="Migrations\20181126233300_AddEndpointToEFServer.cs" />
-    <Compile Remove="Migrations\20181127143920_AddEndpointToEFServerUpdateServerIdType.cs" />
-    <Compile Remove="Migrations\20190222234606_AddIndexToEFMeta-KeyAndClientId.cs" />
-    <Compile Remove="Migrations\20190223012312_SetMaxLengthForMetaKey.cs" />
-    <Compile Remove="Migrations\20190907222702_AddMomentViewAnglesToAcSnapshot.cs" />
-    <Compile Remove="Migrations\20190907222702_AddMomentViewAnglesToAcSnapshot.Designer.cs" />
-    <Compile Remove="Migrations\20191120170503_AddDateAuditColumnsToSharedEntity.cs" />
-    <Compile Remove="Migrations\20191120170503_AddDateAuditColumnsToSharedEntity.Designer.cs" />
-    <Compile Remove="Migrations\20191120204934_AddDateAuditColumnsToSharedEntity.cs" />
-    <Compile Remove="Migrations\20191120204934_AddDateAuditColumnsToSharedEntity.Designer.cs" />
-    <Compile Remove="Migrations\20191120205633_AddDateAuditColumnsToSharedEntity.cs" />
-    <Compile Remove="Migrations\20191120205633_AddDateAuditColumnsToSharedEntity.Designer.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="8.6.2" />

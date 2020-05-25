@@ -2,6 +2,8 @@
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +12,15 @@ using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Services
 {
-    public class ClientService : Interfaces.IEntityService<EFClient>
+    public class ClientService : IEntityService<EFClient>, IResourceQueryHelper<FindClientRequest, FindClientResult>
     {
+        private readonly IDatabaseContextFactory _contextFactory;
+
+        public ClientService(IDatabaseContextFactory databaseContextFactory)
+        {
+            _contextFactory = databaseContextFactory;
+        }
+
         public async Task<EFClient> Create(EFClient entity)
         {
             using (var context = new DatabaseContext())
@@ -105,7 +114,7 @@ namespace SharedLibraryCore.Services
 
         private async Task UpdateAlias(string originalName, int? ip, EFClient entity, DatabaseContext context)
         {
-            string name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH); 
+            string name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH);
 
             // entity is the tracked db context item
             // get all aliases by IP address and LinkId
@@ -723,6 +732,57 @@ namespace SharedLibraryCore.Services
 
                 await ctx.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// find clients matching the given query
+        /// </summary>
+        /// <param name="query">query filters</param>
+        /// <returns></returns>
+        public async Task<ResourceQueryHelperResult<FindClientResult>> QueryResource(FindClientRequest query)
+        {
+            var result = new ResourceQueryHelperResult<FindClientResult>();
+            using var context = _contextFactory.CreateContext(enableTracking: false);
+
+            IQueryable<EFClient> iqClients = null;
+
+            if (!string.IsNullOrEmpty(query.Xuid))
+            {
+                long networkId = query.Xuid.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
+                iqClients = context.Clients.Where(_client => _client.NetworkId == networkId);
+            }
+
+            else if (!string.IsNullOrEmpty(query.Name))
+            {
+                iqClients = context.Clients.Where(_client => EF.Functions.Like(_client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"));
+            }
+
+            if (query.Direction == SortDirection.Ascending)
+            {
+                iqClients = iqClients.OrderBy(_client => _client.LastConnection);
+            }
+
+            else
+            {
+                iqClients = iqClients.OrderByDescending(_client => _client.LastConnection);
+            }
+
+            var queryResults = await iqClients
+                .Select(_client => new FindClientResult
+                {
+                    ClientId = _client.ClientId,
+                    Xuid = _client.NetworkId.ToString("X"),
+                    Name = _client.CurrentAlias.Name
+                })
+                .Skip(query.Offset)
+                .Take(query.Count)
+                .ToListAsync();
+
+            result.TotalResultCount = await iqClients.CountAsync();
+            result.Results = queryResults;
+            result.RetrievedResultCount = queryResults.Count;
+
+            return result;
         }
     }
 }

@@ -31,6 +31,7 @@ namespace ApplicationTests
         public void Setup()
         {
             serviceProvider = new ServiceCollection().BuildBase()
+                .AddSingleton(A.Fake<ClientService>())
                 .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
                 .BuildServiceProvider();
             fakeManager = serviceProvider.GetRequiredService<IManager>();

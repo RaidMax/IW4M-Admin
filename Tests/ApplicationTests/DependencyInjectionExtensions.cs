@@ -42,7 +42,6 @@ namespace ApplicationTests
                 .AddSingleton(A.Fake<IRConParser>())
                 .AddSingleton(A.Fake<IParserRegexFactory>())
                 .AddSingleton<DataFileLoader>()
-                .AddSingleton(A.Fake<ClientService>())
                 .AddSingleton(A.Fake<IGameLogReaderFactory>())
                 .AddSingleton(eventHandler)
                 .AddSingleton(ConfigurationGenerators.CreateApplicationConfiguration())

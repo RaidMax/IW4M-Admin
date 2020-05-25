@@ -37,6 +37,7 @@ namespace ApplicationTests
 
             serviceProvider = new ServiceCollection()
                 .BuildBase(new EventHandlerMock(true))
+                .AddSingleton(A.Fake<ClientService>())
                 .BuildServiceProvider()
                 .SetupTestHooks();
 

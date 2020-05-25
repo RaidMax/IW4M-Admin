@@ -13,7 +13,7 @@
         /// <summary>
         /// how many itesm to take
         /// </summary>
-        public int Count { get; set; }
+        public int Count { get; set; } = 100;
 
         /// <summary>
         /// filter query

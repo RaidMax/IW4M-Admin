@@ -12,11 +12,11 @@
     <Description>Client Statistics Plugin for IW4MAdmin</Description>
     <Copyright>2018</Copyright>
     <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.2.12" PrivateAssets="All" />
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.4.2" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

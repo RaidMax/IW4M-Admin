@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -9,8 +11,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Services;
+using Stats.Dtos;
+using Stats.Helpers;
 using StatsWeb;
 using StatsWeb.Dtos;
 using System.Collections.Generic;
@@ -19,6 +25,8 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
+using WebfrontCore.Controllers.API.Dtos;
+using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 
 namespace WebfrontCore
@@ -55,6 +63,7 @@ namespace WebfrontCore
 
             // Add framework services.
             var mvcBuilder = services.AddMvc(_options => _options.SuppressAsyncSuffixInActionNames = false)
+                .AddFluentValidation()
                 .ConfigureApplicationPartManager(_partManager =>
                 {
                     foreach (var assembly in pluginAssemblies())
@@ -105,6 +114,9 @@ namespace WebfrontCore
 
             services.AddSingleton(Program.Manager);
             services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, ChatSearchResult>, ChatResourceQueryHelper>();
+            services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
+            services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
+            services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
 
             // todo: this needs to be handled more gracefully
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());

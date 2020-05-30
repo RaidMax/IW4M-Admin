@@ -230,14 +230,14 @@ Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 
 Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime )
 {
-	if ( level.teamBased && isDefined( attacker ) && ( self != attacker ) && isDefined( attacker.team ) && ( self.pers[ "team" ] == attacker.team ) )
-	{
-		return;
-	}
-		
 	if ( self.health - iDamage > 0 )
 	{
-		self Process_Hit( "Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
+		isFriendlyFire = level.teamBased && isDefined( attacker ) && ( self != attacker ) && isDefined( attacker.team ) && ( self.pers[ "team" ] == attacker.team );
+		
+		if ( !isFriendlyFire )
+		{
+			self Process_Hit( "Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
+		}
 	}
 
 	self maps\mp\gametypes\_damage::Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );

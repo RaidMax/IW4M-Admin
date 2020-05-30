@@ -1,5 +1,6 @@
 ﻿using IW4MAdmin.Application.API.Master;
 using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Misc;
 using IW4MAdmin.Application.RconParsers;
 using SharedLibraryCore;
@@ -427,13 +428,13 @@ namespace IW4MAdmin.Application
 
             else
             {
-                var unsavedCommands = _commands.Where(_cmd => !cmdConfig.Commands.Keys.Contains(_cmd.GetType().Name));
+                var unsavedCommands = _commands.Where(_cmd => !cmdConfig.Commands.Keys.Contains(_cmd.CommandConfigNameForType()));
                 commandsToAddToConfig.AddRange(unsavedCommands);
             }
 
             foreach (var cmd in commandsToAddToConfig)
             {
-                cmdConfig.Commands.Add(cmd.GetType().Name,
+                cmdConfig.Commands.Add(cmd.CommandConfigNameForType(),
                 new CommandProperties()
                 {
                     Name = cmd.Name,

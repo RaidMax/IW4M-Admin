@@ -44,6 +44,7 @@ namespace Stats.Helpers
                 .Where(_stats => _stats.ClientId == query.ClientId)
                 .Select(_stats => new StatsInfoResult
                 {
+                    Name = _stats.Client.CurrentAlias.Name, 
                     ServerId = _stats.ServerId,
                     Kills = _stats.Kills,
                     Deaths = _stats.Deaths,

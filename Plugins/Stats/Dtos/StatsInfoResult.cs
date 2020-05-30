@@ -6,6 +6,11 @@ namespace Stats.Dtos
     public class StatsInfoResult
     {
         /// <summary>
+        /// client name
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
         /// ranking on the server
         /// </summary>
         public int Ranking { get; set; }

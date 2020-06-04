@@ -231,6 +231,12 @@ namespace IW4MAdmin.Application
         /// <returns></returns>
         private static async Task ReadConsoleInput()
         {
+            if (Console.IsInputRedirected)
+            {
+                ServerManager.Logger.WriteInfo("Disabling console input as it has been redirected");
+                return;
+            }
+
             string lastCommand;
             var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
 

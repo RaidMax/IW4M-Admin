@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore.RCon;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace SharedLibraryCore.Interfaces
@@ -45,5 +46,16 @@ namespace SharedLibraryCore.Interfaces
         /// indicates the format expected for parsed guids
         /// </summary>
         NumberStyles GuidNumberStyle { get; set; }
+
+        /// <summary>
+        /// specifies simple mappings for dvar names in scenarios where the needed
+        /// information is not stored in a traditional dvar name
+        /// </summary>
+        IDictionary<string, string> OverrideDvarNameMapping { get; set; }
+
+        /// <summary>
+        /// specifies the default dvar values for games that don't support certain dvars
+        /// </summary>
+        IDictionary<string, string> DefaultDvarValues { get; set; }
     }
 }

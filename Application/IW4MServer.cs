@@ -667,7 +667,7 @@ namespace IW4MAdmin
                 }
             }
 
-            else if ((client.IPAddress != null && client.State == ClientState.Disconnecting) || 
+            else if ((client.IPAddress != null && client.State == ClientState.Disconnecting) ||
                 client.Level == Permission.Banned)
             {
                 Logger.WriteWarning($"{client} state is Unknown (probably kicked), but they are still connected. trying to kick again...");
@@ -939,7 +939,7 @@ namespace IW4MAdmin
 
             RemoteConnection.SetConfiguration(RconParser.Configuration);
 
-            var version = await this.GetDvarAsync<string>("version");
+            var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version");
             Version = version.Value;
             GameName = Utilities.GetGame(version?.Value ?? RconParser.Version);
 
@@ -956,8 +956,7 @@ namespace IW4MAdmin
                 Version = RconParser.Version;
             }
 
-            // these T7 specific things aren't ideal , but it's a quick fix
-            var svRunning = await this.GetDvarAsync("sv_running", GameName == Game.T7 ? "1" : null);
+            var svRunning = await this.GetMappedDvarValueOrDefaultAsync<string>("sv_running");
 
             if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")
             {
@@ -965,29 +964,17 @@ namespace IW4MAdmin
             }
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;
-            // this is normally slow, but I'm only doing it because different games have different prefixes
-            var hostname = infoResponse == null ?
-                (await this.GetDvarAsync<string>("sv_hostname")).Value :
-                infoResponse.Where(kvp => kvp.Key.Contains("hostname")).Select(kvp => kvp.Value).First();
-            var mapname = infoResponse == null ?
-                (await this.GetDvarAsync("mapname", "Unknown")).Value :
-                infoResponse["mapname"];
-            int maxplayers = (GameName == Game.IW4) ?  // gotta love IW4 idiosyncrasies
-                (await this.GetDvarAsync<int>("party_maxplayers")).Value :
-                infoResponse == null || !infoResponse.ContainsKey("sv_maxclients") ?
-                (await this.GetDvarAsync<int>("sv_maxclients")).Value :
-                Convert.ToInt32(infoResponse["sv_maxclients"]);
-            var gametype = infoResponse == null ?
-                (await this.GetDvarAsync("g_gametype", GameName == Game.T7 ? "" : null)).Value :
-                infoResponse.Where(kvp => kvp.Key.Contains("gametype")).Select(kvp => kvp.Value).First();
-            var basepath = await this.GetDvarAsync("fs_basepath", GameName == Game.T7 ? "" : null);
-            var basegame = await this.GetDvarAsync("fs_basegame", GameName == Game.T7 ? "" : null);
-            var game = infoResponse == null || !infoResponse.ContainsKey("fs_game") ?
-                (await this.GetDvarAsync("fs_game", GameName == Game.T7 ? "" : null)).Value :
-                infoResponse["fs_game"];
-            var logfile = await this.GetDvarAsync<string>("g_log");
-            var logsync = await this.GetDvarAsync<int>("g_logsync");
-            var ip = await this.GetDvarAsync<string>("net_ip");
+
+            string hostname = (await this.GetMappedDvarValueOrDefaultAsync<string>("sv_hostname", "hostname", infoResponse)).Value;
+            string mapname = (await this.GetMappedDvarValueOrDefaultAsync<string>("mapname", infoResponse: infoResponse)).Value;
+            int maxplayers = (await this.GetMappedDvarValueOrDefaultAsync<int>("sv_maxclients", infoResponse: infoResponse)).Value;
+            string gametype = (await this.GetMappedDvarValueOrDefaultAsync<string>("g_gametype", "gametype", infoResponse)).Value;
+            var basepath = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath"));
+            var basegame = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame"));
+            var game = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_game", infoResponse: infoResponse));
+            var logfile = await this.GetMappedDvarValueOrDefaultAsync<string>("g_log");
+            var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync");
+            var ip = await this.GetMappedDvarValueOrDefaultAsync<string>("net_ip");
 
             if (Manager.GetApplicationSettings().Configuration().EnableCustomSayName)
             {
@@ -996,7 +983,7 @@ namespace IW4MAdmin
 
             try
             {
-                var website = await this.GetDvarAsync<string>("_website");
+                var website = await this.GetMappedDvarValueOrDefaultAsync<string>("_website");
 
                 // this occurs for games that don't give us anything back when
                 // the dvar is not set
@@ -1018,7 +1005,7 @@ namespace IW4MAdmin
             WorkingDirectory = basepath.Value;
             this.Hostname = hostname;
             this.MaxClients = maxplayers;
-            this.FSGame = game;
+            this.FSGame = game.Value;
             this.Gametype = gametype;
             this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
             UpdateMap(mapname);
@@ -1070,7 +1057,7 @@ namespace IW4MAdmin
                     BaseGameDirectory = basegame.Value,
                     BasePathDirectory = basepath.Value,
                     GameDirectory = EventParser.Configuration.GameDirectory ?? "",
-                    ModDirectory = game ?? "",
+                    ModDirectory = game.Value ?? "",
                     LogFile = logfile.Value,
                     IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 };

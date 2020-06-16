@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Database.Models;
+﻿
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -747,7 +748,27 @@ namespace SharedLibraryCore
 
         public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName, T fallbackValue = default)
         {
-            return server.RconParser.GetDvarAsync<T>(server.RemoteConnection, dvarName, fallbackValue);
+            return server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue);
+        }
+
+        public static async Task<Dvar<T>> GetMappedDvarValueOrDefaultAsync<T>(this Server server, string dvarName, string infoResponseName = null, IDictionary<string, string> infoResponse = null)
+        {
+            // todo: unit test this
+            string mappedKey = server.RconParser.GetOverrideDvarName(dvarName);
+            var defaultValue = server.RconParser.GetDefaultDvarValue<T>(mappedKey);
+
+            string foundKey = infoResponse?.Keys.Where(_key => new[] { mappedKey, dvarName, infoResponseName ?? dvarName }.Contains(_key)).FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(foundKey))
+            {
+                return new Dvar<T>
+                {
+                    Value = (T)Convert.ChangeType(infoResponse[foundKey], typeof(T)),
+                    Name = foundKey
+                };
+            }
+
+            return await server.GetDvarAsync(mappedKey, defaultValue);
         }
 
         public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
@@ -943,6 +964,8 @@ namespace SharedLibraryCore
         }
 
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
+
+
 
         /// <summary>
         /// replaces any directory separator chars with the platform specific character

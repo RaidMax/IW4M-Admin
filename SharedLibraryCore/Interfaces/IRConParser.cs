@@ -63,8 +63,24 @@ namespace SharedLibraryCore.Interfaces
         bool CanGenerateLogPath { get; set; }
 
         /// <summary>
-        /// Specifies the name of the parser
+        /// specifies the name of the parser
         /// </summary>
         string Name { get; set; }
+
+        /// <summary>
+        /// retrieves the value of given dvar key if it exists in the override dict
+        /// otherwise returns original
+        /// </summary>
+        /// <param name="dvarName">name of dvar key</param>
+        /// <returns></returns>
+        string GetOverrideDvarName(string dvarName);
+
+        /// <summary>
+        /// retrieves the configuration value of a dvar key for
+        /// games that do not support the given dvar
+        /// </summary>
+        /// <param name="dvarName">dvar key name</param>
+        /// <returns></returns>
+        T GetDefaultDvarValue<T>(string dvarName);
     }
 }

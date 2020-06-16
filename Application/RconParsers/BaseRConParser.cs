@@ -14,8 +14,6 @@ namespace IW4MAdmin.Application.RconParsers
 {
     public class BaseRConParser : IRConParser
     {
-        private const int MAX_FAULTY_STATUS_LINES = 7;
-
         public BaseRConParser(IParserRegexFactory parserRegexFactory)
         {
             Configuration = new DynamicRConParserConfiguration(parserRegexFactory)
@@ -56,10 +54,14 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.StatusHeader.Pattern = "num +score +ping +guid +name +lastmsg +address +qport +rate *";
             Configuration.MapStatus.Pattern = @"map: (([a-z]|_|\d)+)";
             Configuration.MapStatus.AddMapping(ParserRegex.GroupType.RConStatusMap, 1);
+
+            if (!Configuration.DefaultDvarValues.ContainsKey("mapname"))
+            {
+                Configuration.DefaultDvarValues.Add("mapname", "Unknown");
+            }
         }
 
         public IRConParserConfiguration Configuration { get; set; }
-
         public virtual string Version { get; set; } = "CoD";
         public Game GameName { get; set; } = Game.COD;
         public bool CanGenerateLogPath { get; set; } = true;
@@ -211,14 +213,6 @@ namespace IW4MAdmin.Application.RconParsers
                         State = EFClient.ClientState.Connecting
                     };
 
-//#if DEBUG
-//                    if (client.NetworkId < 1000 && client.NetworkId > 0)
-//                    {
-//                        client.IPAddress = 2147483646;
-//                        client.Ping = 0;
-//                    }
-//#endif
-
                     StatusPlayers.Add(client);
                 }
             }
@@ -231,5 +225,19 @@ namespace IW4MAdmin.Application.RconParsers
 
             return StatusPlayers;
         }
+
+        public string GetOverrideDvarName(string dvarName)
+        {
+            if (Configuration.OverrideDvarNameMapping.ContainsKey(dvarName))
+            {
+                return Configuration.OverrideDvarNameMapping[dvarName];
+            }
+
+            return dvarName;
+        }
+
+        public T GetDefaultDvarValue<T>(string dvarName) => Configuration.DefaultDvarValues.ContainsKey(dvarName) ?
+            (T)Convert.ChangeType(Configuration.DefaultDvarValues[dvarName], typeof(T)) :
+            default;
     }
 }

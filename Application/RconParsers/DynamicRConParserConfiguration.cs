@@ -1,6 +1,6 @@
-﻿using IW4MAdmin.Application.Factories;
-using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace IW4MAdmin.Application.RconParsers
@@ -19,6 +19,8 @@ namespace IW4MAdmin.Application.RconParsers
         public string ServerNotRunningResponse { get; set; }
         public bool WaitForResponse { get; set; } = true;
         public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
+        public IDictionary<string, string> OverrideDvarNameMapping { get; set; } = new Dictionary<string, string>();
+        public IDictionary<string, string> DefaultDvarValues { get; set; } = new Dictionary<string, string>();
 
         public DynamicRConParserConfiguration(IParserRegexFactory parserRegexFactory)
         {

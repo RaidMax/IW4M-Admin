@@ -317,7 +317,7 @@ namespace SharedLibraryCore.Database.Models
         /// </summary>
         /// <param name="kickReason">reason to kick for</param>
         /// <param name="sender">client performing the kick</param>
-        public GameEvent Kick(String kickReason, EFClient sender)
+        public GameEvent Kick(string kickReason, EFClient sender)
         {
             var e = new GameEvent()
             {
@@ -330,7 +330,7 @@ namespace SharedLibraryCore.Database.Models
             };
 
             // enforce level restrictions
-            if (Level > sender.Level)
+            if (sender.Level <= Level)
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }

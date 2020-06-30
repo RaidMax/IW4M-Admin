@@ -67,6 +67,10 @@ namespace SharedLibraryCore.Configuration.Validation
             RuleForEach(_app => _app.Servers)
                 .NotEmpty()
                 .SetValidator(new ServerConfigurationValidator());
+
+            RuleFor(_app => _app.MasterUrl)
+                .NotNull()
+                .Must(_url => _url != null && _url.Scheme == Uri.UriSchemeHttp);
         }
     }
 }

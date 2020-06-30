@@ -1,9 +1,11 @@
-﻿using IW4MAdmin.Application.EventParsers;
+﻿using IW4MAdmin.Application.API.Master;
+using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Helpers;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
+using RestEase;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Exceptions;
@@ -23,7 +25,6 @@ namespace IW4MAdmin.Application
         public static BuildNumber Version { get; private set; } = BuildNumber.Parse(Utilities.GetVersionAsString());
         public static ApplicationManager ServerManager;
         private static Task ApplicationTask;
-        private static readonly BuildNumber _fallbackVersion = BuildNumber.Parse("99.99.99.99");
         private static ServiceProvider serviceProvider;
 
         /// <summary>
@@ -76,12 +77,13 @@ namespace IW4MAdmin.Application
 
                 var services = ConfigureServices(args);
                 serviceProvider = services.BuildServiceProvider();
+                var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
                 ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
                 translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
 
                 ServerManager.Logger.WriteInfo(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_VERSION"].FormatExt(Version));
 
-                await CheckVersion(translationLookup);
+                await versionChecker.CheckVersion();
                 await ServerManager.Init();
             }
 
@@ -155,6 +157,7 @@ namespace IW4MAdmin.Application
             {
                 ServerManager.Start(),
                 webfrontTask,
+                serviceProvider.GetRequiredService<IMasterCommunication>().RunUploadStatus(ServerManager.CancellationToken)
             };
 
             await Task.WhenAll(tasks);
@@ -162,68 +165,6 @@ namespace IW4MAdmin.Application
             ServerManager.Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }
 
-        /// <summary>
-        /// checks for latest version of the application
-        /// notifies user if an update is available
-        /// </summary>
-        /// <returns></returns>
-        private static async Task CheckVersion(ITranslationLookup translationLookup)
-        {
-            var api = API.Master.Endpoint.Get();
-            var loc = translationLookup;
-
-            var version = new API.Master.VersionInfo()
-            {
-                CurrentVersionStable = _fallbackVersion
-            };
-
-            try
-            {
-                version = await api.GetVersion(1);
-            }
-
-            catch (Exception e)
-            {
-                ServerManager.Logger.WriteWarning(loc["MANAGER_VERSION_FAIL"]);
-                while (e.InnerException != null)
-                {
-                    e = e.InnerException;
-                }
-
-                ServerManager.Logger.WriteDebug(e.Message);
-            }
-
-            if (version.CurrentVersionStable == _fallbackVersion)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(loc["MANAGER_VERSION_FAIL"]);
-                Console.ForegroundColor = ConsoleColor.Gray;
-            }
-
-#if !PRERELEASE
-            else if (version.CurrentVersionStable > Version)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"IW4MAdmin {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString()}]");
-                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString()}]"));
-                Console.ForegroundColor = ConsoleColor.Gray;
-            }
-#else
-            else if (version.CurrentVersionPrerelease > Version)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"IW4MAdmin-Prerelease {loc["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString()}-pr]");
-                Console.WriteLine(loc["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Version.ToString()}-pr]"));
-                Console.ForegroundColor = ConsoleColor.Gray;
-            }
-#endif
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(loc["MANAGER_VERSION_SUCCESS"]);
-                Console.ForegroundColor = ConsoleColor.Gray;
-            }
-        }
 
         /// <summary>
         /// reads input from the console and executes entered commands on the default server
@@ -299,9 +240,12 @@ namespace IW4MAdmin.Application
                 {
                     var config = _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration();
                     return Localization.Configure.Initialize(useLocalTranslation: config?.UseLocalTranslations ?? false,
+                        apiInstance: _serviceProvider.GetRequiredService<IMasterApi>(),
                         customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
                 })
-                .AddSingleton<IManager, ApplicationManager>();
+                .AddSingleton<IManager, ApplicationManager>()
+                .AddSingleton(_serviceProvider => RestClient.For<IMasterApi>(Utilities.IsDevelopment ? new Uri("http://127.0.0.1:8080") : _serviceProvider.GetRequiredService<ApplicationConfiguration>().MasterUrl))
+                .AddSingleton<IMasterCommunication, MasterCommunication>();
 
             if (args.Contains("serialevents"))
             {

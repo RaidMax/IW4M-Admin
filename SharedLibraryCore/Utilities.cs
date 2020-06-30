@@ -964,7 +964,12 @@ namespace SharedLibraryCore
         }
 
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
-
+        
+        /// <summary>
+        /// indicates if running in development mode
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsDevelopment => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
 
         /// <summary>
@@ -981,12 +986,5 @@ namespace SharedLibraryCore
 
             return path;
         }
-
-#if DEBUG == true
-        public static string ToSql<TEntity>(this IQueryable<TEntity> query) where TEntity : class
-        {
-            return "";
-        }
-#endif
     }
 }

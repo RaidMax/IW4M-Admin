@@ -541,10 +541,6 @@ namespace SharedLibraryCore.Services
                                     LastConnection = client.LastConnection
                                 };
 
-#if DEBUG == true
-                var clientsSql = iqClients.ToSql();
-#endif
-
                 return await iqClients.ToListAsync();
             }
         }
@@ -601,9 +597,7 @@ namespace SharedLibraryCore.Services
                         LastConnection = _client.LastConnection,
                         ClientId = _client.ClientId,
                     });
-#if DEBUG == true
-                var iqClientsSql = iqClients.ToSql();
-#endif
+
                 var clients = await iqClientProjection.ToListAsync();
 
                 // this is so we don't try to evaluate this in the linq to entities query
@@ -635,9 +629,7 @@ namespace SharedLibraryCore.Services
             {
                 var startOfPeriod = DateTime.UtcNow.AddHours(-24);
                 var iqQuery = context.Clients.Where(_client => _client.LastConnection >= startOfPeriod);
-#if DEBUG
-                string sql = iqQuery.ToSql();
-#endif
+
                 return await iqQuery.CountAsync();
             }
         }
@@ -664,9 +656,6 @@ namespace SharedLibraryCore.Services
                         LastConnection = _client.FirstConnection
                     });
 
-#if DEBUG
-                var sql = iqClients.ToSql();
-#endif
                 return await iqClients.ToListAsync();
             }
         }

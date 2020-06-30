@@ -1,0 +1,209 @@
+﻿using IW4MAdmin.Application.API.Master;
+using RestEase;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace IW4MAdmin.Application.Misc
+{
+    /// <summary>
+    /// implementation of IMasterCommunication
+    /// talks to the master server
+    /// </summary>
+    class MasterCommunication : IMasterCommunication
+    {
+        private readonly ILogger _logger;
+        private readonly ITranslationLookup _transLookup;
+        private readonly IMasterApi _apiInstance;
+        private readonly IManager _manager;
+        private readonly ApplicationConfiguration _appConfig;
+        private readonly BuildNumber _fallbackVersion = BuildNumber.Parse("99.99.99.99");
+        private readonly int _apiVersion = 1;
+
+        private bool firstHeartBeat = true;
+
+        public MasterCommunication(ILogger logger, ApplicationConfiguration appConfig, ITranslationLookup translationLookup, IMasterApi apiInstance, IManager manager)
+        {
+            _logger = logger;
+            _transLookup = translationLookup;
+            _apiInstance = apiInstance;
+            _appConfig = appConfig;
+            _manager = manager;
+        }
+
+        /// <summary>
+        /// checks for latest version of the application
+        /// notifies user if an update is available
+        /// </summary>
+        /// <returns></returns>
+        public async Task CheckVersion()
+        {
+            var version = new VersionInfo()
+            {
+                CurrentVersionStable = _fallbackVersion
+            };
+
+            try
+            {
+                version = await _apiInstance.GetVersion(_apiVersion);
+            }
+
+            catch (Exception e)
+            {
+                _logger.WriteWarning(_transLookup["MANAGER_VERSION_FAIL"]);
+                while (e.InnerException != null)
+                {
+                    e = e.InnerException;
+                }
+
+                _logger.WriteDebug(e.Message);
+            }
+
+            if (version.CurrentVersionStable == _fallbackVersion)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(_transLookup["MANAGER_VERSION_FAIL"]);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+
+#if !PRERELEASE
+            else if (version.CurrentVersionStable > Program.Version)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"IW4MAdmin {_transLookup["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionStable.ToString()}]");
+                Console.WriteLine(_transLookup["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Program.Version.ToString()}]"));
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+#else
+            else if (version.CurrentVersionPrerelease > Program.Version)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"IW4MAdmin-Prerelease {_transLookup["MANAGER_VERSION_UPDATE"]} [v{version.CurrentVersionPrerelease.ToString()}-pr]");
+                Console.WriteLine(_transLookup["MANAGER_VERSION_CURRENT"].FormatExt($"[v{Program.Version.ToString()}-pr]"));
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+#endif
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(_transLookup["MANAGER_VERSION_SUCCESS"]);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+        }
+
+        public async Task RunUploadStatus(CancellationToken token)
+        {
+            // todo: clean up this logic
+            bool connected;
+
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await UploadStatus();
+                }
+
+                catch (System.Net.Http.HttpRequestException e)
+                {
+                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                }
+
+                catch (AggregateException e)
+                {
+                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    var exceptions = e.InnerExceptions.Where(ex => ex.GetType() == typeof(ApiException));
+
+                    foreach (var ex in exceptions)
+                    {
+                        if (((ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        {
+                            connected = false;
+                        }
+                    }
+                }
+
+                catch (ApiException e)
+                {
+                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        connected = false;
+                    }
+                }
+
+                catch (Exception e)
+                {
+                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                }
+
+
+                try
+                {
+                    await Task.Delay(30000, token);
+                }
+
+                catch
+                {
+                    break;
+                }
+            }
+        }
+
+        private async Task UploadStatus()
+        {
+            if (firstHeartBeat)
+            {
+                var token = await _apiInstance.Authenticate(new AuthenticationId
+                {
+                    Id = _appConfig.Id
+                });
+
+                _apiInstance.AuthorizationToken = $"Bearer {token.AccessToken}";
+            }
+
+            var instance = new ApiInstance
+            {
+                Id = _appConfig.Id,
+                Uptime = (int)(DateTime.UtcNow - (_manager as ApplicationManager).StartTime).TotalSeconds,
+                Version = Program.Version,
+                Servers = _manager.GetServers().Select(s =>
+                            new ApiServer()
+                            {
+                                ClientNum = s.ClientNum,
+                                Game = s.GameName.ToString(),
+                                Version = s.Version,
+                                Gametype = s.Gametype,
+                                Hostname = s.Hostname,
+                                Map = s.CurrentMap.Name,
+                                MaxClientNum = s.MaxClients,
+                                Id = s.EndPoint,
+                                Port = (short)s.Port,
+                                IPAddress = s.IP
+                            }).ToList()
+            };
+
+            Response<ResultMessage> response = null;
+
+            if (firstHeartBeat)
+            {
+                response = await _apiInstance.AddInstance(instance);
+            }
+
+            else
+            {
+                response = await _apiInstance.UpdateInstance(instance.Id, instance);
+                firstHeartBeat = false;
+            }
+
+            if (response.ResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                _logger.WriteWarning($"Response code from master is {response.ResponseMessage.StatusCode}, message is {response.StringContent}");
+            }
+        }
+    }
+}

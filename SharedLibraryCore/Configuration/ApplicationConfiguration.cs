@@ -98,6 +98,8 @@ namespace SharedLibraryCore.Configuration
         public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl) ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1") : ManualWebfrontUrl;
         [ConfigurationIgnore]
         public bool IgnoreServerConnectionLost { get; set; }
+        [ConfigurationIgnore]
+        public Uri MasterUrl { get; set; } = new Uri("https://fn-p.master.threadsafe.sh/");
 
         public IBaseConfiguration Generate()
         {

@@ -68,9 +68,6 @@ namespace WebfrontCore.Controllers
                         TimePunished = p.When,
                         AutomatedOffense = Authorized ? p.AutomatedOffense : null,
                     });
-#if DEBUG == true
-                var querySql = iqPenalties.ToSql();
-#endif
 
                 penalties = await iqPenalties.ToListAsync();
             }

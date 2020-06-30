@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RestEase;
@@ -35,16 +33,6 @@ namespace IW4MAdmin.Application.API.Master
     {
         [JsonProperty("message")]
         public string Message { get; set; }
-    }
-
-    public class Endpoint
-    {
-#if !DEBUG
-        private static readonly IMasterApi api = RestClient.For<IMasterApi>("http://api.raidmax.org:5000");
-#else
-        private static readonly IMasterApi api = RestClient.For<IMasterApi>("http://127.0.0.1");
-#endif
-        public static IMasterApi Get() => api;
     }
 
     /// <summary>

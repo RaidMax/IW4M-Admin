@@ -11,7 +11,7 @@ namespace IW4MAdmin.Application.Localization
 {
     public class Configure
     {
-        public static ITranslationLookup Initialize(bool useLocalTranslation, string customLocale = null)
+        public static ITranslationLookup Initialize(bool useLocalTranslation, IMasterApi apiInstance, string customLocale = null)
         {
             string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
             string[] localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");
@@ -20,8 +20,7 @@ namespace IW4MAdmin.Application.Localization
             {
                 try
                 {
-                    var api = Endpoint.Get();
-                    var localization = api.GetLocalization(currentLocale).Result;
+                    var localization = apiInstance.GetLocalization(currentLocale).Result;
                     Utilities.CurrentLocalization = localization;
                     return localization.LocalizationIndex;
                 }

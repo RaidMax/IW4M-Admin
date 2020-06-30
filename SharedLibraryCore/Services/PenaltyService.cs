@@ -88,9 +88,6 @@ namespace SharedLibraryCore.Services
                          IsEvade = _penalty.IsEvadedOffense
                      });
 
-#if DEBUG == true
-                var querySql = iqPenalties.ToSql();
-#endif
                 return await iqPenalties.ToListAsync();
             }
         }
@@ -136,9 +133,6 @@ namespace SharedLibraryCore.Services
                         IsEvade = _penalty.IsEvadedOffense
                     });
 
-#if DEBUG == true
-                var querySql = iqPenalties.ToSql();
-#endif
                 return await iqPenalties.Distinct().ToListAsync();
             }
         }
@@ -166,11 +160,6 @@ namespace SharedLibraryCore.Services
                     .Where(a => a.IPAddress != null && a.IPAddress == ip)
                     .SelectMany(a => a.Link.ReceivedPenalties)
                     .Where(filter);
-
-#if DEBUG == true
-                var penaltiesSql = iqLinkPenalties.ToSql();
-                var ipPenaltiesSql = iqIPPenalties.ToSql();
-#endif
 
                 var activePenalties = (await iqLinkPenalties.ToListAsync())
                     .Union(await iqIPPenalties.ToListAsync())

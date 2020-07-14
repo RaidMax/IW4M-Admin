@@ -99,7 +99,7 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore]
         public bool IgnoreServerConnectionLost { get; set; }
         [ConfigurationIgnore]
-        public Uri MasterUrl { get; set; } = new Uri("https://fn-p.master.threadsafe.sh/");
+        public Uri MasterUrl { get; set; } = new Uri("http://api.raidmax.org:5000");
 
         public IBaseConfiguration Generate()
         {

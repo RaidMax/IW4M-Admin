@@ -391,3 +391,12 @@ input:checked + .toggle-switch-slider:before {
     -ms-transform: translateX(3em);
     transform: translateX(3em);
 }
+
+.action-kick-button {
+    color: #492121;
+}
+
+.action-kick-button:hover {
+    color: #ff6060 !important;
+    color: rgba(255, 69, 69, 0.85) !important;
+}

@@ -55,7 +55,7 @@
 
                     if (ViewBag.Authorized)
                     {
-                        <div class="oi oi-circle-x text-danger mr-1 d-md-none profile-action" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                        <div class="oi oi-circle-x mr-1 d-md-none profile-action align-baseline action-kick-button" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
                     }
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
                     <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
@@ -63,7 +63,7 @@
                     </a>
                     if (ViewBag.Authorized)
                     {
-                        <div class="oi oi-circle-x text-danger ml-1 d-none d-md-inline-flex profile-action" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                        <div class="oi oi-circle-x ml-1 d-none d-md-inline-flex profile-action align-baseline action-kick-button" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
                     }
                     <br />
                 }
@@ -84,7 +84,7 @@
                     </a>
                     if (ViewBag.Authorized)
                     {
-                        <div class="oi oi-circle-x text-danger ml-1 profile-action" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                        <div class="oi oi-circle-x ml-1 profile-action align-baseline action-kick-button" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
                     }
                     <br />
                 }

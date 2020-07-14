@@ -329,5 +329,48 @@ namespace WebfrontCore.Controllers
                 command = $"!unflag @{targetId} {reason}"
             }));
         }
+
+        public IActionResult KickForm(int id)
+        {
+            var info = new ActionInfo()
+            {
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_KICK_NAME"],
+                Name = "Kick",
+                Inputs = new List<InputInfo>()
+                {
+                    new InputInfo()
+                    {
+                      Name = "reason",
+                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                    },
+                    new InputInfo()
+                    {
+                        Name = "targetId",
+                        Type = "hidden",
+                        Value = id.ToString()
+                    }
+                },
+                Action = "KickAsync",
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> KickAsync(int targetId, string reason)
+        {
+            var client = Manager.GetActiveClients().FirstOrDefault(_client => _client.ClientId == targetId);
+
+            if (client == null)
+            {
+                return BadRequest(Localization["WEBFRONT_ACTION_KICK_DISCONNECT"]);
+            }
+
+            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            {
+                serverId = client.CurrentServer.EndPoint,
+                command = $"!kick {client.ClientNumber} {reason}"
+            }));
+        }
     }
 }

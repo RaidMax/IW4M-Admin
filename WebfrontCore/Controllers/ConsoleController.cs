@@ -57,26 +57,16 @@ namespace WebfrontCore.Controllers
             };
 
             Manager.AddEvent(remoteEvent);
-            List<CommandResponseInfo> response = null;
+            CommandResponseInfo[] response = null;
 
             try
             {
-                var completedEvent = await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
                 // wait for the event to process
-                if (!completedEvent.Failed)
+                var completedEvent = await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
+         
+                if (completedEvent.FailReason == GameEvent.EventFailReason.Timeout)
                 {
-                    response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToList();
-
-                    // remove the added command response
-                    for (int i = 0; i < response.Count; i++)
-                    {
-                        server.CommandResult.Remove(response[i]);
-                    }
-                }
-
-                else if (completedEvent.FailReason == GameEvent.EventFailReason.Timeout)
-                {
-                    response = new List<CommandResponseInfo>()
+                    response = new[]
                     {
                         new CommandResponseInfo()
                         {
@@ -85,11 +75,22 @@ namespace WebfrontCore.Controllers
                         }
                     };
                 }
+
+                else
+                {
+                    response = response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToArray();
+                }
+
+                // remove the added command response
+                for (int i = 0; i < response?.Length; i++)
+                {
+                    server.CommandResult.Remove(response[i]);
+                }
             }
 
             catch (System.OperationCanceledException)
             {
-                response = new List<CommandResponseInfo>()
+                response = new[]
                 {
                     new CommandResponseInfo()
                     {

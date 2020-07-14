@@ -52,10 +52,19 @@
                     {
                         continue;
                     }
+
+                    if (ViewBag.Authorized)
+                    {
+                        <div class="oi oi-circle-x text-danger mr-1 d-md-none profile-action" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                    }
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
                     <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
                         <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
                     </a>
+                    if (ViewBag.Authorized)
+                    {
+                        <div class="oi oi-circle-x text-danger ml-1 d-none d-md-inline-flex profile-action" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                    }
                     <br />
                 }
             }
@@ -68,10 +77,15 @@
                     {
                         continue;
                     }
+
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
                     <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
                         <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
                     </a>
+                    if (ViewBag.Authorized)
+                    {
+                        <div class="oi oi-circle-x text-danger ml-1 profile-action" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                    }
                     <br />
                 }
             }
@@ -112,8 +126,9 @@
                 <span class="text-light">
                     <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
                 </span>
-                <span> &mdash; 
-                    <color-code value="@Model.ChatHistory[i].Message.CapClientName(48)" allow="@ViewBag.EnableColorCodes"></color-code> 
+                <span>
+                    &mdash;
+                    <color-code value="@Model.ChatHistory[i].Message.CapClientName(48)" allow="@ViewBag.EnableColorCodes"></color-code>
                 </span><br />
             }
         }

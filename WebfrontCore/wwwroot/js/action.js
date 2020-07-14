@@ -30,7 +30,8 @@ $(document).ready(function () {
     /*
      * handle action modal
      */
-    $('.profile-action').click(function (e) {
+    $(document).off('click', '.profile-action');
+    $(document).on('click', '.profile-action', function (e) {
         const actionType = $(this).data('action');
         const actionId = $(this).data('action-id');
         const actionIdKey = actionId === undefined ? '' : '?id=' + actionId;
@@ -43,7 +44,7 @@ $(document).ready(function () {
             })
             .fail(function (jqxhr, textStatus, error) {
                 $('#actionModal .modal-body-content').html('');
-                $('#actionModal .modal-message').text('Error 	— ' + error);
+                $('#actionModal .modal-message').text(_localization['GLOBAL_ERROR'] + ' — ' + jqxhr.responseText);
                 $('#actionModal').modal();
                 $('#actionModal .modal-message').fadeIn('fast');
             });
@@ -78,10 +79,10 @@ $(document).ready(function () {
                     $('#actionModal .modal-message').fadeOut('fast');
                 }
                 if (jqxhr.status === 401) {
-                    $('#actionModal .modal-message').text('Invalid login credentials');
+                    $('#actionModal .modal-message').text(_localization['WEBFRONT_ACTION_CREDENTIALS']);
                 }
                 else {
-                    $('#actionModal .modal-message').text('Error &mdash; ' + error);
+                    $('#actionModal .modal-message').text(_localization['GLOBAL_ERROR'] + ' — ' + jqxhr.responseText);
                 }
                 $('#actionModal .modal-message').fadeIn('fast');
             });

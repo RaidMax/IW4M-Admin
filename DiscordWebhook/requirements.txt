@@ -1,7 +1,0 @@
-certifi>=2018.4.16
-chardet>=3.0.4
-idna>=2.7
-pip>=18.0
-requests>=2.19.1
-setuptools>=39.0.1
-urllib3>=1.23

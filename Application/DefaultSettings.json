@@ -729,6 +729,63 @@
       ]
     },
     {
+    "Game": "T7",
+      "Maps": [
+        {
+          "Alias": "Evac",
+          "Name": "mp_apartments"
+        },
+        {
+          "Alias": "Aquarium",
+          "Name": "mp_biodome"
+        },
+        {
+          "Alias": "Exodus",
+          "Name": "mp_chinatown"
+        },
+        {
+          "Alias": "Hunted",
+          "Name": "mp_ethiopia"
+        },
+        {
+          "Alias": "Havoc",
+          "Name": "mp_havoc"
+        },
+        {
+          "Alias": "Infection",
+          "Name": "mp_infection"
+        },
+        {
+          "Alias": "Metro",
+          "Name": "mp_metro"
+        },
+        {
+          "Alias": "Redwood",
+          "Name": "mp_redwood"
+        },
+        {
+          "Alias": "Combine",
+          "Name": "mp_sector"
+        },
+        {
+          "Alias": "Breach",
+          "Name": "mp_spire"
+        },
+        {
+          "Alias": "Stronghold",
+          "Name": "mp_stronghold"
+        },
+        {
+          "Alias": "Fringe",
+          "Name": "mp_veiled"
+        },
+        {
+          "Alias": "Nuk3town",
+          "Name": "mp_nuketown_x"
+        }
+      ]
+    },
+    {
       "Game": "T6",
       "Maps": [
         {

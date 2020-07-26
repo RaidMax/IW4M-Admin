@@ -244,7 +244,10 @@ namespace IW4MAdmin.Application
                         customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
                 })
                 .AddSingleton<IManager, ApplicationManager>()
-                .AddSingleton(_serviceProvider => RestClient.For<IMasterApi>(Utilities.IsDevelopment ? new Uri("http://127.0.0.1:8080") : _serviceProvider.GetRequiredService<ApplicationConfiguration>().MasterUrl))
+                .AddSingleton(_serviceProvider => RestClient
+                    .For<IMasterApi>(Utilities.IsDevelopment ? new Uri("http://127.0.0.1:8080") : _serviceProvider
+                    .GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration()?.MasterUrl ??
+                    new ApplicationConfiguration().MasterUrl))
                 .AddSingleton<IMasterCommunication, MasterCommunication>();
 
             if (args.Contains("serialevents"))

@@ -7,6 +7,7 @@ let plugin = {
     maxReportCount: 5, // how many reports before action is taken
     tempBanDurationMinutes: 60, // how long to temporarily ban the player
     eventTypes: { 'report': 103 },
+    permissionTypes: { 'trusted': 2 },
 
     onEventAsync: function (gameEvent, server) {
         if (!this.enabled) {
@@ -14,7 +15,8 @@ let plugin = {
         }
 
         if (gameEvent.Type === this.eventTypes['report']) {
-            if (!gameEvent.Target.IsIngame) {
+            if (!gameEvent.Target.IsIngame || gameEvent.Target.Level >= this.permissionTypes['trusted']) {
+                server.Logger.WriteInfo(`Ignoring report for client (id) ${gameEvent.Target.ClientId} because they are privileged or not ingame`);
                 return;
             }
 

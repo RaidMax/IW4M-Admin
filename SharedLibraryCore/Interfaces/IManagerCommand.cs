@@ -49,5 +49,10 @@ namespace SharedLibraryCore.Interfaces
         /// Indicates if the commands can be run as another client
         /// </summary>
         bool AllowImpersonation { get; }
+
+        /// <summary>
+        /// Indicates if the command result should be broadcasted to all clients
+        /// </summary>
+        bool IsBroadcast { get; set; }
     }
 }

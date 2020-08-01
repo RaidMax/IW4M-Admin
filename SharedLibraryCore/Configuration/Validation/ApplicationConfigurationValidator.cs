@@ -64,13 +64,19 @@ namespace SharedLibraryCore.Configuration.Validation
             RuleFor(_app => _app.GlobalRules)
                 .NotNull();
 
-            RuleForEach(_app => _app.Servers)
-                .NotEmpty()
-                .SetValidator(new ServerConfigurationValidator());
-
             RuleFor(_app => _app.MasterUrl)
                 .NotNull()
                 .Must(_url => _url != null && _url.Scheme == Uri.UriSchemeHttp);
+
+            RuleFor(_app => _app.CommandPrefix)
+                .NotEmpty();
+
+            RuleFor(_app => _app.BroadcastCommandPrefix)
+                .NotEmpty();
+
+            RuleForEach(_app => _app.Servers)
+                .NotEmpty()
+                .SetValidator(new ServerConfigurationValidator());
         }
     }
 }

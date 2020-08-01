@@ -1,7 +1,6 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using System;
 using System.Threading.Tasks;
 
 namespace ApplicationTests.Mocks
@@ -26,6 +25,19 @@ namespace ApplicationTests.Mocks
         public NonImpersonatableCommand(CommandConfiguration config, ITranslationLookup lookup) : base(config, lookup)
         {
             Name = nameof(NonImpersonatableCommand);
+        }
+
+        public override Task ExecuteAsync(GameEvent E)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    class MockCommand : Command
+    {
+        public MockCommand(CommandConfiguration config, ITranslationLookup lookup) : base(config, lookup)
+        {
+            Name = nameof(MockCommand);
         }
 
         public override Task ExecuteAsync(GameEvent E)

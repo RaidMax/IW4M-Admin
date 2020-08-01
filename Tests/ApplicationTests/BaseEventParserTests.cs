@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using static SharedLibraryCore.GameEvent;
@@ -18,17 +19,20 @@ namespace ApplicationTests
         private EventLogTest eventLogData;
         private IServiceProvider serviceProvider;
         private ILogger fakeLogger;
+        private ApplicationConfiguration appConfig;
 
         [SetUp]
         public void Setup()
         {
             eventLogData = JsonConvert.DeserializeObject<EventLogTest>(System.IO.File.ReadAllText("Files/GameEvents.json"));
+            appConfig = ConfigurationGenerators.CreateApplicationConfiguration();
 
             fakeLogger = A.Fake<ILogger>();
             serviceProvider = new ServiceCollection()
                 .AddSingleton<BaseEventParser>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
+                .AddSingleton(appConfig)
                 .AddSingleton(fakeLogger)
                 .BuildServiceProvider();
         }
@@ -37,22 +41,6 @@ namespace ApplicationTests
         public void TestParsesAllEventData()
         {
             var eventParser = serviceProvider.GetService<BaseEventParser>();
-
-            void AssertMatch(GameEvent src, LogEvent expected)
-            {
-                Assert.AreEqual(expected.ExpectedEventType, src.Type);
-                Assert.AreEqual(expected.ExpectedData, src.Data);
-                Assert.AreEqual(expected.ExpectedMessage, src.Message);
-                Assert.AreEqual(expected.ExpectedTime, src.GameTime);
-
-                //Assert.AreEqual(expected.ExpectedOriginClientName, src.Origin?.Name);
-                Assert.AreEqual(expected.ExpectedOriginClientNumber, src.Origin?.ClientNumber);
-                Assert.AreEqual(expected.ExpectedOriginNetworkId, src.Origin?.NetworkId.ToString("X"));
-
-                //Assert.AreEqual(expected.ExpectedTargetClientName, src.Target?.Name);
-                Assert.AreEqual(expected.ExpectedTargetClientNumber, src.Target?.ClientNumber);
-                Assert.AreEqual(expected.ExpectedTargetNetworkId, src.Target?.NetworkId.ToString("X"));
-            }
 
             foreach (var e in eventLogData.Events)
             {
@@ -108,6 +96,46 @@ namespace ApplicationTests
 
             A.CallTo(() => fakeLogger.WriteWarning(A<string>.Ignored))
                 .MustHaveHappenedOnceExactly();
+        }
+
+        [Test]
+        public void Test_CustomCommandPrefix_Parses()
+        {
+            var eventParser = serviceProvider.GetService<BaseEventParser>();
+            var commandData = JsonConvert.DeserializeObject<EventLogTest>(System.IO.File.ReadAllText("Files/GameEvent.Command.CustomPrefix.json"));
+            appConfig.CommandPrefix = "^^";
+
+            var e = commandData.Events[0];
+            var parsedEvent = eventParser.GenerateGameEvent(e.EventLine);
+            AssertMatch(parsedEvent, e);
+        }
+
+        [Test]
+        public void Test_CustomBroadcastCommandPrefix_Parses()
+        {
+            var eventParser = serviceProvider.GetService<BaseEventParser>();
+            var commandData = JsonConvert.DeserializeObject<EventLogTest>(System.IO.File.ReadAllText("Files/GameEvent.Command.CustomPrefix.json"));
+            appConfig.BroadcastCommandPrefix = "@@";
+
+            var e = commandData.Events[1];
+            var parsedEvent = eventParser.GenerateGameEvent(e.EventLine);
+            AssertMatch(parsedEvent, e);
+        }
+
+        private static void AssertMatch(GameEvent src, LogEvent expected)
+        {
+            Assert.AreEqual(expected.ExpectedEventType, src.Type);
+            Assert.AreEqual(expected.ExpectedData, src.Data);
+            Assert.AreEqual(expected.ExpectedMessage, src.Message);
+            Assert.AreEqual(expected.ExpectedTime, src.GameTime);
+
+            //Assert.AreEqual(expected.ExpectedOriginClientName, src.Origin?.Name);
+            Assert.AreEqual(expected.ExpectedOriginClientNumber, src.Origin?.ClientNumber);
+            Assert.AreEqual(expected.ExpectedOriginNetworkId, src.Origin?.NetworkId.ToString("X"));
+
+            //Assert.AreEqual(expected.ExpectedTargetClientName, src.Target?.Name);
+            Assert.AreEqual(expected.ExpectedTargetClientNumber, src.Target?.ClientNumber);
+            Assert.AreEqual(expected.ExpectedTargetNetworkId, src.Target?.NetworkId.ToString("X"));
         }
     }
 }

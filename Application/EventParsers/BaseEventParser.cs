@@ -1,4 +1,5 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -12,11 +13,13 @@ namespace IW4MAdmin.Application.EventParsers
     {
         private readonly Dictionary<string, (string, Func<string, IEventParserConfiguration, GameEvent, GameEvent>)> _customEventRegistrations;
         private readonly ILogger _logger;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public BaseEventParser(IParserRegexFactory parserRegexFactory, ILogger logger)
+        public BaseEventParser(IParserRegexFactory parserRegexFactory, ILogger logger, ApplicationConfiguration appConfig)
         {
             _customEventRegistrations = new Dictionary<string, (string, Func<string, IEventParserConfiguration, GameEvent, GameEvent>)>();
             _logger = logger;
+            _appConfig = appConfig;
 
             Configuration = new DynamicEventParserConfiguration(parserRegexFactory)
             {
@@ -128,7 +131,7 @@ namespace IW4MAdmin.Application.EventParsers
                         int clientNumber = int.Parse(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
 
                         // todo: these need to defined outside of here
-                        if (message[0] == '!' || message[0] == '@')
+                        if (message.StartsWith(_appConfig.CommandPrefix) || message.StartsWith(_appConfig.BroadcastCommandPrefix))
                         {
                             return new GameEvent()
                             {

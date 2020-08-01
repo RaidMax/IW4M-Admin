@@ -3,6 +3,7 @@ using IW4MAdmin;
 using IW4MAdmin.Application;
 using IW4MAdmin.Application.EventParsers;
 using NUnit.Framework;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Diagnostics;
@@ -35,7 +36,7 @@ namespace ApplicationTests
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
                 A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>());
 
-            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
+            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
             var log = System.IO.File.ReadAllLines("Files\\T6MapRotation.log");
@@ -61,7 +62,7 @@ namespace ApplicationTests
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
                 A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>());
 
-            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
+            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
             var log = System.IO.File.ReadAllLines("Files\\T6Game.log");

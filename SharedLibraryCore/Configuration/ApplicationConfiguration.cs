@@ -66,6 +66,12 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         public string CustomLocale { get; set; }
 
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_COMMAND_PREFIX")]
+        public string CommandPrefix { get; set; } = "!";
+
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BROADCAST_COMMAND_PREFIX")]
+        public string BroadcastCommandPrefix { get; set; } = "@";
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_DB_PROVIDER")]
         public string DatabaseProvider { get; set; } = "sqlite";
         [ConfigurationOptional]

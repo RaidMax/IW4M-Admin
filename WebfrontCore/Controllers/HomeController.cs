@@ -61,6 +61,7 @@ namespace WebfrontCore.Controllers
         {
             ViewBag.IsFluid = true;
             ViewBag.Title = Localization["WEBFRONT_NAV_HELP"];
+            ViewBag.CommandPrefix = Manager.GetApplicationSettings().Configuration().CommandPrefix;
 
             // we don't need to the name of the shared library assembly
             var excludedAssembly = typeof(BaseController).Assembly;

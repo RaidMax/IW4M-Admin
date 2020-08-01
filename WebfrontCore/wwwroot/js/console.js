@@ -6,10 +6,6 @@
         return false;
     }
 
-    if (command[0] !== '!') {
-        $('#console_command_response').text(_localization['WEBFRONT_CONSOLE_COMMAND']).addClass('text-danger');
-        return false;
-    }
     showLoader();
     $.get('/Console/ExecuteAsync', { serverId: serverId, command: command })
         .done(function (response) {

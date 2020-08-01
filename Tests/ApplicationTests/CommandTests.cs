@@ -57,7 +57,8 @@ namespace ApplicationTests
                 .Returns(new Command[]
                 {
                     new ImpersonatableCommand(cmdConfig, transLookup),
-                    new NonImpersonatableCommand(cmdConfig, transLookup)
+                    new NonImpersonatableCommand(cmdConfig, transLookup),
+                    new MockCommand(cmdConfig, transLookup)
                 });
 
             A.CallTo(() => manager.AddEvent(A<GameEvent>.Ignored))
@@ -517,6 +518,23 @@ namespace ApplicationTests
             Assert.AreEqual(Permission.User, ingameTarget.Level);
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
+        }
+        #endregion
+
+        #region PREFIX_PROCESSING
+        [Test]
+        public async Task Test_CommandProcessing_IsBroadcastCommand()
+        {
+            string broadcastPrefix = "@@";
+            var config = ConfigurationGenerators.CreateApplicationConfiguration();
+            config.BroadcastCommandPrefix = broadcastPrefix;
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+
+            var cmd = EventGenerators.GenerateEvent(GameEvent.EventType.Command, $"{broadcastPrefix}{nameof(MockCommand)}", server);
+
+            var result = await CommandProcessing.ValidateCommand(cmd, config);
+            Assert.AreEqual(nameof(MockCommand), result.Name);
+            Assert.IsTrue(result.IsBroadcast);
         }
         #endregion
     }

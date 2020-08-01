@@ -59,7 +59,7 @@ namespace SharedLibraryCore
         /// <summary>
         /// Helper property to provide the syntax of the command
         /// </summary>
-        public string Syntax => $"{_translationLookup["COMMAND_HELP_SYNTAX"]} !{Alias} {string.Join(" ", Arguments.Select(a => $"<{(a.Required ? "" : _translationLookup["COMMAND_HELP_OPTIONAL"] + " ")}{a.Name}>"))}";
+        public string Syntax => $"{_translationLookup["COMMAND_HELP_SYNTAX"]} {_config.CommandPrefix}{Alias} {string.Join(" ", Arguments.Select(a => $"<{(a.Required ? "" : _translationLookup["COMMAND_HELP_OPTIONAL"] + " ")}{a.Name}>"))}";
 
         /// <summary>
         /// Alternate name for this command to be executed by
@@ -123,5 +123,7 @@ namespace SharedLibraryCore
         /// indicates if this command allows impersonation (run as)
         /// </summary>
         public bool AllowImpersonation { get; set; }
+
+        public bool IsBroadcast { get; set; }
     }
 }

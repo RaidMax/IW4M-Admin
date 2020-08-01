@@ -81,7 +81,7 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser(parserRegexFactory, logger) };
+            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser(parserRegexFactory, logger, appConfigHandler.Configuration()) };
             AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser(parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
@@ -432,6 +432,11 @@ namespace IW4MAdmin.Application
                 commandsToAddToConfig.AddRange(unsavedCommands);
             }
 
+            // this is because I want to store the command prefix in IW4MAdminSettings, but can't easily
+            // inject it to all the places that need it
+            cmdConfig.CommandPrefix = config.CommandPrefix;
+            cmdConfig.BroadcastCommandPrefix = config.BroadcastCommandPrefix;
+
             foreach (var cmd in commandsToAddToConfig)
             {
                 cmdConfig.Commands.Add(cmd.CommandConfigNameForType(),
@@ -729,7 +734,7 @@ namespace IW4MAdmin.Application
 
         public IEventParser GenerateDynamicEventParser(string name)
         {
-            return new DynamicEventParser(_parserRegexFactory, _logger)
+            return new DynamicEventParser(_parserRegexFactory, _logger, ConfigHandler.Configuration())
             {
                 Name = name
             };

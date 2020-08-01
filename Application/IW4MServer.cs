@@ -139,7 +139,7 @@ namespace IW4MAdmin
                 {
                     try
                     {
-                        C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E);
+                        C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E, Manager.GetApplicationSettings().Configuration());
                     }
 
                     catch (CommandException e)

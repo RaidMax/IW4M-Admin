@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Database.Models;
+﻿using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,14 @@ namespace SharedLibraryCore.Commands
 {
     public class CommandProcessing
     {
-        public static async Task<Command> ValidateCommand(GameEvent E)
+        public static async Task<Command> ValidateCommand(GameEvent E, ApplicationConfiguration appConfig)
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var Manager = E.Owner.Manager;
+            bool isBroadcast = E.Data.StartsWith(appConfig.BroadcastCommandPrefix);
+            int prefixLength = isBroadcast ? appConfig.BroadcastCommandPrefix.Length : appConfig.CommandPrefix.Length;
 
-            string CommandString = E.Data.Substring(1, E.Data.Length - 1).Split(' ')[0];
+            string CommandString = E.Data.Substring(prefixLength, E.Data.Length - prefixLength).Split(' ')[0];
             E.Message = E.Data;
 
             Command C = null;
@@ -33,6 +36,8 @@ namespace SharedLibraryCore.Commands
                 E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
                 throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
             }
+
+            C.IsBroadcast = isBroadcast;
 
             if (!C.AllowImpersonation && E.ImpersonationOrigin != null)
             {

@@ -773,6 +773,8 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class ListAdminsCommand : Command
     {
+        private readonly CommandConfiguration _config;
+
         public ListAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "admins";
@@ -780,6 +782,8 @@ namespace SharedLibraryCore.Commands
             Alias = "a";
             Permission = Permission.User;
             RequiresTarget = false;
+
+            _config = config;
         }
 
         public static string OnlineAdmins(Server S, ITranslationLookup lookup)
@@ -798,7 +802,7 @@ namespace SharedLibraryCore.Commands
         {
             foreach (string line in OnlineAdmins(E.Owner, _translationLookup).Split(Environment.NewLine))
             {
-                var _ = E.Message.IsBroadcastCommand() ? E.Owner.Broadcast(line) : E.Origin.Tell(line);
+                var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix) ? E.Owner.Broadcast(line) : E.Origin.Tell(line);
             }
 
             return Task.CompletedTask;
@@ -903,6 +907,8 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class ListRulesCommands : Command
     {
+        private readonly CommandConfiguration _config;
+
         public ListRulesCommands(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "rules";
@@ -910,6 +916,8 @@ namespace SharedLibraryCore.Commands
             Alias = "r";
             Permission = Permission.User;
             RequiresTarget = false;
+
+            _config = config;
         }
 
         public override Task ExecuteAsync(GameEvent E)
@@ -917,7 +925,7 @@ namespace SharedLibraryCore.Commands
             if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Length < 1 &&
                 E.Owner.ServerConfig.Rules?.Length < 1)
             {
-                var _ = E.Message.IsBroadcastCommand() ?
+                var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix) ?
                       E.Owner.Broadcast(_translationLookup["COMMANDS_RULES_NONE"]) :
                       E.Origin.Tell(_translationLookup["COMMANDS_RULES_NONE"]);
             }
@@ -933,7 +941,7 @@ namespace SharedLibraryCore.Commands
 
                 foreach (string r in rules)
                 {
-                    var _ = E.Message.IsBroadcastCommand() ? E.Owner.Broadcast($"- {r}") : E.Origin.Tell($"- {r}");
+                    var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix) ? E.Owner.Broadcast($"- {r}") : E.Origin.Tell($"- {r}");
                 }
             }
 

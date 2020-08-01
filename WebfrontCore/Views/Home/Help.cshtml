@@ -26,7 +26,7 @@
                     <td>@command.Alias</td>
                     <td>@command.Description</td>
                     <td>@command.RequiresTarget</td>
-                    <td>!@command.Syntax.Split('!')[1]</td>
+                    <td>@ViewBag.CommandPrefix@command.Syntax.Split(@ViewBag.CommandPrefix)[1]</td>
                     <td>@command.Permission.ToLocalizedLevelName()</td>
                 </tr>
             }
@@ -62,7 +62,7 @@
                 </tr>
                 <tr>
                     <td scope="row" class="bg-primary">@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</td>
-                    <td class="bg-dark text-light">!@command.Syntax.Split('!')[1]</td>
+                    <td class="bg-dark text-light">@ViewBag.CommandPrefix@command.Syntax.Split(@ViewBag.CommandPrefix)[1]</td>
                 </tr>
                 <tr>
                     <td scope="row" class="bg-primary" style="border-bottom: #222 1px solid;">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</td>

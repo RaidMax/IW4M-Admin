@@ -486,7 +486,7 @@ namespace SharedLibraryCore.Database.Models
                 .DisallowedClientNames
                 ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
             {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is generic");
+                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is not allowed");
                 Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
                 return false;
             }

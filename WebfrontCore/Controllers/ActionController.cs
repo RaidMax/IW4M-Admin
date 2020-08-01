@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
 using static SharedLibraryCore.Database.Models.EFClient;
@@ -13,9 +14,11 @@ namespace WebfrontCore.Controllers
 {
     public class ActionController : BaseController
     {
+        private readonly ApplicationConfiguration _appConfig;
+
         public ActionController(IManager manager) : base(manager)
         {
-
+            _appConfig = manager.GetApplicationSettings().Configuration();
         }
 
         public IActionResult BanForm()
@@ -80,8 +83,8 @@ namespace WebfrontCore.Controllers
             }
 
             string command = Duration == 6 ?
-                $"!ban @{targetId} {Reason}" :
-                $"!tempban @{targetId} {duration} {Reason}";
+                $"{_appConfig.CommandPrefix}ban @{targetId} {Reason}" :
+                $"{_appConfig.CommandPrefix}tempban @{targetId} {duration} {Reason}";
 
             var server = Manager.GetServers().First();
 
@@ -120,7 +123,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"!unban @{targetId} {Reason}"
+                command = $"{_appConfig.CommandPrefix}unban @{targetId} {Reason}"
             }));
         }
 
@@ -189,7 +192,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"!setlevel @{targetId} {level}"
+                command = $"{_appConfig.CommandPrefix}setlevel @{targetId} {level}"
             }));
         }
 
@@ -256,7 +259,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"!say {message}"
+                command = $"{_appConfig.CommandPrefix}say {message}"
             }));
         }
 
@@ -294,7 +297,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"!flag @{targetId} {reason}"
+                command = $"{_appConfig.CommandPrefix}flag @{targetId} {reason}"
             }));
         }
 
@@ -326,7 +329,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"!unflag @{targetId} {reason}"
+                command = $"{_appConfig.CommandPrefix}unflag @{targetId} {reason}"
             }));
         }
 
@@ -369,7 +372,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = client.CurrentServer.EndPoint,
-                command = $"!kick {client.ClientNumber} {reason}"
+                command = $"{_appConfig.CommandPrefix}kick {client.ClientNumber} {reason}"
             }));
         }
     }

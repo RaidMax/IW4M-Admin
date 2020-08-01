@@ -1,0 +1,32 @@
+﻿{
+  "Events": [
+    {
+      "Game": "IW4",
+      "EventLine": " 12:34 say;AAA;1;Player;^^help",
+      "ExpectedEventType": "Command",
+      "ExpectedData": "^^help",
+      "ExpectedMessage": "^^help",
+      "ExpectedOriginNetworkId": "AAA",
+      "ExpectedOriginClientNumber": 1,
+      "ExpectedOriginClientName": "Player",
+      "ExpectedTargetNetworkId": null,
+      "ExpectedTargetClientNumber": null,
+      "ExpectedTargetClientName": null,
+      "ExpectedTime": 754
+    },
+    {
+      "Game": "IW4",
+      "EventLine": " 12:34 say;AAA;1;Player;@@help",
+      "ExpectedEventType": "Command",
+      "ExpectedData": "@@help",
+      "ExpectedMessage": "@@help",
+      "ExpectedOriginNetworkId": "AAA",
+      "ExpectedOriginClientNumber": 1,
+      "ExpectedOriginClientName": "Player",
+      "ExpectedTargetNetworkId": null,
+      "ExpectedTargetClientNumber": null,
+      "ExpectedTargetClientName": null,
+      "ExpectedTime": 754
+    }
+  ]
+}

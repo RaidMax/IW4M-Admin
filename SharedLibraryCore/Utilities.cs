@@ -235,9 +235,14 @@ namespace SharedLibraryCore
             return str;
         }
 
-        public static bool IsBroadcastCommand(this string str)
+        public static bool IsBroadcastCommand(this string str, string broadcastCommandPrefix)
         {
-            return str[0] == '@';
+            return str.StartsWith(broadcastCommandPrefix);
+        }
+
+        public static IManagerCommand AsCommand(this GameEvent gameEvent)
+        {
+            return gameEvent.Extra as IManagerCommand;
         }
 
         /// <summary>

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,9 +11,11 @@ namespace WebfrontCore.Controllers
 {
     public class ConsoleController : BaseController
     {
+        private readonly ApplicationConfiguration _appconfig;
+
         public ConsoleController(IManager manager) : base(manager)
         {
-
+            _appconfig = manager.GetApplicationSettings().Configuration();
         }
 
         public IActionResult Index()
@@ -50,7 +52,8 @@ namespace WebfrontCore.Controllers
             var remoteEvent = new GameEvent()
             {
                 Type = GameEvent.EventType.Command,
-                Data = command,
+                Data = command.StartsWith(_appconfig.CommandPrefix) || command.StartsWith(_appconfig.BroadcastCommandPrefix) ? 
+                command : $"{_appconfig.CommandPrefix}{command}",
                 Origin = client,
                 Owner = server,
                 IsRemote = true
@@ -63,7 +66,7 @@ namespace WebfrontCore.Controllers
             {
                 // wait for the event to process
                 var completedEvent = await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
-         
+
                 if (completedEvent.FailReason == GameEvent.EventFailReason.Timeout)
                 {
                     response = new[]

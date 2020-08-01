@@ -16,6 +16,7 @@ using ApplicationTests.Fixtures;
 using System.Threading.Tasks;
 using Stats.Helpers;
 using Stats.Dtos;
+using SharedLibraryCore.Configuration;
 
 namespace ApplicationTests
 {
@@ -73,7 +74,7 @@ namespace ApplicationTests
                 A.Fake<ITranslationLookup>(),
                 A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>());
 
-            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>());
+            var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
             var log = System.IO.File.ReadAllLines("Files\\T6GameStats.log");

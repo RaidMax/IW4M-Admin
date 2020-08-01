@@ -59,6 +59,8 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             return mostPlayed;
         }
 
+        private readonly CommandConfiguration _config;
+
         public MostPlayedCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup) 
         {
             Name = "mostplayed";
@@ -66,12 +68,14 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             Alias = "mp";
             Permission = EFClient.Permission.User;
             RequiresTarget = false;
+
+            _config = config;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             var topStats = await GetMostPlayed(E.Owner, _translationLookup);
-            if (!E.Message.IsBroadcastCommand())
+            if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
                 foreach (var stat in topStats)
                 {

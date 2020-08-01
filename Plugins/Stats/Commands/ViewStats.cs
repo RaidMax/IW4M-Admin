@@ -30,7 +30,11 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     Required = false
                 }
             };
+
+            _config = config;
         }
+
+        private readonly CommandConfiguration _config;
 
         public override async Task ExecuteAsync(GameEvent E)
         {
@@ -90,7 +94,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 statLine = $"^5{pStats.Kills} ^7{_translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{_translationLookup["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{_translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
             }
 
-            if (E.Message.IsBroadcastCommand())
+            if (E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
                 string name = E.Target == null ? E.Origin.Name : E.Target.Name;
                 E.Owner.Broadcast(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(name));

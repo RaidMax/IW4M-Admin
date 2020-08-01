@@ -17,6 +17,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     class MostKillsCommand : Command
     {
         private readonly IDatabaseContextFactory _contextFactory;
+        private readonly CommandConfiguration _config;
 
         public MostKillsCommand(CommandConfiguration config, ITranslationLookup translationLookup, IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
@@ -26,12 +27,13 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             Permission = EFClient.Permission.User;
 
             _contextFactory = contextFactory;
+            _config = config;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             var mostKills = await GetMostKills(StatManager.GetIdForServer(E.Owner), Plugin.Config.Configuration(), _contextFactory, _translationLookup);
-            if (!E.Message.IsBroadcastCommand())
+            if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
                 foreach (var stat in mostKills)
                 {

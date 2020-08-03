@@ -104,6 +104,13 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 #### `IW4MAdminSettings.json`-- this file is created after initial setup
 * This file uses the [JSON](https://en.wikipedia.org/wiki/JSON#JSON_sample) specification, so please validate your configuration before running **IW4MAdmin**
 
+`ManualWebfrontUrl`
+* Specifies the webfront URL.
+* The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port
+* Example http://gameserver.com:8080
+* Useful for things like [YADB](https://forum.awog.at/topic/89/release-yadb-yet-another-discord-bridge) as it will use that URL instead of the IP address.
+* Default &mdash; `null`
+
 `WebfrontBindUrl`
 * Specifies the address and port the webfront will listen on.
 * The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port

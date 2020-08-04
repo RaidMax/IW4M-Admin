@@ -57,6 +57,13 @@ namespace SharedLibraryCore
             ViewBag.Version = Manager.Version;
             ViewBag.IsFluid = false;
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+
+            Client ??= new EFClient()
+            {
+                ClientId = -1,
+                Level = EFClient.Permission.User,
+                CurrentAlias = new EFAlias() { Name = "Webfront Guest" }
+            };
         }
 
         protected async Task SignInAsync(ClaimsPrincipal claimsPrinciple)
@@ -72,13 +79,6 @@ namespace SharedLibraryCore
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            Client = Client ?? new EFClient()
-            {
-                ClientId = -1,
-                Level = EFClient.Permission.User,
-                CurrentAlias = new EFAlias() { Name = "Webfront Guest" }
-            };
-
             if (!HttpContext.Connection.RemoteIpAddress.GetAddressBytes().SequenceEqual(LocalHost))
             {
                 try

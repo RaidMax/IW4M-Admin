@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
@@ -15,10 +16,47 @@ namespace WebfrontCore.Controllers
     public class ActionController : BaseController
     {
         private readonly ApplicationConfiguration _appConfig;
+        private readonly string _banCommandName;
+        private readonly string _tempbanCommandName;
+        private readonly string _unbanCommandName;
+        private readonly string _sayCommandName;
+        private readonly string _kickCommandName;
+        private readonly string _flagCommandName;
+        private readonly string _unflagCommandName;
 
-        public ActionController(IManager manager) : base(manager)
+        public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands) : base(manager)
         {
             _appConfig = manager.GetApplicationSettings().Configuration();
+
+            foreach (var cmd in registeredCommands)
+            {
+                var type = cmd.GetType().Name;
+
+                switch (type)
+                {
+                    case nameof(BanCommand):
+                        _banCommandName = cmd.Name;
+                        break;
+                    case nameof(TempBanCommand):
+                        _tempbanCommandName = cmd.Name;
+                        break;
+                    case nameof(UnbanCommand):
+                        _unbanCommandName = cmd.Name;
+                        break;
+                    case nameof(SayCommand):
+                        _sayCommandName = cmd.Name;
+                        break;
+                    case nameof(KickCommand):
+                        _kickCommandName = cmd.Name;
+                        break;
+                    case nameof(FlagClientCommand):
+                        _flagCommandName = cmd.Name;
+                        break;
+                    case nameof(UnflagClientCommand):
+                        _unflagCommandName = cmd.Name;
+                        break;
+                }
+            }
         }
 
         public IActionResult BanForm()
@@ -83,8 +121,8 @@ namespace WebfrontCore.Controllers
             }
 
             string command = Duration == 6 ?
-                $"{_appConfig.CommandPrefix}ban @{targetId} {Reason}" :
-                $"{_appConfig.CommandPrefix}tempban @{targetId} {duration} {Reason}";
+                $"{_appConfig.CommandPrefix}{_banCommandName} @{targetId} {Reason}" :
+                $"{_appConfig.CommandPrefix}{_tempbanCommandName} @{targetId} {duration} {Reason}";
 
             var server = Manager.GetServers().First();
 
@@ -123,7 +161,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}unban @{targetId} {Reason}"
+                command = $"{_appConfig.CommandPrefix}{_unbanCommandName} @{targetId} {Reason}"
             }));
         }
 
@@ -259,7 +297,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}say {message}"
+                command = $"{_appConfig.CommandPrefix}{_sayCommandName} {message}"
             }));
         }
 
@@ -297,7 +335,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}flag @{targetId} {reason}"
+                command = $"{_appConfig.CommandPrefix}{_flagCommandName} @{targetId} {reason}"
             }));
         }
 
@@ -329,7 +367,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}unflag @{targetId} {reason}"
+                command = $"{_appConfig.CommandPrefix}{_unflagCommandName} @{targetId} {reason}"
             }));
         }
 
@@ -372,7 +410,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = client.CurrentServer.EndPoint,
-                command = $"{_appConfig.CommandPrefix}kick {client.ClientNumber} {reason}"
+                command = $"{_appConfig.CommandPrefix}{_kickCommandName} {client.ClientNumber} {reason}"
             }));
         }
     }

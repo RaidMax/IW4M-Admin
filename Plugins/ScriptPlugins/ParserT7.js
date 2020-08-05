@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'Black Ops 3 Parser',
     isParser: true,
 
@@ -23,6 +23,8 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.RConGetDvar    = '\xff\xff\xff\xff\x00{0} {1}';
         rconParser.Configuration.CommandPrefixes.RConSetDvar    = '\xff\xff\xff\xff\x00{0} set {1}';
         rconParser.Configuration.CommandPrefixes.RConResponse   = '\xff\xff\xff\xff\x01';
+        rconParser.Configuration.GametypeStatus.Pattern         = 'Gametype: (.+)';
+        rconParser.Configuration.MapStatus.Pattern              = 'Map: (.+)';
         rconParser.Configuration.CommandPrefixes.RConGetInfo    = undefined; // disables this, because it's useless on T7
         rconParser.Configuration.ServerNotRunningResponse       = 'this is here to prevent a hiberating server from being detected as not running';
 
@@ -34,6 +36,7 @@ var plugin = {
         rconParser.Configuration.DefaultDvarValues.Add('fs_game', '');
 
         rconParser.Configuration.Status.AddMapping(105, 6); // ip address
+        rconParser.Configuration.GametypeStatus.AddMapping(112, 1); // gametype
         rconParser.Version = '[local] ship win64 CODBUILD8-764 (3421987) Mon Dec 16 10:44:20 2019 10d27bef';
         rconParser.GameName = 8; // BO3
         rconParser.CanGenerateLogPath = false;

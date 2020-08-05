@@ -38,8 +38,8 @@ namespace SharedLibraryCore.Interfaces
         /// get the list of connected clients from status response
         /// </summary>
         /// <param name="connection">RCon connection to use</param>
-        /// <returns>list of clients, and current map</returns>
-        Task<(List<EFClient>, string)> GetStatusAsync(IRConConnection connection);
+        /// <returns>list of clients, current map, and current gametype</returns>
+        Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection);
 
         /// <summary>
         /// stores the RCon configuration

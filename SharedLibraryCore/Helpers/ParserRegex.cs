@@ -37,6 +37,7 @@ namespace SharedLibraryCore.Interfaces
             RConDvarLatchedValue = 109,
             RConDvarDomain = 110,
             RConStatusMap = 111,
+            RConStatusGametype = 112,
             AdditionalGroup = 200
         }
 

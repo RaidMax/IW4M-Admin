@@ -14,6 +14,7 @@ namespace IW4MAdmin.Application.RconParsers
         public CommandPrefix CommandPrefixes { get; set; }
         public ParserRegex Status { get; set; }
         public ParserRegex MapStatus { get; set; }
+        public ParserRegex GametypeStatus { get; set; }
         public ParserRegex Dvar { get; set; }
         public ParserRegex StatusHeader { get; set; }
         public string ServerNotRunningResponse { get; set; }
@@ -26,6 +27,7 @@ namespace IW4MAdmin.Application.RconParsers
         {
             Status = parserRegexFactory.CreateParserRegex();
             MapStatus = parserRegexFactory.CreateParserRegex();
+            GametypeStatus = parserRegexFactory.CreateParserRegex();
             Dvar = parserRegexFactory.CreateParserRegex();
             StatusHeader = parserRegexFactory.CreateParserRegex();
         }

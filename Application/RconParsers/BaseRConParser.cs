@@ -52,6 +52,7 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDomain, 5);
 
             Configuration.StatusHeader.Pattern = "num +score +ping +guid +name +lastmsg +address +qport +rate *";
+            Configuration.GametypeStatus.Pattern = "";
             Configuration.MapStatus.Pattern = @"map: (([a-z]|_|\d)+)";
             Configuration.MapStatus.AddMapping(ParserRegex.GroupType.RConStatusMap, 1);
 
@@ -114,7 +115,7 @@ namespace IW4MAdmin.Application.RconParsers
             };
         }
 
-        public virtual async Task<(List<EFClient>, string)> GetStatusAsync(IRConConnection connection)
+        public virtual async Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
 #if DEBUG
@@ -123,7 +124,7 @@ namespace IW4MAdmin.Application.RconParsers
                 Console.WriteLine(line);
             }
 #endif
-            return (ClientsFromStatus(response), MapFromStatus(response));
+            return (ClientsFromStatus(response), MapFromStatus(response), GameTypeFromStatus(response));
         }
 
         private string MapFromStatus(string[] response)
@@ -139,6 +140,26 @@ namespace IW4MAdmin.Application.RconParsers
             }
 
             return map;
+        }
+
+        private string GameTypeFromStatus(string[] response)
+        {
+            if (string.IsNullOrWhiteSpace(Configuration.GametypeStatus.Pattern))
+            {
+                return null;
+            }
+
+            string gametype = null;
+            foreach (var line in response)
+            {
+                var regex = Regex.Match(line, Configuration.GametypeStatus.Pattern);
+                if (regex.Success)
+                {
+                    gametype = regex.Groups[Configuration.GametypeStatus.GroupMapping[ParserRegex.GroupType.RConStatusGametype]].ToString();
+                }
+            }
+
+            return gametype;
         }
 
         public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue)

@@ -703,6 +703,7 @@ namespace IW4MAdmin
             var updatedClients = polledClients.Except(connectingClients).Except(disconnectingClients);
 
             UpdateMap(statusResponse.Item2);
+            UpdateGametype(statusResponse.Item3);
 
             return new List<EFClient>[]
             {
@@ -721,6 +722,14 @@ namespace IW4MAdmin
                     Alias = mapname,
                     Name = mapname
                 };
+            }
+        }
+
+        private void UpdateGametype(string gameType)
+        {
+            if (!string.IsNullOrEmpty(gameType))
+            {
+                Gametype = gameType;
             }
         }
 

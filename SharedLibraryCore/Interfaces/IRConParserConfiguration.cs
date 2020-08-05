@@ -22,6 +22,11 @@ namespace SharedLibraryCore.Interfaces
         ParserRegex MapStatus { get; set; }
 
         /// <summary>
+        /// stores regex info for parsing the gametype line from rcon status response
+        /// </summary>
+        ParserRegex GametypeStatus { get; set; }
+
+        /// <summary>
         /// stores the regex info for parsing get DVAR responses
         /// </summary>
         ParserRegex Dvar { get; set; }

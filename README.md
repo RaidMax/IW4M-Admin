@@ -45,6 +45,7 @@ Linux
 ### Help
 Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)  
 If you come across an issue,  bug, or feature request please post an [issue](https://github.com/RaidMax/IW4M-Admin/issues)
+
 ---
 
 ## [More information may be found in our wiki.](https://github.com/RaidMax/IW4M-Admin/wiki)

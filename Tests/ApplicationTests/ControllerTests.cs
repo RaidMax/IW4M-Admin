@@ -38,6 +38,7 @@ namespace ApplicationTests
                 .AddSingleton<IManagerCommand, FlagClientCommand>()
                 .AddSingleton<IManagerCommand, UnflagClientCommand>()
                 .AddSingleton<IManagerCommand, SayCommand>()
+                .AddSingleton<IManagerCommand, SetLevelCommand>()
                 .BuildServiceProvider()
                 .SetupTestHooks();
 
@@ -137,6 +138,19 @@ namespace ApplicationTests
             var expectedEndpoint = server.EndPoint;
 
             var result = await controller.BanAsync(1, "test", 5) as RedirectToActionResult;
+
+            Assert.AreEqual(expectedEndpoint, result.RouteValues["serverId"]);
+            Assert.AreEqual(expectedCommandText, result.RouteValues["command"]);
+        }
+
+        [Test]
+        public async Task Test_SetLevel_Redirects_WithCommandText()
+        {
+            var controller = serviceProvider.GetRequiredService<ActionController>();
+            var expectedCommandText = "!setlevel @1 Moderator";
+            var expectedEndpoint = server.EndPoint;
+
+            var result = await controller.EditAsync(1, "Moderator") as RedirectToActionResult;
 
             Assert.AreEqual(expectedEndpoint, result.RouteValues["serverId"]);
             Assert.AreEqual(expectedCommandText, result.RouteValues["command"]);

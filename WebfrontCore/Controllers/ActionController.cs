@@ -23,6 +23,7 @@ namespace WebfrontCore.Controllers
         private readonly string _kickCommandName;
         private readonly string _flagCommandName;
         private readonly string _unflagCommandName;
+        private readonly string _setLevelCommandName;
 
         public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands) : base(manager)
         {
@@ -54,6 +55,9 @@ namespace WebfrontCore.Controllers
                         break;
                     case nameof(UnflagClientCommand):
                         _unflagCommandName = cmd.Name;
+                        break;
+                    case nameof(SetLevelCommand):
+                        _setLevelCommandName = cmd.Name;
                         break;
                 }
             }
@@ -230,7 +234,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}setlevel @{targetId} {level}"
+                command = $"{_appConfig.CommandPrefix}{_setLevelCommandName} @{targetId} {level}"
             }));
         }
 

@@ -124,6 +124,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IAuditInformationRepository>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<SharedLibraryCore.Interfaces.ILogger>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

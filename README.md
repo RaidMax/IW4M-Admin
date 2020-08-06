@@ -1,5 +1,5 @@
 
-# IW4MAdmin
+# IW4MAdmin [![GitHub license](https://img.shields.io/github/license/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/blob/2.4-pr/LICENSE) [![GitHub stars](https://img.shields.io/github/stars/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/stargazers)
 ### Quick Start Guide
 ### Version 2.4
 _______

@@ -4,7 +4,7 @@
 ### Version 2.4
 _______
 ### About
-**IW4MAdmin** is an administration tool for [IW4x](https://iw4xcachep26muba.onion.link/), [Pluto T6](https://forum.plutonium.pw/category/6/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/14/plutonium-iw5), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://www.teknomw3.pw/), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
+**IW4MAdmin** is an administration tool for [IW4x](https://iw4x.org/), [Pluto T6](https://forum.plutonium.pw/category/6/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/14/plutonium-iw5), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://github.com/Musta1337/TeknoMW3), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
 Latest binary builds are always available at:
 - [GitHub](https://github.com/RaidMax/IW4M-Admin/releases)
@@ -103,6 +103,13 @@ If you wish to further customize your experience of **IW4MAdmin**, the following
 
 #### `IW4MAdminSettings.json`-- this file is created after initial setup
 * This file uses the [JSON](https://en.wikipedia.org/wiki/JSON#JSON_sample) specification, so please validate your configuration before running **IW4MAdmin**
+
+`ManualWebfrontUrl`
+* Specifies the webfront URL.
+* The value can be an [IP Address](https://en.wikipedia.org/wiki/IP_address):port or [Domain Name](https://en.wikipedia.org/wiki/Domain_name):port
+* Example http://gameserver.com:8080
+* Useful for things like [YADB](https://forum.awog.at/topic/89/release-yadb-yet-another-discord-bridge) as it will use that URL instead of the IP address.
+* Default &mdash; `null`
 
 `WebfrontBindUrl`
 * Specifies the address and port the webfront will listen on.

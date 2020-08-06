@@ -48,4 +48,4 @@ If you come across an issue,  bug, or feature request please post an [issue](htt
 
 ---
 
-## [More information may be found in our wiki.](https://github.com/RaidMax/IW4M-Admin/wiki)
+## [Explore the wiki (linked) to find more information.](https://github.com/RaidMax/IW4M-Admin/wiki)

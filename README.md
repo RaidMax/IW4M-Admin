@@ -1,25 +1,25 @@
 
-# IW4MAdmin [![GitHub license](https://img.shields.io/github/license/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/blob/2.4-pr/LICENSE) [![GitHub stars](https://img.shields.io/github/stars/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/stargazers)
-### Quick Start Guide
-_______
-### About
+# IW4MAdmin [![GitHub license](https://img.shields.io/github/license/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/blob/2.4-pr/LICENSE) [![GitHub stars](https://img.shields.io/github/stars/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/stargazers)  
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J821KUJ)
+
+## About
 **IW4MAdmin** is an administration tool for [IW4x](https://iw4x.org/), [Pluto T6](https://forum.plutonium.pw/category/6/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/14/plutonium-iw5), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://github.com/Musta1337/TeknoMW3), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
 Latest binary builds are always available at:
 - [GitHub](https://github.com/RaidMax/IW4M-Admin/releases)
 - [RaidMax](https://raidmax.org/IW4MAdmin)  
 
----
-### Setup
+
+## Setup
 **IW4MAdmin** requires minimal effort to get up and running.
-#### Prerequisites
+### Prerequisites
 * [.NET Core 3.1.x Runtime](https://www.microsoft.com/net/download) *or newer*
     * [Direct Download (Windows)](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-aspnetcore-3.1.4-windows-hosting-bundle-installer)
     * [Package Installation (Linux)](https://docs.microsoft.com/en-us/dotnet/core/install/linux-package-manager-ubuntu-1910)
-#### Installation
+### Installation
 1. Install .NET Core Runtime
 2.  Extract `IW4MAdmin-<version>.zip`  
-#### Launching
+### Launching
 Windows
 1. Run `StartIW4MAdmin.cmd`
 2. Configure **IW4MAdmin**
@@ -40,11 +40,9 @@ Linux
 
     _Your configuration and database will be saved_
 
----
-### Help
+## Help
 Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)  
 If you come across an issue,  bug, or feature request please post an [issue](https://github.com/RaidMax/IW4M-Admin/issues)
 
----
 
-## Explore the [wiki](https://github.com/RaidMax/IW4M-Admin/wiki) to find more information.
+#### Explore the [wiki](https://github.com/RaidMax/IW4M-Admin/wiki) to find more information.

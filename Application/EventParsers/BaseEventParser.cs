@@ -130,7 +130,6 @@ namespace IW4MAdmin.Application.EventParsers
 
                         int clientNumber = int.Parse(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
 
-                        // todo: these need to defined outside of here
                         if (message.StartsWith(_appConfig.CommandPrefix) || message.StartsWith(_appConfig.BroadcastCommandPrefix))
                         {
                             return new GameEvent()

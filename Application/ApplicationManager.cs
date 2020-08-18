@@ -13,6 +13,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections;
@@ -54,7 +55,7 @@ namespace IW4MAdmin.Application
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         readonly IPageList PageList;
         private readonly Dictionary<long, ILogger> _loggers = new Dictionary<long, ILogger>();
-        private readonly MetaService _metaService;
+        private readonly IMetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
         private readonly CancellationTokenSource _tokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
@@ -65,12 +66,14 @@ namespace IW4MAdmin.Application
         private readonly IEnumerable<IRegisterEvent> _customParserEvents;
         private readonly IEventHandler _eventHandler;
         private readonly IScriptCommandFactory _scriptCommandFactory;
+        private readonly IMetaRegistration _metaRegistration;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
-            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory)
+            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory, IMetaService metaService,
+            IMetaRegistration metaRegistration)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -85,7 +88,7 @@ namespace IW4MAdmin.Application
             AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser(parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
-            _metaService = new MetaService();
+            _metaService = metaService;
             _tokenSource = new CancellationTokenSource();
             _loggers.Add(0, logger);
             _commands = commands.ToList();
@@ -96,6 +99,7 @@ namespace IW4MAdmin.Application
             _customParserEvents = customParserEvents;
             _eventHandler = eventHandler;
             _scriptCommandFactory = scriptCommandFactory;
+            _metaRegistration = metaRegistration;
             Plugins = plugins;
         }
 
@@ -453,133 +457,7 @@ namespace IW4MAdmin.Application
             await _commandConfiguration.Save();
             #endregion
 
-            #region META
-            async Task<List<ProfileMeta>> getProfileMeta(int clientId, int offset, int count, DateTime? startAt)
-            {
-                var metaList = new List<ProfileMeta>();
-
-                // we don't want to return anything because it means we're trying to retrieve paged meta data
-                if (count > 1)
-                {
-                    return metaList;
-                }
-
-                var lastMapMeta = await _metaService.GetPersistentMeta("LastMapPlayed", new EFClient() { ClientId = clientId });
-
-                if (lastMapMeta != null)
-                {
-                    metaList.Add(new ProfileMeta()
-                    {
-                        Id = lastMapMeta.MetaId,
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_MAP"],
-                        Value = lastMapMeta.Value,
-                        Show = true,
-                        Type = ProfileMeta.MetaType.Information,
-                    });
-                }
-
-                var lastServerMeta = await _metaService.GetPersistentMeta("LastServerPlayed", new EFClient() { ClientId = clientId });
-
-                if (lastServerMeta != null)
-                {
-                    metaList.Add(new ProfileMeta()
-                    {
-                        Id = lastServerMeta.MetaId,
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_LAST_SERVER"],
-                        Value = lastServerMeta.Value,
-                        Show = true,
-                        Type = ProfileMeta.MetaType.Information
-                    });
-                }
-
-                var client = await GetClientService().Get(clientId);
-
-                if (client == null)
-                {
-                    _logger.WriteWarning($"No client found with id {clientId} when generating profile meta");
-                    return metaList;
-                }
-
-                metaList.Add(new ProfileMeta()
-                {
-                    Id = client.ClientId,
-                    Key = $"{Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]} {Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]}",
-                    Value = Math.Round(client.TotalConnectionTime / 3600.0, 1).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                    Show = true,
-                    Column = 1,
-                    Order = 0,
-                    Type = ProfileMeta.MetaType.Information
-                });
-
-                metaList.Add(new ProfileMeta()
-                {
-                    Id = client.ClientId,
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_FSEEN"],
-                    Value = Utilities.GetTimePassed(client.FirstConnection, false),
-                    Show = true,
-                    Column = 1,
-                    Order = 1,
-                    Type = ProfileMeta.MetaType.Information
-                });
-
-                metaList.Add(new ProfileMeta()
-                {
-                    Id = client.ClientId,
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"],
-                    Value = Utilities.GetTimePassed(client.LastConnection, false),
-                    Show = true,
-                    Column = 1,
-                    Order = 2,
-                    Type = ProfileMeta.MetaType.Information
-                });
-
-                metaList.Add(new ProfileMeta()
-                {
-                    Id = client.ClientId,
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_CONNECTIONS"],
-                    Value = client.Connections.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                    Show = true,
-                    Column = 1,
-                    Order = 3,
-                    Type = ProfileMeta.MetaType.Information
-                });
-
-                metaList.Add(new ProfileMeta()
-                {
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_MASKED"],
-                    Value = client.Masked ? Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_TRUE"] : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
-                    Sensitive = true,
-                    Column = 1,
-                    Order = 4,
-                    Type = ProfileMeta.MetaType.Information
-                });
-
-                return metaList;
-            }
-
-            async Task<List<ProfileMeta>> getPenaltyMeta(int clientId, int offset, int count, DateTime? startAt)
-            {
-                if (count <= 1)
-                {
-                    return new List<ProfileMeta>();
-                }
-
-                var penalties = await GetPenaltyService().GetClientPenaltyForMetaAsync(clientId, count, offset, startAt);
-
-                return penalties.Select(_penalty => new ProfileMeta()
-                {
-                    Id = _penalty.Id,
-                    Type = _penalty.PunisherId == clientId ? ProfileMeta.MetaType.Penalized : ProfileMeta.MetaType.ReceivedPenalty,
-                    Value = _penalty,
-                    When = _penalty.TimePunished,
-                    Sensitive = _penalty.Sensitive
-                })
-                .ToList();
-            }
-
-            MetaService.AddRuntimeMeta(getProfileMeta);
-            MetaService.AddRuntimeMeta(getPenaltyMeta);
-            #endregion
+            _metaRegistration.Register();
 
             #region CUSTOM_EVENTS
             foreach (var customEvent in _customParserEvents.SelectMany(_events => _events.Events))

@@ -618,7 +618,7 @@ namespace SharedLibraryCore.Database.Models
             if (tempbanPenalty != null)
             {
                 CurrentServer.Logger.WriteDebug($"Kicking {this} because their GUID is temporarily banned");
-                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempbanPenalty.Expires.Value - DateTime.UtcNow).TimeSpanText()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
+                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempbanPenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
                 return false;
             }
 

@@ -1,0 +1,53 @@
+﻿@using SharedLibraryCore.Dtos.Meta.Responses
+@model AdministeredPenaltyResponse
+@{
+    string localizationKey = $"WEBFRONT_CLIENT_META_PENALIZED_{Model.PenaltyType.ToString().ToUpper()}_V2";
+}
+
+<div class="d-inline">
+    @foreach (var match in Utilities.SplitTranslationTokens(localizationKey))
+    {
+        if (match.IsInterpolation)
+        {
+            if (match.MatchValue == "action")
+            {
+                <span class="penalties-color-@Model.PenaltyType.ToString().ToLower()">@match.TranslationValue</span>
+            }
+
+            else if (match.MatchValue == "offender")
+            {
+                <span class="text-highlight">
+                    <a class="link-inverse" href="@Model.OffenderClientId">
+                        <color-code value="@Model.OffenderName" allow="@ViewBag.EnableColorCodes"></color-code>
+                    </a>
+                </span>
+            }
+
+            else if (match.MatchValue == "reason")
+            {
+                <span class="text-white">
+                    @if (ViewBag.Authorized && !string.IsNullOrEmpty(Model.AutomatedOffense) && Model.PenaltyType != SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Warning)
+                    {
+                        <span>@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.AutomatedOffense)</span>
+                        <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed" data-penalty-id="@Model.PenaltyId" style="margin-top: 0.125rem;" title="@ViewBag.Localization["WEBFRONT_CLIENT_META_AC_METRIC"]"></span>
+                    }
+                    else
+                    {
+                        <color-code value="@Model.Offense" allow="@ViewBag.EnableColorCodes"></color-code>
+                    }
+
+                </span>
+            }
+
+            else if (match.MatchValue == "time")
+            {
+                <span class="text-white">@Model.LengthText</span>
+            }
+        }
+
+        else
+        {
+            <span>@match.MatchValue</span>
+        }
+    }
+</div>

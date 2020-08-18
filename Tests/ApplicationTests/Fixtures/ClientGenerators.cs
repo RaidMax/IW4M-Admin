@@ -21,9 +21,9 @@ namespace ApplicationTests.Fixtures
             CurrentServer = currentServer
         };
 
-        public static EFClient CreateDatabaseClient(bool hasIp = true) => new EFClient()
+        public static EFClient CreateDatabaseClient(bool hasIp = true, int clientId = 1) => new EFClient()
         {
-            ClientId = 1,
+            ClientId = clientId,
             ClientNumber = -1,
             AliasLinkId = 1,
             Level = EFClient.Permission.User,

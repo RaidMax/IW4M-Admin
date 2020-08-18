@@ -5,12 +5,14 @@ let startAt = null;
 let isLoaderLoading = false;
 let loadUri = '';
 let loaderResponseId = '';
+let additionalParams = [];
 
-function initLoader(location, loaderId, count = 10, start = count) {
+function initLoader(location, loaderId, count = 10, start = count, additional) {
     loadUri = location;
     loaderResponseId = loaderId;
     loadCount = count;
     loaderOffset = start;
+    additionalParams = additional;
     setupListeners();
 }
 
@@ -21,7 +23,13 @@ function loadMoreItems() {
 
     showLoader();
     isLoaderLoading = true;
-    $.get(loadUri, { offset: loaderOffset, count: loadCount, startAt: startAt })
+    let params = { offset: loaderOffset, count: loadCount, startAt: startAt };
+    for (i = 0; i < additionalParams.length; i++) {
+        let param = additionalParams[i];
+        params[param.name] = param.value;
+    }
+
+    $.get(loadUri, params)
         .done(function (response) {
             $(loaderResponseId).append(response);
             if (response.trim().length === 0) {

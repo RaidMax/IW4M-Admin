@@ -1,6 +1,6 @@
 ﻿namespace SharedLibraryCore.Dtos
 {
-    public class FindClientRequest : PaginationInfo
+    public class FindClientRequest : PaginationRequest
     {
         /// <summary>
         /// name of client

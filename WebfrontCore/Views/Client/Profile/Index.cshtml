@@ -1,17 +1,17 @@
-﻿@model SharedLibraryCore.Dtos.PlayerInfo
+﻿@using SharedLibraryCore.Database.Models
+@using SharedLibraryCore.Interfaces
+@using SharedLibraryCore
+@model SharedLibraryCore.Dtos.PlayerInfo
 @{
     string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
     string shortCode = match == string.Empty ? "?" : match;
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
     string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
-    bool isTempBanned = Model.ActivePenaltyType == "TempBan";
     bool isFlagged = Model.LevelInt == (int)SharedLibraryCore.Database.Models.EFClient.Permission.Flagged;
     bool isPermBanned = Model.LevelInt == (int)SharedLibraryCore.Database.Models.EFClient.Permission.Banned;
-    var informationMeta = Model.Meta
-        .Where(_meta => _meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Information)
-        .OrderBy(_meta => _meta.Order)
-        .GroupBy(_meta => _meta.Column)
-        .OrderBy(_grouping => _grouping.Key);
+    bool isTempBanned = Model.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
+    string translationKey = $"WEBFRONT_PROFILE_{Model.ActivePenalty?.Type.ToString().ToUpper()}_INFO";
+    var ignoredMetaTypes = new[] { MetaType.Information, MetaType.Other, MetaType.QuickMessage };
 }
 
 <div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
@@ -23,7 +23,7 @@
         }
     </div>
     <!-- Name/Level Column -->
-    <div class="d-block d-lg-inline-flex flex-column flex-fill text-center text-lg-left pb-3 pb-lg-0 pt-3 pt-lg-0 pl-3 pr-3">
+    <div class="w-75 d-block d-lg-inline-flex flex-column flex-fill text-center text-lg-left pb-3 pb-lg-0 pt-3 pt-lg-0 pl-3 pr-3 ml-auto mr-auto" style="overflow-wrap: anywhere">
         <div class="mt-n2 flex-fill d-block d-lg-inline-flex">
             <div id="profile_name" class="client-name h1 mb-0"><color-code value="@Model.Name" allow="@ViewBag.EnableColorCodes"></color-code></div>
             @if (ViewBag.Authorized)
@@ -31,6 +31,7 @@
                 <div id="profile_aliases_btn" class="oi oi-caret-bottom h3 ml-0 ml-lg-2 mb-0 pt-lg-2 mt-lg-1"></div>
             }
         </div>
+
         @if (ViewBag.Authorized)
         {
             <div id="profile_aliases" class="text-muted pt-0 pt-lg-2 pb-2">
@@ -49,9 +50,34 @@
                 }
             </div>
         }
-        <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt @(isTempBanned ? "penalties-color-tempban" : "")">
-            @Model.Level @(isTempBanned ? $"({loc["WEBFRONT_PROFILE_TEMPBAN"]})" : "")
-        </div>
+        @if (Model.ActivePenalty != null)
+        {
+            <div class="font-weight-bold h4 mb-0 penalties-color-@Model.ActivePenalty.Type.ToString().ToLower()">
+                @foreach (var result in Utilities.SplitTranslationTokens(translationKey))
+                {
+                    switch (result.MatchValue)
+                    {
+                        case "reason":
+                            <span class="text-white font-weight-lighter">@(ViewBag.Authorized ? !string.IsNullOrEmpty(Model.ActivePenalty.AutomatedOffense) && Model.ActivePenalty.Type != EFPenalty.PenaltyType.Warning ? Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.ActivePenalty.AutomatedOffense) : Model.ActivePenalty.Offense : Model.ActivePenalty.Offense)</span>
+                            break;
+                        case "time":
+                            <span class="text-white font-weight-lighter">
+                                @Utilities.HumanizeForCurrentCulture(Model.ActivePenalty.Expires.Value - DateTime.UtcNow)
+                            </span>
+                            break;
+                        default:
+                            <span>@result.MatchValue</span>
+                            break;
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt">
+                @Model.Level
+            </div>
+        }
     </div>
     @if (ViewBag.Authorized)
     {
@@ -89,23 +115,32 @@
 </div>
 
 <div id="profile_info" class="row d-block d-lg-flex flex-row border-bottom border-top pt-2 pb-2">
-    @foreach (var metaColumn in informationMeta)
-    {
-        <div class="text-center text-lg-left mr-0 mr-lg-4">
-            @foreach (var meta in metaColumn)
+    <partial name="Meta/_Information.cshtml" model="@Model.Meta" />
+</div>
+
+<div class="row border-bottom">
+    <div class="text-center bg-dark p-2 pl-3 pr-4 text-muted col-12 col-md-auto" id="filter_meta_container_button">
+        <span class="oi oi-sort-ascending"></span>
+        <a>Filter Meta</a>
+    </div>
+    <div class="d-none d-md-flex flex-fill" id="filter_meta_container">
+        @foreach (MetaType type in Enum.GetValues(typeof(MetaType)))
+        {
+            if (!ignoredMetaTypes.Contains(type))
             {
-                <div class="profile-meta-entry" title="@(string.IsNullOrEmpty(meta.Extra) ? meta.Key : meta.Extra)">
-                    <span class="profile-meta-value text-primary"><color-code value="@meta.Value" allow="@ViewBag.EnableColorCodes"></color-code></span>
-                    <span class="profile-meta-title text-muted"> @meta.Key</span>
-                </div>
+                <a asp-action="ProfileAsync" asp-controller="Client"
+                   class="nav-link p-2 pl-3 pr-3 text-center col-12 col-md-auto text-md-left @(Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-white" : "text-muted")"
+                   asp-route-id="@Model.ClientId"
+                   asp-route-metaFilterType="@type"
+                   data-meta-type="@type">@type.ToTranslatedName()</a>
             }
-        </div>
-    }
+        }
+    </div>
 </div>
 
 <div class="row d-md-flex pt-2">
-    <div id="profile_events" class="text-muted text-left ml-sm-0">
-        @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0 })
+    <div id="profile_events" class="text-muted text-left pl-4 pr-4 pl-md-0 pr-md-0">
+        @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
     </div>
 </div>
 
@@ -122,5 +157,5 @@
         <script type="text/javascript" src="~/js/loader.js"></script>
         <script type="text/javascript" src="~/js/profile.js"></script>
     </environment>
-    <script>initLoader('/Client/Meta/@Model.ClientId', '#profile_events', 30);</script>
+    <script>initLoader('/Client/Meta/@Model.ClientId', '#profile_events', 30, 30, [{ 'name': 'metaFilterType', 'value': '@Model.MetaFilterType' }]);</script>
 }

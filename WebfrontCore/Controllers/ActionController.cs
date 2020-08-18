@@ -242,7 +242,7 @@ namespace WebfrontCore.Controllers
         {
             var info = new ActionInfo()
             {
-                ActionButtonLabel = "Generate",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_GENERATE_TOKEN"],
                 Name = "GenerateLoginToken",
                 Action = "GenerateLoginTokenAsync",
                 Inputs = new List<InputInfo>()

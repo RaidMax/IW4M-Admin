@@ -27,7 +27,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Title = _translationLookup["WEBFRONT_NAV_AUDIT_LOG"];
             ViewBag.InitialOffset = DEFAULT_COUNT;
 
-            var auditItems = await _auditInformationRepository.ListAuditInformation(new PaginationInfo()
+            var auditItems = await _auditInformationRepository.ListAuditInformation(new PaginationRequest()
             {
                 Count = DEFAULT_COUNT
             });
@@ -35,7 +35,7 @@ namespace WebfrontCore.Controllers
             return View(auditItems);
         }
 
-        public async Task<IActionResult> ListAuditLog([FromQuery] PaginationInfo paginationInfo)
+        public async Task<IActionResult> ListAuditLog([FromQuery] PaginationRequest paginationInfo)
         {
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
             var auditItems = await _auditInformationRepository.ListAuditInformation(paginationInfo);

@@ -1,5 +1,8 @@
 ﻿
+using Humanizer;
+using Humanizer.Localisation;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos.Meta;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -381,57 +384,6 @@ namespace SharedLibraryCore
             return !ip.HasValue ? "" : new IPAddress(BitConverter.GetBytes(ip.Value)).ToString();
         }
 
-        public static string GetTimePassed(DateTime start)
-        {
-            return GetTimePassed(start, true);
-        }
-
-        public static string GetTimePassed(DateTime start, bool includeAgo)
-        {
-            TimeSpan Elapsed = DateTime.UtcNow - start;
-            string ago = includeAgo ? $" {CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_TEMPLATE_AGO"]}" : "";
-
-            if (Elapsed.TotalSeconds < 30)
-            {
-                return CurrentLocalization.LocalizationIndex["GLOBAL_TIME_JUSTNOW"] + ago;
-            }
-            if (Elapsed.TotalMinutes < 120)
-            {
-                if (Elapsed.TotalMinutes < 1.5)
-                {
-                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MINUTES"]}{ago}";
-                }
-
-                return Math.Round(Elapsed.TotalMinutes, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MINUTES"]}{ago}";
-            }
-            if (Elapsed.TotalHours <= 24)
-            {
-                if (Elapsed.TotalHours < 1.5)
-                {
-                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]}{ago}";
-                }
-
-                return Math.Round(Elapsed.TotalHours, 0) + $" { CurrentLocalization.LocalizationIndex["GLOBAL_TIME_HOURS"]}{ago}";
-            }
-            if (Elapsed.TotalDays <= 90)
-            {
-                if (Elapsed.TotalDays < 1.5)
-                {
-                    return $"1 {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_DAYS"]}{ago}";
-                }
-
-                return Math.Round(Elapsed.TotalDays, 0) + $" {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_DAYS"]}{ago}";
-            }
-            if (Elapsed.TotalDays <= 365)
-            {
-                return $"{Math.Round(Elapsed.TotalDays / 7)} {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_WEEKS"]}{ago}";
-            }
-            else
-            {
-                return $"{Math.Round(Elapsed.TotalDays / 30, 0)} {CurrentLocalization.LocalizationIndex["GLOBAL_TIME_MONTHS"]}{ago}";
-            }
-        }
-
         public static Game GetGame(string gameName)
         {
             if (string.IsNullOrEmpty(gameName))
@@ -517,42 +469,6 @@ namespace SharedLibraryCore
             }
 
             return new TimeSpan(1, 0, 0);
-        }
-
-        public static string TimeSpanText(this TimeSpan span)
-        {
-            var loc = CurrentLocalization.LocalizationIndex;
-
-            if (span.TotalMinutes < 60)
-            {
-                return $"{span.Minutes} {loc["GLOBAL_TIME_MINUTES"]}";
-            }
-            else if (span.Hours >= 1 && span.TotalHours < 24)
-            {
-                return $"{span.Hours} {loc["GLOBAL_TIME_HOURS"]}";
-            }
-            else if (span.TotalDays >= 1 && span.TotalDays < 7)
-            {
-                return $"{span.Days} {loc["GLOBAL_TIME_DAYS"]}";
-            }
-            else if (span.TotalDays >= 7 && span.TotalDays < 90)
-            {
-                return $"{Math.Round(span.Days / 7.0, 0)} {loc["GLOBAL_TIME_WEEKS"]}";
-            }
-            else if (span.TotalDays >= 90 && span.TotalDays < 365)
-            {
-                return $"{Math.Round(span.Days / 30.0, 0)} {loc["GLOBAL_TIME_MONTHS"]}";
-            }
-            else if (span.TotalDays >= 365 && span.TotalDays < 36500)
-            {
-                return $"{Math.Round(span.Days / 365.0, 0)} {loc["GLOBAL_TIME_YEARS"]}";
-            }
-            else if (span.TotalDays >= 36500)
-            {
-                return loc["GLOBAL_TIME_FOREVER"];
-            }
-
-            return "unknown";
         }
 
         /// <summary>
@@ -932,7 +848,7 @@ namespace SharedLibraryCore
         /// <param name="penalty"></param>
         /// <param name="penaltyService"></param>
         /// <param name="logger"></param>
-        /// <returns>true of the creat succeeds, false otherwise</returns>
+        /// <returns>true of the create succeeds, false otherwise</returns>
         public static async Task<bool> TryCreatePenalty(this EFPenalty penalty, IEntityService<EFPenalty> penaltyService, ILogger logger)
         {
             try
@@ -969,7 +885,50 @@ namespace SharedLibraryCore
         }
 
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
-        
+
+        /// <summary>
+        /// parses translation string into tokens that are able to be formatted by the webfront
+        /// </summary>
+        /// <param name="translationKey">key for translation lookup</param>
+        /// <returns></returns>
+        public static WebfrontTranslationHelper[] SplitTranslationTokens(string translationKey)
+        {
+            string translationString = CurrentLocalization.LocalizationIndex[translationKey];
+            var builder = new StringBuilder();
+            var results = new List<WebfrontTranslationHelper>();
+
+            foreach (string word in translationString.Split(' '))
+            {
+                string finalWord = word;
+
+                if ((word.StartsWith("{{") && !word.EndsWith("}}")) ||
+                    (builder.Length > 0 && !word.EndsWith("}}")))
+                {
+                    builder.Append($"{word} ");
+                    continue;
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.Append(word);
+                    finalWord = builder.ToString();
+                    builder.Clear();
+                }
+
+                var match = Regex.Match(finalWord, @"{{([^}|^-]+)(?:->)([^}]+)}}|{{([^}]+)}}");
+                bool isInterpolation = match.Success;
+
+                results.Add(new WebfrontTranslationHelper
+                {
+                    IsInterpolation = isInterpolation,
+                    MatchValue = isInterpolation ? match.Groups[3].Length > 0 ? match.Groups[3].ToString() : match.Groups[1].ToString() : finalWord,
+                    TranslationValue = isInterpolation && match.Groups[2].Length > 0 ? match.Groups[2].ToString() : ""
+                });
+            }
+
+            return results.ToArray();
+        }
+
         /// <summary>
         /// indicates if running in development mode
         /// </summary>
@@ -990,6 +949,28 @@ namespace SharedLibraryCore
             }
 
             return path;
+        }
+
+        /// <summary>
+        /// wrapper method for humanizee that uses current current culture
+        /// </summary>
+        public static string HumanizeForCurrentCulture(this TimeSpan timeSpan, int precision = 1, TimeUnit maxUnit = TimeUnit.Week, 
+            TimeUnit minUnit = TimeUnit.Millisecond, string collectionSeparator = ", ", bool toWords = false)
+        {
+            return timeSpan.Humanize(precision, CurrentLocalization.Culture, maxUnit, minUnit, collectionSeparator, toWords);
+        }
+
+        /// <summary>
+        /// wrapper method for humanizee that uses current current culture
+        /// </summary>
+        public static string HumanizeForCurrentCulture(this DateTime input, bool utcDate = true, DateTime? dateToCompareAgainst = null, CultureInfo culture = null)
+        {
+            return input.Humanize(utcDate, dateToCompareAgainst, CurrentLocalization.Culture);
+        }
+
+        public static string ToTranslatedName(this MetaType metaType)
+        {
+            return CurrentLocalization.LocalizationIndex[$"META_TYPE_{metaType.ToString().ToUpper()}_NAME"];
         }
     }
 }

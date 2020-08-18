@@ -1,7 +1,10 @@
-[
+﻿[
   {
     "outputFile": "wwwroot/css/global.css",
-    "inputFile": "wwwroot/css/src/main.scss",
-    "sourceMap": false
+    "inputFile": "wwwroot/css/src/main.scss"
+  },
+  {
+    "outputFile": "wwwroot/css/src/profile.css",
+    "inputFile": "wwwroot/css/src/profile.scss"
   }
 ]

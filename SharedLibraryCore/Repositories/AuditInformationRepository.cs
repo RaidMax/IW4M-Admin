@@ -20,7 +20,7 @@ namespace SharedLibraryCore.Repositories
         }
 
         /// <inheritdoc/>
-        public async Task<IList<AuditInfo>> ListAuditInformation(PaginationInfo paginationInfo)
+        public async Task<IList<AuditInfo>> ListAuditInformation(PaginationRequest paginationInfo)
         {
             using (var ctx = _contextFactory.CreateContext(enableTracking: false))
             {

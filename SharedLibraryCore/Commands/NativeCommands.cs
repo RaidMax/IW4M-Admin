@@ -53,7 +53,6 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            MetaService.Clear();
             E.Owner.Manager.Restart();
             E.Origin.Tell(_translationLookup["COMMANDS_RESTART_SUCCESS"]);
             return Task.CompletedTask;
@@ -292,7 +291,7 @@ namespace SharedLibraryCore.Commands
                     switch ((await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
                     {
                         case GameEvent.EventFailReason.None:
-                            E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(E.Target, length.TimeSpanText()));
+                            E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(E.Target, length.HumanizeForCurrentCulture()));
                             break;
                         case GameEvent.EventFailReason.Exception:
                             E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
@@ -890,14 +889,9 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            foreach (var P in db_players)
+            foreach (var client in db_players)
             {
-                // they're not going by another alias
-                // /*P.AliasLink.Children.FirstOrDefault(a => a.Name.ToLower().Contains(E.Data.ToLower()))?.Name*/
-                string msg = P.Name.ToLower().Contains(E.Data.ToLower()) ?
-                    $"[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor((Permission)P.LevelInt, P.Level)}^7] - {P.IPAddress} | last seen {Utilities.GetTimePassed(P.LastConnection)}" :
-                    $"()->[^3{P.Name}^7] [^3@{P.ClientId}^7] - [{ Utilities.ConvertLevelToColor((Permission)P.LevelInt, P.Level)}^7] - {P.IPAddress} | last seen {Utilities.GetTimePassed(P.LastConnection)}";
-                E.Origin.Tell(msg);
+                E.Origin.Tell(_translationLookup["COMMANDS_FIND_FORMAT"].FormatExt(client.Name, client.ClientId, Utilities.ConvertLevelToColor((Permission)client.LevelInt, client.Level), client.IPAddress, client.LastConnectionText));
             }
         }
     }
@@ -1259,7 +1253,7 @@ namespace SharedLibraryCore.Commands
 
             else
             {
-                string remainingTime = (penalty.Expires.Value - DateTime.UtcNow).TimeSpanText();
+                string remainingTime = (penalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture();
                 E.Origin.Tell(_translationLookup["COMMANDS_BANINFO_TB_SUCCESS"].FormatExt(E.Target.Name, penalty.Offense, remainingTime));
             }
         }
@@ -1543,7 +1537,9 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class SetGravatarCommand : Command
     {
-        public SetGravatarCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly IMetaService _metaService; 
+
+        public SetGravatarCommand(CommandConfiguration config, ITranslationLookup translationLookup, IMetaService metaService) : base(config, translationLookup)
         {
             Name = "setgravatar";
             Description = _translationLookup["COMMANDS_GRAVATAR_DESC"];
@@ -1558,17 +1554,17 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+
+            _metaService = metaService;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var metaSvc = new MetaService();
-
             using (var md5 = MD5.Create())
             {
                 string gravatarEmail = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
                                 .Select(h => h.ToString("x2")));
-                await metaSvc.AddPersistentMeta("GravatarEmail", gravatarEmail, E.Origin);
+                await _metaService.AddPersistentMeta("GravatarEmail", gravatarEmail, E.Origin);
             }
 
             E.Origin.Tell(_translationLookup["COMMANDS_GRAVATAR_SUCCESS_NEW"]);

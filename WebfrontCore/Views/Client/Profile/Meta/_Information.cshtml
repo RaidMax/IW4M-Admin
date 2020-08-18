@@ -1,0 +1,43 @@
+﻿@model IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>
+@{
+    var informationMeta = Model
+        .Where(_meta => _meta.Type == SharedLibraryCore.Interfaces.MetaType.Information)
+        .OrderBy(_meta => _meta.Order)
+        .GroupBy(_meta => _meta.Column)
+        .OrderBy(_grouping => _grouping.Key);
+}
+
+@foreach (var metaColumn in informationMeta)
+{
+    <div class="text-center text-lg-left mr-0 mr-lg-4">
+        @foreach (var meta in metaColumn)
+        {
+            <div class="profile-meta-entry" title="@meta.ToolTipText">
+
+                @{var results = Utilities.SplitTranslationTokens(meta.Key);}
+
+                @if (results.Any(_result => _result.IsInterpolation))
+                {
+                    foreach (var result in results)
+                    {
+                        if (result.IsInterpolation)
+                        {
+                            <span class="profile-meta-value text-primary"><color-code value="@meta.Value" allow="@ViewBag.EnableColorCodes"></color-code></span>
+                        }
+
+                        else
+                        {
+                            <span class="profile-meta-title text-muted">@result.MatchValue</span>
+                        }
+                    }
+                }
+
+                else
+                {
+                    <span class="profile-meta-value text-primary"><color-code value="@meta.Value" allow="@ViewBag.EnableColorCodes"></color-code></span>
+                    <span class="profile-meta-title text-muted"> @meta.Key</span>
+                }
+            </div>
+        }
+    </div>
+}

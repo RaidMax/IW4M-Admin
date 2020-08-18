@@ -1,9 +1,10 @@
 ﻿using SharedLibraryCore.Dtos;
+using SharedLibraryCore.QueryHelper;
 using System;
 
 namespace StatsWeb.Dtos
 {
-    public class ChatSearchQuery : PaginationInfo
+    public class ChatSearchQuery : ClientPaginationRequest
     {
         /// <summary>
         /// specifies the partial content of the message to search for
@@ -18,7 +19,7 @@ namespace StatsWeb.Dtos
         /// <summary>
         /// identifier for the client
         /// </summary>
-        public int? ClientId { get; set; }
+        public new int? ClientId { get; set; }
 
         /// <summary>
         /// only look for messages sent after this date

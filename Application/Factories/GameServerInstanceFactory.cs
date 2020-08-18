@@ -13,17 +13,19 @@ namespace IW4MAdmin.Application.Factories
         private readonly ITranslationLookup _translationLookup;
         private readonly IRConConnectionFactory _rconConnectionFactory;
         private readonly IGameLogReaderFactory _gameLogReaderFactory;
+        private readonly IMetaService _metaService;
 
         /// <summary>
         /// base constructor
         /// </summary>
         /// <param name="translationLookup"></param>
         /// <param name="rconConnectionFactory"></param>
-        public GameServerInstanceFactory(ITranslationLookup translationLookup, IRConConnectionFactory rconConnectionFactory, IGameLogReaderFactory gameLogReaderFactory)
+        public GameServerInstanceFactory(ITranslationLookup translationLookup, IRConConnectionFactory rconConnectionFactory, IGameLogReaderFactory gameLogReaderFactory, IMetaService metaService)
         {
             _translationLookup = translationLookup;
             _rconConnectionFactory = rconConnectionFactory;
             _gameLogReaderFactory = gameLogReaderFactory;
+            _metaService = metaService;
         }
 
         /// <summary>
@@ -34,7 +36,7 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public Server CreateServer(ServerConfiguration config, IManager manager)
         {
-            return new IW4MServer(manager, config, _translationLookup, _rconConnectionFactory, _gameLogReaderFactory);
+            return new IW4MServer(manager, config, _translationLookup, _rconConnectionFactory, _gameLogReaderFactory, _metaService);
         }
     }
 }

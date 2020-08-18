@@ -22,7 +22,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             List<string> mostPlayed = new List<string>()
             {
-                $"^5--{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
+                $"^5--{translationLookup["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
             };
 
             using (var db = new DatabaseContext(true))
@@ -51,8 +51,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 var iqList = await iqStats.ToListAsync();
 
-                mostPlayed.AddRange(iqList.Select(stats =>
-                $"^3{stats.Name}^7 - ^5{stats.Kills} ^7{translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{Utilities.GetTimePassed(DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime), false)} ^7{translationLookup["WEBFRONT_PROFILE_PLAYER"].ToLower()}"));
+                mostPlayed.AddRange(iqList.Select(stats => translationLookup["COMMANDS_MOST_PLAYED_FORMAT"].FormatExt(stats.Name, (DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime)).HumanizeForCurrentCulture())));
             }
 
 

@@ -7,7 +7,6 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,15 +25,17 @@ namespace IW4MAdmin
         private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
         public GameLogEventDetection LogEvent;
         private readonly ITranslationLookup _translationLookup;
+        private readonly IMetaService _metaService;
         private const int REPORT_FLAG_COUNT = 4;
         private int lastGameTime = 0;
 
         public int Id { get; private set; }
 
         public IW4MServer(IManager mgr, ServerConfiguration cfg, ITranslationLookup lookup,
-            IRConConnectionFactory connectionFactory, IGameLogReaderFactory gameLogReaderFactory) : base(cfg, mgr, connectionFactory, gameLogReaderFactory)
+            IRConConnectionFactory connectionFactory, IGameLogReaderFactory gameLogReaderFactory, IMetaService metaService) : base(cfg, mgr, connectionFactory, gameLogReaderFactory)
         {
             _translationLookup = lookup;
+            _metaService = metaService;
         }
 
         override public async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -475,8 +476,8 @@ namespace IW4MAdmin
                     Time = DateTime.UtcNow
                 });
 
-                await new MetaService().AddPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin);
-                await new MetaService().AddPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin);
+                await _metaService.AddPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin);
+                await _metaService.AddPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin);
             }
 
             else if (E.Type == GameEvent.EventType.PreDisconnect)
@@ -610,13 +611,10 @@ namespace IW4MAdmin
 
             if (E.Type == GameEvent.EventType.Broadcast)
             {
-#if DEBUG == false
-                // this is a little ugly but I don't want to change the abstract class
-                if (E.Data != null)
+                if (!Utilities.IsDevelopment && E.Data != null) // hides broadcast when in development mode
                 {
                     await E.Owner.ExecuteCommandAsync(E.Data);
                 }
-#endif
             }
 
             lock (ChatHistory)
@@ -1083,9 +1081,11 @@ namespace IW4MAdmin
             Logger.WriteInfo($"Log file is {LogPath}");
 
             _ = Task.Run(() => LogEvent.PollForChanges());
-#if !DEBUG
-            Broadcast(loc["BROADCAST_ONLINE"]);
-#endif
+
+            if (!Utilities.IsDevelopment)
+            {
+                Broadcast(loc["BROADCAST_ONLINE"]);
+            }
         }
 
         public Uri[] GenerateUriForLog(string logPath, string gameLogServerUrl)
@@ -1233,6 +1233,7 @@ namespace IW4MAdmin
             if (targetClient.IsIngame)
             {
                 string formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"^7{loc["SERVER_TB_TEXT"]}- ^5{Reason}");
+                Logger.WriteDebug($"Executing tempban kick command for {targetClient}");
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
         }

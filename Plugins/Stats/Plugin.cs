@@ -6,8 +6,10 @@ using SharedLibraryCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
@@ -33,13 +35,15 @@ namespace IW4MAdmin.Plugins.Stats
 #endif
         private readonly IDatabaseContextFactory _databaseContextFactory;
         private readonly ITranslationLookup _translationLookup;
+        private readonly IMetaService _metaService;
 
         public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
-            ITranslationLookup translationLookup)
+            ITranslationLookup translationLookup, IMetaService metaService)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
             _translationLookup = translationLookup;
+            _metaService = metaService;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -188,17 +192,14 @@ namespace IW4MAdmin.Plugins.Stats
                    "/Stats/TopPlayersAsync");
 
             // meta data info
-            async Task<List<ProfileMeta>> getStats(int clientId, int offset, int count, DateTime? startAt)
+            async Task<IEnumerable<InformationResponse>> getStats(ClientPaginationRequest request)
             {
-                if (count > 1)
-                {
-                    return new List<ProfileMeta>();
-                }
-
                 IList<EFClientStatistics> clientStats;
-                using (var ctx = new DatabaseContext(disableTracking: true))
+                int messageCount = 0;
+                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
                 {
-                    clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == clientId).ToListAsync();
+                    clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
+                    messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);                 
                 }
 
                 int kills = clientStats.Sum(c => c.Kills);
@@ -209,73 +210,76 @@ namespace IW4MAdmin.Plugins.Stats
                 double performance = Math.Round(validPerformanceValues.Sum(c => c.Performance * c.TimePlayed / performancePlayTime), 2);
                 double spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Where(c => c.SPM > 0).Count(), 1);
 
-                return new List<ProfileMeta>()
+                return new List<InformationResponse>()
                 {
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
-                        Value = "#" + (await Manager.GetClientOverallRanking(clientId)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Value = "#" + (await Manager.GetClientOverallRanking(request.ClientId)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 0,
-                        Type = ProfileMeta.MetaType.Information
+                        Type = MetaType.Information
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                            Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"],
                            Value = kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                            Column = 0,
                            Order = 1,
-                           Type = ProfileMeta.MetaType.Information
+                           Type = MetaType.Information
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"],
                         Value = deaths.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 2,
-                        Type = ProfileMeta.MetaType.Information
+                        Type = MetaType.Information
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"],
                         Value = kdr.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 3,
-                        Type = ProfileMeta.MetaType.Information
+                        Type = MetaType.Information
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PERFORMANCE"],
                         Value = performance.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 4,
-                        Type = ProfileMeta.MetaType.Information
+                        Type = MetaType.Information
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_META_SPM"],
                         Value = spm.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 5,
-                        Type = ProfileMeta.MetaType.Information
+                        Type = MetaType.Information
+                    },
+                    new InformationResponse()
+                    {
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
+                        Value = messageCount.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Column = 1,
+                        Order = 4,
+                        Type = MetaType.Information
                     }
                 };
             }
 
-            async Task<List<ProfileMeta>> getAnticheatInfo(int clientId, int offset, int count, DateTime? startAt)
+            async Task<IEnumerable<InformationResponse>> getAnticheatInfo(ClientPaginationRequest request)
             {
-                if (count > 1)
-                {
-                    return new List<ProfileMeta>();
-                }
-
                 IList<EFClientStatistics> clientStats;
 
-                using (var ctx = new DatabaseContext(disableTracking: true))
+                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
                 {
                     clientStats = await ctx.Set<EFClientStatistics>()
                         .Include(c => c.HitLocations)
-                        .Where(c => c.ClientId == clientId)
+                        .Where(c => c.ClientId == request.ClientId)
                         .ToListAsync();
                 }
 
@@ -310,147 +314,120 @@ namespace IW4MAdmin.Plugins.Stats
                     averageSnapValue = clientStats.Any(_stats => _stats.AverageSnapValue > 0) ? clientStats.Where(_stats => _stats.AverageSnapValue > 0).Average(_stat => _stat.AverageSnapValue) : 0;
                 }
 
-                return new List<ProfileMeta>()
+                return new List<InformationResponse>()
                 {
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key =  $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 1",
                         Value = chestRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 0,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM1"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM1"],
+                        IsSensitive = true
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 2",
                         Value = abdomenRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 1,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM2"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM2"],
+                        IsSensitive = true
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 3",
                         Value = chestAbdomenRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 2,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM3"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM3"],
+                        IsSensitive = true
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 4",
                         Value = headRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 3,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM4"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM4"],
+                        IsSensitive = true
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 5",
                         // todo: make sure this is wrapped somewhere else
                         Value = $"{Math.Round(((float)hitOffsetAverage), 4).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))}°",
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 4,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM5"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM5"],
+                        IsSensitive = true
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 6",
                         Value = Math.Round(maxStrain, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 5,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM6"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM6"],
+                        IsSensitive = true
                     },
-                    new ProfileMeta()
+                    new InformationResponse()
                     {
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 7",
                         Value = Math.Round(averageSnapValue, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                        Type = ProfileMeta.MetaType.Information,
+                        Type = MetaType.Information,
                         Column = 2,
                         Order = 6,
-                        Extra = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
-                        Sensitive = true
+                        ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
+                        IsSensitive = true
                     }
                 };
             }
 
-            async Task<List<ProfileMeta>> getMessages(int clientId, int offset, int count, DateTime? startAt)
+            async Task<IEnumerable<MessageResponse>> getMessages(ClientPaginationRequest request)
             {
-                if (count <= 1)
-                {
-                    using (var ctx = new DatabaseContext(true))
-                    {
-                        return new List<ProfileMeta>
-                        {
-                            new ProfileMeta()
-                            {
-                                Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
-                                Value = (await ctx.Set<EFClientMessage>()
-                                    .CountAsync(_message => _message.ClientId == clientId))
-                                    .ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                                Column = 1,
-                                Order= 4,
-                                Type = ProfileMeta.MetaType.Information
-                            }
-                        };
-                    }
-                }
-
-                List<ProfileMeta> messageMeta;
-                using (var ctx = new DatabaseContext(disableTracking: true))
+                List<MessageResponse> messageMeta;
+                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
                 {
                     var messages = ctx.Set<EFClientMessage>()
-                        .Where(m => m.ClientId == clientId)
-                        .Where(_message => _message.TimeSent < startAt)
+                        .Where(m => m.ClientId == request.ClientId)
+                        .Where(_message => _message.TimeSent < request.Before)
                         .OrderByDescending(_message => _message.TimeSent)
-                        .Skip(offset)
-                        .Take(count);
+                        .Take(request.Count);
 
-                    messageMeta = await messages.Select(m => new ProfileMeta()
+                    messageMeta = await messages.Select(m => new MessageResponse()
                     {
-                        Key = null,
-                        Value = new { m.Message, m.Server.GameName },
+                        // todo: game name
+                        Message = m.Message,
                         When = m.TimeSent,
-                        Extra = m.ServerId.ToString(),
-                        Type = ProfileMeta.MetaType.ChatMessage
+                        ServerId = m.ServerId,
+                        Type = MetaType.ChatMessage
                     }).ToListAsync();
 
-                    foreach (var message in messageMeta)
+                    foreach (var meta in messageMeta)
                     {
-                        if ((message.Value.Message as string).IsQuickMessage())
+                        if ((meta.Message).IsQuickMessage())
                         {
                             try
                             {
                                 var quickMessages = ServerManager.GetApplicationSettings().Configuration()
                                     .QuickMessages
-                                    .First(_qm => _qm.Game == message.Value.GameName);
-                                message.Value = quickMessages.Messages[(message.Value.Message as string).Substring(1)];
-                                message.Type = ProfileMeta.MetaType.QuickMessage;
+                                    .First(/*_qm => _qm.Game == meta.GameName*/);
+                                meta.Message = quickMessages.Messages[(meta.Message as string).Substring(1)];
+                                meta.Type = MetaType.QuickMessage;
                             }
                             catch
                             {
-                                message.Value = message.Value.Message;
+
                             }
                         }
-
-                        else
-                        {
-                            message.Value = message.Value.Message;
-                        }
                     }
-
                 }
 
                 return messageMeta;
@@ -458,11 +435,11 @@ namespace IW4MAdmin.Plugins.Stats
 
             if (Config.Configuration().EnableAntiCheat)
             {
-                MetaService.AddRuntimeMeta(getAnticheatInfo);
+                _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, getAnticheatInfo);
             }
 
-            MetaService.AddRuntimeMeta(getStats);
-            MetaService.AddRuntimeMeta(getMessages);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, getStats);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, MessageResponse>(MetaType.ChatMessage, getMessages);
 
             async Task<string> totalKills(Server server)
             {

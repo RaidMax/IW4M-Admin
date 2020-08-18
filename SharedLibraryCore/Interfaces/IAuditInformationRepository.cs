@@ -14,6 +14,6 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="paginationInfo">pagination info</param>
         /// <returns></returns>
-        Task<IList<AuditInfo>> ListAuditInformation(PaginationInfo paginationInfo);
+        Task<IList<AuditInfo>> ListAuditInformation(PaginationRequest paginationInfo);
     }
 }

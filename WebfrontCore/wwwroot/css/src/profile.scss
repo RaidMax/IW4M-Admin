@@ -1,4 +1,6 @@
-﻿.level-bgcolor-console {
+﻿@import 'bootstrap-custom.scss';
+
+.level-bgcolor-console {
     background-color: grey;
 }
 
@@ -193,4 +195,9 @@
 
 #profile_events span {
     word-break: break-all;
+}
+
+#filter_meta_container .nav-link:hover {
+    background-color: $dark;
+    color: $white !important;
 }

@@ -1,0 +1,9 @@
+﻿@using SharedLibraryCore.Dtos.Meta.Responses;
+
+@model MessageResponse
+<span class="client-message" data-serverid="@Model.ServerId" data-when="@Model.When.ToFileTimeUtc()">
+    <span class="oi oi-chevron-right text-white-50 align-middle client-message-prefix" title="@ViewBag.Localization["WEBFRONT_PROFILE_MESSAGE_CONTEXT"]" style="font-size: 0.75rem; margin-top: -0.256rem"></span>
+    <span class="text-muted">
+        <color-code value="@Model.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+    </span>
+</span>

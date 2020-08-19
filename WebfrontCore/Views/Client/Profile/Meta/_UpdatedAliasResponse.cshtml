@@ -1,0 +1,27 @@
+﻿@using SharedLibraryCore.Dtos.Meta.Responses
+@using SharedLibraryCore
+@model UpdatedAliasResponse
+
+@foreach (var token in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_META_CONNECT_ALIAS"))
+{
+    if (token.IsInterpolation)
+    {
+        switch (token.MatchValue)
+        {
+            case "action":
+                <span class="text-warning">@token.TranslationValue</span>
+                break;
+            case "alias":
+                <span class="text-white">
+                    <color-code value="@Model.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    [@Model.IPAddress]
+                </span>
+                break;
+        }
+    }
+
+    else
+    {
+        <span class="text-muted">@token.MatchValue</span>
+    }
+}

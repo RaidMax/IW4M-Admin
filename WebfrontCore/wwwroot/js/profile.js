@@ -11,7 +11,15 @@
     });
 
     /* set the end time for initial event query */
-    startAt = $('#profile_events').children().last().data('time');
+    startAt = $('.loader-data-time').last().data('time');
+
+
+    $('#filter_meta_container_button').click(function () {
+        $('#filter_meta_container').hide();
+        $('#filter_meta_container').removeClass('d-none');
+        $('#filter_meta_container').addClass('d-block');
+        $('#filter_meta_container').slideDown();
+    });
 
     /*
      * load context of chat 
@@ -20,6 +28,14 @@
     $(document).on('click', '.client-message', function (e) {
         showLoader();
         const location = $(this);
+        $('.client-message-prefix').removeClass('oi-chevron-bottom');
+        $('.client-message-prefix').removeClass('oi-chevron-right');
+
+        $('.client-message-prefix').addClass('oi-chevron-right');
+
+        $(this).children().filter('.client-message-prefix').removeClass('oi-chevron-right');
+        $(this).children().filter('.client-message-prefix').addClass('oi-chevron-bottom');
+       
         $.get('/Stats/GetMessageAsync', {
             'serverId': $(this).data('serverid'),
             'when': $(this).data('when')

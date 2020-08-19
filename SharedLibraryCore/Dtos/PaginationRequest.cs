@@ -1,9 +1,11 @@
-﻿namespace SharedLibraryCore.Dtos
+﻿using System;
+
+namespace SharedLibraryCore.Dtos
 {
     /// <summary>
     /// pagination information holder class
     /// </summary>
-    public class PaginationInfo
+    public class PaginationRequest
     {
         /// <summary>
         /// how many items to skip
@@ -24,6 +26,8 @@
         /// direction of ordering
         /// </summary>
         public SortDirection Direction { get; set; } = SortDirection.Descending;
+
+        public DateTime? Before { get; set; }
     }
 
     public enum SortDirection

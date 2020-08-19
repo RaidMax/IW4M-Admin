@@ -156,7 +156,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Deaths = s.Deaths,
                     Kills = s.Kills,
                     KDR = Math.Round(s.KDR, 2),
-                    LastSeen = Utilities.GetTimePassed(clientRatingsDict[s.ClientId].LastConnection, false),
+                    LastSeen = (DateTime.UtcNow - clientRatingsDict[s.ClientId].LastConnection).HumanizeForCurrentCulture(),
                     Name = clientRatingsDict[s.ClientId].Name,
                     Performance = Math.Round(clientRatingsDict[s.ClientId].Performance, 2),
                     RatingChange = ratingInfo.First(r => r.Key == s.ClientId).Ratings.First().Ranking - ratingInfo.First(r => r.Key == s.ClientId).Ratings.Last().Ranking,
@@ -662,6 +662,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     string flagReason = penalty.Type == Cheat.Detection.DetectionType.Bone ?
                             $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}" :
                             $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
+
+                    penaltyClient.AdministeredPenalties = new List<EFPenalty>()
+                    {
+                        new EFPenalty()
+                        {
+                            AutomatedOffense = flagReason
+                        }
+                    };
 
                     await attacker.Flag(flagReason, penaltyClient, new TimeSpan(168, 0, 0)).WaitAsync(Utilities.DefaultCommandTimeout, attacker.CurrentServer.Manager.CancellationToken);
                     break;

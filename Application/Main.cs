@@ -2,16 +2,22 @@
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Helpers;
+using IW4MAdmin.Application.Meta;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
 using RestEase;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos.Meta.Requests;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Repositories;
+using SharedLibraryCore.Services;
 using System;
 using System.Linq;
 using System.Text;
@@ -128,7 +134,11 @@ namespace IW4MAdmin.Application
                 await ApplicationTask;
             }
 
-            catch { }
+            catch (Exception e) 
+            {
+                string failMessage = translationLookup == null ? "Failed to initalize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
+                Console.WriteLine($"{failMessage}: {e.GetExceptionInfo()}");
+            }
 
             if (ServerManager.IsRestartRequested)
             {
@@ -235,6 +245,12 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IGameLogReaderFactory, GameLogReaderFactory>()
                 .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
                 .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
+                .AddSingleton<IEntityService<EFClient>, ClientService>()
+                .AddSingleton<IMetaService, MetaService>()
+                .AddSingleton<IMetaRegistration, MetaRegistration>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>, ReceivedPenaltyResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>, AdministeredPenaltyResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>
                 {

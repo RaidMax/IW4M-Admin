@@ -43,13 +43,14 @@ namespace ApplicationTests
                 .AddSingleton(A.Fake<IParserRegexFactory>())
                 .AddSingleton<DataFileLoader>()
                 .AddSingleton(A.Fake<IGameLogReaderFactory>())
+                .AddSingleton(A.Fake<IMetaService>())
                 .AddSingleton(eventHandler)
                 .AddSingleton(ConfigurationGenerators.CreateApplicationConfiguration())
                 .AddSingleton(ConfigurationGenerators.CreateCommandConfiguration())
                 .AddSingleton<IConfigurationHandler<ApplicationConfiguration>, ApplicationConfigurationHandlerMock>();
 
             serviceCollection.AddSingleton(_sp => new IW4MServer(_sp.GetRequiredService<IManager>(), ConfigurationGenerators.CreateServerConfiguration(),
-                _sp.GetRequiredService<ITranslationLookup>(), _sp.GetRequiredService<IRConConnectionFactory>(), _sp.GetRequiredService<IGameLogReaderFactory>())
+                _sp.GetRequiredService<ITranslationLookup>(), _sp.GetRequiredService<IRConConnectionFactory>(), _sp.GetRequiredService<IGameLogReaderFactory>(), _sp.GetRequiredService<IMetaService>())
             {
                 RconParser = _sp.GetRequiredService<IRConParser>()
             });

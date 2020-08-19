@@ -1,5 +1,4 @@
-﻿@import 'bootstrap-custom.scss';
-@import 'profile.scss';
+﻿@import 'profile.scss';
 
 $icon-font-path: '/font/' !default;
 @import '../../lib/open-iconic/font/css/open-iconic-bootstrap.scss';
@@ -195,7 +194,7 @@ form *, select {
     font-size: 1rem;
 }
 
-.client-message, .automated-penalty-info-detailed, .oi {
+.oi {
     cursor: pointer;
 }
 

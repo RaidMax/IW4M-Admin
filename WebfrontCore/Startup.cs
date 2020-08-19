@@ -19,6 +19,10 @@ using Stats.Dtos;
 using Stats.Helpers;
 using StatsWeb;
 using StatsWeb.Dtos;
+/*using Stats.Dtos;
+using Stats.Helpers;
+using StatsWeb;
+using StatsWeb.Dtos;*/
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -125,6 +129,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<SharedLibraryCore.Interfaces.ILogger>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IMetaService>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -2,12 +2,15 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebfrontCore.ViewComponents;
 using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.Database.Models.EFPenalty;
 
@@ -15,12 +18,14 @@ namespace WebfrontCore.Controllers
 {
     public class ClientController : BaseController
     {
-        public ClientController(IManager manager) : base(manager)
-        {
+        private readonly IMetaService _metaService;
 
+        public ClientController(IManager manager, IMetaService metaService) : base(manager)
+        {
+            _metaService = metaService;
         }
 
-        public async Task<IActionResult> ProfileAsync(int id)
+        public async Task<IActionResult> ProfileAsync(int id, MetaType? metaFilterType)
         {
             var client = await Manager.GetClientService().Get(id);
 
@@ -29,8 +34,8 @@ namespace WebfrontCore.Controllers
                 return NotFound();
             }
 
-            var activePenalties = (await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress))
-                .Where(_penalty => _penalty.Type != PenaltyType.Flag);
+            var activePenalties = (await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress));
+
 
             int displayLevelInt = (int)client.Level;
             string displayLevel = client.Level.ToLocalizedLevelName();
@@ -49,7 +54,7 @@ namespace WebfrontCore.Controllers
                 ClientId = client.ClientId,
                 IPAddress = client.IPAddressString,
                 NetworkId = client.NetworkId,
-                Meta = new List<ProfileMeta>(),
+                Meta = new List<InformationResponse>(),
                 Aliases = client.AliasLink.Children
                     .Select(_alias => _alias.Name)
                     .GroupBy(_alias => _alias.StripColors())
@@ -65,38 +70,32 @@ namespace WebfrontCore.Controllers
                     .Prepend(client.CurrentAlias.IPAddress.ConvertIPtoString())
                     .Distinct()
                     .ToList(),
-                HasActivePenalty = activePenalties.Count() > 0,
-                ActivePenaltyType = activePenalties.Count() > 0 ? activePenalties.First().Type.ToString() : null,
+                HasActivePenalty = activePenalties.Any(_penalty => _penalty.Type != PenaltyType.Flag),
                 Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
-                TimeOnline = (DateTime.UtcNow - client.LastConnection).TimeSpanText(),
-                LinkedAccounts = client.LinkedAccounts
+                TimeOnline = (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture(),
+                LinkedAccounts = client.LinkedAccounts,
+                MetaFilterType = metaFilterType
             };
 
-            var meta = await MetaService.GetRuntimeMeta(client.ClientId, 0, 1, DateTime.UtcNow);
-            var gravatar = await new MetaService().GetPersistentMeta("GravatarEmail", client);
+            var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest
+            {
+                ClientId = client.ClientId,
+                Before = DateTime.UtcNow
+            }, MetaType.Information);
+
+            var gravatar = await _metaService.GetPersistentMeta("GravatarEmail", client);
             if (gravatar != null)
             {
-                clientDto.Meta.Add(new ProfileMeta()
+                clientDto.Meta.Add(new InformationResponse()
                 {
                     Key = "GravatarEmail",
-                    Type = ProfileMeta.MetaType.Other,
+                    Type = MetaType.Other,
                     Value = gravatar.Value
                 });
             }
 
-            var currentPenalty = activePenalties.FirstOrDefault();
-
-            if (currentPenalty != null && currentPenalty.Type == PenaltyType.TempBan)
-            {
-                clientDto.Meta.Add(new ProfileMeta()
-                {
-                    Key = Localization["WEBFRONT_CLIENT_META_REMAINING_BAN"],
-                    Value = ((currentPenalty.Expires - DateTime.UtcNow) ?? new TimeSpan()).TimeSpanText(),
-                    When = currentPenalty.When
-                });
-            }
-
-            clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.Sensitive));
+            clientDto.ActivePenalty = activePenalties.OrderByDescending(_penalty => _penalty.Type).FirstOrDefault();
+            clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.IsSensitive));
 
             string strippedName = clientDto.Name.StripColors();
             ViewBag.Title = strippedName.Substring(strippedName.Length - 1).ToLower()[0] == 's' ?
@@ -160,14 +159,17 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
-        public async Task<IActionResult> Meta(int id, int count, int offset, DateTime? startAt)
+        public async Task<IActionResult> Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType)
         {
-            IEnumerable<ProfileMeta> meta = await MetaService.GetRuntimeMeta(id, startAt == null ? offset : 0, count, startAt ?? DateTime.UtcNow);
-
-            if (!Authorized)
+            var request = new ClientPaginationRequest
             {
-                meta = meta.Where(_meta => !_meta.Sensitive);
-            }
+                ClientId = id,
+                Count = count,
+                Offset = offset,
+                Before = DateTime.FromFileTimeUtc(startAt ?? DateTime.UtcNow.ToFileTimeUtc())
+            };
+
+            var meta = await ProfileMetaListViewComponent.GetClientMeta(_metaService, metaFilterType, Client.Level, request);
 
             if (meta.Count() == 0)
             {

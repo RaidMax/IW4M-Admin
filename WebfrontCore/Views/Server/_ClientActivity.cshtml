@@ -54,21 +54,21 @@
                     }
 
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
-                        <div class="d-inline-flex">
-                            @if (ViewBag.Authorized)
-                            {
-                                <div class="oi oi-circle-x ml-0 mr-1 profile-action action-kick-button d-inline d-md-none" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
-                            }
+                    <div class="d-inline-flex">
+                        @if (ViewBag.Authorized)
+                        {
+                            <div class="oi oi-circle-x ml-0 mr-1 profile-action action-kick-button d-inline d-md-none" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                        }
 
-                            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
-                                <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
-                            </a>
+                        <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
+                            <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                        </a>
 
-                            @if (ViewBag.Authorized)
-                            {
-                                <div class="oi oi-circle-x ml-1 profile-action action-kick-button d-none d-md-inline" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
-                            }
-                        </div>
+                        @if (ViewBag.Authorized)
+                        {
+                            <div class="oi oi-circle-x ml-1 profile-action action-kick-button d-none d-md-inline" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                        }
+                    </div>
                     <br />
                 }
             }

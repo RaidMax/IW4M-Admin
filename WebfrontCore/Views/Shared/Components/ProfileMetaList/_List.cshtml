@@ -1,94 +1,66 @@
-﻿@model IEnumerable<SharedLibraryCore.Dtos.ProfileMeta>
+﻿@using SharedLibraryCore.Interfaces;
+
+@model IEnumerable<IClientMeta>
 @{
     Layout = null;
 
-    var timeSinceLastEvent = DateTime.MinValue;
+    var lastHeaderEventDate = DateTime.UtcNow;
 
-    dynamic formatPenaltyInfo(SharedLibraryCore.Dtos.ProfileMeta meta)
+    TimeSpan timeSpanForEvent(DateTime When)
     {
-        var penalty = meta.Value as SharedLibraryCore.Dtos.PenaltyInfo;
+        var timePassed = (DateTime.UtcNow - When);
+        var daysPassed = timePassed.TotalDays;
+        var minutesPassed = timePassed.TotalMinutes;
 
-        string localizationKey = meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized ?
-            $"WEBFRONT_CLIENT_META_PENALIZED_{penalty.PenaltyTypeText.ToUpper()}" :
-            $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{penalty.PenaltyTypeText.ToUpper()}";
-
-        string localizationMessage = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex[localizationKey];
-        var regexMatch = System.Text.RegularExpressions.Regex.Match(localizationMessage, @"^.*{{([^{}]+)}}.+$");
-        string penaltyType = regexMatch.Groups[1].Value.ToString();
-        var secondMatch = System.Text.RegularExpressions.Regex.Match(localizationMessage, @"\{\{.+\}\}(.+)\{0\}(.+)\{1\}");
-
-        return new
+        if (minutesPassed <= 60)
         {
-            Type = meta.Type,
-            Match = secondMatch,
-            Penalty = penalty,
-            PenaltyType = penaltyType
-        };
+            return TimeSpan.FromMinutes(5);
+        }
+
+        if (minutesPassed > 60 && daysPassed <= 1)
+        {
+            return TimeSpan.FromHours(1);
+        }
+
+        if (daysPassed > 1 && daysPassed <= 7)
+        {
+            return TimeSpan.FromDays(1);
+        }
+
+        if (daysPassed > 7 && daysPassed <= 31)
+        {
+            return TimeSpan.FromDays(31);
+        }
+
+        if (daysPassed > 31 && daysPassed <= 365)
+        {
+            return TimeSpan.FromDays(31);
+        }
+
+        else
+        {
+            return TimeSpan.FromDays(365);
+        }
     }
 }
 
 @if (Model.Count() == 0)
 {
-    <div class="p2 text-muted profile-event-timestep">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_NONE"]</div>
+    <div class="p2 text-muted profile-event-timestep">@ViewBag.Localization["WEBFRONT_CLIENT_META_NONE"]</div>
 }
 
 @foreach (var meta in Model.OrderByDescending(_meta => _meta.When))
 {
-    @if (Math.Abs((meta.When - timeSinceLastEvent).TotalDays) >= 1)
+    @if ((lastHeaderEventDate - meta.When) > timeSpanForEvent(lastHeaderEventDate))
     {
         <div class="p2 text-white profile-event-timestep">
             <span class="text-primary">&mdash;</span>
-            <span>@SharedLibraryCore.Utilities.GetTimePassed(meta.When, true)</span>
+            <span>@meta.When.HumanizeForCurrentCulture()</span>
         </div>
-
-        timeSinceLastEvent = meta.When;
+        lastHeaderEventDate = meta.When;
     }
 
-    @switch (meta.Type)
-    {
-        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ChatMessage:
-        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.QuickMessage:
-            <div class="profile-meta-entry loader-data-time" data-time="@meta.When">
-                <span style="color:white;">></span>
-                <span class="client-message text-muted @(meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.QuickMessage ? "font-italic" : "")" data-serverid="@meta.Extra" data-when="@meta.When.ToFileTimeUtc()" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGE_CONTEXT"]"> <color-code value="@meta.Value" allow="@ViewBag.EnableColorCodes"></color-code></span>
-            </div>
-            break;
-        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.ReceivedPenalty:
-        case SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized:
-            <div class="profile-meta-entry loader-data-time" data-time="@meta.When">
-                @{ var penaltyInfo = formatPenaltyInfo(meta); }
-                @if (meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.Penalized)
-                {
-                    <span class="penalties-color-@penaltyInfo.Penalty.PenaltyTypeText.ToLower()">@penaltyInfo.PenaltyType</span>
-                    <span>@penaltyInfo.Match.Groups[1].ToString()</span> <!-- by -->
-
-                    <span class="text-highlight">
-                        <!-- punisher -->
-                        <a class="link-inverse" href="@penaltyInfo.Penalty.OffenderId">
-                            <color-code value="@penaltyInfo.Penalty.OffenderName" allow="@ViewBag.EnableColorCodes"></color-code>
-                        </a>
-                    </span>
-                    <span>@penaltyInfo.Match.Groups[2].ToString()</span> <!-- for -->
-                    <span class="@(ViewBag.Authorized ? "automated-penalty-info-detailed" : "")} text-white"
-                          data-penalty-id="@penaltyInfo.Penalty.Id"><color-code value="@penaltyInfo.Penalty.Offense" allow="@ViewBag.EnableColorCodes"></color-code> @(ViewBag.Authorized ? penaltyInfo.Penalty.AdditionalPenaltyInformation : "")</span>
-                    }
-
-                @if (meta.Type == SharedLibraryCore.Dtos.ProfileMeta.MetaType.ReceivedPenalty)
-                {
-                    <span class="penalties-color-@penaltyInfo.Penalty.PenaltyTypeText.ToLower()">@penaltyInfo.PenaltyType</span> <!-- actioned -->
-                    <span>@penaltyInfo.Match.Groups[1].ToString()</span> <!-- by -->
-                    <span class="text-highlight">
-                        <a class="link-inverse" href="@penaltyInfo.Penalty.PunisherId">
-                            <color-code value="@penaltyInfo.Penalty.PunisherName" allow="@ViewBag.EnableColorCodes"></color-code>
-                        </a> <!-- punisher -->
-                    </span>
-                    <span>@penaltyInfo.Match.Groups[2]</span>
-                    <span class="@(ViewBag.Authorized ? "automated-penalty-info-detailed" : "") text-white"
-                          data-penalty-id="@penaltyInfo.Penalty.Id">
-                        <color-code value="@penaltyInfo.Penalty.Offense" allow="@ViewBag.EnableColorCodes"></color-code> @(ViewBag.Authorized ? penaltyInfo.Penalty.AdditionalPenaltyInformation : "")
-                    </span>
-                }
-            </div>
-            break;
-    }
+    <div class="profile-meta-entry loader-data-time" data-time="@meta.When.ToFileTimeUtc()" title="@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_META_DATE_OCCURRED"], meta.When.ToString())">
+        <partial name="~/Views/Client/Profile/Meta/_@(meta.GetType().Name).cshtml" model="meta" />
+    </div>
 }

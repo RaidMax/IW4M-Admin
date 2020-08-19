@@ -21,8 +21,8 @@ namespace SharedLibraryCore.Dtos
         public PenaltyType PenaltyType { get; set; }
         public string PenaltyTypeText => PenaltyType.ToString();
         public DateTime TimePunished { get; set; }
-        public string TimePunishedString => Utilities.GetTimePassed(TimePunished, true);
-        public string TimeRemaining => DateTime.UtcNow > Expires ? "" : $"{((Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? Utilities.GetTimePassed(TimePunished, true) : Utilities.TimeSpanText((Expires ?? DateTime.MaxValue) - DateTime.UtcNow))}";
+        public string TimePunishedString => TimePunished.HumanizeForCurrentCulture();
+        public string TimeRemaining => DateTime.UtcNow > Expires ? "" : $"{((Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? TimePunishedString : ((Expires ?? DateTime.MaxValue) - DateTime.UtcNow).HumanizeForCurrentCulture())}";
         public bool Expired => Expires.HasValue && Expires <= DateTime.UtcNow;
         public DateTime? Expires { get; set; }
         public override bool Sensitive => PenaltyType == PenaltyType.Flag || PenaltyType == PenaltyType.Unflag;

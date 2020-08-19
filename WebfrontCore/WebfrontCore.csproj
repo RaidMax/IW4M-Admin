@@ -73,11 +73,11 @@
   <ItemGroup Condition="'$(Configuration)'=='Debug'">
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.7" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Folder Include="wwwroot\lib\canvas.js\" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Plugins\Web\StatsWeb\StatsWeb.csproj" />
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />

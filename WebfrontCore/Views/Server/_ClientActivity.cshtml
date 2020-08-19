@@ -54,21 +54,26 @@
                     }
 
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
-                    <div class="d-inline-flex">
-                        <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
-                            <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
-                        </a>
+                        <div class="d-inline-flex">
+                            @if (ViewBag.Authorized)
+                            {
+                                <div class="oi oi-circle-x ml-0 mr-1 profile-action action-kick-button d-inline d-md-none" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                            }
 
-                        @if (ViewBag.Authorized)
-                        {
-                            <div class="oi oi-circle-x ml-1 profile-action align-baseline action-kick-button" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
-                        }
-                    </div>
+                            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
+                                <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                            </a>
+
+                            @if (ViewBag.Authorized)
+                            {
+                                <div class="oi oi-circle-x ml-1 profile-action action-kick-button d-none d-md-inline" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                            }
+                        </div>
                     <br />
                 }
             }
         </div>
-        <div class="col-6 text-right">
+        <div class="col-6 text-right w-50">
             @{
                 for (int i = half; i < Math.Min(Model.ClientCount, Model.Players.Count); i++)
                 {
@@ -79,13 +84,13 @@
 
                     string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
 
-                    <div class="d-inline-flex">
+                    <div>
                         <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
                             <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
                         </a>
                         @if (ViewBag.Authorized)
                         {
-                            <div class="oi oi-circle-x ml-1 profile-action align-baseline action-kick-button" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
+                            <span class="oi oi-circle-x ml-1 profile-action align-baseline action-kick-button flex-column" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></span>
                         }
                         <br />
                     </div>

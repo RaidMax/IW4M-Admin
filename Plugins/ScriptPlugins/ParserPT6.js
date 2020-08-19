@@ -20,6 +20,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Ban         = 'clientkick_for_reason {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.TempBan     = 'clientkick_for_reason {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.RConGetDvar = '\xff\xff\xff\xffrcon {0} get {1}';
+        rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined;  // adding this in here temporarily until getInfo is fixed in new T6 version
 
         rconParser.Configuration.Dvar.Pattern = '^(.+) is "(.+)?"$';
         rconParser.Configuration.Dvar.AddMapping(106, 1);

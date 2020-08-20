@@ -121,9 +121,13 @@
 <div class="row border-bottom">
     <div class="text-center bg-dark p-2 pl-3 pr-4 text-muted col-12 col-md-auto" id="filter_meta_container_button">
         <span class="oi oi-sort-ascending"></span>
-        <a>Filter Meta</a>
+        <a>@ViewBag.Localization["WEBFRONT_CLIENT_META_FILTER"]</a>
     </div>
     <div class="d-none d-md-flex flex-fill" id="filter_meta_container">
+        <a asp-action="ProfileAsync" asp-controller="Client"
+           class="nav-link p-2 pl-3 pr-3 text-center col-12 col-md-auto text-md-left @(!Model.MetaFilterType.HasValue ? "btn-primary text-white" : "text-muted")"
+           asp-route-id="@Model.ClientId">@ViewBag.Localization["META_TYPE_ALL_NAME"]</a>
+
         @foreach (MetaType type in Enum.GetValues(typeof(MetaType)))
         {
             if (!ignoredMetaTypes.Contains(type))

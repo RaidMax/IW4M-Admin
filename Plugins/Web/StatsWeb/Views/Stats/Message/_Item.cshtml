@@ -1,4 +1,5 @@
-﻿@model IEnumerable<StatsWeb.Dtos.ChatSearchResult>
+﻿@using SharedLibraryCore.Dtos.Meta.Responses
+@model IEnumerable<MessageResponse>
 
 @foreach (var message in Model)
 {
@@ -10,13 +11,20 @@
             </a>
         </td>
         <td class="text-light w-50 text-break">
-            <color-code value="@message.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+            @if (message.IsHidden && !ViewBag.Authorized)
+            {
+                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)" allow="@ViewBag.EnableColorCodes"></color-code>
+            }
+            else
+            {
+                <color-code value="@message.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+            }
         </td>
         <td class="text-light">
             <color-code value="@(message.ServerName ?? "--")" allow="@ViewBag.EnableColorCodes"></color-code>
         </td>
         <td class="text-right text-light">
-            @message.Date
+            @message.When
         </td>
     </tr>
 
@@ -33,7 +41,14 @@
     <tr class="d-table-row d-lg-none bg-dark">
         <th scope="row" class="bg-primary">@ViewBag.Localization["WEBFRONT_ACTION_LABEL_MESSAGE"]</th>
         <td class="text-light">
-            <color-code value="@message.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+            @if (message.IsHidden && !ViewBag.Authorized)
+            {
+                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)" allow="@ViewBag.EnableColorCodes"></color-code>
+            }
+            else
+            {
+                <color-code value="@message.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+            }
         </td>
     </tr>
 
@@ -47,7 +62,7 @@
     <tr class="d-table-row d-lg-none bg-dark">
         <th scope="row" class="bg-primary" style="border-bottom: 1px solid #222">@ViewBag.Localization["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</th>
         <td class="text-light mb-2 border-bottom">
-            @message.Date
+            @message.When
         </td>
     </tr>
 }

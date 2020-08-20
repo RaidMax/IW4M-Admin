@@ -12,7 +12,7 @@ function initLoader(location, loaderId, count = 10, start = count, additional) {
     loaderResponseId = loaderId;
     loadCount = count;
     loaderOffset = start;
-    additionalParams = additional;
+    additionalParams = additional ?? [];
     setupListeners();
 }
 

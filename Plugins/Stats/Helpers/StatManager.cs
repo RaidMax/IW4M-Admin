@@ -248,6 +248,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ctx.Entry(server).Property(_prop => _prop.HostName).IsModified = true;
                         ctx.SaveChanges();
                     }
+
+                    ctx.Entry(server).Property(_prop => _prop.IsPasswordProtected).IsModified = true;
+                    server.IsPasswordProtected = !string.IsNullOrEmpty(sv.GamePassword);
+                    ctx.SaveChanges();
                 }
 
                 // check to see if the stats have ever been initialized

@@ -42,7 +42,8 @@ namespace WebfrontCore.Controllers
                     LevelInt = (int)p.Level
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
-                PlayerHistory = s.ClientHistory.ToArray()
+                PlayerHistory = s.ClientHistory.ToArray(),
+                IsPasswordProtected = !string.IsNullOrEmpty(s.GamePassword)
             };
             return PartialView("_ClientActivity", serverInfo);
         }

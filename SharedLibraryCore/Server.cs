@@ -293,6 +293,7 @@ namespace SharedLibraryCore
         public string Hostname { get => ServerConfig.CustomHostname ?? hostname; protected set => hostname = value; }
         public string Website { get; protected set; }
         public string Gametype { get; set; }
+        public string GamePassword { get; protected set; }
         public Map CurrentMap { get; set; }
         public int ClientNum
         {

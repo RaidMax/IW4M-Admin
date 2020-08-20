@@ -21,5 +21,6 @@ namespace SharedLibraryCore.Dtos
         public bool Online { get; set; }
         public string ConnectProtocolUrl { get; set; }
         public string IPAddress { get; set; }
+        public bool IsPasswordProtected { get; set; }
     }
 }

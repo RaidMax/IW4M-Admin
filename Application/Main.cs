@@ -10,7 +10,6 @@ using RestEase;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Dtos.Meta.Requests;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
@@ -18,6 +17,8 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Repositories;
 using SharedLibraryCore.Services;
+using Stats.Dtos;
+using StatsWeb;
 using System;
 using System.Linq;
 using System.Text;
@@ -251,6 +252,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>, ReceivedPenaltyResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>, AdministeredPenaltyResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton(_serviceProvider =>
                 {

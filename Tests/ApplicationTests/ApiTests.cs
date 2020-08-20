@@ -9,7 +9,6 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
-using StatsWeb.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;

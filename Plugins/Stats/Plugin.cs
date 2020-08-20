@@ -5,12 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
-using SharedLibraryCore.Services;
+using Stats.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,14 +35,16 @@ namespace IW4MAdmin.Plugins.Stats
         private readonly IDatabaseContextFactory _databaseContextFactory;
         private readonly ITranslationLookup _translationLookup;
         private readonly IMetaService _metaService;
+        private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatQueryHelper;
 
         public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
-            ITranslationLookup translationLookup, IMetaService metaService)
+            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
             _translationLookup = translationLookup;
             _metaService = metaService;
+            _chatQueryHelper = chatQueryHelper;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -199,7 +200,7 @@ namespace IW4MAdmin.Plugins.Stats
                 using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
                 {
                     clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
-                    messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);                 
+                    messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);
                 }
 
                 int kills = clientStats.Sum(c => c.Kills);
@@ -392,45 +393,16 @@ namespace IW4MAdmin.Plugins.Stats
 
             async Task<IEnumerable<MessageResponse>> getMessages(ClientPaginationRequest request)
             {
-                List<MessageResponse> messageMeta;
-                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
+                var query = new ChatSearchQuery()
                 {
-                    var messages = ctx.Set<EFClientMessage>()
-                        .Where(m => m.ClientId == request.ClientId)
-                        .Where(_message => _message.TimeSent < request.Before)
-                        .OrderByDescending(_message => _message.TimeSent)
-                        .Take(request.Count);
+                    ClientId = request.ClientId,
+                    Before = request.Before,
+                    SentBefore = request.Before ?? DateTime.UtcNow,
+                    Count = request.Count,
+                    IsProfileMeta = true
+                };
 
-                    messageMeta = await messages.Select(m => new MessageResponse()
-                    {
-                        // todo: game name
-                        Message = m.Message,
-                        When = m.TimeSent,
-                        ServerId = m.ServerId,
-                        Type = MetaType.ChatMessage
-                    }).ToListAsync();
-
-                    foreach (var meta in messageMeta)
-                    {
-                        if ((meta.Message).IsQuickMessage())
-                        {
-                            try
-                            {
-                                var quickMessages = ServerManager.GetApplicationSettings().Configuration()
-                                    .QuickMessages
-                                    .First(/*_qm => _qm.Game == meta.GameName*/);
-                                meta.Message = quickMessages.Messages[(meta.Message as string).Substring(1)];
-                                meta.Type = MetaType.QuickMessage;
-                            }
-                            catch
-                            {
-
-                            }
-                        }
-                    }
-                }
-
-                return messageMeta;
+                return (await _chatQueryHelper.QueryResource(query)).Results;
             }
 
             if (Config.Configuration().EnableAntiCheat)

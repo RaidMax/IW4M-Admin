@@ -5,31 +5,24 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
 using Stats.Helpers;
 using StatsWeb;
-using StatsWeb.Dtos;
-/*using Stats.Dtos;
-using Stats.Helpers;
-using StatsWeb;
-using StatsWeb.Dtos;*/
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
-using WebfrontCore.Controllers.API.Dtos;
 using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 
@@ -117,7 +110,7 @@ namespace WebfrontCore
 #endif
 
             services.AddSingleton(Program.Manager);
-            services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, ChatSearchResult>, ChatResourceQueryHelper>();
+            services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
             services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
             services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
@@ -130,6 +123,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<SharedLibraryCore.Interfaces.ILogger>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IMetaService>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetService<ApplicationConfiguration>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

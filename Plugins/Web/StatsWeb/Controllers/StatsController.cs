@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
-using StatsWeb.Dtos;
+using Stats.Dtos;
 using StatsWeb.Extensions;
 using System;
 using System.Linq;
@@ -18,10 +19,10 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
     {
         private readonly ILogger _logger;
         private readonly IManager _manager;
-        private readonly IResourceQueryHelper<ChatSearchQuery, ChatSearchResult> _chatResourceQueryHelper;
+        private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatResourceQueryHelper;
         private readonly ITranslationLookup _translationLookup;
 
-        public StatsController(ILogger logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, ChatSearchResult> resourceQueryHelper,
+        public StatsController(ILogger logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, MessageResponse> resourceQueryHelper,
             ITranslationLookup translationLookup) : base(manager)
         {
             _logger = logger;
@@ -72,51 +73,24 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetMessageAsync(int serverId, long when)
+        public async Task<IActionResult> GetMessageAsync(string serverId, long when)
         {
             var whenTime = DateTime.FromFileTimeUtc(when);
             var whenUpper = whenTime.AddMinutes(5);
             var whenLower = whenTime.AddMinutes(-5);
 
-            using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
+            var messages = await _chatResourceQueryHelper.QueryResource(new ChatSearchQuery()
             {
-                var iqMessages = from message in ctx.Set<Stats.Models.EFClientMessage>()
-                                 where message.ServerId == serverId
-                                 where message.TimeSent >= whenLower
-                                 where message.TimeSent <= whenUpper
-                                 select new ChatInfo()
-                                 {
-                                     ClientId = message.ClientId,
-                                     Message = message.Message,
-                                     Name = message.Client.CurrentAlias.Name,
-                                     Time = message.TimeSent,
-                                     ServerGame = message.Server.GameName ?? Server.Game.IW4
-                                 };
+                ServerId = serverId,
+                SentBefore = whenUpper,
+                SentAfter = whenLower
+            });
 
-                var messages = await iqMessages.ToListAsync();
-
-                foreach (var message in messages)
-                {
-                    if (message.Message.IsQuickMessage())
-                    {
-                        try
-                        {
-                            var quickMessages = _manager.GetApplicationSettings().Configuration()
-                                .QuickMessages
-                                .First(_qm => _qm.Game == message.ServerGame);
-                            message.Message = quickMessages.Messages[message.Message.Substring(1)];
-                            message.IsQuickMessage = true;
-                        }
-                        catch { }
-                    }
-                }
-
-                return View("_MessageContext", messages);
-            }
+            return View("_MessageContext", messages.Results);
         }
 
         [HttpGet("Message/Find")]
-        public async Task<IActionResult> FindMessage([FromQuery]string query)
+        public async Task<IActionResult> FindMessage([FromQuery] string query)
         {
             ViewBag.Localization = _translationLookup;
             ViewBag.EnableColorCodes = _manager.GetApplicationSettings().Configuration().EnableColorCodes;
@@ -151,7 +125,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         }
 
         [HttpGet("Message/FindNext")]
-        public async Task<IActionResult> FindNextMessages([FromQuery]string query, [FromQuery]int count, [FromQuery]int offset)
+        public async Task<IActionResult> FindNextMessages([FromQuery] string query, [FromQuery] int count, [FromQuery] int offset)
         {
             ChatSearchQuery searchRequest;
 

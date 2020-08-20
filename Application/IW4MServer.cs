@@ -541,14 +541,18 @@ namespace IW4MAdmin
                                 .First(_qm => _qm.Game == GameName)
                                 .Messages[E.Data.Substring(1)];
                         }
-                        catch { }
+                        catch
+                        {
+                            message = E.Data.Substring(1);
+                        }
                     }
 
                     ChatHistory.Add(new ChatInfo()
                     {
                         Name = E.Origin.Name,
                         Message = message,
-                        Time = DateTime.UtcNow
+                        Time = DateTime.UtcNow,
+                        IsHidden = !string.IsNullOrEmpty(GamePassword)
                     });
                 }
             }
@@ -982,6 +986,7 @@ namespace IW4MAdmin
             var logfile = await this.GetMappedDvarValueOrDefaultAsync<string>("g_log");
             var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync");
             var ip = await this.GetMappedDvarValueOrDefaultAsync<string>("net_ip");
+            var gamePassword = await this.GetMappedDvarValueOrDefaultAsync("g_password", overrideDefault: "");
 
             if (Manager.GetApplicationSettings().Configuration().EnableCustomSayName)
             {
@@ -1015,6 +1020,7 @@ namespace IW4MAdmin
             this.FSGame = game.Value;
             this.Gametype = gametype;
             this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
+            this.GamePassword = gamePassword.Value;
             UpdateMap(mapname);
 
             if (RconParser.CanGenerateLogPath)

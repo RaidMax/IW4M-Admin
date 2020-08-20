@@ -1,5 +1,5 @@
 ﻿using SharedLibraryCore.Dtos;
-using StatsWeb.Dtos;
+using Stats.Dtos;
 using System;
 using System.Linq;
 

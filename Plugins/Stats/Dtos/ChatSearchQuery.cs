@@ -1,8 +1,7 @@
-﻿using SharedLibraryCore.Dtos;
-using SharedLibraryCore.QueryHelper;
+﻿using SharedLibraryCore.QueryHelper;
 using System;
 
-namespace StatsWeb.Dtos
+namespace Stats.Dtos
 {
     public class ChatSearchQuery : ClientPaginationRequest
     {
@@ -30,5 +29,10 @@ namespace StatsWeb.Dtos
         /// only look for messages sent before this date0
         /// </summary>
         public DateTime SentBefore { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// indicates if the chat is on the meta page
+        /// </summary>
+        public bool IsProfileMeta { get; set; }
     }
 }

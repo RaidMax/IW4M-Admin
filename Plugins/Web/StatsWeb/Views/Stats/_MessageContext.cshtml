@@ -1,20 +1,21 @@
-﻿@model IEnumerable<SharedLibraryCore.Dtos.ChatInfo>
+﻿@using SharedLibraryCore.Dtos.Meta.Responses
+@model IEnumerable<MessageResponse>
 @{
     Layout = null;
 }
 
 <div class="client-message-context">
-    <h5 class="bg-primary pt-2 pb-2 pl-3 mb-0 mt-2 text-white">@Model.First().Time.ToString()</h5>
+    <h5 class="bg-primary pt-2 pb-2 pl-3 mb-0 mt-2 text-white">@Model.First().When.ToString()</h5>
     <div class="bg-dark p-3 mb-2 border-bottom">
         @foreach (var message in Model)
         {
             <span class="text-white">
-                <color-code value="@message.Name" allow="ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@message.ClientName" allow="ViewBag.EnableColorCodes"></color-code>
             </span>
             <span>
                 &mdash;
                 <span class="@(message.IsQuickMessage ? "font-italic" : "")">
-                    <color-code value="@message.Message" allow="ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@(message.IsHidden ? message.HiddenMessage : message.Message)" allow="ViewBag.EnableColorCodes"></color-code>
                 </span>
             </span>
             <br />

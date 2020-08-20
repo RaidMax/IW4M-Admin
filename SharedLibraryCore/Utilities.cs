@@ -672,11 +672,11 @@ namespace SharedLibraryCore
             return server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue);
         }
 
-        public static async Task<Dvar<T>> GetMappedDvarValueOrDefaultAsync<T>(this Server server, string dvarName, string infoResponseName = null, IDictionary<string, string> infoResponse = null)
+        public static async Task<Dvar<T>> GetMappedDvarValueOrDefaultAsync<T>(this Server server, string dvarName, string infoResponseName = null, IDictionary<string, string> infoResponse = null, T overrideDefault = default)
         {
             // todo: unit test this
             string mappedKey = server.RconParser.GetOverrideDvarName(dvarName);
-            var defaultValue = server.RconParser.GetDefaultDvarValue<T>(mappedKey);
+            var defaultValue = server.RconParser.GetDefaultDvarValue<T>(mappedKey) ?? overrideDefault;
 
             string foundKey = infoResponse?.Keys.Where(_key => new[] { mappedKey, dvarName, infoResponseName ?? dvarName }.Contains(_key)).FirstOrDefault();
 
@@ -811,7 +811,7 @@ namespace SharedLibraryCore
         /// <returns>true if the </returns>
         public static bool IsQuickMessage(this string message)
         {
-            return Regex.IsMatch(message, @"^\u0014(?:[A-Z]|_)+$");
+            return Regex.IsMatch(message, @"^\u0014(?:\w|_|!|\s)+$");
         }
 
         /// <summary>

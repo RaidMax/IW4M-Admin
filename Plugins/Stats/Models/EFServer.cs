@@ -16,5 +16,6 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public string EndPoint { get; set; }
         public Game? GameName { get; set; }
         public string HostName { get; set; }
+        public bool IsPasswordProtected { get; set; }
     }
 }

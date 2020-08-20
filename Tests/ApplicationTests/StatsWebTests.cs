@@ -154,7 +154,7 @@ namespace ApplicationTests
             var query = $"chat|after {DateTime.Now.ToString()}".ParseSearchInfo(1, 0);
             var result = await queryHelper.QueryResource(query);
 
-            Assert.AreEqual(oneHourAhead, result.Results.First().Date);
+            Assert.AreEqual(oneHourAhead, result.Results.First().When);
 
             dbContext.Remove(msg);
             await dbContext.SaveChangesAsync();
@@ -173,7 +173,7 @@ namespace ApplicationTests
             var query = $"chat|before {DateTime.Now.ToString()}".ParseSearchInfo(1, 0);
             var result = await queryHelper.QueryResource(query);
 
-            Assert.AreEqual(oneHourAgo, result.Results.First().Date);
+            Assert.AreEqual(oneHourAgo, result.Results.First().When);
 
             dbContext.Remove(msg);
             await dbContext.SaveChangesAsync();
@@ -251,14 +251,14 @@ namespace ApplicationTests
             var query = $"chat|sort {SortDirection.Ascending}".ParseSearchInfo(2, 0);
             var result = await queryHelper.QueryResource(query);
 
-            Assert.AreEqual(firstMessage.TimeSent, result.Results.First().Date);
-            Assert.AreEqual(secondMessage.TimeSent, result.Results.Last().Date);
+            Assert.AreEqual(firstMessage.TimeSent, result.Results.First().When);
+            Assert.AreEqual(secondMessage.TimeSent, result.Results.Last().When);
 
             query = $"chat|sort {SortDirection.Descending}".ParseSearchInfo(2, 0);
             result = await queryHelper.QueryResource(query);
 
-            Assert.AreEqual(firstMessage.TimeSent, result.Results.Last().Date);
-            Assert.AreEqual(secondMessage.TimeSent, result.Results.First().Date);
+            Assert.AreEqual(firstMessage.TimeSent, result.Results.Last().When);
+            Assert.AreEqual(secondMessage.TimeSent, result.Results.First().When);
 
             dbContext.Remove(firstMessage);
             dbContext.Remove(secondMessage);

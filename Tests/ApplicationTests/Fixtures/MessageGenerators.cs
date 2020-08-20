@@ -19,7 +19,7 @@ namespace ApplicationTests.Fixtures
             return new EFClientMessage()
             {
                 Active = true,
-                Message = content,
+                Message = content ?? "test",
                 TimeSent = sent.Value,
                 Client = new EFClient()
                 {

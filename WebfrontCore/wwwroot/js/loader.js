@@ -7,12 +7,12 @@ let loadUri = '';
 let loaderResponseId = '';
 let additionalParams = [];
 
-function initLoader(location, loaderId, count = 10, start = count, additional) {
+function initLoader(location, loaderId, count = 10, start = count, additional = []) {
     loadUri = location;
     loaderResponseId = loaderId;
     loadCount = count;
     loaderOffset = start;
-    additionalParams = additional ?? [];
+    additionalParams = additional;
     setupListeners();
 }
 

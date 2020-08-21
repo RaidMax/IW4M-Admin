@@ -26,6 +26,10 @@ if not exist "%PublishDir%\Lib\" md "%PublishDir%\Lib\"
 move "%PublishDir%\*.dll" "%PublishDir%\Lib\"
 move "%PublishDir%\*.json" "%PublishDir%\Lib\"
 move "%PublishDir%\runtimes" "%PublishDir%\Lib\runtimes"
+move "%PublishDir%\ru" "%PublishDir%\Lib\ru"
+move "%PublishDir%\de" "%PublishDir%\Lib\de"
+move "%PublishDir%\pt" "%PublishDir%\Lib\pt"
+move "%PublishDir%\es" "%PublishDir%\Lib\es"
 if exist "%PublishDir%\refs" move "%PublishDir%\refs" "%PublishDir%\Lib\refs"
 
 echo making start scripts

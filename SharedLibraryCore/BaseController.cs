@@ -108,7 +108,7 @@ namespace SharedLibraryCore
             }
 
             // give the local host full access
-            else
+            else if (!HttpContext.Request.Headers.ContainsKey("X-Forwarded-For"))
             {
                 Client.ClientId = 1;
                 Client.Level = EFClient.Permission.Console;

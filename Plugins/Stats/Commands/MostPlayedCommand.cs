@@ -51,7 +51,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
                 var iqList = await iqStats.ToListAsync();
 
-                mostPlayed.AddRange(iqList.Select(stats => translationLookup["COMMANDS_MOST_PLAYED_FORMAT"].FormatExt(stats.Name, (DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime)).HumanizeForCurrentCulture())));
+                mostPlayed.AddRange(iqList.Select(stats => translationLookup["COMMANDS_MOST_PLAYED_FORMAT"].FormatExt(stats.Name, stats.Kills, (DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime)).HumanizeForCurrentCulture())));
             }
 
 

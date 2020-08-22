@@ -2,12 +2,7 @@ trigger:
   batch: true
   branches:
     include:
-    - releases/*
-    - 2.4-pr
-  paths:
-    exclude:
-    - azure-pipelines.yml
-    - Master/*
+    - release/pre
 
 pr: none
 

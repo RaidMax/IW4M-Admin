@@ -233,7 +233,7 @@ namespace IW4MAdmin.Application
             serviceCollection.AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
                 .AddSingleton(new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings") as IConfigurationHandler<ApplicationConfiguration>)
                 .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
-                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration())
+                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration() ?? new ApplicationConfiguration())
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
                 .AddSingleton<ILogger>(_serviceProvider => defaultLogger)
                 .AddSingleton<IPluginImporter, PluginImporter>()

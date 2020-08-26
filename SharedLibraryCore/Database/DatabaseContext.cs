@@ -26,7 +26,6 @@ namespace SharedLibraryCore.Database
 
         static string _ConnectionString;
         static string _provider;
-        private static readonly string _migrationPluginDirectory = @"X:\IW4MAdmin\BUILD\Plugins";
         private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.AddConsole()
@@ -72,7 +71,7 @@ namespace SharedLibraryCore.Database
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //optionsBuilder.UseLoggerFactory(_loggerFactory)
-             //  .EnableSensitiveDataLogging();
+            //  .EnableSensitiveDataLogging();
 
             if (string.IsNullOrEmpty(_ConnectionString))
             {
@@ -198,11 +197,14 @@ namespace SharedLibraryCore.Database
 
             // adapted from
             // https://aleemkhan.wordpress.com/2013/02/28/dynamically-adding-dbset-properties-in-dbcontext-for-entity-framework-code-first/
-#if DEBUG
-            string pluginDir = _migrationPluginDirectory;
-#else
+
             string pluginDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
-#endif
+
+            if (Utilities.IsDevelopment)
+            {
+                pluginDir = Path.Join(Utilities.OperatingDirectory, "..", "..", "..", "..", "BUILD", "Plugins");
+            }
+
             IEnumerable<string> directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
 
             foreach (string dllPath in directoryFiles)

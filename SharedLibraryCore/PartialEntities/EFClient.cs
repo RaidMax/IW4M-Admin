@@ -657,6 +657,8 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public bool IsBot => NetworkId == Name.GenerateGuidFromString();
         [NotMapped]
+        public bool IsZombieClient => IsBot && Name == "Zombie";
+        [NotMapped]
         public string XuidString => (NetworkId + 0x110000100000000).ToString("x");
         [NotMapped]
         public string GuidString => NetworkId.ToString("x");

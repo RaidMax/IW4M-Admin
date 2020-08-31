@@ -785,7 +785,7 @@ namespace IW4MAdmin
 
                     var polledClients = await PollPlayersAsync();
 
-                    foreach (var disconnectingClient in polledClients[1])
+                    foreach (var disconnectingClient in polledClients[1].Where(_client => !_client.IsZombieClient /* ignores "fake" zombie clients */))
                     {
                         disconnectingClient.CurrentServer = this;
                         var e = new GameEvent()

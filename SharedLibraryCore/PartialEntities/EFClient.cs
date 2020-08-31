@@ -656,6 +656,10 @@ namespace SharedLibraryCore.Database.Models
         public int Score { get; set; }
         [NotMapped]
         public bool IsBot => NetworkId == Name.GenerateGuidFromString();
+        [NotMapped]
+        public string XuidString => (NetworkId + 0x110000100000000).ToString("x");
+        [NotMapped]
+        public string GuidString => NetworkId.ToString("x");
 
         [NotMapped]
         public ClientState State { get; set; }

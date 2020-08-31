@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.6,
+    version: 0.7,
     name: 'Tekno MW3 Parser',
     isParser: true,
 
@@ -29,6 +29,7 @@ var plugin = {
         rconParser.Configuration.Dvar.Pattern = '^(.*)$';
 
         rconParser.Configuration.DefaultDvarValues.Add('sv_running', '1');
+        rconParser.Configuration.OverrideDvarNameMapping.Add('_website', 'sv_clanWebsite');
 
         rconParser.Version = 'IW5 MP 1.4 build 382 latest Thu Jan 19 2012 11:09:49AM win-x86';
         rconParser.GameName = 3; // IW5

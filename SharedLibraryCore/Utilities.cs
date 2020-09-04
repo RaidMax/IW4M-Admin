@@ -773,6 +773,8 @@ namespace SharedLibraryCore
             byte[] bytes = toTest.GetAddressBytes();
             switch (bytes[0])
             {
+                case 0:
+                    return bytes[1] == 0 && bytes[2] == 0 && bytes[3] == 0;
                 case 10:
                     return true;
                 case 172:

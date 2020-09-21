@@ -203,10 +203,11 @@ namespace IW4MAdmin.Application.RconParsers
 
                     long networkId;
                     string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
+                    string networkIdString;
 
                     try
                     {
-                        string networkIdString = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]];
+                        networkIdString = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]];
 
                         networkId = networkIdString.IsBotGuid() ?
                             name.GenerateGuidFromString() :
@@ -233,6 +234,8 @@ namespace IW4MAdmin.Application.RconParsers
                         Score = score,
                         State = EFClient.ClientState.Connecting
                     };
+
+                    client.SetAdditionalProperty("BotGuid", networkIdString);
 
                     StatusPlayers.Add(client);
                 }

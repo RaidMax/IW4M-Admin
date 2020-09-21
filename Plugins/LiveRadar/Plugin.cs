@@ -3,6 +3,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,12 +18,14 @@ namespace LiveRadar
         public string Author => "RaidMax";
 
         private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
+        private readonly Dictionary<string, long> _botGuidLookups;
         private bool addedPage;
         private readonly object lockObject = new object();
 
         public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
         {
             _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
+            _botGuidLookups = new Dictionary<string, long>();
         }
 
         public Task OnEventAsync(GameEvent E, Server S)
@@ -41,27 +44,44 @@ namespace LiveRadar
                 }
             }
 
-            if (E.Type == GameEvent.EventType.Unknown)
+            if (E.Type == GameEvent.EventType.PreConnect && E.Origin.IsBot)
             {
-                if (E.Data?.StartsWith("LiveRadar") ?? false)
+                string botKey = $"BotGuid_{E.Extra}";
+                lock (lockObject)
                 {
-                    try
+                    if (!_botGuidLookups.ContainsKey(botKey))
                     {
-                        var radarUpdate = RadarEvent.Parse(E.Data);
-                        var client = S.Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
+                        _botGuidLookups.Add(botKey, E.Origin.NetworkId);
+                    }
+                }
+            }
 
-                        if (client != null)
-                        {
-                            radarUpdate.Name = client.Name.StripColors();
-                            client.SetAdditionalProperty("LiveRadar", radarUpdate);
-                        }
+            if (E.Type == GameEvent.EventType.Other && E.Subtype == "LiveRadar")
+            {
+                try
+                {
+                    string botKey = $"BotGuid_{E.Extra}";
+                    long generatedBotGuid;
+
+                    lock (lockObject)
+                    {
+                        generatedBotGuid = _botGuidLookups.ContainsKey(botKey) ? _botGuidLookups[botKey] : 0;
                     }
 
-                    catch (Exception e)
+                    var radarUpdate = RadarEvent.Parse(E.Data, generatedBotGuid);
+                    var client = S.Manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
+
+                    if (client != null)
                     {
-                        S.Logger.WriteWarning($"Could not parse live radar output: {e.Data}");
-                        S.Logger.WriteDebug(e.GetExceptionInfo());
+                        radarUpdate.Name = client.Name.StripColors();
+                        client.SetAdditionalProperty("LiveRadar", radarUpdate);
                     }
+                }
+
+                catch (Exception e)
+                {
+                    S.Logger.WriteWarning($"Could not parse live radar output: {e.Data}");
+                    S.Logger.WriteDebug(e.GetExceptionInfo());
                 }
             }
 

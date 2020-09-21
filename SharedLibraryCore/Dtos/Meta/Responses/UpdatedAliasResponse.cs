@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SharedLibraryCore.Dtos.Meta.Responses
+﻿namespace SharedLibraryCore.Dtos.Meta.Responses
 {
     public class UpdatedAliasResponse : BaseMetaResponse
     {
@@ -17,6 +15,6 @@ namespace SharedLibraryCore.Dtos.Meta.Responses
             return false;
         }
 
-        public override int GetHashCode() => HashCode.Combine(Name.StripColors(), IPAddress);
+        public override int GetHashCode() => $"{Name.StripColors()}{IPAddress}".GetStableHashCode();
     }
 }

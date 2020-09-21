@@ -1,9 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Helpers;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace LiveRadar
 {
@@ -39,13 +37,13 @@ namespace LiveRadar
             return false;
         }
 
-        public static RadarEvent Parse(string input)
+        public static RadarEvent Parse(string input, long generatedBotGuid)
         {
             var items = input.Split(';').Skip(1).ToList();
 
             var parsedEvent = new RadarEvent()
             {
-                Guid = items[0].ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber),
+                Guid = generatedBotGuid,
                 Location = Vector3.Parse(items[1]),
                 ViewAngles = Vector3.Parse(items[2]).FixIW4Angles(),
                 Team = items[3],

@@ -1232,6 +1232,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return 886229536;
             }
 
+            // todo: this is not stable and will need to be migrated again...
             long id = HashCode.Combine(server.IP, server.Port);
             id = id < 0 ? Math.Abs(id) : id;
             long? serverId;

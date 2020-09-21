@@ -816,6 +816,7 @@ namespace IW4MAdmin
                             Origin = client,
                             Owner = this,
                             IsBlocking = true,
+                            Extra = client.GetAdditionalProperty<string>("BotGuid"),
                             Source = GameEvent.EventSource.Status
                         };
 

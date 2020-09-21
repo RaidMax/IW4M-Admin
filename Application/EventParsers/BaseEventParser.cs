@@ -255,6 +255,7 @@ namespace IW4MAdmin.Application.EventParsers
                             ClientNumber = Convert.ToInt32(match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
                             State = EFClient.ClientState.Connecting,
                         },
+                        Extra = originIdString,
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
                         IsBlocking = true,
                         GameTime = gameTime,

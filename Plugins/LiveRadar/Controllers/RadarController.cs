@@ -74,14 +74,14 @@ namespace LiveRadar.Web.Controllers
         [Route("Radar/Update")]
         public IActionResult Update(string payload)
         {
-            var radarUpdate = RadarEvent.Parse(payload);
+            /*var radarUpdate = RadarEvent.Parse(payload);
             var client = _manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
 
             if (client != null)
             {
                 radarUpdate.Name = client.Name.StripColors();
                 client.SetAdditionalProperty("LiveRadar", radarUpdate);
-            }
+            }*/
 
             return Ok();
         }

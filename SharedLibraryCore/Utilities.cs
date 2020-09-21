@@ -369,7 +369,27 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="value">value string</param>
         /// <returns></returns>
-        public static long GenerateGuidFromString(this string value) => string.IsNullOrEmpty(value) ? -1 : HashCode.Combine(value.StripColors());
+        public static long GenerateGuidFromString(this string value) => string.IsNullOrEmpty(value) ? -1 : GetStableHashCode(value.StripColors());
+
+        /// https://stackoverflow.com/questions/36845430/persistent-hashcode-for-strings
+        public static int GetStableHashCode(this string str)
+        {
+            unchecked
+            {
+                int hash1 = 5381;
+                int hash2 = hash1;
+
+                for (int i = 0; i < str.Length && str[i] != '\0'; i += 2)
+                {
+                    hash1 = ((hash1 << 5) + hash1) ^ str[i];
+                    if (i == str.Length - 1 || str[i + 1] == '\0')
+                        break;
+                    hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
+                }
+
+                return hash1 + (hash2 * 1566083941);
+            }
+        }
 
         public static int? ConvertToIP(this string str)
         {
@@ -954,7 +974,7 @@ namespace SharedLibraryCore
         /// <summary>
         /// wrapper method for humanizee that uses current current culture
         /// </summary>
-        public static string HumanizeForCurrentCulture(this TimeSpan timeSpan, int precision = 1, TimeUnit maxUnit = TimeUnit.Week, 
+        public static string HumanizeForCurrentCulture(this TimeSpan timeSpan, int precision = 1, TimeUnit maxUnit = TimeUnit.Week,
             TimeUnit minUnit = TimeUnit.Millisecond, string collectionSeparator = ", ", bool toWords = false)
         {
             return timeSpan.Humanize(precision, CurrentLocalization.Culture, maxUnit, minUnit, collectionSeparator, toWords);

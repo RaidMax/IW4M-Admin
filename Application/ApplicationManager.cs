@@ -67,13 +67,14 @@ namespace IW4MAdmin.Application
         private readonly IEventHandler _eventHandler;
         private readonly IScriptCommandFactory _scriptCommandFactory;
         private readonly IMetaRegistration _metaRegistration;
+        private readonly IScriptPluginServiceResolver _scriptPluginServiceResolver;
 
         public ApplicationManager(ILogger logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
             IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory, IMetaService metaService,
-            IMetaRegistration metaRegistration)
+            IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -100,6 +101,7 @@ namespace IW4MAdmin.Application
             _eventHandler = eventHandler;
             _scriptCommandFactory = scriptCommandFactory;
             _metaRegistration = metaRegistration;
+            _scriptPluginServiceResolver = scriptPluginServiceResolver;
             Plugins = plugins;
         }
 
@@ -277,12 +279,12 @@ namespace IW4MAdmin.Application
                 {
                     if (plugin is ScriptPlugin scriptPlugin)
                     {
-                        await scriptPlugin.Initialize(this, _scriptCommandFactory);
+                        await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver);
                         scriptPlugin.Watcher.Changed += async (sender, e) =>
                         {
                             try
                             {
-                                await scriptPlugin.Initialize(this, _scriptCommandFactory);
+                                await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver);
                             }
 
                             catch (Exception ex)
@@ -449,7 +451,8 @@ namespace IW4MAdmin.Application
                     Name = cmd.Name,
                     Alias = cmd.Alias,
                     MinimumPermission = cmd.Permission,
-                    AllowImpersonation = cmd.AllowImpersonation
+                    AllowImpersonation = cmd.AllowImpersonation,
+                    SupportedGames = cmd.SupportedGames
                 });
             }
 

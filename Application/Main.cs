@@ -249,6 +249,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IEntityService<EFClient>, ClientService>()
                 .AddSingleton<IMetaService, MetaService>()
                 .AddSingleton<IMetaRegistration, MetaRegistration>()
+                .AddSingleton<IScriptPluginServiceResolver, ScriptPluginServiceResolver>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>, ReceivedPenaltyResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>, AdministeredPenaltyResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()

@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json.Converters;
-using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using static SharedLibraryCore.Database.Models.EFClient;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Configuration
 {
@@ -29,5 +30,11 @@ namespace SharedLibraryCore.Configuration
         /// Indicates if the command can be run by another user (impersonation)
         /// </summary>
         public bool AllowImpersonation { get; set; }
+
+        /// <summary>
+        /// Specifies the games supporting the functionality of the command
+        /// </summary>
+        [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
+        public Game[] SupportedGames { get; set; } = new Game[0];
     }
 }

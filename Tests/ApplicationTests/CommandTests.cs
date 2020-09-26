@@ -537,5 +537,46 @@ namespace ApplicationTests
             Assert.IsTrue(result.IsBroadcast);
         }
         #endregion
+
+        #region PMADMINS
+        [Test]
+        public async Task Test_PrivateMessageAdmins_HappyPath()
+        {
+            var cmd = new PrivateMessageAdminsCommand(cmdConfig, transLookup);
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var origin = ClientGenerators.CreateDatabaseClient();
+            origin.Level = Permission.Administrator;
+            origin.CurrentServer = server;
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "", server);
+            cmdConfig.Commands.Add(nameof(PrivateMessageAdminsCommand), new CommandProperties { SupportedGames = new[] { server.GameName } });
+            
+            server.Clients[0] = origin;
+            server.Clients[1] = origin;
+            await cmd.ExecuteAsync(gameEvent);
+            int expectedEvents = 2;
+
+            Assert.AreEqual(expectedEvents, mockEventHandler.Events.Count(_event => _event.Type == GameEvent.EventType.Tell));
+        }
+
+        [Test]
+        public async Task Test_PrivateMessageAdmins_GameNotSupported()
+        {
+            var cmd = new PrivateMessageAdminsCommand(cmdConfig, transLookup);
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var origin = ClientGenerators.CreateDatabaseClient();
+            origin.Level = Permission.Administrator;
+            origin.CurrentServer = server;
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "", server);
+            gameEvent.Origin = origin;
+            cmdConfig.Commands.Add(nameof(PrivateMessageAdminsCommand), new CommandProperties());
+
+            server.Clients[0] = origin;
+            server.Clients[1] = origin;
+            await cmd.ExecuteAsync(gameEvent);
+            int expectedEvents = 1;
+
+            Assert.AreEqual(expectedEvents, mockEventHandler.Events.Count(_event => _event.Type == GameEvent.EventType.Tell));
+        }
+        #endregion
     }
 }

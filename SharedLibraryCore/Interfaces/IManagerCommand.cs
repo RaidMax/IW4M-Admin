@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using static SharedLibraryCore.Database.Models.EFClient;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -34,6 +35,11 @@ namespace SharedLibraryCore.Interfaces
         /// Minimum permission required to execute the command
         /// </summary>
         Permission Permission { get; }
+
+        /// <summary>
+        /// Games the command is supported on
+        /// </summary>
+        Game[] SupportedGames { get; }
 
         /// <summary>
         /// Syntax for using the command

@@ -5,6 +5,7 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore
 {
@@ -13,7 +14,7 @@ namespace SharedLibraryCore
     /// </summary>
     public abstract class Command : IManagerCommand
     {
-        private readonly CommandConfiguration _config;
+        protected readonly CommandConfiguration _config;
         protected readonly ITranslationLookup _translationLookup;
         protected ILogger logger;
 
@@ -112,6 +113,25 @@ namespace SharedLibraryCore
             }
         }
         private EFClient.Permission permission;
+
+        public Game[] SupportedGames
+        {
+            get => supportedGames;
+            protected set
+            {
+                try
+                {
+                    var savedGames = _config?.Commands[GetType().Name].SupportedGames;
+                    supportedGames =  savedGames?.Length != 0 ? savedGames : value;
+                }
+
+                catch (KeyNotFoundException)
+                {
+                    supportedGames = value;
+                }
+            }
+        }
+        private Game[] supportedGames;
 
 
         /// <summary>

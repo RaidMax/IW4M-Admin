@@ -449,7 +449,8 @@ namespace IW4MAdmin.Application
                     Name = cmd.Name,
                     Alias = cmd.Alias,
                     MinimumPermission = cmd.Permission,
-                    AllowImpersonation = cmd.AllowImpersonation
+                    AllowImpersonation = cmd.AllowImpersonation,
+                    SupportedGames = cmd.SupportedGames
                 });
             }
 

@@ -61,7 +61,7 @@ namespace IW4MAdmin.Application.Misc
             _onProcessing.Dispose();
         }
 
-        public async Task Initialize(IManager manager, IScriptCommandFactory scriptCommandFactory)
+        public async Task Initialize(IManager manager, IScriptCommandFactory scriptCommandFactory, IScriptPluginServiceResolver serviceResolver)
         {
             await _onProcessing.WaitAsync();
 
@@ -114,6 +114,7 @@ namespace IW4MAdmin.Application.Misc
 
                 _scriptEngine.Execute(script);
                 _scriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
+                _scriptEngine.SetValue("_serviceResolver", serviceResolver);
                 dynamic pluginObject = _scriptEngine.GetValue("plugin").ToObject();
 
                 Author = pluginObject.author;
@@ -162,6 +163,11 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 successfullyLoaded = true;
+            }
+
+            catch (JavaScriptException ex)
+            {
+                throw new PluginException($"An error occured while initializing script plugin: {ex.Error} (Line: {ex.Location.Start.Line}, Character: {ex.Location.Start.Column})") { PluginFile = _fileName };
             }
 
             catch

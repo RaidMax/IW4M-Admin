@@ -44,6 +44,8 @@ let plugin = {
     },
 
     onLoadAsync: function (manager) {
+        this.logger = _serviceResolver.ResolveService("ILogger");
+        this.logger.WriteDebug("sample plugin loaded");
     },
 
     onUnloadAsync: function () {

@@ -25,7 +25,7 @@ namespace IW4MAdmin.Application.Factories
         }
 
         /// <inheritdoc/>
-        public IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction)
+        public IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction)
         {
             var permissionEnum = Enum.Parse<Permission>(permission);
             var argsArray = args.Select(_arg => new CommandArgument
@@ -34,7 +34,7 @@ namespace IW4MAdmin.Application.Factories
                 Required = _arg.Item2
             }).ToArray();
 
-            return new ScriptCommand(name, alias, description, permissionEnum, argsArray, executeAction, _config, _transLookup);
+            return new ScriptCommand(name, alias, description, isTargetRequired, permissionEnum, argsArray, executeAction, _config, _transLookup);
         }
     }
 }

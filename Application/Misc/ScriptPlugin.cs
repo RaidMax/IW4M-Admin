@@ -252,6 +252,7 @@ namespace IW4MAdmin.Application.Misc
                 string alias = dynamicCommand.alias;
                 string description = dynamicCommand.description;
                 string permission = dynamicCommand.permission;
+                bool targetRequired = false;
 
                 List<(string, bool)> args = new List<(string, bool)>();
                 dynamic arguments = null;
@@ -259,6 +260,16 @@ namespace IW4MAdmin.Application.Misc
                 try
                 {
                     arguments = dynamicCommand.arguments;
+                }
+
+                catch (RuntimeBinderException)
+                {
+                    // arguments are optional
+                }
+
+                try
+                {
+                    targetRequired = dynamicCommand.targetRequired;
                 }
 
                 catch (RuntimeBinderException)
@@ -290,7 +301,7 @@ namespace IW4MAdmin.Application.Misc
                     }
                 }
 
-                commandList.Add(scriptCommandFactory.CreateScriptCommand(name, alias, description, permission, args, execute));
+                commandList.Add(scriptCommandFactory.CreateScriptCommand(name, alias, description, permission, targetRequired, args, execute));
             }
 
             return commandList;

@@ -18,14 +18,31 @@ namespace IW4MAdmin.Application.Misc
 
         public object ResolveService(string serviceName)
         {
-            var serviceType = typeof(IScriptPluginServiceResolver).Assembly.GetTypes().FirstOrDefault(_type => _type.Name == serviceName);
+            var serviceType = DetermineRootType(serviceName);
+            return _serviceProvider.GetService(serviceType);
+        }
+
+        public object ResolveService(string serviceName, string[] genericParameters)
+        {
+            var serviceType = DetermineRootType(serviceName, genericParameters.Length);
+            var genericTypes = genericParameters.Select(_genericTypeParam => DetermineRootType(_genericTypeParam));
+            var resolvedServiceType = serviceType.MakeGenericType(genericTypes.ToArray());
+            return _serviceProvider.GetService(resolvedServiceType);
+        }
+
+        private Type DetermineRootType(string serviceName, int genericParamCount = 0)
+        {
+            var typeCollection = AppDomain.CurrentDomain.GetAssemblies()
+                       .SelectMany(t => t.GetTypes());
+            string generatedName = $"{serviceName}{(genericParamCount == 0 ? "" : $"`{genericParamCount}")}".ToLower();
+            var serviceType = typeCollection.FirstOrDefault(_type => _type.Name.ToLower() == generatedName);
 
             if (serviceType == null)
             {
-                throw new InvalidOperationException($"No service type '{serviceName}' defined in IW4MAdmin assembly");
+                throw new InvalidOperationException($"No object type '{serviceName}' defined in loaded assemblies");
             }
 
-            return _serviceProvider.GetService(serviceType);
+            return serviceType;
         }
     }
 }

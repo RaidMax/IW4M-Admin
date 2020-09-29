@@ -7,6 +7,8 @@ let commands = [{
     alias: "pp",
     // required
     permission: "User",
+    // optional (defaults to false)
+    targetRequired: false,
     // optional
     arguments: [{
         name: "times to ping",

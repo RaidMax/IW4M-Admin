@@ -33,6 +33,7 @@ namespace ApplicationTests
             serviceProvider = new ServiceCollection().BuildBase()
                 .AddSingleton(A.Fake<ClientService>())
                 .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
+                .AddSingleton(A.Fake<IScriptPluginServiceResolver>())
                 .BuildServiceProvider();
             fakeManager = serviceProvider.GetRequiredService<IManager>();
             mockEventHandler = serviceProvider.GetRequiredService<EventHandlerMock>();
@@ -66,7 +67,7 @@ namespace ApplicationTests
             A.CallTo(() => fakeManager.GetClientService())
                 .Returns(fakeClientService);
 
-            await plugin.Initialize(serviceProvider.GetRequiredService<IManager>(), serviceProvider.GetRequiredService<IScriptCommandFactory>());
+            await plugin.Initialize(serviceProvider.GetRequiredService<IManager>(), serviceProvider.GetRequiredService<IScriptCommandFactory>(), serviceProvider.GetRequiredService<IScriptPluginServiceResolver>());
 
             var gameEvent = new GameEvent()
             {

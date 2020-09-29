@@ -15,9 +15,10 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="alias">alias of command</param>
         /// <param name="description">description of command</param>
         /// <param name="permission">minimum required permission</param>
+        /// <param name="isTargetRequired">target required or not</param>
         /// <param name="args">command arguments (name, is required)</param>
         /// <param name="executeAction">action to peform when commmand is executed</param>
         /// <returns></returns>
-        IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction);
+        IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction);
     }
 }

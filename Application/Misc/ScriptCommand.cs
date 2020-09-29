@@ -15,7 +15,7 @@ namespace IW4MAdmin.Application.Misc
     {
         private readonly Action<GameEvent> _executeAction;
 
-        public ScriptCommand(string name, string alias, string description, Permission permission,
+        public ScriptCommand(string name, string alias, string description, bool isTargetRequired, Permission permission,
             CommandArgument[] args, Action<GameEvent> executeAction, CommandConfiguration config, ITranslationLookup layout)
             : base(config, layout)
         {
@@ -24,6 +24,7 @@ namespace IW4MAdmin.Application.Misc
             Name = name;
             Alias = alias;
             Description = description;
+            RequiresTarget = isTargetRequired;
             Permission = permission;
             Arguments = args;
         }

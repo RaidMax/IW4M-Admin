@@ -182,8 +182,9 @@ namespace IW4MAdmin.Plugins.Stats
             if (Config.Configuration() == null)
             {
                 Config.Set((StatsConfiguration)new StatsConfiguration().Generate());
-                await Config.Save();
             }
+            Config.Configuration().ApplyMigration();
+            await Config.Save();
 
             // register the topstats page
             // todo:generate the URL/Location instead of hardcoding
@@ -405,7 +406,7 @@ namespace IW4MAdmin.Plugins.Stats
                 return (await _chatQueryHelper.QueryResource(query)).Results;
             }
 
-            if (Config.Configuration().EnableAntiCheat)
+            if (Config.Configuration().AnticheatConfiguration.Enable)
             {
                 _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, getAnticheatInfo);
             }
@@ -496,6 +497,6 @@ namespace IW4MAdmin.Plugins.Stats
         /// </summary>
         /// <param name="s"></param>
         /// <returns></returns>
-        private bool ShouldOverrideAnticheatSetting(Server s) => Config.Configuration().EnableAntiCheat && s.GameName == Server.Game.IW5;
+        private bool ShouldOverrideAnticheatSetting(Server s) => Config.Configuration().AnticheatConfiguration.Enable && s.GameName == Server.Game.IW5;
     }
 }

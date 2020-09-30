@@ -20,7 +20,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Offset,
             Strain,
             Recoil,
-            Snap
+            Snap,
+            Button
         };
 
         public ChangeTracking<EFACSnapshot> Tracker { get; private set; }
@@ -38,11 +39,12 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         ILogger Log;
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
-        private double sessionAverageRecoilAmount;
+        private double mapAverageRecoilAmount;
         private double sessionAverageSnapAmount;
         private int sessionSnapHits;
         private EFClientKill lastHit;
         private int validRecoilHitCount;
+        private int validButtonHitCount;
 
         private class HitInfo
         {
@@ -282,22 +284,65 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
 
             #region RECOIL
             float hitRecoilAverage = 0;
-            if (!Plugin.Config.Configuration().RecoilessWeapons.Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex)))
+            bool shouldIgnoreDetection = false;
+            try
+            {
+                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[hit.GameName][DetectionType.Recoil]
+                    .Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex));
+            }
+
+            catch (KeyNotFoundException)
+            {
+
+            }
+
+            if (!shouldIgnoreDetection)
             {
                 validRecoilHitCount++;
                 hitRecoilAverage = (hit.AnglesList.Sum(_angle => _angle.Z) + hit.ViewAngles.Z) / (hit.AnglesList.Count + 1);
-                sessionAverageRecoilAmount = (sessionAverageRecoilAmount * (validRecoilHitCount - 1) + hitRecoilAverage) / validRecoilHitCount;
+                mapAverageRecoilAmount = (mapAverageRecoilAmount * (validRecoilHitCount - 1) + hitRecoilAverage) / validRecoilHitCount;
 
-                if (validRecoilHitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && sessionAverageRecoilAmount == 0)
+                if (validRecoilHitCount >= Thresholds.LowSampleMinKills && Kills > Thresholds.LowSampleMinKillsRecoil && mapAverageRecoilAmount == 0)
                 {
                     results.Add(new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
-                        Value = sessionAverageRecoilAmount,
+                        Value = mapAverageRecoilAmount,
                         HitCount = HitCount,
                         Type = DetectionType.Recoil
                     });
                 }
+            }
+            #endregion
+
+            #region BUTTON
+            try
+            {
+                shouldIgnoreDetection = false;
+                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[hit.GameName][DetectionType.Button]
+                    .Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex));
+            }
+
+            catch (KeyNotFoundException)
+            {
+
+            }
+
+            if (!shouldIgnoreDetection)
+            {
+                validButtonHitCount++;
+            }
+
+            double lastDiff = hit.TimeOffset - hit.TimeSinceLastAttack;
+            if (validButtonHitCount > 0 && lastDiff <= 0)
+            {
+                results.Add(new DetectionPenaltyResult()
+                {
+                    ClientPenalty = EFPenalty.PenaltyType.Ban,
+                    Value = lastDiff,
+                    HitCount = HitCount,
+                    Type = DetectionType.Button
+                });
             }
             #endregion
 
@@ -384,7 +429,19 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #region CHEST_ABDOMEN_RATIO_SESSION
             int chestHits = HitLocationCount[IW4Info.HitLocation.torso_upper].Count;
 
-            if (chestHits >= Thresholds.MediumSampleMinKills)
+            try
+            {
+                shouldIgnoreDetection = false; // reset previous value
+                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[hit.GameName][DetectionType.Chest]
+                    .Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex));
+            }
+
+            catch (KeyNotFoundException)
+            {
+
+            }
+
+            if (chestHits >= Thresholds.MediumSampleMinKills && !shouldIgnoreDetection)
             {
                 double marginOfError = Thresholds.GetMarginOfError(chestHits);
                 double lerpAmount = Math.Min(1.0, (chestHits - Thresholds.MediumSampleMinKills) / (double)(Thresholds.HighSampleMinKills - Thresholds.LowSampleMinKills));
@@ -465,6 +522,12 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Tracker.OnChange(snapshot);
 
             return results;
+        }
+
+        public void OnMapChange()
+        {
+            mapAverageRecoilAmount = 0;
+            validRecoilHitCount = 0;
         }
     }
 }

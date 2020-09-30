@@ -1,6 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Stats.Config;
+using System;
 using System.Collections.Generic;
 using static IW4MAdmin.Plugins.Stats.Cheat.Detection;
 
@@ -8,21 +9,41 @@ namespace IW4MAdmin.Plugins.Stats.Config
 {
     public class StatsConfiguration : IBaseConfiguration
     {
-        public bool EnableAntiCheat { get; set; }
+        [Obsolete]
+        public bool? EnableAntiCheat { get; set; }
         public List<StreakMessageConfiguration> KillstreakMessages { get; set; }
         public List<StreakMessageConfiguration> DeathstreakMessages { get; set; }
-        public List<string> RecoilessWeapons { get; set; }
         public int TopPlayersMinPlayTime { get; set; }
         public bool StoreClientKills { get; set; }
         public int MostKillsMaxInactivityDays { get; set; } = 30;
         public int MostKillsClientLimit { get; set; } = 5;
-        public IDictionary<DetectionType, DistributionConfiguration> DetectionDistributions { get; set; }
+        [Obsolete]
         public IDictionary<long, DetectionType[]> ServerDetectionTypes { get; set; }
+        public AnticheatConfiguration AnticheatConfiguration { get; set; } = new AnticheatConfiguration();
+
+#pragma warning disable CS0612 // Type or member is obsolete
+        public void ApplyMigration()
+        {
+            if (ServerDetectionTypes != null)
+            {
+                AnticheatConfiguration.ServerDetectionTypes = ServerDetectionTypes;
+            }
+
+            ServerDetectionTypes = null;
+
+            if (EnableAntiCheat != null)
+            {
+                AnticheatConfiguration.Enable = EnableAntiCheat.Value;
+            }
+
+            EnableAntiCheat = null;
+        }
+#pragma warning restore CS0612 // Type or member is obsolete
 
         public string Name() => "StatsPluginSettings";
         public IBaseConfiguration Generate()
         {
-            EnableAntiCheat = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_SETUP_ENABLEAC"]);
+            AnticheatConfiguration.Enable = Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_SETUP_ENABLEAC"]);
             KillstreakMessages = new List<StreakMessageConfiguration>()
             {
                 new StreakMessageConfiguration(){
@@ -57,16 +78,9 @@ namespace IW4MAdmin.Plugins.Stats.Config
                  },
             };
 
-            RecoilessWeapons = new List<string>()
-            {
-                "ranger.*_mp",
-                "model1887.*_mp",
-                ".+shotgun.*_mp"
-            };
-            
             TopPlayersMinPlayTime = 3600 * 3;
             StoreClientKills = false;
-            
+
             return this;
         }
     }

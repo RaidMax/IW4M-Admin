@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using SharedLibraryCore.Helpers;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
+using static SharedLibraryCore.Server;
 
 namespace IW4MAdmin.Plugins.Stats.Models
 {
@@ -44,6 +45,8 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public float AdsPercent { get; set; }
         [NotMapped]
         public List<Vector3> AnglesList { get; set; }
+        [NotMapped]
+        public Game GameName { get; set; }
 
         /// <summary>
         /// Indicates if the attacker was alive after last captured angle

@@ -481,7 +481,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     IsKill = !isDamage,
                     AnglesList = snapshotAngles,
                     IsAlive = isAlive == "1",
-                    TimeSinceLastAttack = long.Parse(lastAttackTime)
+                    TimeSinceLastAttack = long.Parse(lastAttackTime),
+                    GameName = attacker.CurrentServer.GameName
                 };
 
                 if (hit.HitLoc == IW4Info.HitLocation.shield)
@@ -539,7 +540,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                if (Plugin.Config.Configuration().EnableAntiCheat && !attacker.IsBot && attacker.ClientId != victim.ClientId)
+                if (Plugin.Config.Configuration().AnticheatConfiguration.Enable && !attacker.IsBot && attacker.ClientId != victim.ClientId)
                 {
                     clientDetection.TrackedHits.Add(hit);
 
@@ -555,10 +556,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                             if (oldestHit.IsAlive)
                             {
-                                var result = DeterminePenaltyResult(clientDetection.ProcessHit(oldestHit), attacker.CurrentServer.EndPoint);
-#if !DEBUG
-                                await ApplyPenalty(result, attacker);
-#endif
+                                var result = DeterminePenaltyResult(clientDetection.ProcessHit(oldestHit), attacker);
+                                
+                                if (Utilities.IsDevelopment)
+                                {
+                                    await ApplyPenalty(result, attacker);
+                                }
 
                                 if (clientDetection.Tracker.HasChanges && result.ClientPenalty != EFPenalty.PenaltyType.Any)
                                 {
@@ -594,10 +597,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        private DetectionPenaltyResult DeterminePenaltyResult(IEnumerable<DetectionPenaltyResult> results, long serverId)
+        private DetectionPenaltyResult DeterminePenaltyResult(IEnumerable<DetectionPenaltyResult> results, EFClient client)
         {
             // allow disabling of certain detection types
-            results = results.Where(_result => ShouldUseDetection(serverId, _result.Type));
+            results = results.Where(_result => ShouldUseDetection(client.CurrentServer, _result.Type, client.ClientId));
             return results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Ban) ??
                 results.FirstOrDefault(_result => _result.ClientPenalty == EFPenalty.PenaltyType.Flag) ??
                 new DetectionPenaltyResult()
@@ -617,21 +620,24 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        private bool ShouldUseDetection(long serverId, DetectionType detectionType)
+        private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
         {
-            var detectionTypes = Plugin.Config.Configuration().ServerDetectionTypes;
+            bool shouldRun = true;
+            var detectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.ServerDetectionTypes;
+            var ignoredClients = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredClientIds;
 
-            if (detectionTypes == null)
+            try
             {
-                return true;
+                shouldRun &= !detectionTypes[server.EndPoint].Contains(detectionType);
             }
 
-            if (!detectionTypes.ContainsKey(serverId))
+            catch (KeyNotFoundException)
             {
-                return true;
+
             }
 
-            return detectionTypes[serverId].Contains(detectionType);
+            shouldRun &= !ignoredClients.Any(_clientId => _clientId == clientId);
+            return shouldRun;
         }
 
         async Task ApplyPenalty(DetectionPenaltyResult penalty, EFClient attacker)
@@ -1139,10 +1145,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public void ResetKillstreaks(Server sv)
         {
-            foreach (var stat in sv.GetClientsAsList()
-                .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY)))
+            foreach (var session in sv.GetClientsAsList()
+                .Select(_client => new
+                {
+                    stat = _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY),
+                    detection = _client.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY)
+                }))
             {
-                stat?.StartNewSession();
+                session.stat?.StartNewSession();
+                session.detection?.OnMapChange();
             }
         }
 

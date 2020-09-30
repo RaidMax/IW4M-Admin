@@ -772,8 +772,6 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class ListAdminsCommand : Command
     {
-        private readonly CommandConfiguration _config;
-
         public ListAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "admins";
@@ -781,8 +779,6 @@ namespace SharedLibraryCore.Commands
             Alias = "a";
             Permission = Permission.User;
             RequiresTarget = false;
-
-            _config = config;
         }
 
         public static string OnlineAdmins(Server S, ITranslationLookup lookup)
@@ -901,8 +897,6 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class ListRulesCommands : Command
     {
-        private readonly CommandConfiguration _config;
-
         public ListRulesCommands(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "rules";
@@ -910,8 +904,6 @@ namespace SharedLibraryCore.Commands
             Alias = "r";
             Permission = Permission.User;
             RequiresTarget = false;
-
-            _config = config;
         }
 
         public override Task ExecuteAsync(GameEvent E)

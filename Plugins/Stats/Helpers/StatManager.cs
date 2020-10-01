@@ -557,8 +557,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             if (oldestHit.IsAlive)
                             {
                                 var result = DeterminePenaltyResult(clientDetection.ProcessHit(oldestHit), attacker);
-                                
-                                if (Utilities.IsDevelopment)
+
+                                if (!Utilities.IsDevelopment)
                                 {
                                     await ApplyPenalty(result, attacker);
                                 }
@@ -622,13 +622,21 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
         {
-            bool shouldRun = true;
             var detectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.ServerDetectionTypes;
             var ignoredClients = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredClientIds;
 
+            if (ignoredClients.Contains(clientId))
+            {
+                return false;
+            }
+
+
             try
             {
-                shouldRun &= !detectionTypes[server.EndPoint].Contains(detectionType);
+                if (detectionTypes[server.EndPoint].Contains(detectionType))
+                {
+                    return false;
+                }
             }
 
             catch (KeyNotFoundException)
@@ -636,8 +644,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             }
 
-            shouldRun &= !ignoredClients.Any(_clientId => _clientId == clientId);
-            return shouldRun;
+            return true;
         }
 
         async Task ApplyPenalty(DetectionPenaltyResult penalty, EFClient attacker)

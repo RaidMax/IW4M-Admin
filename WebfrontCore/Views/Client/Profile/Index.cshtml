@@ -50,7 +50,7 @@
                 }
             </div>
         }
-        @if (Model.ActivePenalty != null)
+        @if (Model.ActivePenalty != null && (Model.ActivePenalty.Type != EFPenalty.PenaltyType.Flag || ViewBag.Authorized))
         {
             <div class="font-weight-bold h4 mb-0 penalties-color-@Model.ActivePenalty.Type.ToString().ToLower()">
                 @foreach (var result in Utilities.SplitTranslationTokens(translationKey))

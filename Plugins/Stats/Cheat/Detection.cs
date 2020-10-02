@@ -331,18 +331,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             if (!shouldIgnoreDetection)
             {
                 validButtonHitCount++;
-            }
 
-            double lastDiff = hit.TimeOffset - hit.TimeSinceLastAttack;
-            if (validButtonHitCount > 0 && lastDiff <= 0)
-            {
-                results.Add(new DetectionPenaltyResult()
+                double lastDiff = hit.TimeOffset - hit.TimeSinceLastAttack;
+                if (validButtonHitCount > 0 && lastDiff <= 0)
                 {
-                    ClientPenalty = EFPenalty.PenaltyType.Ban,
-                    Value = lastDiff,
-                    HitCount = HitCount,
-                    Type = DetectionType.Button
-                });
+                    results.Add(new DetectionPenaltyResult()
+                    {
+                        ClientPenalty = EFPenalty.PenaltyType.Ban,
+                        Value = lastDiff,
+                        HitCount = HitCount,
+                        Type = DetectionType.Button
+                    });
+                }
             }
             #endregion
 

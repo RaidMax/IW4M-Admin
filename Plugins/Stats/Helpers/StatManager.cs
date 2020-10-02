@@ -633,7 +633,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             try
             {
-                if (detectionTypes[server.EndPoint].Contains(detectionType))
+                if (!detectionTypes[server.EndPoint].Contains(detectionType))
                 {
                     return false;
                 }

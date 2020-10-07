@@ -240,6 +240,42 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
+    /// Prints out a message to all clients on all servers
+    /// </summary>
+    public class SayAllCommand : Command
+    {
+        public SayAllCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        {
+            Name = "sayall";
+            Description = _translationLookup["COMMANDS_SAY_ALL_DESC"];
+            Alias = "sa";
+            Permission = Permission.Moderator;
+            RequiresTarget = false;
+            Arguments = new[]
+            {
+                new CommandArgument()
+                {
+                    Name = _translationLookup["COMMANDS_ARGS_MESSAGE"],
+                    Required = true
+                }
+            };
+        }
+
+        public override Task ExecuteAsync(GameEvent E)
+        {
+            string message = _translationLookup["COMMANDS_SAY_ALL_MESSAGE_FORMAT"].FormatExt(E.Origin.Name, E.Data);
+
+            foreach (var server in E.Owner.Manager.GetServers())
+            {
+                server.Broadcast(message, E.Origin);
+            }
+
+            E.Origin.Tell(_translationLookup["COMMANDS_SAY_SUCCESS"]);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
     /// Temporarily bans a client
     /// </summary>
     public class TempBanCommand : Command

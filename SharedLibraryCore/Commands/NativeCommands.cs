@@ -632,11 +632,11 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var _ = !E.Origin.Masked ?
+            _ = !E.Origin.Masked ?
                 E.Owner.Broadcast($"{_translationLookup["COMMANDS_MAPROTATE"]} [^5{E.Origin.Name}^7]", E.Origin) :
                 E.Owner.Broadcast(_translationLookup["COMMANDS_MAPROTATE"], E.Origin);
 
-            await Task.Delay(5000);
+            await Task.Delay(E.Owner.Manager.GetApplicationSettings().Configuration().MapChangeDelaySeconds * 1000);
             await E.Owner.ExecuteCommandAsync("map_rotate");
         }
     }
@@ -864,21 +864,17 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            string newMap = E.Data.Trim().ToLower();
-            foreach (Map m in E.Owner.Maps)
-            {
-                if (m.Name.ToLower() == newMap || m.Alias.ToLower() == newMap)
-                {
-                    E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(m.Alias));
-                    await Task.Delay((int)(Utilities.DefaultCommandTimeout.TotalMilliseconds / 2.0));
-                    await E.Owner.LoadMap(m.Name);
-                    return;
-                }
-            }
+            string newMap = E.Data.Trim();
+            int delay = E.Owner.Manager.GetApplicationSettings().Configuration().MapChangeDelaySeconds * 1000;
 
-            // todo: this can be moved into a single statement
-            E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_UKN"].FormatExt(newMap));
-            await Task.Delay(5000);
+            var foundMap = E.Owner.Maps.FirstOrDefault(_map => _map.Name.Equals(newMap, StringComparison.InvariantCultureIgnoreCase) ||
+            _map.Alias.Equals(newMap, StringComparison.InvariantCultureIgnoreCase));
+
+            _ = foundMap == null ?
+                E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_UKN"].FormatExt(newMap)) :
+                 E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(foundMap.Alias));
+
+            await Task.Delay(delay);
             await E.Owner.LoadMap(newMap);
         }
     }
@@ -1565,7 +1561,7 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class SetGravatarCommand : Command
     {
-        private readonly IMetaService _metaService; 
+        private readonly IMetaService _metaService;
 
         public SetGravatarCommand(CommandConfiguration config, ITranslationLookup translationLookup, IMetaService metaService) : base(config, translationLookup)
         {

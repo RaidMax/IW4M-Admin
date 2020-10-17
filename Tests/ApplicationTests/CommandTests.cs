@@ -14,6 +14,8 @@ using SharedLibraryCore;
 using ApplicationTests.Mocks;
 using SharedLibraryCore.Services;
 using static SharedLibraryCore.Database.Models.EFClient;
+using FluentAssertions;
+using FluentAssertions.Extensions;
 
 namespace ApplicationTests
 {
@@ -33,11 +35,14 @@ namespace ApplicationTests
         public void Setup()
         {
             logger = A.Fake<ILogger>();
-            cmdConfig = new CommandConfiguration();
 
             serviceProvider = new ServiceCollection()
                 .BuildBase(new EventHandlerMock(true))
                 .AddSingleton(A.Fake<ClientService>())
+                .AddSingleton<LoadMapCommand>()
+                .AddSingleton<SetLevelCommand>()
+                .AddSingleton<RunAsCommand>()
+                .AddSingleton<PrivateMessageAdminsCommand>()
                 .BuildServiceProvider()
                 .SetupTestHooks();
 
@@ -46,6 +51,8 @@ namespace ApplicationTests
             transLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
             clientService = serviceProvider.GetRequiredService<ClientService>();
             appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
+            appConfig.MapChangeDelaySeconds = 1;
+            cmdConfig = serviceProvider.GetRequiredService<CommandConfiguration>();
 
             A.CallTo(() => manager.GetClientService())
                 .Returns(clientService);
@@ -69,7 +76,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_RunAsFailsOnSelf()
         {
-            var cmd = new RunAsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<RunAsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var target = ClientGenerators.CreateBasicClient(server);
 
@@ -88,7 +95,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_RunAsFailsOnHigherPrivilege()
         {
-            var cmd = new RunAsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<RunAsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var target = ClientGenerators.CreateBasicClient(server);
             target.Level = EFClient.Permission.Administrator;
@@ -111,7 +118,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_RunAsFailsOnSamePrivilege()
         {
-            var cmd = new RunAsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<RunAsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var target = ClientGenerators.CreateBasicClient(server);
             target.Level = EFClient.Permission.Administrator;
@@ -134,7 +141,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_RunAsFailsOnDisallowedCommand()
         {
-            var cmd = new RunAsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<RunAsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var target = ClientGenerators.CreateBasicClient(server);
             target.Level = EFClient.Permission.Moderator;
@@ -160,7 +167,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_RunAsQueuesEventAndResponse()
         {
-            var cmd = new RunAsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<RunAsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var target = ClientGenerators.CreateBasicClient(server);
             target.Level = EFClient.Permission.Moderator;
@@ -187,7 +194,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_SetLevelFailOnSelf()
         {
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var target = ClientGenerators.CreateBasicClient(server);
             target.Level = Permission.Owner;
@@ -211,7 +218,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelFailWithSourcePrivilegeTooLow()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Moderator;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -239,7 +246,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelFailWithExistingOwner_AndOnlyOneOwnerAllowed()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             var target = ClientGenerators.CreateBasicClient(server);
             target.Level = Permission.User;
@@ -266,7 +273,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelFailWithStepPrivilegesDisabled_AndNonOwner()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.SeniorAdmin;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -294,7 +301,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelFailWithStepPrivilegesEnabled_ButNewPermissionTooHigh()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Moderator;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -320,7 +327,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelFailInvalidGroup()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Owner;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -345,7 +352,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelSucceedWithNoExistingOwner_AndOnlyOneOwnerAllowed()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Owner;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -373,7 +380,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelOwnerSucceedWithMultiOwnerAllowed()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Owner;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -402,7 +409,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelOwnerSucceedWithMultiOwnerAllowed_AndSteppedPrivileges()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Owner;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -432,7 +439,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelSucceedWithSteppedPrivileges()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Moderator;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -461,7 +468,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelSucceed()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Owner;
             var target = ClientGenerators.CreateBasicClient(server);
@@ -490,7 +497,7 @@ namespace ApplicationTests
         public async Task Test_SetLevelSucceed_AndFindsIngameClient()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var cmd = new SetLevelCommand(cmdConfig, transLookup, logger);
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
             var origin = ClientGenerators.CreateBasicClient(server);
             origin.Level = Permission.Owner;
             var databaseTarget = ClientGenerators.CreateDatabaseClient();
@@ -542,14 +549,14 @@ namespace ApplicationTests
         [Test]
         public async Task Test_PrivateMessageAdmins_HappyPath()
         {
-            var cmd = new PrivateMessageAdminsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<PrivateMessageAdminsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var origin = ClientGenerators.CreateDatabaseClient();
             origin.Level = Permission.Administrator;
             origin.CurrentServer = server;
             var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "", server);
             cmdConfig.Commands.Add(nameof(PrivateMessageAdminsCommand), new CommandProperties { SupportedGames = new[] { server.GameName } });
-            
+
             server.Clients[0] = origin;
             server.Clients[1] = origin;
             await cmd.ExecuteAsync(gameEvent);
@@ -561,7 +568,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_PrivateMessageAdmins_GameNotSupported()
         {
-            var cmd = new PrivateMessageAdminsCommand(cmdConfig, transLookup);
+            var cmd = serviceProvider.GetRequiredService<PrivateMessageAdminsCommand>();
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             var origin = ClientGenerators.CreateDatabaseClient();
             origin.Level = Permission.Administrator;
@@ -576,6 +583,28 @@ namespace ApplicationTests
             int expectedEvents = 1;
 
             Assert.AreEqual(expectedEvents, mockEventHandler.Events.Count(_event => _event.Type == GameEvent.EventType.Tell));
+        }
+        #endregion
+
+        #region LOADMAP
+        [Test]
+        public void Test_LoadMap_WaitsAppropriateTime_BeforeExecutingCommand()
+        {
+            var cmd = serviceProvider.GetRequiredService<LoadMapCommand>();
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var rconParser = serviceProvider.GetRequiredService<IRConParser>();
+            server.Maps.Add(new Map()
+            {
+                Name = "mp_test",
+                Alias = "test"
+            });
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, server.Maps.First().Name, server);
+
+            Func<Task> act = () => cmd.ExecuteAsync(gameEvent);
+
+            act.ExecutionTime().Should().BeCloseTo(appConfig.MapChangeDelaySeconds.Seconds(), 500.Milliseconds());
+            A.CallTo(() => rconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, A<string>.Ignored))
+                .MustHaveHappened();
         }
         #endregion
     }

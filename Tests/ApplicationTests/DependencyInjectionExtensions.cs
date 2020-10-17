@@ -30,6 +30,10 @@ namespace ApplicationTests
             var manager = A.Fake<IManager>();
             var logger = A.Fake<ILogger>();
 
+            var transLookup = A.Fake<ITranslationLookup>();
+            A.CallTo(() => transLookup[A<string>.Ignored])
+                .Returns("test");
+
             A.CallTo(() => manager.GetLogger(A<long>.Ignored))
                 .Returns(logger);
 
@@ -38,7 +42,7 @@ namespace ApplicationTests
                 .AddSingleton<IDatabaseContextFactory, DatabaseContextFactoryMock>()
                 .AddSingleton(A.Fake<IRConConnectionFactory>())
                 .AddSingleton(A.Fake<IRConConnection>())
-                .AddSingleton(A.Fake<ITranslationLookup>())
+                .AddSingleton(transLookup)
                 .AddSingleton(A.Fake<IRConParser>())
                 .AddSingleton(A.Fake<IParserRegexFactory>())
                 .AddSingleton<DataFileLoader>()

@@ -91,6 +91,8 @@ namespace SharedLibraryCore.Configuration
         public string[] GlobalRules { get; set; } = new string[0];
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_DISALLOWED_NAMES")]
         public string[] DisallowedClientNames { get; set; } = new string[0];
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAP_CHANGE_DELAY")]
+        public int MapChangeDelaySeconds { get; set; } = 5;
         [UIHint("ServerConfiguration")]
         public ServerConfiguration[] Servers { get; set; }
 

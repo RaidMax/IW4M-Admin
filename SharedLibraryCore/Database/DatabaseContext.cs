@@ -205,7 +205,18 @@ namespace SharedLibraryCore.Database
                 pluginDir = Path.Join(Utilities.OperatingDirectory, "..", "..", "..", "..", "BUILD", "Plugins");
             }
 
-            IEnumerable<string> directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
+            IEnumerable<string> directoryFiles = Enumerable.Empty<string>();
+
+            try
+            {
+                directoryFiles = Directory.GetFiles(pluginDir).Where(f => f.EndsWith(".dll"));
+            }
+
+            catch (DirectoryNotFoundException)
+            {
+                // this is just an ugly thing for unit testing
+                directoryFiles = Directory.GetFiles(@"X:\IW4MAdmin\Tests\ApplicationTests\bin\Debug\netcoreapp3.1").Where(f => f.EndsWith("dll"));
+            }
 
             foreach (string dllPath in directoryFiles)
             {

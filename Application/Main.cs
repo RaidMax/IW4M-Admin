@@ -135,7 +135,7 @@ namespace IW4MAdmin.Application
                 await ApplicationTask;
             }
 
-            catch (Exception e) 
+            catch (Exception e)
             {
                 string failMessage = translationLookup == null ? "Failed to initalize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
                 Console.WriteLine($"{failMessage}: {e.GetExceptionInfo()}");
@@ -226,12 +226,17 @@ namespace IW4MAdmin.Application
         /// </summary>
         private static IServiceCollection ConfigureServices(string[] args)
         {
+            var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
+            var appConfig = appConfigHandler.Configuration();
             var defaultLogger = new Logger("IW4MAdmin-Manager");
-            var pluginImporter = new PluginImporter(defaultLogger);
+
+            var masterUri = Utilities.IsDevelopment ? new Uri("http://127.0.0.1:8080") : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
+            var apiClient = RestClient.For<IMasterApi>(masterUri);
+            var pluginImporter = new PluginImporter(defaultLogger, appConfig, apiClient, new RemoteAssemblyHandler(defaultLogger, appConfig));
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
-                .AddSingleton(new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings") as IConfigurationHandler<ApplicationConfiguration>)
+                .AddSingleton(appConfigHandler as IConfigurationHandler<ApplicationConfiguration>)
                 .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration() ?? new ApplicationConfiguration())
                 .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
@@ -255,19 +260,17 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
+                .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
+                .AddSingleton<IMasterCommunication, MasterCommunication>()
+                .AddSingleton<IManager, ApplicationManager>()
+                .AddSingleton(apiClient)
                 .AddSingleton(_serviceProvider =>
                 {
                     var config = _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration();
                     return Localization.Configure.Initialize(useLocalTranslation: config?.UseLocalTranslations ?? false,
                         apiInstance: _serviceProvider.GetRequiredService<IMasterApi>(),
                         customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
-                })
-                .AddSingleton<IManager, ApplicationManager>()
-                .AddSingleton(_serviceProvider => RestClient
-                    .For<IMasterApi>(Utilities.IsDevelopment ? new Uri("http://127.0.0.1:8080") : _serviceProvider
-                    .GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration()?.MasterUrl ??
-                    new ApplicationConfiguration().MasterUrl))
-                .AddSingleton<IMasterCommunication, MasterCommunication>();
+                });
 
             if (args.Contains("serialevents"))
             {

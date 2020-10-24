@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using IW4MAdmin.Application.Helpers;
 using Newtonsoft.Json;
 using RestEase;
 using SharedLibraryCore.Helpers;
@@ -35,6 +37,13 @@ namespace IW4MAdmin.Application.API.Master
         public string Message { get; set; }
     }
 
+    public class PluginSubscriptionContent
+    {
+        public string Content { get; set; }
+        public PluginType Type { get; set; }
+    }
+
+
     /// <summary>
     /// Defines the capabilities of the master API
     /// </summary>
@@ -63,5 +72,8 @@ namespace IW4MAdmin.Application.API.Master
 
         [Get("localization/{languageTag}")]
         Task<SharedLibraryCore.Localization.Layout> GetLocalization([Path("languageTag")] string languageTag);
+
+        [Get("plugin_subscriptions")]
+        Task<IEnumerable<PluginSubscriptionContent>> GetPluginSubscription([Query("instance_id")] Guid instanceId, [Query("subscription_id")] string subscription_id);
     }
 }

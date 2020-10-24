@@ -6,6 +6,8 @@ using SharedLibraryCore.Interfaces;
 using System.Linq;
 using SharedLibraryCore;
 using IW4MAdmin.Application.Misc;
+using IW4MAdmin.Application.API.Master;
+using SharedLibraryCore.Configuration;
 
 namespace IW4MAdmin.Application.Helpers
 {
@@ -15,12 +17,19 @@ namespace IW4MAdmin.Application.Helpers
     /// </summary>
     public class PluginImporter : IPluginImporter
     {
+        private IEnumerable<PluginSubscriptionContent> _pluginSubscription;
         private static readonly string PLUGIN_DIR = "Plugins";
         private readonly ILogger _logger;
+        private readonly IRemoteAssemblyHandler _remoteAssemblyHandler;
+        private readonly IMasterApi _masterApi;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public PluginImporter(ILogger logger)
+        public PluginImporter(ILogger logger, ApplicationConfiguration appConfig, IMasterApi masterApi, IRemoteAssemblyHandler remoteAssemblyHandler)
         {
             _logger = logger;
+            _masterApi = masterApi;
+            _remoteAssemblyHandler = remoteAssemblyHandler;
+            _appConfig = appConfig;
         }
 
         /// <summary>
@@ -33,11 +42,11 @@ namespace IW4MAdmin.Application.Helpers
 
             if (Directory.Exists(pluginDir))
             {
-                string[] scriptPluginFiles = Directory.GetFiles(pluginDir, "*.js");
+                var scriptPluginFiles = Directory.GetFiles(pluginDir, "*.js").AsEnumerable().Union(GetRemoteScripts());
 
-                _logger.WriteInfo($"Discovered {scriptPluginFiles.Length} potential script plugins");
+                _logger.WriteInfo($"Discovered {scriptPluginFiles.Count()} potential script plugins");
 
-                if (scriptPluginFiles.Length > 0)
+                if (scriptPluginFiles.Count() > 0)
                 {
                     foreach (string fileName in scriptPluginFiles)
                     {
@@ -66,7 +75,10 @@ namespace IW4MAdmin.Application.Helpers
 
                 if (dllFileNames.Length > 0)
                 {
-                    var assemblies = dllFileNames.Select(_name => Assembly.LoadFrom(_name));
+                    // we only want to load the most recent assembly in case of duplicates
+                    var assemblies = dllFileNames.Select(_name => Assembly.LoadFrom(_name))
+                        .Union(GetRemoteAssemblies())
+                        .GroupBy(_assembly => _assembly.FullName).Select(_assembly => _assembly.OrderByDescending(_assembly => _assembly.GetName().Version).First());
 
                     pluginTypes = assemblies
                         .SelectMany(_asm => _asm.GetTypes())
@@ -84,5 +96,47 @@ namespace IW4MAdmin.Application.Helpers
 
             return (pluginTypes, commandTypes);
         }
+
+        private IEnumerable<Assembly> GetRemoteAssemblies()
+        {
+            try
+            {
+                if (_pluginSubscription == null)
+                    _pluginSubscription = _masterApi.GetPluginSubscription(Guid.Parse(_appConfig.Id), _appConfig.SubscriptionId).Result;
+
+                return _remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription.Where(sub => sub.Type == PluginType.Binary).Select(sub => sub.Content).ToArray());
+            }
+
+            catch (Exception ex)
+            {
+                _logger.WriteWarning("Could not load remote assemblies");
+                _logger.WriteDebug(ex.GetExceptionInfo());
+                return Enumerable.Empty<Assembly>();
+            }
+        }
+
+        private IEnumerable<string> GetRemoteScripts()
+        {
+            try
+            {
+                if (_pluginSubscription == null)
+                    _pluginSubscription = _masterApi.GetPluginSubscription(Guid.Parse(_appConfig.Id), _appConfig.SubscriptionId).Result;
+
+                return _remoteAssemblyHandler.DecryptScripts(_pluginSubscription.Where(sub => sub.Type == PluginType.Script).Select(sub => sub.Content).ToArray());
+            }
+
+            catch (Exception ex)
+            {
+                _logger.WriteWarning("Could not load remote assemblies");
+                _logger.WriteDebug(ex.GetExceptionInfo());
+                return Enumerable.Empty<string>();
+            }
+        }
+    }
+
+    public enum PluginType
+    {
+        Binary,
+        Script
     }
 }

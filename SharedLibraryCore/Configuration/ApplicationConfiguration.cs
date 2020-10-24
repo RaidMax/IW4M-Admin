@@ -99,6 +99,8 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore]
         public string Id { get; set; }
         [ConfigurationIgnore]
+        public string SubscriptionId { get; set; }
+        [ConfigurationIgnore]
         public MapConfiguration[] Maps { get; set; }
         [ConfigurationIgnore]
         public QuickMessageConfiguration[] QuickMessages { get; set; }

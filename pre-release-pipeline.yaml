@@ -1,0 +1,185 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - release/pre
+
+pr: none
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: 'IW4MAdmin.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Prerelease'
+  outputFolder: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+
+steps:
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+            md -Force lib\open-iconic\font\css
+            wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
+
+- task: projectversionasvariable@1
+  inputs:
+    path: '$(Build.Repository.LocalPath)\Application\Application.csproj'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: |
+      **/WebfrontCore.csproj
+      **/Application.csproj
+    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId)'
+    zipAfterPublish: false
+    modifyOutputPath: false
+    
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'wget https://raidmax.org/downloads/dos2unix.exe'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
+- task: PowerShell@2
+  inputs:
+    filePath: 'PostPublish.ps1'
+    arguments: '$(outputFolder)'
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)'
+
+- task: BatchScript@1
+  inputs:
+    filename: 'Application\BuildScripts\PostPublish.bat'
+    workingFolder: '$(Build.Repository.LocalPath)'
+    arguments: '$(outputFolder)'
+    failOnStandardError: true
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      echo changing to encoding for linux start script
+      dos2unix $(outputFolder)\StartIW4MAdmin.sh
+      echo creating website version filename
+      @echo IW4MAdmin-$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId) > $(Build.ArtifactStagingDirectory)\version_prerelease.txt
+    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\Plugins\ScriptPlugins'
+    Contents: '*.js'
+    TargetFolder: '$(outputFolder)\Plugins'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\'
+    Contents: '*.dll'
+    TargetFolder: '$(outputFolder)\Plugins'
+
+- task: CmdLine@2
+  inputs:
+   script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
+   workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+   failOnStderr: true
+
+- task: CmdLine@2
+  inputs:
+   script: 'echo d | xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
+   workingDirectory: '$(Build.Repository.LocalPath)'
+   failOnStderr: true
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(outputFolder)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+- task: FtpUpload@2
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: '*.zip'
+    remoteDirectory: 'IW4MAdmin/Download'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false
+
+- task: FtpUpload@2
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: 'version_prerelease.txt'
+    remoteDirectory: 'IW4MAdmin'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false
+
+- task: GitHubRelease@1
+  inputs:
+    gitHubConnection: 'github.com_RaidMax'
+    repositoryName: 'RaidMax/IW4M-Admin'
+    action: 'create'
+    target: '$(Build.SourceVersion)'
+    tagSource: 'userSpecifiedTag'
+    tag: '$(Version.Major).$(Version.Minor)-$(buildConfiguration)$(Version.Build)b$(Build.BuildId)'
+    title: 'Version $(Version.Major).$(Version.Minor) $(buildConfiguration) Feature $(Version.Build) Build $(Build.BuildId)'
+    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
+    isPreRelease: true
+    releaseNotesSource: 'inline'
+    releaseNotesInline: 'todo'
+    changeLogCompareToRelease: 'lastNonDraftRelease'
+    changeLogType: 'commitBased'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      $payload = @{
+          'current-version-prerelease' = '$(Version.Major).$(Version.Minor).$(Version.Build).$(Build.BuildId)'
+          'jwt-secret' = '$(JWTSecret)'
+      } | ConvertTo-Json
+              
+      
+      $params = @{
+          Uri         = 'http://api.raidmax.org:5000/version'
+          Method      = 'POST'
+          Body        = $payload
+          ContentType = 'application/json'
+      }
+      
+      Invoke-RestMethod @params
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(outputFolder)'
+    artifact: 'IW4MAdmin.$(buildConfiguration)'
+    publishLocation: 'pipeline'

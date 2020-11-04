@@ -606,6 +606,25 @@ namespace ApplicationTests
             A.CallTo(() => rconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, A<string>.Ignored))
                 .MustHaveHappened();
         }
+
+        [Test]
+        public async Task Test_LoadMap_FindsMapName_FromPartialAlias()
+        {
+            var cmd = serviceProvider.GetRequiredService<LoadMapCommand>();
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var rconParser = serviceProvider.GetRequiredService<IRConParser>();
+            server.Maps.Add(new Map()
+            {
+                Name = "mp_test",
+                Alias = "test"
+            });
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, server.Maps.First().Name, server);
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            A.CallTo(() => rconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, A<string>.That.Contains(server.Maps[0].Name)))
+                .MustHaveHappened();
+        }
         #endregion
     }
 }

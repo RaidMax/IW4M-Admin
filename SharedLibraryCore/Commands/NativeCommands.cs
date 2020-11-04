@@ -875,7 +875,7 @@ namespace SharedLibraryCore.Commands
                  E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(foundMap.Alias));
 
             await Task.Delay(delay);
-            await E.Owner.LoadMap(newMap);
+            await E.Owner.LoadMap(foundMap?.Name ?? newMap);
         }
     }
 

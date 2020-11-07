@@ -49,9 +49,11 @@ namespace IW4MAdmin.Application.RCon
 
             var connectionState = ActiveQueries[this.Endpoint];
 
-#if DEBUG == true
-            _log.WriteDebug($"Waiting for semaphore to be released [{this.Endpoint}]");
-#endif
+            if (Utilities.IsDevelopment)
+            {
+                _log.WriteDebug($"Waiting for semaphore to be released [{this.Endpoint}]");
+            }
+
             // enter the semaphore so only one query is sent at a time per server.
             await connectionState.OnComplete.WaitAsync();
 
@@ -64,10 +66,11 @@ namespace IW4MAdmin.Application.RCon
 
             connectionState.LastQuery = DateTime.Now;
 
-#if DEBUG == true
-            _log.WriteDebug($"Semaphore has been released [{this.Endpoint}]");
-            _log.WriteDebug($"Query [{this.Endpoint},{type.ToString()},{parameters}]");
-#endif
+            if (Utilities.IsDevelopment)
+            {
+                _log.WriteDebug($"Semaphore has been released [{Endpoint}]");
+                _log.WriteDebug($"Query [{Endpoint},{type},{parameters}]");
+            }
 
             byte[] payload = null;
             bool waitForResponse = config.WaitForResponse;
@@ -133,6 +136,7 @@ namespace IW4MAdmin.Application.RCon
                 connectionState.OnReceivedData.Reset();
                 connectionState.ConnectionAttempts++;
                 connectionState.BytesReadPerSegment.Clear();
+                bool exceptionCaught = false;
 #if DEBUG == true
                 _log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
 #endif
@@ -150,9 +154,11 @@ namespace IW4MAdmin.Application.RCon
 
                 catch
                 {
+                    // we want to retry with a delay
                     if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
                     {
-                        await Task.Delay(StaticHelpers.FloodProtectionInterval);
+                        exceptionCaught = true;
+                        await Task.Delay(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts));
                         goto retrySend;
                     }
 
@@ -161,7 +167,8 @@ namespace IW4MAdmin.Application.RCon
 
                 finally
                 {
-                    if (connectionState.OnComplete.CurrentCount == 0)
+                    // we don't want to release if we're going to retry the query
+                    if (connectionState.OnComplete.CurrentCount == 0 && !exceptionCaught)
                     {
                         connectionState.OnComplete.Release(1);
                     }
@@ -170,13 +177,12 @@ namespace IW4MAdmin.Application.RCon
 
             if (response.Length == 0)
             {
-                _log.WriteWarning($"Received empty response for request [{type.ToString()}, {parameters}, {Endpoint.ToString()}]");
+                _log.WriteWarning($"Received empty response for request [{type}, {parameters}, {Endpoint}]");
                 return new string[0];
             }
 
             string responseString = type == StaticHelpers.QueryType.COMMAND_STATUS ?
-               ReassembleSegmentedStatus(response) :
-               _gameEncoding.GetString(response[0]) + '\n';
+               ReassembleSegmentedStatus(response) : RecombineMessages(response);
 
             // note: not all games respond if the pasword is wrong or not set
             if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
@@ -234,6 +240,35 @@ namespace IW4MAdmin.Application.RCon
             return string.Join("", splitStatusStrings);
         }
 
+        /// <summary>
+        /// Recombines multiple game messages into one
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        private string RecombineMessages(byte[][] payload)
+        {
+            if (payload.Length == 1)
+            {
+                return _gameEncoding.GetString(payload[0]).TrimEnd('\n') + '\n';
+            }
+
+            else
+            {
+                var builder = new StringBuilder();
+                for (int i = 0; i < payload.Length; i++)
+                {
+                    string message = _gameEncoding.GetString(payload[i]).TrimEnd('\n') + '\n';
+                    if (i > 0)
+                    {
+                        message = message.Replace(config.CommandPrefixes.RConResponse, "");
+                    }
+                    builder.Append(message);
+                }
+                builder.Append('\n');
+                return builder.ToString();
+            }
+        }
+
         private async Task<byte[][]> SendPayloadAsync(byte[] payload, bool waitForResponse)
         {
             var connectionState = ActiveQueries[this.Endpoint];
@@ -259,7 +294,8 @@ namespace IW4MAdmin.Application.RCon
             if (sendDataPending)
             {
                 // the send has not been completed asyncronously
-                if (!await Task.Run(() => connectionState.OnSentData.Wait(StaticHelpers.SocketTimeout)))
+                // this really shouldn't ever happen because it's UDP
+                if (!await Task.Run(() => connectionState.OnSentData.Wait(StaticHelpers.SocketTimeout(1))))
                 {
                     rconSocket.Close();
                     throw new NetworkException("Timed out sending data", rconSocket);
@@ -278,7 +314,11 @@ namespace IW4MAdmin.Application.RCon
 
             if (receiveDataPending)
             {
-                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(10000)))
+                if (Utilities.IsDevelopment)
+                {
+                    _log.WriteDebug($"Waiting to asynchrously receive data on attempt #{connectionState.ConnectionAttempts}");
+                }
+                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts))))
                 {
                     rconSocket.Close();
                     throw new NetworkException("Timed out waiting for response", rconSocket);
@@ -287,6 +327,11 @@ namespace IW4MAdmin.Application.RCon
 
             rconSocket.Close();
 
+            return GetResponseData(connectionState);
+        }
+
+        private byte[][] GetResponseData(ConnectionState connectionState)
+        {
             var responseList = new List<byte[]>();
             int totalBytesRead = 0;
 
@@ -305,9 +350,10 @@ namespace IW4MAdmin.Application.RCon
 
         private void OnDataReceived(object sender, SocketAsyncEventArgs e)
         {
-#if DEBUG == true
-            _log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint.ToString()}");
-#endif
+            if (Utilities.IsDevelopment)
+            {
+                _log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint}");
+            }
 
             // this occurs when we close the socket
             if (e.BytesTransferred == 0)
@@ -330,9 +376,10 @@ namespace IW4MAdmin.Application.RCon
 
                         if (!sock.ReceiveAsync(state.ReceiveEventArgs))
                         {
-#if DEBUG == true
-                            _log.WriteDebug($"Read {state.ReceiveEventArgs.BytesTransferred} synchronous bytes from {e.RemoteEndPoint.ToString()}");
-#endif
+                            if (Utilities.IsDevelopment)
+                            {
+                                _log.WriteDebug($"Read {state.ReceiveEventArgs.BytesTransferred} synchronous bytes from {e.RemoteEndPoint}");
+                            }
                             // we need to increment this here because the callback isn't executed if there's no pending IO
                             state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
                             ActiveQueries[this.Endpoint].OnReceivedData.Set();
@@ -354,9 +401,10 @@ namespace IW4MAdmin.Application.RCon
 
         private void OnDataSent(object sender, SocketAsyncEventArgs e)
         {
-#if DEBUG == true
-            _log.WriteDebug($"Sent {e.Buffer?.Length} bytes to {e.ConnectSocket?.RemoteEndPoint?.ToString()}");
-#endif
+            if (Utilities.IsDevelopment)
+            {
+                _log.WriteDebug($"Sent {e.Buffer?.Length} bytes to {e.ConnectSocket?.RemoteEndPoint?.ToString()}");
+            }
             ActiveQueries[this.Endpoint].OnSentData.Set();
         }
     }

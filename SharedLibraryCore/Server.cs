@@ -269,7 +269,7 @@ namespace SharedLibraryCore
         {
             try
             {
-                return (await this.GetDvarAsync<string>("sv_customcallbacks")).Value == "1";
+                return (await this.GetDvarAsync("sv_customcallbacks", "0")).Value == "1";
             }
 
             catch (Exceptions.DvarException)

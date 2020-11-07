@@ -76,7 +76,22 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default)
         {
-            string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
+            string[] lineSplit;
+
+            try
+            {
+                lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
+            }
+            catch
+            {
+                if (fallbackValue == null)
+                {
+                    throw;
+                }
+
+                lineSplit = new string[0];
+            }
+
             string response = string.Join('\n', lineSplit).TrimEnd('\0');
             var match = Regex.Match(response, Configuration.Dvar.Pattern);
 

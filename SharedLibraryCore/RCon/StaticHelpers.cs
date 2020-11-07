@@ -49,14 +49,23 @@ namespace SharedLibraryCore.RCon
         /// <summary>
         /// timeout in seconds to wait for a socket send or receive before giving up
         /// </summary>
-        public static readonly int SocketTimeout = 10000;
+        public static TimeSpan SocketTimeout(int retryAttempt)
+        {
+            return retryAttempt switch
+            {
+                1 => TimeSpan.FromMilliseconds(550),
+                2 => TimeSpan.FromMilliseconds(1000),
+                3 => TimeSpan.FromMilliseconds(2000),
+                _ => TimeSpan.FromMilliseconds(5000),
+            };
+        }
         /// <summary>
         /// interval in milliseconds to wait before sending the next RCon request
         /// </summary>
-        public static readonly int FloodProtectionInterval = 650;
+        public static readonly int FloodProtectionInterval = 750;
         /// <summary>
         /// how many failed connection attempts before aborting connection
         /// </summary>
-        public static readonly int AllowedConnectionFails = 3;
+        public static readonly int AllowedConnectionFails = 4;
     }
 }

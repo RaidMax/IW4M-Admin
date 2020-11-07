@@ -972,7 +972,7 @@ namespace IW4MAdmin
 
             if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")
             {
-                throw new ServerException(loc["SERVER_ERROR_NOT_RUNNING"]);
+                throw new ServerException(loc["SERVER_ERROR_NOT_RUNNING"].FormatExt(this.ToString()));
             }
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;
@@ -1042,9 +1042,10 @@ namespace IW4MAdmin
                 }
 
                 if (needsRestart)
-                {
-                    Logger.WriteWarning("Game log file not properly initialized, restarting map...");
-                    await this.ExecuteCommandAsync("map_restart");
+                {  
+                    // disabling this for the time being
+                    /*Logger.WriteWarning("Game log file not properly initialized, restarting map...");
+                    await this.ExecuteCommandAsync("map_restart");*/ 
                 }
 
                 // this DVAR isn't set until the a map is loaded

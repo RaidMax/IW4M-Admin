@@ -3,6 +3,9 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.IO
 {
@@ -12,12 +15,14 @@ namespace IW4MAdmin.Application.IO
         private readonly Server _server;
         private readonly IGameLogReader _reader;
         private readonly bool _ignoreBots;
+        private readonly ILogger _logger;
 
-        public GameLogEventDetection(Server server, Uri[] gameLogUris, IGameLogReaderFactory gameLogReaderFactory)
+        public GameLogEventDetection(ILogger<GameLogEventDetection> logger, Server server, Uri[] gameLogUris, IGameLogReaderFactory gameLogReaderFactory)
         {
             _reader = gameLogReaderFactory.CreateGameLogReader(gameLogUris, server.EventParser);
             _server = server;
             _ignoreBots = server?.Manager.GetApplicationSettings().Configuration().IgnoreBots ?? false;
+            _logger = logger;
         }
 
         public async Task PollForChanges()
@@ -33,15 +38,17 @@ namespace IW4MAdmin.Application.IO
 
                     catch (Exception e)
                     {
-                        _server.Logger.WriteWarning($"Failed to update log event for {_server.EndPoint}");
-                        _server.Logger.WriteDebug(e.GetExceptionInfo());
+                        using(LogContext.PushProperty("Server", _server.ToString()))
+                        {
+                            _logger.LogError(e, "Failed to update log event for {endpoint}", _server.EndPoint);
+                        }
                     }
                 }
 
                 await Task.Delay(_reader.UpdateInterval, _server.Manager.CancellationToken);
             }
 
-            _server.Logger.WriteDebug("Stopped polling for changes");
+            _logger.LogDebug("Stopped polling for changes");
         }
 
         public async Task UpdateLogEvents()
@@ -68,9 +75,6 @@ namespace IW4MAdmin.Application.IO
             {
                 try
                 {
-#if DEBUG
-                    _server.Logger.WriteVerbose(gameEvent.Data);
-#endif
                     gameEvent.Owner = _server;
 
                     // we don't want to add the event if ignoreBots is on and the event comes from a bot
@@ -102,10 +106,14 @@ namespace IW4MAdmin.Application.IO
 
                 catch (InvalidOperationException)
                 {
-                    if (!_ignoreBots)
+                    if (_ignoreBots)
                     {
-                        _server.Logger.WriteWarning("Could not find client in client list when parsing event line");
-                        _server.Logger.WriteDebug(gameEvent.Data);
+                        continue;
+                    }
+                    
+                    using(LogContext.PushProperty("Server", _server.ToString()))
+                    {
+                        _logger.LogError("Could not find client in client list when parsing event line {data}", gameEvent.Data);
                     }
                 }
             }

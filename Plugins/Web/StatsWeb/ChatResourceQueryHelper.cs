@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace StatsWeb
 {
@@ -23,7 +25,7 @@ namespace StatsWeb
         private readonly ApplicationConfiguration _appConfig;
         private List<EFServer> serverCache;
 
-        public ChatResourceQueryHelper(ILogger logger, IDatabaseContextFactory contextFactory, ApplicationConfiguration appConfig)
+        public ChatResourceQueryHelper(ILogger<ChatResourceQueryHelper> logger, IDatabaseContextFactory contextFactory, ApplicationConfiguration appConfig)
         {
             _contextFactory = contextFactory;
             _logger = logger;

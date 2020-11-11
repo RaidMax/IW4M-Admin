@@ -79,11 +79,11 @@ namespace WebfrontCore
                 });
 
 #if DEBUG
-            mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
+            /*mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
             services.Configure<RazorViewEngineOptions>(_options =>
             {
                 _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
-            });
+            });*/
 #endif
 
             foreach (var asm in pluginAssemblies())
@@ -103,13 +103,6 @@ namespace WebfrontCore
                     options.LoginPath = "/";
                 });
 
-#if DEBUG
-            services.AddLogging(_builder =>
-            {
-                _builder.AddDebug();
-            });
-#endif
-
             services.AddSingleton(Program.Manager);
             services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
             services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
@@ -121,7 +114,6 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IDatabaseContextFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IAuditInformationRepository>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<SharedLibraryCore.Interfaces.ILogger>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IMetaService>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ApplicationConfiguration>());
@@ -152,7 +144,7 @@ namespace WebfrontCore
 
             if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
             {
-                app.UseMiddleware<IPWhitelist>(manager.GetLogger(0), manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
+                app.UseMiddleware<IPWhitelist>(Program.ApplicationServiceProvider.GetService<ILogger<IPWhitelist>>(), manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
             }
 
             app.UseStaticFiles();

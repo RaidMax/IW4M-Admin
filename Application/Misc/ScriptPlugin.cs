@@ -1,4 +1,5 @@
-﻿using Jint;
+﻿using System;
+using Jint;
 using Jint.Native;
 using Jint.Runtime;
 using Microsoft.CSharp.RuntimeBinder;
@@ -12,6 +13,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -39,9 +43,11 @@ namespace IW4MAdmin.Application.Misc
         private readonly SemaphoreSlim _onProcessing;
         private bool successfullyLoaded;
         private readonly List<string> _registeredCommandNames;
+        private readonly ILogger _logger;
 
-        public ScriptPlugin(string filename, string workingDirectory = null)
+        public ScriptPlugin(ILogger logger, string filename, string workingDirectory = null)
         {
+            _logger = logger;
             _fileName = filename;
             Watcher = new FileSystemWatcher()
             {
@@ -84,7 +90,7 @@ namespace IW4MAdmin.Application.Misc
 
                     foreach (string commandName in _registeredCommandNames)
                     {
-                        manager.GetLogger(0).WriteDebug($"Removing plugin registered command \"{commandName}\"");
+                        _logger.LogDebug("Removing plugin registered command {command}", commandName);
                         manager.RemoveCommandByName(commandName);
                     }
 
@@ -129,7 +135,7 @@ namespace IW4MAdmin.Application.Misc
                     {
                         foreach (var command in GenerateScriptCommands(commands, scriptCommandFactory))
                         {
-                            manager.GetLogger(0).WriteDebug($"Adding plugin registered command \"{command.Name}\"");
+                            _logger.LogDebug("Adding plugin registered command {commandName}", command.Name);
                             manager.AddAdditionalCommand(command);
                             _registeredCommandNames.Add(command.Name);
                         }
@@ -167,12 +173,20 @@ namespace IW4MAdmin.Application.Misc
 
             catch (JavaScriptException ex)
             {
-                throw new PluginException($"An error occured while initializing script plugin: {ex.Error} (Line: {ex.Location.Start.Line}, Character: {ex.Location.Start.Column})") { PluginFile = _fileName };
+                _logger.LogError(ex,
+                    "Encountered JavaScript runtime error while executing {methodName} for script plugin {plugin} initialization {@locationInfo}",
+                    nameof(OnLoadAsync), _fileName, ex.Location);
+                
+                throw new PluginException("An error occured while initializing script plugin");
             }
-
-            catch
+            
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex,
+                    "Encountered unexpected error while running {methodName} for script plugin {plugin} with event type {eventType}",
+                    nameof(OnLoadAsync), _fileName);
+                
+                throw new PluginException("An unexpected error occured while initializing script plugin");
             }
 
             finally
@@ -197,10 +211,29 @@ namespace IW4MAdmin.Application.Misc
                     _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(S));
                     _scriptEngine.Execute("plugin.onEventAsync(_gameEvent, _server)").GetCompletionValue();
                 }
-
-                catch
+                
+                catch (JavaScriptException ex)
                 {
-                    throw;
+                    using (LogContext.PushProperty("Server", S.ToString()))
+                    {
+                        _logger.LogError(ex,
+                            "Encountered JavaScript runtime error while executing {methodName} for script plugin {plugin} with event type {eventType} {@locationInfo}",
+                            nameof(OnEventAsync), _fileName, E.Type, ex.Location);
+                    }
+
+                    throw new PluginException($"An error occured while executing action for script plugin");
+                }
+
+                catch (Exception e)
+                {
+                    using (LogContext.PushProperty("Server", S.ToString()))
+                    {
+                        _logger.LogError(e,
+                            "Encountered unexpected error while running {methodName} for script plugin {plugin} with event type {eventType}",
+                            nameof(OnEventAsync), _fileName, E.Type);
+                    }
+
+                    throw new PluginException($"An error occured while executing action for script plugin");
                 }
 
                 finally
@@ -215,7 +248,7 @@ namespace IW4MAdmin.Application.Misc
 
         public Task OnLoadAsync(IManager manager)
         {
-            manager.GetLogger(0).WriteDebug($"OnLoad executing for {Name}");
+            _logger.LogDebug("OnLoad executing for {name}", Name);
             _scriptEngine.SetValue("_manager", manager);
             return Task.FromResult(_scriptEngine.Execute("plugin.onLoadAsync(_manager)").GetCompletionValue());
         }

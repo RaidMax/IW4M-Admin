@@ -4,7 +4,6 @@ using IW4MAdmin.Plugins.Stats.Models;
 using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -15,7 +14,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static IW4MAdmin.Plugins.Stats.Cheat.Detection;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -30,10 +31,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
 
-        public StatManager(IManager mgr, IDatabaseContextFactory contextFactory, IConfigurationHandler<StatsConfiguration> configHandler)
+        public StatManager(ILogger<StatManager> logger, IManager mgr, IDatabaseContextFactory contextFactory, IConfigurationHandler<StatsConfiguration> configHandler)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
-            _log = mgr.GetLogger(0);
+            _log = logger;
             _contextFactory = contextFactory;
             _configHandler = configHandler;
         }
@@ -265,8 +266,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception e)
             {
-                _log.WriteError($"{Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]} - {e.Message}");
-                _log.WriteDebug(e.GetExceptionInfo());
+                _log.LogError(e, "{message}", Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]);
             }
         }
 
@@ -283,7 +283,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 if (!_servers.ContainsKey(serverId))
                 {
-                    _log.WriteError($"[Stats::AddPlayer] Server with id {serverId} could not be found");
+                    _log.LogError("[Stats::AddPlayer] Server with id {serverId} could not be found", serverId);
                     return null;
                 }
 
@@ -360,7 +360,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     clientStats.LastScore = pl.Score;
 
                     pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats));
-                    pl.CurrentServer.Logger.WriteInfo($"Added {pl} to stats");
+                    _log.LogDebug("Added {client} to stats", pl.ToString());
                 }
 
                 return clientStats;
@@ -368,8 +368,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception ex)
             {
-                _log.WriteWarning("Could not add client to stats");
-                _log.WriteDebug(ex.GetExceptionInfo());
+                _log.LogError(ex, "Could not add client to stats {@client}", pl);
             }
 
             return null;
@@ -382,11 +381,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         public async Task RemovePlayer(EFClient pl)
         {
-            pl.CurrentServer.Logger.WriteInfo($"Removing {pl} from stats");
+            _log.LogDebug("Removing {client} from stats", pl.ToString());
 
             if (pl.CurrentServer == null)
             {
-                pl.CurrentServer.Logger.WriteWarning($"Disconnecting client {pl} is not on a server, state is {pl.State}");
+                _log.LogWarning("Disconnecting client {@client} is not on a server", pl);
                 return;
             }
 
@@ -407,7 +406,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             else
             {
-                pl.CurrentServer.Logger.WriteWarning($"Disconnecting client {pl} has not been added to stats, state is {pl.State}");
+                _log.LogWarning("Disconnecting client {@client} has not been added to stats", pl);
             }
         }
 
@@ -452,10 +451,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                catch (FormatException)
+                catch (FormatException ex)
                 {
-                    _log.WriteError("Could not parse vector data from hit");
-                    _log.WriteDebug($"Kill - {killOrigin} Death - {deathOrigin} ViewAngle - {viewAngles} Snapshot - {string.Join(",", snapshotAngles.Select(_a => _a.ToString()))}");
+                    _log.LogWarning(ex, "Could not parse vector data from hit");
                     return;
                 }
 
@@ -527,8 +525,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                     catch (Exception e)
                     {
-                        _log.WriteError("Could not store client kills");
-                        _log.WriteDebug(e.GetExceptionInfo());
+                        _log.LogError(e, "Could not store client kills");
                     }
 
                     finally
@@ -583,9 +580,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             catch (TaskCanceledException) { }
             catch (Exception ex)
             {
-                _log.WriteError("Could not save hit or AC info");
-                _log.WriteDebug(ex.GetExceptionInfo());
-                _log.WriteDebug($"Attacker: {attacker} Victim: {victim}, ServerId {serverId}");
+                _log.LogError(ex, "Could not save hit or anti-cheat info {@attacker} {@victim} {server}", attacker, victim, serverId);
             }
 
             finally
@@ -714,9 +709,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var attackerStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             var victimStats = victim.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
 
-#if DEBUG
-            _log.WriteDebug("Processing standard kill");
-#endif
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
 
@@ -754,14 +746,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // fixme: why?
             if (double.IsNaN(victimStats.SPM) || double.IsNaN(victimStats.Skill))
             {
-                _log.WriteDebug($"[StatManager::AddStandardKill] victim SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
+                _log.LogWarning("victim SPM/SKILL {@victimStats}", victimStats);
                 victimStats.SPM = 0.0;
                 victimStats.Skill = 0.0;
             }
 
             if (double.IsNaN(attackerStats.SPM) || double.IsNaN(attackerStats.Skill))
             {
-                _log.WriteDebug($"[StatManager::AddStandardKill] attacker SPM/SKILL {victimStats.SPM} {victimStats.Skill}");
+                _log.LogWarning("attacker SPM/SKILL {@attackerStats}", attackerStats);
                 attackerStats.SPM = 0.0;
                 attackerStats.Skill = 0.0;
             }
@@ -781,8 +773,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 catch (Exception e)
                 {
-                    _log.WriteWarning($"Could not update stat history for {attacker}");
-                    _log.WriteDebug(e.GetExceptionInfo());
+                    _log.LogWarning(e, "Could not update stat history for {attacker}", attacker.ToString());
                 }
 
                 finally
@@ -1099,8 +1090,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (clientStats.SPM < 0)
             {
-                _log.WriteWarning("[StatManager:UpdateStats] clientStats SPM < 0");
-                _log.WriteDebug($"{scoreDifference}-{clientStats.RoundScore} - {clientStats.LastScore} - {clientStats.SessionScore}");
+                _log.LogWarning("clientStats SPM < 0 {scoreDifference} {@clientStats}", scoreDifference, clientStats);
                 clientStats.SPM = 0;
             }
 
@@ -1110,8 +1100,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // fixme: how does this happen?
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
             {
-                _log.WriteWarning("[StatManager::UpdateStats] clientStats SPM/Skill NaN");
-                _log.WriteDebug($"{killSPM}-{KDRWeight}-{totalPlayTime}-{SPMAgainstPlayWeight}-{clientStats.SPM}-{clientStats.Skill}-{scoreDifference}");
+                _log.LogWarning("clientStats SPM/Skill NaN {@killInfo}", new {killSPM, KDRWeight, totalPlayTime, SPMAgainstPlayWeight, clientStats, scoreDifference});
                 clientStats.SPM = 0;
                 clientStats.Skill = 0;
             }
@@ -1133,7 +1122,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 if (serverStats == null)
                 {
-                    _log.WriteDebug($"Initializing server stats for {serverId}");
+                    _log.LogDebug("Initializing server stats for {serverId}", serverId);
                     // server stats have never been generated before
                     serverStats = new EFServerStatistics()
                     {
@@ -1225,8 +1214,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception e)
             {
-                _log.WriteError("There was a probably syncing server stats");
-                _log.WriteDebug(e.GetExceptionInfo());
+                _log.LogError(e, "There was a problem syncing server stats");
             }
 
             finally

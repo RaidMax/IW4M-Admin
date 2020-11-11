@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace StatsWeb.API
 {
@@ -16,7 +17,7 @@ namespace StatsWeb.API
         private readonly ILogger _logger;
         private readonly IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> _statsQueryHelper;
 
-        public StatsController(ILogger logger, IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> statsQueryHelper)
+        public StatsController(ILogger<StatsController> logger, IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> statsQueryHelper)
         {
             _statsQueryHelper = statsQueryHelper;
             _logger = logger;
@@ -56,8 +57,7 @@ namespace StatsWeb.API
 
             catch (Exception e)
             {
-                _logger.WriteWarning($"Could not get client stats for client id {clientId}");
-                _logger.WriteDebug(e.GetExceptionInfo());
+                _logger.LogWarning(e, "Could not get client stats for client id {clientId}", clientId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
                 {

@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using WebfrontCore.Controllers.API.Dtos;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -20,7 +21,7 @@ namespace WebfrontCore.Controllers.API
         private readonly IResourceQueryHelper<FindClientRequest, FindClientResult> _clientQueryHelper;
         private readonly ILogger _logger;
 
-        public ClientController(ILogger logger, IResourceQueryHelper<FindClientRequest, FindClientResult> clientQueryHelper)
+        public ClientController(ILogger<ClientController> logger, IResourceQueryHelper<FindClientRequest, FindClientResult> clientQueryHelper)
         {
             _logger = logger;
             _clientQueryHelper = clientQueryHelper;
@@ -53,8 +54,7 @@ namespace WebfrontCore.Controllers.API
 
             catch (Exception e)
             {
-                _logger.WriteWarning($"Failed to retrieve clients with query - {request.ToDebugString()}");
-                _logger.WriteDebug(e.GetExceptionInfo());
+                _logger.LogWarning(e, "Failed to retrieve clients with query - {@request}", request);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse()
                 {

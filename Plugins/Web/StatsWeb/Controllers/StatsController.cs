@@ -12,6 +12,8 @@ using StatsWeb.Extensions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 {
@@ -22,7 +24,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatResourceQueryHelper;
         private readonly ITranslationLookup _translationLookup;
 
-        public StatsController(ILogger logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, MessageResponse> resourceQueryHelper,
+        public StatsController(ILogger<StatsController> logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, MessageResponse> resourceQueryHelper,
             ITranslationLookup translationLookup) : base(manager)
         {
             _logger = logger;
@@ -108,15 +110,13 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 
             catch (ArgumentException e)
             {
-                _logger.WriteWarning($"Could not parse chat message search query - {query}");
-                _logger.WriteDebug(e.GetExceptionInfo());
+                _logger.LogWarning(e, "Could not parse chat message search query {query}", query);
                 ViewBag.Error = e;
             }
 
             catch (FormatException e)
             {
-                _logger.WriteWarning($"Could not parse chat message search query filter format - {query}");
-                _logger.WriteDebug(e.GetExceptionInfo());
+                _logger.LogWarning(e, "Could not parse chat message search query filter format {query}", query);
                 ViewBag.Error = e;
             }
 
@@ -136,15 +136,13 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 
             catch (ArgumentException e)
             {
-                _logger.WriteWarning($"Could not parse chat message search query - {query}");
-                _logger.WriteDebug(e.GetExceptionInfo());
+                _logger.LogWarning(e, "Could not parse chat message search query {query}", query);
                 throw;
             }
 
             catch (FormatException e)
             {
-                _logger.WriteWarning($"Could not parse chat message search query filter format - {query}");
-                _logger.WriteDebug(e.GetExceptionInfo());
+                _logger.LogWarning(e, "Could not parse chat message search query filter format {query}", query);
                 throw;
             }
 

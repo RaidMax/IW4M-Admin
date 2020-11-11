@@ -6,6 +6,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore
 {

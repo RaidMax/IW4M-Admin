@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.RconParsers
 {
@@ -8,7 +9,7 @@ namespace IW4MAdmin.Application.RconParsers
     /// </summary>
     sealed internal class DynamicRConParser : BaseRConParser
     {
-        public DynamicRConParser(IParserRegexFactory parserRegexFactory) : base(parserRegexFactory)
+        public DynamicRConParser(ILogger<BaseRConParser> logger, IParserRegexFactory parserRegexFactory) : base(logger, parserRegexFactory)
         {
         }
     }

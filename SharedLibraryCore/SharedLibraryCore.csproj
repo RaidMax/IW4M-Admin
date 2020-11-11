@@ -3,8 +3,6 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ApplicationIcon />
-    <StartupObject />
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
     <Version>2.4.10</Version>
     <Authors>RaidMax</Authors>
@@ -21,8 +19,9 @@
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Shared Library for IW4MAdmin</Description>
-    <AssemblyVersion>2.4.10.0</AssemblyVersion>
-    <FileVersion>2.4.10.0</FileVersion>
+    <AssemblyVersion>2020.11.11.1</AssemblyVersion>
+    <FileVersion>2020.11.11.1</FileVersion>
+    <PackageVersion>2020.11.11.1</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">
@@ -54,6 +53,7 @@
     <PackageReference Include="Npgsql" Version="4.1.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.4" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="3.1.2" />
+    <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
     <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0" />
   </ItemGroup>
 

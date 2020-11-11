@@ -8,6 +8,8 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
 
 namespace SharedLibraryCore.Database.Models
 {
@@ -89,6 +91,7 @@ namespace SharedLibraryCore.Database.Models
             SetAdditionalProperty("_reportCount", 0);
             ReceivedPenalties = new List<EFPenalty>();
             _processingEvent = new SemaphoreSlim(1, 1);
+            
         }
 
         ~EFClient()
@@ -475,39 +478,42 @@ namespace SharedLibraryCore.Database.Models
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
-            if (string.IsNullOrWhiteSpace(Name) || CleanedName.Replace(" ", "").Length < 3)
+            using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is too short");
-                Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
-                return false;
-            }
+                if (string.IsNullOrWhiteSpace(Name) || CleanedName.Replace(" ", "").Length < 3)
+                {
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their name is too short", ToString());
+                    Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
+                    return false;
+                }
 
-            if (CurrentServer.Manager.GetApplicationSettings().Configuration()
-                .DisallowedClientNames
-                ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
-            {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name is not allowed");
-                Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
-                return false;
-            }
+                if (CurrentServer.Manager.GetApplicationSettings().Configuration()
+                    .DisallowedClientNames
+                    ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
+                {
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their name is not allowed", ToString());
+                    Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
+                    return false;
+                }
 
-            if (Name.Where(c => char.IsControl(c)).Count() > 0)
-            {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because their name contains control characters");
-                Kick(loc["SERVER_KICK_CONTROLCHARS"], Utilities.IW4MAdminClient(CurrentServer));
-                return false;
-            }
+                if (Name.Where(c => char.IsControl(c)).Count() > 0)
+                {
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their name contains control characters", ToString());
+                    Kick(loc["SERVER_KICK_CONTROLCHARS"], Utilities.IW4MAdminClient(CurrentServer));
+                    return false;
+                }
 
-            // reserved slots stuff
-            // todo: bots don't seem to honor party_maxplayers/sv_maxclients
-            if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged() && !_client.IsBot)) < CurrentServer.ServerConfig.ReservedSlotNumber &&
-               !this.IsPrivileged() &&
-               CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
-               CurrentServer.MaxClients != 0)
-            {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} their spot is reserved");
-                Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
-                return false;
+                // reserved slots stuff
+                // todo: bots don't seem to honor party_maxplayers/sv_maxclients
+                if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged() && !_client.IsBot)) < CurrentServer.ServerConfig.ReservedSlotNumber &&
+                !this.IsPrivileged() &&
+                CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
+                CurrentServer.MaxClients != 0)
+                {
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} their spot is reserved", ToString());
+                    Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
+                    return false;
+                }
             }
 
             return true;
@@ -515,126 +521,151 @@ namespace SharedLibraryCore.Database.Models
 
         public async Task OnDisconnect()
         {
-            TotalConnectionTime += ConnectionLength;
-            LastConnection = DateTime.UtcNow;
-
-            try
+            using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                await CurrentServer.Manager.GetClientService().Update(this);
-            }
+                TotalConnectionTime += ConnectionLength;
+                LastConnection = DateTime.UtcNow;
 
-            catch (Exception e)
-            {
-                CurrentServer.Logger.WriteWarning($"Could not update disconnected player {this}");
-                CurrentServer.Logger.WriteDebug(e.GetExceptionInfo());
-            }
+                Utilities.DefaultLogger.LogInformation("Client {client} is leaving the game", ToString());
 
-            finally
-            {
-                State = ClientState.Unknown;
+                try
+                {
+                    await CurrentServer.Manager.GetClientService().Update(this);
+                }
+
+                catch (Exception e)
+                {
+                        Utilities.DefaultLogger.LogError(e, "Could not update disconnected client {client}",
+                            ToString());
+                }
+
+                finally
+                {
+                    State = ClientState.Unknown;
+                }
             }
         }
 
         public async Task OnJoin(int? ipAddress)
         {
-            CurrentServer.Logger.WriteDebug($"Start join for {this}::{ipAddress}::{Level.ToString()}");
-
-            if (ipAddress != null)
+            using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                IPAddress = ipAddress;
-                await CurrentServer.Manager.GetClientService().UpdateAlias(this);
-                CurrentServer.Logger.WriteDebug($"Updated alias for {this}");
-                await CurrentServer.Manager.GetClientService().Update(this);
-                CurrentServer.Logger.WriteDebug($"Updated client for {this}");
+                Utilities.DefaultLogger.LogInformation("Client {client} is joining the game from {source}", ToString(), ipAddress.HasValue ? "Status" : "Log");
 
-                bool canConnect = await CanConnect(ipAddress);
-
-                if (!canConnect)
+                if (ipAddress != null)
                 {
-                    CurrentServer.Logger.WriteDebug($"Client {this} is not allowed to join the server");
+                    IPAddress = ipAddress;
+                    Utilities.DefaultLogger.LogInformation("Received ip from client {client}", ToString());
+                    await CurrentServer.Manager.GetClientService().UpdateAlias(this);
+                    await CurrentServer.Manager.GetClientService().Update(this);
+
+                    bool canConnect = await CanConnect(ipAddress);
+
+                    if (!canConnect)
+                    {
+                        Utilities.DefaultLogger.LogInformation("Client {client} is not allowed to join the server",
+                            ToString());
+                    }
+
+                    else
+                    {
+                        Utilities.DefaultLogger.LogDebug("Creating join event for {client}", ToString());
+                        var e = new GameEvent()
+                        {
+                            Type = GameEvent.EventType.Join,
+                            Origin = this,
+                            Target = this,
+                            Owner = CurrentServer,
+                        };
+
+                        CurrentServer.Manager.AddEvent(e);
+                    }
                 }
 
                 else
                 {
-                    CurrentServer.Logger.WriteDebug($"Creating join event for {this}");
-                    var e = new GameEvent()
-                    {
-                        Type = GameEvent.EventType.Join,
-                        Origin = this,
-                        Target = this,
-                        Owner = CurrentServer,
-                    };
-
-                    CurrentServer.Manager.AddEvent(e);
+                    Utilities.DefaultLogger.LogInformation("Waiting to receive ip from client {client}", ToString());
                 }
-            }
 
-            else
-            {
-                CurrentServer.Logger.WriteDebug($"Client {this} does not have an IP yet");
+                Utilities.DefaultLogger.LogDebug("OnJoin finished for {client}", ToString());
             }
-
-            CurrentServer.Logger.WriteDebug($"OnJoin finished for {this}");
         }
 
         public async Task<bool> CanConnect(int? ipAddress)
         {
-            var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
-
-            bool isAbleToConnectSimple = IsAbleToConnectSimple();
-
-            if (!isAbleToConnectSimple)
+            using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                return false;
-            }
+                var loc = Utilities.CurrentLocalization.LocalizationIndex;
+                var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
 
-            // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
-            var activePenalties = await CurrentServer.Manager.GetPenaltyService().GetActivePenaltiesAsync(AliasLinkId, ipAddress);
-            var banPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
-            var tempbanPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
-            var flagPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);
+                bool isAbleToConnectSimple = IsAbleToConnectSimple();
 
-            // we want to kick them if any account is banned
-            if (banPenalty != null)
-            {
-                if (Level == Permission.Banned)
+                if (!isAbleToConnectSimple)
                 {
-                    CurrentServer.Logger.WriteDebug($"Kicking {this} because they are banned");
-                    Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
                     return false;
                 }
 
-                else
+                // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
+                var activePenalties = await CurrentServer.Manager.GetPenaltyService()
+                    .GetActivePenaltiesAsync(AliasLinkId, ipAddress);
+                var banPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
+                var tempbanPenalty =
+                    activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);
+                var flagPenalty =
+                    activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag);
+
+                // we want to kick them if any account is banned
+                if (banPenalty != null)
                 {
-                    CurrentServer.Logger.WriteDebug($"Client {this} is banned, but using a new GUID, we we're updating their level and kicking them");
-                    await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout, CurrentServer.Manager.CancellationToken);
-                    Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
+                    if (Level == Permission.Banned)
+                    {
+                        Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
+                        Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
+                        return false;
+                    }
+
+                    else
+                    {
+                        Utilities.DefaultLogger.LogInformation(
+                            "Client {client} is banned, but using a new GUID, we we're updating their level and kicking them",
+                            ToString());
+                        await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
+                            CurrentServer.Manager.CancellationToken);
+                        Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
+                        return false;
+                    }
+                }
+
+                // we want to kick them if any account is tempbanned
+                if (tempbanPenalty != null)
+                {
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their GUID is temporarily banned",
+                        ToString());
+                    Kick(
+                        $"{loc["SERVER_TB_REMAIN"]} ({(tempbanPenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})",
+                        autoKickClient);
                     return false;
                 }
-            }
 
-            // we want to kick them if any account is tempbanned
-            if (tempbanPenalty != null)
-            {
-                CurrentServer.Logger.WriteDebug($"Kicking {this} because their GUID is temporarily banned");
-                Kick($"{loc["SERVER_TB_REMAIN"]} ({(tempbanPenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})", autoKickClient);
-                return false;
-            }
+                // if we found a flag, we need to make sure all the accounts are flagged
+                if (flagPenalty != null && Level != Permission.Flagged)
+                {
+                    Utilities.DefaultLogger.LogInformation(
+                        "Flagged client {client} joining with new GUID, so we are changing their level to flagged",
+                        ToString());
+                    await SetLevel(Permission.Flagged, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
+                        CurrentServer.Manager.CancellationToken);
+                }
 
-            // if we found a flag, we need to make sure all the accounts are flagged
-            if (flagPenalty != null && Level != Permission.Flagged)
-            {
-                CurrentServer.Logger.WriteDebug($"Flagged client {this} joining with new GUID, so we are changing their level to flagged");
-                await SetLevel(Permission.Flagged, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout, CurrentServer.Manager.CancellationToken);
-            }
-
-            // remove their auto flag
-            if (Level == Permission.Flagged && !activePenalties.Any(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag))
-            {
-                // remove their auto flag status after a week
-                CurrentServer.Logger.WriteInfo($"Unflagging {this} because the auto flag time has expired");
-                Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
+                // remove their auto flag
+                if (Level == Permission.Flagged &&
+                    !activePenalties.Any(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag))
+                {
+                    // remove their auto flag status after a week
+                    Utilities.DefaultLogger.LogInformation("Unflagging {client} because the auto flag time has expired",
+                        ToString());
+                    Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
+                }
             }
 
             return true;

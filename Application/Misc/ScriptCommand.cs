@@ -4,7 +4,9 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Database.Models.EFClient;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -14,13 +16,15 @@ namespace IW4MAdmin.Application.Misc
     public class ScriptCommand : Command
     {
         private readonly Action<GameEvent> _executeAction;
+        private readonly ILogger _logger;
 
         public ScriptCommand(string name, string alias, string description, bool isTargetRequired, Permission permission,
-            CommandArgument[] args, Action<GameEvent> executeAction, CommandConfiguration config, ITranslationLookup layout)
+            CommandArgument[] args, Action<GameEvent> executeAction, CommandConfiguration config, ITranslationLookup layout, ILogger<ScriptCommand> logger)
             : base(config, layout)
         {
 
             _executeAction = executeAction;
+            _logger = logger;
             Name = name;
             Alias = alias;
             Description = description;
@@ -29,14 +33,21 @@ namespace IW4MAdmin.Application.Misc
             Arguments = args;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent e)
         {
             if (_executeAction == null)
             {
                 throw new InvalidOperationException($"No execute action defined for command \"{Name}\"");
             }
 
-            return Task.Run(() => _executeAction(E));
+            try
+            {
+                await Task.Run(() => _executeAction(e));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to execute ScriptCommand action for command {command} {@event}", Name, e);
+            }
         }
     }
 }

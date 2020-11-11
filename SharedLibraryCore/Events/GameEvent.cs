@@ -3,6 +3,8 @@ using SharedLibraryCore.Events;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
 
 namespace SharedLibraryCore
 {
@@ -254,9 +256,6 @@ namespace SharedLibraryCore
         public void Complete()
         {
             _eventFinishedWaiter.Set();
-#if DEBUG
-            Owner?.Logger.WriteDebug($"Completed internal for event {Id}");
-#endif
         }
 
         /// <summary>
@@ -266,11 +265,7 @@ namespace SharedLibraryCore
         public async Task<GameEvent> WaitAsync(TimeSpan timeSpan, CancellationToken token)
         {
             bool processed = false;
-
-#if DEBUG
-            Owner?.Logger.WriteDebug($"Begin wait for event {Id}");
-#endif
-
+            Utilities.DefaultLogger.LogDebug("Begin wait for event {Id}", Id);
             try
             {
                 processed = await Task.Run(() => _eventFinishedWaiter.WaitOne(timeSpan), token);
@@ -283,13 +278,11 @@ namespace SharedLibraryCore
 
             if (!processed)
             {
-                Owner?.Logger.WriteError("Waiting for event to complete timed out");
-                Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");
-#if DEBUG
-                //throw new Exception();
-#endif
+                using(LogContext.PushProperty("Server", Owner?.ToString()))
+                {
+                    Utilities.DefaultLogger.LogError("Waiting for event to complete timed out {@eventData}", new { Event = this, Message, Origin = Origin.ToString(), Target = Target.ToString()});
+                }
             }
-
 
             // this lets us know if the the action timed out
             FailReason = FailReason == EventFailReason.None && !processed ? EventFailReason.Timeout : FailReason;

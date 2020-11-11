@@ -6,7 +6,6 @@ using FakeItEasy;
 using IW4MAdmin.Application.EventParsers;
 using System.Linq;
 using IW4MAdmin.Plugins.Stats.Models;
-using IW4MAdmin.Application.Helpers;
 using IW4MAdmin.Plugins.Stats.Config;
 using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
@@ -14,9 +13,12 @@ using Microsoft.Extensions.DependencyInjection;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using ApplicationTests.Fixtures;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
 using Stats.Helpers;
 using Stats.Dtos;
 using SharedLibraryCore.Configuration;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -41,13 +43,6 @@ namespace ApplicationTests
                 .BuildServiceProvider();
 
             contextFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
-
-            void testLog(string msg) => Console.WriteLine(msg);
-
-            A.CallTo(() => logger.WriteError(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteWarning(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteInfo(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteDebug(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
         }
 
         [Test]
@@ -66,13 +61,11 @@ namespace ApplicationTests
             A.CallTo(() => handlerFactory.GetConfigurationHandler<StatsConfiguration>(A<string>.Ignored))
                 .Returns(config);
 
-            A.CallTo(() => mgr.GetLogger(A<long>.Ignored))
-                .Returns(logger);
-
             var server = new IW4MServer(mgr,
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
                 A.Fake<ITranslationLookup>(),
-                A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>());
+                A.Fake<IRConConnectionFactory>(), 
+                A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>(), A.Fake<ILogger<Server>>());
 
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;

@@ -81,7 +81,13 @@
   <ItemGroup>
     <Folder Include="wwwroot\lib\canvas.js\" />
   </ItemGroup>
-
+  
+  <Target Name="RemoveSatellitesFromPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ReferenceSatellitePaths)" />
+    </ItemGroup>
+  </Target>
+  
   <ItemGroup>
     <ProjectReference Include="..\Plugins\Web\StatsWeb\StatsWeb.csproj" />
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />

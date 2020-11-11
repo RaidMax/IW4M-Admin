@@ -5,11 +5,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore.Services
 {
     public class ChangeHistoryService : IEntityService<EFChangeHistory>
     {
+        private readonly ILogger _logger;
+        
+        public ChangeHistoryService(ILogger<ChangeHistoryService> logger)
+        {
+            _logger = logger;
+        }
+        
         public Task<EFChangeHistory> Create(EFChangeHistory entity)
         {
             throw new NotImplementedException();
@@ -79,8 +88,7 @@ namespace SharedLibraryCore.Services
 
                 catch (Exception ex)
                 {
-                    e.Owner.Logger.WriteWarning(ex.Message);
-                    e.Owner.Logger.WriteDebug(ex.GetExceptionInfo());
+                    _logger.LogError(ex, "Could not persist change @{change}", change);
                 }
 
                 finally

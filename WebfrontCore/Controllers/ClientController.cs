@@ -171,7 +171,7 @@ namespace WebfrontCore.Controllers
 
             var meta = await ProfileMetaListViewComponent.GetClientMeta(_metaService, metaFilterType, Client.Level, request);
 
-            if (meta.Count() == 0)
+            if (!meta.Any())
             {
                 return Ok();
             }

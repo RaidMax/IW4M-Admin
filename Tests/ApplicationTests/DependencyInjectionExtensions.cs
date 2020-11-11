@@ -4,10 +4,10 @@ using FakeItEasy;
 using IW4MAdmin;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Services;
 using System;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
 
 namespace ApplicationTests
 {
@@ -34,10 +34,9 @@ namespace ApplicationTests
             A.CallTo(() => transLookup[A<string>.Ignored])
                 .Returns("test");
 
-            A.CallTo(() => manager.GetLogger(A<long>.Ignored))
-                .Returns(logger);
-
-            serviceCollection.AddSingleton(logger)
+            serviceCollection
+                .AddLogging()
+                .AddSingleton(A.Fake<ILogger>())
                 .AddSingleton(manager)
                 .AddSingleton<IDatabaseContextFactory, DatabaseContextFactoryMock>()
                 .AddSingleton(A.Fake<IRConConnectionFactory>())
@@ -53,8 +52,13 @@ namespace ApplicationTests
                 .AddSingleton(ConfigurationGenerators.CreateCommandConfiguration())
                 .AddSingleton<IConfigurationHandler<ApplicationConfiguration>, ApplicationConfigurationHandlerMock>();
 
-            serviceCollection.AddSingleton(_sp => new IW4MServer(_sp.GetRequiredService<IManager>(), ConfigurationGenerators.CreateServerConfiguration(),
-                _sp.GetRequiredService<ITranslationLookup>(), _sp.GetRequiredService<IRConConnectionFactory>(), _sp.GetRequiredService<IGameLogReaderFactory>(), _sp.GetRequiredService<IMetaService>())
+            serviceCollection.AddSingleton(_sp => new IW4MServer(_sp.GetRequiredService<IManager>(), 
+                ConfigurationGenerators.CreateServerConfiguration(),
+                _sp.GetRequiredService<ITranslationLookup>(), 
+                _sp.GetRequiredService<IRConConnectionFactory>(), 
+                _sp.GetRequiredService<IGameLogReaderFactory>(), 
+                _sp.GetRequiredService<IMetaService>(),
+                _sp.GetRequiredService<ILogger<Server>>())
             {
                 RconParser = _sp.GetRequiredService<IRConParser>()
             });

@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
 {
@@ -18,7 +20,7 @@ namespace IW4MAdmin.Application.Meta
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
 
-        public AdministeredPenaltyResourceQueryHelper(ILogger logger, IDatabaseContextFactory contextFactory)
+        public AdministeredPenaltyResourceQueryHelper(ILogger<AdministeredPenaltyResourceQueryHelper> logger, IDatabaseContextFactory contextFactory)
         {
             _contextFactory = contextFactory;
             _logger = logger;

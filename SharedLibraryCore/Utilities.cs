@@ -17,14 +17,18 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.Database.Models.EFPenalty;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore
 {
     public static class Utilities
     {
+        // note: this is only to be used by classes not created by dependency injection
+        public static ILogger DefaultLogger { get; set; }
 #if DEBUG == true
         public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}{Path.DirectorySeparatorChar}";
 #else
@@ -881,8 +885,7 @@ namespace SharedLibraryCore
 
             catch (Exception e)
             {
-                logger.WriteWarning($"Could not create penalty of type {penalty.Type.ToString()}");
-                logger.WriteDebug(e.GetExceptionInfo());
+                logger.LogError(e, $"Could not create penalty of type {penalty.Type.ToString()}");
             }
 
             return false;

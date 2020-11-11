@@ -22,7 +22,6 @@ namespace ApplicationTests
     [TestFixture]
     public class CommandTests
     {
-        ILogger logger;
         private IServiceProvider serviceProvider;
         private ITranslationLookup transLookup;
         private CommandConfiguration cmdConfig;
@@ -34,8 +33,6 @@ namespace ApplicationTests
         [SetUp]
         public void Setup()
         {
-            logger = A.Fake<ILogger>();
-
             serviceProvider = new ServiceCollection()
                 .BuildBase(new EventHandlerMock(true))
                 .AddSingleton(A.Fake<ClientService>())

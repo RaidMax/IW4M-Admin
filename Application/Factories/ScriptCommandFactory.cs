@@ -6,6 +6,8 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin.Application.Factories
@@ -15,17 +17,20 @@ namespace IW4MAdmin.Application.Factories
     /// </summary>
     public class ScriptCommandFactory : IScriptCommandFactory
     {
-        private CommandConfiguration _config;
+        private readonly CommandConfiguration _config;
         private readonly ITranslationLookup _transLookup;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ScriptCommandFactory(CommandConfiguration  config, ITranslationLookup transLookup)
+        public ScriptCommandFactory(CommandConfiguration  config, ITranslationLookup transLookup, IServiceProvider serviceProvider)
         {
             _config = config;
             _transLookup = transLookup;
+            _serviceProvider = serviceProvider;
         }
 
         /// <inheritdoc/>
-        public IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction)
+        public IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, 
+            bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction)
         {
             var permissionEnum = Enum.Parse<Permission>(permission);
             var argsArray = args.Select(_arg => new CommandArgument
@@ -34,7 +39,8 @@ namespace IW4MAdmin.Application.Factories
                 Required = _arg.Item2
             }).ToArray();
 
-            return new ScriptCommand(name, alias, description, isTargetRequired, permissionEnum, argsArray, executeAction, _config, _transLookup);
+            return new ScriptCommand(name, alias, description, isTargetRequired, permissionEnum, argsArray, executeAction,
+                _config, _transLookup, _serviceProvider.GetRequiredService<ILogger<ScriptCommand>>());
         }
     }
 }

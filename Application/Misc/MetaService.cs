@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -20,7 +22,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ILogger _logger;
 
-        public MetaService(ILogger logger, IDatabaseContextFactory contextFactory)
+        public MetaService(ILogger<MetaService> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
             _metaActions = new Dictionary<MetaType, List<dynamic>>();

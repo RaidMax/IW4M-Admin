@@ -1,13 +1,13 @@
 ﻿using IW4MAdmin.Plugins.Stats.Models;
-using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
@@ -223,11 +223,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (weightedSessionAverage > Thresholds.MaxOffset(totalSessionHits) &&
                     totalSessionHits >= (Thresholds.MediumSampleMinKills * 2))
                 {
-                    Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
-                    Log.WriteDebug($"Session Average = {weightedSessionAverage}");
-                    Log.WriteDebug($"HitCount = {HitCount}");
-                    Log.WriteDebug($"ID = {hit.AttackerId}");
-
                     results.Add(new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
@@ -237,18 +232,14 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                         Location = hitLoc.Location
                     });
                 }
-
-#if DEBUG
-                Log.WriteDebug($"PredictVsReal={realAgainstPredict}");
-#endif
+                
+                Log.LogDebug("PredictVsReal={realAgainstPredict}", realAgainstPredict);
             }
             #endregion
 
             #region STRAIN
             double currentStrain = Strain.GetStrain(hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, LastOffset == 0 ? 50 : (hit.TimeOffset - LastOffset)));
-#if DEBUG == true
-            Log.WriteDebug($"Current Strain: {currentStrain}");
-#endif
+            Log.LogDebug("Current Strain: {currentStrain}", currentStrain);
             LastOffset = hit.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)

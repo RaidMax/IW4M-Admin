@@ -1,19 +1,18 @@
 ﻿using IW4MAdmin.Application.Misc;
-using Newtonsoft.Json;
 using SharedLibraryCore;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application
 {
     public class GameEventHandler : IEventHandler
     {
         private readonly EventLog _eventLog;
+        private readonly ILogger _logger;
         private static readonly GameEvent.EventType[] overrideEvents = new[]
         {
             GameEvent.EventType.Connect,
@@ -22,34 +21,23 @@ namespace IW4MAdmin.Application
             GameEvent.EventType.Stop
         };
 
-        public GameEventHandler()
+        public GameEventHandler(ILogger<GameEventHandler> logger)
         {
             _eventLog = new EventLog();
+            _logger = logger;
         }
 
         public void HandleEvent(IManager manager, GameEvent gameEvent)
         {
-#if DEBUG
-            ThreadPool.GetMaxThreads(out int workerThreads, out int n);
-            ThreadPool.GetAvailableThreads(out int availableThreads, out int m);
-            gameEvent.Owner.Logger.WriteDebug($"There are {workerThreads - availableThreads} active threading tasks");
-
-#endif
             if (manager.IsRunning || overrideEvents.Contains(gameEvent.Type))
             {
-#if DEBUG
-                gameEvent.Owner.Logger.WriteDebug($"Adding event with id {gameEvent.Id}");
-#endif
-
                 EventApi.OnGameEvent(gameEvent);
                 Task.Factory.StartNew(() => manager.ExecuteEvent(gameEvent));
             }
-#if DEBUG
             else
             {
-                gameEvent.Owner.Logger.WriteDebug($"Skipping event as we're shutting down {gameEvent.Id}");
+                _logger.LogDebug("Skipping event as we're shutting down {eventId}", gameEvent.Id);
             }
-#endif
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using IW4MAdmin.Application.API.Master;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Factories;
-using IW4MAdmin.Application.Helpers;
 using IW4MAdmin.Application.Meta;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Misc;
@@ -24,6 +23,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using IW4MAdmin.Application.Extensions;
+using IW4MAdmin.Application.Localization;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application
 {
@@ -76,19 +79,21 @@ namespace IW4MAdmin.Application
         {
         restart:
             ITranslationLookup translationLookup = null;
+            var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
+            Utilities.DefaultLogger = logger;
+            logger.LogInformation("Begin IW4MAdmin startup. Version is {version} {@args}", Version, args);
+            
             try
             {
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
-
+                logger.LogDebug("Configuring services...");
                 var services = ConfigureServices(args);
                 serviceProvider = services.BuildServiceProvider();
                 var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
                 ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
                 translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
-
-                ServerManager.Logger.WriteInfo(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_VERSION"].FormatExt(Version));
 
                 await versionChecker.CheckVersion();
                 await ServerManager.Init();
@@ -96,9 +101,10 @@ namespace IW4MAdmin.Application
 
             catch (Exception e)
             {
-                string failMessage = translationLookup == null ? "Failed to initalize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
+                string failMessage = translationLookup == null ? "Failed to initialize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
                 string exitMessage = translationLookup == null ? "Press enter to exit..." : translationLookup["MANAGER_EXIT"];
 
+                logger.LogCritical(e, "Failed to initialize IW4MAdmin");
                 Console.WriteLine(failMessage);
 
                 while (e.InnerException != null)
@@ -131,13 +137,14 @@ namespace IW4MAdmin.Application
 
             try
             {
-                ApplicationTask = RunApplicationTasksAsync();
+                ApplicationTask = RunApplicationTasksAsync(logger);
                 await ApplicationTask;
             }
 
             catch (Exception e)
             {
-                string failMessage = translationLookup == null ? "Failed to initalize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
+                logger.LogCritical(e, "Failed to launch IW4MAdmin");
+                string failMessage = translationLookup == null ? "Failed to launch IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
                 Console.WriteLine($"{failMessage}: {e.GetExceptionInfo()}");
             }
 
@@ -153,7 +160,7 @@ namespace IW4MAdmin.Application
         /// runs the core application tasks
         /// </summary>
         /// <returns></returns>
-        private static async Task RunApplicationTasksAsync()
+        private static async Task RunApplicationTasksAsync(ILogger logger)
         {
             var webfrontTask = ServerManager.GetApplicationSettings().Configuration().EnableWebFront ?
                 WebfrontCore.Program.Init(ServerManager, serviceProvider, ServerManager.CancellationToken) :
@@ -161,7 +168,7 @@ namespace IW4MAdmin.Application
 
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
             // because we can't exit early from waiting on console input, and it prevents us from restarting
-            var inputThread = new Thread(async () => await ReadConsoleInput());
+            var inputThread = new Thread(async () => await ReadConsoleInput(logger));
             inputThread.Start();
 
             var tasks = new[]
@@ -171,9 +178,11 @@ namespace IW4MAdmin.Application
                 serviceProvider.GetRequiredService<IMasterCommunication>().RunUploadStatus(ServerManager.CancellationToken)
             };
 
+            logger.LogDebug("Starting webfront and input tasks");
             await Task.WhenAll(tasks);
 
-            ServerManager.Logger.WriteVerbose(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
+            logger.LogInformation("Shutdown completed successfully");
+            Console.Write(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }
 
 
@@ -181,11 +190,11 @@ namespace IW4MAdmin.Application
         /// reads input from the console and executes entered commands on the default server
         /// </summary>
         /// <returns></returns>
-        private static async Task ReadConsoleInput()
+        private static async Task ReadConsoleInput(ILogger logger)
         {
             if (Console.IsInputRedirected)
             {
-                ServerManager.Logger.WriteInfo("Disabling console input as it has been redirected");
+                logger.LogInformation("Disabling console input as it has been redirected");
                 return;
             }
 
@@ -221,71 +230,29 @@ namespace IW4MAdmin.Application
             { }
         }
 
-        /// <summary>
-        /// Configures the dependency injection services
-        /// </summary>
-        private static IServiceCollection ConfigureServices(string[] args)
+        private static IServiceCollection HandlePluginRegistration(ApplicationConfiguration appConfig, 
+            IServiceCollection serviceCollection, 
+            IMasterApi masterApi)
         {
-            var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
-            var appConfig = appConfigHandler.Configuration();
-            var defaultLogger = new Logger("IW4MAdmin-Manager");
-
-            var masterUri = Utilities.IsDevelopment ? new Uri("http://127.0.0.1:8080") : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
-            var apiClient = RestClient.For<IMasterApi>(masterUri);
-            var pluginImporter = new PluginImporter(defaultLogger, appConfig, apiClient, new RemoteAssemblyHandler(defaultLogger, appConfig));
-
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
-                .AddSingleton(appConfigHandler as IConfigurationHandler<ApplicationConfiguration>)
-                .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
-                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration() ?? new ApplicationConfiguration())
-                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
-                .AddSingleton<ILogger>(_serviceProvider => defaultLogger)
-                .AddSingleton<IPluginImporter, PluginImporter>()
-                .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
-                .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
-                .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
-                .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
-                .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
-                .AddSingleton<IDatabaseContextFactory, DatabaseContextFactory>()
-                .AddSingleton<IGameLogReaderFactory, GameLogReaderFactory>()
-                .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
-                .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
-                .AddSingleton<IEntityService<EFClient>, ClientService>()
-                .AddSingleton<IMetaService, MetaService>()
-                .AddSingleton<IMetaRegistration, MetaRegistration>()
-                .AddSingleton<IScriptPluginServiceResolver, ScriptPluginServiceResolver>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>, ReceivedPenaltyResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>, AdministeredPenaltyResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
-                .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
+            var defaultLogger = BuildDefaultLogger<Program>(appConfig);
+            var pluginServiceProvider = new ServiceCollection()
+                .AddBaseLogger(appConfig)
+                .AddSingleton(appConfig)
+                .AddSingleton(masterApi)
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
-                .AddSingleton<IMasterCommunication, MasterCommunication>()
-                .AddSingleton<IManager, ApplicationManager>()
-                .AddSingleton(apiClient)
-                .AddSingleton(_serviceProvider =>
-                {
-                    var config = _serviceProvider.GetRequiredService<IConfigurationHandler<ApplicationConfiguration>>().Configuration();
-                    return Localization.Configure.Initialize(useLocalTranslation: config?.UseLocalTranslations ?? false,
-                        apiInstance: _serviceProvider.GetRequiredService<IMasterApi>(),
-                        customLocale: config?.EnableCustomLocale ?? false ? (config.CustomLocale ?? "en-US") : "en-US");
-                });
+                .AddSingleton<IPluginImporter, PluginImporter>()
+                .BuildServiceProvider();
 
-            if (args.Contains("serialevents"))
-            {
-                serviceCollection.AddSingleton<IEventHandler, SerialGameEventHandler>();
-            }
-            else
-            {
-                serviceCollection.AddSingleton<IEventHandler, GameEventHandler>();
-            }
-
+            var pluginImporter = pluginServiceProvider.GetRequiredService<IPluginImporter>();
+            
+            // we need to register the rest client with regular collection
+            serviceCollection.AddSingleton(masterApi);
+            
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
                         .Where(_command => _command.BaseType == typeof(Command)))
             {
-                defaultLogger.WriteInfo($"Registered native command type {commandType.Name}");
+                defaultLogger.LogDebug("Registered native command type {name}", commandType.Name);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
             }
 
@@ -293,14 +260,14 @@ namespace IW4MAdmin.Application
             var pluginImplementations = pluginImporter.DiscoverAssemblyPluginImplementations();
             foreach (var pluginType in pluginImplementations.Item1)
             {
-                defaultLogger.WriteInfo($"Registered plugin type {pluginType.FullName}");
+                defaultLogger.LogDebug("Registered plugin type {name}", pluginType.FullName);
                 serviceCollection.AddSingleton(typeof(IPlugin), pluginType);
             }
 
             // register the plugin commands
             foreach (var commandType in pluginImplementations.Item2)
             {
-                defaultLogger.WriteInfo($"Registered plugin command type {commandType.FullName}");
+                defaultLogger.LogDebug("Registered plugin command type {name}", commandType.FullName);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
             }
 
@@ -323,6 +290,87 @@ namespace IW4MAdmin.Application
             }
 
             return serviceCollection;
+        }
+        
+
+        /// <summary>
+        /// Configures the dependency injection services
+        /// </summary>
+        private static IServiceCollection ConfigureServices(string[] args)
+        {
+            // setup the static resources (config/master api/translations)
+            var serviceCollection = new ServiceCollection();
+            var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
+            var appConfig = appConfigHandler.Configuration();
+            var masterUri = Utilities.IsDevelopment
+                ? new Uri("http://127.0.0.1:8080")
+                : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
+            var masterRestClient = RestClient.For<IMasterApi>(masterUri);
+            var translationLookup =  Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
+
+            if (appConfig == null)
+            {
+                appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
+                appConfigHandler.Set(appConfig);
+                appConfigHandler.Save();
+            }
+            
+            // build the dependency list
+            HandlePluginRegistration(appConfig, serviceCollection, masterRestClient);
+
+            serviceCollection
+                .AddBaseLogger(appConfig)
+                .AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
+                .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
+                .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
+                .AddSingleton(appConfig)
+                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
+                .AddSingleton<IPluginImporter, PluginImporter>()
+                .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
+                .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
+                .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
+                .AddSingleton<IConfigurationHandlerFactory, ConfigurationHandlerFactory>()
+                .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
+                .AddSingleton<IDatabaseContextFactory, DatabaseContextFactory>()
+                .AddSingleton<IGameLogReaderFactory, GameLogReaderFactory>()
+                .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
+                .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
+                .AddSingleton<IEntityService<EFClient>, ClientService>()
+                .AddSingleton<IMetaService, MetaService>()
+                .AddSingleton<ClientService>()
+                .AddSingleton<ChangeHistoryService>()
+                .AddSingleton<IMetaRegistration, MetaRegistration>()
+                .AddSingleton<IScriptPluginServiceResolver, ScriptPluginServiceResolver>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>, ReceivedPenaltyResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>, AdministeredPenaltyResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
+                .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
+                .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
+                .AddSingleton<IMasterCommunication, MasterCommunication>()
+                .AddSingleton<IManager, ApplicationManager>()
+                .AddSingleton<SharedLibraryCore.Interfaces.ILogger, Logger>()
+                .AddSingleton(translationLookup);
+
+            if (args.Contains("serialevents"))
+            {
+                serviceCollection.AddSingleton<IEventHandler, SerialGameEventHandler>();
+            }
+            else
+            {
+                serviceCollection.AddSingleton<IEventHandler, GameEventHandler>();
+            }
+
+            return serviceCollection;
+        }
+       
+        private static ILogger BuildDefaultLogger<T>(ApplicationConfiguration appConfig)
+        {
+            var collection = new ServiceCollection()
+                .AddBaseLogger(appConfig)
+                .BuildServiceProvider();
+
+            return collection.GetRequiredService<ILogger<T>>();
         }
     }
 }

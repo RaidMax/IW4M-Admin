@@ -8,14 +8,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.RconParsers
 {
     public class BaseRConParser : IRConParser
     {
-        public BaseRConParser(IParserRegexFactory parserRegexFactory)
+        private readonly ILogger _logger;
+        
+        public BaseRConParser(ILogger<BaseRConParser> logger, IParserRegexFactory parserRegexFactory)
         {
+            _logger = logger;
             Configuration = new DynamicRConParserConfiguration(parserRegexFactory)
             {
                 CommandPrefixes = new CommandPrefix()
@@ -133,12 +138,7 @@ namespace IW4MAdmin.Application.RconParsers
         public virtual async Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
-#if DEBUG
-            foreach (var line in response)
-            {
-                Console.WriteLine(line);
-            }
-#endif
+            _logger.LogDebug("Status Response {@response}", (object)response);
             return (ClientsFromStatus(response), MapFromStatus(response), GameTypeFromStatus(response));
         }
 

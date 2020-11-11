@@ -56,7 +56,8 @@ namespace SharedLibraryCore.RCon
                 1 => TimeSpan.FromMilliseconds(550),
                 2 => TimeSpan.FromMilliseconds(1000),
                 3 => TimeSpan.FromMilliseconds(2000),
-                _ => TimeSpan.FromMilliseconds(5000),
+                4 => TimeSpan.FromMilliseconds(5000),
+                _ => TimeSpan.FromMilliseconds(10000),
             };
         }
         /// <summary>
@@ -66,6 +67,6 @@ namespace SharedLibraryCore.RCon
         /// <summary>
         /// how many failed connection attempts before aborting connection
         /// </summary>
-        public static readonly int AllowedConnectionFails = 4;
+        public static readonly int AllowedConnectionFails = 5;
     }
 }

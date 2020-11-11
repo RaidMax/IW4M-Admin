@@ -11,6 +11,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.RCon
 {
@@ -27,7 +30,7 @@ namespace IW4MAdmin.Application.RCon
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
 
-        public RConConnection(string ipAddress, int port, string password, ILogger log, Encoding gameEncoding)
+        public RConConnection(string ipAddress, int port, string password, ILogger<RConConnection> log, Encoding gameEncoding)
         {
             Endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
             _gameEncoding = gameEncoding;
@@ -49,10 +52,7 @@ namespace IW4MAdmin.Application.RCon
 
             var connectionState = ActiveQueries[this.Endpoint];
 
-            if (Utilities.IsDevelopment)
-            {
-                _log.WriteDebug($"Waiting for semaphore to be released [{this.Endpoint}]");
-            }
+            _log.LogDebug("Waiting for semaphore to be released [{endpoint}]", Endpoint);
 
             // enter the semaphore so only one query is sent at a time per server.
             await connectionState.OnComplete.WaitAsync();
@@ -66,11 +66,8 @@ namespace IW4MAdmin.Application.RCon
 
             connectionState.LastQuery = DateTime.Now;
 
-            if (Utilities.IsDevelopment)
-            {
-                _log.WriteDebug($"Semaphore has been released [{Endpoint}]");
-                _log.WriteDebug($"Query [{Endpoint},{type},{parameters}]");
-            }
+            _log.LogDebug("Semaphore has been released [{endpoint}]", Endpoint);
+            _log.LogDebug("Query {@queryInfo}", new { endpoint=Endpoint.ToString(), type, parameters });
 
             byte[] payload = null;
             bool waitForResponse = config.WaitForResponse;
@@ -115,10 +112,16 @@ namespace IW4MAdmin.Application.RCon
 
             // this happens when someone tries to send something that can't be converted into a 7 bit character set
             // e.g: emoji -> windows-1252
-            catch (OverflowException)
+            catch (OverflowException ex)
             {
                 connectionState.OnComplete.Release(1);
-                throw new NetworkException($"Invalid character encountered when converting encodings - {parameters}");
+                using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                {
+                    _log.LogError(ex, "Could not convert RCon data payload to desired encoding {encoding} {params}",
+                        _gameEncoding.EncodingName, parameters);
+                }
+
+                throw new RConException($"Invalid character encountered when converting encodings");
             }
 
             byte[][] response = null;
@@ -137,16 +140,17 @@ namespace IW4MAdmin.Application.RCon
                 connectionState.ConnectionAttempts++;
                 connectionState.BytesReadPerSegment.Clear();
                 bool exceptionCaught = false;
-#if DEBUG == true
-                _log.WriteDebug($"Sending {payload.Length} bytes to [{this.Endpoint}] ({connectionState.ConnectionAttempts}/{StaticHelpers.AllowedConnectionFails})");
-#endif
+
+                _log.LogDebug("Sending {payloadLength} bytes to [{endpoint}] ({connectionAttempts}/{allowedConnectionFailures})",
+                payload.Length, Endpoint, connectionState.ConnectionAttempts, StaticHelpers.AllowedConnectionFails);
+
                 try
                 {
                     response = await SendPayloadAsync(payload, waitForResponse);
 
                     if ((response.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
-                        throw new NetworkException("Expected response but got 0 bytes back");
+                        throw new RConException("Expected response but got 0 bytes back");
                     }
 
                     connectionState.ConnectionAttempts = 0;
@@ -162,7 +166,14 @@ namespace IW4MAdmin.Application.RCon
                         goto retrySend;
                     }
 
-                    throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMUNICATION"].FormatExt(Endpoint));
+                    using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                    {
+                        _log.LogWarning(
+                            "Made {connectionAttempts} attempts to send RCon data to server, but received no response",
+                            connectionState.ConnectionAttempts);
+                    }
+                    connectionState.ConnectionAttempts = 0;
+                    throw new NetworkException("Reached maximum retry attempts to send RCon data to server");
                 }
 
                 finally
@@ -177,7 +188,7 @@ namespace IW4MAdmin.Application.RCon
 
             if (response.Length == 0)
             {
-                _log.WriteWarning($"Received empty response for request [{type}, {parameters}, {Endpoint}]");
+                _log.LogDebug("Received empty response for RCon request {@query}", new { endpoint=Endpoint.ToString(), type, parameters });
                 return new string[0];
             }
 
@@ -187,12 +198,12 @@ namespace IW4MAdmin.Application.RCon
             // note: not all games respond if the pasword is wrong or not set
             if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
             {
-                throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_INVALID"]);
+                throw new RConException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_INVALID"]);
             }
 
             if (responseString.Contains("rcon_password"))
             {
-                throw new NetworkException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
+                throw new RConException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_NOTSET"]);
             }
 
             if (responseString.Contains(config.ServerNotRunningResponse))
@@ -205,7 +216,13 @@ namespace IW4MAdmin.Application.RCon
 
             if (headerSplit.Length != 2)
             {
-                throw new NetworkException("Unexpected response header from server");
+                using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                {
+                    _log.LogWarning("Invalid response header from server. Expected {expected}, but got {response}",
+                        config.CommandPrefixes.RConResponse, headerSplit.FirstOrDefault());
+                }
+
+                throw new RConException("Unexpected response header from server");
             }
 
             string[] splitResponse = headerSplit.Last().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -293,12 +310,17 @@ namespace IW4MAdmin.Application.RCon
 
             if (sendDataPending)
             {
-                // the send has not been completed asyncronously
+                // the send has not been completed asynchronously
                 // this really shouldn't ever happen because it's UDP
                 if (!await Task.Run(() => connectionState.OnSentData.Wait(StaticHelpers.SocketTimeout(1))))
                 {
+                    using(LogContext.PushProperty("Server", Endpoint.ToString()))
+                    {
+                        _log.LogWarning("Socket timed out while sending RCon data on attempt {attempt}",
+                            connectionState.ConnectionAttempts);
+                    }
                     rconSocket.Close();
-                    throw new NetworkException("Timed out sending data", rconSocket);
+                    throw new NetworkException("Timed out sending RCon data", rconSocket);
                 }
             }
 
@@ -314,14 +336,22 @@ namespace IW4MAdmin.Application.RCon
 
             if (receiveDataPending)
             {
-                if (Utilities.IsDevelopment)
-                {
-                    _log.WriteDebug($"Waiting to asynchrously receive data on attempt #{connectionState.ConnectionAttempts}");
-                }
+                _log.LogDebug("Waiting to asynchronously receive data on attempt #{connectionAttempts}", connectionState.ConnectionAttempts);
                 if (!await Task.Run(() => connectionState.OnReceivedData.Wait(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts))))
                 {
+                    if (connectionState.ConnectionAttempts > 1) // this reduces some spam for unstable connections
+                    {
+                        using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                        {
+                            _log.LogWarning(
+                                "Socket timed out while waiting for RCon response on attempt {attempt} with timeout delay of {timeout}",
+                                connectionState.ConnectionAttempts,
+                                StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts));
+                        }
+                    }
+
                     rconSocket.Close();
-                    throw new NetworkException("Timed out waiting for response", rconSocket);
+                    throw new NetworkException("Timed out receiving RCon response", rconSocket);
                 }
             }
 
@@ -350,10 +380,7 @@ namespace IW4MAdmin.Application.RCon
 
         private void OnDataReceived(object sender, SocketAsyncEventArgs e)
         {
-            if (Utilities.IsDevelopment)
-            {
-                _log.WriteDebug($"Read {e.BytesTransferred} bytes from {e.RemoteEndPoint}");
-            }
+            _log.LogDebug("Read {bytesTransferred} bytes from {endpoint}", e.BytesTransferred, e.RemoteEndPoint);
 
             // this occurs when we close the socket
             if (e.BytesTransferred == 0)
@@ -376,10 +403,7 @@ namespace IW4MAdmin.Application.RCon
 
                         if (!sock.ReceiveAsync(state.ReceiveEventArgs))
                         {
-                            if (Utilities.IsDevelopment)
-                            {
-                                _log.WriteDebug($"Read {state.ReceiveEventArgs.BytesTransferred} synchronous bytes from {e.RemoteEndPoint}");
-                            }
+                            _log.LogDebug("Read {bytesTransferred} synchronous bytes from {endpoint}", state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint);
                             // we need to increment this here because the callback isn't executed if there's no pending IO
                             state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
                             ActiveQueries[this.Endpoint].OnReceivedData.Set();
@@ -401,10 +425,7 @@ namespace IW4MAdmin.Application.RCon
 
         private void OnDataSent(object sender, SocketAsyncEventArgs e)
         {
-            if (Utilities.IsDevelopment)
-            {
-                _log.WriteDebug($"Sent {e.Buffer?.Length} bytes to {e.ConnectSocket?.RemoteEndPoint?.ToString()}");
-            }
+            _log.LogDebug("Sent {byteCount} bytes to {endpoint}", e.Buffer?.Length, e.ConnectSocket?.RemoteEndPoint);
             ActiveQueries[this.Endpoint].OnSentData.Set();
         }
     }

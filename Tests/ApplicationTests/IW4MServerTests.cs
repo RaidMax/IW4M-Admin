@@ -11,6 +11,7 @@ using SharedLibraryCore.Database.Models;
 using System.Threading.Tasks;
 using ApplicationTests.Mocks;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Configuration;
@@ -529,9 +530,6 @@ namespace ApplicationTests
             {
                 await server.ProcessUpdatesAsync(new System.Threading.CancellationToken());
             }
-
-            A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
-              .MustNotHaveHappened();
         }
 
         [Test]
@@ -554,9 +552,6 @@ namespace ApplicationTests
             {
                 await server.ExecuteEvent(e);
             }
-
-            A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
-                .MustHaveHappenedOnceExactly();
 
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ConnectionLost));
             Assert.AreEqual("err", (mockEventHandler.Events[0].Extra as NetworkException).Message);

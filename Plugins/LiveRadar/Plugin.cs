@@ -1,11 +1,12 @@
 ﻿using LiveRadar.Configuration;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Interfaces;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace LiveRadar
 {
@@ -21,11 +22,13 @@ namespace LiveRadar
         private readonly Dictionary<string, long> _botGuidLookups;
         private bool addedPage;
         private readonly object lockObject = new object();
+        private readonly ILogger _logger;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory)
         {
             _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
             _botGuidLookups = new Dictionary<string, long>();
+            _logger = logger;
         }
 
         public Task OnEventAsync(GameEvent E, Server S)
@@ -80,8 +83,7 @@ namespace LiveRadar
 
                 catch (Exception e)
                 {
-                    S.Logger.WriteWarning($"Could not parse live radar output: {e.Data}");
-                    S.Logger.WriteDebug(e.GetExceptionInfo());
+                    _logger.LogError(e, "Could not parse live radar output: {data}", e.Data);
                 }
             }
 

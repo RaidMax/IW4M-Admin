@@ -6,6 +6,8 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
 {
@@ -18,7 +20,7 @@ namespace IW4MAdmin.Application.Meta
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
 
-        public UpdatedAliasResourceQueryHelper(ILogger logger, IDatabaseContextFactory contextFactory)
+        public UpdatedAliasResourceQueryHelper(ILogger<UpdatedAliasResourceQueryHelper> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
             _contextFactory = contextFactory;

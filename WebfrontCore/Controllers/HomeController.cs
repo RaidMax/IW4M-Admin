@@ -3,19 +3,22 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace WebfrontCore.Controllers
 {
     public class HomeController : BaseController
     {
         private readonly ITranslationLookup _translationLookup;
+        private readonly ILogger _logger;
 
-        public HomeController(IManager manager, ITranslationLookup translationLookup) : base(manager)
+        public HomeController(ILogger<HomeController> logger, IManager manager, ITranslationLookup translationLookup) : base(manager)
         {
+            _logger = logger;
             _translationLookup = translationLookup;
         }
 
@@ -43,10 +46,7 @@ namespace WebfrontCore.Controllers
         public IActionResult Error()
         {
             var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-            Manager.GetLogger(0).WriteError($"[Webfront] {exceptionFeature.Error.Message}");
-            Manager.GetLogger(0).WriteDebug(exceptionFeature.Path);
-            Manager.GetLogger(0).WriteDebug(exceptionFeature.Error.StackTrace);
-
+            _logger.LogError("[Webfront] {path} {message} {@exception}", exceptionFeature.Path, exceptionFeature.Error.Message, exceptionFeature.Error);
             ViewBag.Description = Localization["WEBFRONT_ERROR_DESC"];
             ViewBag.Title = Localization["WEBFRONT_ERROR_TITLE"];
             return View(exceptionFeature.Error);

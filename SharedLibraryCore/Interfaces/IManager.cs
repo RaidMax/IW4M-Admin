@@ -6,6 +6,7 @@ using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -15,6 +16,7 @@ namespace SharedLibraryCore.Interfaces
         Task Start();
         void Stop();
         void Restart();
+        [Obsolete]
         ILogger GetLogger(long serverId);
         IList<Server> GetServers();
         IList<IManagerCommand> GetCommands();

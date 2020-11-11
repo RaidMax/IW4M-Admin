@@ -5,11 +5,12 @@ using System.Reflection;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using SharedLibraryCore;
-using IW4MAdmin.Application.Misc;
 using IW4MAdmin.Application.API.Master;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IW4MAdmin.Application.Helpers
+namespace IW4MAdmin.Application.Misc
 {
     /// <summary>
     /// implementation of IPluginImporter
@@ -24,7 +25,7 @@ namespace IW4MAdmin.Application.Helpers
         private readonly IMasterApi _masterApi;
         private readonly ApplicationConfiguration _appConfig;
 
-        public PluginImporter(ILogger logger, ApplicationConfiguration appConfig, IMasterApi masterApi, IRemoteAssemblyHandler remoteAssemblyHandler)
+        public PluginImporter(ILogger<PluginImporter> logger, ApplicationConfiguration appConfig, IMasterApi masterApi, IRemoteAssemblyHandler remoteAssemblyHandler)
         {
             _logger = logger;
             _masterApi = masterApi;
@@ -44,14 +45,14 @@ namespace IW4MAdmin.Application.Helpers
             {
                 var scriptPluginFiles = Directory.GetFiles(pluginDir, "*.js").AsEnumerable().Union(GetRemoteScripts());
 
-                _logger.WriteInfo($"Discovered {scriptPluginFiles.Count()} potential script plugins");
+                _logger.LogDebug("Discovered {count} potential script plugins", scriptPluginFiles.Count());
 
                 if (scriptPluginFiles.Count() > 0)
                 {
                     foreach (string fileName in scriptPluginFiles)
                     {
-                        _logger.WriteInfo($"Discovered script plugin {fileName}");
-                        var plugin = new ScriptPlugin(fileName);
+                        _logger.LogDebug("Discovered script plugin {fileName}", fileName);
+                        var plugin = new ScriptPlugin(_logger, fileName);
                         yield return plugin;
                     }
                 }
@@ -71,7 +72,7 @@ namespace IW4MAdmin.Application.Helpers
             if (Directory.Exists(pluginDir))
             {
                 var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
-                _logger.WriteInfo($"Discovered {dllFileNames.Length} potential plugin assemblies");
+                _logger.LogDebug("Discovered {count} potential plugin assemblies", dllFileNames.Length);
 
                 if (dllFileNames.Length > 0)
                 {
@@ -84,13 +85,13 @@ namespace IW4MAdmin.Application.Helpers
                         .SelectMany(_asm => _asm.GetTypes())
                         .Where(_assemblyType => _assemblyType.GetInterface(nameof(IPlugin), false) != null);
 
-                    _logger.WriteInfo($"Discovered {pluginTypes.Count()} plugin implementations");
+                    _logger.LogDebug("Discovered {count} plugin implementations", pluginTypes.Count());
 
                     commandTypes = assemblies
                         .SelectMany(_asm => _asm.GetTypes())
                         .Where(_assemblyType => _assemblyType.IsClass && _assemblyType.BaseType == typeof(Command));
 
-                    _logger.WriteInfo($"Discovered {commandTypes.Count()} plugin commands");
+                    _logger.LogDebug("Discovered {count} plugin commands", commandTypes.Count());
                 }
             }
 
@@ -109,8 +110,7 @@ namespace IW4MAdmin.Application.Helpers
 
             catch (Exception ex)
             {
-                _logger.WriteWarning("Could not load remote assemblies");
-                _logger.WriteDebug(ex.GetExceptionInfo());
+                _logger.LogWarning(ex, "Could not load remote assemblies");
                 return Enumerable.Empty<Assembly>();
             }
         }
@@ -127,8 +127,7 @@ namespace IW4MAdmin.Application.Helpers
 
             catch (Exception ex)
             {
-                _logger.WriteWarning("Could not load remote assemblies");
-                _logger.WriteDebug(ex.GetExceptionInfo());
+                _logger.LogWarning(ex,"Could not load remote scripts");
                 return Enumerable.Empty<string>();
             }
         }

@@ -14,7 +14,7 @@
     <RunPostBuildEvent>Always</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.4.9" PrivateAssets="All" />
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2020.11.11.1" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,7 +28,7 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
-
+  
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(ProjectDir)..\..\..\BUILD\Plugins --no-build --no-restore --no-dependencies" />
   </Target>

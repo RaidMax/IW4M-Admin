@@ -7,25 +7,19 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
 
 namespace ApplicationTests
 {
     [TestFixture]
     public class ServerTests
     {
-        ILogger logger;
 
         [SetUp]
         public void Setup()
         {
-            logger = A.Fake<ILogger>();
 
-            void testLog(string msg) => Console.WriteLine(msg);
-
-            A.CallTo(() => logger.WriteError(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteWarning(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteInfo(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteDebug(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
         }
 
         [Test]
@@ -34,7 +28,8 @@ namespace ApplicationTests
             var mgr = A.Fake<IManager>();
             var server = new IW4MServer(mgr,
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>());
+                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), 
+                A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>(), A.Fake<ILogger<Server>>());
 
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
@@ -56,11 +51,11 @@ namespace ApplicationTests
         public void LogFileReplay()
         {
             var mgr = A.Fake<IManager>();
-            A.CallTo(() => mgr.GetLogger(A<long>.Ignored)).Returns(logger);
 
             var server = new IW4MServer(mgr,
                 new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>());
+                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>(),
+                A.Fake<ILogger<Server>>());
 
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
@@ -70,7 +65,6 @@ namespace ApplicationTests
             foreach (string line in log)
             {
                 var e = parser.GenerateGameEvent(line);
-                server.Logger.WriteInfo($"{e.GameTime}");
                 if (e.Origin != null)
                 {
                     e.Origin.CurrentServer = server;

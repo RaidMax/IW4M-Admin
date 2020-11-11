@@ -1,8 +1,9 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -11,7 +12,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDictionary<string, IList<object>> _actions;
         private readonly ILogger _logger;
 
-        public MiddlewareActionHandler(ILogger logger)
+        public MiddlewareActionHandler(ILogger<MiddlewareActionHandler> logger)
         {
             _actions = new Dictionary<string, IList<object>>();
             _logger = logger;
@@ -38,8 +39,7 @@ namespace IW4MAdmin.Application.Misc
                     }
                     catch (Exception e) 
                     {
-                        _logger.WriteWarning($"Failed to invoke middleware action {name}");
-                        _logger.WriteDebug(e.GetExceptionInfo());
+                        _logger.LogWarning(e, "Failed to invoke middleware action {name}", name);
                     }
                 }
 

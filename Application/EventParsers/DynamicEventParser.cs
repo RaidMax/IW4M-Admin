@@ -1,5 +1,6 @@
 ﻿using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.EventParsers
 {

@@ -5,7 +5,9 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -348,7 +350,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                 catch (Exception e)
                 {
-                    _logger.WriteWarning($"Could not handle custom event generation - {e.GetExceptionInfo()}");
+                    _logger.LogError(e, $"Could not handle custom event generation");
                 }
             }
 

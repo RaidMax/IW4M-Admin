@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -28,23 +29,24 @@ namespace IW4MAdmin.Plugins.Stats
         public static StatManager Manager { get; private set; }
         public static IManager ServerManager;
         public static IConfigurationHandler<StatsConfiguration> Config { get; private set; }
-#if DEBUG
-        int scriptDamageCount;
-        int scriptKillCount;
-#endif
+
         private readonly IDatabaseContextFactory _databaseContextFactory;
         private readonly ITranslationLookup _translationLookup;
         private readonly IMetaService _metaService;
         private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatQueryHelper;
+        private readonly ILogger<StatManager> _managerLogger;
+        private readonly ILogger<Plugin> _logger;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
-            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper)
+        public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
+            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper, ILogger<StatManager> managerLogger)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
             _translationLookup = translationLookup;
             _metaService = metaService;
             _chatQueryHelper = chatQueryHelper;
+            _managerLogger = managerLogger;
+            _logger = logger;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -102,23 +104,13 @@ namespace IW4MAdmin.Plugins.Stats
                         {
                             E.Origin = E.Target;
                         }
-
-#if DEBUG
-                        scriptKillCount++;
-                        S.Logger.WriteInfo($"Start ScriptKill {scriptKillCount}");
-#endif
-
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
-
-#if DEBUG
-                        S.Logger.WriteInfo($"End ScriptKill {scriptKillCount}");
-#endif
                     }
 
                     else
                     {
-                        S.Logger.WriteDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
+                        _logger.LogDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -155,22 +147,13 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
-#if DEBUG
-                        scriptDamageCount++;
-                        S.Logger.WriteInfo($"Start ScriptDamage {scriptDamageCount}");
-#endif
-
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
-
-#if DEBUG
-                        S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");
-#endif
                     }
 
                     else
                     {
-                        S.Logger.WriteDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
+                        _logger.LogDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
             }
@@ -457,7 +440,7 @@ namespace IW4MAdmin.Plugins.Stats
             manager.GetMessageTokens().Add(new MessageToken("MOSTKILLS", mostKills));
 
             ServerManager = manager;
-            Manager = new StatManager(manager, _databaseContextFactory, Config);
+            Manager = new StatManager(_managerLogger, manager, _databaseContextFactory, Config);
         }
 
         public Task OnTickAsync(Server S)

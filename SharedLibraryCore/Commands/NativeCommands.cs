@@ -12,6 +12,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Commands
@@ -646,7 +648,7 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class SetLevelCommand : Command
     {
-        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup, ILogger logger) : base(config, translationLookup)
+        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup, ILogger<SetLevelCommand> logger) : base(config, translationLookup)
         {
             Name = "setlevel";
             Description = _translationLookup["COMMANDS_SETLEVEL_DESC"];
@@ -727,13 +729,16 @@ namespace SharedLibraryCore.Commands
                     gameEvent.Owner.Manager.GetActiveClients()
                     .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient : targetClient;
 
-                logger.WriteInfo($"Beginning set level of client {gameEvent.Origin} to {newPerm}");
+                logger.LogDebug("Beginning set level of client {origin} to {newPermission}", gameEvent.Origin.ToString(), newPerm);
 
                 var result = await targetClient.SetLevel(newPerm, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
 
                 if (result.Failed)
                 {
-                    logger.WriteInfo($"Failed to set level of client {gameEvent.Origin}");
+                    using (LogContext.PushProperty("Server", gameEvent.Origin.CurrentServer?.ToString()))
+                    {
+                        logger.LogWarning("Failed to set level of client {origin}", gameEvent.Origin.ToString());
+                    }
                     gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     return;
                 }

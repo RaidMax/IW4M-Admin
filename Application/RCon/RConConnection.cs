@@ -26,6 +26,7 @@ namespace IW4MAdmin.Application.RCon
         public IPEndPoint Endpoint { get; private set; }
         public string RConPassword { get; private set; }
 
+        private IRConParser parser;
         private IRConParserConfiguration config;
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
@@ -38,9 +39,10 @@ namespace IW4MAdmin.Application.RCon
             _log = log;
         }
 
-        public void SetConfiguration(IRConParserConfiguration config)
+        public void SetConfiguration(IRConParser parser)
         {
-            this.config = config;
+            this.parser = parser;
+            config = parser.Configuration;
         }
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
@@ -146,7 +148,8 @@ namespace IW4MAdmin.Application.RCon
 
                 try
                 {
-                    response = await SendPayloadAsync(payload, waitForResponse);
+                    
+                    response = await SendPayloadAsync(payload, waitForResponse, parser.OverrideTimeoutForCommand(parameters));
 
                     if ((response.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
@@ -286,7 +289,7 @@ namespace IW4MAdmin.Application.RCon
             }
         }
 
-        private async Task<byte[][]> SendPayloadAsync(byte[] payload, bool waitForResponse)
+        private async Task<byte[][]> SendPayloadAsync(byte[] payload, bool waitForResponse, TimeSpan overrideTimeout)
         {
             var connectionState = ActiveQueries[this.Endpoint];
             var rconSocket = (Socket)connectionState.SendEventArgs.UserToken;
@@ -337,7 +340,12 @@ namespace IW4MAdmin.Application.RCon
             if (receiveDataPending)
             {
                 _log.LogDebug("Waiting to asynchronously receive data on attempt #{connectionAttempts}", connectionState.ConnectionAttempts);
-                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts))))
+                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(
+                    new[]
+                    {
+                        StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts), 
+                        overrideTimeout
+                    }.Max())))
                 {
                     if (connectionState.ConnectionAttempts > 1) // this reduces some spam for unstable connections
                     {

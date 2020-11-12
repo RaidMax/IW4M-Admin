@@ -278,5 +278,16 @@ namespace IW4MAdmin.Application.RconParsers
         public T GetDefaultDvarValue<T>(string dvarName) => Configuration.DefaultDvarValues.ContainsKey(dvarName) ?
             (T)Convert.ChangeType(Configuration.DefaultDvarValues[dvarName], typeof(T)) :
             default;
+
+        public TimeSpan OverrideTimeoutForCommand(string command)
+        {
+            if (command.Contains("map_rotate", StringComparison.InvariantCultureIgnoreCase) ||
+                command.StartsWith("map ", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return TimeSpan.FromSeconds(30);
+            }
+
+            return TimeSpan.Zero;
+        }
     }
 }

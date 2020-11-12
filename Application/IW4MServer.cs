@@ -952,7 +952,7 @@ namespace IW4MAdmin
             RconParser = RconParser ?? Manager.AdditionalRConParsers[0];
             EventParser = EventParser ?? Manager.AdditionalEventParsers[0];
 
-            RemoteConnection.SetConfiguration(RconParser.Configuration);
+            RemoteConnection.SetConfiguration(RconParser);
 
             var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version");
             Version = version.Value;

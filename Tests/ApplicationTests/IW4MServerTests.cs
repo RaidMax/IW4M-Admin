@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Configuration;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {

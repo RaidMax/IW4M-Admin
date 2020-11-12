@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using SharedLibraryCore.Database.Models;
 using static SharedLibraryCore.Server;
@@ -82,5 +83,12 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="dvarName">dvar key name</param>
         /// <returns></returns>
         T GetDefaultDvarValue<T>(string dvarName);
+
+        /// <summary>
+        /// determines the amount of time to wait for the command to respond
+        /// </summary>
+        /// <param name="command">name of command being executed</param>
+        /// <returns></returns>
+        TimeSpan OverrideTimeoutForCommand(string command);
     }
 }

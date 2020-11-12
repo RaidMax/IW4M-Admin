@@ -27,7 +27,6 @@ let commands = [{
 
         // we want to print out a pong message for the number of times they requested
         for (var i = 0; i < times; i++) {
-            gameEvent.Origin = undefined;
             gameEvent.Origin.Tell(`^${i}pong #${i + 1}^7`);
 
             // don't want to wait if it's the last pong

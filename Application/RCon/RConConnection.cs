@@ -128,7 +128,17 @@ namespace IW4MAdmin.Application.RCon
 
             byte[][] response = null;
 
-        retrySend:
+            retrySend:
+            if (connectionState.ConnectionAttempts > 1)
+            {
+                using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                {
+                    _log.LogInformation(
+                        "Retrying RCon message ({connectionAttempts}/{allowedConnectionFailures} attempts) with parameters {payload}", 
+                        connectionState.ConnectionAttempts, 
+                        StaticHelpers.AllowedConnectionFails, parameters);
+                }
+            }
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
             {
                 DontFragment = true,

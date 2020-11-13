@@ -10,6 +10,7 @@ using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
 using StatsWeb.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -88,7 +89,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 SentAfter = whenLower
             });
 
-            return View("_MessageContext", messages.Results);
+            return View("_MessageContext", messages.Results.ToList());
         }
 
         [HttpGet("Message/Find")]
@@ -187,13 +188,13 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 // we want to show anything related to the automated offense 
                 else
                 {
-                    return View("_MessageContext", new[]
+                    return View("_MessageContext", new List<MessageResponse>
                     {
-                        new ChatInfo()
+                        new MessageResponse()
                         {
                             ClientId = penalty.OffenderId,
                             Message = penalty.AutomatedOffense,
-                            Time = penalty.When
+                            When = penalty.When
                         }
                     });
                 }

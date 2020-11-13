@@ -6,21 +6,37 @@
     string rankIcon(double elo)
     {
         if (elo >= getDeviation(-0.75) && elo < getDeviation(1.25))
+        {
             return "0_no-place/menu_div_no_place.png";
+        }
         if (elo >= getDeviation(0.125) && elo < getDeviation(0.625))
+        {
             return "1_iron/menu_div_iron_sub03.png";
+        }
         if (elo >= getDeviation(0.625) && elo < getDeviation(1.0))
+        {
             return "2_bronze/menu_div_bronze_sub03.png";
+        }
         if (elo >= getDeviation(1.0) && elo < getDeviation(1.25))
+        {
             return "3_silver/menu_div_silver_sub03.png";
+        }
         if (elo >= getDeviation(1.25) && elo < getDeviation(1.5))
+        {
             return "4_gold/menu_div_gold_sub03.png";
+        }
         if (elo >= getDeviation(1.5) && elo < getDeviation(1.75))
+        {
             return "5_platinum/menu_div_platinum_sub03.png";
+        }
         if (elo >= getDeviation(1.75) && elo < getDeviation(2.0))
+        {
             return "6_semipro/menu_div_semipro_sub03.png";
+        }
         if (elo >= getDeviation(2.0))
+        {
             return "7_pro/menu_div_pro_sub03.png";
+        }
 
         return "0_no-place/menu_div_no_place.png";
     }

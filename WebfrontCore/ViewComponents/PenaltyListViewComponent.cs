@@ -14,7 +14,7 @@ namespace WebfrontCore.ViewComponents
             var penalties = await Program.Manager.GetPenaltyService().GetRecentPenalties(PENALTY_COUNT, offset, showOnly, ignoreAutomated);
             penalties = User.Identity.IsAuthenticated ? penalties : penalties.Where(p => !p.Sensitive).ToList();
 
-            return View("_List", penalties);
+            return View("~/Views/Penalty/PenaltyInfoList.cshtml", penalties);
         }
     }
 }

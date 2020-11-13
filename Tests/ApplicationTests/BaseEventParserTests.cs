@@ -9,8 +9,8 @@ using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
-using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.GameEvent;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {

@@ -6,8 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
-using Microsoft.Extensions.Logging;
-using SharedLibraryCore;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -28,7 +27,6 @@ namespace ApplicationTests
             }
 
             var manager = A.Fake<IManager>();
-            var logger = A.Fake<ILogger>();
 
             var transLookup = A.Fake<ITranslationLookup>();
             A.CallTo(() => transLookup[A<string>.Ignored])
@@ -37,8 +35,11 @@ namespace ApplicationTests
             serviceCollection
                 .AddLogging()
                 .AddSingleton(A.Fake<ILogger>())
+                .AddSingleton(A.Fake<SharedLibraryCore.Interfaces.ILogger>())
+                .AddSingleton(new ServerConfiguration { IPAddress = "127.0.0.1", Port = 28960 })
                 .AddSingleton(manager)
                 .AddSingleton<IDatabaseContextFactory, DatabaseContextFactoryMock>()
+                .AddSingleton<IW4MServer>()
                 .AddSingleton(A.Fake<IRConConnectionFactory>())
                 .AddSingleton(A.Fake<IRConConnection>())
                 .AddSingleton(transLookup)
@@ -51,17 +52,6 @@ namespace ApplicationTests
                 .AddSingleton(ConfigurationGenerators.CreateApplicationConfiguration())
                 .AddSingleton(ConfigurationGenerators.CreateCommandConfiguration())
                 .AddSingleton<IConfigurationHandler<ApplicationConfiguration>, ApplicationConfigurationHandlerMock>();
-
-            serviceCollection.AddSingleton(_sp => new IW4MServer(_sp.GetRequiredService<IManager>(), 
-                ConfigurationGenerators.CreateServerConfiguration(),
-                _sp.GetRequiredService<ITranslationLookup>(), 
-                _sp.GetRequiredService<IRConConnectionFactory>(), 
-                _sp.GetRequiredService<IGameLogReaderFactory>(), 
-                _sp.GetRequiredService<IMetaService>(),
-                _sp.GetRequiredService<ILogger<Server>>())
-            {
-                RconParser = _sp.GetRequiredService<IRConParser>()
-            });
 
             return serviceCollection;
         }

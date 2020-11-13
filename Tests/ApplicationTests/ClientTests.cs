@@ -8,6 +8,7 @@ using SharedLibraryCore.Database.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SharedLibraryCore.Configuration;
 
 namespace ApplicationTests
 {

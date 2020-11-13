@@ -41,6 +41,8 @@ namespace ApplicationTests
             fakeRConParser = serviceProvider.GetRequiredService<IRConParser>();
             mockEventHandler = serviceProvider.GetRequiredService<EventHandlerMock>();
             appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
+            serviceProvider.GetService<IW4MServer>().RconParser =
+                serviceProvider.GetService<IRConParser>();
 
             var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
 
@@ -215,7 +217,7 @@ namespace ApplicationTests
 
             await server.Ban("test reason", target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -290,7 +292,7 @@ namespace ApplicationTests
 
             await server.TempBan("test reason", TimeSpan.Zero, target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -312,7 +314,7 @@ namespace ApplicationTests
 
             await server.TempBan("test reason", TimeSpan.Zero, target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
         #endregion
@@ -348,7 +350,7 @@ namespace ApplicationTests
 
             await server.Kick("test reason", target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
 

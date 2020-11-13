@@ -17,7 +17,7 @@ namespace IW4MAdmin.Application.IO
         private readonly bool _ignoreBots;
         private readonly ILogger _logger;
 
-        public GameLogEventDetection(ILogger<GameLogEventDetection> logger, Server server, Uri[] gameLogUris, IGameLogReaderFactory gameLogReaderFactory)
+        public GameLogEventDetection(ILogger<GameLogEventDetection> logger, IW4MServer server, Uri[] gameLogUris, IGameLogReaderFactory gameLogReaderFactory)
         {
             _reader = gameLogReaderFactory.CreateGameLogReader(gameLogUris, server.EventParser);
             _server = server;

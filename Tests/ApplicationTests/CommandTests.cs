@@ -16,6 +16,7 @@ using SharedLibraryCore.Services;
 using static SharedLibraryCore.Database.Models.EFClient;
 using FluentAssertions;
 using FluentAssertions.Extensions;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -50,6 +51,10 @@ namespace ApplicationTests
             appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
             appConfig.MapChangeDelaySeconds = 1;
             cmdConfig = serviceProvider.GetRequiredService<CommandConfiguration>();
+            serviceProvider.GetService<IW4MServer>().RconParser =
+                serviceProvider.GetService<IRConParser>();
+
+            Utilities.DefaultLogger = serviceProvider.GetRequiredService<ILogger>();
 
             A.CallTo(() => manager.GetClientService())
                 .Returns(clientService);

@@ -1,12 +1,11 @@
 ﻿using FakeItEasy;
-using IW4MAdmin;
 using IW4MAdmin.Application.IO;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Threading.Tasks;
+using SharedLibraryCore;
 
 namespace ApplicationTests
 {
@@ -19,19 +18,24 @@ namespace ApplicationTests
         [SetUp]
         public void Setup()
         {
-            serviceProvider = new ServiceCollection().BuildBase().BuildServiceProvider();
+            serviceProvider = new ServiceCollection()
+                .BuildBase()
+                .AddSingleton(new Uri[] { new Uri("C:\\test.log")})
+                .AddSingleton(A.Fake<IGameLogReaderFactory>())
+                .AddSingleton<GameLogEventDetection>()
+                .BuildServiceProvider();
         }
 
         [Test]
         public async Task GameLogEventDetection_WorksAfterFileSizeReset()
         {
             var reader = A.Fake<IGameLogReader>();
-            var factory = A.Fake<IGameLogReaderFactory>();
+            var factory = serviceProvider.GetRequiredService<IGameLogReaderFactory>();
 
             A.CallTo(() => factory.CreateGameLogReader(A<Uri[]>.Ignored, A<IEventParser>.Ignored))
                 .Returns(reader);
 
-            var detect = new GameLogEventDetection(serviceProvider.GetService<IW4MServer>(), new Uri[] { new Uri("C:\\test.log") }, factory);
+            var detect = serviceProvider.GetRequiredService<GameLogEventDetection>();
 
             A.CallTo(() => reader.Length)
                 .Returns(100)

@@ -15,7 +15,7 @@ namespace Stats.Config
                 Game.IW4, new Dictionary<DetectionType, string[]>
                 {
                     { DetectionType.Chest, new[] { "m21.+" } },
-                    { DetectionType.Recoil, new[] { "ranger.*_mp", "model1887.*_mp", ".+shotgun.*_mp" } },
+                    { DetectionType.Recoil, new[] { "ranger.*_mp", "model1887.*_mp", ".+shotgun.*_mp", "turret_minigun_mp" } },
                     { DetectionType.Button, new[] { ".*akimbo.*" } }
                 }
             }

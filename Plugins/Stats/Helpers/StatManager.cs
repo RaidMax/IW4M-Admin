@@ -385,7 +385,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (pl.CurrentServer == null)
             {
-                _log.LogWarning("Disconnecting client {@client} is not on a server", pl);
+                _log.LogWarning("Disconnecting client {client} is not on a server", pl.ToString());
                 return;
             }
 
@@ -406,7 +406,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             else
             {
-                _log.LogWarning("Disconnecting client {@client} has not been added to stats", pl);
+                _log.LogWarning("Disconnecting client {client} has not been added to stats", pl.ToString());
             }
         }
 

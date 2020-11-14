@@ -183,7 +183,7 @@ namespace IW4MAdmin.Application.Misc
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Encountered unexpected error while running {methodName} for script plugin {plugin} with event type {eventType}",
+                    "Encountered unexpected error while running {methodName} for script plugin {plugin}",
                     nameof(OnLoadAsync), _fileName);
                 
                 throw new PluginException("An unexpected error occured while initializing script plugin");

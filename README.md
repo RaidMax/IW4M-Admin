@@ -3,7 +3,7 @@
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J821KUJ)
 
 ## About
-**IW4MAdmin** is an administration tool for [IW4x](https://iw4x.org/), [Pluto T6](https://forum.plutonium.pw/category/6/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/14/plutonium-iw5), [CoD4x](https://cod4x.me/),  [TeknoMW3](https://github.com/Musta1337/TeknoMW3), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
+**IW4MAdmin** is an administration tool for [IW4x](https://iw4x.org/), [IW6x](https://xlabs.dev), [Pluto T6](https://forum.plutonium.pw/category/6/plutonium-t6), [Pluto IW5](https://forum.plutonium.pw/category/14/plutonium-iw5), [CoD4x](https://cod4x.me/), [TeknoMW3](https://github.com/Musta1337/TeknoMW3), and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, **IW4MAdmin** monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.
 ### Download
 Latest binary builds are always available at:
 - [GitHub](https://github.com/RaidMax/IW4M-Admin/releases)

@@ -21,6 +21,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using IW4MAdmin.Application.Migration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
@@ -404,6 +405,7 @@ namespace IW4MAdmin.Application
                 GetApplicationSettings().Configuration()?.DatabaseProvider))
             {
                 await new ContextSeed(db).Seed();
+                DatabaseHousekeeping.RemoveOldRatings(db);
             }
             #endregion
 

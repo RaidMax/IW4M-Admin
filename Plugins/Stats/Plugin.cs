@@ -58,9 +58,6 @@ namespace IW4MAdmin.Plugins.Stats
                     break;
                 case GameEvent.EventType.Stop:
                     break;
-                case GameEvent.EventType.PreConnect:
-                    await Manager.AddPlayer(E.Origin);
-                    break;
                 case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
                     break;
@@ -104,6 +101,8 @@ namespace IW4MAdmin.Plugins.Stats
                         {
                             E.Origin = E.Target;
                         }
+                        await Manager.AddPlayer(E.Origin);
+                        await Manager.AddPlayer(E.Target);
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
                     }
@@ -122,6 +121,8 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+                        await Manager.AddPlayer(E.Origin);
+                        await Manager.AddPlayer(E.Target);
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     }
                     break;
@@ -147,6 +148,8 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+                        await Manager.AddPlayer(E.Origin);
+                        await Manager.AddPlayer(E.Target);
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
                     }

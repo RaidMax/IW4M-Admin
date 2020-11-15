@@ -277,6 +277,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns>EFClientStatistic of specified player</returns>
         public async Task<EFClientStatistics> AddPlayer(EFClient pl)
         {
+            var existingStats = pl.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
+            
+            if (existingStats != null)
+            {
+                return existingStats;
+            }
+            
             try
             {
                 long serverId = GetIdForServer(pl.CurrentServer);
@@ -368,7 +375,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (Exception ex)
             {
-                _log.LogError(ex, "Could not add client to stats {@client}", pl);
+                _log.LogError(ex, "Could not add client to stats {@client}", pl.ToString());
             }
 
             return null;

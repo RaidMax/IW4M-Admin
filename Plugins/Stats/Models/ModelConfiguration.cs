@@ -22,7 +22,10 @@ namespace Stats.Models
 
             builder.Entity<EFRating>()
                 .HasIndex(p => new { p.Performance, p.Ranking, p.When });
-
+            
+            builder.Entity<EFRating>()
+                .HasIndex(p => new { p.When, p.ServerId, p.Performance, p.ActivityAmount });
+            
             builder.Entity<EFClientMessage>()
                 .HasIndex(p => p.TimeSent);
 

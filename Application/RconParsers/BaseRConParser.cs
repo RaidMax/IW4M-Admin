@@ -138,7 +138,7 @@ namespace IW4MAdmin.Application.RconParsers
         public virtual async Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
-            _logger.LogDebug("Status Response {@response}", (object)response);
+            _logger.LogDebug("Status Response {response}", string.Join(Environment.NewLine, response));
             return (ClientsFromStatus(response), MapFromStatus(response), GameTypeFromStatus(response));
         }
 
@@ -205,6 +205,12 @@ namespace IW4MAdmin.Application.RconParsers
 
                 if (match.Success)
                 {
+                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "ZMBI")
+                    {
+                        _logger.LogDebug("Ignoring detected client {client} because they are zombie state", string.Join(",", match.Values));
+                        continue;
+                    }
+                    
                     int clientNumber = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]]);
                     int score = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]]);
 

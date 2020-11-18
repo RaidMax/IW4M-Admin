@@ -40,6 +40,7 @@
     <Content Remove="Views\Plugins\Stats\_MessageContext.cshtml" />
     <Content Remove="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
     <Content Remove="Views\Plugins\_ViewImports.cshtml" />
+    <Content Remove="Views\Plugins\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,6 +52,7 @@
     <None Include="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
     <None Include="Views\Plugins\_ViewImports.cshtml" />
     <None Include="wwwroot\css\src\global.css" />
+    <None Remove="Views\Plugins\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -91,6 +93,14 @@
     <Content Update="libman.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Views\Plugins\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Views\Plugins\**" />
   </ItemGroup>
 
   <ProjectExtensions>

@@ -1171,7 +1171,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             stats.EloRating = 200;
         }
 
-        public async Task AddMessageAsync(int clientId, long serverId, string message)
+        public async Task AddMessageAsync(int clientId, long serverId, bool sentIngame, string message)
         {
             // the web users can have no account
             if (clientId < 1)
@@ -1179,18 +1179,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            ctx.Set<EFClientMessage>().Add(new EFClientMessage()
             {
-                ctx.Set<EFClientMessage>().Add(new EFClientMessage()
-                {
-                    ClientId = clientId,
-                    Message = message,
-                    ServerId = serverId,
-                    TimeSent = DateTime.UtcNow
-                });
+                ClientId = clientId,
+                Message = message,
+                ServerId = serverId,
+                TimeSent = DateTime.UtcNow,
+                SentIngame = sentIngame
+            });
 
-                await ctx.SaveChangesAsync();
-            }
+            await ctx.SaveChangesAsync();
         }
 
         public async Task Sync(Server sv)

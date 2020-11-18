@@ -17,5 +17,6 @@ namespace IW4MAdmin.Plugins.Stats.Models
         public virtual EFClient Client { get; set; }
         public string Message { get; set; }
         public DateTime TimeSent { get; set; }
+        public bool SentIngame { get; set; }
     }
 }

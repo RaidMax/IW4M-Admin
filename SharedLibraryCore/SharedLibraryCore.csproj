@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
-    <Version>2.4.10</Version>
+    <Version>2020.11.18.1</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Configurations>Debug;Release;Prerelease</Configurations>
@@ -19,9 +19,7 @@
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Shared Library for IW4MAdmin</Description>
-    <AssemblyVersion>2020.11.11.1</AssemblyVersion>
-    <FileVersion>2020.11.11.1</FileVersion>
-    <PackageVersion>2020.11.11.1</PackageVersion>
+    <PackageVersion>2020.11.18.1</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">

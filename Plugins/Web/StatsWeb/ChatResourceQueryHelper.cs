@@ -81,7 +81,8 @@ namespace StatsWeb
                     When = _message.TimeSent,
                     Message = _message.Message,
                     ServerName = query.IsProfileMeta ? "" : _message.Server.HostName,
-                    GameName = _message.Server.GameName == null ? Server.Game.IW4 : _message.Server.GameName.Value
+                    GameName = _message.Server.GameName == null ? Server.Game.IW4 : _message.Server.GameName.Value,
+                    SentIngame = _message.SentIngame
                 });
 
             if (query.Direction == SharedLibraryCore.Dtos.SortDirection.Descending)

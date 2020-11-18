@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Commands;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -56,8 +57,6 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Start:
                     Manager.AddServer(S);
                     break;
-                case GameEvent.EventType.Stop:
-                    break;
                 case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
                     break;
@@ -65,7 +64,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!string.IsNullOrEmpty(E.Data) &&
                         E.Origin.ClientId > 1)
                     {
-                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), E.Data);
+                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), true, E.Data);
                     }
                     break;
                 case GameEvent.EventType.MapChange:
@@ -76,21 +75,13 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.MapEnd:
                     await Manager.Sync(S);
                     break;
-                case GameEvent.EventType.JoinTeam:
-                    break;
-                case GameEvent.EventType.Broadcast:
-                    break;
-                case GameEvent.EventType.Tell:
-                    break;
-                case GameEvent.EventType.Kick:
-                    break;
-                case GameEvent.EventType.Ban:
-                    break;
-                case GameEvent.EventType.Unknown:
-                    break;
-                case GameEvent.EventType.Report:
-                    break;
-                case GameEvent.EventType.Flag:
+                case GameEvent.EventType.Command:
+                    var shouldPersist = !string.IsNullOrEmpty(E.Data) &&
+                                        E.Extra is SayCommand;
+                    if (shouldPersist)
+                    {
+                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), false, E.Data);
+                    }
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];

@@ -30,6 +30,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private static List<EFServer> serverModels;
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
+        private readonly SemaphoreSlim _addPlayerWaiter = new SemaphoreSlim(1, 1); 
 
         public StatManager(ILogger<StatManager> logger, IManager mgr, IDatabaseContextFactory contextFactory, IConfigurationHandler<StatsConfiguration> configHandler)
         {
@@ -39,6 +40,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             _configHandler = configHandler;
         }
 
+        ~StatManager()
+        {
+            _addPlayerWaiter.Dispose();
+        }
+        
         private void SetupServerIds()
         {
             using (var ctx = _contextFactory.CreateContext(enableTracking: false))
@@ -283,9 +289,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 return existingStats;
             }
-            
+
             try
             {
+                await _addPlayerWaiter.WaitAsync();
                 long serverId = GetIdForServer(pl.CurrentServer);
 
                 if (!_servers.ContainsKey(serverId))
@@ -318,12 +325,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             Skill = 0.0,
                             SPM = 0.0,
                             EloRating = 200.0,
-                            HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>().Select(hl => new EFHitLocationCount()
-                            {
-                                Active = true,
-                                HitCount = 0,
-                                Location = hl
-                            }).ToList()
+                            HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
+                                .Select(hl => new EFHitLocationCount()
+                                {
+                                    Active = true,
+                                    HitCount = 0,
+                                    Location = hl
+                                }).ToList()
                         };
 
                         // insert if they've not been added
@@ -336,7 +344,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     // migration for previous existing stats
                     if (clientStats.HitLocations.Count == 0)
                     {
-                        clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
+                        clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation))
+                            .OfType<IW4Info.HitLocation>()
                             .Select(hl => new EFHitLocationCount()
                             {
                                 Active = true,
@@ -376,6 +385,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             catch (Exception ex)
             {
                 _log.LogError(ex, "Could not add client to stats {@client}", pl.ToString());
+            }
+
+            finally
+            {
+                if (_addPlayerWaiter.CurrentCount == 0)
+                {
+                    _addPlayerWaiter.Release(1);
+                }
             }
 
             return null;

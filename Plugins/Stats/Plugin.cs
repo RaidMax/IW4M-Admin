@@ -92,8 +92,8 @@ namespace IW4MAdmin.Plugins.Stats
                         {
                             E.Origin = E.Target;
                         }
-                        await Manager.AddPlayer(E.Origin);
-                        await Manager.AddPlayer(E.Target);
+
+                        await EnsureClientsAdded(E.Origin, E.Target);
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
                     }
@@ -112,8 +112,7 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
-                        await Manager.AddPlayer(E.Origin);
-                        await Manager.AddPlayer(E.Target);
+                        await EnsureClientsAdded(E.Origin, E.Target);
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     }
                     break;
@@ -139,8 +138,7 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
-                        await Manager.AddPlayer(E.Origin);
-                        await Manager.AddPlayer(E.Target);
+                        await EnsureClientsAdded(E.Origin, E.Target);
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
                     }
@@ -475,5 +473,21 @@ namespace IW4MAdmin.Plugins.Stats
         /// <param name="s"></param>
         /// <returns></returns>
         private bool ShouldOverrideAnticheatSetting(Server s) => Config.Configuration().AnticheatConfiguration.Enable && s.GameName == Server.Game.IW5;
+
+        /// <summary>
+        /// Makes sure both clients are added
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private async Task EnsureClientsAdded(EFClient origin, EFClient target)
+        {
+            await Manager.AddPlayer(origin);
+
+            if (!origin.Equals(target))
+            {
+                await Manager.AddPlayer(target);
+            }
+        }
     }
 }

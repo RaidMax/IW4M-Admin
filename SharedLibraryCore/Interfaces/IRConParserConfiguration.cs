@@ -62,5 +62,9 @@ namespace SharedLibraryCore.Interfaces
         /// specifies the default dvar values for games that don't support certain dvars
         /// </summary>
         IDictionary<string, string> DefaultDvarValues { get; set; }
+
+        int NoticeMaximumLines { get; set; }
+
+        int NoticeMaxCharactersPerLine { get; set; }
     }
 }

@@ -47,6 +47,8 @@ namespace SharedLibraryCore.Configuration
         public string SocialLinkAddress { get; set; }
         [LocalizedDisplayName("SETUP_SOCIAL_TITLE")]
         public string SocialLinkTitle { get; set; }
+        [LocalizedDisplayName("SETUP_CONTACT_URI")]
+        public string ContactUri { get; set; }
 
         [LocalizedDisplayName("SETUP_USE_CUSTOMENCODING")]
         [ConfigurationLinked("CustomParserEncoding")]

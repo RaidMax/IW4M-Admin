@@ -350,6 +350,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
                 .AddSingleton<IManager, ApplicationManager>()
                 .AddSingleton<SharedLibraryCore.Interfaces.ILogger, Logger>()
+                .AddSingleton<IClientNoticeMessageFormatter, ClientNoticeMessageFormatter>()
                 .AddSingleton(translationLookup);
 
             if (args.Contains("serialevents"))

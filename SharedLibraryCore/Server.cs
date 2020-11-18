@@ -14,7 +14,7 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore
 {
-    public abstract class Server
+    public abstract class Server : IGameServer
     {
         public enum Game
         {
@@ -205,9 +205,10 @@ namespace SharedLibraryCore
         /// <summary>
         /// Kick a player from the server
         /// </summary>
-        /// <param name="Reason">Reason for kicking</param>
+        /// <param name="reason">Reason for kicking</param>
         /// <param name="Target">EFClient to kick</param>
-        abstract public Task Kick(String Reason, EFClient Target, EFClient Origin);
+        public Task Kick(String reason, EFClient Target, EFClient Origin) => Kick(reason, Target, Origin, null);
+        public abstract Task Kick(string reason, EFClient target, EFClient origin, EFPenalty originalPenalty);
 
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server

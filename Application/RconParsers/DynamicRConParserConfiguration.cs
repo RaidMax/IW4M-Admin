@@ -22,6 +22,8 @@ namespace IW4MAdmin.Application.RconParsers
         public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
         public IDictionary<string, string> OverrideDvarNameMapping { get; set; } = new Dictionary<string, string>();
         public IDictionary<string, string> DefaultDvarValues { get; set; } = new Dictionary<string, string>();
+        public int NoticeMaximumLines { get; set; } = 8;
+        public int NoticeMaxCharactersPerLine { get; set; } = 50;
 
         public DynamicRConParserConfiguration(IParserRegexFactory parserRegexFactory)
         {

@@ -320,7 +320,15 @@ namespace SharedLibraryCore.Database.Models
         /// </summary>
         /// <param name="kickReason">reason to kick for</param>
         /// <param name="sender">client performing the kick</param>
-        public GameEvent Kick(string kickReason, EFClient sender)
+        public GameEvent Kick(string kickReason, EFClient sender) => Kick(kickReason, sender, null);
+
+        /// <summary>
+        /// kick a client for the given reason
+        /// </summary>
+        /// <param name="kickReason">reason to kick for</param>
+        /// <param name="sender">client performing the kick</param>
+        /// <param name="originalPenalty">original client penalty</param>
+        public GameEvent Kick(string kickReason, EFClient sender, EFPenalty originalPenalty)
         {
             var e = new GameEvent()
             {
@@ -329,6 +337,7 @@ namespace SharedLibraryCore.Database.Models
                 Target = this,
                 Origin = sender,
                 Data = kickReason,
+                Extra = originalPenalty,
                 Owner = sender.CurrentServer
             };
 
@@ -597,7 +606,6 @@ namespace SharedLibraryCore.Database.Models
             {
                 var loc = Utilities.CurrentLocalization.LocalizationIndex;
                 var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
-
                 bool isAbleToConnectSimple = IsAbleToConnectSimple();
 
                 if (!isAbleToConnectSimple)
@@ -617,23 +625,18 @@ namespace SharedLibraryCore.Database.Models
                 // we want to kick them if any account is banned
                 if (banPenalty != null)
                 {
-                    if (Level == Permission.Banned)
-                    {
-                        Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
-                        Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
-                        return false;
-                    }
-
-                    else
+                    if (Level != Permission.Banned)
                     {
                         Utilities.DefaultLogger.LogInformation(
                             "Client {client} is banned, but using a new GUID, we we're updating their level and kicking them",
                             ToString());
                         await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
                             CurrentServer.Manager.CancellationToken);
-                        Kick(loc["SERVER_BAN_PREV"].FormatExt(banPenalty?.Offense), autoKickClient);
-                        return false;
                     }
+
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
+                    Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
+                    return false;
                 }
 
                 // we want to kick them if any account is tempbanned
@@ -641,9 +644,7 @@ namespace SharedLibraryCore.Database.Models
                 {
                     Utilities.DefaultLogger.LogInformation("Kicking {client} because their GUID is temporarily banned",
                         ToString());
-                    Kick(
-                        $"{loc["SERVER_TB_REMAIN"]} ({(tempbanPenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture()} {loc["WEBFRONT_PENALTY_TEMPLATE_REMAINING"]})",
-                        autoKickClient);
+                    Kick(loc["WEBFRONT_PENALTY_LIST_TEMPBANNED_REASON"], autoKickClient, tempbanPenalty);
                     return false;
                 }
 

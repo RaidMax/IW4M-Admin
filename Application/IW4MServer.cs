@@ -32,13 +32,15 @@ namespace IW4MAdmin
         private int lastGameTime = 0;
 
         public int Id { get; private set; }
-        private readonly IServiceProvider _serviceProvider; 
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IClientNoticeMessageFormatter _messageFormatter;
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
             ITranslationLookup lookup,
             IMetaService metaService, 
-            IServiceProvider serviceProvider) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
+            IServiceProvider serviceProvider,
+            IClientNoticeMessageFormatter messageFormatter) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
             serviceProvider.GetRequiredService<SharedLibraryCore.Interfaces.ILogger>(), 
             serverConfiguration,
             serviceProvider.GetRequiredService<IManager>(), 
@@ -48,6 +50,7 @@ namespace IW4MAdmin
             _translationLookup = lookup;
             _metaService = metaService;
             _serviceProvider = serviceProvider;
+            _messageFormatter = messageFormatter;
         }
 
         public override async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -454,7 +457,6 @@ namespace IW4MAdmin
                 else if (E.Type == GameEvent.EventType.TempBan)
                 {
                     await TempBan(E.Data, (TimeSpan) E.Extra, E.Target, E.ImpersonationOrigin ?? E.Origin);
-                    ;
                 }
 
                 else if (E.Type == GameEvent.EventType.Ban)
@@ -470,7 +472,7 @@ namespace IW4MAdmin
 
                 else if (E.Type == GameEvent.EventType.Kick)
                 {
-                    await Kick(E.Data, E.Target, E.ImpersonationOrigin ?? E.Origin);
+                    await Kick(E.Data, E.Target, E.ImpersonationOrigin ?? E.Origin, E.Extra as EFPenalty);
                 }
 
                 else if (E.Type == GameEvent.EventType.Warn)
@@ -1015,6 +1017,12 @@ namespace IW4MAdmin
             {
                 Website = loc["SERVER_WEBSITE_GENERIC"];
             }
+            
+            // todo: remove this once _website is weaned off
+            if (string.IsNullOrEmpty(Manager.GetApplicationSettings().Configuration().ContactUri))
+            {
+                Manager.GetApplicationSettings().Configuration().ContactUri = Website;
+            }
 
             InitializeMaps();
 
@@ -1190,7 +1198,7 @@ namespace IW4MAdmin
             }
         }
 
-        public override async Task Kick(string Reason, EFClient targetClient, EFClient originClient)
+        public override async Task Kick(string reason, EFClient targetClient, EFClient originClient, EFPenalty previousPenalty)
         {
             targetClient = targetClient.ClientNumber < 0 ?
                 Manager.GetActiveClients()
@@ -1202,7 +1210,7 @@ namespace IW4MAdmin
                 Type = EFPenalty.PenaltyType.Kick,
                 Expires = DateTime.UtcNow,
                 Offender = targetClient,
-                Offense = Reason,
+                Offense = reason,
                 Punisher = originClient,
                 Link = targetClient.AliasLink
             };
@@ -1221,8 +1229,11 @@ namespace IW4MAdmin
 
                 Manager.AddEvent(e);
 
-                // todo: move to translation sheet
-                string formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_KICK_TEXT"]} - ^5{Reason}^7");
+                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
+                    targetClient.ClientNumber, 
+                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, 
+                        newPenalty, 
+                        previousPenalty));
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
         }
@@ -1250,14 +1261,15 @@ namespace IW4MAdmin
 
             if (targetClient.IsIngame)
             {
-                // todo: move to translation sheet
-                string formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"^7{loc["SERVER_TB_TEXT"]}- ^5{Reason}");
+                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
+                    targetClient.ClientNumber,
+                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
                 ServerLogger.LogDebug("Executing tempban kick command for {targetClient}", targetClient.ToString());
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
         }
 
-        override public async Task Ban(string reason, EFClient targetClient, EFClient originClient, bool isEvade = false)
+        public override async Task Ban(string reason, EFClient targetClient, EFClient originClient, bool isEvade = false)
         {
             // ensure player gets kicked if command not performed on them in the same server
             targetClient = targetClient.ClientNumber < 0 ?
@@ -1283,8 +1295,9 @@ namespace IW4MAdmin
             if (targetClient.IsIngame)
             {
                 ServerLogger.LogDebug("Attempting to kicking newly banned client {targetClient}", targetClient.ToString());
-                // todo: move to translation sheet
-                string formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, targetClient.ClientNumber, $"{loc["SERVER_BAN_TEXT"]} - ^5{reason} ^7{loc["SERVER_BAN_APPEAL"].FormatExt(Website)}^7");
+                var formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
+                    targetClient.ClientNumber, 
+                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
             }
         }

@@ -41,6 +41,10 @@ namespace ApplicationTests
                 .AddSingleton<SetLevelCommand>()
                 .AddSingleton<RunAsCommand>()
                 .AddSingleton<PrivateMessageAdminsCommand>()
+                .AddSingleton<KickCommand>()
+                .AddSingleton<WarnCommand>()
+                .AddSingleton<TempBanCommand>()
+                .AddSingleton<BanCommand>()
                 .BuildServiceProvider()
                 .SetupTestHooks();
 
@@ -626,6 +630,172 @@ namespace ApplicationTests
 
             A.CallTo(() => rconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, A<string>.That.Contains(server.Maps[0].Name)))
                 .MustHaveHappened();
+        }
+        #endregion
+        
+        #region REASON_FROM_RULE
+        [Test]
+        public async Task Test_Warn_WithGlobalRule()
+        {
+            var expectedReason = "testglobalrule";
+            appConfig.GlobalRules = new[] {expectedReason};
+            var command = serviceProvider.GetRequiredService<WarnCommand>();
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "rule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.Warn));
+        }
+        
+        [Test]
+        public async Task Test_Warn_WithServerRule()
+        {          
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var expectedReason = "testserverrule";
+            appConfig.Servers = new [] { new ServerConfiguration()
+            {
+                IPAddress = server.IP,
+                Port = server.Port,
+                Rules = new []{ expectedReason }
+            }};
+            var command = serviceProvider.GetRequiredService<WarnCommand>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "serverrule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.Warn));
+        }
+        
+        [Test]
+        public async Task Test_Kick_WithGlobalRule()
+        {
+            var expectedReason = "testglobalrule";
+            appConfig.GlobalRules = new[] {expectedReason};
+            var command = serviceProvider.GetRequiredService<KickCommand>();
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "rule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.Kick));
+        }
+        
+        [Test]
+        public async Task Test_Kick_WithServerRule()
+        {          
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var expectedReason = "testserverrule";
+            appConfig.Servers = new [] { new ServerConfiguration()
+            {
+                IPAddress = server.IP,
+                Port = server.Port,
+                Rules = new []{ expectedReason }
+            }};
+            var command = serviceProvider.GetRequiredService<KickCommand>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "serverrule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.Kick));
+        }
+        
+        [Test]
+        public async Task Test_TempBan_WithGlobalRule()
+        {
+            var expectedReason = "testglobalrule";
+            appConfig.GlobalRules = new[] {expectedReason};
+            var command = serviceProvider.GetRequiredService<TempBanCommand>();
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "1h rule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.TempBan));
+        }
+        
+        [Test]
+        public async Task Test_TempBan_WithServerRule()
+        {          
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var expectedReason = "testserverrule";
+            appConfig.Servers = new [] { new ServerConfiguration()
+            {
+                IPAddress = server.IP,
+                Port = server.Port,
+                Rules = new []{ expectedReason }
+            }};
+            var command = serviceProvider.GetRequiredService<TempBanCommand>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "1h serverrule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.TempBan));
+        }
+        
+        [Test]
+        public async Task Test_Ban_WithGlobalRule()
+        {
+            var expectedReason = "testglobalrule";
+            appConfig.GlobalRules = new[] {expectedReason};
+            var command = serviceProvider.GetRequiredService<BanCommand>();
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "rule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.Ban));
+        }
+        
+        [Test]
+        public async Task Test_Ban_WithServerRule()
+        {          
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var expectedReason = "testserverrule";
+            appConfig.Servers = new [] { new ServerConfiguration()
+            {
+                IPAddress = server.IP,
+                Port = server.Port,
+                Rules = new []{ expectedReason }
+            }};
+            var command = serviceProvider.GetRequiredService<BanCommand>();
+            var gameEvent = EventGenerators.GenerateEvent(GameEvent.EventType.Command, "serverrule1", server);
+            gameEvent.Origin.CurrentServer = server;
+            gameEvent.Target = gameEvent.Origin;
+
+            await command.ExecuteAsync(gameEvent);
+            
+            Assert.NotNull(mockEventHandler.Events
+                .FirstOrDefault(e => e.Data == expectedReason && 
+                                     e.Type == GameEvent.EventType.Ban));
         }
         #endregion
     }

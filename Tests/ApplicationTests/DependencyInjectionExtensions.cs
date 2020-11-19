@@ -48,6 +48,7 @@ namespace ApplicationTests
                 .AddSingleton<DataFileLoader>()
                 .AddSingleton(A.Fake<IGameLogReaderFactory>())
                 .AddSingleton(A.Fake<IMetaService>())
+                .AddSingleton(A.Fake<IClientNoticeMessageFormatter>())
                 .AddSingleton(eventHandler)
                 .AddSingleton(ConfigurationGenerators.CreateApplicationConfiguration())
                 .AddSingleton(ConfigurationGenerators.CreateCommandConfiguration())

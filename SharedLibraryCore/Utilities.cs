@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Configuration;
 using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.Database.Models.EFPenalty;
 using static SharedLibraryCore.Server;
@@ -996,6 +997,32 @@ namespace SharedLibraryCore
         public static string ToTranslatedName(this MetaType metaType)
         {
             return CurrentLocalization.LocalizationIndex[$"META_TYPE_{metaType.ToString().ToUpper()}_NAME"];
+        }
+
+        public static string FindRuleForReason(this string reason, ApplicationConfiguration appConfig, Server server)
+        {
+            var regex = Regex.Match(reason, @"(rule|serverrule)(\d+)", RegexOptions.IgnoreCase);
+            if (!regex.Success)
+            {
+                return reason;
+            }
+
+            var serverConfig = appConfig.Servers?
+                .FirstOrDefault(configServer =>
+                    configServer.IPAddress == server.IP && configServer.Port == server.Port);
+
+            var index = int.Parse(regex.Groups[2].ToString()) - 1;
+
+            return regex.Groups[1].ToString().ToLower() switch
+            {
+                "rule" => appConfig.GlobalRules?.Length > 0 && appConfig.GlobalRules.Length >= index 
+                    ? appConfig.GlobalRules[index] : 
+                    reason,
+                "serverrule" => serverConfig?.Rules?.Length > 0 && serverConfig.Rules?.Length >= index 
+                    ? serverConfig.Rules[index] : 
+                    reason,
+                _ => reason
+            };
         }
     }
 }

@@ -101,7 +101,8 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class WarnCommand : Command
     {
-        public WarnCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        public WarnCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "warn";
             Description = _translationLookup["COMMANDS_WARN_DESC"];
@@ -121,13 +122,15 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            if (E.Target.Warn(E.Data, E.Origin).Failed)
+            var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
+            if (gameEvent.Target.Warn(reason, gameEvent.Origin).Failed)
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_WARN_FAIL"].FormatExt(E.Target.Name));
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_WARN_FAIL"].FormatExt(gameEvent.Target.Name));
             }
 
             return Task.CompletedTask;
@@ -172,7 +175,9 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class KickCommand : Command
     {
-        public KickCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        
+        public KickCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "kick";
             Description = _translationLookup["COMMANDS_KICK_DESC"];
@@ -192,20 +197,22 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            switch ((await E.Target.Kick(E.Data, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+            var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
+            switch ((await gameEvent.Target.Kick(reason, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.None:
-                    E.Origin.Tell(_translationLookup["COMMANDS_KICK_SUCCESS"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_KICK_SUCCESS"].FormatExt(gameEvent.Target.Name));
                     break;
                 case GameEvent.EventFailReason.Exception:
-                    E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     break;
                 default:
-                    E.Origin.Tell(_translationLookup["COMMANDS_KICK_FAIL"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_KICK_FAIL"].FormatExt(gameEvent.Target.Name));
                     break;
             }
         }
@@ -282,7 +289,9 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class TempBanCommand : Command
     {
-        public TempBanCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        
+        public TempBanCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "tempban";
             Description = _translationLookup["COMMANDS_TEMPBAN_DESC"];
@@ -307,35 +316,36 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
         private static readonly string TempBanRegex = @"([0-9]+\w+)\ (.+)";
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var match = Regex.Match(E.Data, TempBanRegex);
+            var match = Regex.Match(gameEvent.Data, TempBanRegex);
             if (match.Success)
             {
-                string tempbanReason = match.Groups[2].ToString();
+                var tempbanReason = match.Groups[2].ToString().FindRuleForReason(_appConfig, gameEvent.Owner);
                 var length = match.Groups[1].ToString().ParseTimespan();
 
-                if (length > E.Owner.Manager.GetApplicationSettings().Configuration().MaximumTempBanTime)
+                if (length > gameEvent.Owner.Manager.GetApplicationSettings().Configuration().MaximumTempBanTime)
                 {
-                    E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL_TOOLONG"]);
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL_TOOLONG"]);
                 }
 
                 else
                 {
-                    switch ((await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+                    switch ((await gameEvent.Target.TempBan(tempbanReason, length, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
                     {
                         case GameEvent.EventFailReason.None:
-                            E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(E.Target, length.HumanizeForCurrentCulture()));
+                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(gameEvent.Target, length.HumanizeForCurrentCulture()));
                             break;
                         case GameEvent.EventFailReason.Exception:
-                            E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                            gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                             break;
                         default:
-                            E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL"].FormatExt(E.Target.Name));
+                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL"].FormatExt(gameEvent.Target.Name));
                             break;
                     }
                 }
@@ -348,7 +358,8 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class BanCommand : Command
     {
-        public BanCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        public BanCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "ban";
             Description = _translationLookup["COMMANDS_BAN_DESC"];
@@ -368,20 +379,22 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            switch ((await E.Target.Ban(E.Data, E.Origin, false).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+            var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
+            switch ((await gameEvent.Target.Ban(reason, gameEvent.Origin, false).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.None:
-                    E.Origin.Tell(_translationLookup["COMMANDS_BAN_SUCCESS"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_BAN_SUCCESS"].FormatExt(gameEvent.Target.Name));
                     break;
                 case GameEvent.EventFailReason.Exception:
-                    E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     break;
                 default:
-                    E.Origin.Tell(_translationLookup["COMMANDS_BAN_FAIL"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_BAN_FAIL"].FormatExt(gameEvent.Target.Name));
                     break;
             }
         }

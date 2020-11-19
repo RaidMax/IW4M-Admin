@@ -197,6 +197,7 @@ namespace IW4MAdmin
 
                 catch (Exception e)
                 {
+                    ServerLogger.LogError(e, "Unexpected exception occurred processing event");
                     if (E.Origin != null && E.Type == GameEvent.EventType.Command)
                     {
                         E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);

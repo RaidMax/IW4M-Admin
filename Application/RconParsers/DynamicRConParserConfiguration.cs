@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using System;
+using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
 using System.Collections.Generic;
 using System.Globalization;
@@ -24,6 +25,7 @@ namespace IW4MAdmin.Application.RconParsers
         public IDictionary<string, string> DefaultDvarValues { get; set; } = new Dictionary<string, string>();
         public int NoticeMaximumLines { get; set; } = 8;
         public int NoticeMaxCharactersPerLine { get; set; } = 50;
+        public string NoticeLineSeparator { get; set; } = Environment.NewLine;
 
         public DynamicRConParserConfiguration(IParserRegexFactory parserRegexFactory)
         {

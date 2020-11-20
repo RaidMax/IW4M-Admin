@@ -25,18 +25,29 @@ namespace IW4MAdmin.Application.Misc
 
         public string BuildFormattedMessage(IRConParserConfiguration config, EFPenalty currentPenalty, EFPenalty originalPenalty = null)
         {
+            var isNewLineSeparator = config.NoticeLineSeparator == Environment.NewLine;
             var penalty = originalPenalty ?? currentPenalty;
             var builder = new StringBuilder();
             // build the top level header
             var header = _transLookup[$"SERVER_{penalty.Type.ToString().ToUpper()}_TEXT"];
             builder.Append(header);
-            builder.Append(Environment.NewLine);
+            builder.Append(config.NoticeLineSeparator);
             // build the reason
             var reason = _transLookup["GAME_MESSAGE_PENALTY_REASON"].FormatExt(penalty.Offense);
-            foreach (var splitReason in SplitOverMaxLength(reason, config.NoticeMaxCharactersPerLine))
+
+            if (isNewLineSeparator)
             {
-                builder.Append(splitReason);
-                builder.Append(Environment.NewLine);
+                foreach (var splitReason in SplitOverMaxLength(reason, config.NoticeMaxCharactersPerLine))
+                {
+                    builder.Append(splitReason);
+                    builder.Append(config.NoticeLineSeparator);
+                }
+            }
+
+            else
+            {
+                builder.Append(reason);
+                builder.Append(config.NoticeLineSeparator);
             }
 
             if (penalty.Type == EFPenalty.PenaltyType.TempBan)
@@ -46,11 +57,19 @@ namespace IW4MAdmin.Application.Misc
                     ? (penalty.Expires - DateTime.UtcNow).Value.HumanizeForCurrentCulture()
                     : "--";
                 var timeRemaining = _transLookup["GAME_MESSAGE_PENALTY_TIME_REMAINING"].FormatExt(timeRemainingValue);
-                
-                foreach (var splitReason in SplitOverMaxLength(timeRemaining, config.NoticeMaxCharactersPerLine))
+
+                if (isNewLineSeparator)
                 {
-                    builder.Append(splitReason);
-                    builder.Append(Environment.NewLine);
+                    foreach (var splitReason in SplitOverMaxLength(timeRemaining, config.NoticeMaxCharactersPerLine))
+                    {
+                        builder.Append(splitReason);
+                        builder.Append(config.NoticeLineSeparator);
+                    }
+                }
+
+                else
+                {
+                    builder.Append(timeRemaining);
                 }
             }
 

@@ -63,6 +63,10 @@ namespace IW4MAdmin.Application.Localization
             {
                 var localizationContents = File.ReadAllText(filePath, Encoding.UTF8);
                 var eachLocalizationFile = Newtonsoft.Json.JsonConvert.DeserializeObject<SharedLibraryCore.Localization.Layout>(localizationContents);
+                if (eachLocalizationFile == null)
+                {
+                    continue;
+                }
 
                 foreach (var item in eachLocalizationFile.LocalizationIndex.Set)
                 {

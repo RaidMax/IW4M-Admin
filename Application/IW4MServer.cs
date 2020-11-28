@@ -334,7 +334,7 @@ namespace IW4MAdmin
                     // possible a connect/reconnect game event before we get to process it here 
                     // it appears that new games decide to switch client slots between maps (even if the clients aren't disconnecting)
                     // bots can have duplicate names which causes conflicting GUIDs
-                    else if (existingClient != null && existingClient.ClientNumber != E.Origin.ClientNumber &&
+                    if (existingClient != null && existingClient.ClientNumber != E.Origin.ClientNumber &&
                              !E.Origin.IsBot)
                     {
                         ServerLogger.LogWarning(

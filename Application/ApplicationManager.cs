@@ -53,7 +53,6 @@ namespace IW4MAdmin.Application
         private readonly ILogger _logger;
         private readonly List<MessageToken> MessageTokens;
         private readonly ClientService ClientSvc;
-        readonly AliasService AliasSvc;
         readonly PenaltyService PenaltySvc;
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         readonly IPageList PageList;
@@ -80,14 +79,13 @@ namespace IW4MAdmin.Application
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
             IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory, IMetaService metaService,
             IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
-            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig)
+            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
             MessageTokens = new List<MessageToken>();
             ClientSvc = clientService;
-            AliasSvc = new AliasService();
-            PenaltySvc = new PenaltyService();
+            PenaltySvc = penaltyService;
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
@@ -401,16 +399,16 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region DATABASE
-            using (var db = new DatabaseContext(GetApplicationSettings().Configuration()?.ConnectionString,
-                GetApplicationSettings().Configuration()?.DatabaseProvider))
-            {
-                await new ContextSeed(db).Seed();
-                DatabaseHousekeeping.RemoveOldRatings(db);
-            }
+            _logger.LogInformation("Beginning database migration sync");
+            Console.WriteLine(_translationLookup["MANAGER_MIGRATION_START"]);
+            await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
+            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
+            _logger.LogInformation("Finished database migration sync");
+            Console.WriteLine(_translationLookup["MANAGER_MIGRATION_END"]);
             #endregion
 
             #region COMMANDS
-            if (ClientSvc.GetOwners().Result.Count > 0)
+            if (await ClientSvc.HasOwnerAsync(_tokenSource.Token))
             {
                 _commands.RemoveAll(_cmd => _cmd.GetType() == typeof(OwnerCommand));
             }
@@ -563,11 +561,6 @@ namespace IW4MAdmin.Application
         public ClientService GetClientService()
         {
             return ClientSvc;
-        }
-
-        public AliasService GetAliasService()
-        {
-            return AliasSvc;
         }
 
         public PenaltyService GetPenaltyService()

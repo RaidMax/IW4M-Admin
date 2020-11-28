@@ -16,7 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     class TopStats : Command
     {
-        public static async Task<List<string>> GetTopStats(Server s, ITranslationLookup translationLookup)
+        public static async Task<List<string>> GetTopStats(Server s, ITranslationLookup translationLookup, IDatabaseContextFactory contextFactory)
         {
             long serverId = StatManager.GetIdForServer(s); 
             var topStatsText = new List<string>()
@@ -24,36 +24,34 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 $"^5--{translationLookup["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"
             };
 
-            using (var db = new DatabaseContext(true))
-            {
-                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
-                int minPlayTime = Plugin.Config.Configuration().TopPlayersMinPlayTime;
+            await using var context = contextFactory.CreateContext(false);
+            var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+            int minPlayTime = Plugin.Config.Configuration().TopPlayersMinPlayTime;
 
-                var iqStats = (from stats in db.Set<EFClientStatistics>()
-                               join client in db.Clients
-                               on stats.ClientId equals client.ClientId
-                               join alias in db.Aliases
-                               on client.CurrentAliasId equals alias.AliasId
-                               where stats.ServerId == serverId
-                               where stats.TimePlayed >= minPlayTime
-                               where client.Level != EFClient.Permission.Banned
-                               where client.LastConnection >= fifteenDaysAgo
-                               orderby (stats.EloRating + stats.Skill) / 2.0d descending
-                               select new
-                               {
-                                   stats.KDR,
-                                   stats.Performance,
-                                   alias.Name
-                               })
-                              .Take(5);
+            var iqStats = (from stats in context.Set<EFClientStatistics>()
+                           join client in context.Clients
+                           on stats.ClientId equals client.ClientId
+                           join alias in context.Aliases
+                           on client.CurrentAliasId equals alias.AliasId
+                           where stats.ServerId == serverId
+                           where stats.TimePlayed >= minPlayTime
+                           where client.Level != EFClient.Permission.Banned
+                           where client.LastConnection >= fifteenDaysAgo
+                           orderby (stats.EloRating + stats.Skill) / 2.0d descending
+                           select new
+                           {
+                               stats.KDR,
+                               stats.Performance,
+                               alias.Name
+                           })
+                          .Take(5);
 
-                var statsList = (await iqStats.ToListAsync())
-                    .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{translationLookup["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
+            var statsList = (await iqStats.ToListAsync())
+                .Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{translationLookup["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
 
-                topStatsText.AddRange(statsList);
-            }
+            topStatsText.AddRange(statsList);
 
-            // no one qualified
+                // no one qualified
             if (topStatsText.Count == 1)
             {
                 topStatsText = new List<string>()
@@ -66,8 +64,10 @@ namespace IW4MAdmin.Plugins.Stats.Commands
         }
 
         private readonly CommandConfiguration _config;
+        private readonly IDatabaseContextFactory _contextFactory;
 
-        public TopStats(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup) 
+        public TopStats(CommandConfiguration config, ITranslationLookup translationLookup, 
+            IDatabaseContextFactory contextFactory) : base(config, translationLookup) 
         {
             Name = "topstats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_TOP_DESC"];
@@ -76,11 +76,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             RequiresTarget = false;
 
             _config = config;
+            _contextFactory = contextFactory;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var topStats = await GetTopStats(E.Owner, _translationLookup);
+            var topStats = await GetTopStats(E.Owner, _translationLookup, _contextFactory);
             if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
                 foreach (var stat in topStats)

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using System;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -79,11 +80,11 @@ namespace WebfrontCore
                 });
 
 #if DEBUG
-            /*mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
+            mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
             services.Configure<RazorViewEngineOptions>(_options =>
             {
                 _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
-            });*/
+            });
 #endif
 
             foreach (var asm in pluginAssemblies())
@@ -92,10 +93,7 @@ namespace WebfrontCore
             }
 
             services.AddHttpContextAccessor();
-
-            services.AddEntityFrameworkSqlite()
-                .AddDbContext<DatabaseContext>();
-
+            
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
                 {
@@ -120,7 +118,7 @@ namespace WebfrontCore
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IManager manager)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
         {
             app.UseStatusCodePages(_context =>
             {
@@ -144,7 +142,7 @@ namespace WebfrontCore
 
             if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
             {
-                app.UseMiddleware<IPWhitelist>(Program.ApplicationServiceProvider.GetService<ILogger<IPWhitelist>>(), manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
+                app.UseMiddleware<IPWhitelist>(serviceProvider.GetService<ILogger<IPWhitelist>>(), serviceProvider.GetRequiredService<ApplicationConfiguration>().WebfrontConnectionWhitelist);
             }
 
             app.UseStaticFiles();

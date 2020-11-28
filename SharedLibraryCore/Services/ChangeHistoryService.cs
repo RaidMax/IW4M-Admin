@@ -10,21 +10,18 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore.Services
 {
-    public class ChangeHistoryService : IEntityService<EFChangeHistory>
+    public class ChangeHistoryService
     {
         private readonly ILogger _logger;
+        private readonly IDatabaseContextFactory _contextFactory;
         
-        public ChangeHistoryService(ILogger<ChangeHistoryService> logger)
+        public ChangeHistoryService(ILogger<ChangeHistoryService> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
-        }
-        
-        public Task<EFChangeHistory> Create(EFChangeHistory entity)
-        {
-            throw new NotImplementedException();
+            _contextFactory = contextFactory;
         }
 
-        public async Task<EFChangeHistory> Add(GameEvent e, DatabaseContext ctx = null)
+        public async Task Add(GameEvent e)
         {
             EFChangeHistory change = null;
 
@@ -74,58 +71,24 @@ namespace SharedLibraryCore.Services
                     break;
             }
 
-            if (change != null)
+            if (change == null)
             {
-                bool existingCtx = ctx != null;
-                ctx = ctx ?? new DatabaseContext(true);
-
-                ctx.EFChangeHistory.Add(change);
-
-                try
-                {
-                    await ctx.SaveChangesAsync();
-                }
-
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Could not persist change @{change}", change);
-                }
-
-                finally
-                {
-                    if (!existingCtx)
-                    {
-                        ctx.Dispose();
-                    }
-                }
+                return;
             }
 
-            return change;
-        }
+            await using var context = _contextFactory.CreateContext(false);
 
-        public Task<EFChangeHistory> Delete(EFChangeHistory entity)
-        {
-            throw new NotImplementedException();
-        }
+            context.EFChangeHistory.Add(change);
 
-        public Task<IList<EFChangeHistory>> Find(Func<EFChangeHistory, bool> expression)
-        {
-            throw new NotImplementedException();
-        }
+            try
+            {
+                await context.SaveChangesAsync();
+            }
 
-        public Task<EFChangeHistory> Get(int entityID)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<EFChangeHistory> GetUnique(long entityProperty)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<EFChangeHistory> Update(EFChangeHistory entity)
-        {
-            throw new NotImplementedException();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not persist change @{change}", change);
+            }
         }
     }
 }

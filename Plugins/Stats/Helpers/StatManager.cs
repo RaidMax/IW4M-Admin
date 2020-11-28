@@ -47,10 +47,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         
         private void SetupServerIds()
         {
-            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
-            {
-                serverModels = ctx.Set<EFServer>().ToList();
-            }
+            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            serverModels = ctx.Set<EFServer>().ToList();
         }
 
         public Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)

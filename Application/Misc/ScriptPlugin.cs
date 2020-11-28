@@ -118,7 +118,28 @@ namespace IW4MAdmin.Application.Misc
                     })
                     .CatchClrExceptions());
 
-                _scriptEngine.Execute(script);
+                try
+                {
+                    _scriptEngine.Execute(script);
+                }
+                catch (JavaScriptException ex)
+                {
+                
+                    _logger.LogError(ex,
+                        "Encountered JavaScript runtime error while executing {methodName} for script plugin {plugin} at {@locationInfo}",
+                        nameof(Initialize), _fileName, ex.Location);
+                    throw new PluginException($"A JavaScript parsing error occured while initializing script plugin");
+                }
+
+                catch (Exception e)
+                {
+
+                        _logger.LogError(e,
+                            "Encountered unexpected error while running {methodName} for script plugin {plugin}",
+                            nameof(Initialize), _fileName);
+                    throw new PluginException($"An unexpected error occured while initialization script plugin");
+                }
+
                 _scriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
                 _scriptEngine.SetValue("_serviceResolver", serviceResolver);
                 dynamic pluginObject = _scriptEngine.GetValue("plugin").ToObject();

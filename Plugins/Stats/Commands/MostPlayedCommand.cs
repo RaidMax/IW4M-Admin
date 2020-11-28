@@ -16,7 +16,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     class MostPlayedCommand : Command
     {
-        public static async Task<List<string>> GetMostPlayed(Server s, ITranslationLookup translationLookup)
+        public static async Task<List<string>> GetMostPlayed(Server s, ITranslationLookup translationLookup, IDatabaseContextFactory contextFactory)
         {
             long serverId = StatManager.GetIdForServer(s);
 
@@ -25,42 +25,39 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 $"^5--{translationLookup["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
             };
 
-            using (var db = new DatabaseContext(true))
-            {
-                db.ChangeTracker.AutoDetectChangesEnabled = false;
-                db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            await using var context = contextFactory.CreateContext(false);
+            var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
 
-                var thirtyDaysAgo = DateTime.UtcNow.AddMonths(-1);
+            var iqStats = (from stats in context.Set<EFClientStatistics>()
+                           join client in context.Clients
+                           on stats.ClientId equals client.ClientId
+                           join alias in context.Aliases
+                           on client.CurrentAliasId equals alias.AliasId
+                           where stats.ServerId == serverId
+                           where client.Level != EFClient.Permission.Banned
+                           where client.LastConnection >= thirtyDaysAgo
+                           orderby stats.TimePlayed descending
+                           select new
+                           {
+                               alias.Name,
+                               client.TotalConnectionTime,
+                               stats.Kills
+                           })
+                            .Take(5);
 
-                var iqStats = (from stats in db.Set<EFClientStatistics>()
-                               join client in db.Clients
-                               on stats.ClientId equals client.ClientId
-                               join alias in db.Aliases
-                               on client.CurrentAliasId equals alias.AliasId
-                               where stats.ServerId == serverId
-                               where client.Level != EFClient.Permission.Banned
-                               where client.LastConnection >= thirtyDaysAgo
-                               orderby stats.TimePlayed descending
-                               select new
-                               {
-                                   alias.Name,
-                                   client.TotalConnectionTime,
-                                   stats.Kills
-                               })
-                                .Take(5);
+            var iqList = await iqStats.ToListAsync();
 
-                var iqList = await iqStats.ToListAsync();
-
-                mostPlayed.AddRange(iqList.Select(stats => translationLookup["COMMANDS_MOST_PLAYED_FORMAT"].FormatExt(stats.Name, stats.Kills, (DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime)).HumanizeForCurrentCulture())));
-            }
+            mostPlayed.AddRange(iqList.Select(stats => translationLookup["COMMANDS_MOST_PLAYED_FORMAT"].FormatExt(stats.Name, stats.Kills, (DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-stats.TotalConnectionTime)).HumanizeForCurrentCulture())));
 
 
             return mostPlayed;
         }
 
         private readonly CommandConfiguration _config;
+        private readonly IDatabaseContextFactory _contextFactory;
 
-        public MostPlayedCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup) 
+        public MostPlayedCommand(CommandConfiguration config, ITranslationLookup translationLookup,
+            IDatabaseContextFactory contextFactory) : base(config, translationLookup) 
         {
             Name = "mostplayed";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_MOSTPLAYED_DESC"];
@@ -69,11 +66,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             RequiresTarget = false;
 
             _config = config;
+            _contextFactory = contextFactory;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var topStats = await GetMostPlayed(E.Owner, _translationLookup);
+            var topStats = await GetMostPlayed(E.Owner, _translationLookup, _contextFactory);
             if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
                 foreach (var stat in topStats)

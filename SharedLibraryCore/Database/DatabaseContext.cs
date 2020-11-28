@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Database
 {
-    public class DatabaseContext : DbContext
+    public abstract class DatabaseContext : DbContext
     {
         public DbSet<EFClient> Clients { get; set; }
         public DbSet<EFAlias> Aliases { get; set; }
@@ -23,88 +23,6 @@ namespace SharedLibraryCore.Database
         public DbSet<EFPenalty> Penalties { get; set; }
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
-
-        static string _ConnectionString;
-        static string _provider;
-        private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddConsole()
-            .AddDebug()
-            .AddFilter((category, level) => true);
-        });
-
-        public DatabaseContext(DbContextOptions<DatabaseContext> opt) : base(opt)
-        {
-        }
-
-        public DatabaseContext()
-        {
-        }
-
-        public override void Dispose()
-        {
-        }
-
-        public DatabaseContext(bool disableTracking) : this()
-        {
-            if (disableTracking)
-            {
-                this.ChangeTracker.AutoDetectChangesEnabled = false;
-                this.ChangeTracker.LazyLoadingEnabled = false;
-                this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-            }
-
-            else
-            {
-                this.ChangeTracker.AutoDetectChangesEnabled = true;
-                this.ChangeTracker.LazyLoadingEnabled = true;
-                this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
-            }
-        }
-
-        public DatabaseContext(string connStr, string provider) : this()
-        {
-            _ConnectionString = connStr;
-            _provider = provider;
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            //optionsBuilder.UseLoggerFactory(_loggerFactory)
-            //  .EnableSensitiveDataLogging();
-
-            if (string.IsNullOrEmpty(_ConnectionString))
-            {
-                string currentPath = Utilities.OperatingDirectory;
-                // allows the application to find the database file
-                currentPath = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
-                    $"{Path.DirectorySeparatorChar}{currentPath}" :
-                    currentPath;
-
-                var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = Path.Join(currentPath, "Database", "Database.db") };
-                var connectionString = connectionStringBuilder.ToString();
-                var connection = new SqliteConnection(connectionString);
-
-                if (!optionsBuilder.IsConfigured)
-                {
-                    optionsBuilder.UseSqlite(connection);
-                }
-            }
-
-            else
-            {
-                switch (_provider)
-                {
-                    default:
-                    case "mysql":
-                        optionsBuilder.UseMySql(_ConnectionString, _options => _options.EnableRetryOnFailure());
-                        break;
-                    case "postgresql":
-                        optionsBuilder.UseNpgsql(_ConnectionString, _options => _options.EnableRetryOnFailure());
-                        break;
-                }
-            }
-        }
 
         private void SetAuditColumns()
         {
@@ -127,6 +45,24 @@ namespace SharedLibraryCore.Database
                     //((SharedEntity)entityEntry.Entity).UpdatedDateTime = DateTime.UtcNow;
                 }
             }
+        }
+
+        public DatabaseContext()
+        {
+            if (!Utilities.IsMigration)
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
+        {
+            
+        }
+
+        protected DatabaseContext(DbContextOptions options) : base(options)
+        {
+            
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)

@@ -65,10 +65,12 @@ namespace IW4MAdmin.Plugins.Welcome
         public string Name => "Welcome Plugin";
 
         private readonly IConfigurationHandler<WelcomeConfiguration> _configHandler;
+        private readonly IDatabaseContextFactory _contextFactory;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory contextFactory)
         {
             _configHandler = configurationHandlerFactory.GetConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
+            _contextFactory = contextFactory;
         }
 
         public async Task OnLoadAsync(IManager manager)
@@ -98,9 +100,9 @@ namespace IW4MAdmin.Plugins.Welcome
                 {
                     string penaltyReason;
 
-                    using (var ctx = new DatabaseContext(disableTracking: true))
+                    await using var context = _contextFactory.CreateContext(false);
                     {
-                        penaltyReason = await ctx.Penalties
+                        penaltyReason = await context.Penalties
                             .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == EFPenalty.PenaltyType.Flag)
                             .OrderByDescending(p => p.When)
                             .Select(p => p.AutomatedOffense ?? p.Offense)

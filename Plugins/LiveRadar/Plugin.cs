@@ -2,6 +2,7 @@
 using SharedLibraryCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -68,7 +69,9 @@ namespace LiveRadar
 
                     lock (lockObject)
                     {
-                        generatedBotGuid = _botGuidLookups.ContainsKey(botKey) ? _botGuidLookups[botKey] : 0;
+                        generatedBotGuid = _botGuidLookups.ContainsKey(botKey) 
+                            ? _botGuidLookups[botKey] 
+                            : (E.Extra.ToString() ?? "0").ConvertGuidToLong(NumberStyles.HexNumber);
                     }
 
                     var radarUpdate = RadarEvent.Parse(E.Data, generatedBotGuid);

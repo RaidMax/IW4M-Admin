@@ -12,7 +12,7 @@
     <Description>Welcome plugin for IW4MAdmin welcomes clients to the server</Description>
     <Copyright>2018</Copyright>
     <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

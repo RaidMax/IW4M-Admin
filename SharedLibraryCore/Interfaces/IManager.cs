@@ -24,7 +24,6 @@ namespace SharedLibraryCore.Interfaces
         IList<EFClient> GetActiveClients();
         IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();
         ClientService GetClientService();
-        AliasService GetAliasService();
         PenaltyService GetPenaltyService();
         /// <summary>
         /// enumerates the registered plugin instances

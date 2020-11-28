@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using IW4MAdmin.Plugins.Stats.Models;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Migration
 {
     public static class DatabaseHousekeeping
     {
-        private static DateTime _cutoffDate = DateTime.UtcNow.AddMonths(-6);
+        private static readonly DateTime CutoffDate = DateTime.UtcNow.AddMonths(-6);
         
-        public static void RemoveOldRatings(DatabaseContext context)
+        public static async Task RemoveOldRatings(IDatabaseContextFactory contextFactory, CancellationToken token)
         {
+            await using var context = contextFactory.CreateContext();
             var dbSet = context.Set<EFRating>();
-            var itemsToDelete = dbSet.Where(rating => rating.When <= _cutoffDate);
+            var itemsToDelete = dbSet.Where(rating => rating.When <= CutoffDate);
             dbSet.RemoveRange(itemsToDelete);
-            context.SaveChanges();
+            await context.SaveChangesAsync(token);
         }
     }
 }

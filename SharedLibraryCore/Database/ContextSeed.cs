@@ -2,31 +2,30 @@
 using SharedLibraryCore.Database.Models;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using SharedLibraryCore.Interfaces;
 using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Database
 {
-    public class ContextSeed
+    public static class ContextSeed
     {
-        private DatabaseContext context;
-
-        public ContextSeed(DatabaseContext ctx)
+        public static async Task Seed(IDatabaseContextFactory contextFactory, CancellationToken token)
         {
-            context = ctx;
-        }
+            var context = contextFactory.CreateContext();
+            var strategy = context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await context.Database.MigrateAsync(token);
+            });
 
-        public async Task Seed()
-        {
-            context.Database.Migrate();
-
-            if (context.AliasLinks.Count() == 0)
+            if (!await context.AliasLinks.AnyAsync(token))
             {
                 var link = new EFAliasLink();
 
                 context.Clients.Add(new EFClient()
                 {
-                    ClientId = 1,
                     Active = false,
                     Connections = 0,
                     FirstConnection = DateTime.UtcNow,
@@ -44,7 +43,7 @@ namespace SharedLibraryCore.Database
                     },
                 });
 
-                await context.SaveChangesAsync();
+                await context.SaveChangesAsync(token);
             }
         }
     }

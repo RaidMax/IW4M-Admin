@@ -81,6 +81,7 @@ namespace IW4MAdmin.Application
             ITranslationLookup translationLookup = null;
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
+            IServiceCollection services = null;
             logger.LogInformation("Begin IW4MAdmin startup. Version is {version} {@args}", Version, args);
             
             try
@@ -89,7 +90,7 @@ namespace IW4MAdmin.Application
                 ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
                 logger.LogDebug("Configuring services...");
-                var services = ConfigureServices(args);
+                services = ConfigureServices(args);
                 serviceProvider = services.BuildServiceProvider();
                 var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
                 ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
@@ -137,7 +138,7 @@ namespace IW4MAdmin.Application
 
             try
             {
-                ApplicationTask = RunApplicationTasksAsync(logger);
+                ApplicationTask = RunApplicationTasksAsync(logger, services);
                 await ApplicationTask;
             }
 
@@ -160,10 +161,10 @@ namespace IW4MAdmin.Application
         /// runs the core application tasks
         /// </summary>
         /// <returns></returns>
-        private static async Task RunApplicationTasksAsync(ILogger logger)
+        private static async Task RunApplicationTasksAsync(ILogger logger, IServiceCollection services)
         {
             var webfrontTask = ServerManager.GetApplicationSettings().Configuration().EnableWebFront ?
-                WebfrontCore.Program.Init(ServerManager, serviceProvider, ServerManager.CancellationToken) :
+                WebfrontCore.Program.Init(ServerManager, serviceProvider, services, ServerManager.CancellationToken) :
                 Task.CompletedTask;
 
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
@@ -322,9 +323,13 @@ namespace IW4MAdmin.Application
                 .AddBaseLogger(appConfig)
                 .AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
                 .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
-                .AddSingleton(new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as IConfigurationHandler<CommandConfiguration>)
+                .AddSingleton(
+                    new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as
+                        IConfigurationHandler<CommandConfiguration>)
                 .AddSingleton(appConfig)
-                .AddSingleton(_serviceProvider => _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>().Configuration() ?? new CommandConfiguration())
+                .AddSingleton(_serviceProvider =>
+                    _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
+                        .Configuration() ?? new CommandConfiguration())
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
                 .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
@@ -338,12 +343,16 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IEntityService<EFClient>, ClientService>()
                 .AddSingleton<IMetaService, MetaService>()
                 .AddSingleton<ClientService>()
+                .AddSingleton<PenaltyService>()
                 .AddSingleton<ChangeHistoryService>()
                 .AddSingleton<IMetaRegistration, MetaRegistration>()
                 .AddSingleton<IScriptPluginServiceResolver, ScriptPluginServiceResolver>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>, ReceivedPenaltyResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>, AdministeredPenaltyResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>, UpdatedAliasResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>,
+                    ReceivedPenaltyResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>,
+                    AdministeredPenaltyResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>,
+                    UpdatedAliasResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
@@ -351,7 +360,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IManager, ApplicationManager>()
                 .AddSingleton<SharedLibraryCore.Interfaces.ILogger, Logger>()
                 .AddSingleton<IClientNoticeMessageFormatter, ClientNoticeMessageFormatter>()
-                .AddSingleton(translationLookup);
+                .AddSingleton(translationLookup)
+                .AddDatabaseContext(appConfig);
 
             if (args.Contains("serialevents"))
             {

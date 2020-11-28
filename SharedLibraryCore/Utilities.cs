@@ -961,6 +961,8 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static bool IsDevelopment => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
+        public static bool IsMigration => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Migration";
+
 
         /// <summary>
         /// replaces any directory separator chars with the platform specific character

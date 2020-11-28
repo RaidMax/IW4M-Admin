@@ -1434,7 +1434,10 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class PruneAdminsCommand : Command
     {
-        public PruneAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly IDatabaseContextFactory _contextFactory;
+        
+        public PruneAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup, 
+            IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
             Name = "prune";
             Description = _translationLookup["COMMANDS_PRUNE_DESC"];
@@ -1476,16 +1479,15 @@ namespace SharedLibraryCore.Commands
             List<EFClient> inactiveUsers = null;
             // todo: make an event for this
             // update user roles
-            using (var context = new DatabaseContext())
-            {
-                var lastActive = DateTime.UtcNow.AddDays(-inactiveDays);
-                inactiveUsers = await context.Clients
-                    .Where(c => c.Level > Permission.Flagged && c.Level <= Permission.Moderator)
-                    .Where(c => c.LastConnection < lastActive)
-                    .ToListAsync();
-                inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
-                await context.SaveChangesAsync();
-            }
+            await using var context = _contextFactory.CreateContext();
+            var lastActive = DateTime.UtcNow.AddDays(-inactiveDays);
+            inactiveUsers = await context.Clients
+                .Where(c => c.Level > Permission.Flagged && c.Level <= Permission.Moderator)
+                .Where(c => c.LastConnection < lastActive)
+                .ToListAsync();
+            inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
+            await context.SaveChangesAsync();
+      
             E.Origin.Tell(_translationLookup["COMMANDS_PRUNE_SUCCESS"].FormatExt(inactiveUsers.Count));
         }
     }

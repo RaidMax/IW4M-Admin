@@ -24,14 +24,17 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         private readonly IManager _manager;
         private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatResourceQueryHelper;
         private readonly ITranslationLookup _translationLookup;
+        private readonly IDatabaseContextFactory _contextFactory;
 
-        public StatsController(ILogger<StatsController> logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, MessageResponse> resourceQueryHelper,
-            ITranslationLookup translationLookup) : base(manager)
+        public StatsController(ILogger<StatsController> logger, IManager manager, IResourceQueryHelper<ChatSearchQuery, 
+                MessageResponse> resourceQueryHelper, ITranslationLookup translationLookup, 
+            IDatabaseContextFactory contextFactory) : base(manager)
         {
             _logger = logger;
             _manager = manager;
             _chatResourceQueryHelper = resourceQueryHelper;
             _translationLookup = translationLookup;
+            _contextFactory = contextFactory;
         }
 
         [HttpGet]
@@ -155,49 +158,48 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         [Authorize]
         public async Task<IActionResult> GetAutomatedPenaltyInfoAsync(int penaltyId)
         {
-            using (var ctx = new SharedLibraryCore.Database.DatabaseContext(true))
+            await using var context = _contextFactory.CreateContext(false);
+            
+            var penalty = await context.Penalties
+                .Select(_penalty => new { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
+                .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
+
+            if (penalty == null)
             {
-                var penalty = await ctx.Penalties
-                    .Select(_penalty => new { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
-                    .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
+                return NotFound();
+            }
 
-                if (penalty == null)
+            // todo: this can be optimized
+            var iqSnapshotInfo = context.Set<Stats.Models.EFACSnapshot>()
+                .Where(s => s.ClientId == penalty.OffenderId)
+                .Include(s => s.LastStrainAngle)
+                .Include(s => s.HitOrigin)
+                .Include(s => s.HitDestination)
+                .Include(s => s.CurrentViewAngle)
+                .Include(s => s.PredictedViewAngles)
+                .ThenInclude(_angles => _angles.Vector)
+                .OrderBy(s => s.When)
+                .ThenBy(s => s.Hits);
+
+            var penaltyInfo = await iqSnapshotInfo.ToListAsync();
+
+            if (penaltyInfo.Count > 0)
+            {
+                return View("_PenaltyInfo", penaltyInfo);
+            }
+
+            // we want to show anything related to the automated offense 
+            else
+            {
+                return View("_MessageContext", new List<MessageResponse>
                 {
-                    return NotFound();
-                }
-
-                // todo: this can be optimized
-                var iqSnapshotInfo = ctx.Set<Stats.Models.EFACSnapshot>()
-                    .Where(s => s.ClientId == penalty.OffenderId)
-                    .Include(s => s.LastStrainAngle)
-                    .Include(s => s.HitOrigin)
-                    .Include(s => s.HitDestination)
-                    .Include(s => s.CurrentViewAngle)
-                    .Include(s => s.PredictedViewAngles)
-                    .ThenInclude(_angles => _angles.Vector)
-                    .OrderBy(s => s.When)
-                    .ThenBy(s => s.Hits);
-
-                var penaltyInfo = await iqSnapshotInfo.ToListAsync();
-
-                if (penaltyInfo.Count > 0)
-                {
-                    return View("_PenaltyInfo", penaltyInfo);
-                }
-
-                // we want to show anything related to the automated offense 
-                else
-                {
-                    return View("_MessageContext", new List<MessageResponse>
+                    new MessageResponse()
                     {
-                        new MessageResponse()
-                        {
-                            ClientId = penalty.OffenderId,
-                            Message = penalty.AutomatedOffense,
-                            When = penalty.When
-                        }
-                    });
-                }
+                        ClientId = penalty.OffenderId,
+                        Message = penalty.AutomatedOffense,
+                        When = penalty.When
+                    }
+                });
             }
         }
     }

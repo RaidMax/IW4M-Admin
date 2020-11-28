@@ -12,14 +12,17 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
-        public ResetStats(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly IDatabaseContextFactory _contextFactory;
+        
+        public ResetStats(CommandConfiguration config, ITranslationLookup translationLookup, 
+            IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
             Name = "resetstats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_RESET_DESC"];
             Alias = "rs";
             Permission = EFClient.Permission.User;
             RequiresTarget = false;
-            //AllowImpersonation = true;
+            AllowImpersonation = true;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -30,27 +33,24 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 long serverId = Helpers.StatManager.GetIdForServer(E.Owner);
 
                 EFClientStatistics clientStats;
-                using (var ctx = new DatabaseContext(disableTracking: true))
-                {
-                    clientStats = await ctx.Set<EFClientStatistics>()
-                        .Where(s => s.ClientId == E.Origin.ClientId)
-                        .Where(s => s.ServerId == serverId)
-                        .FirstAsync();
+                await using var context = _contextFactory.CreateContext();
+                clientStats = await context.Set<EFClientStatistics>()
+                    .Where(s => s.ClientId == E.Origin.ClientId)
+                    .Where(s => s.ServerId == serverId)
+                    .FirstAsync();
 
-                    clientStats.Deaths = 0;
-                    clientStats.Kills = 0;
-                    clientStats.SPM = 0.0;
-                    clientStats.Skill = 0.0;
-                    clientStats.TimePlayed = 0;
-                    // todo: make this more dynamic
-                    clientStats.EloRating = 200.0;
+                clientStats.Deaths = 0;
+                clientStats.Kills = 0;
+                clientStats.SPM = 0.0;
+                clientStats.Skill = 0.0;
+                clientStats.TimePlayed = 0;
+                // todo: make this more dynamic
+                clientStats.EloRating = 200.0;
 
-                    // reset the cached version
-                    Plugin.Manager.ResetStats(E.Origin);
+                // reset the cached version
+                Plugin.Manager.ResetStats(E.Origin);
 
-                    // fixme: this doesn't work properly when another context exists
-                    await ctx.SaveChangesAsync();
-                }
+                await context.SaveChangesAsync();
                 E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 

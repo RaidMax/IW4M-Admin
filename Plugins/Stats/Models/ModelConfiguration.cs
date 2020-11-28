@@ -25,10 +25,12 @@ namespace Stats.Models
             
             builder.Entity<EFRating>()
                 .HasIndex(p => new { p.When, p.ServerId, p.Performance, p.ActivityAmount });
-            
-            builder.Entity<EFClientMessage>()
-                .HasIndex(p => p.TimeSent);
 
+            builder.Entity<EFClientMessage>(message =>
+            {
+                message.HasIndex(p => p.TimeSent);
+            });
+ 
             // force pluralization
             builder.Entity<EFClientKill>().ToTable("EFClientKills");
             builder.Entity<EFClientMessage>().ToTable("EFClientMessages");

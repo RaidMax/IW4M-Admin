@@ -391,32 +391,28 @@ namespace IW4MAdmin.Plugins.Stats
 
             async Task<string> totalKills(Server server)
             {
-                using (var ctx = new DatabaseContext(disableTracking: true))
-                {
-                    long kills = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
-                    return kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
-                }
+                await using var context = _databaseContextFactory.CreateContext(false);
+                long kills = await context.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
+                return kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
             }
 
             async Task<string> totalPlayTime(Server server)
             {
-                using (var ctx = new DatabaseContext(disableTracking: true))
-                {
-                    long playTime = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
-                    return (playTime / 3600.0).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
-                }
+                await using var context = _databaseContextFactory.CreateContext(false);
+                long playTime = await context.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
+                return (playTime / 3600.0).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
             }
 
             async Task<string> topStats(Server s)
             {
                 // todo: this needs to needs to be updated when we DI the lookup
-                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s, Utilities.CurrentLocalization.LocalizationIndex));
+                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s, Utilities.CurrentLocalization.LocalizationIndex, _databaseContextFactory));
             }
 
             async Task<string> mostPlayed(Server s)
             {
                 // todo: this needs to needs to be updated when we DI the lookup
-                return string.Join(Environment.NewLine, await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex));
+                return string.Join(Environment.NewLine, await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex, _databaseContextFactory));
             }
 
             async Task<string> mostKills(Server gameServer)

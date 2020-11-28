@@ -74,14 +74,14 @@ namespace IW4MAdmin.Application.Extensions
                         StringComparison.InvariantCultureIgnoreCase);
                     services.AddDbContext<DatabaseContext, MySqlDatabaseContext>(options =>
                         options.UseMySql(
-                            appConfig.ConnectionString + (appendTimeout ? "default command timeout=0" : ""),
+                            appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : ""),
                             mysqlOptions => mysqlOptions.EnableRetryOnFailure()), ServiceLifetime.Transient);
                     break;
                 case "postgresql":
                     appendTimeout = !appConfig.ConnectionString.Contains("Command Timeout",
                         StringComparison.InvariantCultureIgnoreCase);
                     services.AddDbContext<DatabaseContext, PostgresqlDatabaseContext>(options =>
-                        options.UseNpgsql(appConfig.ConnectionString + (appendTimeout ? "Command Timeout=0" : ""),
+                        options.UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
                             postgresqlOptions => postgresqlOptions.EnableRetryOnFailure()), ServiceLifetime.Transient);
                     break;
             }

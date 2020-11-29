@@ -28,7 +28,7 @@ namespace IW4MAdmin.Application.Meta
 
         public async Task<ResourceQueryHelperResult<AdministeredPenaltyResponse>> QueryResource(ClientPaginationRequest query)
         {
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
 
             var iqPenalties = ctx.Penalties.AsNoTracking()
                 .Where(_penalty => query.ClientId == _penalty.PunisherId)

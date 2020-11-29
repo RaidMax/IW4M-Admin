@@ -41,7 +41,7 @@ namespace StatsWeb
             }
 
             var result = new ResourceQueryHelperResult<MessageResponse>();
-            using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
 
             if (serverCache == null)
             {

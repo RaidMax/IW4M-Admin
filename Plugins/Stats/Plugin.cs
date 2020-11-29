@@ -173,11 +173,9 @@ namespace IW4MAdmin.Plugins.Stats
             {
                 IList<EFClientStatistics> clientStats;
                 int messageCount = 0;
-                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
-                {
-                    clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
-                    messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);
-                }
+                await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
+                clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
+                messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);
 
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
@@ -252,13 +250,11 @@ namespace IW4MAdmin.Plugins.Stats
             {
                 IList<EFClientStatistics> clientStats;
 
-                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
-                {
-                    clientStats = await ctx.Set<EFClientStatistics>()
-                        .Include(c => c.HitLocations)
-                        .Where(c => c.ClientId == request.ClientId)
-                        .ToListAsync();
-                }
+                await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
+                clientStats = await ctx.Set<EFClientStatistics>()
+                    .Include(c => c.HitLocations)
+                    .Where(c => c.ClientId == request.ClientId)
+                    .ToListAsync();
 
                 double headRatio = 0;
                 double chestRatio = 0;

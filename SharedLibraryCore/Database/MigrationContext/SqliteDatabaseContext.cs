@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Database.MigrationContext
             }
         }
         
-        public SqliteDatabaseContext(DbContextOptions<SqliteDatabaseContext> options) : base(options)
+        public SqliteDatabaseContext(DbContextOptions options) : base(options)
         {
             
         }

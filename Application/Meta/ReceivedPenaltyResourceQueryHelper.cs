@@ -31,7 +31,7 @@ namespace IW4MAdmin.Application.Meta
         public async Task<ResourceQueryHelperResult<ReceivedPenaltyResponse>> QueryResource(ClientPaginationRequest query)
         {
             var linkedPenaltyType = Utilities.LinkedPenaltyTypes();
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
 
             var linkId = await ctx.Clients.AsNoTracking()
                     .Where(_client => _client.ClientId == query.ClientId)

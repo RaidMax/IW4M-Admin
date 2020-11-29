@@ -26,7 +26,7 @@ namespace Stats.Helpers
         public async Task<ResourceQueryHelperResult<StatsInfoResult>> QueryResource(StatsInfoRequest query)
         {
             var result = new ResourceQueryHelperResult<StatsInfoResult>();
-            using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
 
             // we need to get the ratings separately because there's not explicit FK
             var ratings = await context.Set<EFClientRatingHistory>()

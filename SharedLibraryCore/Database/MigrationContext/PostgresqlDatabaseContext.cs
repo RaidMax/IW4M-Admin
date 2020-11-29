@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Database.MigrationContext
             }
         }
         
-        public PostgresqlDatabaseContext(DbContextOptions<PostgresqlDatabaseContext> options) : base(options)
+        public PostgresqlDatabaseContext(DbContextOptions options) : base(options)
         {
             
         }

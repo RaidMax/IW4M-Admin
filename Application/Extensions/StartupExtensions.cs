@@ -48,10 +48,12 @@ namespace IW4MAdmin.Application.Extensions
             return services;
         }
 
-        public static IServiceCollection AddDatabaseContext(this IServiceCollection services,
+        public static IServiceCollection AddDatabaseContextOptions(this IServiceCollection services,
             ApplicationConfiguration appConfig)
         {
-            if (string.IsNullOrEmpty(appConfig.ConnectionString) || appConfig.DatabaseProvider == "sqlite")
+            var activeProvider = appConfig.DatabaseProvider?.ToLower();
+
+            if (string.IsNullOrEmpty(appConfig.ConnectionString) || activeProvider == "sqlite")
             {
                 var currentPath = Utilities.OperatingDirectory;
                 currentPath = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
@@ -62,31 +64,34 @@ namespace IW4MAdmin.Application.Extensions
                     {DataSource = Path.Join(currentPath, "Database", "Database.db")};
                 var connectionString = connectionStringBuilder.ToString();
 
-                services.AddDbContext<DatabaseContext, SqliteDatabaseContext>(options =>
-                    options.UseSqlite(connectionString), ServiceLifetime.Transient);
+                var builder = new DbContextOptionsBuilder<SqliteDatabaseContext>()
+                    .UseSqlite(connectionString);
+
+                services.AddSingleton((DbContextOptions) builder.Options);
                 return services;
             }
 
-            switch (appConfig.DatabaseProvider)
+            switch (activeProvider)
             {
                 case "mysql":
                     var appendTimeout = !appConfig.ConnectionString.Contains("default command timeout",
                         StringComparison.InvariantCultureIgnoreCase);
-                    services.AddDbContext<DatabaseContext, MySqlDatabaseContext>(options =>
-                        options.UseMySql(
-                            appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : ""),
-                            mysqlOptions => mysqlOptions.EnableRetryOnFailure()), ServiceLifetime.Transient);
-                    break;
+                    var mysqlBuilder = new DbContextOptionsBuilder<MySqlDatabaseContext>()
+                        .UseMySql(appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : ""),
+                            mysqlOptions => mysqlOptions.EnableRetryOnFailure());
+                    services.AddSingleton((DbContextOptions) mysqlBuilder.Options);
+                    return services;
                 case "postgresql":
                     appendTimeout = !appConfig.ConnectionString.Contains("Command Timeout",
                         StringComparison.InvariantCultureIgnoreCase);
-                    services.AddDbContext<DatabaseContext, PostgresqlDatabaseContext>(options =>
-                        options.UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
-                            postgresqlOptions => postgresqlOptions.EnableRetryOnFailure()), ServiceLifetime.Transient);
-                    break;
+                    var postgresqlBuilder = new DbContextOptionsBuilder<PostgresqlDatabaseContext>()
+                        .UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
+                            postgresqlOptions => postgresqlOptions.EnableRetryOnFailure());
+                    services.AddSingleton((DbContextOptions) postgresqlBuilder.Options);
+                    return services;
+                default:
+                    throw new ArgumentException($"No context available for {appConfig.DatabaseProvider}");
             }
-
-            return services;
         }
     }
 }

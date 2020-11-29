@@ -361,7 +361,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<SharedLibraryCore.Interfaces.ILogger, Logger>()
                 .AddSingleton<IClientNoticeMessageFormatter, ClientNoticeMessageFormatter>()
                 .AddSingleton(translationLookup)
-                .AddDatabaseContext(appConfig);
+                .AddDatabaseContextOptions(appConfig);
 
             if (args.Contains("serialevents"))
             {

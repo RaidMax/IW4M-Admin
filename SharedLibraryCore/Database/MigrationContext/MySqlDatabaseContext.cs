@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Database.MigrationContext
             }
         }
 
-        public MySqlDatabaseContext(DbContextOptions<MySqlDatabaseContext> options) : base(options)
+        public MySqlDatabaseContext(DbContextOptions options) : base(options)
         {
             
         }

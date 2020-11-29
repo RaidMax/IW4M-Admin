@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Database
     {
         public static async Task Seed(IDatabaseContextFactory contextFactory, CancellationToken token)
         {
-            var context = contextFactory.CreateContext();
+            await using var context = contextFactory.CreateContext();
             var strategy = context.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {

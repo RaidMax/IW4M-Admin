@@ -1,7 +1,8 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database;
+using SharedLibraryCore.Database.MigrationContext;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Factories
@@ -11,13 +12,15 @@ namespace IW4MAdmin.Application.Factories
     /// </summary>
     public class DatabaseContextFactory : IDatabaseContextFactory
     {
-        private readonly IServiceProvider _serviceProvider;
-        
-        public DatabaseContextFactory(IServiceProvider serviceProvider)
+        private readonly DbContextOptions _contextOptions;
+        private readonly string _activeProvider;
+
+        public DatabaseContextFactory(ApplicationConfiguration appConfig, DbContextOptions contextOptions)
         {
-            _serviceProvider = serviceProvider;
+            _contextOptions = contextOptions;
+            _activeProvider = appConfig.DatabaseProvider?.ToLower();
         }
-        
+
         /// <summary>
         /// creates a new database context
         /// </summary>
@@ -25,10 +28,10 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public DatabaseContext CreateContext(bool? enableTracking = true)
         {
-            var context = _serviceProvider.GetRequiredService<DatabaseContext>();
+            var context = BuildContext();
 
             enableTracking ??= true;
-            
+
             if (enableTracking.Value)
             {
                 context.ChangeTracker.AutoDetectChangesEnabled = true;
@@ -43,6 +46,17 @@ namespace IW4MAdmin.Application.Factories
             }
 
             return context;
+        }
+
+        private DatabaseContext BuildContext()
+        {
+            return _activeProvider switch
+            {
+                "sqlite" => new SqliteDatabaseContext(_contextOptions),
+                "mysql" => new MySqlDatabaseContext(_contextOptions),
+                "postgresql" => new PostgresqlDatabaseContext(_contextOptions),
+                _ => throw new ArgumentException($"No context found for {_activeProvider}")
+            };
         }
     }
 }

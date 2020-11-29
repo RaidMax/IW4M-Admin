@@ -91,12 +91,11 @@ namespace SharedLibraryCore.Database.Models
             SetAdditionalProperty("_reportCount", 0);
             ReceivedPenalties = new List<EFPenalty>();
             _processingEvent = new SemaphoreSlim(1, 1);
-            
         }
 
         ~EFClient()
         {
-            _processingEvent.Dispose();
+            _processingEvent?.Dispose();
         }
 
         public override string ToString()

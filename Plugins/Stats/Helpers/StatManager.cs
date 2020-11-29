@@ -68,121 +68,118 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         public async Task<int> GetClientOverallRanking(int clientId)
         {
-            using (var context = _contextFactory.CreateContext(enableTracking: false))
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
+
+            var clientPerformance = await context.Set<EFRating>()
+                .Where(r => r.RatingHistory.ClientId == clientId)
+                .Where(r => r.ServerId == null)
+                .Where(r => r.Newest)
+                .Select(r => r.Performance)
+                .FirstOrDefaultAsync();
+
+            if (clientPerformance != 0)
             {
-                var clientPerformance = await context.Set<EFRating>()
-                    .Where(r => r.RatingHistory.ClientId == clientId)
-                    .Where(r => r.ServerId == null)
-                    .Where(r => r.Newest)
-                    .Select(r => r.Performance)
-                    .FirstOrDefaultAsync();
+                var iqClientRanking = context.Set<EFRating>()
+                    .Where(r => r.RatingHistory.ClientId != clientId)
+                    .Where(r => r.Performance > clientPerformance)
+                    .Where(GetRankingFunc());
 
-                if (clientPerformance != 0)
-                {
-                    var iqClientRanking = context.Set<EFRating>()
-                        .Where(r => r.RatingHistory.ClientId != clientId)
-                        .Where(r => r.Performance > clientPerformance)
-                        .Where(GetRankingFunc());
-
-                    return await iqClientRanking.CountAsync() + 1;
-                }
-
-                return 0;
+                return await iqClientRanking.CountAsync() + 1;
             }
+
+            return 0;
         }
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null)
         {
-            using (var context = _contextFactory.CreateContext(enableTracking: false))
-            {
-                // setup the query for the clients within the given rating range
-                var iqClientRatings = (from rating in context.Set<EFRating>()
-                    .Where(GetRankingFunc(serverId))
-                                       select new
-                                       {
-                                           rating.RatingHistory.ClientId,
-                                           rating.RatingHistory.Client.CurrentAlias.Name,
-                                           rating.RatingHistory.Client.LastConnection,
-                                           rating.Performance,
-                                       })
-                    .OrderByDescending(c => c.Performance)
-                    .Skip(start)
-                    .Take(count);
-
-                // materialized list
-                var clientRatings = await iqClientRatings.ToListAsync();
-
-                // get all the unique client ids that are in the top stats
-                var clientIds = clientRatings
-                    .GroupBy(r => r.ClientId)
-                    .Select(r => r.First().ClientId)
-                    .ToList();
-
-                var iqRatingInfo = from rating in context.Set<EFRating>()
-                                   where clientIds.Contains(rating.RatingHistory.ClientId)
-                                   where rating.ServerId == serverId
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            // setup the query for the clients within the given rating range
+            var iqClientRatings = (from rating in context.Set<EFRating>()
+                .Where(GetRankingFunc(serverId))
                                    select new
                                    {
-                                       rating.Ranking,
-                                       rating.Performance,
                                        rating.RatingHistory.ClientId,
-                                       rating.When
-                                   };
+                                       rating.RatingHistory.Client.CurrentAlias.Name,
+                                       rating.RatingHistory.Client.LastConnection,
+                                       rating.Performance,
+                                   })
+                .OrderByDescending(c => c.Performance)
+                .Skip(start)
+                .Take(count);
 
-                var ratingInfo = (await iqRatingInfo.ToListAsync())
-                    .GroupBy(r => r.ClientId)
-                    .Select(grp => new
-                    {
-                        grp.Key,
-                        Ratings = grp.Select(r => new { r.Performance, r.Ranking, r.When })
-                    });
+            // materialized list
+            var clientRatings = await iqClientRatings.ToListAsync();
 
-                var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
-                                   where clientIds.Contains(stat.ClientId)
-                                   where stat.Kills > 0 || stat.Deaths > 0
-                                   where serverId == null ? true : stat.ServerId == serverId
-                                   group stat by stat.ClientId into s
-                                   select new
-                                   {
-                                       ClientId = s.Key,
-                                       Kills = s.Sum(c => c.Kills),
-                                       Deaths = s.Sum(c => c.Deaths),
-                                       KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) / s.Sum(c => c.TimePlayed),
-                                       TotalTimePlayed = s.Sum(c => c.TimePlayed),
-                                   });
-
-                var topPlayers = await iqStatsInfo.ToListAsync();
-
-                var clientRatingsDict = clientRatings.ToDictionary(r => r.ClientId);
-                var finished = topPlayers.Select(s => new TopStatsInfo()
-                {
-                    ClientId = s.ClientId,
-                    Id = (int?)serverId ?? 0,
-                    Deaths = s.Deaths,
-                    Kills = s.Kills,
-                    KDR = Math.Round(s.KDR, 2),
-                    LastSeen = (DateTime.UtcNow - clientRatingsDict[s.ClientId].LastConnection).HumanizeForCurrentCulture(),
-                    Name = clientRatingsDict[s.ClientId].Name,
-                    Performance = Math.Round(clientRatingsDict[s.ClientId].Performance, 2),
-                    RatingChange = ratingInfo.First(r => r.Key == s.ClientId).Ratings.First().Ranking - ratingInfo.First(r => r.Key == s.ClientId).Ratings.Last().Ranking,
-                    PerformanceHistory = ratingInfo.First(r => r.Key == s.ClientId).Ratings.Count() > 1 ?
-                        ratingInfo.First(r => r.Key == s.ClientId).Ratings.OrderBy(r => r.When).Select(r => r.Performance).ToList() :
-                       new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
-                    TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
-                })
-                .OrderByDescending(r => r.Performance)
+            // get all the unique client ids that are in the top stats
+            var clientIds = clientRatings
+                .GroupBy(r => r.ClientId)
+                .Select(r => r.First().ClientId)
                 .ToList();
 
-                // set the ranking numerically
-                int i = start + 1;
-                foreach (var stat in finished)
-                {
-                    stat.Ranking = i;
-                    i++;
-                }
+            var iqRatingInfo = from rating in context.Set<EFRating>()
+                               where clientIds.Contains(rating.RatingHistory.ClientId)
+                               where rating.ServerId == serverId
+                               select new
+                               {
+                                   rating.Ranking,
+                                   rating.Performance,
+                                   rating.RatingHistory.ClientId,
+                                   rating.When
+                               };
 
-                return finished;
+            var ratingInfo = (await iqRatingInfo.ToListAsync())
+                .GroupBy(r => r.ClientId)
+                .Select(grp => new
+                {
+                    grp.Key,
+                    Ratings = grp.Select(r => new { r.Performance, r.Ranking, r.When })
+                });
+
+            var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
+                               where clientIds.Contains(stat.ClientId)
+                               where stat.Kills > 0 || stat.Deaths > 0
+                               where serverId == null ? true : stat.ServerId == serverId
+                               group stat by stat.ClientId into s
+                               select new
+                               {
+                                   ClientId = s.Key,
+                                   Kills = s.Sum(c => c.Kills),
+                                   Deaths = s.Sum(c => c.Deaths),
+                                   KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) / s.Sum(c => c.TimePlayed),
+                                   TotalTimePlayed = s.Sum(c => c.TimePlayed),
+                               });
+
+            var topPlayers = await iqStatsInfo.ToListAsync();
+
+            var clientRatingsDict = clientRatings.ToDictionary(r => r.ClientId);
+            var finished = topPlayers.Select(s => new TopStatsInfo()
+            {
+                ClientId = s.ClientId,
+                Id = (int?)serverId ?? 0,
+                Deaths = s.Deaths,
+                Kills = s.Kills,
+                KDR = Math.Round(s.KDR, 2),
+                LastSeen = (DateTime.UtcNow - clientRatingsDict[s.ClientId].LastConnection).HumanizeForCurrentCulture(),
+                Name = clientRatingsDict[s.ClientId].Name,
+                Performance = Math.Round(clientRatingsDict[s.ClientId].Performance, 2),
+                RatingChange = ratingInfo.First(r => r.Key == s.ClientId).Ratings.First().Ranking - ratingInfo.First(r => r.Key == s.ClientId).Ratings.Last().Ranking,
+                PerformanceHistory = ratingInfo.First(r => r.Key == s.ClientId).Ratings.Count() > 1 ?
+                    ratingInfo.First(r => r.Key == s.ClientId).Ratings.OrderBy(r => r.When).Select(r => r.Performance).ToList() :
+                   new List<double>() { clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance },
+                TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
+            })
+            .OrderByDescending(r => r.Performance)
+            .ToList();
+
+            // set the ranking numerically
+            int i = start + 1;
+            foreach (var stat in finished)
+            {
+                stat.Ranking = i;
+                i++;
             }
+
+            return finished;
         }
 
         /// <summary>
@@ -202,62 +199,60 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 long serverId = GetIdForServer(sv);
                 EFServer server;
 
-                using (var ctx = _contextFactory.CreateContext(enableTracking: false))
+                using var ctx = _contextFactory.CreateContext(enableTracking: false);
+                var serverSet = ctx.Set<EFServer>();
+                // get the server from the database if it exists, otherwise create and insert a new one
+                server = serverSet.FirstOrDefault(s => s.ServerId == serverId);
+
+                // the server might be using legacy server id
+                if (server == null)
                 {
-                    var serverSet = ctx.Set<EFServer>();
-                    // get the server from the database if it exists, otherwise create and insert a new one
-                    server = serverSet.FirstOrDefault(s => s.ServerId == serverId);
+                    server = serverSet.FirstOrDefault(s => s.EndPoint == sv.ToString());
 
-                    // the server might be using legacy server id
-                    if (server == null)
+                    if (server != null)
                     {
-                        server = serverSet.FirstOrDefault(s => s.EndPoint == sv.ToString());
-
-                        if (server != null)
-                        {
-                            // this provides a way to identify legacy server entries
-                            server.EndPoint = sv.ToString();
-                            ctx.Update(server);
-                            ctx.SaveChanges();
-                        }
-                    }
-
-                    // server has never been added before
-                    if (server == null)
-                    {
-                        server = new EFServer()
-                        {
-                            Port = sv.Port,
-                            EndPoint = sv.ToString(),
-                            ServerId = serverId,
-                            GameName = sv.GameName,
-                            HostName = sv.Hostname
-                        };
-
-                        server = serverSet.Add(server).Entity;
-                        // this doesn't need to be async as it's during initialization
+                        // this provides a way to identify legacy server entries
+                        server.EndPoint = sv.ToString();
+                        ctx.Update(server);
                         ctx.SaveChanges();
                     }
+                }
 
-                    // we want to set the gamename up if it's never been set, or it changed
-                    else if (!server.GameName.HasValue || server.GameName.HasValue && server.GameName.Value != sv.GameName)
+                // server has never been added before
+                if (server == null)
+                {
+                    server = new EFServer()
                     {
-                        server.GameName = sv.GameName;
-                        ctx.Entry(server).Property(_prop => _prop.GameName).IsModified = true;
-                        ctx.SaveChanges();
-                    }
+                        Port = sv.Port,
+                        EndPoint = sv.ToString(),
+                        ServerId = serverId,
+                        GameName = sv.GameName,
+                        HostName = sv.Hostname
+                    };
 
-                    if (server.HostName == null || server.HostName != sv.Hostname)
-                    {
-                        server.HostName = sv.Hostname;
-                        ctx.Entry(server).Property(_prop => _prop.HostName).IsModified = true;
-                        ctx.SaveChanges();
-                    }
-
-                    ctx.Entry(server).Property(_prop => _prop.IsPasswordProtected).IsModified = true;
-                    server.IsPasswordProtected = !string.IsNullOrEmpty(sv.GamePassword);
+                    server = serverSet.Add(server).Entity;
+                    // this doesn't need to be async as it's during initialization
                     ctx.SaveChanges();
                 }
+
+                // we want to set the gamename up if it's never been set, or it changed
+                else if (!server.GameName.HasValue || server.GameName.HasValue && server.GameName.Value != sv.GameName)
+                {
+                    server.GameName = sv.GameName;
+                    ctx.Entry(server).Property(_prop => _prop.GameName).IsModified = true;
+                    ctx.SaveChanges();
+                }
+
+                if (server.HostName == null || server.HostName != sv.Hostname)
+                {
+                    server.HostName = sv.Hostname;
+                    ctx.Entry(server).Property(_prop => _prop.HostName).IsModified = true;
+                    ctx.SaveChanges();
+                }
+
+                ctx.Entry(server).Property(_prop => _prop.IsPasswordProtected).IsModified = true;
+                server.IsPasswordProtected = !string.IsNullOrEmpty(sv.GamePassword);
+                ctx.SaveChanges();
 
                 // check to see if the stats have ever been initialized
                 var serverStats = InitializeServerStats(server.ServerId);
@@ -304,78 +299,76 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 EFClientStatistics clientStats;
 
-                using (var ctx = _contextFactory.CreateContext(enableTracking: false))
+                await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+                var clientStatsSet = ctx.Set<EFClientStatistics>();
+                clientStats = clientStatsSet
+                    .Include(cl => cl.HitLocations)
+                    .FirstOrDefault(c => c.ClientId == pl.ClientId && c.ServerId == serverId);
+
+                if (clientStats == null)
                 {
-                    var clientStatsSet = ctx.Set<EFClientStatistics>();
-                    clientStats = clientStatsSet
-                        .Include(cl => cl.HitLocations)
-                        .FirstOrDefault(c => c.ClientId == pl.ClientId && c.ServerId == serverId);
-
-                    if (clientStats == null)
+                    clientStats = new EFClientStatistics()
                     {
-                        clientStats = new EFClientStatistics()
-                        {
-                            Active = true,
-                            ClientId = pl.ClientId,
-                            Deaths = 0,
-                            Kills = 0,
-                            ServerId = serverId,
-                            Skill = 0.0,
-                            SPM = 0.0,
-                            EloRating = 200.0,
-                            HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
-                                .Select(hl => new EFHitLocationCount()
-                                {
-                                    Active = true,
-                                    HitCount = 0,
-                                    Location = hl
-                                }).ToList()
-                        };
-
-                        // insert if they've not been added
-                        clientStats = clientStatsSet.Add(clientStats).Entity;
-                        await ctx.SaveChangesAsync();
-                    }
-
-                    pl.SetAdditionalProperty(CLIENT_STATS_KEY, clientStats);
-
-                    // migration for previous existing stats
-                    if (clientStats.HitLocations.Count == 0)
-                    {
-                        clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation))
-                            .OfType<IW4Info.HitLocation>()
+                        Active = true,
+                        ClientId = pl.ClientId,
+                        Deaths = 0,
+                        Kills = 0,
+                        ServerId = serverId,
+                        Skill = 0.0,
+                        SPM = 0.0,
+                        EloRating = 200.0,
+                        HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation)).OfType<IW4Info.HitLocation>()
                             .Select(hl => new EFHitLocationCount()
                             {
                                 Active = true,
                                 HitCount = 0,
                                 Location = hl
-                            })
-                            .ToList();
+                            }).ToList()
+                    };
 
-                        ctx.Update(clientStats);
-                        await ctx.SaveChangesAsync();
-                    }
-
-                    // for stats before rating
-                    if (clientStats.EloRating == 0.0)
-                    {
-                        clientStats.EloRating = clientStats.Skill;
-                    }
-
-                    if (clientStats.RollingWeightedKDR == 0)
-                    {
-                        clientStats.RollingWeightedKDR = clientStats.KDR;
-                    }
-
-                    // set these on connecting
-                    clientStats.LastActive = DateTime.UtcNow;
-                    clientStats.LastStatCalculation = DateTime.UtcNow;
-                    clientStats.SessionScore = pl.Score;
-                    clientStats.LastScore = pl.Score;
-
-                    pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats));
-                    _log.LogDebug("Added {client} to stats", pl.ToString());
+                    // insert if they've not been added
+                    clientStats = clientStatsSet.Add(clientStats).Entity;
+                    await ctx.SaveChangesAsync();
                 }
+
+                pl.SetAdditionalProperty(CLIENT_STATS_KEY, clientStats);
+
+                // migration for previous existing stats
+                if (clientStats.HitLocations.Count == 0)
+                {
+                    clientStats.HitLocations = Enum.GetValues(typeof(IW4Info.HitLocation))
+                        .OfType<IW4Info.HitLocation>()
+                        .Select(hl => new EFHitLocationCount()
+                        {
+                            Active = true,
+                            HitCount = 0,
+                            Location = hl
+                        })
+                        .ToList();
+
+                    ctx.Update(clientStats);
+                    await ctx.SaveChangesAsync();
+                }
+
+                // for stats before rating
+                if (clientStats.EloRating == 0.0)
+                {
+                    clientStats.EloRating = clientStats.Skill;
+                }
+
+                if (clientStats.RollingWeightedKDR == 0)
+                {
+                    clientStats.RollingWeightedKDR = clientStats.KDR;
+                }
+
+                // set these on connecting
+                clientStats.LastActive = DateTime.UtcNow;
+                clientStats.LastStatCalculation = DateTime.UtcNow;
+                clientStats.SessionScore = pl.Score;
+                clientStats.LastScore = pl.Score;
+
+                pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats));
+                _log.LogDebug("Added {client} to stats", pl.ToString());
 
                 return clientStats;
             }
@@ -434,11 +427,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private async Task SaveClientStats(EFClientStatistics clientStats)
         {
-            using (var ctx = _contextFactory.CreateContext())
-            {
-                ctx.Update(clientStats);
-                await ctx.SaveChangesAsync();
-            }
+            await using var ctx = _contextFactory.CreateContext();
+            ctx.Update(clientStats);
+            await ctx.SaveChangesAsync();
         }
 
         public void AddDamageEvent(string eventLine, int attackerClientId, int victimClientId, long serverId)
@@ -628,13 +619,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task SaveHitCache(long serverId)
         {
-            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
-            {
-                var server = _servers[serverId];
-                ctx.AddRange(server.HitCache.ToList());
-                await ctx.SaveChangesAsync();
-                server.HitCache.Clear();
-            }
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            var server = _servers[serverId];
+            ctx.AddRange(server.HitCache.ToList());
+            await ctx.SaveChangesAsync();
+            server.HitCache.Clear();
         }
 
         private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
@@ -714,14 +703,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             EFACSnapshot change;
 
-            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
+            await using var ctx = _contextFactory.CreateContext();
+            while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
             {
-                while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
-                {
-                    ctx.Add(change);
-                }
-                await ctx.SaveChangesAsync();
+                ctx.Add(change);
             }
+            await ctx.SaveChangesAsync();
         }
 
         public async Task AddStandardKill(EFClient attacker, EFClient victim)
@@ -826,160 +813,158 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
-            using (var ctx = _contextFactory.CreateContext(enableTracking: true))
+            await using var ctx = _contextFactory.CreateContext(enableTracking: true);
+            // select the rating history for client
+            var iqHistoryLink = from history in ctx.Set<EFClientRatingHistory>()
+                                 .Include(h => h.Ratings)
+                                where history.ClientId == client.ClientId
+                                select history;
+
+            // get the client ratings
+            var clientHistory = await iqHistoryLink
+                .FirstOrDefaultAsync() ?? new EFClientRatingHistory()
+                {
+                    Active = true,
+                    ClientId = client.ClientId,
+                    Ratings = new List<EFRating>()
+                };
+
+            // it's the first time they've played
+            if (clientHistory.RatingHistoryId == 0)
             {
-                // select the rating history for client
-                var iqHistoryLink = from history in ctx.Set<EFClientRatingHistory>()
-                                     .Include(h => h.Ratings)
-                                    where history.ClientId == client.ClientId
-                                    select history;
-
-                // get the client ratings
-                var clientHistory = await iqHistoryLink
-                    .FirstOrDefaultAsync() ?? new EFClientRatingHistory()
-                    {
-                        Active = true,
-                        ClientId = client.ClientId,
-                        Ratings = new List<EFRating>()
-                    };
-
-                // it's the first time they've played
-                if (clientHistory.RatingHistoryId == 0)
-                {
-                    ctx.Add(clientHistory);
-                }
-
-                #region INDIVIDUAL_SERVER_PERFORMANCE
-                // get the client ranking for the current server
-                int individualClientRanking = await ctx.Set<EFRating>()
-                   .Where(GetRankingFunc(clientStats.ServerId))
-                   // ignore themselves in the query
-                   .Where(c => c.RatingHistory.ClientId != client.ClientId)
-                   .Where(c => c.Performance > clientStats.Performance)
-                   .CountAsync() + 1;
-
-                // limit max history per server to 40
-                if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 40)
-                {
-                    // select the oldest one
-                    var ratingToRemove = clientHistory.Ratings
-                        .Where(r => r.ServerId == clientStats.ServerId)
-                        .OrderBy(r => r.When)
-                        .First();
-
-                    ctx.Remove(ratingToRemove);
-                }
-
-                // set the previous newest to false
-                var ratingToUnsetNewest = clientHistory.Ratings
-                    .Where(r => r.ServerId == clientStats.ServerId)
-                    .OrderByDescending(r => r.When)
-                    .FirstOrDefault();
-
-                if (ratingToUnsetNewest != null)
-                {
-                    if (ratingToUnsetNewest.Newest)
-                    {
-                        ctx.Update(ratingToUnsetNewest);
-                        ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
-                        ratingToUnsetNewest.Newest = false;
-                    }
-                }
-
-                var newServerRating = new EFRating()
-                {
-                    Performance = clientStats.Performance,
-                    Ranking = individualClientRanking,
-                    Active = true,
-                    Newest = true,
-                    ServerId = clientStats.ServerId,
-                    RatingHistory = clientHistory,
-                    ActivityAmount = currentServerTotalPlaytime,
-                };
-
-                // add new rating for current server
-                ctx.Add(newServerRating);
-
-                #endregion
-                #region OVERALL_RATING
-                // select all performance & time played for current client
-                var iqClientStats = from stats in ctx.Set<EFClientStatistics>()
-                                    where stats.ClientId == client.ClientId
-                                    where stats.ServerId != clientStats.ServerId
-                                    select new
-                                    {
-                                        stats.Performance,
-                                        stats.TimePlayed
-                                    };
-
-                var clientStatsList = await iqClientStats.ToListAsync();
-
-                // add the current server's so we don't have to pull it from the database
-                clientStatsList.Add(new
-                {
-                    clientStats.Performance,
-                    TimePlayed = currentServerTotalPlaytime
-                });
-
-                // weight the overall performance based on play time
-                double performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
-
-                // shouldn't happen but just in case the sum of time played is 0
-                if (double.IsNaN(performanceAverage))
-                {
-                    performanceAverage = clientStatsList.Average(p => p.Performance);
-                }
-
-                int overallClientRanking = await ctx.Set<EFRating>()
-                     .Where(GetRankingFunc())
-                     .Where(r => r.RatingHistory.ClientId != client.ClientId)
-                     .Where(r => r.Performance > performanceAverage)
-                     .CountAsync() + 1;
-
-                // limit max average history to 40
-                if (clientHistory.Ratings.Count(r => r.ServerId == null) >= 40)
-                {
-                    var ratingToRemove = clientHistory.Ratings
-                        .Where(r => r.ServerId == null)
-                        .OrderBy(r => r.When)
-                        .First();
-
-                    ctx.Remove(ratingToRemove);
-                }
-
-                // set the previous average newest to false
-                ratingToUnsetNewest = clientHistory.Ratings
-                    .Where(r => r.ServerId == null)
-                    .OrderByDescending(r => r.When)
-                    .FirstOrDefault();
-
-                if (ratingToUnsetNewest != null)
-                {
-                    if (ratingToUnsetNewest.Newest)
-                    {
-                        ctx.Update(ratingToUnsetNewest);
-                        ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
-                        ratingToUnsetNewest.Newest = false;
-                    }
-                }
-
-                // add new average rating
-                var averageRating = new EFRating()
-                {
-                    Active = true,
-                    Newest = true,
-                    Performance = performanceAverage,
-                    Ranking = overallClientRanking,
-                    ServerId = null,
-                    RatingHistory = clientHistory,
-                    ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
-                };
-
-                ctx.Add(averageRating);
-                #endregion
-
-                await ctx.SaveChangesAsync();
+                ctx.Add(clientHistory);
             }
+
+            #region INDIVIDUAL_SERVER_PERFORMANCE
+            // get the client ranking for the current server
+            int individualClientRanking = await ctx.Set<EFRating>()
+               .Where(GetRankingFunc(clientStats.ServerId))
+               // ignore themselves in the query
+               .Where(c => c.RatingHistory.ClientId != client.ClientId)
+               .Where(c => c.Performance > clientStats.Performance)
+               .CountAsync() + 1;
+
+            // limit max history per server to 40
+            if (clientHistory.Ratings.Count(r => r.ServerId == clientStats.ServerId) >= 40)
+            {
+                // select the oldest one
+                var ratingToRemove = clientHistory.Ratings
+                    .Where(r => r.ServerId == clientStats.ServerId)
+                    .OrderBy(r => r.When)
+                    .First();
+
+                ctx.Remove(ratingToRemove);
+            }
+
+            // set the previous newest to false
+            var ratingToUnsetNewest = clientHistory.Ratings
+                .Where(r => r.ServerId == clientStats.ServerId)
+                .OrderByDescending(r => r.When)
+                .FirstOrDefault();
+
+            if (ratingToUnsetNewest != null)
+            {
+                if (ratingToUnsetNewest.Newest)
+                {
+                    ctx.Update(ratingToUnsetNewest);
+                    ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
+                    ratingToUnsetNewest.Newest = false;
+                }
+            }
+
+            var newServerRating = new EFRating()
+            {
+                Performance = clientStats.Performance,
+                Ranking = individualClientRanking,
+                Active = true,
+                Newest = true,
+                ServerId = clientStats.ServerId,
+                RatingHistory = clientHistory,
+                ActivityAmount = currentServerTotalPlaytime,
+            };
+
+            // add new rating for current server
+            ctx.Add(newServerRating);
+
+            #endregion
+            #region OVERALL_RATING
+            // select all performance & time played for current client
+            var iqClientStats = from stats in ctx.Set<EFClientStatistics>()
+                                where stats.ClientId == client.ClientId
+                                where stats.ServerId != clientStats.ServerId
+                                select new
+                                {
+                                    stats.Performance,
+                                    stats.TimePlayed
+                                };
+
+            var clientStatsList = await iqClientStats.ToListAsync();
+
+            // add the current server's so we don't have to pull it from the database
+            clientStatsList.Add(new
+            {
+                clientStats.Performance,
+                TimePlayed = currentServerTotalPlaytime
+            });
+
+            // weight the overall performance based on play time
+            double performanceAverage = clientStatsList.Sum(p => (p.Performance * p.TimePlayed)) / clientStatsList.Sum(p => p.TimePlayed);
+
+            // shouldn't happen but just in case the sum of time played is 0
+            if (double.IsNaN(performanceAverage))
+            {
+                performanceAverage = clientStatsList.Average(p => p.Performance);
+            }
+
+            int overallClientRanking = await ctx.Set<EFRating>()
+                 .Where(GetRankingFunc())
+                 .Where(r => r.RatingHistory.ClientId != client.ClientId)
+                 .Where(r => r.Performance > performanceAverage)
+                 .CountAsync() + 1;
+
+            // limit max average history to 40
+            if (clientHistory.Ratings.Count(r => r.ServerId == null) >= 40)
+            {
+                var ratingToRemove = clientHistory.Ratings
+                    .Where(r => r.ServerId == null)
+                    .OrderBy(r => r.When)
+                    .First();
+
+                ctx.Remove(ratingToRemove);
+            }
+
+            // set the previous average newest to false
+            ratingToUnsetNewest = clientHistory.Ratings
+                .Where(r => r.ServerId == null)
+                .OrderByDescending(r => r.When)
+                .FirstOrDefault();
+
+            if (ratingToUnsetNewest != null)
+            {
+                if (ratingToUnsetNewest.Newest)
+                {
+                    ctx.Update(ratingToUnsetNewest);
+                    ctx.Entry(ratingToUnsetNewest).Property(r => r.Newest).IsModified = true;
+                    ratingToUnsetNewest.Newest = false;
+                }
+            }
+
+            // add new average rating
+            var averageRating = new EFRating()
+            {
+                Active = true,
+                Newest = true,
+                Performance = performanceAverage,
+                Ranking = overallClientRanking,
+                ServerId = null,
+                RatingHistory = clientHistory,
+                ActivityAmount = clientStatsList.Sum(s => s.TimePlayed)
+            };
+
+            ctx.Add(averageRating);
+            #endregion
+
+            await ctx.SaveChangesAsync();
         }
 
         /// <summary>
@@ -1137,25 +1122,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             EFServerStatistics serverStats;
 
-            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
+            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            var serverStatsSet = ctx.Set<EFServerStatistics>();
+            serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
+
+            if (serverStats == null)
             {
-                var serverStatsSet = ctx.Set<EFServerStatistics>();
-                serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
-
-                if (serverStats == null)
+                _log.LogDebug("Initializing server stats for {serverId}", serverId);
+                // server stats have never been generated before
+                serverStats = new EFServerStatistics()
                 {
-                    _log.LogDebug("Initializing server stats for {serverId}", serverId);
-                    // server stats have never been generated before
-                    serverStats = new EFServerStatistics()
-                    {
-                        ServerId = serverId,
-                        TotalKills = 0,
-                        TotalPlayTime = 0,
-                    };
+                    ServerId = serverId,
+                    TotalKills = 0,
+                    TotalPlayTime = 0,
+                };
 
-                    serverStats = serverStatsSet.Add(serverStats).Entity;
-                    ctx.SaveChanges();
-                }
+                serverStats = serverStatsSet.Add(serverStats).Entity;
+                ctx.SaveChanges();
             }
 
             return serverStats;
@@ -1216,12 +1199,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 await waiter.WaitAsync();
 
-                using (var ctx = _contextFactory.CreateContext())
-                {
-                    var serverStatsSet = ctx.Set<EFServerStatistics>();
-                    serverStatsSet.Update(_servers[serverId].ServerStatistics);
-                    await ctx.SaveChangesAsync();
-                }
+                await using var ctx = _contextFactory.CreateContext();
+                var serverStatsSet = ctx.Set<EFServerStatistics>();
+                serverStatsSet.Update(_servers[serverId].ServerStatistics);
+                await ctx.SaveChangesAsync();
 
                 foreach (var stats in sv.GetClientsAsList()
                     .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))

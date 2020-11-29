@@ -37,7 +37,7 @@ namespace IW4MAdmin.Application.Misc
                 return;
             }
 
-            using var ctx = _contextFactory.CreateContext();
+            await using var ctx = _contextFactory.CreateContext();
 
             var existingMeta = await ctx.EFMeta
                 .Where(_meta => _meta.Key == metaKey)
@@ -66,7 +66,7 @@ namespace IW4MAdmin.Application.Misc
 
         public async Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client)
         {
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
 
             return await ctx.EFMeta
                 .Where(_meta => _meta.Key == metaKey)

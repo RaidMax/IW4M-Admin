@@ -28,7 +28,7 @@ namespace IW4MAdmin.Application.Meta
 
         public async Task<ResourceQueryHelperResult<UpdatedAliasResponse>> QueryResource(ClientPaginationRequest query)
         {
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
             int linkId = ctx.Clients.First(_client => _client.ClientId == query.ClientId).AliasLinkId;
 
             var iqAliasUpdates = ctx.Aliases

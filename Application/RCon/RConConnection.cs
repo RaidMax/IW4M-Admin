@@ -407,37 +407,39 @@ namespace IW4MAdmin.Application.RCon
                 return;
             }
 
-            if (sender is Socket sock)
+            if (!(sender is Socket sock))
             {
-                var state = ActiveQueries[this.Endpoint];
-                state.BytesReadPerSegment.Add(e.BytesTransferred);
+                return;
+            }
+            
+            var state = ActiveQueries[this.Endpoint];
+            state.BytesReadPerSegment.Add(e.BytesTransferred);
 
-                try
+            try
+            {
+                var totalBytesTransferred = e.BytesTransferred;
+                // we still have available data so the payload was segmented
+                while (sock.Available > 0)
                 {
-                    // we still have available data so the payload was segmented
-                    if (sock.Available > 0)
+                    state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, totalBytesTransferred, sock.Available);
+
+                    if (sock.ReceiveAsync(state.ReceiveEventArgs))
                     {
-                        state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, e.BytesTransferred, state.ReceiveBuffer.Length - e.BytesTransferred);
-
-                        if (!sock.ReceiveAsync(state.ReceiveEventArgs))
-                        {
-                            _log.LogDebug("Read {bytesTransferred} synchronous bytes from {endpoint}", state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint);
-                            // we need to increment this here because the callback isn't executed if there's no pending IO
-                            state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
-                            ActiveQueries[this.Endpoint].OnReceivedData.Set();
-                        }
+                        continue;
                     }
-
-                    else
-                    {
-                        ActiveQueries[this.Endpoint].OnReceivedData.Set();
-                    }
+                        
+                    _log.LogDebug("Read {bytesTransferred} synchronous bytes from {endpoint}", state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint);
+                    // we need to increment this here because the callback isn't executed if there's no pending IO
+                    state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
+                    totalBytesTransferred += state.ReceiveEventArgs.BytesTransferred;
                 }
+                    
+                ActiveQueries[this.Endpoint].OnReceivedData.Set();
+            }
 
-                catch (ObjectDisposedException)
-                {
-                    ActiveQueries[this.Endpoint].OnReceivedData.Set();
-                }
+            catch (ObjectDisposedException)
+            {
+                ActiveQueries[this.Endpoint].OnReceivedData.Set();
             }
         }
 

@@ -205,7 +205,8 @@ namespace IW4MAdmin.Application.RconParsers
 
                 if (match.Success)
                 {
-                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "ZMBI")
+                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "ZMBI" || 
+                        match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "CNCT")
                     {
                         _logger.LogDebug("Ignoring detected client {client} because they are zombie state", string.Join(",", match.Values));
                         continue;

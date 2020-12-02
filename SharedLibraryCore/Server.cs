@@ -42,7 +42,7 @@ namespace SharedLibraryCore
             ServerConfig = config;
             RemoteConnection = rconConnectionFactory.CreateConnection(IP, Port, Password);
             EventProcessing = new SemaphoreSlim(1, 1);
-            Clients = new List<EFClient>(new EFClient[18]);
+            Clients = new List<EFClient>(new EFClient[64]);
             Reports = new List<Report>();
             ClientHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();

@@ -5,12 +5,13 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.MigrationContext;
+using ILogger = Serilog.ILogger;
 
 namespace IW4MAdmin.Application.Extensions
 {
@@ -45,6 +46,8 @@ namespace IW4MAdmin.Application.Extensions
             }
 
             services.AddLogging(builder => builder.AddSerilog(_defaultLogger, dispose: true));
+            services.AddSingleton(new LoggerFactory()
+                .AddSerilog(_defaultLogger, true));
             return services;
         }
 
@@ -76,18 +79,19 @@ namespace IW4MAdmin.Application.Extensions
                 case "mysql":
                     var appendTimeout = !appConfig.ConnectionString.Contains("default command timeout",
                         StringComparison.InvariantCultureIgnoreCase);
-                    var mysqlBuilder = new DbContextOptionsBuilder<MySqlDatabaseContext>()
+                    services.AddSingleton(sp => (DbContextOptions) new DbContextOptionsBuilder<MySqlDatabaseContext>()
                         .UseMySql(appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : ""),
-                            mysqlOptions => mysqlOptions.EnableRetryOnFailure());
-                    services.AddSingleton((DbContextOptions) mysqlBuilder.Options);
+                            mysqlOptions => mysqlOptions.EnableRetryOnFailure())
+                        .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Options);
                     return services;
                 case "postgresql":
                     appendTimeout = !appConfig.ConnectionString.Contains("Command Timeout",
                         StringComparison.InvariantCultureIgnoreCase);
-                    var postgresqlBuilder = new DbContextOptionsBuilder<PostgresqlDatabaseContext>()
-                        .UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
-                            postgresqlOptions => postgresqlOptions.EnableRetryOnFailure());
-                    services.AddSingleton((DbContextOptions) postgresqlBuilder.Options);
+                    services.AddSingleton(sp =>
+                        (DbContextOptions) new DbContextOptionsBuilder<PostgresqlDatabaseContext>()
+                            .UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
+                                postgresqlOptions => postgresqlOptions.EnableRetryOnFailure())
+                            .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Options);
                     return services;
                 default:
                     throw new ArgumentException($"No context available for {appConfig.DatabaseProvider}");

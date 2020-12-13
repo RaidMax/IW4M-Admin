@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
@@ -141,7 +142,7 @@ namespace IW4MAdmin.Application.RCon
             }
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
             {
-                DontFragment = true,
+                DontFragment = false,
                 Ttl = 100,
                 ExclusiveAddressUse = true,
             })
@@ -403,6 +404,7 @@ namespace IW4MAdmin.Application.RCon
             // this occurs when we close the socket
             if (e.BytesTransferred == 0)
             {
+                _log.LogDebug("No bytes were transmitted so the connection was probably closed");
                 ActiveQueries[this.Endpoint].OnReceivedData.Set();
                 return;
             }
@@ -415,16 +417,24 @@ namespace IW4MAdmin.Application.RCon
             var state = ActiveQueries[this.Endpoint];
             state.BytesReadPerSegment.Add(e.BytesTransferred);
 
+            // I don't even want to know why this works for getting more data from Cod4x
+            // but I'm leaving it in here as long as it doesn't break anything.
+            // it's very stupid...
+            Thread.Sleep(150);
+
             try
             {
                 var totalBytesTransferred = e.BytesTransferred;
+                _log.LogDebug("{total} total bytes transferred with {available} bytes remaining", totalBytesTransferred, sock.Available);
                 // we still have available data so the payload was segmented
                 while (sock.Available > 0)
                 {
+                    _log.LogDebug("{available} more bytes to be read", sock.Available);
                     state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, totalBytesTransferred, sock.Available);
 
                     if (sock.ReceiveAsync(state.ReceiveEventArgs))
                     {
+                        _log.LogDebug("Remaining bytes are async");
                         continue;
                     }
                         
@@ -439,6 +449,7 @@ namespace IW4MAdmin.Application.RCon
 
             catch (ObjectDisposedException)
             {
+                _log.LogDebug("Socket was disposed while receiving data");
                 ActiveQueries[this.Endpoint].OnReceivedData.Set();
             }
         }

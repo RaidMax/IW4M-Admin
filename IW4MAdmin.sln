@@ -44,6 +44,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 		Plugins\ScriptPlugins\SampleScriptPluginCommand.js = Plugins\ScriptPlugins\SampleScriptPluginCommand.js
 		Plugins\ScriptPlugins\SharedGUIDKick.js = Plugins\ScriptPlugins\SharedGUIDKick.js
 		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js
+		Plugins\ScriptPlugins\ParserT4.js = Plugins\ScriptPlugins\ParserT4.js
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{A848FCF1-8527-4AA8-A1AA-50D29695C678}"

@@ -235,7 +235,7 @@ namespace SharedLibraryCore
         /// <summary>
         /// Specifies the game time offset as printed in the log
         /// </summary>
-        public int? GameTime { get; set; }
+        public long? GameTime { get; set; }
         public EFClient Origin;
         public EFClient Target;
         public EFClient ImpersonationOrigin { get; set; }

@@ -23,10 +23,13 @@ var plugin = {
         rconParser.Configuration.Dvar.Pattern = '^"(.+)" is: "(.+)?" default: "(.+)?" info: "(.+)?"$';
         rconParser.Configuration.Dvar.AddMapping(109, 2); // DVAR latched value
         rconParser.Configuration.Dvar.AddMapping(110, 4); // dvar info
+        rconParser.Configuration.GuidNumberStyle = 7; // Integer
+        rconParser.Configuration.NoticeLineSeparator = '. '; // CoD4x does not support \n in the client notice
         rconParser.Version = 'CoD4 X - win_mingw-x86 build 963 Mar 12 2019';
         rconParser.GameName = 1; // IW3
 
         eventParser.Configuration.GameDirectory = 'main';
+        eventParser.Configuration.GuidNumberStyle = 7; // Integer
         eventParser.Version = 'CoD4 X - win_mingw-x86 build 963 Mar 12 2019';
         eventParser.GameName = 1; // IW3
         eventParser.URLProtocolFormat = 'cod4://{{ip}}:{{port}}';

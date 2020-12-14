@@ -29,7 +29,7 @@ namespace IW4MAdmin
         private readonly ITranslationLookup _translationLookup;
         private readonly IMetaService _metaService;
         private const int REPORT_FLAG_COUNT = 4;
-        private int lastGameTime = 0;
+        private long lastGameTime = 0;
 
         public int Id { get; private set; }
         private readonly IServiceProvider _serviceProvider;

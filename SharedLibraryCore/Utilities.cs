@@ -366,8 +366,7 @@ namespace SharedLibraryCore
         /// <returns>true if is bot guid, otherwise false</returns>
         public static bool IsBotGuid(this string guid)
         {
-            // todo: revisit this magic number for cod5 bot guid
-            return guid.Contains("bot") || guid == "0" || guid == "1075569476";
+            return guid.Contains("bot") || guid == "0";
         }
 
         /// <summary>

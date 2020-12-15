@@ -205,8 +205,7 @@ namespace IW4MAdmin.Application.RconParsers
 
                 if (match.Success)
                 {
-                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "ZMBI" || 
-                        match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "CNCT")
+                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "ZMBI")
                     {
                         _logger.LogDebug("Ignoring detected client {client} because they are zombie state", string.Join(",", match.Values));
                         continue;
@@ -226,12 +225,13 @@ namespace IW4MAdmin.Application.RconParsers
                     long networkId;
                     string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
                     string networkIdString;
+                    var ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 
                     try
                     {
                         networkIdString = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]];
 
-                        networkId = networkIdString.IsBotGuid() ?
+                        networkId = networkIdString.IsBotGuid() || (ip == null && ping == 999) ?
                             name.GenerateGuidFromString() :
                             networkIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
                     }
@@ -240,8 +240,6 @@ namespace IW4MAdmin.Application.RconParsers
                     {
                         continue;
                     }
-
-                    int? ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()
                     {

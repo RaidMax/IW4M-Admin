@@ -15,11 +15,10 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     public class ViewStatsCommand : Command
     {
         private readonly IDatabaseContextFactory _contextFactory;
-        
-        public ViewStatsCommand(CommandConfiguration config, ITranslationLookup translationLookup, 
+
+        public ViewStatsCommand(CommandConfiguration config, ITranslationLookup translationLookup,
             IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
-
             Name = "stats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_VIEW_DESC"];
             Alias = "xlrstats";
@@ -33,17 +32,14 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     Required = false
                 }
             };
-
-            _config = config;
+            
             _contextFactory = contextFactory;
         }
-
-        private readonly CommandConfiguration _config;
 
         public override async Task ExecuteAsync(GameEvent E)
         {
             string statLine;
-            EFClientStatistics pStats;
+            EFClientStatistics pStats = null;
 
             if (E.Data.Length > 0 && E.Target == null)
             {
@@ -55,48 +51,67 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 }
             }
 
-            long serverId = StatManager.GetIdForServer(E.Owner);
+            var serverId = StatManager.GetIdForServer(E.Owner);
 
-
+            // getting stats for a particular client
             if (E.Target != null)
             {
-                int performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId);
-                string performanceRankingString = performanceRanking == 0 ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
+                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId);
+                var performanceRankingString = performanceRanking == 0
+                    ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
+                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
 
-                if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Target)))
+                // target is currently connected so we want their cached stats if they exist
+                if (E.Owner.GetClientsAsList().Any(client => client.Equals(E.Target)))
                 {
                     pStats = E.Target.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
                 }
 
-                else
+                // target is not connected so we want to look up via database
+                if (pStats == null)
                 {
                     await using var context = _contextFactory.CreateContext(false);
-                    pStats = (await context.Set<EFClientStatistics>().FirstAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId));
+                    pStats = (await context.Set<EFClientStatistics>()
+                        .FirstOrDefaultAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId));
                 }
-                statLine = $"^5{pStats.Kills} ^7{_translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{_translationLookup["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{_translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
+
+                // if it's still null then they've not gotten a kill or death yet
+                statLine = pStats == null
+                    ? _translationLookup["PLUGINS_STATS_COMMANDS_NOTAVAILABLE"]
+                    : $"^5{pStats.Kills} ^7{_translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{_translationLookup["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{_translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
             }
 
+            // getting self stats
             else
             {
-                int performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId);
-                string performanceRankingString = performanceRanking == 0 ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"] : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
+                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId);
+                var performanceRankingString = performanceRanking == 0
+                    ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
+                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
 
-                if (E.Owner.GetClientsAsList().Any(_client => _client.Equals(E.Origin)))
+                // check if current client is connected to the server
+                if (E.Owner.GetClientsAsList().Any(client => client.Equals(E.Origin)))
                 {
                     pStats = E.Origin.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
                 }
 
-                else
+                // happens if the user has not gotten a kill/death since connecting
+                if (pStats == null)
                 {
                     await using var context = _contextFactory.CreateContext(false);
-                    pStats = (await context.Set<EFClientStatistics>().FirstAsync(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId));
+                    pStats = (await context.Set<EFClientStatistics>()
+                        .FirstOrDefaultAsync(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId));
                 }
-                statLine = $"^5{pStats.Kills} ^7{_translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{_translationLookup["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{_translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
+
+                // if it's still null then they've not gotten a kill or death yet
+                statLine = pStats == null
+                    ? _translationLookup["PLUGINS_STATS_COMMANDS_NOTAVAILABLE"]
+                    : $"^5{pStats.Kills} ^7{_translationLookup["PLUGINS_STATS_TEXT_KILLS"]} | ^5{pStats.Deaths} ^7{_translationLookup["PLUGINS_STATS_TEXT_DEATHS"]} | ^5{pStats.KDR} ^7KDR | ^5{pStats.Performance} ^7{_translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"].ToUpper()} | {performanceRankingString}";
             }
 
             if (E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
-                string name = E.Target == null ? E.Origin.Name : E.Target.Name;
+                var name = E.Target == null ? E.Origin.Name : E.Target.Name;
                 E.Owner.Broadcast(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(name));
                 E.Owner.Broadcast(statLine);
             }

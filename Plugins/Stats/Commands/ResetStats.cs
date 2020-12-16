@@ -23,40 +23,44 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             Permission = EFClient.Permission.User;
             RequiresTarget = false;
             AllowImpersonation = true;
+
+            _contextFactory = contextFactory;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            if (E.Origin.ClientNumber >= 0)
+            if (gameEvent.Origin.ClientNumber >= 0)
             {
+                var serverId = Helpers.StatManager.GetIdForServer(gameEvent.Owner);
 
-                long serverId = Helpers.StatManager.GetIdForServer(E.Owner);
-
-                EFClientStatistics clientStats;
                 await using var context = _contextFactory.CreateContext();
-                clientStats = await context.Set<EFClientStatistics>()
-                    .Where(s => s.ClientId == E.Origin.ClientId)
+                var clientStats = await context.Set<EFClientStatistics>()
+                    .Where(s => s.ClientId == gameEvent.Origin.ClientId)
                     .Where(s => s.ServerId == serverId)
-                    .FirstAsync();
-
-                clientStats.Deaths = 0;
-                clientStats.Kills = 0;
-                clientStats.SPM = 0.0;
-                clientStats.Skill = 0.0;
-                clientStats.TimePlayed = 0;
-                // todo: make this more dynamic
-                clientStats.EloRating = 200.0;
+                    .FirstOrDefaultAsync();
+                
+                // want to prevent resetting stats before they've gotten any kills
+                if (clientStats != null)
+                {
+                    clientStats.Deaths = 0;
+                    clientStats.Kills = 0;
+                    clientStats.SPM = 0.0;
+                    clientStats.Skill = 0.0;
+                    clientStats.TimePlayed = 0;
+                    // todo: make this more dynamic
+                    clientStats.EloRating = 200.0;
+                    await context.SaveChangesAsync();
+                }
 
                 // reset the cached version
-                Plugin.Manager.ResetStats(E.Origin);
+                Plugin.Manager.ResetStats(gameEvent.Origin);
 
-                await context.SaveChangesAsync();
-                E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 
             else
             {
-                E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
             }
         }
     }

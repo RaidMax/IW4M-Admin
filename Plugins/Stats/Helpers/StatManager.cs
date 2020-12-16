@@ -1161,6 +1161,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public void ResetStats(EFClient client)
         {
             var stats = client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
+            
+            // the cached stats have not been loaded yet
+            if (stats == null)
+            {
+                return;
+            }
+            
             stats.Kills = 0;
             stats.Deaths = 0;
             stats.SPM = 0;

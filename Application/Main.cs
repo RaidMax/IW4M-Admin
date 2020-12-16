@@ -68,7 +68,10 @@ namespace IW4MAdmin.Application
         private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
         {
             ServerManager?.Stop();
-            await ApplicationTask;
+            if (ApplicationTask != null)
+            {
+                await ApplicationTask;
+            }
         }
 
         /// <summary>

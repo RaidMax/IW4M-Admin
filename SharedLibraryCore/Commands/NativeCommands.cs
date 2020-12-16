@@ -725,6 +725,12 @@ namespace SharedLibraryCore.Commands
                 gameEvent.Origin.Tell($"{_translationLookup["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{gameEvent.Target.Name}");
                 return;
             }
+            
+            else if (gameEvent.Target.Level == Permission.Flagged)
+            {
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_FLAGGED"].FormatExt(gameEvent.Target.Name));
+                return;
+            }
 
             // stepped privilege is enabled, but the new level is too high
             else if (steppedPrivileges && !canPromoteSteppedPriv)
@@ -748,9 +754,19 @@ namespace SharedLibraryCore.Commands
 
                 if (result.Failed)
                 {
+                    // user is the same level
+                    if (result.FailReason == GameEvent.EventFailReason.Invalid)
+                    {
+                        gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_INVALID"]
+                            .FormatExt(gameEvent.Target.Name, newPerm.ToString()));
+                        return;
+                    }
+                    
                     using (LogContext.PushProperty("Server", gameEvent.Origin.CurrentServer?.ToString()))
                     {
-                        logger.LogWarning("Failed to set level of client {origin}", gameEvent.Origin.ToString());
+                        logger.LogWarning("Failed to set level of client {origin} {reason}", 
+                            gameEvent.Origin.ToString(), 
+                            result.FailReason);
                     }
                     gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     return;

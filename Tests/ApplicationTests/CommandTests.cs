@@ -532,6 +532,31 @@ namespace ApplicationTests
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission && !_event.Failed));
         }
+        
+        [Test]
+        public async Task Test_SetLevelFail_WhenFlagged()
+        {
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
+            var cmd = serviceProvider.GetRequiredService<SetLevelCommand>();
+            var origin = ClientGenerators.CreateBasicClient(server);
+            origin.Level = Permission.Owner;
+            var target = ClientGenerators.CreateBasicClient(server);
+            target.Level = Permission.Flagged;
+
+            var gameEvent = new GameEvent()
+            {
+                Target = target,
+                Origin = origin,
+                Data = "Banned",
+                Owner = server,
+            };
+
+            await cmd.ExecuteAsync(gameEvent);
+
+            Assert.AreEqual(Permission.Flagged, target.Level);
+            Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.Tell));
+            Assert.IsEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ChangePermission));
+        }
         #endregion
 
         #region PREFIX_PROCESSING

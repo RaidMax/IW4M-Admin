@@ -142,11 +142,14 @@
     </div>
 </div>
 
-<div class="row d-md-flex pt-2">
-    <div id="profile_events" class="text-muted text-left pl-4 pr-4 pl-md-0 pr-md-0">
-        @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
+@if (ViewBag.Authorized)
+{
+    <div class="row d-md-flex pt-2">
+        <div id="profile_events" class="text-muted text-left pl-4 pr-4 pl-md-0 pr-md-0">
+            @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
+        </div>
     </div>
-</div>
+}
 
 <div class="row">
     <div class="oi oi-chevron-bottom text-center mt-2 btn btn-primary btn-block loader-load-more" title="Load more meta" data-action="unban" aria-hidden="true"></div>

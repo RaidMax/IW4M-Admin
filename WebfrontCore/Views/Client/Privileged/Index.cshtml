@@ -2,7 +2,9 @@
 
 <h4 class="pb-3 text-center ">@ViewBag.Title</h4>
 
-<div class="row border-bottom">
+@if (ViewBag.Authorized)
+{
+    <div class="row border-bottom">
     @{
         foreach (var key in Model.Keys)
         {
@@ -21,4 +23,9 @@
             </div>
         }
     }
-</div>
+    </div>
+}else{
+    <div class="row">
+        <div class="bg-danger">This section only accessible for logged in users </div>
+    </div>
+}

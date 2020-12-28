@@ -74,9 +74,15 @@
         }
         else
         {
-            <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt">
-                @Model.Level
-            </div>
+            if(ViewBag.Authorized){
+                <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt">
+                    @Model.Level
+                </div>
+            }else{
+                <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-0">
+                    User
+                </div>
+            }
         }
     </div>
     @if (ViewBag.Authorized)

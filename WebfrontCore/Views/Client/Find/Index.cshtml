@@ -20,7 +20,11 @@
                         <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
                     </a>
                 </div>
-                <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
+                @if (ViewBag.Authorized){
+                    <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
+                }else{
+                    <div class="col-4 level-color-0">User</div>
+                }
                 <div class="col-3 text-right">@client.LastConnectionText</div>
             </div>
         }

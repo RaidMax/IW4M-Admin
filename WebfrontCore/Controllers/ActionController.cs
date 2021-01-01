@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -25,9 +26,10 @@ namespace WebfrontCore.Controllers
         private readonly string _unflagCommandName;
         private readonly string _setLevelCommandName;
 
-        public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands) : base(manager)
+        public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands,
+            ApplicationConfiguration appConfig) : base(manager)
         {
-            _appConfig = manager.GetApplicationSettings().Configuration();
+            _appConfig = appConfig;
 
             foreach (var cmd in registeredCommands)
             {
@@ -73,23 +75,33 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                      Name = "Reason",
-                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                        Name = "Reason",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     },
                     new InputInfo()
                     {
-                        Name ="Duration",
-                        Label=Localization["WEBFRONT_ACTION_LABEL_DURATION"],
-                        Type="select",
-                        Values = new Dictionary<string, string>()
-                        {
-                            {"1", $"1 {Localization["GLOBAL_TIME_HOUR"]}" },
-                            {"2", $"6  {Localization["GLOBAL_TIME_HOURS"]}" },
-                            {"3", $"1  {Localization["GLOBAL_TIME_DAY"]}" },
-                            {"4", $"2  {Localization["GLOBAL_TIME_DAYS"]}" },
-                            {"5", $"1  {Localization["GLOBAL_TIME_WEEK"]}" },
-                            {"6", $"{Localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]}" },
-                        }
+                        Name = "PresetReason",
+                        Type = "select",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_PRESET_REASON"],
+                        Values = GetPresetPenaltyReasons()
+                    },
+                    new InputInfo()
+                    {
+                        Name = "Duration",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_DURATION"],
+                        Type = "select",
+                        Values = _appConfig.BanDurations
+                            .Select((item, index) => new
+                                {
+                                    Id = (index + 1).ToString(),
+                                    Value = item.HumanizeForCurrentCulture()
+                                }
+                            )
+                            .Append(new
+                            {
+                                Id = (_appConfig.BanDurations.Length + 1).ToString(),
+                                Value = Localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]
+                            }).ToDictionary(duration => duration.Id, duration => duration.Value),
                     }
                 },
                 Action = "BanAsync",
@@ -99,34 +111,24 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
-        public async Task<IActionResult> BanAsync(int targetId, string Reason, int Duration)
+        public async Task<IActionResult> BanAsync(int targetId, string reason, int duration, string presetReason = null)
         {
-            string duration = string.Empty;
-
-            var loc = Utilities.CurrentLocalization.LocalizationIndex;
-
-            switch (Duration)
+            var fallthroughReason = presetReason ?? reason;
+            string command;
+            // permanent
+            if (duration > _appConfig.BanDurations.Length)
             {
-                case 1:
-                    duration = $"1{loc["GLOBAL_TIME_HOURS"][0]}";
-                    break;
-                case 2:
-                    duration = $"6{loc["GLOBAL_TIME_HOURS"][0]}";
-                    break;
-                case 3:
-                    duration = $"1{loc["GLOBAL_TIME_DAYS"][0]}";
-                    break;
-                case 4:
-                    duration = $"2{loc["GLOBAL_TIME_DAYS"][0]}";
-                    break;
-                case 5:
-                    duration = $"1{loc["GLOBAL_TIME_WEEKS"][0]}";
-                    break;
+                command = $"{_appConfig.CommandPrefix}{_banCommandName} @{targetId} {fallthroughReason}";
             }
-
-            string command = Duration == 6 ?
-                $"{_appConfig.CommandPrefix}{_banCommandName} @{targetId} {Reason}" :
-                $"{_appConfig.CommandPrefix}{_tempbanCommandName} @{targetId} {duration} {Reason}";
+            // temporary ban
+            else
+            {
+                var durationSpan = _appConfig.BanDurations[duration - 1];
+                var durationValue = durationSpan.TotalHours.ToString(CultureInfo.InvariantCulture) +
+                                    Localization["GLOBAL_TIME_HOURS"][0];
+                command =
+                    $"{_appConfig.CommandPrefix}{_tempbanCommandName} @{targetId} {durationValue} {fallthroughReason}";
+            }
 
             var server = Manager.GetServers().First();
 
@@ -147,8 +149,8 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                      Name = "Reason",
-                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                        Name = "Reason",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     }
                 },
                 Action = "UnbanAsync",
@@ -197,7 +199,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> LoginAsync(int clientId, string password)
         {
-            return await Task.FromResult(RedirectToAction("LoginAsync", "Account", new { clientId, password }));
+            return await Task.FromResult(RedirectToAction("LoginAsync", "Account", new {clientId, password}));
         }
 
         public IActionResult EditForm()
@@ -210,14 +212,14 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                        Name ="level",
-                        Label=Localization["WEBFRONT_PROFILE_LEVEL"],
-                        Type="select",
+                        Name = "level",
+                        Label = Localization["WEBFRONT_PROFILE_LEVEL"],
+                        Type = "select",
                         Values = Enum.GetValues(typeof(Permission)).OfType<Permission>()
                             .Where(p => p <= Client.Level)
                             .Where(p => p != Permission.Banned)
                             .Where(p => p != Permission.Flagged)
-                            .ToDictionary(p => p.ToString(), p=> p.ToLocalizedLevelName())
+                            .ToDictionary(p => p.ToString(), p => p.ToLocalizedLevelName())
                     },
                 },
                 Action = "EditAsync",
@@ -255,7 +257,10 @@ namespace WebfrontCore.Controllers
         public string GenerateLoginTokenAsync()
         {
             var state = Manager.TokenAuthenticator.GenerateNextToken(Client.NetworkId);
-            return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token, $"{state.RemainingTime} {Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}", Client.ClientId);
+            return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"],
+                state.Token,
+                $"{state.RemainingTime} {Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}",
+                Client.ClientId);
         }
 
         public IActionResult ChatForm(long id)
@@ -321,9 +326,16 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                      Name = "reason",
-                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
-                    }
+                        Name = "reason",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                    },
+                    new InputInfo()
+                    {
+                        Name = "PresetReason",
+                        Type = "select",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_PRESET_REASON"],
+                        Values = GetPresetPenaltyReasons()
+                    },
                 },
                 Action = "FlagAsync",
                 ShouldRefresh = true
@@ -332,14 +344,14 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
-        public async Task<IActionResult> FlagAsync(int targetId, string reason)
+        public async Task<IActionResult> FlagAsync(int targetId, string reason, string presetReason = null)
         {
             var server = Manager.GetServers().First();
 
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}{_flagCommandName} @{targetId} {reason}"
+                command = $"{_appConfig.CommandPrefix}{_flagCommandName} @{targetId} {presetReason ?? reason}"
             }));
         }
 
@@ -353,8 +365,8 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                      Name = "reason",
-                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                        Name = "reason",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     }
                 },
                 Action = "UnflagAsync",
@@ -385,8 +397,15 @@ namespace WebfrontCore.Controllers
                 {
                     new InputInfo()
                     {
-                      Name = "reason",
-                      Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                        Name = "reason",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
+                    },
+                    new InputInfo()
+                    {
+                        Name = "PresetReason",
+                        Type = "select",
+                        Label = Localization["WEBFRONT_ACTION_LABEL_PRESET_REASON"],
+                        Values = GetPresetPenaltyReasons()
                     },
                     new InputInfo()
                     {
@@ -402,7 +421,7 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
-        public async Task<IActionResult> KickAsync(int targetId, string reason)
+        public async Task<IActionResult> KickAsync(int targetId, string reason, string presetReason = null)
         {
             var client = Manager.GetActiveClients().FirstOrDefault(_client => _client.ClientId == targetId);
 
@@ -414,8 +433,23 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
             {
                 serverId = client.CurrentServer.EndPoint,
-                command = $"{_appConfig.CommandPrefix}{_kickCommandName} {client.ClientNumber} {reason}"
+                command = $"{_appConfig.CommandPrefix}{_kickCommandName} {client.ClientNumber} {presetReason ?? reason}"
             }));
         }
+
+        private Dictionary<string, string> GetPresetPenaltyReasons() => _appConfig.PresetPenaltyReasons.Values
+            .Concat(_appConfig.GlobalRules)
+            .Concat(_appConfig.Servers.SelectMany(server => server.Rules))
+            .Distinct()
+            .Select((value, index) => new
+            {
+                Value = value
+            })
+            // this is used for the default empty optional value
+            .Prepend(new
+            {
+                Value = ""
+            })
+            .ToDictionary(item => item.Value, item => item.Value);
     }
 }

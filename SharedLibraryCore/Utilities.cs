@@ -1003,6 +1003,12 @@ namespace SharedLibraryCore
 
         public static string FindRuleForReason(this string reason, ApplicationConfiguration appConfig, Server server)
         {
+            // allow for penalty presets
+            if (appConfig.PresetPenaltyReasons?.ContainsKey(reason.ToLower()) ?? false)
+            {
+                return appConfig.PresetPenaltyReasons[reason.ToLower()];
+            }
+            
             var regex = Regex.Match(reason, @"(rule|serverrule)(\d+)", RegexOptions.IgnoreCase);
             if (!regex.Success)
             {

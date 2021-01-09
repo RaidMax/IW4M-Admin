@@ -20,7 +20,14 @@
                         <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
                     </a>
                 </div>
-                <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
+                @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
+                {
+                    <div class="col-4 level-color-0">@loc["GLOBAL_PERMISSION_USER"]</div>
+                }
+                else
+                {
+                    <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
+                }
                 <div class="col-3 text-right">@client.LastConnectionText</div>
             </div>
         }
@@ -41,7 +48,14 @@
                     <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
                 </a>
             </div>
-            <div class="p-2 level-color-@client.LevelInt">@client.Level</div>
+             @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
+             {
+                 <div class="p-2 level-color-0">@loc["GLOBAL_PERMISSION_USER"]</div>
+             }
+             else
+             {
+                 <div class="p-2 level-color-@client.LevelInt">@client.Level</div>
+             }
             <div class="p-2 text-white-50">@client.LastConnectionText</div>
         </div>
     }

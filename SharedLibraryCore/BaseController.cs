@@ -134,6 +134,7 @@ namespace SharedLibraryCore
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
             ViewBag.CustomBranding = Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+            ViewBag.EnablePrivilegedUserPrivacy = Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy;
 
             base.OnActionExecuting(context);
         }

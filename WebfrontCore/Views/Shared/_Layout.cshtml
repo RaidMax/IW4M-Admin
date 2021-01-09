@@ -35,7 +35,14 @@
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_HOME"], "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
                     <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
+                    @if (ViewBag.Authorized)
+                    {
+                        <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link"})</li>
+                    }
+                    else if (!ViewBag.Authorized && !ViewBag.EnablePrivilegedUserPrivacy)
+                    {
+                        <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link"})</li>
+                    }
                     <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_HELP"], "Help", "Home", new { area = "" }, new { @class = "nav-link" })</li>
                     @foreach (var _page in ViewBag.Pages)
                     {

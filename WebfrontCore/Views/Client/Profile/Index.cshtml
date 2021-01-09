@@ -16,7 +16,7 @@
 
 <div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
     <!-- Initial/Avatar Column -->
-    <div id="profile_avatar" class="d-block d-lg-inline-flex flex-column mr-auto ml-auto mr-lg-0 ml-lg-0 justify-content-center text-center level-bgcolor-@Model.LevelInt @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
+    <div id="profile_avatar" class="d-block d-lg-inline-flex flex-column mr-auto ml-auto mr-lg-0 ml-lg-0 justify-content-center text-center level-bgcolor-@(!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy ? "0" : Model.LevelInt.ToString()) @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@string.Format("https://gravatar.com/avatar/{0}?size=168&default=blank&rating=pg", gravatarUrl)')">
         @if (string.IsNullOrEmpty(gravatarUrl))
         {
             <span class="profile-shortcode">@shortCode</span>
@@ -74,9 +74,19 @@
         }
         else
         {
-            <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt">
-                @Model.Level
-            </div>
+            if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
+            {
+                <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-0">
+                    @ViewBag.Localization["GLOBAL_PERMISSION_USER"]
+                </div>
+            }
+
+            else
+            {
+                <div id="profile_level" class="font-weight-bold h4 mb-0 level-color-@Model.LevelInt">
+                    @Model.Level
+                </div>
+            }
         }
     </div>
     @if (ViewBag.Authorized)
@@ -142,11 +152,14 @@
     </div>
 </div>
 
-<div class="row d-md-flex pt-2">
-    <div id="profile_events" class="text-muted text-left pl-4 pr-4 pl-md-0 pr-md-0">
-        @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
+@if ((!ViewBag.Authorized && !ViewBag.EnablePrivilegedUserPrivacy) || ViewBag.Authorized)
+{
+    <div class="row d-md-flex pt-2">
+        <div id="profile_events" class="text-muted text-left pl-4 pr-4 pl-md-0 pr-md-0">
+            @await Component.InvokeAsync("ProfileMetaList", new {clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType})
+        </div>
     </div>
-</div>
+}
 
 <div class="row">
     <div class="oi oi-chevron-bottom text-center mt-2 btn btn-primary btn-block loader-load-more" title="Load more meta" data-action="unban" aria-hidden="true"></div>

@@ -135,6 +135,8 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]
         public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new Dictionary<string, string>
             {{"afk", "Away from keyboard"}, {"ci", "Connection interrupted. Reconnect"}};
+        [LocalizedDisplayName(("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY"))]
+        public bool EnablePrivilegedUserPrivacy { get; set; }
         [UIHint("ServerConfiguration")] 
         public ServerConfiguration[] Servers { get; set; }
 

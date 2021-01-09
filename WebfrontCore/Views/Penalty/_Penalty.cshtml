@@ -31,7 +31,12 @@
 <tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
     <td>
-        @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + (int)Model.PunisherLevel })
+        @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", 
+            "Client", 
+            new { id = Model.PunisherId }, 
+            new { @class = !ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy 
+                ? "level-color-0" 
+                : "level-color-" + (int)Model.PunisherLevel })
     </td>
 </tr>
 
@@ -64,7 +69,12 @@
         <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")" allow="@ViewBag.EnableColorCodes"></color-code>
     </td>
     <td>
-        @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", "Client", new { id = Model.PunisherId }, new { @class = "level-color-" + (int)Model.PunisherLevel })
+        @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", 
+            "Client", 
+            new { id = Model.PunisherId }, 
+            new { @class = !ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy 
+                ? "level-color-0" 
+                : "level-color-" + (int)Model.PunisherLevel })
     </td>
     <td class="text-right text-light">
         @{

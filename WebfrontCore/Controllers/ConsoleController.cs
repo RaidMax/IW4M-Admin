@@ -26,9 +26,9 @@ namespace WebfrontCore.Controllers
                 ID = s.EndPoint,
             });
 
-            ViewBag.Description = "Use the IW4MAdmin web console to execute commands";
+            ViewBag.Description = Localization["WEFBRONT_DESCRIPTION_CONSOLE"];
             ViewBag.Title = Localization["WEBFRONT_CONSOLE_TITLE"];
-            ViewBag.Keywords = "IW4MAdmin, console, execute, commands";
+            ViewBag.Keywords = Localization["WEBFRONT_KEYWORDS_CONSOLE"];
 
             return View(activeServers);
         }

@@ -24,9 +24,9 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> Index(Game? game = null)
         {
-            ViewBag.Description = "IW4MAdmin is a complete server administration tool for IW4x.";
+            ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_HOME"];
             ViewBag.Title = Localization["WEBFRONT_HOME_TITLE"];
-            ViewBag.Keywords = "IW4MAdmin, server, administration, IW4x, MW2, Modern Warfare 2";
+            ViewBag.Keywords = Localization["WEBFRONT_KEWORDS_HOME"];
 
             var servers = Manager.GetServers().Where(_server => !game.HasValue ? true : _server.GameName == game);
 

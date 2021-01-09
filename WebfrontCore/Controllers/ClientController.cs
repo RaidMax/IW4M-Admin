@@ -131,8 +131,8 @@ namespace WebfrontCore.Controllers
             }
 
             ViewBag.Title = Localization["WEBFRONT_CLIENT_PRIVILEGED_TITLE"];
-            ViewBag.Description = "List of all privileged clients on IW4MAdmin";
-            ViewBag.Keywords = "IW4MAdmin, privileged, admins, clients, administrators";
+            ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_PRIVILEGED"];
+            ViewBag.Keywords = Localization["WEBFRONT_KEYWORDS_PRIVILEGED"];
 
             return View("Privileged/Index", adminsDict);
         }

@@ -830,9 +830,9 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
+            var uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
             var loc = _translationLookup;
-            E.Origin.Tell(loc["COMMANDS_UPTIME_TEXT"].FormatExt(uptime.Days, uptime.Hours, uptime.Minutes));
+            E.Origin.Tell(loc["COMMANDS_UPTIME_TEXT"].FormatExt(uptime.HumanizeForCurrentCulture(4)));
             return Task.CompletedTask;
         }
     }

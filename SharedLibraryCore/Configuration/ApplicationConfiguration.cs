@@ -129,7 +129,7 @@ namespace SharedLibraryCore.Configuration
             TimeSpan.FromDays(1),
             TimeSpan.FromDays(2),
             TimeSpan.FromDays(7),
-            TimeSpan.FromDays(31)
+            TimeSpan.FromDays(30)
         };
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]

@@ -22,9 +22,9 @@ namespace WebfrontCore.Controllers
 
         public IActionResult List(PenaltyType showOnly = PenaltyType.Any, bool hideAutomatedPenalties = true)
         {
-            ViewBag.Description = "List of all the recent penalties (bans, kicks, warnings) on IW4MAdmin";
+            ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_PENALTIES"];
             ViewBag.Title = Localization["WEBFRONT_PENALTY_TITLE"];
-            ViewBag.Keywords = "IW4MAdmin, penalties, ban, kick, warns";
+            ViewBag.Keywords = Localization["WEBFRONT_KEYWORDS_PENALTIES"];
             ViewBag.HideAutomatedPenalties = hideAutomatedPenalties;
 
             return View(showOnly);

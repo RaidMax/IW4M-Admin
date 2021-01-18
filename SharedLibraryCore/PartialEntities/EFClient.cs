@@ -133,7 +133,7 @@ namespace SharedLibraryCore.Database.Models
         /// send a message directly to the connected client
         /// </summary>
         /// <param name="message">message content to send to client</param>
-        public GameEvent Tell(String message)
+        public GameEvent Tell(string message)
         {
             var e = new GameEvent()
             {
@@ -141,8 +141,12 @@ namespace SharedLibraryCore.Database.Models
                 Target = this,
                 Owner = CurrentServer,
                 Type = GameEvent.EventType.Tell,
-                Data = message
+                Data = message,
+                CorrelationId = CurrentServer.Manager.ProcessingEvents.Values
+                    .FirstOrDefault(ev => ev.Type == GameEvent.EventType.Command && (ev.Origin?.ClientId == ClientId || ev.ImpersonationOrigin?.ClientId == ClientId))?.CorrelationId ?? Guid.NewGuid()
             };
+            
+            e.Output.Add(message.StripColors());
 
             CurrentServer?.Manager.AddEvent(e);
             return e;

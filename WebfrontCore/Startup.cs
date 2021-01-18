@@ -115,6 +115,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IMetaService>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ApplicationConfiguration>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ClientService>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

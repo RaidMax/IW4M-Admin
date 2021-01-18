@@ -1,6 +1,7 @@
 ﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -247,6 +248,8 @@ namespace SharedLibraryCore
         public long Id { get; private set; }
         public EventFailReason FailReason { get; set; }
         public bool Failed => FailReason != EventFailReason.None;
+        public Guid CorrelationId { get; set; } = Guid.NewGuid();
+        public List<string> Output { get; set; } = new List<string>();
 
         /// <summary>
         /// Indicates if the event should block until it is complete
@@ -280,7 +283,7 @@ namespace SharedLibraryCore
             {
                 using(LogContext.PushProperty("Server", Owner?.ToString()))
                 {
-                    Utilities.DefaultLogger.LogError("Waiting for event to complete timed out {@eventData}", new { Event = this, Message, Origin = Origin.ToString(), Target = Target.ToString()});
+                    Utilities.DefaultLogger.LogError("Waiting for event to complete timed out {@eventData}", new { Event = this, Message, Origin = Origin?.ToString(), Target = Target?.ToString()});
                 }
             }
 

@@ -154,7 +154,8 @@ namespace IW4MAdmin
 
                         catch (CommandException e)
                         {
-                            ServerLogger.LogWarning(e, "Error validating command from event {@event}", E);
+                            ServerLogger.LogWarning(e, "Error validating command from event {@event}", 
+                                new { E.Type, E.Data, E.Message, E.Subtype, E.IsRemote, E.CorrelationId });
                             E.FailReason = GameEvent.EventFailReason.Invalid;
                         }
 

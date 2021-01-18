@@ -52,8 +52,10 @@ namespace WebfrontCore.Controllers
             var remoteEvent = new GameEvent()
             {
                 Type = GameEvent.EventType.Command,
-                Data = command.StartsWith(_appconfig.CommandPrefix) || command.StartsWith(_appconfig.BroadcastCommandPrefix) ? 
-                command : $"{_appconfig.CommandPrefix}{command}",
+                Data = command.StartsWith(_appconfig.CommandPrefix) ||
+                       command.StartsWith(_appconfig.BroadcastCommandPrefix)
+                    ? command
+                    : $"{_appconfig.CommandPrefix}{command}",
                 Origin = client,
                 Owner = server,
                 IsRemote = true
@@ -65,7 +67,8 @@ namespace WebfrontCore.Controllers
             try
             {
                 // wait for the event to process
-                var completedEvent = await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
+                var completedEvent =
+                    await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
 
                 if (completedEvent.FailReason == GameEvent.EventFailReason.Timeout)
                 {
@@ -81,13 +84,11 @@ namespace WebfrontCore.Controllers
 
                 else
                 {
-                    response = response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToArray();
-                }
-
-                // remove the added command response
-                for (int i = 0; i < response?.Length; i++)
-                {
-                    server.CommandResult.Remove(response[i]);
+                    response = completedEvent.Output.Select(output => new CommandResponseInfo()
+                    {
+                        Response = output,
+                        ClientId = client.ClientId
+                    }).ToArray();
                 }
             }
 

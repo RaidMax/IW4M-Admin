@@ -6,6 +6,7 @@ using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
 using System;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
 namespace SharedLibraryCore.Interfaces
@@ -86,5 +87,6 @@ namespace SharedLibraryCore.Interfaces
         /// event executed when event has finished executing 
         /// </summary>
         event EventHandler<GameEvent> OnGameEventExecuted;
+        ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; }
     }
 }

@@ -72,6 +72,7 @@ namespace IW4MAdmin.Application
         private readonly IServiceProvider _serviceProvider;
         private readonly ChangeHistoryService _changeHistoryService;
         private readonly ApplicationConfiguration _appConfig;
+        public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } = new ConcurrentDictionary<long, GameEvent>();
 
         public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
@@ -115,6 +116,8 @@ namespace IW4MAdmin.Application
 
         public async Task ExecuteEvent(GameEvent newEvent)
         {
+            ProcessingEvents.TryAdd(newEvent.Id, newEvent);
+            
             // the event has failed already
             if (newEvent.Failed)
             {
@@ -175,6 +178,29 @@ namespace IW4MAdmin.Application
             }
 
             skip:
+            if (newEvent.Type == EventType.Command && newEvent.ImpersonationOrigin == null)
+            {
+                var correlatedEvents =
+                    ProcessingEvents.Values.Where(ev =>
+                            ev.CorrelationId == newEvent.CorrelationId && ev.Id != newEvent.Id)
+                        .ToList();
+
+                await Task.WhenAll(correlatedEvents.Select(ev =>
+                    ev.WaitAsync(Utilities.DefaultCommandTimeout, CancellationToken)));
+                newEvent.Output.AddRange(correlatedEvents.SelectMany(ev => ev.Output));
+
+                foreach (var correlatedEvent in correlatedEvents)
+                {
+                    ProcessingEvents.Remove(correlatedEvent.Id, out _);
+                }
+            }
+
+            // we don't want to remove events that are correlated to command
+            if (ProcessingEvents.Values.Count(gameEvent => gameEvent.CorrelationId == newEvent.CorrelationId) == 1)
+            {
+                ProcessingEvents.Remove(newEvent.Id, out _);
+            }
+
             // tell anyone waiting for the output that we're done
             newEvent.Complete();
             OnGameEventExecuted?.Invoke(this, newEvent);

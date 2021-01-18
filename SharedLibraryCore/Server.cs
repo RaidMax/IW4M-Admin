@@ -172,22 +172,6 @@ namespace SharedLibraryCore
                 Console.WriteLine(message.StripColors());
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
-
-            // prevent this from queueing up too many command responses
-            if (CommandResult.Count > 15)
-            {
-                CommandResult.RemoveAt(0);
-            }
-
-            // it was a remote command so we need to add it to the command result queue
-            if (target.ClientNumber < 0)
-            {
-                CommandResult.Add(new CommandResponseInfo()
-                {
-                    Response = message.StripColors(),
-                    ClientId = target.ClientId
-                });
-            }
         }
 
         /// <summary>
@@ -347,8 +331,5 @@ namespace SharedLibraryCore
         // only here for performance
         private readonly bool CustomSayEnabled;
         private readonly string CustomSayName;
-
-        //Remote
-        public IList<CommandResponseInfo> CommandResult = new List<CommandResponseInfo>();
     }
 }

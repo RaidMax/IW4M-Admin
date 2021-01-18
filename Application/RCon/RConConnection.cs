@@ -435,6 +435,7 @@ namespace IW4MAdmin.Application.RCon
                     if (bufferSpaceAvailable >= 0 )
                     {
                         _log.LogWarning("Not enough buffer space to store incoming data {bytesNeeded} additional bytes required", bufferSpaceAvailable);
+                        continue;
                     }
 
                     state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, totalBytesTransferred, sock.Available);

@@ -196,7 +196,7 @@ namespace IW4MAdmin.Application
             }
 
             // we don't want to remove events that are correlated to command
-            if (ProcessingEvents.Values.Count(gameEvent => gameEvent.CorrelationId == newEvent.CorrelationId) == 1)
+            if (ProcessingEvents.Values.ToList()?.Count(gameEvent => gameEvent.CorrelationId == newEvent.CorrelationId) == 1)
             {
                 ProcessingEvents.Remove(newEvent.Id, out _);
             }

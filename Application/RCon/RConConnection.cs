@@ -430,6 +430,13 @@ namespace IW4MAdmin.Application.RCon
                 while (sock.Available > 0)
                 {
                     _log.LogDebug("{available} more bytes to be read", sock.Available);
+
+                    var bufferSpaceAvailable = sock.Available + totalBytesTransferred - state.ReceiveBuffer.Length;
+                    if (bufferSpaceAvailable >= 0 )
+                    {
+                        _log.LogWarning("Not enough buffer space to store incoming data {bytesNeeded} additional bytes required", bufferSpaceAvailable);
+                    }
+
                     state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, totalBytesTransferred, sock.Available);
 
                     if (sock.ReceiveAsync(state.ReceiveEventArgs))

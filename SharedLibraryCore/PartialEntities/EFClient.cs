@@ -152,6 +152,16 @@ namespace SharedLibraryCore.Database.Models
             return e;
         }
 
+        public void Tell(IEnumerable<string> messages)
+        {
+            foreach(var message in messages)
+            {
+#pragma warning disable 4014
+                Tell(message).WaitAsync();
+#pragma warning restore 4014
+            }
+        }
+
         /// <summary>
         /// warn a client with given reason
         /// </summary>
@@ -706,9 +716,15 @@ namespace SharedLibraryCore.Database.Models
         public ClientPermission ClientPermission => new ClientPermission()
         {
             Level = Level,
-            Name = Utilities.CurrentLocalization
-                .LocalizationIndex[$"GLOBAL_PERMISSION_{Level.ToString().ToUpper()}"]
+            Name = Level.ToLocalizedLevelName()
         };
+
+        [NotMapped]
+        public string Tag
+        {
+            get => GetAdditionalProperty<string>(EFMeta.ClientTag);
+            set => SetAdditionalProperty(EFMeta.ClientTag, value);
+        }
 
         [NotMapped]
         private readonly SemaphoreSlim _processingEvent;

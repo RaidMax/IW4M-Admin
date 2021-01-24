@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SharedLibraryCore.Database.MigrationContext;
@@ -9,9 +10,10 @@ using SharedLibraryCore.Database.MigrationContext;
 namespace SharedLibraryCore.Migrations.Postgresql
 {
     [DbContext(typeof(PostgresqlDatabaseContext))]
-    partial class PostgresqlDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20210123024304_UpdateEFMetaToSupportNonClientMeta")]
+    partial class UpdateEFMetaToSupportNonClientMeta
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -638,9 +640,6 @@ namespace SharedLibraryCore.Migrations.Postgresql
                         .HasColumnType("character varying(32)")
                         .HasMaxLength(32);
 
-                    b.Property<int?>("LinkedMetaId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp without time zone");
 
@@ -653,8 +652,6 @@ namespace SharedLibraryCore.Migrations.Postgresql
                     b.HasIndex("ClientId");
 
                     b.HasIndex("Key");
-
-                    b.HasIndex("LinkedMetaId");
 
                     b.ToTable("EFMeta");
                 });
@@ -921,11 +918,6 @@ namespace SharedLibraryCore.Migrations.Postgresql
                     b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
                         .WithMany("Meta")
                         .HasForeignKey("ClientId");
-
-                    b.HasOne("SharedLibraryCore.Database.Models.EFMeta", "LinkedMeta")
-                        .WithMany()
-                        .HasForeignKey("LinkedMetaId")
-                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFPenalty", b =>

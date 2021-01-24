@@ -14,7 +14,7 @@ namespace SharedLibraryCore.Migrations.Sqlite
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.7");
+                .HasAnnotation("ProductVersion", "3.1.10");
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot", b =>
                 {
@@ -608,7 +608,7 @@ namespace SharedLibraryCore.Migrations.Sqlite
                     b.Property<bool>("Active")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ClientId")
+                    b.Property<int?>("ClientId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Created")
@@ -622,6 +622,9 @@ namespace SharedLibraryCore.Migrations.Sqlite
                         .HasColumnType("TEXT")
                         .HasMaxLength(32);
 
+                    b.Property<int?>("LinkedMetaId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("Updated")
                         .HasColumnType("TEXT");
 
@@ -634,6 +637,8 @@ namespace SharedLibraryCore.Migrations.Sqlite
                     b.HasIndex("ClientId");
 
                     b.HasIndex("Key");
+
+                    b.HasIndex("LinkedMetaId");
 
                     b.ToTable("EFMeta");
                 });
@@ -897,9 +902,12 @@ namespace SharedLibraryCore.Migrations.Sqlite
                 {
                     b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
                         .WithMany("Meta")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("SharedLibraryCore.Database.Models.EFMeta", "LinkedMeta")
+                        .WithMany()
+                        .HasForeignKey("LinkedMetaId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFPenalty", b =>

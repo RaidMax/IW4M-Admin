@@ -16,7 +16,31 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="metaValue">value of the meta data</param>
         /// <param name="client">client to save the meta for</param>
         /// <returns></returns>
-        Task AddPersistentMeta(string metaKey, string metaValue, EFClient client);
+        Task AddPersistentMeta(string metaKey, string metaValue, EFClient client, EFMeta linkedMeta = null);
+
+        /// <summary>
+        /// adds or updates meta key and value to the database
+        /// </summary>
+        /// <param name="metaKey">key of meta data</param>
+        /// <param name="metaValue">value of the meta data</param>
+        /// <returns></returns>
+        Task AddPersistentMeta(string metaKey, string metaValue);
+
+        /// <summary>
+        ///  removes meta key with given value
+        /// </summary>
+        /// <param name="metaKey">key of meta data</param>
+        /// <param name="client">client to delete the meta for</param>
+        /// <returns></returns>
+        Task RemovePersistentMeta(string metaKey, EFClient client);
+
+        /// <summary>
+        /// removes meta key with given value
+        /// </summary>
+        /// <param name="metaKey">key of the meta data</param>
+        /// <param name="metaValue">value of the meta data</param>
+        /// <returns></returns>
+        Task RemovePersistentMeta(string metaKey, string metaValue = null);
 
         /// <summary>
         /// retrieves meta data for given client and key
@@ -25,6 +49,13 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="client">client to retrieve meta for</param>
         /// <returns></returns>
         Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client);
+
+        /// <summary>
+        /// retrieves collection of meta for given key
+        /// </summary>
+        /// <param name="metaKey">key to retrieve values for</param>
+        /// <returns></returns>
+        Task<IEnumerable<EFMeta>> GetPersistentMeta(string metaKey);
 
         /// <summary>
         /// adds a meta task to the runtime meta list

@@ -140,6 +140,17 @@ namespace SharedLibraryCore
             Manager.AddEvent(e);
             return e;
         }
+        
+        public void Broadcast(IEnumerable<string> messages, EFClient sender = null)
+        {
+            foreach (var message in messages)
+            {
+#pragma warning disable 4014
+                Broadcast(message, sender).WaitAsync();
+#pragma warning restore 4014
+            }
+        }
+        
 
         /// <summary>
         /// Send a message to a particular players

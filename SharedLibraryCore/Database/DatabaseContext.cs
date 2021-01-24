@@ -57,12 +57,12 @@ namespace SharedLibraryCore.Database
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
         {
-            
+
         }
 
         protected DatabaseContext(DbContextOptions options) : base(options)
         {
-            
+
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -123,6 +123,10 @@ namespace SharedLibraryCore.Database
             modelBuilder.Entity<EFMeta>(ent =>
             {
                 ent.HasIndex(_meta => _meta.Key);
+                ent.HasIndex(_meta => _meta.LinkedMetaId);
+                ent.HasOne(_meta => _meta.LinkedMeta)
+                    .WithMany()
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // force full name for database conversion

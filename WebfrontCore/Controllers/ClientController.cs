@@ -36,6 +36,11 @@ namespace WebfrontCore.Controllers
 
             var activePenalties = (await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.IPAddress));
 
+            var tag = await _metaService.GetPersistentMeta(EFMeta.ClientTag, client);
+            if (tag?.LinkedMeta != null)
+            {
+                client.SetAdditionalProperty(EFMeta.ClientTag, tag.LinkedMeta.Value);
+            }
 
             int displayLevelInt = (int)client.Level;
             string displayLevel = client.Level.ToLocalizedLevelName();
@@ -45,6 +50,8 @@ namespace WebfrontCore.Controllers
                 displayLevelInt = (int)Permission.User;
                 displayLevel = Permission.User.ToLocalizedLevelName();
             }
+
+            displayLevel = string.IsNullOrEmpty(client.Tag) ? displayLevel : $"{displayLevel} ({client.Tag})";
 
             var clientDto = new PlayerInfo()
             {

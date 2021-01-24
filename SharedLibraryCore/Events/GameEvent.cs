@@ -261,6 +261,11 @@ namespace SharedLibraryCore
             _eventFinishedWaiter.Set();
         }
 
+        public async Task<GameEvent> WaitAsync()
+        {
+            return await WaitAsync(Utilities.DefaultCommandTimeout, new CancellationToken());
+        }
+
         /// <summary>
         /// asynchronously wait for GameEvent to be processed
         /// </summary>

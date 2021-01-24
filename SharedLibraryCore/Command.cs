@@ -28,9 +28,9 @@ namespace SharedLibraryCore
         /// <summary>
         /// Executes the command
         /// </summary>
-        /// <param name="E"></param>
+        /// <param name="gameEvent"></param>
         /// <returns></returns>
-        abstract public Task ExecuteAsync(GameEvent E);
+        abstract public Task ExecuteAsync(GameEvent gameEvent);
 
         /// <summary>
         /// Specifies the name and string that triggers the command

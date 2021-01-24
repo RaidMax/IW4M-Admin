@@ -59,6 +59,7 @@ namespace SharedLibraryCore
         /// fallback id for world events
         /// </summary>
         public const long WORLD_ID = -1;
+        public static Dictionary<Permission, string> PermissionLevelOverrides { get; } = new Dictionary<Permission, string>();
 
         public static string HttpRequest(string location, string header, string headerValue)
         {
@@ -219,9 +220,12 @@ namespace SharedLibraryCore
             return $"^{colorCode}{localizedLevel ?? level.ToString()}";
         }
 
-        public static string ToLocalizedLevelName(this EFClient.Permission perm)
+        public static string ToLocalizedLevelName(this Permission permission)
         {
-            return CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"];
+            var localized = CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{permission.ToString().ToUpper()}"];
+            return PermissionLevelOverrides.ContainsKey(permission) && PermissionLevelOverrides[permission] != localized
+                ? PermissionLevelOverrides[permission]
+                : localized;
         }
 
         public async static Task<string> ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)

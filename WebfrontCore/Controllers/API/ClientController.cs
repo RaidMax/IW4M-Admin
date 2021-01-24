@@ -88,8 +88,6 @@ namespace WebfrontCore.Controllers.API
                 return Unauthorized();
             }
 
-            HttpContext.Request.Cookies.TryGetValue(".AspNetCore.Cookies", out var cookie);
-
             if (Authorized)
             {
                 return Ok();

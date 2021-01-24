@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace SharedLibraryCore.Database.Models
 {
@@ -11,15 +9,18 @@ namespace SharedLibraryCore.Database.Models
     /// </summary>
     public class EFMeta : SharedEntity
     {
+        public const string ClientTagName = nameof(ClientTagName);
+        public const string ClientTag = nameof(ClientTag);
+
         [Key]
         public int MetaId { get; set; }
         [Required]
         public DateTime Created { get; set; } = DateTime.UtcNow;
         [Required]
         public DateTime Updated { get; set; } = DateTime.UtcNow;
-        [Required]
-        public int ClientId { get; set; }
-        [ForeignKey("ClientId")] // this is the client that the meta belongs to
+        public int? ClientId { get; set; }
+        // this is the client that the meta could belong to
+        [ForeignKey(nameof(ClientId))]
         public virtual EFClient Client { get; set; }
         [Required]
         [MinLength(3)]
@@ -29,5 +30,9 @@ namespace SharedLibraryCore.Database.Models
         [Required]
         public string Value { get; set; }
         public string Extra { get; set; }
+
+        public int? LinkedMetaId { get; set; }
+        [ForeignKey(nameof(LinkedMetaId))]
+        public virtual EFMeta LinkedMeta { get; set; }
     }
 }

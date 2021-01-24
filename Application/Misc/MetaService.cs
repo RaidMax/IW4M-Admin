@@ -29,7 +29,7 @@ namespace IW4MAdmin.Application.Misc
             _contextFactory = contextFactory;
         }
 
-        public async Task AddPersistentMeta(string metaKey, string metaValue, EFClient client)
+        public async Task AddPersistentMeta(string metaKey, string metaValue, EFClient client, EFMeta linkedMeta = null)
         {
             // this seems to happen if the client disconnects before they've had time to authenticate and be added
             if (client.ClientId < 1)
@@ -48,6 +48,7 @@ namespace IW4MAdmin.Application.Misc
             {
                 existingMeta.Value = metaValue;
                 existingMeta.Updated = DateTime.UtcNow;
+                existingMeta.LinkedMetaId = linkedMeta?.MetaId;
             }
 
             else
@@ -57,11 +58,96 @@ namespace IW4MAdmin.Application.Misc
                     ClientId = client.ClientId,
                     Created = DateTime.UtcNow,
                     Key = metaKey,
-                    Value = metaValue
+                    Value = metaValue,
+                    LinkedMetaId = linkedMeta?.MetaId
                 });
             }
 
             await ctx.SaveChangesAsync();
+        }
+
+        public async Task AddPersistentMeta(string metaKey, string metaValue)
+        {
+            await using var ctx = _contextFactory.CreateContext();
+
+            var existingMeta = await ctx.EFMeta
+                .Where(meta => meta.Key == metaKey)
+                .Where(meta => meta.ClientId == null)
+                .ToListAsync();
+
+            var matchValues = existingMeta
+                .Where(meta => meta.Value == metaValue)
+                .ToArray();
+
+            if (matchValues.Any())
+            {
+                foreach (var meta in matchValues)
+                {
+                    _logger.LogDebug("Updating existing meta with key {key} and id {id}", meta.Key, meta.MetaId);
+                    meta.Value = metaValue;
+                    meta.Updated = DateTime.UtcNow;
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+
+            else
+            {
+                _logger.LogDebug("Adding new meta with key {key}", metaKey);
+
+                ctx.EFMeta.Add(new EFMeta()
+                {
+                    Created = DateTime.UtcNow,
+                    Key = metaKey,
+                    Value = metaValue
+                });
+
+                await ctx.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemovePersistentMeta(string metaKey, EFClient client)
+        {
+            await using var context = _contextFactory.CreateContext();
+
+            var existingMeta = await context.EFMeta
+                .FirstOrDefaultAsync(meta => meta.Key == metaKey && meta.ClientId == client.ClientId);
+
+            if (existingMeta == null)
+            {
+                _logger.LogDebug("No meta with key {key} found for client id {id}", metaKey, client.ClientId);
+                return;
+            }
+
+            _logger.LogDebug("Removing meta for key {key} with id {id}", metaKey, existingMeta.MetaId);
+            context.EFMeta.Remove(existingMeta);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task RemovePersistentMeta(string metaKey, string metaValue = null)
+        {
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            var existingMeta = await context.EFMeta
+                .Where(meta => meta.Key == metaKey)
+                .Where(meta => meta.ClientId == null)
+                .ToListAsync();
+
+            if (metaValue == null)
+            {
+                _logger.LogDebug("Removing all meta for key {key} with ids [{ids}] ", metaKey, string.Join(", ", existingMeta.Select(meta => meta.MetaId)));
+                existingMeta.ForEach(meta => context.Remove(existingMeta));
+                await context.SaveChangesAsync();
+                return;
+            }
+
+            var foundMeta = existingMeta.FirstOrDefault(meta => meta.Value == metaValue);
+
+            if (foundMeta != null)
+            {
+                _logger.LogDebug("Removing meta for key {key} with id {id}", metaKey, foundMeta.MetaId);
+                context.Remove(foundMeta);
+                await context.SaveChangesAsync();
+            }
         }
 
         public async Task<EFMeta> GetPersistentMeta(string metaKey, EFClient client)
@@ -76,9 +162,32 @@ namespace IW4MAdmin.Application.Misc
                     MetaId = _meta.MetaId,
                     Key = _meta.Key,
                     ClientId = _meta.ClientId,
-                    Value = _meta.Value
+                    Value = _meta.Value,
+                    LinkedMetaId = _meta.LinkedMetaId,
+                    LinkedMeta = _meta.LinkedMetaId != null ? new EFMeta()
+                    {
+                        MetaId = _meta.LinkedMeta.MetaId,
+                        Key = _meta.LinkedMeta.Key,
+                        Value = _meta.LinkedMeta.Value
+                    } : null
                 })
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<EFMeta>> GetPersistentMeta(string metaKey)
+        {
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            return await context.EFMeta
+                .Where(meta => meta.Key == metaKey)
+                .Where(meta => meta.ClientId == null)
+                .Select(meta => new EFMeta
+                {
+                    MetaId = meta.MetaId,
+                    Key = meta.Key,
+                    ClientId = meta.ClientId,
+                    Value = meta.Value,
+                })
+                .ToListAsync();
         }
 
         public void AddRuntimeMeta<T, V>(MetaType metaKey, Func<T, Task<IEnumerable<V>>> metaAction) where T : PaginationRequest where V : IClientMeta

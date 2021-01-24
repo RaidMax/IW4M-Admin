@@ -29,7 +29,8 @@ namespace WebfrontCore.ViewComponents
                     Name = p.Name,
                     ClientId = p.ClientId,
                     Level = p.Level.ToLocalizedLevelName(),
-                    LevelInt = (int)p.Level
+                    LevelInt = (int)p.Level,
+                    Tag = p.Tag
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
                 Online = !s.Throttled,

@@ -186,7 +186,7 @@ namespace IW4MAdmin.Application
             await Task.WhenAll(tasks);
 
             logger.LogInformation("Shutdown completed successfully");
-            Console.Write(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
+            Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }
 
 
@@ -317,6 +317,15 @@ namespace IW4MAdmin.Application
                 appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
                 appConfigHandler.Set(appConfig);
                 appConfigHandler.Save();
+            }
+
+            // register override level names
+            foreach (var (key, value) in appConfig.OverridePermissionLevelNames)
+            {
+                if (!Utilities.PermissionLevelOverrides.ContainsKey(key))
+                {
+                    Utilities.PermissionLevelOverrides.Add(key, value);
+                }
             }
             
             // build the dependency list

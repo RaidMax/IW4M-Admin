@@ -14,7 +14,7 @@ namespace SharedLibraryCore.Migrations.MySql
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.7")
+                .HasAnnotation("ProductVersion", "3.1.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("IW4MAdmin.Plugins.Stats.Models.EFACSnapshot", b =>
@@ -470,11 +470,11 @@ namespace SharedLibraryCore.Migrations.MySql
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("varchar(24) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
+                        .HasColumnType("varchar(24) CHARACTER SET utf8mb4")
                         .HasMaxLength(24);
 
                     b.Property<string>("SearchableName")
-                        .HasColumnType("varchar(24) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
+                        .HasColumnType("varchar(24) CHARACTER SET utf8mb4")
                         .HasMaxLength(24);
 
                     b.HasKey("AliasId");
@@ -609,7 +609,7 @@ namespace SharedLibraryCore.Migrations.MySql
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<int>("ClientId")
+                    b.Property<int?>("ClientId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Created")
@@ -623,6 +623,9 @@ namespace SharedLibraryCore.Migrations.MySql
                         .HasColumnType("varchar(32) CHARACTER SET utf8mb4")
                         .HasMaxLength(32);
 
+                    b.Property<int?>("LinkedMetaId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime(6)");
 
@@ -635,6 +638,8 @@ namespace SharedLibraryCore.Migrations.MySql
                     b.HasIndex("ClientId");
 
                     b.HasIndex("Key");
+
+                    b.HasIndex("LinkedMetaId");
 
                     b.ToTable("EFMeta");
                 });
@@ -898,9 +903,12 @@ namespace SharedLibraryCore.Migrations.MySql
                 {
                     b.HasOne("SharedLibraryCore.Database.Models.EFClient", "Client")
                         .WithMany("Meta")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("SharedLibraryCore.Database.Models.EFMeta", "LinkedMeta")
+                        .WithMany()
+                        .HasForeignKey("LinkedMetaId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("SharedLibraryCore.Database.Models.EFPenalty", b =>

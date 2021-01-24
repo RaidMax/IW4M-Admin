@@ -3,6 +3,8 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace SharedLibraryCore.Configuration
 {
@@ -137,6 +139,10 @@ namespace SharedLibraryCore.Configuration
             {{"afk", "Away from keyboard"}, {"ci", "Connection interrupted. Reconnect"}};
         [LocalizedDisplayName(("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY"))]
         public bool EnablePrivilegedUserPrivacy { get; set; }
+        public Dictionary<Permission, string> OverridePermissionLevelNames { get; set; } = Enum
+            .GetValues(typeof(Permission))
+            .Cast<Permission>()
+            .ToDictionary(perm => perm, perm => perm.ToString());
         [UIHint("ServerConfiguration")] 
         public ServerConfiguration[] Servers { get; set; }
 

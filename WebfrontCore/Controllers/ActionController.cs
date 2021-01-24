@@ -439,7 +439,7 @@ namespace WebfrontCore.Controllers
 
         private Dictionary<string, string> GetPresetPenaltyReasons() => _appConfig.PresetPenaltyReasons.Values
             .Concat(_appConfig.GlobalRules)
-            .Concat(_appConfig.Servers.SelectMany(server => server.Rules))
+            .Concat(_appConfig.Servers.SelectMany(server => server.Rules ?? new string[0]))
             .Distinct()
             .Select((value, index) => new
             {

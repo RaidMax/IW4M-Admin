@@ -300,6 +300,13 @@ namespace IW4MAdmin
                             Time = DateTime.UtcNow
                         });
 
+                        var clientTag = await _metaService.GetPersistentMeta(EFMeta.ClientTag, E.Origin);
+
+                        if (clientTag?.LinkedMeta != null)
+                        {
+                            E.Origin.Tag = clientTag.LinkedMeta.Value;
+                        }
+
                         await E.Origin.OnJoin(E.Origin.IPAddress);
                     }
                 }

@@ -465,10 +465,11 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            string you = string.Format("{0} [^3#{1}^7] {2} ^7[^3@{3}^7] ^7[{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level, E.Origin.ClientPermission.Name), E.Origin.IPAddressString);
-            E.Origin.Tell(you);
+            var you = _translationLookup["COMMANDS_WHOAMI_FORMAT"].FormatExt(gameEvent.Origin.ClientNumber, gameEvent.Origin.ClientId, gameEvent.Origin.GuidString,
+                gameEvent.Origin.IPAddressString, gameEvent.Origin.ClientPermission.Name, string.IsNullOrEmpty(gameEvent.Origin.Tag) ? "" : $" {gameEvent.Origin.Tag}^7", gameEvent.Origin.Name);
+            gameEvent.Origin.Tell(you);
 
             return Task.CompletedTask;
         }
@@ -488,46 +489,14 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            StringBuilder playerList = new StringBuilder();
-            int count = 0;
-            for (int i = 0; i < E.Owner.Clients.Count; i++)
-            {
-                var P = E.Owner.Clients[i];
+            var clientList = gameEvent.Owner.GetClientsAsList()
+                .Select(client => _translationLookup["COMMANDS_LIST_FORMAT"]
+                .FormatExt(client.ClientPermission.Name, string.IsNullOrEmpty(client.Tag) ? "" : $" {client.Tag}^7", client.ClientNumber, client.Name))
+                .ToArray();
 
-                if (P == null)
-                {
-                    continue;
-                }
-                // todo: fix spacing
-                // todo: make this better :)
-                if (P.Masked)
-                {
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(EFClient.Permission.User, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(EFClient.Permission.SeniorAdmin.ToString().Length - EFClient.Permission.User.ToString().Length));
-                }
-                else
-                {
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(EFClient.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
-                }
-
-                if (count == 2 || E.Owner.GetClientsAsList().Count == 1)
-                {
-                    E.Origin.Tell(playerList.ToString());
-                    count = 0;
-                    playerList = new StringBuilder();
-                    continue;
-                }
-
-                count++;
-            }
-
-            if (playerList.Length > 0)
-            {
-                E.Origin.Tell(playerList.ToString());
-            }
-
-            // todo: make no players response for webfront
+            gameEvent.Origin.Tell(clientList);
 
             return Task.CompletedTask;
         }
@@ -737,7 +706,7 @@ namespace SharedLibraryCore.Commands
             {
                 // can't promote a client to higher than your current perms
                 // or your peer
-                gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_SETLEVEL_LEVELTOOHIGH"], gameEvent.Target.Name, (gameEvent.Origin.Level - 1).ToString()));
+                gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_SETLEVEL_LEVELTOOHIGH"], gameEvent.Target.Name, (gameEvent.Origin.Level - 1).ToLocalizedLevelName()));
                 return;
             }
 
@@ -991,9 +960,14 @@ namespace SharedLibraryCore.Commands
                     rules.AddRange(E.Owner.ServerConfig.Rules);
                 }
 
-                foreach (string r in rules)
+                var ruleFomat = rules.Select(r => $"- {r}");
+                if (E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
                 {
-                    var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix) ? E.Owner.Broadcast($"- {r}") : E.Origin.Tell($"- {r}");
+                    E.Owner.Broadcast(ruleFomat);
+                }
+                else
+                {
+                    E.Origin.Tell(ruleFomat);
                 }
             }
 

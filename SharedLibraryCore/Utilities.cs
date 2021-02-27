@@ -1013,7 +1013,7 @@ namespace SharedLibraryCore
                 return appConfig.PresetPenaltyReasons[reason.ToLower()];
             }
             
-            var regex = Regex.Match(reason, @"(rule|serverrule)(\d+)", RegexOptions.IgnoreCase);
+            var regex = Regex.Match(reason, @"rule(\d+)", RegexOptions.IgnoreCase);
             if (!regex.Success)
             {
                 return reason;
@@ -1023,18 +1023,20 @@ namespace SharedLibraryCore
                 .FirstOrDefault(configServer =>
                     configServer.IPAddress == server.IP && configServer.Port == server.Port);
 
-            var index = int.Parse(regex.Groups[2].ToString()) - 1;
-
-            return regex.Groups[1].ToString().ToLower() switch
+            var allRules = appConfig.GlobalRules?.ToList() ?? new List<string>();
+            if (serverConfig?.Rules != null)
             {
-                "rule" => appConfig.GlobalRules?.Length > 0 && appConfig.GlobalRules.Length >= index 
-                    ? appConfig.GlobalRules[index] : 
-                    reason,
-                "serverrule" => serverConfig?.Rules?.Length > 0 && serverConfig.Rules?.Length >= index 
-                    ? serverConfig.Rules[index] : 
-                    reason,
-                _ => reason
-            };
+                allRules.AddRange(serverConfig.Rules);
+            }
+
+            var index = int.Parse(regex.Groups[1].ToString()) - 1;
+
+            if (!allRules.Any() || index > allRules.Count - 1 || index < 0)
+            {
+                return reason;
+            }
+
+            return allRules[index];
         }
     }
 }

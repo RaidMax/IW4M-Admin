@@ -17,7 +17,6 @@ using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Repositories;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
-using StatsWeb;
 using System;
 using System.Linq;
 using System.Text;
@@ -31,7 +30,6 @@ using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Client;
-using IW4MAdmin.Plugins.Stats.Client.Game;
 using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Helpers;
@@ -100,6 +98,7 @@ namespace IW4MAdmin.Application
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
+                ConfigurationMigration.RemoveObsoletePlugins20210322();
                 logger.LogDebug("Configuring services...");
                 services = ConfigureServices(args);
                 serviceProvider = services.BuildServiceProvider();

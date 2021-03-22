@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
-    <Version>2020.12.20.1</Version>
+    <Version>2021.3.5.1</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Configurations>Debug;Release;Prerelease</Configurations>
@@ -13,13 +13,13 @@
     <PackageTags>IW4MAdmin</PackageTags>
     <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin/</RepositoryUrl>
     <PackageProjectUrl>https://www.raidmax.org/IW4MAdmin/</PackageProjectUrl>
-    <Copyright>2020</Copyright>
+    <Copyright>2021</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Shared Library for IW4MAdmin</Description>
-    <PackageVersion>2020.12.20.1</PackageVersion>
+    <PackageVersion>2021.3.19.1</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">
@@ -37,10 +37,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.10">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.10" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.10" />
@@ -48,21 +44,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.10" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.10" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Npgsql" Version="4.1.7" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.4" />
-    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="3.2.4" />
+    <PackageReference Include="RaidMax.IW4MAdmin.Data" Version="1.0.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
     <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)'=='Debug'">
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="3.1.10" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Migrations\MySql\20210123023212_UpdateEFMetaToSupportNonClientMeta.cs" />
-    <Compile Remove="Migrations\MySql\20210123165535_UpdateEFMetaToSupportLinkedMeta.cs" />
-    <Compile Remove="Migrations\MySql\20210123165535_UpdateEFMetaToSupportLinkedMeta.Designer.cs" />
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

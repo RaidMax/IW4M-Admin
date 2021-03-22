@@ -1,19 +1,18 @@
-﻿using Newtonsoft.Json.Converters;
-using SharedLibraryCore.Localization;
+﻿using SharedLibraryCore.Localization;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using Data.Models;
 
 namespace SharedLibraryCore.Database.Models
 {
-    public partial class EFClient
+    public class EFClient : Data.Models.Client.EFClient
     {
         public enum ClientState
         {
@@ -38,50 +37,6 @@ namespace SharedLibraryCore.Database.Models
             /// represents when the client is leaving (either through RCon or log file)
             /// </summary>
             Disconnecting
-        }
-
-        public enum Permission
-        {
-            /// <summary>
-            /// client has been banned
-            /// </summary>
-            Banned = -1,
-            /// <summary>
-            /// default client state upon first connect
-            /// </summary>
-            User = 0,
-            /// <summary>
-            /// client has been flagged
-            /// </summary>
-            Flagged = 1,
-            /// <summary>
-            /// client is trusted
-            /// </summary>
-            Trusted = 2,
-            /// <summary>
-            /// client is a moderator
-            /// </summary>
-            Moderator = 3,
-            /// <summary>
-            /// client is an administrator
-            /// </summary>
-            Administrator = 4,
-            /// <summary>
-            /// client is a senior administrator
-            /// </summary>
-            SeniorAdmin = 5,
-            /// <summary>
-            /// client is a owner
-            /// </summary>
-            Owner = 6,
-            /// <summary>
-            /// not used
-            /// </summary>
-            Creator = 7,
-            /// <summary>
-            /// reserved for default account
-            /// </summary>
-            Console = 8
         }
 
         public EFClient()

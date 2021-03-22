@@ -2,7 +2,7 @@
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -159,6 +159,7 @@
         <script type="text/javascript" src="~/lib/moment-timezone/moment-timezone.js"></script>
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
         <script type="text/javascript" src="~/lib/canvas.js/canvasjs.js"></script>
+        <script type="text/javascript" src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
         <script type="text/javascript" src="~/js/action.js"></script>
         <script type="text/javascript" src="~/js/search.js"></script>
     </environment>
@@ -172,6 +173,6 @@
             _localization[key] = value;
             });
     </script>
-    @RenderSection("scripts", required: false)
+    @await RenderSectionAsync("scripts", required: false)
 </body>
 </html>

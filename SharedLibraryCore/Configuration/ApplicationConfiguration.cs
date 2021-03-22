@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using static SharedLibraryCore.Database.Models.EFClient;
+using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Configuration
 {

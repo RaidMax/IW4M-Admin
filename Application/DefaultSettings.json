@@ -16,7 +16,13 @@
     "Keep grenade launcher use to a minimum",
     "Balance teams at ALL times"
   ],
-  "DisallowedClientNames": [ "Unknown Soldier", "VickNet", "UnknownSoldier", "CHEATER", "Play77" ],
+  "DisallowedClientNames": [
+    "Unknown Soldier",
+    "VickNet",
+    "UnknownSoldier",
+    "CHEATER",
+    "Play77"
+  ],
   "QuickMessages": [
     {
       "Game": "IW4",
@@ -248,222 +254,178 @@
           "Alias": "Rust",
           "Name": "mp_rust"
         },
-
         {
           "Alias": "Terminal",
           "Name": "mp_terminal"
         },
-
         {
           "Alias": "Crash",
           "Name": "mp_crash"
         },
-
         {
           "Alias": "Afghan",
           "Name": "mp_afghan"
         },
-
         {
           "Alias": "Derail",
           "Name": "mp_derail"
         },
-
         {
           "Alias": "Estate",
           "Name": "mp_estate"
         },
-
         {
           "Alias": "Favela",
           "Name": "mp_favela"
         },
-
         {
           "Alias": "Highrise",
           "Name": "mp_highrise"
         },
-
         {
           "Alias": "Invasion",
           "Name": "mp_invasion"
         },
-
         {
           "Alias": "Karachi",
           "Name": "mp_checkpoint"
         },
-
         {
           "Alias": "Quarry",
           "Name": "mp_quarry"
         },
-
         {
           "Alias": "Rundown",
           "Name": "mp_rundown"
         },
-
         {
           "Alias": "Scrapyard",
           "Name": "mp_boneyard"
         },
-
         {
           "Alias": "Skidrow",
           "Name": "mp_nightshift"
         },
-
         {
           "Alias": "Sub Base",
           "Name": "mp_subbase"
         },
-
         {
           "Alias": "Underpass",
           "Name": "mp_underpass"
         },
-
         {
           "Alias": "Wasteland",
           "Name": "mp_brecourt"
         },
-
         {
           "Alias": "Overgrown",
           "Name": "mp_overgrown"
         },
-
         {
           "Alias": "Strike",
           "Name": "mp_strike"
         },
-
         {
           "Alias": "Vacant",
           "Name": "mp_vacant"
         },
-
         {
           "Alias": "Carnival",
           "Name": "mp_abandon"
         },
-
         {
           "Alias": "Trailer Park",
           "Name": "mp_trailerpark"
         },
-
         {
           "Alias": "Fuel",
           "Name": "mp_fuel2"
         },
-
         {
           "Alias": "Storm",
           "Name": "mp_storm"
         },
-
         {
           "Alias": "Bailout",
           "Name": "mp_complex"
         },
-
         {
           "Alias": "Salvage",
           "Name": "mp_compact"
         },
-
         {
           "Alias": "Nuketown",
           "Name": "mp_nuked"
         },
-
         {
           "Alias": "Test map",
           "Name": "iw4_credits"
         },
-
         {
           "Alias": "Killhouse",
           "Name": "mp_killhouse"
         },
-
         {
           "Alias": "Bog",
           "Name": "mp_bog_sh"
         },
-
         {
           "Alias": "Freighter",
           "Name": "mp_cargoship_sh"
         },
-
         {
           "Alias": "Cargoship",
           "Name": "mp_cargoship"
         },
-
         {
           "Alias": "Shipment",
           "Name": "mp_shipment"
         },
-
         {
           "Alias": "Shipment - Long",
           "Name": "mp_shipment_long"
         },
-
         {
           "Alias": "Rust - Long",
           "Name": "mp_rust_long"
         },
-
         {
           "Alias": "Firing Range",
           "Name": "mp_firingrange"
         },
-
         {
           "Alias": "Chemical Plant",
           "Name": "mp_storm_spring"
         },
-
         {
           "Alias": "Tropical Favela",
           "Name": "mp_fav_tropical"
         },
-
         {
           "Alias": "Tropical Estate",
           "Name": "mp_estate_tropical"
         },
-
         {
           "Alias": "Tropical Crash",
           "Name": "mp_crash_tropical"
         },
-
         {
           "Alias": "Forgotten City",
           "Name": "mp_bloc_sh"
         },
-
         {
           "Alias": "Crossfire",
           "Name": "mp_cross_fire"
         },
-
         {
           "Alias": "Bloc",
           "Name": "mp_bloc"
         },
-
         {
           "Alias": "Oilrig",
           "Name": "oilrig"
         },
-
         {
           "Name": "Village",
           "Alias": "co_hunted"
@@ -519,7 +481,7 @@
         },
         {
           "Alias": "Havana",
-          "Name":  "mp_cairo"
+          "Name": "mp_cairo"
         },
         {
           "Alias": "Hazard",
@@ -885,5 +847,79 @@
         }
       ]
     }
-  ]
+  ],
+  "GameStrings": {
+    "IW4": {
+      "torso_upper": "Upper Torso",
+      "torso_lower": "Lower Torso",
+      "right_leg_upper": "Upper Right Leg",
+      "right_leg_lower": "Lower Right Leg",
+      "right_hand": "Right Hand",
+      "right_foot": "Right Foot",
+      "right_arm_upper": "Upper Right Arm",
+      "right_arm_lower": "Lower Right Arm",
+      "left_leg_upper": "Upper Left Leg",
+      "left_leg_lower": "Lower Left Leg",
+      "left_hand": "Left Hand",
+      "left_foot": "Left Foot",
+      "left_arm_upper": "Upper Left Arm",
+      "left_arm_lower": "Lower Left Arm",
+      "acog": "ACOG Sight",
+      "eotech": "Holographic Sight",
+      "fmj": "FMJ",
+      "gl": "Grenade Launcher",
+      "heartbeat": "Heartbeat Sensor",
+      "reflex": "Red Dot Sight",
+      "rof": "Rapid Fire",
+      "thermal": "Thermal",
+      "xmags": "Extended Mags",
+      "m4": "M4A1",
+      "m40a3": "M40A3",
+      "ak47": "AK-47",
+      "ak47classic": "AK-47 Classic",
+      "fn2000": "F2000",
+      "masada": "ACR",
+      "famas": "FAMAS",
+      "fal": "FAL",
+      "scar": "SCAR-H",
+      "tavor": "TAR-21",
+      "m16": "M16A4",
+      "mp5k": "MP5K",
+      "ump45": "UMP45",
+      "kriss": "Vector",
+      "uzi": "Mini-Uzi",
+      "rpd": "RPD",
+      "sa80": "L86 LSW",
+      "mg4": "MG4",
+      "aug": "AUG HBAR",
+      "cheytac": "Intervention",
+      "barrett": "Barrett .50cal",
+      "wa2000": "WA2000",
+      "m21": "M21 EBR",
+      "pp2000": "PP2000",
+      "glock": "G18",
+      "beretta": "M93 Raffica",
+      "tmp": "TMP",
+      "spas12": "SPAS-12",
+      "aa12": "AA-12",
+      "model1887": "Model 1887",
+      "usp": "USP .45",
+      "coltanaconda": ".44 Magnum",
+      "deserteagle": "Desert Eagle",
+      "deserteaglegold": "Desert Eagle Gold",
+      "at4": "AT4-HS",
+      "m79": "Thumper",
+      "rpg": "RPG-7",
+      "concussion": "Stun",
+      "throwingknife": "Throwing Knife",
+      "ffar": "Airstrike",
+      "pavelow": "Pave Low",
+      "cobra": "Attack Helicopter",
+      "ac130": "AC-130",
+      "remotemissile": "Predator Missile",
+      "artillery": "Precision Airstrike",
+      "player": "",
+      "attach": ""
+    }
+  }
 }

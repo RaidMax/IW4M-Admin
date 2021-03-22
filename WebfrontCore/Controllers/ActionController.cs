@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Models.Client;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
@@ -10,7 +11,6 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
-using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace WebfrontCore.Controllers
 {
@@ -215,10 +215,10 @@ namespace WebfrontCore.Controllers
                         Name = "level",
                         Label = Localization["WEBFRONT_PROFILE_LEVEL"],
                         Type = "select",
-                        Values = Enum.GetValues(typeof(Permission)).OfType<Permission>()
+                        Values = Enum.GetValues(typeof(EFClient.Permission)).OfType<EFClient.Permission>()
                             .Where(p => p <= Client.Level)
-                            .Where(p => p != Permission.Banned)
-                            .Where(p => p != Permission.Flagged)
+                            .Where(p => p != EFClient.Permission.Banned)
+                            .Where(p => p != EFClient.Permission.Flagged)
                             .ToDictionary(p => p.ToString(), p => p.ToLocalizedLevelName())
                     },
                 },

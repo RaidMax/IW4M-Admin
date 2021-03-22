@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -12,9 +11,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
-using static SharedLibraryCore.Database.Models.EFClient;
+using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Commands
 {
@@ -1474,6 +1475,7 @@ namespace SharedLibraryCore.Commands
             inactiveUsers = await context.Clients
                 .Where(c => c.Level > Permission.Flagged && c.Level <= Permission.Moderator)
                 .Where(c => c.LastConnection < lastActive)
+                .Select(c => c.ToPartialClient())
                 .ToListAsync();
             inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
             await context.SaveChangesAsync();

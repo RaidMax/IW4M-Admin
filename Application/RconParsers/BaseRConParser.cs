@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Data.Models;
 using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;

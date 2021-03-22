@@ -1,11 +1,12 @@
-﻿using IW4MAdmin.Plugins.Stats.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models.Client.Stats;
 
 namespace Stats.Helpers
 {
@@ -48,7 +49,7 @@ namespace Stats.Helpers
                     ServerId = _stats.ServerId,
                     Kills = _stats.Kills,
                     Deaths = _stats.Deaths,
-                    Performance = Math.Round((_stats.EloRating + _stats.Skill) / 2.0, 2),
+                    Performance = Math.Round(_stats.EloRating * 1/3.0 + _stats.Skill * 2/3.0, 2),
                     ScorePerMinute = _stats.SPM,
                     LastPlayed = _stats.Client.LastConnection,
                     TotalSecondsPlayed = _stats.TimePlayed,

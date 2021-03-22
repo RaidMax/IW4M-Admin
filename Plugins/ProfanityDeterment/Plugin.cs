@@ -2,9 +2,8 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Data.Models;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.ProfanityDeterment

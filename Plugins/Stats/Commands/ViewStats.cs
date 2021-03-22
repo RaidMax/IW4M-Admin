@@ -1,8 +1,8 @@
 ﻿using SharedLibraryCore;
-using IW4MAdmin.Plugins.Stats.Models;
 using System.Linq;
 using System.Threading.Tasks;
-using SharedLibraryCore.Database;
+using Data.Abstractions;
+using Data.Models.Client.Stats;
 using Microsoft.EntityFrameworkCore;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using SharedLibraryCore.Database.Models;
@@ -56,7 +56,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             // getting stats for a particular client
             if (E.Target != null)
             {
-                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId);
+                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
                     : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
@@ -84,7 +84,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             // getting self stats
             else
             {
-                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId);
+                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
                     : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";

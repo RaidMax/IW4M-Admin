@@ -6,7 +6,6 @@ using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Configuration.Validation;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
@@ -21,6 +20,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Context;
 using IW4MAdmin.Application.Migration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -291,6 +292,15 @@ namespace IW4MAdmin.Application
             IsRunning = true;
             ExternalIPAddress = await Utilities.GetExternalIP();
 
+            #region DATABASE
+            _logger.LogInformation("Beginning database migration sync");
+            Console.WriteLine(_translationLookup["MANAGER_MIGRATION_START"]);
+            await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
+            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
+            _logger.LogInformation("Finished database migration sync");
+            Console.WriteLine(_translationLookup["MANAGER_MIGRATION_END"]);
+            #endregion
+
             #region PLUGINS
             foreach (var plugin in Plugins)
             {
@@ -331,7 +341,7 @@ namespace IW4MAdmin.Application
             // copy over default config if it doesn't exist
             if (!_appConfig.Servers?.Any() ?? true)
             {
-                var defaultConfig = new BaseConfigurationHandler<DefaultConfiguration>("DefaultSettings").Configuration();
+                var defaultConfig = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings").Configuration();
                 //ConfigHandler.Set((ApplicationConfiguration)new ApplicationConfiguration().Generate());
                 //var newConfig = ConfigHandler.Configuration();
 
@@ -424,15 +434,6 @@ namespace IW4MAdmin.Application
 
             #endregion
 
-            #region DATABASE
-            _logger.LogInformation("Beginning database migration sync");
-            Console.WriteLine(_translationLookup["MANAGER_MIGRATION_START"]);
-            await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
-            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
-            _logger.LogInformation("Finished database migration sync");
-            Console.WriteLine(_translationLookup["MANAGER_MIGRATION_END"]);
-            #endregion
-
             #region COMMANDS
             if (await ClientSvc.HasOwnerAsync(_tokenSource.Token))
             {
@@ -517,7 +518,7 @@ namespace IW4MAdmin.Application
                     // add the start event for this server
                     var e = new GameEvent()
                     {
-                        Type = GameEvent.EventType.Start,
+                        Type = EventType.Start,
                         Data = $"{ServerInstance.GameName} started",
                         Owner = ServerInstance
                     };

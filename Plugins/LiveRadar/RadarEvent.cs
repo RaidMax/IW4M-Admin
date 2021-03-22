@@ -1,5 +1,5 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
+﻿using Data.Models;
+using SharedLibraryCore;
 using System;
 using System.Linq;
 

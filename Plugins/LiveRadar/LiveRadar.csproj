@@ -15,14 +15,15 @@
     <StartupObject />
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2020.12.20.1" PrivateAssets="All" />
-  </ItemGroup>
 
   <ItemGroup>
     <Content Update="Views\_ViewImports.cshtml">
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2021.3.19.1" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

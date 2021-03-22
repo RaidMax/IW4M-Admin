@@ -4,6 +4,7 @@ using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
 
 namespace SharedLibraryCore.Repositories
 {
@@ -24,7 +25,7 @@ namespace SharedLibraryCore.Repositories
         {
             await using var ctx = _contextFactory.CreateContext(enableTracking: false);
             var iqItems = (from change in ctx.EFChangeHistory
-                           where change.TypeOfChange != Database.Models.EFChangeHistory.ChangeType.Ban
+                           where change.TypeOfChange != Data.Models.EFChangeHistory.ChangeType.Ban
                            orderby change.TimeChanged descending
                            join originClient in ctx.Clients
                            on (change.ImpersonationEntityId ?? change.OriginEntityId) equals originClient.ClientId

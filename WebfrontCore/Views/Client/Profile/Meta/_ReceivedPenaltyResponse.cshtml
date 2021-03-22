@@ -1,5 +1,4 @@
 ﻿@using SharedLibraryCore.Dtos.Meta.Responses
-@using SharedLibraryCore
 @model ReceivedPenaltyResponse
 
 @{
@@ -28,7 +27,7 @@
             else if (match.MatchValue == "reason")
             {
                 <span class="text-white">
-                    @if (ViewBag.Authorized && !string.IsNullOrEmpty(Model.AutomatedOffense) && Model.PenaltyType != SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Warning && Model.PenaltyType != SharedLibraryCore.Database.Models.EFPenalty.PenaltyType.Kick)
+                    @if (ViewBag.Authorized && !string.IsNullOrEmpty(Model.AutomatedOffense) && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Warning && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Kick)
                     {
                         <span>@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.AutomatedOffense)</span>
                         <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed" data-penalty-id="@Model.PenaltyId" style="margin-top: 0.125rem;" title="@ViewBag.Localization["WEBFRONT_CLIENT_META_AC_METRIC"]"></span>

@@ -6,6 +6,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Models;
 
 namespace WebfrontCore.Controllers
 {

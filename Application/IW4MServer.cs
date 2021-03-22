@@ -15,10 +15,14 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
+using Data.Models;
+using Data.Models.Server;
+using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
 {
@@ -34,13 +38,15 @@ namespace IW4MAdmin
         public int Id { get; private set; }
         private readonly IServiceProvider _serviceProvider;
         private readonly IClientNoticeMessageFormatter _messageFormatter;
+        private readonly ILookupCache<EFServer> _serverCache;
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
             ITranslationLookup lookup,
             IMetaService metaService, 
             IServiceProvider serviceProvider,
-            IClientNoticeMessageFormatter messageFormatter) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
+            IClientNoticeMessageFormatter messageFormatter,
+            ILookupCache<EFServer> serverCache) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
             serviceProvider.GetRequiredService<SharedLibraryCore.Interfaces.ILogger>(), 
             serverConfiguration,
             serviceProvider.GetRequiredService<IManager>(), 
@@ -51,6 +57,7 @@ namespace IW4MAdmin
             _metaService = metaService;
             _serviceProvider = serviceProvider;
             _messageFormatter = messageFormatter;
+            _serverCache = serverCache;
         }
 
         public override async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -250,6 +257,28 @@ namespace IW4MAdmin
             {
                 ServerLogger.LogDebug("processing event of type {type}", E.Type);
 
+                if (E.Type == GameEvent.EventType.Start)
+                {
+                    var existingServer = (await _serverCache
+                        .FirstAsync(server => server.Id == EndPoint));
+
+                    var serverId = await GetIdForServer(E.Owner);
+
+                    if (existingServer == null)
+                    {
+                        var server = new EFServer()
+                        {
+                            Port = Port,
+                            EndPoint = ToString(),
+                            ServerId = serverId,
+                            GameName = (Reference.Game?)GameName,
+                            HostName = Hostname
+                        };
+
+                        await _serverCache.AddAsync(server);
+                    }
+                }
+                
                 if (E.Type == GameEvent.EventType.ConnectionLost)
                 {
                     var exception = E.Extra as Exception;
@@ -734,6 +763,25 @@ namespace IW4MAdmin
                 updatedClients.ToList()
             };
         }
+        
+        private async Task<long> GetIdForServer(Server server)
+        {
+            if ($"{server.IP}:{server.Port.ToString()}" == "66.150.121.184:28965")
+            {
+                return 886229536;
+            }
+
+            // todo: this is not stable and will need to be migrated again...
+            long id = HashCode.Combine(server.IP, server.Port);
+            id = id < 0 ? Math.Abs(id) : id;
+
+            var serverId = (await _serverCache
+                    .FirstAsync(_server => _server.ServerId == server.EndPoint ||
+                                                                    _server.EndPoint == server.ToString() ||
+                                                                    _server.ServerId == id))?.ServerId;
+
+            return !serverId.HasValue ? id : serverId.Value;
+        }
 
         private void UpdateMap(string mapname)
         {
@@ -1113,6 +1161,7 @@ namespace IW4MAdmin
                 this, 
                 GenerateUriForLog(LogPath, ServerConfig.GameLogServerUrl?.AbsoluteUri), gameLogReaderFactory);
 
+            await _serverCache.InitializeAsync();
             _ = Task.Run(() => LogEvent.PollForChanges());
 
             if (!Utilities.IsDevelopment)

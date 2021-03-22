@@ -1,5 +1,5 @@
 ﻿using System;
-using static SharedLibraryCore.Database.Models.EFPenalty;
+using Data.Models;
 
 namespace SharedLibraryCore.Dtos.Meta.Responses
 {
@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Dtos.Meta.Responses
         public string OffenderName { get; set; }
         public string PunisherName { get; set; }
         public int PunisherClientId { get; set; }
-        public PenaltyType PenaltyType { get; set; }
+        public EFPenalty.PenaltyType PenaltyType { get; set; }
         public string Offense { get; set; }
         public string AutomatedOffense { get; set; }
         public DateTime? ExpirationDate { get; set; }

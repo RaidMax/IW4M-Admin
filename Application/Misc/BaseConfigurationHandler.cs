@@ -22,6 +22,11 @@ namespace IW4MAdmin.Application.Misc
             Build();
         }
 
+        public BaseConfigurationHandler() : this(typeof(T).Name)
+        {
+            
+        }
+
         public string FileName { get; }
 
         public void Build()

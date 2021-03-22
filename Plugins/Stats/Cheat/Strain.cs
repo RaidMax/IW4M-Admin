@@ -1,9 +1,6 @@
 ﻿using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
-using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Data.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {

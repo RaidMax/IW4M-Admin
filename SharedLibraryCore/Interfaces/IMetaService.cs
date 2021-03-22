@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Database.Models;
+﻿using Data.Models;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.QueryHelper;
 using System;

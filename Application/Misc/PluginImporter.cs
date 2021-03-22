@@ -63,11 +63,12 @@ namespace IW4MAdmin.Application.Misc
         /// discovers all the C# assembly plugins and commands
         /// </summary>
         /// <returns></returns>
-        public (IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
+        public (IEnumerable<Type>, IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
         {
-            string pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
+            var pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
             var pluginTypes = Enumerable.Empty<Type>();
             var commandTypes = Enumerable.Empty<Type>();
+            var configurationTypes = Enumerable.Empty<Type>();
 
             if (Directory.Exists(pluginDir))
             {
@@ -92,10 +93,17 @@ namespace IW4MAdmin.Application.Misc
                         .Where(_assemblyType => _assemblyType.IsClass && _assemblyType.BaseType == typeof(Command));
 
                     _logger.LogDebug("Discovered {count} plugin commands", commandTypes.Count());
+
+                    configurationTypes = assemblies
+                        .SelectMany(asm => asm.GetTypes())
+                        .Where(asmType =>
+                            asmType.IsClass && asmType.GetInterface(nameof(IBaseConfiguration), false) != null);
+
+                    _logger.LogDebug("Discovered {count} configuration implementations", configurationTypes.Count());
                 }
             }
 
-            return (pluginTypes, commandTypes);
+            return (pluginTypes, commandTypes, configurationTypes);
         }
 
         private IEnumerable<Assembly> GetRemoteAssemblies()

@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
@@ -12,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Data.Context;
+using Data.Models;
 
 namespace SharedLibraryCore
 {
@@ -25,7 +25,7 @@ namespace SharedLibraryCore
         public IManager Manager { get; private set; }
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; set; }
-        protected SharedLibraryCore.Localization.TranslationLookup Localization { get; private set; }
+        protected Localization.TranslationLookup Localization { get; private set; }
         protected EFClient Client { get; private set; }
         private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
         private static string SocialLink;

@@ -1,4 +1,6 @@
 ﻿using System;
+using Data.Abstractions;
+using Data.Models.Server;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -37,7 +39,7 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public Server CreateServer(ServerConfiguration config, IManager manager)
         {
-            return new IW4MServer(config, _translationLookup, _metaService, _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>());
+            return new IW4MServer(config, _translationLookup, _metaService, _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(), _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
         }
     }
 }

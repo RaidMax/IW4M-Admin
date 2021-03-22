@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
@@ -9,10 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Context;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
-using static SharedLibraryCore.Database.Models.EFClient;
+using static Data.Models.Client.EFClient;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Data.Models;
 
 namespace SharedLibraryCore.Services
 {
@@ -118,9 +120,8 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        private async Task UpdateAlias(string originalName, int? ip, EFClient entity, DatabaseContext context)
+        private async Task UpdateAlias(string originalName, int? ip, Data.Models.Client.EFClient entity, DatabaseContext context)
         {
-            using (LogContext.PushProperty("Server", entity?.CurrentServer?.ToString()))
             {
                 string name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH);
 
@@ -276,7 +277,7 @@ namespace SharedLibraryCore.Services
             entity.Level = newPermission;
             await ctx.SaveChangesAsync();
 
-            using (LogContext.PushProperty("Server", entity?.CurrentServer?.ToString()))
+            using (LogContext.PushProperty("Server", temporalClient?.CurrentServer?.ToString()))
             {
                 _logger.LogInformation("Updated {clientId} to {newPermission}", temporalClient.ClientId, newPermission);
 
@@ -413,14 +414,12 @@ namespace SharedLibraryCore.Services
 
         public async Task UpdateAlias(EFClient temporalClient)
         {
-            await using var context = _contextFactory.CreateContext();
+            await using var context = _contextFactory.CreateContext(enableTracking:true);
 
             var entity = context.Clients
                 .Include(c => c.AliasLink)
                 .Include(c => c.CurrentAlias)
                 .First(e => e.ClientId == temporalClient.ClientId);
-
-            entity.CurrentServer = temporalClient.CurrentServer;
 
             await UpdateAlias(temporalClient.Name, temporalClient.IPAddress, entity, context);
 
@@ -474,7 +473,7 @@ namespace SharedLibraryCore.Services
 
             // update in database
             await context.SaveChangesAsync();
-            return entity;
+            return entity.ToPartialClient();
         }
 
         #region ServiceSpecific
@@ -483,6 +482,7 @@ namespace SharedLibraryCore.Services
             await using var context = _contextFactory.CreateContext(false);
             return await context.Clients
                 .Where(c => c.Level == Permission.Owner)
+                .Select(c => c.ToPartialClient())
                 .ToListAsync();
         }
 
@@ -704,7 +704,7 @@ namespace SharedLibraryCore.Services
             client.AliasLinkId = newLink.AliasLinkId;
             client.Level = Permission.User;
 
-            await ctx.Aliases.Where(_alias => _alias.IPAddress == client.IPAddress)
+            await ctx.Aliases.Where(_alias => _alias.IPAddress == client.CurrentAlias.IPAddress && _alias.IPAddress != null)
                 .ForEachAsync(_alias => _alias.LinkId = newLink.AliasLinkId);
 
             await ctx.SaveChangesAsync();
@@ -725,12 +725,16 @@ namespace SharedLibraryCore.Services
             if (!string.IsNullOrEmpty(query.Xuid))
             {
                 long networkId = query.Xuid.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
-                iqClients = context.Clients.Where(_client => _client.NetworkId == networkId);
+                iqClients = context.Clients.
+                    Where(_client => _client.NetworkId == networkId)
+                    .Select(client => client.ToPartialClient());
             }
 
             else if (!string.IsNullOrEmpty(query.Name))
             {
-                iqClients = context.Clients.Where(_client => EF.Functions.Like(_client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"));
+                iqClients = context.Clients
+                    .Where(_client => EF.Functions.Like(_client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"))
+                    .Select(client => client.ToPartialClient());
             }
 
             if (query.Direction == SortDirection.Ascending)

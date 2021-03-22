@@ -2,7 +2,8 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using IW4MAdmin.Plugins.Stats.Models;
+using Data.Abstractions;
+using Data.Models.Client.Stats;
 using SharedLibraryCore.Database;
 using SharedLibraryCore.Interfaces;
 

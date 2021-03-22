@@ -11,6 +11,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Database.Models;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Data.Models;
 
 namespace SharedLibraryCore
 {

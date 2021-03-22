@@ -5,6 +5,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Data.Models;
 using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -310,7 +311,7 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType.Contains("ExitLevel"))
+            if (eventType.Contains("ExitLevel") || eventType.Contains("ShutdownGame"))
             {
                 return new GameEvent()
                 {

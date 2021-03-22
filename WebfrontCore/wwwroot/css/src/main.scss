@@ -103,7 +103,7 @@ a.link-inverse:hover {
     border-bottom-color: $orange;
 }
 
-form *, select {
+form *, select, button.btn {
     border-radius: 0 !important;
 }
 
@@ -140,7 +140,6 @@ form *, select {
     z-index: 100;
     font-size: 4rem;
     -webkit-animation: rotation 1s infinite linear;
-    background-color: $black;
     background-color: rgba(0, 0,0, 0.5);
     border-radius: 40px;
     padding: 5px;
@@ -209,7 +208,6 @@ form *, select {
 }
 
 .nav-tabs, .nav-tabs .nav-link.active {
-    color: $white;
     color: $white !important;
     border: none;
 }
@@ -399,4 +397,43 @@ input:checked + .toggle-switch-slider:before {
 .action-kick-button:hover {
     color: #ff6060 !important;
     color: rgba(255, 69, 69, 0.85) !important;
+}
+
+.text-force-break 
+{
+    word-break: break-all; 
+    overflow-wrap: break-word;
+}
+
+div.card {
+    min-width: 15rem;
+    border-radius: 0;
+}
+
+.stat-card {
+    max-width: 15rem;
+}
+
+#rank_icon {
+    max-height: 6rem;
+}
+
+.border-bottom-danger {
+    border-bottom: $danger;
+}
+
+.border-top-danger {
+    border-top: $danger;
+}
+
+.border-danger {
+    border: 1px solid $danger;
+}
+
+#client_stats_summary a:hover {
+    color:  #e0e0e0;
+}
+
+#hitlocation_container {
+    background-color: #141414;
 }

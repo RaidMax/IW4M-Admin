@@ -6,6 +6,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 

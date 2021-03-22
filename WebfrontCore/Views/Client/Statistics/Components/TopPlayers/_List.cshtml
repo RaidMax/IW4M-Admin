@@ -1,0 +1,151 @@
+﻿@using IW4MAdmin.Plugins.Stats
+@model List<IW4MAdmin.Plugins.Stats.Web.Dtos.TopStatsInfo>
+@{
+    Layout = null;
+    var loc = Utilities.CurrentLocalization.LocalizationIndex.Set;
+    double getDeviation(double deviations) => Math.Pow(Math.E, 5.259 + (deviations * 0.812));
+    string rankIcon(double? elo)
+    {
+        if (elo >= getDeviation(-0.75) && elo < getDeviation(1.25))
+        {
+            return "0_no-place/menu_div_no_place.png";
+        }
+        if (elo >= getDeviation(0.125) && elo < getDeviation(0.625))
+        {
+            return "1_iron/menu_div_iron_sub03.png";
+        }
+        if (elo >= getDeviation(0.625) && elo < getDeviation(1.0))
+        {
+            return "2_bronze/menu_div_bronze_sub03.png";
+        }
+        if (elo >= getDeviation(1.0) && elo < getDeviation(1.25))
+        {
+            return "3_silver/menu_div_silver_sub03.png";
+        }
+        if (elo >= getDeviation(1.25) && elo < getDeviation(1.5))
+        {
+            return "4_gold/menu_div_gold_sub03.png";
+        }
+        if (elo >= getDeviation(1.5) && elo < getDeviation(1.75))
+        {
+            return "5_platinum/menu_div_platinum_sub03.png";
+        }
+        if (elo >= getDeviation(1.75) && elo < getDeviation(2.0))
+        {
+            return "6_semipro/menu_div_semipro_sub03.png";
+        }
+        if (elo >= getDeviation(2.0))
+        {
+            return "7_pro/menu_div_pro_sub03.png";
+        }
+
+        return "0_no-place/menu_div_no_place.png";
+    }
+}
+
+@if (Model.Count == 0)
+{
+    <div class="p-2 text-center">@Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_NOQUALIFY"]</div>
+}
+@foreach (var stat in Model)
+{
+    <div class="row ml-0 mr-0 pt-2 pb-2">
+        @if (ViewBag.UseNewStats)
+        {
+            <img class="align-self-center d-block d-md-none m-auto pb-3 pt-3" src="~/images/stats/ranks/rank_@(stat.ZScore.RankIconIndexForZScore()).png" alt="@stat.Performance"/>
+        }
+        <div class="col-md-4 text-md-left text-center">
+            <div class="h2 d-flex flex-row justify-content-center justify-content-md-start align-items-center">
+                <div class="text-muted">#@stat.Ranking</div>
+                @if (stat.RatingChange > 0)
+                {
+                    <div class="d-flex flex-column text-center pl-1">
+                        <div class="oi oi-caret-top text-success client-rating-change-up"></div>
+                        <div class="client-rating-change-amount text-success">@stat.RatingChange</div>
+                    </div>
+                }
+                @if (stat.RatingChange < 0)
+                {
+                    <div class="d-flex flex-column text-center pl-1">
+                        <div class="client-rating-change-amount client-rating-change-amount-down text-danger">@Math.Abs(stat.RatingChange)</div>
+                        <div class="oi oi-caret-bottom text-danger client-rating-change-down"></div>
+                    </div>
+                }
+                <span class="text-muted pr-1 pl-1">&ndash;</span>
+                @if (!ViewBag.UseNewStats)
+                {
+                    <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@stat.ClientId">
+                        <color-code value="@stat.Name" allow="ViewBag.EnableColorCodes"></color-code>
+                    </a> 
+                }
+                else
+                {
+                    <a asp-controller="ClientStatistics" asp-action="Advanced" asp-route-id="@stat.ClientId">
+                        <color-code value="@stat.Name" allow="ViewBag.EnableColorCodes"></color-code>
+                    </a>
+                }
+            </div>
+
+            @if (ViewBag.UseNewStats)
+            {
+                <div class="d-flex flex-column">
+                    <div>
+                        <span class="text-primary font-weight-bold h5">
+                            @stat.Performance.ToNumericalString()
+                        </span>
+                        @if (stat.ServerId == null)
+                        {
+                            <span class="text-muted font-weight-bold h5">@loc["WEBFRONT_ADV_STATS_RATING"].FormatExt("").ToLower()</span>
+                        }
+
+                        else
+                        {
+                            <span class="text-muted font-weight-bold h5">@loc["WEBFRONT_ADV_STATS_PERFORMANCE"].FormatExt("").ToLower()</span>
+                        }
+                    </div>
+                    <div>
+                        <span class="text-primary">@stat.Kills.ToNumericalString()</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KILLS"]</span>
+                    </div>
+                    <div>
+                        <span class="text-primary">@stat.Deaths.ToNumericalString()</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_DEATHS"]</span><br />
+                    </div>
+                    <div>
+                        <span class="text-primary">@stat.KDR</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KDR"]</span>
+                    </div>
+                    <div>
+                        <span class="text-primary">@stat.TimePlayedValue.HumanizeForCurrentCulture() </span><span class="text-muted">@loc["WEBFRONT_PROFILE_PLAYER"]</span> 
+                    </div>
+                    <div>    
+                        <span class="text-primary"> @stat.LastSeenValue.HumanizeForCurrentCulture() </span><span class="text-muted">@loc["WEBFRONT_PROFILE_LSEEN"]</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <span class="text-primary">@stat.Performance</span>      <span class="text-muted"> @loc["PLUGINS_STATS_COMMANDS_PERFORMANCE"]</span>
+                <br/>
+                <span class="text-primary">@stat.KDR</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KDR"]</span>
+                <span class="text-primary">@stat.Kills</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KILLS"]</span>
+                <span class="text-primary">@stat.Deaths</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_DEATHS"]</span><br />
+                <span class="text-muted">@loc["WEBFRONT_PROFILE_PLAYER"]</span> <span class="text-primary"> @stat.TimePlayed </span><span class="text-muted">@loc["GLOBAL_TIME_HOURS"]</span><br />
+                <span class="text-muted">@loc["WEBFRONT_PROFILE_LSEEN"]</span><span class="text-primary"> @stat.LastSeen </span><span class="text-muted">@loc["WEBFRONT_PENALTY_TEMPLATE_AGO"]</span>
+            }
+        </div>
+
+        <div class="col-md-6 client-rating-graph" id="rating_history_@(stat.ClientId + "_" + stat.Id)" data-history="@Html.Raw(Json.Serialize(stat.PerformanceHistory))">
+
+        </div>
+
+        <div class="col-md-2 client-rating-icon text-md-right text-center align-items-center d-flex justify-content-center">
+            @if (ViewBag.UseNewStats)
+            {
+                <img class="align-self-center d-none d-md-block" src="~/images/stats/ranks/rank_@(stat.ZScore.RankIconIndexForZScore()).png" alt="@stat.Performance"/>
+            }
+
+            else
+            {
+                <img src="/images/icons/@rankIcon(stat.Performance)"/>
+            }
+        </div>
+    </div>
+}

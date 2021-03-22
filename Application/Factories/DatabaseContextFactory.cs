@@ -1,9 +1,9 @@
 ﻿using System;
+using Data.Abstractions;
+using Data.Context;
+using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.MigrationContext;
-using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Factories
 {

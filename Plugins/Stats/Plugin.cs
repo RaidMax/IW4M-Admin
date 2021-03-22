@@ -1,10 +1,7 @@
 ﻿using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
-using IW4MAdmin.Plugins.Stats.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
-using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -14,8 +11,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models.Client;
+using Data.Models.Client.Stats;
+using Data.Models.Server;
+using Humanizer;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Commands;
+using IW4MAdmin.Plugins.Stats.Client.Abstractions;
+using Stats.Client.Abstractions;
+using EFClient = SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -37,9 +42,12 @@ namespace IW4MAdmin.Plugins.Stats
         private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatQueryHelper;
         private readonly ILogger<StatManager> _managerLogger;
         private readonly ILogger<Plugin> _logger;
+        private readonly List<IClientStatisticCalculator> _statCalculators;
+        private readonly IServerDistributionCalculator _serverDistributionCalculator;
 
         public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
-            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper, ILogger<StatManager> managerLogger)
+            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper, ILogger<StatManager> managerLogger, 
+            IEnumerable<IClientStatisticCalculator> statCalculators, IServerDistributionCalculator serverDistributionCalculator)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
@@ -48,6 +56,8 @@ namespace IW4MAdmin.Plugins.Stats
             _chatQueryHelper = chatQueryHelper;
             _managerLogger = managerLogger;
             _logger = logger;
+            _statCalculators = statCalculators.ToList();
+            _serverDistributionCalculator = serverDistributionCalculator;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -148,6 +158,16 @@ namespace IW4MAdmin.Plugins.Stats
                         _logger.LogDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
+            }
+
+            if (!Config.Configuration().EnableAdvancedMetrics)
+            {
+                return;
+            }
+            
+            foreach (var calculator in _statCalculators)
+            {
+                await calculator.CalculateForEvent(E);
             }
         }
 
@@ -267,20 +287,20 @@ namespace IW4MAdmin.Plugins.Stats
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
                 {
                     chestRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
-                    c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
+                    c.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_upper).HitCount) /
                     (double)clientStats.Where(c => c.HitLocations.Count > 0)
-                    .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
+                    .Sum(c => c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
 
                     abdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
-                         c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount) /
-                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
+                         c.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_lower).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(c => c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
 
-                    chestAbdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
-                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount)) * 100.0, 0);
+                    chestAbdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_upper).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_lower).HitCount)) * 100.0, 0);
 
-                    headRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.head).HitCount) /
+                    headRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.head).HitCount) /
                          (double)clientStats.Where(c => c.HitLocations.Count > 0)
-                            .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
+                            .Sum(c => c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
 
                     var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0).SelectMany(hl => hl.HitLocations);
                     hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
@@ -402,7 +422,7 @@ namespace IW4MAdmin.Plugins.Stats
             async Task<string> topStats(Server s)
             {
                 // todo: this needs to needs to be updated when we DI the lookup
-                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s, Utilities.CurrentLocalization.LocalizationIndex, _databaseContextFactory));
+                return string.Join(Environment.NewLine, await Commands.TopStats.GetTopStats(s, Utilities.CurrentLocalization.LocalizationIndex));
             }
 
             async Task<string> mostPlayed(Server s)
@@ -423,8 +443,17 @@ namespace IW4MAdmin.Plugins.Stats
             manager.GetMessageTokens().Add(new MessageToken("MOSTPLAYED", mostPlayed));
             manager.GetMessageTokens().Add(new MessageToken("MOSTKILLS", mostKills));
 
+            if (Config.Configuration().EnableAdvancedMetrics)
+            {
+                foreach (var calculator in _statCalculators)
+                {
+                    await calculator.GatherDependencies();
+                }
+            }
+
             ServerManager = manager;
-            Manager = new StatManager(_managerLogger, manager, _databaseContextFactory, Config);
+            Manager = new StatManager(_managerLogger, manager, _databaseContextFactory, Config, _serverDistributionCalculator);
+            await _serverDistributionCalculator.Initialize();
         }
 
         public Task OnTickAsync(Server S)

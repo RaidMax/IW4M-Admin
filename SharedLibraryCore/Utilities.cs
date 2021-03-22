@@ -3,7 +3,6 @@ using Humanizer;
 using Humanizer.Localisation;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -19,10 +18,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
-using static SharedLibraryCore.Database.Models.EFClient;
-using static SharedLibraryCore.Database.Models.EFPenalty;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using static Data.Models.Client.EFClient;
+using Data.Models;
+using static Data.Models.EFPenalty;
 
 namespace SharedLibraryCore
 {
@@ -965,9 +965,6 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static bool IsDevelopment => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
-        public static bool IsMigration => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Migration";
-
-
         /// <summary>
         /// replaces any directory separator chars with the platform specific character
         /// </summary>
@@ -987,7 +984,7 @@ namespace SharedLibraryCore
         /// wrapper method for humanizee that uses current current culture
         /// </summary>
         public static string HumanizeForCurrentCulture(this TimeSpan timeSpan, int precision = 1, TimeUnit maxUnit = TimeUnit.Week,
-            TimeUnit minUnit = TimeUnit.Millisecond, string collectionSeparator = ", ", bool toWords = false)
+            TimeUnit minUnit = TimeUnit.Second, string collectionSeparator = ", ", bool toWords = false)
         {
             return timeSpan.Humanize(precision, CurrentLocalization.Culture, maxUnit, minUnit, collectionSeparator, toWords);
         }
@@ -1003,6 +1000,51 @@ namespace SharedLibraryCore
         public static string ToTranslatedName(this MetaType metaType)
         {
             return CurrentLocalization.LocalizationIndex[$"META_TYPE_{metaType.ToString().ToUpper()}_NAME"];
+        }
+
+        public static EFClient ToPartialClient(this Data.Models.Client.EFClient client)
+        {
+            return new EFClient()
+            {
+                ClientId = client.ClientId,
+                NetworkId = client.NetworkId,
+                Connections = client.Connections,
+                TotalConnectionTime = client.TotalConnectionTime,
+                FirstConnection = client.FirstConnection,
+                LastConnection = client.LastConnection,
+                Masked = client.Masked,
+                AliasLinkId = client.AliasLinkId,
+                AliasLink = client.AliasLink,
+                Level = client.Level,
+                CurrentAliasId = client.CurrentAliasId,
+                CurrentAlias = client.CurrentAlias,
+                Password = client.Password,
+                PasswordSalt = client.PasswordSalt,
+                Meta = client.Meta,
+                ReceivedPenalties = client.ReceivedPenalties,
+                AdministeredPenalties = client.AdministeredPenalties,
+                Active = client.Active
+            };
+        }
+
+        public static string ToNumericalString(this int? value)
+        {
+            return value?.ToNumericalString();
+        }
+
+        public static string ToNumericalString(this int value)
+        {
+            return value.ToString("#,##0", CurrentLocalization.Culture);
+        }
+        
+        public static string ToNumericalString(this double value, int precision = 0)
+        {
+            return value.ToString("#,##0" + $"{(precision > 0 ? "." : "")}" + new string(Enumerable.Repeat('0', precision).ToArray()), CurrentLocalization.Culture);
+        }
+
+        public static string ToNumericalString(this double? value, int precision = 0)
+        {
+            return value?.ToNumericalString(precision);
         }
 
         public static string FindRuleForReason(this string reason, ApplicationConfiguration appConfig, Server server)

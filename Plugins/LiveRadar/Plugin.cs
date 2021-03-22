@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -24,12 +25,14 @@ namespace LiveRadar
         private bool addedPage;
         private readonly object lockObject = new object();
         private readonly ILogger _logger;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory)
+        public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory, ApplicationConfiguration appConfig)
         {
             _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
             _botGuidLookups = new Dictionary<string, long>();
             _logger = logger;
+            _appConfig = appConfig;
         }
 
         public Task OnEventAsync(GameEvent E, Server S)
@@ -64,6 +67,11 @@ namespace LiveRadar
             {
                 try
                 {
+                    if (((string) E.Extra).IsBotGuid() && _appConfig.IgnoreBots)
+                    {
+                        return Task.CompletedTask;
+                    }
+                    
                     string botKey = $"BotGuid_{E.Extra}";
                     long generatedBotGuid;
 

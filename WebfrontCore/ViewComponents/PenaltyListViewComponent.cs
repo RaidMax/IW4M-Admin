@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SharedLibraryCore.Database.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Models;
 
 namespace WebfrontCore.ViewComponents
 {

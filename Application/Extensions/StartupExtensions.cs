@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Data.MigrationContext;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +11,6 @@ using Serilog;
 using Serilog.Events;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.MigrationContext;
 using ILogger = Serilog.ILogger;
 
 namespace IW4MAdmin.Application.Extensions
@@ -32,13 +32,12 @@ namespace IW4MAdmin.Application.Extensions
                     .ReadFrom.Configuration(configuration)
                     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
 
-
                 if (Utilities.IsDevelopment)
                 {
                     loggerConfig = loggerConfig.WriteTo.Console(
                             outputTemplate:
                             "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                         .MinimumLevel.Debug();
                 }
 
@@ -67,10 +66,10 @@ namespace IW4MAdmin.Application.Extensions
                     {DataSource = Path.Join(currentPath, "Database", "Database.db")};
                 var connectionString = connectionStringBuilder.ToString();
 
-                var builder = new DbContextOptionsBuilder<SqliteDatabaseContext>()
-                    .UseSqlite(connectionString);
-
-                services.AddSingleton((DbContextOptions) builder.Options);
+                services.AddSingleton(sp => (DbContextOptions) new DbContextOptionsBuilder<SqliteDatabaseContext>()
+                    .UseSqlite(connectionString)
+                    .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>())
+                    .EnableSensitiveDataLogging().Options);
                 return services;
             }
 
@@ -90,7 +89,11 @@ namespace IW4MAdmin.Application.Extensions
                     services.AddSingleton(sp =>
                         (DbContextOptions) new DbContextOptionsBuilder<PostgresqlDatabaseContext>()
                             .UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
-                                postgresqlOptions => postgresqlOptions.EnableRetryOnFailure())
+                                postgresqlOptions =>
+                                {
+                                    postgresqlOptions.EnableRetryOnFailure();
+                                    postgresqlOptions.SetPostgresVersion(new Version("9.4"));
+                                })
                             .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Options);
                     return services;
                 default:

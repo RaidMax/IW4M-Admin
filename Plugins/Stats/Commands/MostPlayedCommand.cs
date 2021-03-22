@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using SharedLibraryCore;
-using IW4MAdmin.Plugins.Stats.Models;
-using SharedLibraryCore.Database;
 using System.Collections.Generic;
+using Data.Abstractions;
+using Data.Models.Client.Stats;
 using SharedLibraryCore.Database.Models;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using SharedLibraryCore.Configuration;

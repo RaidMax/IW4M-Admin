@@ -2,6 +2,7 @@
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System.Threading.Tasks;
+using Data.Models;
 
 namespace SharedLibraryCore.Commands
 {

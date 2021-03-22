@@ -1,5 +1,10 @@
 ﻿function getStatsChart(id, width, height) {
     const data = $('#' + id).data('history');
+    
+    if (data === undefined) {
+        return;
+    }
+    
     let fixedData = [];
     data.forEach(function (item, i) {
         fixedData[i] = { x: i, y: Math.floor(item) };
@@ -12,7 +17,7 @@
         dataMin = 0;
     }
 
-    const padding = (dataMax - dataMin) * 0.075;
+    const padding = (dataMax - dataMin) * 0.5;
     const min = Math.max(0, dataMin - padding);
     const max = dataMax + padding;
     let interval = Math.floor((max - min) / 2);
@@ -27,12 +32,11 @@
         animationEnabled: false,
         toolTip: {
             contentFormatter: function (e) {
-                return Math.round(e.entries[0].dataPoint.y, 1);
+                return `${_localization['WEBFRONT_ADV_STATS_RANKING_METRIC']} ${Math.round(e.entries[0].dataPoint.y, 1)}`;
             }
         },
         title: {
-            text: _localization['WEBFRONT_STATS_PERFORMANCE_HISTORY'],
-            fontSize: 14
+            fontSize: 0
         },
         axisX: {
             gridThickness: 0,

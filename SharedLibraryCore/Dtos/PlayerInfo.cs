@@ -1,8 +1,8 @@
-﻿using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Dtos.Meta.Responses;
+﻿using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using Data.Models;
 
 namespace SharedLibraryCore.Dtos
 {

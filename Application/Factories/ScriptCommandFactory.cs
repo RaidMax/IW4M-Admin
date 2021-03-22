@@ -6,9 +6,9 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Data.Models.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using static SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin.Application.Factories
 {
@@ -32,7 +32,7 @@ namespace IW4MAdmin.Application.Factories
         public IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, 
             bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction)
         {
-            var permissionEnum = Enum.Parse<Permission>(permission);
+            var permissionEnum = Enum.Parse<EFClient.Permission>(permission);
             var argsArray = args.Select(_arg => new CommandArgument
             {
                 Name = _arg.Item1,

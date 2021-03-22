@@ -23,10 +23,18 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Helpers;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Localization;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using IW4MAdmin.Plugins.Stats.Client.Abstractions;
+using IW4MAdmin.Plugins.Stats.Client;
+using IW4MAdmin.Plugins.Stats.Client.Game;
+using Stats.Client.Abstractions;
+using Stats.Client;
+using Stats.Helpers;
 
 namespace IW4MAdmin.Application
 {
@@ -80,13 +88,13 @@ namespace IW4MAdmin.Application
         /// <returns></returns>
         private static async Task LaunchAsync(string[] args)
         {
-        restart:
+            restart:
             ITranslationLookup translationLookup = null;
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
             IServiceCollection services = null;
             logger.LogInformation("Begin IW4MAdmin startup. Version is {version} {@args}", Version, args);
-            
+
             try
             {
                 // do any needed housekeeping file/folder migrations
@@ -96,7 +104,7 @@ namespace IW4MAdmin.Application
                 services = ConfigureServices(args);
                 serviceProvider = services.BuildServiceProvider();
                 var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
-                ServerManager = (ApplicationManager)serviceProvider.GetRequiredService<IManager>();
+                ServerManager = (ApplicationManager) serviceProvider.GetRequiredService<IManager>();
                 translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
 
                 await versionChecker.CheckVersion();
@@ -105,8 +113,12 @@ namespace IW4MAdmin.Application
 
             catch (Exception e)
             {
-                string failMessage = translationLookup == null ? "Failed to initialize IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
-                string exitMessage = translationLookup == null ? "Press enter to exit..." : translationLookup["MANAGER_EXIT"];
+                string failMessage = translationLookup == null
+                    ? "Failed to initialize IW4MAdmin"
+                    : translationLookup["MANAGER_INIT_FAIL"];
+                string exitMessage = translationLookup == null
+                    ? "Press enter to exit..."
+                    : translationLookup["MANAGER_EXIT"];
 
                 logger.LogCritical(e, "Failed to initialize IW4MAdmin");
                 Console.WriteLine(failMessage);
@@ -120,7 +132,8 @@ namespace IW4MAdmin.Application
                 {
                     if (translationLookup != null)
                     {
-                        Console.WriteLine(translationLookup[configException.Message].FormatExt(configException.ConfigurationFileName));
+                        Console.WriteLine(translationLookup[configException.Message]
+                            .FormatExt(configException.ConfigurationFileName));
                     }
 
                     foreach (string error in configException.Errors)
@@ -148,7 +161,9 @@ namespace IW4MAdmin.Application
             catch (Exception e)
             {
                 logger.LogCritical(e, "Failed to launch IW4MAdmin");
-                string failMessage = translationLookup == null ? "Failed to launch IW4MAdmin" : translationLookup["MANAGER_INIT_FAIL"];
+                string failMessage = translationLookup == null
+                    ? "Failed to launch IW4MAdmin"
+                    : translationLookup["MANAGER_INIT_FAIL"];
                 Console.WriteLine($"{failMessage}: {e.GetExceptionInfo()}");
             }
 
@@ -166,9 +181,9 @@ namespace IW4MAdmin.Application
         /// <returns></returns>
         private static async Task RunApplicationTasksAsync(ILogger logger, IServiceCollection services)
         {
-            var webfrontTask = ServerManager.GetApplicationSettings().Configuration().EnableWebFront ?
-                WebfrontCore.Program.Init(ServerManager, serviceProvider, services, ServerManager.CancellationToken) :
-                Task.CompletedTask;
+            var webfrontTask = ServerManager.GetApplicationSettings().Configuration().EnableWebFront
+                ? WebfrontCore.Program.Init(ServerManager, serviceProvider, services, ServerManager.CancellationToken)
+                : Task.CompletedTask;
 
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
             // because we can't exit early from waiting on console input, and it prevents us from restarting
@@ -179,7 +194,8 @@ namespace IW4MAdmin.Application
             {
                 ServerManager.Start(),
                 webfrontTask,
-                serviceProvider.GetRequiredService<IMasterCommunication>().RunUploadStatus(ServerManager.CancellationToken)
+                serviceProvider.GetRequiredService<IMasterCommunication>()
+                    .RunUploadStatus(ServerManager.CancellationToken)
             };
 
             logger.LogDebug("Starting webfront and input tasks");
@@ -231,11 +247,12 @@ namespace IW4MAdmin.Application
                 }
             }
             catch (OperationCanceledException)
-            { }
+            {
+            }
         }
 
-        private static IServiceCollection HandlePluginRegistration(ApplicationConfiguration appConfig, 
-            IServiceCollection serviceCollection, 
+        private static IServiceCollection HandlePluginRegistration(ApplicationConfiguration appConfig,
+            IServiceCollection serviceCollection,
             IMasterApi masterApi)
         {
             var defaultLogger = BuildDefaultLogger<Program>(appConfig);
@@ -248,31 +265,42 @@ namespace IW4MAdmin.Application
                 .BuildServiceProvider();
 
             var pluginImporter = pluginServiceProvider.GetRequiredService<IPluginImporter>();
-            
+
             // we need to register the rest client with regular collection
             serviceCollection.AddSingleton(masterApi);
-            
+
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
-                        .Where(_command => _command.BaseType == typeof(Command)))
+                .Where(_command => _command.BaseType == typeof(Command)))
             {
                 defaultLogger.LogDebug("Registered native command type {name}", commandType.Name);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
             }
 
             // register the plugin implementations
-            var pluginImplementations = pluginImporter.DiscoverAssemblyPluginImplementations();
-            foreach (var pluginType in pluginImplementations.Item1)
+            var (plugins, commands, configurations) = pluginImporter.DiscoverAssemblyPluginImplementations();
+            foreach (var pluginType in plugins)
             {
                 defaultLogger.LogDebug("Registered plugin type {name}", pluginType.FullName);
                 serviceCollection.AddSingleton(typeof(IPlugin), pluginType);
             }
 
             // register the plugin commands
-            foreach (var commandType in pluginImplementations.Item2)
+            foreach (var commandType in commands)
             {
                 defaultLogger.LogDebug("Registered plugin command type {name}", commandType.FullName);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
+            }
+
+            foreach (var configurationType in configurations)
+            {
+                defaultLogger.LogDebug("Registered plugin config type {name}", configurationType.Name);
+                var configInstance = (IBaseConfiguration) Activator.CreateInstance(configurationType);
+                var handlerType = typeof(BaseConfigurationHandler<>).MakeGenericType(configurationType);
+                var handlerInstance = Activator.CreateInstance(handlerType, new[] {configInstance.Name()});
+                var genericInterfaceType = typeof(IConfigurationHandler<>).MakeGenericType(configurationType);
+                
+                serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
             }
 
             // register any script plugins
@@ -284,10 +312,9 @@ namespace IW4MAdmin.Application
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
                 .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))
-                .Union(pluginImplementations
-                .Item1.SelectMany(_asm => _asm.Assembly.GetTypes())
-                .Distinct()
-                .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))))
+                .Union(plugins.SelectMany(_asm => _asm.Assembly.GetTypes())
+                    .Distinct()
+                    .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))))
             {
                 var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
                 serviceCollection.AddSingleton(instance);
@@ -295,7 +322,7 @@ namespace IW4MAdmin.Application
 
             return serviceCollection;
         }
-        
+
 
         /// <summary>
         /// Configures the dependency injection services
@@ -310,7 +337,7 @@ namespace IW4MAdmin.Application
                 ? new Uri("http://127.0.0.1:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
             var masterRestClient = RestClient.For<IMasterApi>(masterUri);
-            var translationLookup =  Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
+            var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
 
             if (appConfig == null)
             {
@@ -327,13 +354,14 @@ namespace IW4MAdmin.Application
                     Utilities.PermissionLevelOverrides.Add(key, value);
                 }
             }
-            
+
             // build the dependency list
             HandlePluginRegistration(appConfig, serviceCollection, masterRestClient);
 
             serviceCollection
                 .AddBaseLogger(appConfig)
                 .AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
+                .AddSingleton<IConfigurationHandler<DefaultSettings>, BaseConfigurationHandler<DefaultSettings>>()
                 .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
                 .AddSingleton(
                     new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as
@@ -372,6 +400,12 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IManager, ApplicationManager>()
                 .AddSingleton<SharedLibraryCore.Interfaces.ILogger, Logger>()
                 .AddSingleton<IClientNoticeMessageFormatter, ClientNoticeMessageFormatter>()
+                .AddSingleton<IClientStatisticCalculator, HitCalculator>()
+                .AddSingleton<IServerDistributionCalculator, ServerDistributionCalculator>()
+                .AddSingleton<IWeaponNameParser, WeaponNameParser>()
+                .AddSingleton<IHitInfoBuilder, HitInfoBuilder>()
+                .AddSingleton(typeof(ILookupCache<>), typeof(LookupCache<>))
+                .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 
@@ -386,7 +420,7 @@ namespace IW4MAdmin.Application
 
             return serviceCollection;
         }
-       
+
         private static ILogger BuildDefaultLogger<T>(ApplicationConfiguration appConfig)
         {
             var collection = new ServiceCollection()

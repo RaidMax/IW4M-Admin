@@ -4,6 +4,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Threading.Tasks;
+using Data.Models.Client;
 using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Database.Models.EFClient;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -18,7 +19,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly Action<GameEvent> _executeAction;
         private readonly ILogger _logger;
 
-        public ScriptCommand(string name, string alias, string description, bool isTargetRequired, Permission permission,
+        public ScriptCommand(string name, string alias, string description, bool isTargetRequired, EFClient.Permission permission,
             CommandArgument[] args, Action<GameEvent> executeAction, CommandConfiguration config, ITranslationLookup layout, ILogger<ScriptCommand> logger)
             : base(config, layout)
         {

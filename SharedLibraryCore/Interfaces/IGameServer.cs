@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Data.Models;
 using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore.Interfaces

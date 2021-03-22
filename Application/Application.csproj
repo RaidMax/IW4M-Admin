@@ -56,7 +56,7 @@
 
   <ItemGroup>
     <None Update="DefaultSettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Configuration\LoggingConfiguration.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

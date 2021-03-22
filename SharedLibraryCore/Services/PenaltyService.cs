@@ -7,11 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models;
 using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Services
 {
-    public class PenaltyService : Interfaces.IEntityService<EFPenalty>
+    public class PenaltyService : IEntityService<EFPenalty>
     {
         private readonly IDatabaseContextFactory _contextFactory;
         

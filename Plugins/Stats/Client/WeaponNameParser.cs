@@ -48,7 +48,8 @@ namespace Stats.Client
             }
 
             // remove the _mp suffix
-            var filtered = splitWeaponName.Where(part => part != configForGame.WeaponSuffix);
+            var filtered = splitWeaponName
+                .Where(part => part != configForGame.WeaponSuffix && part != configForGame.WeaponPrefix);
             var baseName = splitWeaponName.First();
             var attachments = new List<string>();
 
@@ -66,8 +67,6 @@ namespace Stats.Client
                     Name = attachment
                 }).ToList()
             };
-
-           // _logger.LogDebug("Parsed weapon info {@info}", weaponInfo);
 
             return weaponInfo;
         }

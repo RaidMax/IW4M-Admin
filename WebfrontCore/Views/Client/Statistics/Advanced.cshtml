@@ -32,10 +32,10 @@
             return null;
         }
         var rebuiltName = stat.RebuildWeaponName();
-        var name = config.GetStringForGame(rebuiltName);
+        var name = config.GetStringForGame(rebuiltName, stat.Weapon?.Game);
         return !rebuiltName.Equals(name, StringComparison.InvariantCultureIgnoreCase)
             ? name
-            : config.GetStringForGame(stat.Weapon.Name);
+            : config.GetStringForGame(stat.Weapon.Name, stat.Weapon.Game);
     }
 
     string GetWeaponAttachmentName(EFWeaponAttachmentCombo attachment)
@@ -47,9 +47,9 @@
 
         var attachmentText = string.Join('+', new[]
         {
-            config.GetStringForGame(attachment.Attachment1.Name),
-            config.GetStringForGame(attachment.Attachment2?.Name),
-            config.GetStringForGame(attachment.Attachment3?.Name)
+            config.GetStringForGame(attachment.Attachment1.Name, attachment.Attachment1.Game),
+            config.GetStringForGame(attachment.Attachment2?.Name, attachment.Attachment2?.Game),
+            config.GetStringForGame(attachment.Attachment3?.Name, attachment.Attachment3?.Game)
         }.Where(attach => !string.IsNullOrWhiteSpace(attach)));
 
         return attachmentText;
@@ -404,7 +404,7 @@
             @foreach (var hitLocation in filteredHitLocations.Take(8))
             {
                 <tr>
-                    <td class="@textClass text-force-break">@config.GetStringForGame(hitLocation.HitLocation.Name)</td>
+                    <td class="@textClass text-force-break">@config.GetStringForGame(hitLocation.HitLocation.Name, hitLocation.HitLocation.Game)</td>
                     <td class="text-success text-force-break">@hitLocation.HitCount</td>
                     <td class="text-muted text-force-break">@Math.Round((hitLocation.HitCount / (float) totalHits) * 100.0).ToString(Utilities.CurrentLocalization.Culture)%</td>
                     <td class="text-muted text-force-break">@hitLocation.DamageInflicted.ToNumericalString()</td>
@@ -414,7 +414,7 @@
             @foreach (var hitLocation in filteredHitLocations.Skip(8))
             {
                 <tr class="bg-dark hidden-row" style="display:none;">
-                    <td class="@textClass text-force-break">@config.GetStringForGame(hitLocation.HitLocation.Name)</td>
+                    <td class="@textClass text-force-break">@config.GetStringForGame(hitLocation.HitLocation.Name, hitLocation.HitLocation.Game)</td>
                     <td class="text-success text-force-break">@hitLocation.HitCount</td>
                     <td class="text-muted text-force-break">@Math.Round((hitLocation.HitCount / (float) totalHits) * 100.0).ToString(Utilities.CurrentLocalization.Culture)%</td>
                     <td class="text-muted text-force-break">@hitLocation.DamageInflicted.ToNumericalString()</td>

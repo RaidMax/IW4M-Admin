@@ -699,6 +699,10 @@
         {
           "Alias": "Rust",
           "Name": "mp_rust"
+        },
+        {
+          "Alias": "Highrise",
+          "Name": "mp_highrise"
         }
       ]
     },
@@ -860,10 +864,131 @@
       ]
     },
     {
+      "Game": "T7",
+      "Maps": [
+        {
+          "Alias": "Evac",
+          "Name": "mp_apartments"
+        },
+        {
+          "Alias": "Aquarium",
+          "Name": "mp_biodome"
+        },
+        {
+          "Alias": "Exodus",
+          "Name": "mp_chinatown"
+        },
+        {
+          "Alias": "Hunted",
+          "Name": "mp_ethiopia"
+        },
+        {
+          "Alias": "Havoc",
+          "Name": "mp_havoc"
+        },
+        {
+          "Alias": "Infection",
+          "Name": "mp_infection"
+        },
+        {
+          "Alias": "Metro",
+          "Name": "mp_metro"
+        },
+        {
+          "Alias": "Redwood",
+          "Name": "mp_redwood"
+        },
+        {
+          "Alias": "Combine",
+          "Name": "mp_sector"
+        },
+        {
+          "Alias": "Breach",
+          "Name": "mp_spire"
+        },
+        {
+          "Alias": "Stronghold",
+          "Name": "mp_stronghold"
+        },
+        {
+          "Alias": "Fringe",
+          "Name": "mp_veiled"
+        },
+        {
+          "Alias": "Nuk3town",
+          "Name": "mp_nuketown_x"
+        },
+        {
+          "Alias": "Gauntlet",
+          "Name": "mp_crucible"
+        },
+        {
+          "Alias": "Rise",
+          "Name": "mp_rise"
+        },
+        {
+          "Alias": "Skyjacked",
+          "Name": "mp_skyjacked"
+        },
+        {
+          "Alias": "Splash",
+          "Name": "mp_waterpark"
+        },
+        {
+          "Alias": "Spire",
+          "Name": "mp_aerospace"
+        },
+        {
+          "Alias": "Verge",
+          "Name": "mp_banzai"
+        },
+        {
+          "Alias": "Rift",
+          "Name": "mp_conduit"
+        },
+        {
+          "Alias": "Knockout",
+          "Name": "mp_kung_fu"
+        },
+        {
+          "Alias": "Rumble",
+          "Name": "mp_arena"
+        },
+        {
+          "Alias": "Cyrogen",
+          "Name": "mp_cryogen"
+        },
+        {
+          "Alias": "Empire",
+          "Name": "mp_rome"
+        },
+        {
+          "Alias": "Berserk",
+          "Name": "mp_shrine"
+        },
+        {
+          "Alias": "Rupture",
+          "Name": "mp_city"
+        },
+        {
+          "Alias": "Micro",
+          "Name": "mp_miniature"
+        },
+        {
+          "Alias": "Citadel",
+          "Name": "mp_ruins"
+        },
+        {
+          "Alias": "Outlaw",
+          "Name": "mp_western"
+        }
+      ]
+    },
+    {
       "Game": "IW6",
       "Maps": [
         {
-          "Alias": "Prision Break",
+          "Alias": "Prison Break",
           "Name": "mp_prisonbreak"
         },
         {

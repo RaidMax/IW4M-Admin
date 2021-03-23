@@ -253,6 +253,10 @@ function drawHitLocationChart(context, background, scalar, width, height) {
 
         const color = '#' + red + green + '0077';
         const location = hitLocations[hit.name];
+        
+        if (location === undefined) {
+            return true;
+        }
 
         if (location.type === 'polygon') {
             drawPolygon(context, scalar, location.p1, location.p2, location.p3, location.p4, color);

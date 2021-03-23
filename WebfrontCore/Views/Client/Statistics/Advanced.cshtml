@@ -16,7 +16,8 @@
     const string meleeKey = "MOD_MELEE";
 
     var suicideKeys = new[] {"MOD_SUICIDE", "MOD_FALLING"};
-    var config = (GameStringConfiguration) ViewBag.Config;
+    // if they've not copied default settings config this could be null
+    var config = (GameStringConfiguration) ViewBag.Config ?? new GameStringConfiguration(); 
 
     var headerClass = Model.Level == EFClient.Permission.Banned ? "bg-danger" : "bg-primary";
     var textClass = Model.Level == EFClient.Permission.Banned ? "text-danger" : "text-primary";

@@ -22,8 +22,21 @@ namespace IW4MAdmin.Plugins.Stats.Config
         {
             new WeaponNameParserConfiguration()
             {
+                Game = Server.Game.IW3,
+                WeaponSuffix = "mp",
+                Delimiters = new[] {'_'}
+            },
+            new WeaponNameParserConfiguration()
+            {
                 Game = Server.Game.IW4,
                 WeaponSuffix = "mp",
+                Delimiters = new[] {'_'}
+            },
+            new WeaponNameParserConfiguration()
+            {
+                Game = Server.Game.IW5,
+                WeaponSuffix = "mp",
+                WeaponPrefix = "iw5",
                 Delimiters = new[] {'_'}
             },
             new WeaponNameParserConfiguration()

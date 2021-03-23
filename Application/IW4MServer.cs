@@ -481,10 +481,10 @@ namespace IW4MAdmin
 
                     await Manager.GetPenaltyService().Create(newReport);
 
-                    int reportNum = await Manager.GetClientService().GetClientReportCount(E.Target.ClientId);
-                    bool isAutoFlagged = await Manager.GetClientService().IsAutoFlagged(E.Target.ClientId);
+                    var reportNum = await Manager.GetClientService().GetClientReportCount(E.Target.ClientId);
+                    var canBeAutoFlagged = await Manager.GetClientService().CanBeAutoFlagged(E.Target.ClientId);
 
-                    if (!E.Target.IsPrivileged() && reportNum >= REPORT_FLAG_COUNT && !isAutoFlagged)
+                    if (!E.Target.IsPrivileged() && reportNum >= REPORT_FLAG_COUNT && canBeAutoFlagged)
                     {
                         E.Target.Flag(
                             Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTO_FLAG_REPORT"]

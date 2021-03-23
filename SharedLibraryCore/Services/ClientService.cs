@@ -669,22 +669,30 @@ namespace SharedLibraryCore.Services
         }
 
         /// <summary>
-        /// indicates if the given clientid has been autoflagged 
+        /// indicates if the given clientid can be autoflagged 
         /// </summary>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<bool> IsAutoFlagged(int clientId)
+        public async Task<bool> CanBeAutoFlagged(int clientId)
         {
             await using var context = _contextFactory.CreateContext(false);
 
             var now = DateTime.UtcNow;
-            return await context.Penalties
+             var hasExistingAutoFlag = await context.Penalties
                 .Where(_penalty => _penalty.Active)
                 .Where(_penalty => _penalty.OffenderId == clientId)
                 .Where(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag)
                 .Where(_penalty => _penalty.PunisherId == 1)
                 .Where(_penalty => _penalty.Expires == null || _penalty.Expires > now)
                 .AnyAsync();
+
+             var hasUnflag = await context.Penalties
+                 .Where(_penalty => _penalty.Active)
+                 .Where(_penalty => _penalty.OffenderId == clientId)
+                 .Where(_penalty => _penalty.Type == EFPenalty.PenaltyType.Unflag)
+                 .AnyAsync();
+
+             return !hasExistingAutoFlag && !hasUnflag;
         }
 
         /// <summary>

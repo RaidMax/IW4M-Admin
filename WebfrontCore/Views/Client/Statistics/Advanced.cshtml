@@ -9,7 +9,7 @@
 @model Stats.Dtos.AdvancedStatsInfo
 @{
     ViewBag.Title = "Advanced Client Statistics";
-    ViewBag.Description = Model.ClientName;
+    ViewBag.Description = Model.ClientName.StripColors();
 
     const int maxItems = 5;
     const string headshotKey = "MOD_HEAD_SHOT";

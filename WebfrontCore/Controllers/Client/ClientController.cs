@@ -120,6 +120,11 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> PrivilegedAsync()
         {
+            if (Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy && !Authorized)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
                 .OrderByDescending(_client => _client.Level)
                 .ThenBy(_client => _client.Name);

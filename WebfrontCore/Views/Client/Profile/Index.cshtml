@@ -1,15 +1,15 @@
 ﻿@using SharedLibraryCore.Interfaces
 @using Data.Models
+@using Data.Models.Client
 @model SharedLibraryCore.Dtos.PlayerInfo
 @{
-    string match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
-    string shortCode = match == string.Empty ? "?" : match;
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
-    string gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
-    bool isFlagged = Model.LevelInt == (int) SharedLibraryCore.Database.Models.EFClient.Permission.Flagged;
-    bool isPermBanned = Model.LevelInt == (int) SharedLibraryCore.Database.Models.EFClient.Permission.Banned;
-    bool isTempBanned = Model.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
-    string translationKey = $"WEBFRONT_PROFILE_{Model.ActivePenalty?.Type.ToString().ToUpper()}_INFO";
+    var match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
+    var shortCode = match == string.Empty ? "?" : match;
+    var gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
+    var isFlagged = Model.LevelInt == (int) EFClient.Permission.Flagged;
+    var isPermBanned = Model.LevelInt == (int) EFClient.Permission.Banned;
+    var isTempBanned = Model.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
+    var translationKey = $"WEBFRONT_PROFILE_{Model.ActivePenalty?.Type.ToString().ToUpper()}_INFO";
     var ignoredMetaTypes = new[] {MetaType.Information, MetaType.Other, MetaType.QuickMessage};
 }
 
@@ -61,7 +61,7 @@
                     switch (result.MatchValue)
                     {
                         case "reason":
-                            <span class="text-white font-weight-lighter">@(ViewBag.Authorized ? !string.IsNullOrEmpty(Model.ActivePenalty.AutomatedOffense) && Model.ActivePenalty.Type != EFPenalty.PenaltyType.Warning ? Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.ActivePenalty.AutomatedOffense) : Model.ActivePenalty.Offense : Model.ActivePenalty.Offense)</span>
+                            <span class="text-white font-weight-lighter">@(ViewBag.Authorized ? !string.IsNullOrEmpty(Model.ActivePenalty.AutomatedOffense) && Model.ActivePenalty.Type != EFPenalty.PenaltyType.Warning ? Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.ActivePenalty.AutomatedOffense) : Model.ActivePenalty.Offense.StripColors() : Model.ActivePenalty.Offense.StripColors())</span>
                             break;
                         case "time":
                             <span class="text-white font-weight-lighter">

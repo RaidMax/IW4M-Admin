@@ -24,7 +24,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Say = 'say {0}';
         rconParser.Configuration.CommandPrefixes.Kick = 'dropclient {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban = 'dropclient {0} "{1}"';
-        rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"';
+        rconParser.Configuration.CommandPrefixes.TempBan = 'dropclient {0} "{1}"';
         rconParser.Configuration.Dvar.AddMapping(107, 1); // RCon DvarValue
         rconParser.Configuration.Dvar.Pattern = '^(.*)$';
         rconParser.Configuration.NoticeLineSeparator = '. ';

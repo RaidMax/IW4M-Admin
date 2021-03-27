@@ -728,21 +728,19 @@ namespace SharedLibraryCore.Services
             var result = new ResourceQueryHelperResult<FindClientResult>();
             await using var context = _contextFactory.CreateContext(enableTracking: false);
 
-            IQueryable<EFClient> iqClients = null;
+            IQueryable<Data.Models.Client.EFClient> iqClients = null;
 
             if (!string.IsNullOrEmpty(query.Xuid))
             {
-                long networkId = query.Xuid.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
-                iqClients = context.Clients.
-                    Where(_client => _client.NetworkId == networkId)
-                    .Select(client => client.ToPartialClient());
+                var networkId = query.Xuid.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
+                iqClients = context.Clients.Where(_client => _client.NetworkId == networkId);
             }
 
             else if (!string.IsNullOrEmpty(query.Name))
             {
                 iqClients = context.Clients
-                    .Where(_client => EF.Functions.Like(_client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"))
-                    .Select(client => client.ToPartialClient());
+                    .Where(_client =>
+                        EF.Functions.Like(_client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"));
             }
 
             if (query.Direction == SortDirection.Ascending)

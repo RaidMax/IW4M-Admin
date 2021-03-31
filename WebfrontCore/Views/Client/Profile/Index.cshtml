@@ -38,18 +38,22 @@
             <div id="profile_aliases" class="text-muted pt-0 pt-lg-2 pb-2">
                 @foreach (var linked in Model.LinkedAccounts)
                 {
-                    @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new {id = linked.Key}, new {@class = "link-inverse"})<br/>
+                    <div>
+                        @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new {id = linked.Key}, new {@class = "link-inverse"})
+                    </div>
                 }
                 @foreach (var alias in Model.Aliases)
                 {
-                    <color-code value="@alias" allow="@ViewBag.EnableColorCodes"></color-code>
-                    <br/>
+                    <div>
+                        <color-code value="@alias" allow="@ViewBag.EnableColorCodes"></color-code>
+                    </div>
                 }
 
-                @foreach (string ip in Model.IPs)
+                @foreach (var ip in Model.IPs)
                 {
-                    <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a>
-                    <br/>
+                    <div>
+                        <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a>
+                    </div>
                 }
             </div>
         }

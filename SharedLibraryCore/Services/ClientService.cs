@@ -547,7 +547,8 @@ namespace SharedLibraryCore.Services
 
         public async Task<IList<PlayerInfo>> FindClientsByIdentifier(string identifier)
         {
-            if (identifier?.Length < 3)
+            var trimmedIdentifier = identifier?.Trim();
+            if (trimmedIdentifier?.Length < 3)
             {
                 return new List<PlayerInfo>();
             }
@@ -556,11 +557,11 @@ namespace SharedLibraryCore.Services
             long? networkId = null;
             try
             {
-                networkId = identifier.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
+                networkId = trimmedIdentifier.ConvertGuidToLong(System.Globalization.NumberStyles.HexNumber);
             }
             catch { }
 
-            int? ipAddress = identifier.ConvertToIP();
+            int? ipAddress = trimmedIdentifier.ConvertToIP();
 
             IQueryable<EFAlias> iqLinkIds = context.Aliases.Where(_alias => _alias.Active);
 
@@ -573,7 +574,7 @@ namespace SharedLibraryCore.Services
             // want to find them by name (wildcard)
             else
             {
-                iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like((_alias.SearchableName ?? _alias.Name.ToLower()), $"%{identifier.ToLower()}%"));
+                iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like((_alias.SearchableName ?? _alias.Name.ToLower()), $"%{trimmedIdentifier.ToLower()}%"));
             }
 
             var linkIds = await iqLinkIds

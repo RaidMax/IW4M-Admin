@@ -49,8 +49,9 @@ namespace Stats.Client
 
             // remove the _mp suffix
             var filtered = splitWeaponName
-                .Where(part => part != configForGame.WeaponSuffix && part != configForGame.WeaponPrefix);
-            var baseName = splitWeaponName.First();
+                .Where(part => part != configForGame.WeaponSuffix && part != configForGame.WeaponPrefix)
+                .ToList();
+            var baseName = filtered.First();
             var attachments = new List<string>();
 
             if (filtered.Count() > 1)

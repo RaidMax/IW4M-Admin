@@ -20,12 +20,12 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
         rconParser.Configuration.GuidNumberStyle              = 7; // Integer
         
-        rconParser.Version = 'Plutonium T4 Multiplayer (r1678-staging)';
+        rconParser.Version  = 'Plutonium T4 Multiplayer (r1678-staging)';
+        rconParser.GameName = 5; // T4
 
         eventParser.Configuration.GuidNumberStyle = 7; // Integer
         eventParser.Configuration.GameDirectory   = 'raw';
-        
-        eventParser.GameName = 5; // T4
+ 
         eventParser.Version  = 'Plutonium T4 Multiplayer (r1678-staging)';
     },
 

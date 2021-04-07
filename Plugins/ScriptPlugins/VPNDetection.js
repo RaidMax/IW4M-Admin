@@ -33,7 +33,7 @@ var plugin = {
             co.Dispose();
             re.Dispose();
             cl.Dispose();
-            usingVPN = true;//parsedJSON.success && parsedJSON.proxy;
+            usingVPN = parsedJSON.success && parsedJSON.proxy;
         } catch (e) {
             this.logger.WriteWarning('There was a problem checking client IP for VPN ' + e.message);
         }

@@ -2,8 +2,8 @@
 var eventParser;
 
 var plugin = {
-    author: 'RaidMax',
-    version: 0.1,
+    author: 'RaidMax, Chase',
+    version: 0.2,
     name: 'Plutonium T4 Parser',
     isParser: true,
 

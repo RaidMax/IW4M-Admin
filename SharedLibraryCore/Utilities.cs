@@ -365,12 +365,13 @@ namespace SharedLibraryCore
 
         /// <summary>
         /// determines if the guid provided appears to be a bot guid
+        /// "1277538174" - (Pluto?)WaW (T4)
         /// </summary>
         /// <param name="guid">value of the guid</param>
         /// <returns>true if is bot guid, otherwise false</returns>
         public static bool IsBotGuid(this string guid)
         {
-            return guid.Contains("bot") || guid == "0";
+            return guid.Contains("bot") || guid == "0" || guid == "1277538174";
         }
 
         /// <summary>

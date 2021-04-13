@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'RektT5m Parser',
     isParser: true,
 
@@ -16,7 +16,7 @@ var plugin = {
 
         eventParser.Configuration.GameDirectory = 'data';
 
-        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xff\x01print';
+        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xff\x01print\n';
         rconParser.Configuration.CommandPrefixes.Tell = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined;
 

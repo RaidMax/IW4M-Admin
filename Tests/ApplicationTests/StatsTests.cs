@@ -6,7 +6,6 @@ using FakeItEasy;
 using IW4MAdmin.Application.EventParsers;
 using System.Linq;
 using IW4MAdmin.Plugins.Stats.Models;
-using IW4MAdmin.Application.Helpers;
 using IW4MAdmin.Plugins.Stats.Config;
 using System.Collections.Generic;
 using SharedLibraryCore.Database.Models;
@@ -17,6 +16,7 @@ using System.Threading.Tasks;
 using Stats.Helpers;
 using Stats.Dtos;
 using SharedLibraryCore.Configuration;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -35,19 +35,15 @@ namespace ApplicationTests
             handlerFactory = A.Fake<IConfigurationHandlerFactory>();
 
             serviceProvider = new ServiceCollection()
-                .AddSingleton<StatsResourceQueryHelper>()
                 .BuildBase()
+                .AddSingleton(A.Fake<IConfigurationHandler<StatsConfiguration>>())
+                .AddSingleton<StatsResourceQueryHelper>()
+                .AddSingleton(new ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 })
+                .AddSingleton<StatManager>()
                 .AddSingleton<IW4MAdmin.Plugins.Stats.Plugin>()
                 .BuildServiceProvider();
 
             contextFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
-
-            void testLog(string msg) => Console.WriteLine(msg);
-
-            A.CallTo(() => logger.WriteError(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteWarning(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteInfo(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteDebug(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
         }
 
         [Test]
@@ -66,13 +62,7 @@ namespace ApplicationTests
             A.CallTo(() => handlerFactory.GetConfigurationHandler<StatsConfiguration>(A<string>.Ignored))
                 .Returns(config);
 
-            A.CallTo(() => mgr.GetLogger(A<long>.Ignored))
-                .Returns(logger);
-
-            var server = new IW4MServer(mgr,
-                new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(),
-                A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>());
+            var server = serviceProvider.GetRequiredService<IW4MServer>();
 
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
@@ -135,8 +125,8 @@ namespace ApplicationTests
         public async Task Test_ConcurrentCallsToUpdateStatHistoryDoesNotCauseException()
         {
             var server = serviceProvider.GetRequiredService<IW4MServer>();
-            var configHandler = A.Fake<IConfigurationHandler<StatsConfiguration>>();
-            var mgr = new StatManager(serviceProvider.GetRequiredService<IManager>(), serviceProvider.GetRequiredService<IDatabaseContextFactory>(), configHandler);
+            var configHandler = serviceProvider.GetRequiredService<IConfigurationHandler<StatsConfiguration>>();
+            var mgr = serviceProvider.GetRequiredService<StatManager>();
             var target = ClientGenerators.CreateDatabaseClient();
             target.CurrentServer = server;
 
@@ -148,10 +138,11 @@ namespace ApplicationTests
 
             var dbFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
             var db = dbFactory.CreateContext(true);
-            db.Set<EFServer>().Add(new EFServer()
+            var efServer = new EFServer()
             {
                 EndPoint = server.EndPoint.ToString()
-            });
+            };
+            db.Set<EFServer>().Add(efServer);
 
             db.Clients.Add(target);
             db.SaveChanges();
@@ -161,6 +152,10 @@ namespace ApplicationTests
             var stats = target.GetAdditionalProperty<EFClientStatistics>("ClientStats");
 
             await mgr.UpdateStatHistory(target, stats);
+
+            db.Clients.Remove(target);
+            db.Set<EFServer>().Remove(efServer);
+            await db.SaveChangesAsync();
         }
 
         #region QUERY_HELPER
@@ -168,7 +163,7 @@ namespace ApplicationTests
         public async Task Test_StatsQueryHelper_Get()
         {
             var queryHelper = serviceProvider.GetRequiredService<StatsResourceQueryHelper>();
-            using var context = contextFactory.CreateContext();
+            await using var context = contextFactory.CreateContext();
 
             var server = new EFServer() { ServerId = 1 };
             var stats = new EFClientStatistics()

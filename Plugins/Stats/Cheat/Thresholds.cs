@@ -1,19 +1,19 @@
 ﻿using Stats.Config;
 using System;
-using static SharedLibraryCore.Database.Models.EFPenalty;
+using Data.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
     public static class DistributionHelper
     {
-        public static double CalculateMaxValue(this DistributionConfiguration config, PenaltyType penaltyType, int sampleSize)
+        public static double CalculateMaxValue(this DistributionConfiguration config, EFPenalty.PenaltyType penaltyType, int sampleSize)
         {
             switch (config.Type)
             {
                 case DistributionConfiguration.DistributionType.Normal:
                     break;
                 case DistributionConfiguration.DistributionType.LogNormal:
-                    double deviationNumber = penaltyType == PenaltyType.Flag ? 3.0 : 4.0;
+                    double deviationNumber = penaltyType == EFPenalty.PenaltyType.Flag ? 3.0 : 4.0;
                     double marginOfError = 1.644 / (config.StandardDeviation / Math.Sqrt(sampleSize));
                     double maxValue = (config.StandardDeviation * deviationNumber) + marginOfError;
                     return maxValue;

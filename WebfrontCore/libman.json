@@ -26,6 +26,10 @@
     {
       "library": "moment@2.24.0",
       "destination": "wwwroot/lib/moment.js/"
+    },
+    {
+      "library": "chart.js@2.9.4",
+      "destination": "wwwroot/lib/chart.js"
     }
   ]
 }

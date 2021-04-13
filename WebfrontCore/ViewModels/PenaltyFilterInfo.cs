@@ -1,4 +1,4 @@
-﻿using static SharedLibraryCore.Database.Models.EFPenalty;
+﻿using Data.Models;
 
 namespace WebfrontCore.ViewModels
 {
@@ -15,7 +15,7 @@ namespace WebfrontCore.ViewModels
         /// <summary>
         /// show only a certain type of penalty
         /// </summary>
-        public PenaltyType ShowOnly { get; set; }
+        public EFPenalty.PenaltyType ShowOnly { get; set; }
 
         /// <summary>
         /// ignore penalties that are automated

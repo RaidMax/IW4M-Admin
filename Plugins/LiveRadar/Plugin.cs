@@ -1,11 +1,14 @@
 ﻿using LiveRadar.Configuration;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace LiveRadar
 {
@@ -21,11 +24,15 @@ namespace LiveRadar
         private readonly Dictionary<string, long> _botGuidLookups;
         private bool addedPage;
         private readonly object lockObject = new object();
+        private readonly ILogger _logger;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory, ApplicationConfiguration appConfig)
         {
             _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
             _botGuidLookups = new Dictionary<string, long>();
+            _logger = logger;
+            _appConfig = appConfig;
         }
 
         public Task OnEventAsync(GameEvent E, Server S)
@@ -60,12 +67,19 @@ namespace LiveRadar
             {
                 try
                 {
+                    if (((string) E.Extra).IsBotGuid() && _appConfig.IgnoreBots)
+                    {
+                        return Task.CompletedTask;
+                    }
+                    
                     string botKey = $"BotGuid_{E.Extra}";
                     long generatedBotGuid;
 
                     lock (lockObject)
                     {
-                        generatedBotGuid = _botGuidLookups.ContainsKey(botKey) ? _botGuidLookups[botKey] : 0;
+                        generatedBotGuid = _botGuidLookups.ContainsKey(botKey) 
+                            ? _botGuidLookups[botKey] 
+                            : (E.Extra.ToString() ?? "0").ConvertGuidToLong(NumberStyles.HexNumber);
                     }
 
                     var radarUpdate = RadarEvent.Parse(E.Data, generatedBotGuid);
@@ -80,8 +94,7 @@ namespace LiveRadar
 
                 catch (Exception e)
                 {
-                    S.Logger.WriteWarning($"Could not parse live radar output: {e.Data}");
-                    S.Logger.WriteDebug(e.GetExceptionInfo());
+                    _logger.LogError(e, "Could not parse live radar output: {data}", e.Data);
                 }
             }
 

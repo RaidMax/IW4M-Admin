@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using static SharedLibraryCore.Database.Models.EFClient;
+using Data.Models.Client;
 using static SharedLibraryCore.GameEvent;
 
 namespace WebfrontCore.Middleware
@@ -36,10 +36,10 @@ namespace WebfrontCore.Middleware
         private void OnGameEvent(object sender, GameEvent gameEvent)
         {
             if (gameEvent.Type == EventType.ChangePermission &&
-                gameEvent.Extra is Permission perm)
+                gameEvent.Extra is EFClient.Permission perm)
             {
                 // we want to remove the claims when the client is demoted
-                if (perm < Permission.Trusted)
+                if (perm < EFClient.Permission.Trusted)
                 {
                     lock (_privilegedClientIds)
                     {
@@ -47,7 +47,7 @@ namespace WebfrontCore.Middleware
                     }
                 }
                 // and add if promoted
-                else if (perm > Permission.Trusted &&
+                else if (perm > EFClient.Permission.Trusted &&
                     !_privilegedClientIds.Contains(gameEvent.Target.ClientId))
                 {
                     lock (_privilegedClientIds)

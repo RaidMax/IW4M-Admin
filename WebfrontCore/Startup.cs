@@ -1,29 +1,31 @@
-﻿using FluentValidation;
+﻿using System;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
 using Stats.Helpers;
-using StatsWeb;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Helpers;
+using IW4MAdmin.Plugins.Stats.Config;
+using Stats.Client.Abstractions;
 using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 
@@ -79,11 +81,14 @@ namespace WebfrontCore
                 });
 
 #if DEBUG
-            mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
-            services.Configure<RazorViewEngineOptions>(_options =>
             {
-                _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
-            });
+                mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
+                services.Configure<RazorViewEngineOptions>(_options =>
+                {
+                    _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
+                    _options.ViewLocationFormats.Add("/Views/Plugins/Stats/Advanced.cshtml");
+                });
+            }
 #endif
 
             foreach (var asm in pluginAssemblies())
@@ -92,10 +97,7 @@ namespace WebfrontCore
             }
 
             services.AddHttpContextAccessor();
-
-            services.AddEntityFrameworkSqlite()
-                .AddDbContext<DatabaseContext>();
-
+            
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
                 {
@@ -103,32 +105,32 @@ namespace WebfrontCore
                     options.LoginPath = "/";
                 });
 
-#if DEBUG
-            services.AddLogging(_builder =>
-            {
-                _builder.AddDebug();
-            });
-#endif
-
             services.AddSingleton(Program.Manager);
             services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
             services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
             services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
-
+            services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>, AdvancedClientStatsResourceQueryHelper>();
+            services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
             // todo: this needs to be handled more gracefully
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IDatabaseContextFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IAuditInformationRepository>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<SharedLibraryCore.Interfaces.ILogger>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IMetaService>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<ApplicationConfiguration>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ClientService>());
+            services.AddSingleton(
+                Program.ApplicationServiceProvider.GetRequiredService<IServerDistributionCalculator>());
+            services.AddSingleton(Program.ApplicationServiceProvider
+                .GetRequiredService<IConfigurationHandler<DefaultSettings>>());
+            services.AddSingleton(Program.ApplicationServiceProvider
+                            .GetRequiredService<IConfigurationHandler<StatsConfiguration>>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IManager manager)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
         {
             app.UseStatusCodePages(_context =>
             {
@@ -152,7 +154,7 @@ namespace WebfrontCore
 
             if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
             {
-                app.UseMiddleware<IPWhitelist>(manager.GetLogger(0), manager.GetApplicationSettings().Configuration().WebfrontConnectionWhitelist);
+                app.UseMiddleware<IPWhitelist>(serviceProvider.GetService<ILogger<IPWhitelist>>(), serviceProvider.GetRequiredService<ApplicationConfiguration>().WebfrontConnectionWhitelist);
             }
 
             app.UseStaticFiles();

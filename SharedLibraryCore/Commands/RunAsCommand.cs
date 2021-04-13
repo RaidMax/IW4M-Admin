@@ -25,40 +25,39 @@ namespace SharedLibraryCore.Commands
             };
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            if (E.IsTargetingSelf())
+            if (gameEvent.IsTargetingSelf())
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SELF"]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SELF"]);
                 return;
             }
 
-            if (!E.CanPerformActionOnTarget())
+            if (!gameEvent.CanPerformActionOnTarget())
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_FAIL_PERM"]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_FAIL_PERM"]);
                 return;
             }
 
-            string cmd = $"{Utilities.CommandPrefix}{E.Data}";
+            var cmd = $"{Utilities.CommandPrefix}{gameEvent.Data}";
             var impersonatedCommandEvent = new GameEvent()
             {
                 Type = GameEvent.EventType.Command,
-                Origin = E.Target,
-                ImpersonationOrigin = E.Origin,
+                Origin = gameEvent.Target,
+                ImpersonationOrigin = gameEvent.Origin,
                 Message = cmd,
                 Data = cmd,
-                Owner = E.Owner
+                Owner = gameEvent.Owner,
+                CorrelationId = gameEvent.CorrelationId
             };
-            E.Owner.Manager.AddEvent(impersonatedCommandEvent);
+            gameEvent.Owner.Manager.AddEvent(impersonatedCommandEvent);
 
-            var result = await impersonatedCommandEvent.WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken);
-            var response = E.Owner.CommandResult.Where(c => c.ClientId == E.Target.ClientId).ToList();
+            var result = await impersonatedCommandEvent.WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
 
             // remove the added command response
-            for (int i = 0; i < response.Count; i++)
+            foreach (var output in result.Output)
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(response[i].Response));
-                E.Owner.CommandResult.Remove(response[i]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output));
             }
         }
     }

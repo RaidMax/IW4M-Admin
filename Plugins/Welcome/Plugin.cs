@@ -3,61 +3,20 @@ using System.Threading.Tasks;
 
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Services;
 using SharedLibraryCore.Database.Models;
 using System.Linq;
-using SharedLibraryCore.Database;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using Newtonsoft.Json.Linq;
-using System.Text.RegularExpressions;
-using static SharedLibraryCore.Database.Models.EFClient;
+using Humanizer;
+using Data.Abstractions;
+using Data.Models;
+using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin.Plugins.Welcome
 {
     public class Plugin : IPlugin
     {
-        String TimesConnected(EFClient P)
-        {
-            int connection = P.Connections;
-            String Prefix = String.Empty;
-            if (connection % 10 > 3 || connection % 10 == 0 || (connection % 100 > 9 && connection % 100 < 19))
-                Prefix = "th";
-            else
-            {
-                switch (connection % 10)
-                {
-                    case 1:
-                        Prefix = "st";
-                        break;
-                    case 2:
-                        Prefix = "nd";
-                        break;
-                    case 3:
-                        Prefix = "rd";
-                        break;
-                }
-            }
-
-            switch (connection)
-            {
-                case 0:
-                case 1:
-                    return "first";
-                case 2:
-                    return "second";
-                case 3:
-                    return "third";
-                case 4:
-                    return "fourth";
-                case 5:
-                    return "fifth";
-                default:
-                    return connection.ToString() + Prefix;
-            }
-        }
-
         public string Author => "RaidMax";
 
         public float Version => 1.0f;
@@ -65,10 +24,12 @@ namespace IW4MAdmin.Plugins.Welcome
         public string Name => "Welcome Plugin";
 
         private readonly IConfigurationHandler<WelcomeConfiguration> _configHandler;
+        private readonly IDatabaseContextFactory _contextFactory;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory contextFactory)
         {
             _configHandler = configurationHandlerFactory.GetConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
+            _contextFactory = contextFactory;
         }
 
         public async Task OnLoadAsync(IManager manager)
@@ -89,7 +50,7 @@ namespace IW4MAdmin.Plugins.Welcome
             if (E.Type == GameEvent.EventType.Join)
             {
                 EFClient newPlayer = E.Origin;
-                if (newPlayer.Level >= Permission.Trusted && !E.Origin.Masked)
+                if (newPlayer.Level >= Permission.Trusted && !E.Origin.Masked || !string.IsNullOrEmpty(newPlayer.GetAdditionalProperty<string>("ClientTag")))
                     E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().PrivilegedAnnouncementMessage, newPlayer));
 
                 newPlayer.Tell(await ProcessAnnouncement(_configHandler.Configuration().UserWelcomeMessage, newPlayer));
@@ -98,9 +59,9 @@ namespace IW4MAdmin.Plugins.Welcome
                 {
                     string penaltyReason;
 
-                    using (var ctx = new DatabaseContext(disableTracking: true))
+                    await using var context = _contextFactory.CreateContext(false);
                     {
-                        penaltyReason = await ctx.Penalties
+                        penaltyReason = await context.Penalties
                             .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == EFPenalty.PenaltyType.Flag)
                             .OrderByDescending(p => p.When)
                             .Select(p => p.AutomatedOffense ?? p.Offense)
@@ -117,13 +78,13 @@ namespace IW4MAdmin.Plugins.Welcome
         private async Task<string> ProcessAnnouncement(string msg, EFClient joining)
         {
             msg = msg.Replace("{{ClientName}}", joining.Name);
-            msg = msg.Replace("{{ClientLevel}}", Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name));
+            msg = msg.Replace("{{ClientLevel}}", $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.GetAdditionalProperty<string>("ClientTag")) ? "" : $" ^7({joining.GetAdditionalProperty<string>("ClientTag")}^7)")}");
             // this prevents it from trying to evaluate it every message
             if (msg.Contains("{{ClientLocation}}"))
             {
                 msg = msg.Replace("{{ClientLocation}}", await GetCountryName(joining.IPAddressString));
             }
-            msg = msg.Replace("{{TimesConnected}}", TimesConnected(joining));
+            msg = msg.Replace("{{TimesConnected}}", joining.Connections.Ordinalize());
 
             return msg;
         }

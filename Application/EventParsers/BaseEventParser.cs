@@ -5,7 +5,10 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Data.Models;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -91,16 +94,25 @@ namespace IW4MAdmin.Application.EventParsers
         public virtual GameEvent GenerateGameEvent(string logLine)
         {
             var timeMatch = Configuration.Time.PatternMatcher.Match(logLine);
-            int gameTime = 0;
+            var gameTime = 0L;
 
             if (timeMatch.Success)
             {
-                gameTime = timeMatch
-                    .Values
-                    .Skip(2)
-                    // this converts the timestamp into seconds passed
-                    .Select((_value, index) => int.Parse(_value.ToString()) * (index == 0 ? 60 : 1))
-                    .Sum();
+                if (timeMatch.Values[0].Contains(":"))
+                {
+                    gameTime = timeMatch
+                        .Values
+                        .Skip(2)
+                        // this converts the timestamp into seconds passed
+                        .Select((_value, index) => long.Parse(_value.ToString()) * (index == 0 ? 60 : 1))
+                        .Sum();
+         
+                }
+                else
+                {
+                    gameTime = long.Parse(timeMatch.Values[0]);
+                }
+                
                 // we want to strip the time from the log line
                 logLine = logLine.Substring(timeMatch.Values.First().Length);
             }
@@ -299,7 +311,7 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType.Contains("ExitLevel"))
+            if (eventType.Contains("ExitLevel") || eventType.Contains("ShutdownGame"))
             {
                 return new GameEvent()
                 {
@@ -348,7 +360,7 @@ namespace IW4MAdmin.Application.EventParsers
 
                 catch (Exception e)
                 {
-                    _logger.WriteWarning($"Could not handle custom event generation - {e.GetExceptionInfo()}");
+                    _logger.LogError(e, $"Could not handle custom event generation");
                 }
             }
 

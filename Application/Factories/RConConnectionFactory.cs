@@ -1,6 +1,7 @@
 ﻿using IW4MAdmin.Application.RCon;
 using SharedLibraryCore.Interfaces;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace IW4MAdmin.Application.Factories
 {
@@ -10,13 +11,13 @@ namespace IW4MAdmin.Application.Factories
     internal class RConConnectionFactory : IRConConnectionFactory
     {
         private static readonly Encoding gameEncoding = Encoding.GetEncoding("windows-1252");
-        private readonly ILogger _logger;
+        private readonly ILogger<RConConnection> _logger;
        
         /// <summary>
         /// Base constructor
         /// </summary>
         /// <param name="logger"></param>
-        public RConConnectionFactory(ILogger logger)
+        public RConConnectionFactory(ILogger<RConConnection> logger)
         {
             _logger = logger;
         }

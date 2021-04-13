@@ -1,9 +1,6 @@
 ﻿using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
-using SharedLibraryCore.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Data.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
@@ -27,12 +24,6 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             double[] distance = Utilities.AngleStuff(newAngle, LastAngle);
             LastDistance = distance[0] + distance[1];
 
-#if DEBUG == true
-            Console.WriteLine($"Angle Between = {LastDistance}");
-            Console.WriteLine($"Distance From Target = {killDistance}");
-            Console.WriteLine($"Time Offset = {deltaTime}");
-            Console.WriteLine($"Decay Factor = {decayFactor} ");
-#endif
             // this happens on first kill
             if ((distance[0] == 0 && distance[1] == 0) ||
                 deltaTime == 0 ||

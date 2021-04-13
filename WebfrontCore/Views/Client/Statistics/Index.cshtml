@@ -1,0 +1,34 @@
+﻿<ul class="nav nav-tabs border-top border-bottom nav-fill row" role="tablist" id="stats_top_players">
+    <li class="nav-item">
+        <a class="nav-link active top-players-link" href="#server_0" role="tab" data-toggle="tab" aria-selected="true" data-serverid="0">@ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"]</a>
+    </li>
+
+    @foreach (var server in ViewBag.Servers)
+    {
+        <li class="nav-item ">
+            <a class="nav-link top-players-link" href="#server_@server.ID" role="tab" data-toggle="tab" aria-selected="false" data-serverid="@server.ID">
+                <color-code value="@server.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+            </a>
+        </li>
+    }
+</ul>
+<div class="tab-content border-bottom row">
+    <div role="tabpanel" class="tab-pane active striped flex-fill" id="server_0">
+        @await Component.InvokeAsync("TopPlayers", new { count = 25, offset = 0 })
+    </div>
+
+    @foreach (var server in ViewBag.Servers)
+    {
+        <div role="tabpanel" class="tab-pane striped flex-fill" id="server_@server.ID">
+        </div>
+    }
+</div>
+
+@section scripts
+    {
+    <environment include="Development">
+        <script type="text/javascript" src="~/js/loader.js"></script>
+        <script type="text/javascript" src="~/js/stats.js"></script>
+    </environment>
+    <script>initLoader('/Stats/GetTopPlayersAsync', '#server_0', 25);</script>
+}

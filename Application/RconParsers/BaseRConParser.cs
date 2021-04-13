@@ -8,14 +8,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Data.Models;
+using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.RconParsers
 {
     public class BaseRConParser : IRConParser
     {
-        public BaseRConParser(IParserRegexFactory parserRegexFactory)
+        private readonly ILogger _logger;
+        
+        public BaseRConParser(ILogger<BaseRConParser> logger, IParserRegexFactory parserRegexFactory)
         {
+            _logger = logger;
             Configuration = new DynamicRConParserConfiguration(parserRegexFactory)
             {
                 CommandPrefixes = new CommandPrefix()
@@ -76,7 +82,22 @@ namespace IW4MAdmin.Application.RconParsers
 
         public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default)
         {
-            string[] lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
+            string[] lineSplit;
+
+            try
+            {
+                lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
+            }
+            catch
+            {
+                if (fallbackValue == null)
+                {
+                    throw;
+                }
+
+                lineSplit = new string[0];
+            }
+
             string response = string.Join('\n', lineSplit).TrimEnd('\0');
             var match = Regex.Match(response, Configuration.Dvar.Pattern);
 
@@ -118,12 +139,7 @@ namespace IW4MAdmin.Application.RconParsers
         public virtual async Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection)
         {
             string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
-#if DEBUG
-            foreach (var line in response)
-            {
-                Console.WriteLine(line);
-            }
-#endif
+            _logger.LogDebug("Status Response {response}", string.Join(Environment.NewLine, response));
             return (ClientsFromStatus(response), MapFromStatus(response), GameTypeFromStatus(response));
         }
 
@@ -190,6 +206,12 @@ namespace IW4MAdmin.Application.RconParsers
 
                 if (match.Success)
                 {
+                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]] == "ZMBI")
+                    {
+                        _logger.LogDebug("Ignoring detected client {client} because they are zombie state", string.Join(",", match.Values));
+                        continue;
+                    }
+                    
                     int clientNumber = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]]);
                     int score = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]]);
 
@@ -204,12 +226,13 @@ namespace IW4MAdmin.Application.RconParsers
                     long networkId;
                     string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
                     string networkIdString;
+                    var ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 
                     try
                     {
                         networkIdString = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]];
 
-                        networkId = networkIdString.IsBotGuid() ?
+                        networkId = networkIdString.IsBotGuid() || (ip == null && ping == 999) ?
                             name.GenerateGuidFromString() :
                             networkIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
                     }
@@ -218,8 +241,6 @@ namespace IW4MAdmin.Application.RconParsers
                     {
                         continue;
                     }
-
-                    int? ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 
                     var client = new EFClient()
                     {
@@ -263,5 +284,16 @@ namespace IW4MAdmin.Application.RconParsers
         public T GetDefaultDvarValue<T>(string dvarName) => Configuration.DefaultDvarValues.ContainsKey(dvarName) ?
             (T)Convert.ChangeType(Configuration.DefaultDvarValues[dvarName], typeof(T)) :
             default;
+
+        public TimeSpan OverrideTimeoutForCommand(string command)
+        {
+            if (command.Contains("map_rotate", StringComparison.InvariantCultureIgnoreCase) ||
+                command.StartsWith("map ", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return TimeSpan.FromSeconds(30);
+            }
+
+            return TimeSpan.Zero;
+        }
     }
 }

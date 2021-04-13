@@ -1,8 +1,8 @@
-﻿using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Dtos.Meta.Responses;
+﻿using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using Data.Models;
 
 namespace SharedLibraryCore.Dtos
 {
@@ -11,6 +11,7 @@ namespace SharedLibraryCore.Dtos
         public string Name { get; set; }
         public int ClientId { get; set; }
         public string Level { get; set; }
+        public string Tag { get; set; }
         public int LevelInt { get; set; }
         public string IPAddress { get; set; }
         public long NetworkId { get; set; }

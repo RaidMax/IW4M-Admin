@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.IO
 {
@@ -19,7 +21,7 @@ namespace IW4MAdmin.Application.IO
 
         public int UpdateInterval => 300;
 
-        public GameLogReader(string logFile, IEventParser parser, ILogger logger)
+        public GameLogReader(string logFile, IEventParser parser, ILogger<GameLogReader> logger)
         {
             _logFile = logFile;
             _parser = parser;
@@ -73,9 +75,7 @@ namespace IW4MAdmin.Application.IO
 
                 catch (Exception e)
                 {
-                    _logger.WriteWarning("Could not properly parse event line");
-                    _logger.WriteDebug(e.Message);
-                    _logger.WriteDebug(eventLine);
+                    _logger.LogError(e, "Could not properly parse event line {@eventLine}", eventLine);
                 }
             }
 

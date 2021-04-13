@@ -22,5 +22,6 @@ namespace SharedLibraryCore.Dtos
         public string ConnectProtocolUrl { get; set; }
         public string IPAddress { get; set; }
         public bool IsPasswordProtected { get; set; }
+        public string Endpoint => $"{IPAddress}:{Port}";
     }
 }

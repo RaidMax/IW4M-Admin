@@ -1,0 +1,458 @@
+﻿@using SharedLibraryCore.Configuration
+@using Data.Models.Client.Stats
+@using Stats.Helpers
+@using Data.Models.Client
+@using Data.Models.Client.Stats.Reference
+@using Humanizer
+@using Humanizer.Localisation
+@using IW4MAdmin.Plugins.Stats
+@model Stats.Dtos.AdvancedStatsInfo
+@{
+    ViewBag.Title = "Advanced Client Statistics";
+    ViewBag.Description = Model.ClientName.StripColors();
+
+    const int maxItems = 5;
+    const string headshotKey = "MOD_HEAD_SHOT";
+    const string meleeKey = "MOD_MELEE";
+
+    var suicideKeys = new[] {"MOD_SUICIDE", "MOD_FALLING"};
+    // if they've not copied default settings config this could be null
+    var config = (GameStringConfiguration) ViewBag.Config ?? new GameStringConfiguration(); 
+
+    var headerClass = Model.Level == EFClient.Permission.Banned ? "bg-danger" : "bg-primary";
+    var textClass = Model.Level == EFClient.Permission.Banned ? "text-danger" : "text-primary";
+    var borderBottomClass = Model.Level == EFClient.Permission.Banned ? "border-bottom-danger border-top-danger" : "border-bottom border-top";
+    var borderClass = Model.Level == EFClient.Permission.Banned ? "border-danger" : "border-primary";
+    var buttonClass = Model.Level == EFClient.Permission.Banned ? "btn-danger" : "btn-primary";
+    
+    string GetWeaponNameForHit(EFClientHitStatistic stat)
+    {
+        if (stat == null)
+        {
+            return null;
+        }
+        var rebuiltName = stat.RebuildWeaponName();
+        var name = config.GetStringForGame(rebuiltName, stat.Weapon?.Game);
+        return !rebuiltName.Equals(name, StringComparison.InvariantCultureIgnoreCase)
+            ? name
+            : config.GetStringForGame(stat.Weapon.Name, stat.Weapon.Game);
+    }
+
+    string GetWeaponAttachmentName(EFWeaponAttachmentCombo attachment)
+    {
+        if (attachment == null)
+        {
+            return null;
+        }
+
+        var attachmentText = string.Join('+', new[]
+        {
+            config.GetStringForGame(attachment.Attachment1.Name, attachment.Attachment1.Game),
+            config.GetStringForGame(attachment.Attachment2?.Name, attachment.Attachment2?.Game),
+            config.GetStringForGame(attachment.Attachment3?.Name, attachment.Attachment3?.Game)
+        }.Where(attach => !string.IsNullOrWhiteSpace(attach)));
+
+        return attachmentText;
+    }
+
+    var weapons = Model.ByWeapon
+        .Where(hit => hit.DamageInflicted > 0)
+        .GroupBy(hit => new {hit.WeaponId})
+        .Select(group =>
+        {
+            var withoutAttachments = group.FirstOrDefault(hit => hit.WeaponAttachmentComboId == null);
+            var mostUsedAttachment = group.Except(new[] {withoutAttachments})
+                .OrderByDescending(g => g.DamageInflicted)
+                .GroupBy(g => g.WeaponAttachmentComboId)
+                .FirstOrDefault()
+                ?.FirstOrDefault();
+
+            if (withoutAttachments == null || mostUsedAttachment == null)
+            {
+                return withoutAttachments;
+            }
+            
+            withoutAttachments.WeaponAttachmentComboId = mostUsedAttachment.WeaponAttachmentComboId;
+            withoutAttachments.WeaponAttachmentCombo = mostUsedAttachment.WeaponAttachmentCombo;
+
+            return withoutAttachments;
+        })
+        .Where(hit => hit != null)
+        .OrderByDescending(hit => hit.KillCount)
+        .ToList();
+
+    var allPerServer = Model.All.Where(hit => hit.ServerId == Model.ServerId).ToList();
+
+    // if the serverId is supplied we want all the entries with serverID but nothing else
+    var aggregate = Model.ServerId == null
+        ? Model.Aggregate
+        : allPerServer.Where(hit => hit.WeaponId == null)
+            .Where(hit => hit.HitLocation == null)
+            .Where(hit => hit.ServerId == Model.ServerId)
+            .Where(hit => hit.WeaponAttachmentComboId == null)
+            .FirstOrDefault(hit => hit.MeansOfDeathId == null);
+
+    var filteredHitLocations = Model.ByHitLocation
+        .Where(hit => hit.HitCount > 0)
+        .Where(hit => hit.HitLocation.Name != "none")
+        .Where(hit => hit.HitLocation.Name != "neck")
+        .Where(hit => hit.ServerId == Model.ServerId)
+        .OrderByDescending(hit => hit.HitCount)
+        .ThenBy(hit => hit.HitLocationId)
+        .ToList();
+
+    var uniqueWeapons = allPerServer.Any()
+        ? Model.ByWeapon.Where(hit => hit.ServerId == Model.ServerId)
+            .Where(weapon => weapon.DamageInflicted > 0)
+            .GroupBy(weapon => weapon.WeaponId)
+            .Count()
+        : (int?) null; // want to default to -- in ui instead of 0
+
+    var activeTime = weapons.Any()
+        ? TimeSpan.FromSeconds(weapons.Sum(weapon => weapon.UsageSeconds ?? 0))
+        : (TimeSpan?) null; // want to default to -- in ui instead of 0
+
+    var kdr = aggregate == null
+        ? null
+        : Math.Round(aggregate.KillCount / (float) aggregate.DeathCount, 2).ToString(Utilities.CurrentLocalization.Culture);
+
+    var serverLegacyStat = Model.LegacyStats
+        .FirstOrDefault(stat => stat.ServerId == Model.ServerId);
+
+    // legacy stats section
+    var performance = Model.Performance;
+    var skill = Model.ServerId != null ? serverLegacyStat?.Skill.ToNumericalString() : Model.LegacyStats.WeightValueByPlaytime(nameof(EFClientStatistics.Skill), 0).ToNumericalString();
+    var elo = Model.ServerId != null ? serverLegacyStat?.EloRating.ToNumericalString() : Model.LegacyStats.WeightValueByPlaytime(nameof(EFClientStatistics.EloRating), 0).ToNumericalString();
+    var spm = Model.ServerId != null ? serverLegacyStat?.SPM.ToNumericalString() : Model.LegacyStats.WeightValueByPlaytime(nameof(EFClientStatistics.SPM), 0).ToNumericalString();
+
+    var performanceHistory = Model.Ratings
+        .Select(rating => rating.PerformanceMetric);
+
+    if (performance != null)
+    {
+        performanceHistory = performanceHistory.Append(performance.Value);
+    }
+
+    var score = allPerServer.Any()
+        ? allPerServer.Sum(stat => stat.Score)
+        : null;
+
+    var headShots = allPerServer.Any()
+        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey).Sum(hit => hit.HitCount)
+        : (int?) null; // want to default to -- in ui instead of 0
+
+    var meleeKills = allPerServer.Any()
+        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == meleeKey).Sum(hit => hit.KillCount)
+        : (int?) null;
+
+    var suicides = allPerServer.Any()
+        ? allPerServer.Where(hit => suicideKeys.Contains(hit.MeansOfDeath?.Name ?? "")).Sum(hit => hit.KillCount)
+        : (int?) null;
+
+    var statCards = new[]
+    {
+        new
+        {
+            Name = (ViewBag.Localization["PLUGINS_STATS_TEXT_KILLS"] as string).Titleize(),
+            Value = aggregate?.KillCount.ToNumericalString()
+        },
+        new
+        {
+            Name = (ViewBag.Localization["PLUGINS_STATS_TEXT_DEATHS"] as string).Titleize(),
+            Value = aggregate?.DeathCount.ToNumericalString()
+        },
+        new
+        {
+            Name = (ViewBag.Localization["PLUGINS_STATS_TEXT_KDR"] as string).Titleize(),
+            Value = kdr
+        },
+        new
+        {
+            Name = (ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"] as string).Titleize(),
+            Value = score.ToNumericalString()
+        },
+        new 
+        {
+            Name = (ViewBag.Localization["WEBFRONT_ADV_STATS_ZSCORE"] as string),
+            Value = Model.ZScore.ToNumericalString(2)
+        },
+        new
+        {
+            Name = (ViewBag.Localization["PLUGINS_STATS_TEXT_SKILL"] as string).ToLower().Titleize(),
+            Value = skill
+        },
+        new
+        {
+            Name = (ViewBag.Localization["WEBFRONT_ADV_STATS_ELO"] as string).Titleize(),
+            Value = elo
+        },
+        new
+        {
+            Name = (ViewBag.Localization["PLUGINS_STATS_META_SPM"] as string).Titleize(),
+            Value = spm
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_TOTAL_DAMAGE"] as string,
+            Value = aggregate?.DamageInflicted.ToNumericalString()
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_SUICIDES"] as string,
+            Value = suicides.ToNumericalString()
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_HEADSHOTS"] as string,
+            Value = headShots.ToNumericalString()
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_MELEES"] as string,
+            Value = meleeKills.ToNumericalString()
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_FAV_WEAP"] as string,
+            Value = GetWeaponNameForHit(weapons.FirstOrDefault())
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_FAV_ATTACHMENTS"] as string,
+            Value = GetWeaponAttachmentName(weapons.FirstOrDefault()?.WeaponAttachmentCombo)
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_TOTAL_WEAPONS_USED"] as string,
+            Value = uniqueWeapons.ToNumericalString()
+        },
+        new
+        {
+            Name = ViewBag.Localization["WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"] as string,
+            Value = activeTime?.HumanizeForCurrentCulture()
+        }
+    };
+}
+
+<div class="w-100 @headerClass mb-1">
+    <select class="w-100 @headerClass text-white pl-4 pr-4 pt-2 pb-2 m-auto h5 @borderClass"
+            id="server_selector"
+            onchange="if (this.value) window.location.href=this.value">
+        @if (Model.ServerId == null)
+        {
+            <option value="@Url.Action("Advanced", "ClientStatistics")" selected>@ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"]</option>
+        }
+        else
+        {
+            <option value="@Url.Action("Advanced", "ClientStatistics")">@ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"]</option>
+        }
+        @foreach (var server in Model.Servers)
+        {
+            if (server.Endpoint == Model.ServerEndpoint)
+            {
+                <option value="@Url.Action("Advanced", "ClientStatistics", new {serverId = server.Endpoint})" selected>@server.Name.StripColors()</option>
+            }
+            else
+            {
+                <option value="@Url.Action("Advanced", "ClientStatistics", new {serverId = server.Endpoint})">@server.Name.StripColors()</option>
+            }
+        }
+    </select>
+</div>
+<div class="@headerClass p-4 mb-0 d-flex flex-wrap">
+
+    <div class="align-self-center d-flex flex-column flex-lg-row text-center text-lg-left mb-3 mb-md-0 p-2 ml-lg-0 mr-lg-0 ml-auto mr-auto">
+        <div class="mr-lg-3 m-auto">
+            <img class="img-fluid align-self-center" id="rank_icon" src="~/images/stats/ranks/rank_@(Model.ZScore.RankIconIndexForZScore()).png" alt="@performance"/>
+        </div>
+        <div class="d-flex flex-column align-self-center" id="client_stats_summary">
+            <div class="h1 mb-0 font-weight-bold">
+                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.ClientId">@Model.ClientName.StripColors()</a>
+            </div>
+            @if (Model.Level == EFClient.Permission.Banned)
+            {
+                <div class="h5 mb-0">@ViewBag.Localization["GLOBAL_PERMISSION_BANNED"]</div>
+            }
+            else if (Model.ZScore != null)
+            {
+                if (Model.ServerId != null)
+                {
+                    <div class="h5 mb-0">@((ViewBag.Localization["WEBFRONT_ADV_STATS_PERFORMANCE"] as string).FormatExt(performance.ToNumericalString()))</div>
+                }
+
+                else
+                {
+                    <div class="h5 mb-0">@((ViewBag.Localization["WEBFRONT_ADV_STATS_RATING"] as string).FormatExt(Model.Rating.ToNumericalString()))</div>
+                }
+
+                if (Model.Ranking > 0)
+                {
+                    <div class="h5 mb-0">@((ViewBag.Localization["WEBFRONT_ADV_STATS_RANKED"] as string).FormatExt(Model.Ranking.ToNumericalString()))</div>
+                }
+
+                else
+                {
+                    <div class="h5 mb-0">@ViewBag.Localization["WEBFRONT_ADV_STATS_EXPIRED"]</div>
+                }
+            }
+
+            else
+            {
+                <div class="h5 mb-0">@ViewBag.Localization["WEBFRONT_STATS_INDEX_UNRANKED"]</div>
+            }
+        </div>
+    </div>
+    <div class="w-50 m-auto ml-md-auto mr-md-0" id="client_performance_history_container">
+        <canvas id="client_performance_history" data-history="@Html.Raw(Json.Serialize(performanceHistory))"></canvas>
+    </div>
+
+</div>
+
+<div class="mb-4 bg-dark @borderBottomClass d-flex flex-wrap">
+    @foreach (var card in statCards)
+    {
+        <div class="pl-3 pr-4 pb-3 pt-3 stat-card flex-fill w-50 w-md-auto">
+            @if (string.IsNullOrWhiteSpace(card.Value))
+            {
+                <h5 class="card-title @textClass">&mdash;</h5>
+            }
+            else
+            {
+                <h5 class="card-title @textClass">@card.Value</h5>
+            }
+            <h6 class="card-subtitle mb-0 text-muted">@card.Name</h6>
+        </div>
+    }
+</div>
+<div class="row">
+    <!-- WEAPONS USED -->
+    <div class="col-12 mb-4">
+        <div class="@headerClass h4 mb-1 p-2">
+            <div class="text-center">@ViewBag.Localization["WEBFRONT_ADV_STATS_WEAP_USAGE"]</div>
+        </div>
+        <table class="table mb-0">
+            <tr class="@headerClass">
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_WEAPON"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_FAV_ATTACHMENTS"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_HITS"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_DAMAGE"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_USAGE"]</th>
+            </tr>
+            @foreach (var weaponHit in weapons.Take(maxItems))
+            {
+                <tr class="bg-dark">
+                    <td class="@textClass text-force-break">@GetWeaponNameForHit(weaponHit)</td>
+                    @{ var attachments = GetWeaponAttachmentName(weaponHit.WeaponAttachmentCombo); }
+                    @if (string.IsNullOrWhiteSpace(attachments))
+                    {
+                        <td class="text-muted text-force-break">&mdash;</td>
+                    }
+                    else
+                    {
+                        <td class="text-muted text-force-break">@attachments</td>
+                    }
+                    <td class="text-success text-force-break">@weaponHit.KillCount.ToNumericalString()</td>
+                    <td class="text-muted text-force-break">@weaponHit.HitCount.ToNumericalString()</td>
+                    <td class="text-muted text-force-break">@weaponHit.DamageInflicted.ToNumericalString()</td>
+                    <td class="text-muted text-force-break">@TimeSpan.FromSeconds(weaponHit.UsageSeconds ?? 0).HumanizeForCurrentCulture(minUnit: TimeUnit.Second)</td>
+                </tr>
+            }
+            <!-- OVERFLOW -->
+            @foreach (var weaponHit in weapons.Skip(maxItems))
+            {
+                <tr class="bg-dark hidden-row" style="display:none">
+                    <td class="@textClass text-force-break">@GetWeaponNameForHit(weaponHit)</td>
+                    @{ var attachments = GetWeaponAttachmentName(weaponHit.WeaponAttachmentCombo); }
+                    @if (string.IsNullOrWhiteSpace(attachments))
+                    {
+                        <td class="text-muted text-force-break">&mdash;</td>
+                    }
+                    else
+                    {
+                        <td class="text-muted text-force-break">@attachments</td>
+                    }
+                    <td class="text-success text-force-break">@weaponHit.KillCount.ToNumericalString()</td>
+                    <td class="text-muted text-force-break">@weaponHit.HitCount.ToNumericalString()</td>
+                    <td class="text-muted text-force-break">@weaponHit.DamageInflicted.ToNumericalString()</td>
+                    <td class="text-muted text-force-break">@TimeSpan.FromSeconds(weaponHit.UsageSeconds ?? 0).HumanizeForCurrentCulture()</td>
+                </tr>
+            }
+            <tr>
+        </table>
+        <button class="btn @buttonClass btn-block table-slide">
+            <span class="oi oi-chevron-bottom"></span>
+        </button>
+    </div>
+</div>
+<div class="row">
+    <!-- HIT LOCATIONS -->
+    <div class="col-lg-6 col-12 pr-3 pr-lg-0" id="hit_location_table">
+        <div class="@headerClass h4 mb-1 p-2">
+            <div class="text-center">@ViewBag.Localization["WEBFRONT_ADV_STATS_HIT_LOCATIONS"]</div>
+        </div>
+        <table class="table @borderBottomClass bg-dark mb-0 pb-0">
+            <tr class="@headerClass">
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_LOCATION"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_HITS"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_PERCENTAGE"]</th>
+                <th class="text-force-break">@ViewBag.Localization["WEBFRONT_ADV_STATS_DAMAGE"]</th>
+            </tr>
+            @{
+                var totalHits = filteredHitLocations.Sum(hit => hit.HitCount);
+            }
+            @foreach (var hitLocation in filteredHitLocations.Take(8))
+            {
+                <tr>
+                    <td class="@textClass text-force-break">@config.GetStringForGame(hitLocation.HitLocation.Name, hitLocation.HitLocation.Game)</td>
+                    <td class="text-success text-force-break">@hitLocation.HitCount</td>
+                    <td class="text-muted text-force-break">@Math.Round((hitLocation.HitCount / (float) totalHits) * 100.0).ToString(Utilities.CurrentLocalization.Culture)%</td>
+                    <td class="text-muted text-force-break">@hitLocation.DamageInflicted.ToNumericalString()</td>
+                </tr>
+            }
+
+            @foreach (var hitLocation in filteredHitLocations.Skip(8))
+            {
+                <tr class="bg-dark hidden-row" style="display:none;">
+                    <td class="@textClass text-force-break">@config.GetStringForGame(hitLocation.HitLocation.Name, hitLocation.HitLocation.Game)</td>
+                    <td class="text-success text-force-break">@hitLocation.HitCount</td>
+                    <td class="text-muted text-force-break">@Math.Round((hitLocation.HitCount / (float) totalHits) * 100.0).ToString(Utilities.CurrentLocalization.Culture)%</td>
+                    <td class="text-muted text-force-break">@hitLocation.DamageInflicted.ToNumericalString()</td>
+                </tr>
+            }
+        </table>
+        <button class="btn @buttonClass btn-block table-slide">
+            <span class="oi oi-chevron-bottom"></span>
+        </button>
+    </div>
+    <div class="col-lg-6 col-12 pl-3 pl-lg-0">
+        <div class="@borderBottomClass text-center h-100" id="hitlocation_container">
+            <canvas id="hitlocation_model">
+            </canvas>
+        </div>
+    </div>
+</div>
+
+@{
+    var projection = filteredHitLocations.Select(loc => new
+    {
+        name = loc.HitLocation.Name,
+        // we want to count head and neck as the same
+        percentage = (loc.HitLocation.Name == "head"
+            ? filteredHitLocations.FirstOrDefault(c => c.HitLocation.Name == "neck")?.HitCount ?? 0 + loc.HitCount
+            : loc.HitCount) / (float) totalHits
+    }).ToList();
+    var maxPercentage = projection.Any() ? projection.Max(p => p.percentage) : 0;
+}
+
+@section scripts
+{
+    <script type="text/javascript">
+    const hitLocationData = @Html.Raw(Json.Serialize(projection));
+    const maxPercentage = @maxPercentage;
+    </script>
+
+    <environment include="Development">
+        <script type="text/javascript" src="~/js/advanced_stats.js"></script>
+    </environment>
+}

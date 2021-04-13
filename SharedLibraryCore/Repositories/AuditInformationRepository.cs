@@ -4,6 +4,7 @@ using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
 
 namespace SharedLibraryCore.Repositories
 {
@@ -22,34 +23,32 @@ namespace SharedLibraryCore.Repositories
         /// <inheritdoc/>
         public async Task<IList<AuditInfo>> ListAuditInformation(PaginationRequest paginationInfo)
         {
-            using (var ctx = _contextFactory.CreateContext(enableTracking: false))
-            {
-                var iqItems = (from change in ctx.EFChangeHistory
-                               where change.TypeOfChange != Database.Models.EFChangeHistory.ChangeType.Ban
-                               orderby change.TimeChanged descending
-                               join originClient in ctx.Clients
-                               on (change.ImpersonationEntityId ?? change.OriginEntityId) equals originClient.ClientId
-                               join targetClient in ctx.Clients
-                               on change.TargetEntityId equals targetClient.ClientId
-                               into targetChange
-                               from targetClient in targetChange.DefaultIfEmpty()
-                               select new AuditInfo()
-                               {
-                                   Action = change.TypeOfChange.ToString(),
-                                   OriginName = originClient.CurrentAlias.Name,
-                                   OriginId = originClient.ClientId,
-                                   TargetName = targetClient == null ? "" : targetClient.CurrentAlias.Name,
-                                   TargetId = targetClient == null ? new int?() : targetClient.ClientId,
-                                   When = change.TimeChanged,
-                                   Data = change.Comment,
-                                   OldValue = change.PreviousValue,
-                                   NewValue = change.CurrentValue
-                               })
-                    .Skip(paginationInfo.Offset)
-                    .Take(paginationInfo.Count);
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            var iqItems = (from change in ctx.EFChangeHistory
+                           where change.TypeOfChange != Data.Models.EFChangeHistory.ChangeType.Ban
+                           orderby change.TimeChanged descending
+                           join originClient in ctx.Clients
+                           on (change.ImpersonationEntityId ?? change.OriginEntityId) equals originClient.ClientId
+                           join targetClient in ctx.Clients
+                           on change.TargetEntityId equals targetClient.ClientId
+                           into targetChange
+                           from targetClient in targetChange.DefaultIfEmpty()
+                           select new AuditInfo()
+                           {
+                               Action = change.TypeOfChange.ToString(),
+                               OriginName = originClient.CurrentAlias.Name,
+                               OriginId = originClient.ClientId,
+                               TargetName = targetClient == null ? "" : targetClient.CurrentAlias.Name,
+                               TargetId = targetClient == null ? new int?() : targetClient.ClientId,
+                               When = change.TimeChanged,
+                               Data = change.Comment,
+                               OldValue = change.PreviousValue,
+                               NewValue = change.CurrentValue
+                           })
+                .Skip(paginationInfo.Offset)
+                .Take(paginationInfo.Count);
 
-                return await iqItems.ToListAsync();
-            }
+            return await iqItems.ToListAsync();
         }
     }
 }

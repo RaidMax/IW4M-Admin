@@ -3,7 +3,12 @@
 
 <span class="client-message" data-serverid="@Model.ServerId" data-when="@Model.When.ToFileTimeUtc()">
     <span class="oi oi-chevron-right text-white-50 align-middle client-message-prefix" title="@ViewBag.Localization["WEBFRONT_PROFILE_MESSAGE_CONTEXT"]" style="font-size: 0.75rem; margin-top: -0.256rem"></span>
-    <span class="text-muted @(Model.IsQuickMessage ? "font-weight-bold": "")">
+    <span class="text-muted @(Model.IsQuickMessage ? "font-weight-bold" : "")">
+        @if (!Model.SentIngame)
+        {
+            <span>[<span class="text-primary">@ViewBag.Localization["WEBFRONT_PROFILE_MESSAGE_EXTERNAL"]</span>]</span>
+        }
+        
         @if (Model.IsHidden && !ViewBag.Authorized)
         {
             <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], Model.HiddenMessage)" allow="@ViewBag.EnableColorCodes"></color-code>

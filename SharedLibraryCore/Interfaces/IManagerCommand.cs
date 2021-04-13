@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using static SharedLibraryCore.Database.Models.EFClient;
+using static Data.Models.Client.EFClient;
 using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Interfaces

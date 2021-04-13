@@ -10,6 +10,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using static SharedLibraryCore.GameEvent;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -18,7 +19,6 @@ namespace ApplicationTests
     {
         private EventLogTest eventLogData;
         private IServiceProvider serviceProvider;
-        private ILogger fakeLogger;
         private ApplicationConfiguration appConfig;
 
         [SetUp]
@@ -27,13 +27,12 @@ namespace ApplicationTests
             eventLogData = JsonConvert.DeserializeObject<EventLogTest>(System.IO.File.ReadAllText("Files/GameEvents.json"));
             appConfig = ConfigurationGenerators.CreateApplicationConfiguration();
 
-            fakeLogger = A.Fake<ILogger>();
             serviceProvider = new ServiceCollection()
+                .AddSingleton(A.Fake<ILogger>())
                 .AddSingleton<BaseEventParser>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IParserRegexFactory, ParserRegexFactory>()
                 .AddSingleton(appConfig)
-                .AddSingleton(fakeLogger)
                 .BuildServiceProvider();
         }
 
@@ -84,18 +83,6 @@ namespace ApplicationTests
                 eventParser.RegisterCustomEvent("test", "test", (a, b, c) => new GameEvent());
                 eventParser.RegisterCustomEvent("test", "test", (a, b, c) => new GameEvent());
             });
-        }
-
-        [Test]
-        public void TestCustomEventParsingLogsWarningOnException()
-        {
-            var eventParser = serviceProvider.GetService<BaseEventParser>();
-
-            eventParser.RegisterCustomEvent("test", "test", (a, b, c) => throw new Exception());
-            eventParser.GenerateGameEvent("12:12 test");
-
-            A.CallTo(() => fakeLogger.WriteWarning(A<string>.Ignored))
-                .MustHaveHappenedOnceExactly();
         }
 
         [Test]

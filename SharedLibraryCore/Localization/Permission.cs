@@ -1,4 +1,4 @@
-﻿using static SharedLibraryCore.Database.Models.EFClient;
+﻿using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Localization
 {

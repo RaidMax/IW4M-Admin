@@ -4,6 +4,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using System;
 using System.Net;
+using Data.Models;
 using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.GameEvent;
 

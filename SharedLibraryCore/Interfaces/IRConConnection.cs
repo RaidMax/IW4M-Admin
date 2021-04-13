@@ -17,9 +17,9 @@ namespace SharedLibraryCore.Interfaces
         Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "");
 
         /// <summary>
-        /// sets the rcon parser configuration
+        /// sets the rcon parser
         /// </summary>
-        /// <param name="config">parser config</param>
-        void SetConfiguration(IRConParserConfiguration config);
+        /// <param name="config">parser</param>
+        void SetConfiguration(IRConParser config);
     }
 }

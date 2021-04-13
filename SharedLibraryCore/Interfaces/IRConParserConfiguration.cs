@@ -62,5 +62,20 @@ namespace SharedLibraryCore.Interfaces
         /// specifies the default dvar values for games that don't support certain dvars
         /// </summary>
         IDictionary<string, string> DefaultDvarValues { get; set; }
+
+        /// <summary>
+        /// specifies how many lines can be used for ingame notice
+        /// </summary>
+        int NoticeMaximumLines { get; set; }
+
+        /// <summary>
+        /// specifies how many characters can be displayed per notice line 
+        /// </summary>
+        int NoticeMaxCharactersPerLine { get; set; }
+        
+        /// <summary>
+        /// specifies the characters used to split a line
+        /// </summary>
+        string NoticeLineSeparator { get; set; }
     }
 }

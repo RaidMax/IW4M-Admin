@@ -6,6 +6,8 @@ using SharedLibraryCore.QueryHelper;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
 {
@@ -19,7 +21,7 @@ namespace IW4MAdmin.Application.Meta
         private readonly IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> _administeredPenaltyHelper;
         private readonly IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> _updatedAliasHelper;
 
-        public MetaRegistration(ILogger logger, IMetaService metaService, ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
+        public MetaRegistration(ILogger<MetaRegistration> logger, IMetaService metaService, ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
             IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse> receivedPenaltyHelper,
             IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> administeredPenaltyHelper,
             IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> updatedAliasHelper)
@@ -82,7 +84,7 @@ namespace IW4MAdmin.Application.Meta
 
             if (client == null)
             {
-                _logger.WriteWarning($"No client found with id {request.ClientId} when generating profile meta");
+                _logger.LogWarning("No client found with id {clientId} when generating profile meta", request.ClientId);
                 return metaList;
             }
 

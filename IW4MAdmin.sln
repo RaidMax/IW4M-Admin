@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 		Plugins\ScriptPlugins\SampleScriptPluginCommand.js = Plugins\ScriptPlugins\SampleScriptPluginCommand.js
 		Plugins\ScriptPlugins\SharedGUIDKick.js = Plugins\ScriptPlugins\SharedGUIDKick.js
 		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js
+		Plugins\ScriptPlugins\ParserPlutoniumT4.js = Plugins\ScriptPlugins\ParserPlutoniumT4.js
+		Plugins\ScriptPlugins\ParserS1x.js = Plugins\ScriptPlugins\ParserS1x.js
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomessageFeed", "Plugins\AutomessageFeed\AutomessageFeed.csproj", "{F5815359-CFC7-44B4-9A3B-C04BACAD5836}"

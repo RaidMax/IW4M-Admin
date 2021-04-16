@@ -2,8 +2,8 @@
 var eventParser;
 
 var plugin = {
-    author: 'RaidMax',
-    version: 0.1,
+    author: 'RaidMax, Chase',
+    version: 0.2,
     name: 'Plutonium T4 Parser',
     isParser: true,
 
@@ -20,13 +20,13 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
         rconParser.Configuration.GuidNumberStyle              = 7; // Integer
         
-        rconParser.Version  = 'Plutonium T4 Multiplayer (r1678-staging)';
+        rconParser.Version  = 'Plutonium T4';
         rconParser.GameName = 5; // T4
 
         eventParser.Configuration.GuidNumberStyle = 7; // Integer
         eventParser.Configuration.GameDirectory   = 'raw';
  
-        eventParser.Version  = 'Plutonium T4 Multiplayer (r1678-staging)';
+        eventParser.Version  = 'Plutonium T4';
     },
 
     onUnloadAsync: function () {

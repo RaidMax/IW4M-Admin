@@ -170,12 +170,28 @@
           "Name": "mp_asylum"
         },
         {
+          "Alias": "Banzai",
+          "Name": "mp_kwai"
+        },
+        {
+          "Alias": "Battery",
+          "Name": "mp_drum"
+        },
+        {
+          "Alias": "Breach",
+          "Name": "mp_bgate"
+        },
+        {
           "Alias": "Castle",
           "Name": "mp_castle"
         },
         {
           "Alias": "Cliffside",
           "Name": "mp_shrine"
+        },
+        {
+          "Alias": "Corrosion",
+          "Name": "mp_stalingrad"
         },
         {
           "Alias": "Courtyard",
@@ -190,60 +206,52 @@
           "Name": "mp_downfall"
         },
         {
-          "Alias": "Hanger",
+          "Alias": "Hangar",
           "Name": "mp_hangar"
-        },
-        {
-          "Alias": "Makin",
-          "Name": "mp_makin"
-        },
-        {
-          "Alias": "Outskirts",
-          "Name": "mp_outskirts"
-        },
-        {
-          "Alias": "Roundhouse",
-          "Name": "mp_roundhouse"
-        },
-        {
-          "Alias": "Upheaval",
-          "Name": "mp_suburban"
         },
         {
           "Alias": "Knee Deep",
           "Name": "mp_kneedeep"
         },
         {
+          "Alias": "Makin",
+          "Name": "mp_makin"
+        },
+        {
+          "Alias": "Makin Day",
+          "Name": "mp_makin_day"
+        },
+        {
           "Alias": "Nightfire",
           "Name": "mp_nachtfeuer"
+        },
+        {
+          "Alias": "Outskirts",
+          "Name": "mp_outskirts"
+        },
+        {
+          "Alias": "Revolution",
+          "Name": "mp_vodka"
+        },
+        {
+          "Alias": "Roundhouse",
+          "Name": "mp_roundhouse"
+        },
+        {
+          "Alias": "Seelow",
+          "Name": "mp_seelow"
         },
         {
           "Alias": "Station",
           "Name": "mp_subway"
         },
         {
-          "Alias": "Banzai",
-          "Name": "mp_kwai"
-        },
-        {
-          "Alias": "Corrosion",
-          "Name": "mp_stalingrad"
-        },
-        {
           "Alias": "Sub Pens",
           "Name": "mp_docks"
         },
         {
-          "Alias": "Battery",
-          "Name": "mp_drum"
-        },
-        {
-          "Alias": "Breach",
-          "Name": "mp_bgate"
-        },
-        {
-          "Alias": "Revolution",
-          "Name": "mp_vodka"
+          "Alias": "Upheaval",
+          "Name": "mp_suburban"
         }
       ]
     },
@@ -687,6 +695,10 @@
         {
           "Alias": "Terminal",
           "Name": "mp_terminal_cls"
+        },
+        {
+          "Alias": "Rust",
+          "Name": "mp_rust"
         }
       ]
     },

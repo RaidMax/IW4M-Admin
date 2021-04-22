@@ -22,7 +22,8 @@ namespace SharedLibraryCore.Commands
             E.Message = E.Data;
 
             Command C = null;
-            foreach (Command cmd in Manager.GetCommands())
+            foreach (Command cmd in Manager.GetCommands()
+                .Where(c => c.Name != null))
             {
                 if (cmd.Name.Equals(CommandString, StringComparison.OrdinalIgnoreCase) || 
                     (cmd.Alias ?? "").Equals(CommandString, StringComparison.OrdinalIgnoreCase))

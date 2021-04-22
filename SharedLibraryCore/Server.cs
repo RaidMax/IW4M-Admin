@@ -28,7 +28,8 @@ namespace SharedLibraryCore
             T4 = 5,
             T5 = 6,
             T6 = 7,
-            T7 = 8
+            T7 = 8,
+            SHG1 = 9
         }
 
         public Server(ILogger<Server> logger, SharedLibraryCore.Interfaces.ILogger deprecatedLogger, 

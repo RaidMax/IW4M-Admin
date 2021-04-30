@@ -170,12 +170,28 @@
           "Name": "mp_asylum"
         },
         {
+          "Alias": "Banzai",
+          "Name": "mp_kwai"
+        },
+        {
+          "Alias": "Battery",
+          "Name": "mp_drum"
+        },
+        {
+          "Alias": "Breach",
+          "Name": "mp_bgate"
+        },
+        {
           "Alias": "Castle",
           "Name": "mp_castle"
         },
         {
           "Alias": "Cliffside",
           "Name": "mp_shrine"
+        },
+        {
+          "Alias": "Corrosion",
+          "Name": "mp_stalingrad"
         },
         {
           "Alias": "Courtyard",
@@ -190,60 +206,52 @@
           "Name": "mp_downfall"
         },
         {
-          "Alias": "Hanger",
+          "Alias": "Hangar",
           "Name": "mp_hangar"
-        },
-        {
-          "Alias": "Makin",
-          "Name": "mp_makin"
-        },
-        {
-          "Alias": "Outskirts",
-          "Name": "mp_outskirts"
-        },
-        {
-          "Alias": "Roundhouse",
-          "Name": "mp_roundhouse"
-        },
-        {
-          "Alias": "Upheaval",
-          "Name": "mp_suburban"
         },
         {
           "Alias": "Knee Deep",
           "Name": "mp_kneedeep"
         },
         {
+          "Alias": "Makin",
+          "Name": "mp_makin"
+        },
+        {
+          "Alias": "Makin Day",
+          "Name": "mp_makin_day"
+        },
+        {
           "Alias": "Nightfire",
           "Name": "mp_nachtfeuer"
+        },
+        {
+          "Alias": "Outskirts",
+          "Name": "mp_outskirts"
+        },
+        {
+          "Alias": "Revolution",
+          "Name": "mp_vodka"
+        },
+        {
+          "Alias": "Roundhouse",
+          "Name": "mp_roundhouse"
+        },
+        {
+          "Alias": "Seelow",
+          "Name": "mp_seelow"
         },
         {
           "Alias": "Station",
           "Name": "mp_subway"
         },
         {
-          "Alias": "Banzai",
-          "Name": "mp_kwai"
-        },
-        {
-          "Alias": "Corrosion",
-          "Name": "mp_stalingrad"
-        },
-        {
           "Alias": "Sub Pens",
           "Name": "mp_docks"
         },
         {
-          "Alias": "Battery",
-          "Name": "mp_drum"
-        },
-        {
-          "Alias": "Breach",
-          "Name": "mp_bgate"
-        },
-        {
-          "Alias": "Revolution",
-          "Name": "mp_vodka"
+          "Alias": "Upheaval",
+          "Name": "mp_suburban"
         }
       ]
     },
@@ -687,6 +695,10 @@
         {
           "Alias": "Terminal",
           "Name": "mp_terminal_cls"
+        },
+        {
+          "Alias": "Rust",
+          "Name": "mp_rust"
         }
       ]
     },
@@ -993,6 +1005,131 @@
         {
           "Alias": "Exodus",
           "Name": "mp_alien_last"
+        }
+      ]
+    },
+        {
+      "Game": "SHG1",
+      "Maps": [
+        {
+          "Alias": "Ascend",
+          "Name": "mp_refraction"
+        },
+        {
+          "Alias": "Bio Lab",
+          "Name": "mp_lab2"
+        },
+        {
+          "Alias": "Comeback",
+          "Name": "mp_comeback"
+        },
+        {
+          "Alias": "Defender",
+          "Name": "mp_laser2"
+        },
+        {
+          "Alias": "Detroit",
+          "Name": "mp_detroit"
+        },
+        {
+          "Alias": "Greenband",
+          "Name": "mp_greenband"
+        },
+        {
+          "Alias": "Horizon",
+          "Name": "mp_levity"
+        },
+        {
+          "Alias": "Instinct",
+          "Name": "mp_instinct"
+        },
+        {
+          "Alias": "Recovery",
+          "Name": "mp_recovery"
+        },
+        {
+          "Alias": "Retreat",
+          "Name": "mp_venus"
+        },
+        {
+          "Alias": "Riot",
+          "Name": "mp_prison"
+        },
+        {
+          "Alias": "Solar",
+          "Name": "mp_solar"
+        },
+        {
+          "Alias": "Terrace",
+          "Name": "mp_terrace"
+        },
+        {
+          "Alias": "Atlas Gorge",
+          "Name": "mp_dam"
+        },
+        {
+          "Alias": "Chop Shop",
+          "Name": "mp_spark"
+        },
+        {
+          "Alias": "Climate",
+          "Name": "mp_climate_3"
+        },
+        {
+          "Alias": "Compound",
+          "Name": "mp_sector17"
+        },
+        {
+          "Alias": "Core",
+          "Name": "mp_lost"
+        },
+        {
+          "Alias": "Drift",
+          "Name": "mp_torqued"
+        },
+        {
+          "Alias": "Fracture",
+          "Name": "mp_fracture"
+        },
+        {
+          "Alias": "Kremlin",
+          "Name": "mp_kremlin"
+        },
+        {
+          "Alias": "Overload",
+          "Name": "mp_lair"
+        },
+        {
+          "Alias": "Parliament",
+          "Name": "mp_bigben2"
+        },
+        {
+          "Alias": "Perplex",
+          "Name": "mp_perplex_1"
+        },
+        {
+          "Alias": "Quarantine",
+          "Name": "mp_liberty"
+        },
+        {
+          "Alias": "Sideshow",
+          "Name": "mp_clowntown3"
+        },
+        {
+          "Alias": "Site 244",
+          "Name": "mp_blackbox"
+        },
+        {
+          "Alias": "Skyrise",
+          "Name": "mp_highrise2"
+        },
+        {
+          "Alias": "Swarn",
+          "Name": "mp_seoul2"
+        },
+        {
+          "Alias": "Urban",
+          "Name": "mp_urban"
         }
       ]
     }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Database.Models;
@@ -28,7 +27,8 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory contextFactory)
         {
-            _configHandler = configurationHandlerFactory.GetConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
+            _configHandler =
+                configurationHandlerFactory.GetConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
             _contextFactory = contextFactory;
         }
 
@@ -36,7 +36,7 @@ namespace IW4MAdmin.Plugins.Welcome
         {
             if (_configHandler.Configuration() == null)
             {
-                _configHandler.Set((WelcomeConfiguration)new WelcomeConfiguration().Generate());
+                _configHandler.Set((WelcomeConfiguration) new WelcomeConfiguration().Generate());
                 await _configHandler.Save();
             }
         }
@@ -49,9 +49,14 @@ namespace IW4MAdmin.Plugins.Welcome
         {
             if (E.Type == GameEvent.EventType.Join)
             {
-                EFClient newPlayer = E.Origin;
-                if (newPlayer.Level >= Permission.Trusted && !E.Origin.Masked || !string.IsNullOrEmpty(newPlayer.GetAdditionalProperty<string>("ClientTag")))
-                    E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().PrivilegedAnnouncementMessage, newPlayer));
+                var newPlayer = E.Origin;
+                if ((newPlayer.Level >= Permission.Trusted && !E.Origin.Masked) ||
+                    (!string.IsNullOrEmpty(newPlayer.GetAdditionalProperty<string>("ClientTag")) &&
+                     newPlayer.Level != Permission.Flagged && newPlayer.Level != Permission.Banned &&
+                     !newPlayer.Masked))
+                    E.Owner.Broadcast(
+                        await ProcessAnnouncement(_configHandler.Configuration().PrivilegedAnnouncementMessage,
+                            newPlayer));
 
                 newPlayer.Tell(await ProcessAnnouncement(_configHandler.Configuration().UserWelcomeMessage, newPlayer));
 
@@ -71,19 +76,22 @@ namespace IW4MAdmin.Plugins.Welcome
                     E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penaltyReason}) has joined!");
                 }
                 else
-                    E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().UserAnnouncementMessage, newPlayer));
+                    E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().UserAnnouncementMessage,
+                        newPlayer));
             }
         }
 
         private async Task<string> ProcessAnnouncement(string msg, EFClient joining)
         {
             msg = msg.Replace("{{ClientName}}", joining.Name);
-            msg = msg.Replace("{{ClientLevel}}", $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.GetAdditionalProperty<string>("ClientTag")) ? "" : $" ^7({joining.GetAdditionalProperty<string>("ClientTag")}^7)")}");
+            msg = msg.Replace("{{ClientLevel}}",
+                $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.GetAdditionalProperty<string>("ClientTag")) ? "" : $" ^7({joining.GetAdditionalProperty<string>("ClientTag")}^7)")}");
             // this prevents it from trying to evaluate it every message
             if (msg.Contains("{{ClientLocation}}"))
             {
                 msg = msg.Replace("{{ClientLocation}}", await GetCountryName(joining.IPAddressString));
             }
+
             msg = msg.Replace("{{TimesConnected}}", joining.Connections.Ordinalize());
 
             return msg;
@@ -100,11 +108,14 @@ namespace IW4MAdmin.Plugins.Welcome
             {
                 try
                 {
-                    string response = await wc.DownloadStringTaskAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}"));
-                    var responseObj  = JObject.Parse(response);
+                    string response =
+                        await wc.DownloadStringTaskAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}"));
+                    var responseObj = JObject.Parse(response);
                     response = responseObj["country"].ToString();
 
-                    return string.IsNullOrEmpty(response) ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"] : response;
+                    return string.IsNullOrEmpty(response)
+                        ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]
+                        : response;
                 }
 
                 catch

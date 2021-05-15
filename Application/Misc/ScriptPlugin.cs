@@ -168,6 +168,7 @@ namespace IW4MAdmin.Application.Misc
                     }
                 }
 
+                _scriptEngine.SetValue("_configHandler", new ScriptPluginConfigurationWrapper(Name, _scriptEngine));
                 await OnLoadAsync(manager);
 
                 try

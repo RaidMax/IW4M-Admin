@@ -60,22 +60,24 @@ let plugin = {
             "pong",
             "hello"
         ];
+        
+        this.configHandler = _configHandler;
 
-        _configHandler.SetValue("SampleIntegerValue", 123);
-        _configHandler.SetValue("SampleStringValue", this.author);
-        _configHandler.SetValue("SampleFloatValue", this.version);
-        _configHandler.SetValue("SampleNumericalArray", intArray);
-        _configHandler.SetValue("SampleStringArray", stringArray);
+        this.configHandler.SetValue("SampleIntegerValue", 123);
+        this.configHandler.SetValue("SampleStringValue", this.author);
+        this.configHandler.SetValue("SampleFloatValue", this.version);
+        this.configHandler.SetValue("SampleNumericalArray", intArray);
+        this.configHandler.SetValue("SampleStringArray", stringArray);
 
-        this.logger.WriteDebug(_configHandler.GetValue("SampleIntegerValue"));
-        this.logger.WriteDebug(_configHandler.GetValue("SampleStringValue"));
-        this.logger.WriteDebug(_configHandler.GetValue("SampleFloatValue"));
+        this.logger.WriteDebug(this.configHandler.GetValue("SampleIntegerValue"));
+        this.logger.WriteDebug(this.configHandler.GetValue("SampleStringValue"));
+        this.logger.WriteDebug(this.configHandler.GetValue("SampleFloatValue"));
 
-        _configHandler.GetValue("SampleNumericalArray").forEach((element) => {
+        this.configHandler.GetValue("SampleNumericalArray").forEach((element) => {
             this.logger.WriteDebug(element);
         });
 
-        _configHandler.GetValue("SampleStringArray").forEach((element) => {
+        this.configHandler.GetValue("SampleStringArray").forEach((element) => {
             this.logger.WriteDebug(element);
         });
     },

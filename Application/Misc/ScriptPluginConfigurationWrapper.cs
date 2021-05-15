@@ -41,7 +41,7 @@ namespace IW4MAdmin.Application.Misc
 
             if (value is object[] array && array.All(item => item is double d && AsInteger(d) != null))
             {
-                castValue = array.Select(item => (int) item).ToArray();
+                castValue = array.Select(item => AsInteger((double)item)).ToArray();
             }
 
             if (!_config.ContainsKey(_pluginName))

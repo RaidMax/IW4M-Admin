@@ -1435,6 +1435,7 @@ namespace SharedLibraryCore.Commands
             Alias = "pa";
             Permission = Permission.Owner;
             RequiresTarget = false;
+            _contextFactory = contextFactory;
             Arguments = new[]
             {
                 new CommandArgument()

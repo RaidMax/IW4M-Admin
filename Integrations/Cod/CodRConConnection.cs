@@ -1,8 +1,4 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Exceptions;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.RCon;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,25 +10,29 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using SharedLibraryCore;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.RCon;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IW4MAdmin.Application.RCon
+namespace Integrations.Cod
 {
     /// <summary>
     /// implementation of IRConConnection
     /// </summary>
-    public class RConConnection : IRConConnection
+    public class CodRConConnection : IRConConnection
     {
         static readonly ConcurrentDictionary<EndPoint, ConnectionState> ActiveQueries = new ConcurrentDictionary<EndPoint, ConnectionState>();
-        public IPEndPoint Endpoint { get; private set; }
-        public string RConPassword { get; private set; }
+        public IPEndPoint Endpoint { get; }
+        public string RConPassword { get; }
 
         private IRConParser parser;
         private IRConParserConfiguration config;
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
 
-        public RConConnection(string ipAddress, int port, string password, ILogger<RConConnection> log, Encoding gameEncoding)
+        public CodRConConnection(string ipAddress, int port, string password, ILogger<CodRConConnection> log, Encoding gameEncoding)
         {
             Endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
             _gameEncoding = gameEncoding;

@@ -29,7 +29,8 @@ namespace SharedLibraryCore
             T5 = 6,
             T6 = 7,
             T7 = 8,
-            SHG1 = 9
+            SHG1 = 9,
+            CSGO = 10
         }
 
         public Server(ILogger<Server> logger, SharedLibraryCore.Interfaces.ILogger deprecatedLogger, 
@@ -42,7 +43,6 @@ namespace SharedLibraryCore
             Manager = mgr;
             Logger = deprecatedLogger;
             ServerConfig = config;
-            RemoteConnection = rconConnectionFactory.CreateConnection(IP, Port, Password);
             EventProcessing = new SemaphoreSlim(1, 1);
             Clients = new List<EFClient>(new EFClient[64]);
             Reports = new List<Report>();
@@ -52,6 +52,7 @@ namespace SharedLibraryCore
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
             CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
             this.gameLogReaderFactory = gameLogReaderFactory;
+            RConConnectionFactory = rconConnectionFactory;
             ServerLogger = logger;
             InitializeTokens();
             InitializeAutoMessages();
@@ -158,24 +159,28 @@ namespace SharedLibraryCore
         /// Send a message to a particular players
         /// </summary>
         /// <param name="message">Message to send</param>
-        /// <param name="target">EFClient to send message to</param>
-        protected async Task Tell(string message, EFClient target)
+        /// <param name="targetClient">EFClient to send message to</param>
+        protected async Task Tell(string message, EFClient targetClient)
         {
             if (!Utilities.IsDevelopment)
             {
+                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
+                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
+
                 var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell,
-                    target.ClientNumber,
+                    clientNumber,
                     $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
-                if (target.ClientNumber > -1 && message.Length > 0 && target.Level != EFClient.Permission.Console)
+                if (targetClient.ClientNumber > -1 && message.Length > 0 && targetClient.Level != EFClient.Permission.Console)
                     await this.ExecuteCommandAsync(formattedMessage);
             }
             else
             {
-                ServerLogger.LogDebug("Tell[{clientNumber}]->{message}", target.ClientNumber, message.StripColors());
+                ServerLogger.LogDebug("Tell[{clientNumber}]->{message}", targetClient.ClientNumber, message.StripColors());
             }
 
 
-            if (target.Level == EFClient.Permission.Console)
+            if (targetClient.Level == EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 using (LogContext.PushProperty("Server", ToString()))
@@ -340,6 +345,7 @@ namespace SharedLibraryCore
         protected DateTime LastPoll;
         protected ManualResetEventSlim OnRemoteCommandResponse;
         protected IGameLogReaderFactory gameLogReaderFactory;
+        protected IRConConnectionFactory RConConnectionFactory;
 
         // only here for performance
         private readonly bool CustomSayEnabled;

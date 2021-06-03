@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <AssemblyName>Integrations.Source</AssemblyName>
+        <RootNamespace>Integrations.Source</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="RconSharp" Version="2.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+    </ItemGroup>
+
+</Project>

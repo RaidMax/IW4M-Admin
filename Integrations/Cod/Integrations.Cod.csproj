@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <AssemblyName>Integrations.Cod</AssemblyName>
+        <RootNamespace>Integrations.Cod</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+    </ItemGroup>
+
+</Project>

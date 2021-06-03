@@ -11,20 +11,20 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         public enum GroupType
         {
-            EventType,
-            OriginNetworkId,
-            TargetNetworkId,
-            OriginClientNumber,
-            TargetClientNumber,
-            OriginName,
-            TargetName,
-            OriginTeam,
-            TargetTeam,
-            Weapon,
-            Damage,
-            MeansOfDeath,
-            HitLocation,
-            Message,
+            EventType = 0,
+            OriginNetworkId = 1,
+            TargetNetworkId = 2,
+            OriginClientNumber = 3,
+            TargetClientNumber = 4,
+            OriginName = 5,
+            TargetName = 6,
+            OriginTeam = 7,
+            TargetTeam = 8,
+            Weapon = 9,
+            Damage = 10,
+            MeansOfDeath = 11,
+            HitLocation = 12,
+            Message = 13,
             RConClientNumber = 100,
             RConScore = 101,
             RConPing = 102,
@@ -38,6 +38,8 @@ namespace SharedLibraryCore.Interfaces
             RConDvarDomain = 110,
             RConStatusMap = 111,
             RConStatusGametype = 112,
+            RConStatusHostname = 113,
+            RConStatusMaxPlayers = 114,
             AdditionalGroup = 200
         }
 

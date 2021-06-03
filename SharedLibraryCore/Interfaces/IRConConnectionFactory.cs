@@ -11,7 +11,8 @@
         /// <param name="ipAddress">ip address of the server</param>
         /// <param name="port">port of the server</param>
         /// <param name="password"> password of the server</param>
+        /// <param name="rconEngine">engine to create the rcon connection to</param>
         /// <returns>instance of rcon connection</returns>
-        IRConConnection CreateConnection(string ipAddress, int port, string password);
+        IRConConnection CreateConnection(string ipAddress, int port, string password, string rconEngine);
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using IW4MAdmin.Plugins.Stats.Config;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
+using Stats.Config;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Stats.Client
@@ -24,22 +25,16 @@ namespace Stats.Client
         public WeaponInfo Parse(string weaponName, Server.Game gameName)
         {
             var configForGame = _config.WeaponNameParserConfigurations
-                ?.FirstOrDefault(config => config.Game == gameName);
-
-            if (configForGame == null)
+                ?.FirstOrDefault(config => config.Game == gameName) ?? new WeaponNameParserConfiguration()
             {
-                _logger.LogWarning("No weapon parser config available for game {game}", gameName);
-                return new WeaponInfo()
-                {
-                    Name = "Unknown"
-                };
-            }
-            
+                Game = gameName
+            };
+
             var splitWeaponName = weaponName.Split(configForGame.Delimiters);
 
             if (!splitWeaponName.Any())
             {
-                _logger.LogError("Could not parse weapon name {weapon}", weaponName);
+                _logger.LogError("Could not parse weapon name {Weapon}", weaponName);
 
                 return new WeaponInfo()
                 {

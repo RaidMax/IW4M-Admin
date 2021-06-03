@@ -74,6 +74,8 @@ namespace IW4MAdmin
                 client = await Manager.GetClientService().Create(clientFromLog);
             }
 
+            client.CopyAdditionalProperties(clientFromLog);
+
             // this is only a temporary version until the IPAddress is transmitted
             client.CurrentAlias = new EFAlias()
             {
@@ -739,11 +741,11 @@ namespace IW4MAdmin
         /// array index 2 = updated clients
         /// </summary>
         /// <returns></returns>
-        async Task<IList<EFClient>[]> PollPlayersAsync()
+        async Task<List<EFClient>[]> PollPlayersAsync()
         {
             var currentClients = GetClientsAsList();
             var statusResponse = (await this.GetStatusAsync());
-            var polledClients = statusResponse.Item1.AsEnumerable();
+            var polledClients = statusResponse.Clients.AsEnumerable();
 
             if (Manager.GetApplicationSettings().Configuration().IgnoreBots)
             {
@@ -753,10 +755,12 @@ namespace IW4MAdmin
             var connectingClients = polledClients.Except(currentClients);
             var updatedClients = polledClients.Except(connectingClients).Except(disconnectingClients);
 
-            UpdateMap(statusResponse.Item2);
-            UpdateGametype(statusResponse.Item3);
+            UpdateMap(statusResponse.Map);
+            UpdateGametype(statusResponse.GameType);
+            UpdateHostname(statusResponse.Hostname);
+            UpdateMaxPlayers(statusResponse.MaxClients);
 
-            return new List<EFClient>[]
+            return new []
             {
                 connectingClients.ToList(),
                 disconnectingClients.ToList(),
@@ -803,6 +807,36 @@ namespace IW4MAdmin
             }
         }
 
+        private void UpdateHostname(string hostname)
+        {
+            if (string.IsNullOrEmpty(hostname) || Hostname == hostname)
+            {
+                return;
+            }
+            
+            using(LogContext.PushProperty("Server", ToString()))
+            {
+                ServerLogger.LogDebug("Updating hostname to {HostName}", hostname);
+            }
+
+            Hostname = hostname;
+        }
+
+        private void UpdateMaxPlayers(int? maxPlayers)
+        {
+            if (maxPlayers == null || maxPlayers == MaxClients)
+            {
+                return;
+            }
+            
+            using(LogContext.PushProperty("Server", ToString()))
+            {
+                ServerLogger.LogDebug("Updating max clients to {MaxPlayers}", maxPlayers);
+            }
+
+            MaxClients = maxPlayers.Value;
+        }
+        
         private async Task ShutdownInternal()
         {
             foreach (var client in GetClientsAsList())
@@ -1011,6 +1045,7 @@ namespace IW4MAdmin
             RconParser = RconParser ?? Manager.AdditionalRConParsers[0];
             EventParser = EventParser ?? Manager.AdditionalEventParsers[0];
 
+            RemoteConnection = RConConnectionFactory.CreateConnection(IP, Port, Password, RconParser.RConEngine);
             RemoteConnection.SetConfiguration(RconParser);
 
             var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version");
@@ -1172,7 +1207,7 @@ namespace IW4MAdmin
 
         public Uri[] GenerateUriForLog(string logPath, string gameLogServerUrl)
         {
-            var logUri = new Uri(logPath);
+            var logUri = new Uri(logPath, UriKind.Absolute);
 
             if (string.IsNullOrEmpty(gameLogServerUrl))
             {
@@ -1287,8 +1322,12 @@ namespace IW4MAdmin
 
                 Manager.AddEvent(e);
 
+                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
+                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
+
                 var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    targetClient.ClientNumber, 
+                    clientNumber, 
                     _messageFormatter.BuildFormattedMessage(RconParser.Configuration, 
                         newPenalty, 
                         previousPenalty));
@@ -1319,8 +1358,12 @@ namespace IW4MAdmin
 
             if (targetClient.IsIngame)
             {
+                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
+                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
+                
                 var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
-                    targetClient.ClientNumber,
+                    clientNumber,
                     _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
                 ServerLogger.LogDebug("Executing tempban kick command for {targetClient}", targetClient.ToString());
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);
@@ -1353,8 +1396,13 @@ namespace IW4MAdmin
             if (targetClient.IsIngame)
             {
                 ServerLogger.LogDebug("Attempting to kicking newly banned client {targetClient}", targetClient.ToString());
+                
+                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
+                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
+                
                 var formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    targetClient.ClientNumber, 
+                    clientNumber, 
                     _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
                 await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
             }

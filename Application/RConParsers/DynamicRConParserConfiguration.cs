@@ -4,7 +4,7 @@ using SharedLibraryCore.RCon;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace IW4MAdmin.Application.RconParsers
+namespace IW4MAdmin.Application.RConParsers
 {
     /// <summary>
     /// generic implementation of the IRConParserConfiguration
@@ -16,6 +16,8 @@ namespace IW4MAdmin.Application.RconParsers
         public ParserRegex Status { get; set; }
         public ParserRegex MapStatus { get; set; }
         public ParserRegex GametypeStatus { get; set; }
+        public ParserRegex HostnameStatus { get; set; }
+        public ParserRegex MaxPlayersStatus { get; set; }
         public ParserRegex Dvar { get; set; }
         public ParserRegex StatusHeader { get; set; }
         public string ServerNotRunningResponse { get; set; }
@@ -34,6 +36,8 @@ namespace IW4MAdmin.Application.RconParsers
             GametypeStatus = parserRegexFactory.CreateParserRegex();
             Dvar = parserRegexFactory.CreateParserRegex();
             StatusHeader = parserRegexFactory.CreateParserRegex();
+            HostnameStatus = parserRegexFactory.CreateParserRegex();
+            MaxPlayersStatus = parserRegexFactory.CreateParserRegex();
         }
     }
 }

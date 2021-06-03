@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using SharedLibraryCore.Database.Models;
 using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Interfaces
@@ -39,8 +37,8 @@ namespace SharedLibraryCore.Interfaces
         /// get the list of connected clients from status response
         /// </summary>
         /// <param name="connection">RCon connection to use</param>
-        /// <returns>list of clients, current map, and current gametype</returns>
-        Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection);
+        /// <returns><see cref="IStatusResponse"/></returns>
+        Task<IStatusResponse> GetStatusAsync(IRConConnection connection);
 
         /// <summary>
         /// stores the RCon configuration
@@ -50,23 +48,29 @@ namespace SharedLibraryCore.Interfaces
         /// <summary>
         /// stores the game/client specific version (usually the value of the "version" DVAR)
         /// </summary>
-        string Version { get; set; }
+        string Version { get; }
 
         /// <summary>
         /// specifies the game name (usually the internal studio iteration ie: IW4, T5 etc...)
         /// </summary>
-        Game GameName { get; set; }
+        Game GameName { get; }
         
         /// <summary>
         /// indicates if the game supports generating a log path from DVAR retrieval
         /// of fs_game, fs_basepath, g_log
         /// </summary>
-        bool CanGenerateLogPath { get; set; }
+        bool CanGenerateLogPath { get; }
 
         /// <summary>
         /// specifies the name of the parser
         /// </summary>
-        string Name { get; set; }
+        string Name { get; }
+        
+        /// <summary>
+        /// specifies the type of rcon engine
+        /// eg: COD, Source
+        /// </summary>
+        string RConEngine { get; }
 
         /// <summary>
         /// retrieves the value of given dvar key if it exists in the override dict

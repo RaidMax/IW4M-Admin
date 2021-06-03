@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Helpers;
+using Integrations.Source.Extensions;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Localization;
 using Microsoft.Extensions.Logging;
@@ -416,6 +417,8 @@ namespace IW4MAdmin.Application
             {
                 serviceCollection.AddSingleton<IEventHandler, GameEventHandler>();
             }
+
+            serviceCollection.AddSource();
 
             return serviceCollection;
         }

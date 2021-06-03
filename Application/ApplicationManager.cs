@@ -1,7 +1,7 @@
 ﻿using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Misc;
-using IW4MAdmin.Application.RconParsers;
+using IW4MAdmin.Application.RConParsers;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
@@ -220,15 +220,15 @@ namespace IW4MAdmin.Application
         public async Task UpdateServerStates()
         {
             // store the server hash code and task for it
-            var runningUpdateTasks = new Dictionary<long, Task>();
+            var runningUpdateTasks = new Dictionary<long, (Task task, CancellationTokenSource tokenSource, DateTime startTime)>();
 
             while (!_tokenSource.IsCancellationRequested)
             {
                 // select the server ids that have completed the update task
                 var serverTasksToRemove = runningUpdateTasks
-                    .Where(ut => ut.Value.Status == TaskStatus.RanToCompletion ||
-                        ut.Value.Status == TaskStatus.Canceled ||
-                        ut.Value.Status == TaskStatus.Faulted)
+                    .Where(ut => ut.Value.task.Status == TaskStatus.RanToCompletion ||
+                                 ut.Value.task.Status == TaskStatus.Canceled || // we want to cancel if a task takes longer than 5 minutes
+                                 ut.Value.task.Status == TaskStatus.Faulted || DateTime.Now - ut.Value.startTime > TimeSpan.FromMinutes(5))
                     .Select(ut => ut.Key)
                     .ToList();
 
@@ -239,9 +239,14 @@ namespace IW4MAdmin.Application
                     IsInitialized = true;
                 }
 
-                // remove the update tasks as they have completd
-                foreach (long serverId in serverTasksToRemove)
+                // remove the update tasks as they have completed
+                foreach (var serverId in serverTasksToRemove)
                 {
+                    if (!runningUpdateTasks[serverId].tokenSource.Token.IsCancellationRequested)
+                    {
+                        runningUpdateTasks[serverId].tokenSource.Cancel();
+                    }
+
                     runningUpdateTasks.Remove(serverId);
                 }
 
@@ -249,11 +254,12 @@ namespace IW4MAdmin.Application
                 var serverIds = Servers.Select(s => s.EndPoint).Except(runningUpdateTasks.Select(r => r.Key)).ToList();
                 foreach (var server in Servers.Where(s => serverIds.Contains(s.EndPoint)))
                 {
-                    runningUpdateTasks.Add(server.EndPoint, Task.Run(async () =>
+                    var tokenSource = new CancellationTokenSource();
+                    runningUpdateTasks.Add(server.EndPoint, (Task.Run(async () =>
                     {
                         try
                         {
-                            await server.ProcessUpdatesAsync(_tokenSource.Token);
+                            await server.ProcessUpdatesAsync(_tokenSource.Token).WithWaitCancellation(runningUpdateTasks[server.EndPoint].tokenSource.Token);
                         }
 
                         catch (Exception e)
@@ -268,7 +274,7 @@ namespace IW4MAdmin.Application
                         {
                             server.IsInitialized = true;
                         }
-                    }));
+                    }, tokenSource.Token), tokenSource, DateTime.Now));
                 }
 
                 try

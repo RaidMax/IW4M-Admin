@@ -56,7 +56,7 @@
     }
 
     var weapons = Model.ByWeapon
-        .Where(hit => hit.DamageInflicted > 0)
+        .Where(hit => hit.DamageInflicted > 0 || (hit.DamageInflicted == 0 && hit.HitCount > 0))
         .GroupBy(hit => new {hit.WeaponId})
         .Select(group =>
         {

@@ -17,6 +17,8 @@ namespace IW4MAdmin.Application.EventParsers
         private readonly Dictionary<string, (string, Func<string, IEventParserConfiguration, GameEvent, GameEvent>)> _customEventRegistrations;
         private readonly ILogger _logger;
         private readonly ApplicationConfiguration _appConfig;
+        private readonly Dictionary<ParserRegex, GameEvent.EventType> _regexMap;
+        private readonly Dictionary<string, GameEvent.EventType> _eventTypeMap;
 
         public BaseEventParser(IParserRegexFactory parserRegexFactory, ILogger logger, ApplicationConfiguration appConfig)
         {
@@ -78,7 +80,28 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Kill.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.HitLocation, 13);
 
+            Configuration.MapChange.Pattern = @".*InitGame.*";
+            Configuration.MapEnd.Pattern = @".*(?:ExitLevel|ShutdownGame).*";
+
             Configuration.Time.Pattern = @"^ *(([0-9]+):([0-9]+) |^[0-9]+ )";
+
+            _regexMap = new Dictionary<ParserRegex, GameEvent.EventType>
+            {
+                {Configuration.Say, GameEvent.EventType.Say},
+                {Configuration.Kill, GameEvent.EventType.Kill},
+                {Configuration.MapChange, GameEvent.EventType.MapChange},
+                {Configuration.MapEnd, GameEvent.EventType.MapEnd}
+            };
+            
+            _eventTypeMap = new Dictionary<string, GameEvent.EventType>
+            {
+                {"say", GameEvent.EventType.Say},
+                {"sayteam", GameEvent.EventType.Say},
+                {"K", GameEvent.EventType.Kill},
+                {"D", GameEvent.EventType.Damage},
+                {"J", GameEvent.EventType.PreConnect},
+                {"Q", GameEvent.EventType.PreDisconnect},
+            };
         }
 
         public IEventParserConfiguration Configuration { get; set; }
@@ -90,6 +113,28 @@ namespace IW4MAdmin.Application.EventParsers
         public string URLProtocolFormat { get; set; } = "CoD://{{ip}}:{{port}}";
 
         public string Name { get; set; } = "Call of Duty";
+
+        private (GameEvent.EventType type, string eventKey) GetEventTypeFromLine(string logLine)
+        {
+            var lineSplit = logLine.Split(';');
+            if (lineSplit.Length > 1)
+            {
+                var type = lineSplit[0];
+                return _eventTypeMap.ContainsKey(type) ? (_eventTypeMap[type], type): (GameEvent.EventType.Unknown, null);
+            }
+
+            foreach (var (key, value) in _regexMap)
+            {
+                var result = key.PatternMatcher.Match(logLine);
+                if (result.Success)
+                {
+                    return (value, null);
+                }
+            }
+
+            return (GameEvent.EventType.Unknown, null);
+        }
+        
 
         public virtual GameEvent GenerateGameEvent(string logLine)
         {
@@ -104,7 +149,7 @@ namespace IW4MAdmin.Application.EventParsers
                         .Values
                         .Skip(2)
                         // this converts the timestamp into seconds passed
-                        .Select((_value, index) => long.Parse(_value.ToString()) * (index == 0 ? 60 : 1))
+                        .Select((value, index) => long.Parse(value.ToString()) * (index == 0 ? 60 : 1))
                         .Sum();
          
                 }
@@ -114,33 +159,34 @@ namespace IW4MAdmin.Application.EventParsers
                 }
                 
                 // we want to strip the time from the log line
-                logLine = logLine.Substring(timeMatch.Values.First().Length);
+                logLine = logLine.Substring(timeMatch.Values.First().Length).Trim();
             }
 
-            string[] lineSplit = logLine.Split(';');
-            string eventType = lineSplit[0];
+            var eventParseResult = GetEventTypeFromLine(logLine);
+            var eventType = eventParseResult.type;
+            
+            _logger.LogDebug(logLine);
 
-            if (eventType == "say" || eventType == "sayteam")
+            if (eventType == GameEvent.EventType.Say)
             {
                 var matchResult = Configuration.Say.PatternMatcher.Match(logLine);
 
                 if (matchResult.Success)
                 {
-                    string message = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
-                        .ToString()
+                    var message = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
                         .Replace("\x15", "")
                         .Trim();
 
                     if (message.Length > 0)
                     {
-                        string originIdString = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
-                        string originName = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+                        var originIdString = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
+                        var originName = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginName]];
 
-                        long originId = originIdString.IsBotGuid() ?
+                        var originId = originIdString.IsBotGuid() ?
                             originName.GenerateGuidFromString() :
                             originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
 
-                        int clientNumber = int.Parse(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
+                        var clientNumber = int.Parse(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
 
                         if (message.StartsWith(_appConfig.CommandPrefix) || message.StartsWith(_appConfig.BroadcastCommandPrefix))
                         {
@@ -172,26 +218,26 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType == "K")
+            if (eventType == GameEvent.EventType.Kill)
             {
                 var match = Configuration.Kill.PatternMatcher.Match(logLine);
 
                 if (match.Success)
                 {
-                    string originIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
-                    string targetIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString();
-                    string originName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
-                    string targetName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetName]].ToString();
+                    var originIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
+                    var targetIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]];
+                    var originName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginName]];
+                    var targetName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetName]];
 
-                    long originId = originIdString.IsBotGuid() ?
+                    var originId = originIdString.IsBotGuid() ?
                         originName.GenerateGuidFromString() :
                         originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
-                    long targetId = targetIdString.IsBotGuid() ?
+                    var targetId = targetIdString.IsBotGuid() ?
                         targetName.GenerateGuidFromString() :
                         targetIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
 
-                    int originClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
-                    int targetClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
+                    var originClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
+                    var targetClientNumber = int.Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
 
                     return new GameEvent()
                     {
@@ -206,26 +252,26 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType == "D")
+            if (eventType == GameEvent.EventType.Damage)
             {
                 var match = Configuration.Damage.PatternMatcher.Match(logLine);
 
                 if (match.Success)
                 {
-                    string originIdString = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
-                    string targetIdString = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]].ToString();
-                    string originName = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
-                    string targetName = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetName]].ToString();
+                    var originIdString = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
+                    var targetIdString = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetNetworkId]];
+                    var originName = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginName]];
+                    var targetName = match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetName]];
 
-                    long originId = originIdString.IsBotGuid() ?
+                    var originId = originIdString.IsBotGuid() ?
                         originName.GenerateGuidFromString() :
                         originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
-                    long targetId = targetIdString.IsBotGuid() ?
+                    var targetId = targetIdString.IsBotGuid() ?
                         targetName.GenerateGuidFromString() :
                         targetIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
 
-                    int originClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
-                    int targetClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
+                    var originClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
+                    var targetClientNumber = int.Parse(match.Values[Configuration.Damage.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
 
                     return new GameEvent()
                     {
@@ -240,16 +286,16 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType == "J")
+            if (eventType == GameEvent.EventType.PreConnect)
             {
                 var match = Configuration.Join.PatternMatcher.Match(logLine);
 
                 if (match.Success)
                 {
-                    string originIdString = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
-                    string originName = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+                    var originIdString = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
+                    var originName = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]];
 
-                    long networkId = originIdString.IsBotGuid() ?
+                    var networkId = originIdString.IsBotGuid() ?
                         originName.GenerateGuidFromString() :
                         originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
 
@@ -261,10 +307,10 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             CurrentAlias = new EFAlias()
                             {
-                                Name = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine(),
+                                Name = match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginName]].TrimNewLine(),
                             },
                             NetworkId = networkId,
-                            ClientNumber = Convert.ToInt32(match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
+                            ClientNumber = Convert.ToInt32(match.Values[Configuration.Join.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]),
                             State = EFClient.ClientState.Connecting,
                         },
                         Extra = originIdString,
@@ -276,16 +322,16 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType == "Q")
+            if (eventType == GameEvent.EventType.PreDisconnect)
             {
                 var match = Configuration.Quit.PatternMatcher.Match(logLine);
 
                 if (match.Success)
                 {
-                    string originIdString = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]].ToString();
-                    string originName = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString();
+                    var originIdString = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
+                    var originName = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]];
 
-                    long networkId = originIdString.IsBotGuid() ?
+                    var networkId = originIdString.IsBotGuid() ?
                         originName.GenerateGuidFromString() :
                         originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
 
@@ -297,10 +343,10 @@ namespace IW4MAdmin.Application.EventParsers
                         {
                             CurrentAlias = new EFAlias()
                             {
-                                Name = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].ToString().TrimNewLine()
+                                Name = match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginName]].TrimNewLine()
                             },
                             NetworkId = networkId,
-                            ClientNumber = Convert.ToInt32(match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]].ToString()),
+                            ClientNumber = Convert.ToInt32(match.Values[Configuration.Quit.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]),
                             State = EFClient.ClientState.Disconnecting
                         },
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
@@ -311,7 +357,7 @@ namespace IW4MAdmin.Application.EventParsers
                 }
             }
 
-            if (eventType.Contains("ExitLevel") || eventType.Contains("ShutdownGame"))
+            if (eventType == GameEvent.EventType.MapEnd)
             {
                 return new GameEvent()
                 {
@@ -325,9 +371,9 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
-            if (eventType.Contains("InitGame"))
+            if (eventType == GameEvent.EventType.MapChange)
             {
-                string dump = eventType.Replace("InitGame: ", "");
+                var dump = logLine.Replace("InitGame: ", "");
 
                 return new GameEvent()
                 {
@@ -342,26 +388,37 @@ namespace IW4MAdmin.Application.EventParsers
                 };
             }
 
-            if (_customEventRegistrations.ContainsKey(eventType))
+            if (eventParseResult.eventKey == null || !_customEventRegistrations.ContainsKey(eventParseResult.eventKey))
             {
-                var eventModifier = _customEventRegistrations[eventType];
-
-                try
+                return new GameEvent()
                 {
-                    return eventModifier.Item2(logLine, Configuration, new GameEvent()
-                    {
-                        Type = GameEvent.EventType.Other,
-                        Data = logLine,
-                        Subtype = eventModifier.Item1,
-                        GameTime = gameTime,
-                        Source = GameEvent.EventSource.Log
-                    });
-                }
+                    Type = GameEvent.EventType.Unknown,
+                    Data = logLine,
+                    Origin = Utilities.IW4MAdminClient(),
+                    Target = Utilities.IW4MAdminClient(),
+                    RequiredEntity = GameEvent.EventRequiredEntity.None,
+                    GameTime = gameTime,
+                    Source = GameEvent.EventSource.Log
+                };
+            }
 
-                catch (Exception e)
+            var eventModifier = _customEventRegistrations[eventParseResult.eventKey];
+
+            try
+            {
+                return eventModifier.Item2(logLine, Configuration, new GameEvent()
                 {
-                    _logger.LogError(e, $"Could not handle custom event generation");
-                }
+                    Type = GameEvent.EventType.Other,
+                    Data = logLine,
+                    Subtype = eventModifier.Item1,
+                    GameTime = gameTime,
+                    Source = GameEvent.EventSource.Log
+                });
+            }
+
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Could not handle custom event generation");
             }
 
             return new GameEvent()

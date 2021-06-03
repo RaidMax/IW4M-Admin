@@ -1,6 +1,10 @@
-﻿using IW4MAdmin.Application.RCon;
+﻿using System;
 using SharedLibraryCore.Interfaces;
 using System.Text;
+using Integrations.Cod;
+using Integrations.Source;
+using Integrations.Source.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace IW4MAdmin.Application.Factories
@@ -10,16 +14,16 @@ namespace IW4MAdmin.Application.Factories
     /// </summary>
     internal class RConConnectionFactory : IRConConnectionFactory
     {
-        private static readonly Encoding gameEncoding = Encoding.GetEncoding("windows-1252");
-        private readonly ILogger<RConConnection> _logger;
-       
+        private static readonly Encoding GameEncoding = Encoding.GetEncoding("windows-1252");
+        private readonly IServiceProvider _serviceProvider;
+
         /// <summary>
         /// Base constructor
         /// </summary>
         /// <param name="logger"></param>
-        public RConConnectionFactory(ILogger<RConConnection> logger)
+        public RConConnectionFactory(IServiceProvider serviceProvider)
         {
-            _logger = logger;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -29,9 +33,16 @@ namespace IW4MAdmin.Application.Factories
         /// <param name="port">port of the server</param>
         /// <param name="password">rcon password of the server</param>
         /// <returns></returns>
-        public IRConConnection CreateConnection(string ipAddress, int port, string password)
+        public IRConConnection CreateConnection(string ipAddress, int port, string password, string rconEngine)
         {
-            return new RConConnection(ipAddress, port, password, _logger, gameEncoding);
+            return rconEngine switch
+            {
+                "COD" => new CodRConConnection(ipAddress, port, password,
+                    _serviceProvider.GetRequiredService<ILogger<CodRConConnection>>(), GameEncoding),
+                "Source"  => new SourceRConConnection(_serviceProvider.GetRequiredService<ILogger<SourceRConConnection>>(),
+                    _serviceProvider.GetRequiredService<IRConClientFactory>(), ipAddress, port, password),
+                _ => throw new ArgumentException($"No supported RCon engine available for '{rconEngine}'")
+            };
         }
     }
 }

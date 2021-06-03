@@ -261,10 +261,16 @@ namespace IW4MAdmin.Application.RConParsers
                     };
 
                     client.SetAdditionalProperty("BotGuid", networkIdString);
-                    var additionalGroupIndex = Configuration.Status.GroupMapping[ParserRegex.GroupType.AdditionalGroup];
-                    if (match.Values.Length > additionalGroupIndex)
+
+                    if (Configuration.Status.GroupMapping.ContainsKey(ParserRegex.GroupType.AdditionalGroup))
                     {
-                        client.SetAdditionalProperty("ConnectionClientId", match.Values[additionalGroupIndex]);
+                        var additionalGroupIndex =
+                            Configuration.Status.GroupMapping[ParserRegex.GroupType.AdditionalGroup];
+                        
+                        if (match.Values.Length > additionalGroupIndex)
+                        {
+                            client.SetAdditionalProperty("ConnectionClientId", match.Values[additionalGroupIndex]);
+                        }
                     }
 
                     StatusPlayers.Add(client);

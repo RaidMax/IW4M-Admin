@@ -107,10 +107,10 @@ namespace SharedLibraryCore
             }
             if (literal)
             {
-                return GetClientsAsList().Where(p => p.Name?.ToLower() == pName.ToLower()).ToList();
+                return GetClientsAsList().Where(p => p.Name?.StripColors()?.ToLower() == pName.ToLower()).ToList();
             }
 
-            return GetClientsAsList().Where(p => (p.Name?.ToLower() ?? "").Contains(pName.ToLower())).ToList();
+            return GetClientsAsList().Where(p => (p.Name?.StripColors()?.ToLower() ?? "").Contains(pName.ToLower())).ToList();
         }
 
         virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts) => (Task<bool>)Task.CompletedTask;

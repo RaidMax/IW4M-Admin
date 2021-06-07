@@ -1359,13 +1359,13 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var Response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
-            foreach (string S in Response)
+            var response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
+            foreach (var item in response)
             {
-                E.Origin.Tell(S);
+                E.Origin.Tell(item);
             }
 
-            if (Response.Length == 0)
+            if (response.Length == 0)
             {
                 E.Origin.Tell(_translationLookup["COMMANDS_RCON_SUCCESS"]);
             }

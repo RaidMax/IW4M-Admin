@@ -1177,11 +1177,11 @@ namespace IW4MAdmin
                     GameDirectory = EventParser.Configuration.GameDirectory ?? "",
                     ModDirectory = game.Value ?? "",
                     LogFile = logfile.Value,
-                    IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
+                    IsOneLog = RconParser.IsOneLog
                 };
                 LogPath = GenerateLogPath(logInfo);
                 ServerLogger.LogInformation("Game log information {@logInfo}", logInfo);
-
 
                 if (!File.Exists(LogPath) && ServerConfig.GameLogServerUrl == null)
                 {
@@ -1223,12 +1223,12 @@ namespace IW4MAdmin
         public static string GenerateLogPath(LogPathGeneratorInfo logInfo)
         {
             string logPath;
-            string workingDirectory = logInfo.BasePathDirectory;
+            var workingDirectory = logInfo.BasePathDirectory;
 
-            bool baseGameIsDirectory = !string.IsNullOrWhiteSpace(logInfo.BaseGameDirectory) &&
+            var baseGameIsDirectory = !string.IsNullOrWhiteSpace(logInfo.BaseGameDirectory) &&
                 logInfo.BaseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
 
-            bool baseGameIsRelative = logInfo.BaseGameDirectory.FixDirectoryCharacters()
+            var baseGameIsRelative = logInfo.BaseGameDirectory.FixDirectoryCharacters()
                 .Equals(logInfo.GameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
 
             // we want to see if base game is provided and it 'looks' like a directory
@@ -1237,7 +1237,7 @@ namespace IW4MAdmin
                 workingDirectory = logInfo.BaseGameDirectory;
             }
 
-            if (string.IsNullOrWhiteSpace(logInfo.ModDirectory))
+            if (string.IsNullOrWhiteSpace(logInfo.ModDirectory) || logInfo.IsOneLog)
             {
                 logPath = Path.Combine(workingDirectory, logInfo.GameDirectory, logInfo.LogFile);
             }

@@ -71,6 +71,12 @@ namespace SharedLibraryCore.Interfaces
         /// eg: COD, Source
         /// </summary>
         string RConEngine { get; }
+        
+        /// <summary>
+        /// indicates that the game does not log to the mods folder (when mod is loaded),
+        /// but rather always to the fs_basegame directory
+        /// </summary>
+        bool IsOneLog { get; }
 
         /// <summary>
         /// retrieves the value of given dvar key if it exists in the override dict

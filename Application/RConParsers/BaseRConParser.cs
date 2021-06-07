@@ -75,11 +75,12 @@ namespace IW4MAdmin.Application.RConParsers
         public bool CanGenerateLogPath { get; set; } = true;
         public string Name { get; set; } = "Call of Duty";
         public string RConEngine { get; set; } = "COD";
+        public bool IsOneLog { get; set; }
 
         public async Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command)
         {
             var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
-            return response.Skip(1).ToArray();
+            return response.Where(item => item != Configuration.CommandPrefixes.RConResponse).ToArray();
         }
 
         public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default)

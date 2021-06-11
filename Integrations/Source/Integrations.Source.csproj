@@ -4,6 +4,12 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <AssemblyName>Integrations.Source</AssemblyName>
         <RootNamespace>Integrations.Source</RootNamespace>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Prerelease' ">
+      <Optimize>true</Optimize>
     </PropertyGroup>
 
     <ItemGroup>

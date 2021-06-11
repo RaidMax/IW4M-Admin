@@ -3,7 +3,7 @@ let eventParser;
 
 const plugin = {
     author: 'RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'CS:GO (SourceMod) Parser',
     engine: 'Source',
     isParser: true,
@@ -12,8 +12,8 @@ const plugin = {
     },
 
     onLoadAsync: function (manager) {
-        rconParser              = manager.GenerateDynamicRConParser(this.engine);
-        eventParser             = manager.GenerateDynamicEventParser(this.engine);
+        rconParser              = manager.GenerateDynamicRConParser(this.name);
+        eventParser             = manager.GenerateDynamicEventParser(this.name);
         rconParser.RConEngine   = this.engine;
 
         rconParser.Configuration.StatusHeader.Pattern = 'userid +name +uniqueid +connected +ping +loss +state +rate +adr';
@@ -24,16 +24,16 @@ const plugin = {
         rconParser.Configuration.HostnameStatus.Pattern = '^hostname: +(.+)$';
         rconParser.Configuration.MapStatus.AddMapping(113, 1);
 
-        rconParser.Configuration.MaxPlayersStatus.Pattern = '^players *: +\\d humans, \\d bots \\((\\d+).+';
+        rconParser.Configuration.MaxPlayersStatus.Pattern = '^players *: +\\d+ humans, \\d+ bots \\((\\d+).+';
         rconParser.Configuration.MapStatus.AddMapping(114, 1);
 
-        rconParser.Configuration.Dvar.Pattern = '^"(.+)" = (?:"(.+)" (?:\\( def\\. "(.*)" \\))|"(.+)" +(.+)) +- (.*)$';
+        rconParser.Configuration.Dvar.Pattern = '^"(.+)" = "(.+)" (?:\\( def. "(.*)" \\))?(?: |\\w)+- (.+)$';
         rconParser.Configuration.Dvar.AddMapping(106, 1);
         rconParser.Configuration.Dvar.AddMapping(107, 2);
         rconParser.Configuration.Dvar.AddMapping(108, 3);
         rconParser.Configuration.Dvar.AddMapping(109, 3);
 
-        rconParser.Configuration.Status.Pattern = '^#\\s*(\\d+) (\\d+) "(.+)" (\\S+) (\\d+:\\d+) (\\d+) (\\S+) (\\S+) (\\d+) (\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+)$';
+        rconParser.Configuration.Status.Pattern = '^#\\s*(\\d+) (\\d+) "(.+)" (\\S+) +(\\d+:\\d+(?::\\d+)?) (\\d+) (\\S+) (\\S+) (\\d+) (\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+)$';
         rconParser.Configuration.Status.AddMapping(100, 2);
         rconParser.Configuration.Status.AddMapping(101, 7);
         rconParser.Configuration.Status.AddMapping(102, 6);
@@ -64,7 +64,7 @@ const plugin = {
         rconParser.Configuration.CommandPrefixes.Ban            = 'sm_kick #{0} {1}';
         rconParser.Configuration.CommandPrefixes.TempBan        = 'sm_kick #{0} {1}';
         rconParser.Configuration.CommandPrefixes.Say            = 'sm_say {0}';
-        rconParser.Configuration.CommandPrefixes.Tell           = 'sm_psay #{0} {1}';
+        rconParser.Configuration.CommandPrefixes.Tell           = 'sm_psay #{0} "{1}"';
 
         eventParser.Configuration.Say.Pattern = '^"(.+)<(\\d+)><(.+)><(.*?)>" say "(.*)"$';
         eventParser.Configuration.Say.AddMapping(5, 1);

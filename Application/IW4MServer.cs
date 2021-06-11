@@ -1042,8 +1042,8 @@ namespace IW4MAdmin
             EventParser = Manager.AdditionalEventParsers
                 .FirstOrDefault(_parser => _parser.Version == ServerConfig.EventParserVersion);
 
-            RconParser = RconParser ?? Manager.AdditionalRConParsers[0];
-            EventParser = EventParser ?? Manager.AdditionalEventParsers[0];
+            RconParser ??= Manager.AdditionalRConParsers[0];
+            EventParser ??= Manager.AdditionalEventParsers[0];
 
             RemoteConnection = RConConnectionFactory.CreateConnection(IP, Port, Password, RconParser.RConEngine);
             RemoteConnection.SetConfiguration(RconParser);

@@ -38,6 +38,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private static List<EFServer> serverModels;
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
+        public static string ESTIMATED_SCORE = "EstimatedScore";
         private readonly SemaphoreSlim _addPlayerWaiter = new SemaphoreSlim(1, 1);
         private readonly IServerDistributionCalculator _serverDistributionCalculator;
 
@@ -859,7 +860,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
-
+            
             // this happens when the round has changed
             if (attackerStats.SessionScore == 0)
             {
@@ -871,18 +872,24 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 victimStats.LastScore = 0;
             }
 
-            attackerStats.SessionScore = attacker.Score;
-            victimStats.SessionScore = victim.Score;
+            var estimatedAttackerScore = attacker.Score > 0 ? attacker.Score : attackerStats.SessionKills * 50;
+            var estimatedVictimScore = victim.Score > 0 ? victim.Score : victimStats.SessionKills * 50;
+
+            attackerStats.SessionScore = estimatedAttackerScore;
+            victimStats.SessionScore = estimatedVictimScore;
+
+            attacker.SetAdditionalProperty(ESTIMATED_SCORE, estimatedAttackerScore);
+            victim.SetAdditionalProperty(ESTIMATED_SCORE, estimatedVictimScore);
 
             // calculate for the clients
             CalculateKill(attackerStats, victimStats);
             // this should fix the negative SPM
             // updates their last score after being calculated
-            attackerStats.LastScore = attacker.Score;
-            victimStats.LastScore = victim.Score;
+            attackerStats.LastScore = estimatedAttackerScore;
+            victimStats.LastScore = estimatedVictimScore;
 
             // show encouragement/discouragement
-            string streakMessage = (attackerStats.ClientId != victimStats.ClientId)
+            var streakMessage = (attackerStats.ClientId != victimStats.ClientId)
                 ? StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak)
                 : StreakMessage.MessageOnStreak(-1, -1);
 
@@ -1248,41 +1255,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // process the attacker's stats after the kills
             attackerStats = UpdateStats(attackerStats);
 
-            #region DEPRECATED
-
-            /* var validAttackerLobbyRatings = Servers[attackerStats.ServerId].PlayerStats
-                 .Where(cs => cs.Value.ClientId != attackerStats.ClientId)
-                 .Where(cs =>
-                     Servers[attackerStats.ServerId].IsTeamBased ?
-                     cs.Value.Team != attackerStats.Team :
-                     cs.Value.Team != IW4Info.Team.Spectator)
-                 .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
-
-             double attackerLobbyRating = validAttackerLobbyRatings.Count() > 0 ?
-                 validAttackerLobbyRatings.Average(cs => cs.Value.EloRating) :
-                 attackerStats.EloRating;
-
-             var validVictimLobbyRatings = Servers[victimStats.ServerId].PlayerStats
-                 .Where(cs => cs.Value.ClientId != victimStats.ClientId)
-                 .Where(cs =>
-                     Servers[attackerStats.ServerId].IsTeamBased ?
-                     cs.Value.Team != victimStats.Team :
-                     cs.Value.Team != IW4Info.Team.Spectator)
-                  .Where(cs => cs.Value.Team != IW4Info.Team.Spectator);
-
-             double victimLobbyRating = validVictimLobbyRatings.Count() > 0 ?
-                 validVictimLobbyRatings.Average(cs => cs.Value.EloRating) :
-                 victimStats.EloRating;*/
-
-            #endregion
-
             // calculate elo
-            double attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) -
+            var attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) -
                                            Math.Log(Math.Max(1, attackerStats.EloRating));
-            double winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
-
-            // double victimEloDifference = Math.Log(Math.Max(1, attackerStats.EloRating)) - Math.Log(Math.Max(1, victimStats.EloRating));
-            // double lossPercentage = 1.0 / (1 + Math.Pow(10, victimEloDifference/ Math.E));
+            var winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
 
             attackerStats.EloRating += 6.0 * (1 - winPercentage);
             victimStats.EloRating -= 6.0 * (1 - winPercentage);
@@ -1314,10 +1290,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return clientStats;
             }
 
-            double timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
-            double timeSinceLastActive = (DateTime.UtcNow - clientStats.LastActive).TotalSeconds / 60.0;
+            var timeSinceLastCalc = (DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0;
 
-            int scoreDifference = 0;
+            var scoreDifference = 0;
             // this means they've been tking or suicide and is the only time they can have a negative SPM
             if (clientStats.RoundScore < 0)
             {
@@ -1329,17 +1304,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 scoreDifference = clientStats.RoundScore - clientStats.LastScore;
             }
 
-            double killSPM = scoreDifference / timeSinceLastCalc;
-            double spmMultiplier = 2.934 *
+            var killSpm = scoreDifference / timeSinceLastCalc;
+            var spmMultiplier = 2.934 *
                                    Math.Pow(
                                        _servers[clientStats.ServerId]
                                            .TeamCount((IW4Info.Team) clientStats.Team == IW4Info.Team.Allies
                                                ? IW4Info.Team.Axis
                                                : IW4Info.Team.Allies), -0.454);
-            killSPM *= Math.Max(1, spmMultiplier);
+            killSpm *= Math.Max(1, spmMultiplier);
 
             // update this for ac tracking
-            clientStats.SessionSPM = killSPM;
+            clientStats.SessionSPM = killSpm;
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely
@@ -1358,7 +1333,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             double SPMAgainstPlayWeight = timeSinceLastCalc / Math.Min(600, (totalPlayTime / 60.0));
 
             // calculate the new weight against average times the weight against play time
-            clientStats.SPM = (killSPM * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
+            clientStats.SPM = (killSpm * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
 
             if (clientStats.SPM < 0)
             {
@@ -1373,7 +1348,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
             {
                 _log.LogWarning("clientStats SPM/Skill NaN {@killInfo}",
-                    new {killSPM, KDRWeight, totalPlayTime, SPMAgainstPlayWeight, clientStats, scoreDifference});
+                    new {killSPM = killSpm, KDRWeight, totalPlayTime, SPMAgainstPlayWeight, clientStats, scoreDifference});
                 clientStats.SPM = 0;
                 clientStats.Skill = 0;
             }

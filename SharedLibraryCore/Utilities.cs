@@ -917,6 +917,18 @@ namespace SharedLibraryCore
             }
         }
 
+        public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout)
+        { 
+             await Task.WhenAny(task, Task.Delay(timeout));
+             return await task;
+        }
+        
+        public static async Task WithTimeout(this Task task, TimeSpan timeout)
+        { 
+            await Task.WhenAny(task, Task.Delay(timeout));
+        }
+        
+
         public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
 
         /// <summary>

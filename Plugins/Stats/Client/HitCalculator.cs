@@ -11,6 +11,7 @@ using Data.Models.Client.Stats.Reference;
 using Data.Models.Server;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Client.Game;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
@@ -147,7 +148,7 @@ namespace IW4MAdmin.Plugins.Stats.Client
                 foreach (var client in gameEvent.Owner.GetClientsAsList())
                 {
                     var scores = client.GetAdditionalProperty<List<(int, DateTime)>>(SessionScores);
-                    scores?.Add((client.Score, DateTime.Now));
+                    scores?.Add((client.GetAdditionalProperty<int?>(StatManager.ESTIMATED_SCORE) ?? client.Score, DateTime.Now));
                 }
             }
 
@@ -590,7 +591,7 @@ namespace IW4MAdmin.Plugins.Stats.Client
 
             if (sessionScores == null)
             {
-                _logger.LogWarning($"No session scores available for {client}");
+                _logger.LogWarning("No session scores available for {Client}", client.ToString());
                 return;
             }
 
@@ -600,7 +601,7 @@ namespace IW4MAdmin.Plugins.Stats.Client
 
                 if (sessionScores.Count == 0)
                 {
-                    stat.Score += client.Score;
+                    stat.Score += client.Score > 0 ? client.Score : client.GetAdditionalProperty<int?>(Helpers.StatManager.ESTIMATED_SCORE) ?? 0 * 50;
                 }
 
                 else

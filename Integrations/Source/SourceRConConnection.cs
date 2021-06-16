@@ -26,9 +26,12 @@ namespace Integrations.Source
         private readonly SemaphoreSlim _activeQuery;
 
         private static readonly TimeSpan FloodDelay = TimeSpan.FromMilliseconds(250);
-        
+        private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(30);
+
         private DateTime _lastQuery = DateTime.Now;
         private RconClient _rconClient;
+        private bool _authenticated;
+        private bool _needNewSocket = true;
 
         public SourceRConConnection(ILogger<SourceRConConnection> logger, IRConClientFactory rconClientFactory,
             string hostname, int port, string password)
@@ -38,7 +41,6 @@ namespace Integrations.Source
             _hostname = hostname;
             _port = port;
             _logger = logger;
-            _rconClient = _rconClientFactory.CreateClient(_hostname, _port);
             _activeQuery = new SemaphoreSlim(1, 1);
         }
 
@@ -52,10 +54,22 @@ namespace Integrations.Source
             try
             {
                 await _activeQuery.WaitAsync();
-                var diff = DateTime.Now - _lastQuery;
-                if (diff < FloodDelay)
+                await WaitForAvailable();
+
+                if (_needNewSocket)
                 {
-                    await Task.Delay(FloodDelay - diff);
+                    try
+                    {
+                        _rconClient?.Disconnect();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    _rconClient = _rconClientFactory.CreateClient(_hostname, _port);
+                    _authenticated = false;
+                    _needNewSocket = false;
                 }
 
                 using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
@@ -63,64 +77,14 @@ namespace Integrations.Source
                     _logger.LogDebug("Connecting to RCon socket");
                 }
 
-                await _rconClient.ConnectAsync();
+                await TryConnectAndAuthenticate().WithTimeout(ConnectionTimeout);
 
-                bool authenticated;
-
-                try
-                {
-                    using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
-                    {
-                        _logger.LogDebug("Authenticating to RCon socket");
-                    }
-
-                    authenticated = await _rconClient.AuthenticateAsync(_password);
-                }
-                catch (SocketException ex)
-                {
-                    // occurs when the server comes back from hibernation
-                    // this is probably a bug in the library
-                    if (ex.ErrorCode == 10053 || ex.ErrorCode == 10054)
-                    {
-                        using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
-                        {
-                            _logger.LogWarning(ex,
-                                "Server appears to resumed from hibernation, so we are using a new socket");
-                        }
-
-                        try
-                        {
-                            _rconClient.Disconnect();
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        _rconClient = _rconClientFactory.CreateClient(_hostname, _port);
-                    }
-
-                    using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
-                    {
-                        _logger.LogError(ex, "Error occurred authenticating with server");
-                    }
-
-                    throw new NetworkException("Error occurred authenticating with server");
-                }
-
-                if (!authenticated)
-                {
-                    using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
-                    {
-                        _logger.LogError("Could not login to server");
-                    }
-
-                    throw new ServerException("Could not authenticate to server with provided password");
-                }
+                var multiPacket = false;
 
                 if (type == StaticHelpers.QueryType.COMMAND_STATUS)
                 {
                     parameters = "status";
+                    multiPacket = true;
                 }
 
                 parameters = parameters.ReplaceUnfriendlyCharacters();
@@ -131,15 +95,34 @@ namespace Integrations.Source
                     _logger.LogDebug("Sending query {Type} with parameters \"{Parameters}\"", type, parameters);
                 }
 
-                var response = await _rconClient.ExecuteCommandAsync(parameters, true);
+                var response = await _rconClient.ExecuteCommandAsync(parameters, multiPacket)
+                    .WithTimeout(ConnectionTimeout);
 
-                using (LogContext.PushProperty("Server", $"{_rconClient.Host}:{_rconClient.Port}"))
+                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
                 {
                     _logger.LogDebug("Received RCon response {Response}", response);
                 }
 
                 var split = response.TrimEnd('\n').Split('\n');
                 return split.Take(split.Length - 1).ToArray();
+            }
+
+            catch (TaskCanceledException)
+            {
+                _needNewSocket = true;
+                throw new NetworkException("Timeout while attempting to communicate with server");
+            }
+
+            catch (SocketException ex)
+            {
+                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                {
+                    _logger.LogError(ex, "Socket exception encountered while attempting to communicate with server");
+                }
+
+                _needNewSocket = true;
+
+                throw new NetworkException("Socket exception encountered while attempting to communicate with server");
             }
 
             catch (Exception ex) when (ex.GetType() != typeof(NetworkException) &&
@@ -161,6 +144,39 @@ namespace Integrations.Source
                 }
 
                 _lastQuery = DateTime.Now;
+            }
+        }
+
+        private async Task WaitForAvailable()
+        {
+            var diff = DateTime.Now - _lastQuery;
+            if (diff < FloodDelay)
+            {
+                await Task.Delay(FloodDelay - diff);
+            }
+        }
+
+        private async Task TryConnectAndAuthenticate()
+        {
+            if (!_authenticated)
+            {
+                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                {
+                    _logger.LogDebug("Authenticating to RCon socket");
+                }
+
+                await _rconClient.ConnectAsync().WithTimeout(ConnectionTimeout);
+                _authenticated = await _rconClient.AuthenticateAsync(_password).WithTimeout(ConnectionTimeout);
+
+                if (!_authenticated)
+                {
+                    using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                    {
+                        _logger.LogError("Could not login to server");
+                    }
+
+                    throw new ServerException("Could not authenticate to server with provided password");
+                }
             }
         }
 

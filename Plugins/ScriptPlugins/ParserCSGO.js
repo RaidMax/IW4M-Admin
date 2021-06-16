@@ -35,7 +35,7 @@ const plugin = {
 
         rconParser.Configuration.Status.Pattern = '^#\\s*(\\d+) (\\d+) "(.+)" (\\S+) +(\\d+:\\d+(?::\\d+)?) (\\d+) (\\S+) (\\S+) (\\d+) (\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+)$';
         rconParser.Configuration.Status.AddMapping(100, 2);
-        rconParser.Configuration.Status.AddMapping(101, 7);
+        rconParser.Configuration.Status.AddMapping(101, -1);
         rconParser.Configuration.Status.AddMapping(102, 6);
         rconParser.Configuration.Status.AddMapping(103, 4)
         rconParser.Configuration.Status.AddMapping(104, 3);
@@ -90,6 +90,7 @@ const plugin = {
         rconParser.GameName     = 10; // CSGO
         eventParser.Version     = 'CSGO';
         eventParser.GameName    = 10; // CSGO
+        eventParser.URLProtocolFormat = 'steam://connect/{{ip}}:{{port}}';
     },
 
     onUnloadAsync: function () {

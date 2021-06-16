@@ -217,10 +217,15 @@ namespace IW4MAdmin.Application.RConParsers
                         continue;
                     }
                     
-                    int clientNumber = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]]);
-                    int score = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]]);
+                    var clientNumber = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConClientNumber]]);
+                    var score = 0;
+                    
+                    if (Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore] > 0)
+                    {
+                        score = int.Parse(match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConScore]]);
+                    }
 
-                    int ping = 999;
+                    var ping = 999;
 
                     // their state can be CNCT, ZMBI etc
                     if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConPing]].Length <= 3)
@@ -229,7 +234,7 @@ namespace IW4MAdmin.Application.RConParsers
                     }
 
                     long networkId;
-                    string name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
+                    var name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
                     string networkIdString;
                     var ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
 

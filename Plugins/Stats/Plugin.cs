@@ -83,6 +83,7 @@ namespace IW4MAdmin.Plugins.Stats
                     await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.MapEnd:
+                    Manager.ResetKillstreaks(S);
                     await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.Command:

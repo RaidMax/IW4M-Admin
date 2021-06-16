@@ -1008,7 +1008,7 @@
         }
       ]
     },
-        {
+    {
       "Game": "SHG1",
       "Maps": [
         {
@@ -1130,6 +1130,151 @@
         {
           "Alias": "Urban",
           "Name": "mp_urban"
+        }
+      ]
+    },
+    {
+      "Game": "CSGO",
+      "Maps": [
+        {
+          "Name": "ar_baggage",
+          "Alias": "Baggage"
+        },
+        {
+          "Name": "ar_dizzy",
+          "Alias": "Dizzy"
+        },
+        {
+          "Name": "ar_lunacy",
+          "Alias": "Lunacy"
+        },
+        {
+          "Name": "ar_monastery",
+          "Alias": "Monastery"
+        },
+        {
+          "Name": "ar_shoots",
+          "Alias": "Shoots"
+        },
+        {
+          "Name": "cs_agency",
+          "Alias": "Agency"
+        },
+        {
+          "Name": "cs_assault",
+          "Alias": "Assault"
+        },
+        {
+          "Name": "cs_italy",
+          "Alias": "Italy"
+        },
+        {
+          "Name": "cs_militia",
+          "Alias": "Militia"
+        },
+        {
+          "Name": "cs_office",
+          "Alias": "Office"
+        },
+        {
+          "Name": "de_ancient",
+          "Alias": "Ancient"
+        },
+        {
+          "Name": "de_bank",
+          "Alias": "Bank"
+        },
+        {
+          "Name": "de_cache",
+          "Alias": "Cache"
+        },
+        {
+          "Name": "de_calavera",
+          "Alias": "Calavera"
+        },
+        {
+          "Name": "de_canals",
+          "Alias": "Canals"
+        },
+        {
+          "Name": "de_cbble",
+          "Alias": "Cobblestone"
+        },
+        {
+          "Name": "de_dust2",
+          "Alias": "Dust II"
+        },
+        {
+          "Name": "de_grind",
+          "Alias": "Grind"
+        },
+        {
+          "Name": "de_inferno",
+          "Alias": "Inferno"
+        },
+        {
+          "Name": "de_lake",
+          "Alias": "Lake"
+        },
+        {
+          "Name": "de_mirage",
+          "Alias": "Mirage"
+        },
+        {
+          "Name": "de_mocha",
+          "Alias": "Mocha"
+        },
+        {
+          "Name": "de_nuke",
+          "Alias": "Nuke"
+        },
+        {
+          "Name": "de_overpass",
+          "Alias": "Overpass"
+        },
+        {
+          "Name": "de_pitstop",
+          "Alias": "Pitstop"
+        },
+        {
+          "Name": "de_safehouse",
+          "Alias": "Safehouse"
+        },
+        {
+          "Name": "de_shortdust",
+          "Alias": "Shortdust"
+        },
+        {
+          "Name": "de_shortnuke",
+          "Alias": "Shortnuke"
+        },
+        {
+          "Name": "de_stmarc",
+          "Alias": "St. Marc"
+        },
+        {
+          "Name": "de_sugarcane",
+          "Alias": "Sugarcane"
+        },
+        {
+          "Name": "de_train",
+          "Alias": "Train"
+        },
+        {
+          "Name": "de_vertigo",
+          "Alias": "Vertigo"
+        },
+        {
+          "Name": "dz_blacksite",
+          "Alias": "Blacksite"
+        },
+        {
+          "Name": "dz_frostbite",
+          "Alias": "Frostbite"
+        },
+        {
+          "Name": "dz_sirocco",
+          "Alias": "Sirocco"
         }
       ]
     }

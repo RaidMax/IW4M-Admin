@@ -48,6 +48,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Integrations\Cod\Integrations.Cod.csproj" />
+    <ProjectReference Include="..\Integrations\Source\Integrations.Source.csproj" />
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj">
       <Private>true</Private>
     </ProjectReference>

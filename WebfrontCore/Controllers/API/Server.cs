@@ -77,7 +77,8 @@ namespace WebfrontCore.Controllers.API
                 Owner = foundServer,
                 Origin = Client,
                 Data = commandRequest.Command,
-                Extra = commandRequest.Command
+                Extra = commandRequest.Command,
+                IsRemote = true
             };
 
             Manager.AddEvent(commandEvent);

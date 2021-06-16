@@ -176,6 +176,12 @@ namespace IW4MAdmin.Plugins.Stats.Client
 
             foreach (var hitInfo in new[] {attackerHitInfo, victimHitInfo})
             {
+                if (hitInfo.MeansOfDeath == null || hitInfo.Location == null || hitInfo.Weapon == null)
+                {
+                    _logger.LogDebug("Skipping hit because it does not contain the required data");
+                    continue;
+                }
+                
                 try
                 {
                     await _onTransaction.WaitAsync();

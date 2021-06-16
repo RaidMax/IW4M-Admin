@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IW4MAdmin.Application.RconParsers
+namespace IW4MAdmin.Application.RConParsers
 {
     public class BaseRConParser : IRConParser
     {
@@ -56,6 +56,7 @@ namespace IW4MAdmin.Application.RconParsers
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDefaultValue, 3);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarLatchedValue, 4);
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarDomain, 5);
+            Configuration.Dvar.AddMapping(ParserRegex.GroupType.AdditionalGroup, int.MaxValue);
 
             Configuration.StatusHeader.Pattern = "num +score +ping +guid +name +lastmsg +address +qport +rate *";
             Configuration.GametypeStatus.Pattern = "";
@@ -73,11 +74,13 @@ namespace IW4MAdmin.Application.RconParsers
         public Game GameName { get; set; } = Game.COD;
         public bool CanGenerateLogPath { get; set; } = true;
         public string Name { get; set; } = "Call of Duty";
+        public string RConEngine { get; set; } = "COD";
+        public bool IsOneLog { get; set; }
 
         public async Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command)
         {
             var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
-            return response.Skip(1).ToArray();
+            return response.Where(item => item != Configuration.CommandPrefixes.RConResponse).ToArray();
         }
 
         public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default)
@@ -128,7 +131,7 @@ namespace IW4MAdmin.Application.RconParsers
 
             return new Dvar<T>()
             {
-                Name = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarName]].Value,
+                Name = dvarName,
                 Value = string.IsNullOrEmpty(value) ? default : (T)Convert.ChangeType(value, typeof(T)),
                 DefaultValue = string.IsNullOrEmpty(defaultValue) ? default : (T)Convert.ChangeType(defaultValue, typeof(T)),
                 LatchedValue = string.IsNullOrEmpty(latchedValue) ? default : (T)Convert.ChangeType(latchedValue, typeof(T)),
@@ -136,53 +139,55 @@ namespace IW4MAdmin.Application.RconParsers
             };
         }
 
-        public virtual async Task<(List<EFClient>, string, string)> GetStatusAsync(IRConConnection connection)
+        public virtual async Task<IStatusResponse> GetStatusAsync(IRConConnection connection)
         {
-            string[] response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
+            var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
             _logger.LogDebug("Status Response {response}", string.Join(Environment.NewLine, response));
-            return (ClientsFromStatus(response), MapFromStatus(response), GameTypeFromStatus(response));
+            return new StatusResponse
+            {
+                Clients = ClientsFromStatus(response).ToArray(),
+                Map = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusMap, Configuration.MapStatus.Pattern),
+                GameType = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusGametype, Configuration.GametypeStatus.Pattern),
+                Hostname = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusHostname, Configuration.HostnameStatus.Pattern),
+                MaxClients = GetValueFromStatus<int?>(response, ParserRegex.GroupType.RConStatusMaxPlayers, Configuration.MaxPlayersStatus.Pattern)
+            };
         }
 
-        private string MapFromStatus(string[] response)
+        private T GetValueFromStatus<T>(IEnumerable<string> response, ParserRegex.GroupType groupType, string groupPattern)
         {
-            string map = null;
+            if (string.IsNullOrEmpty(groupPattern))
+            {
+                return default;
+            }
+            
+            string value = null;
             foreach (var line in response)
             {
-                var regex = Regex.Match(line, Configuration.MapStatus.Pattern);
+                var regex = Regex.Match(line, groupPattern);
                 if (regex.Success)
                 {
-                    map = regex.Groups[Configuration.MapStatus.GroupMapping[ParserRegex.GroupType.RConStatusMap]].ToString();
+                    value = regex.Groups[Configuration.MapStatus.GroupMapping[groupType]].ToString();
                 }
             }
 
-            return map;
-        }
-
-        private string GameTypeFromStatus(string[] response)
-        {
-            if (string.IsNullOrWhiteSpace(Configuration.GametypeStatus.Pattern))
+            if (value == null)
             {
-                return null;
+                return default;
             }
 
-            string gametype = null;
-            foreach (var line in response)
+            if (typeof(T) == typeof(int?))
             {
-                var regex = Regex.Match(line, Configuration.GametypeStatus.Pattern);
-                if (regex.Success)
-                {
-                    gametype = regex.Groups[Configuration.GametypeStatus.GroupMapping[ParserRegex.GroupType.RConStatusGametype]].ToString();
-                }
+                return (T)Convert.ChangeType(int.Parse(value), Nullable.GetUnderlyingType(typeof(T)));
             }
-
-            return gametype;
+            
+            return (T)Convert.ChangeType(value, typeof(T));
         }
 
         public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue)
         {
             string dvarString = (dvarValue is string str)
                 ? $"{dvarName} \"{str}\""
-                : $"{dvarName} {dvarValue.ToString()}";
+                : $"{dvarName} {dvarValue}";
 
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString)).Length > 0;
         }
@@ -257,6 +262,17 @@ namespace IW4MAdmin.Application.RconParsers
                     };
 
                     client.SetAdditionalProperty("BotGuid", networkIdString);
+
+                    if (Configuration.Status.GroupMapping.ContainsKey(ParserRegex.GroupType.AdditionalGroup))
+                    {
+                        var additionalGroupIndex =
+                            Configuration.Status.GroupMapping[ParserRegex.GroupType.AdditionalGroup];
+                        
+                        if (match.Values.Length > additionalGroupIndex)
+                        {
+                            client.SetAdditionalProperty("ConnectionClientId", match.Values[additionalGroupIndex]);
+                        }
+                    }
 
                     StatusPlayers.Add(client);
                 }

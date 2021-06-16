@@ -94,7 +94,7 @@ namespace WebfrontCore.Controllers
                         _type.Assembly != excludedAssembly && typeof(IPlugin).IsAssignableFrom(_type));
                     return pluginType == null ? _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"] :
                         pluginType.Name == "ScriptPlugin" ? _translationLookup["WEBFRONT_HELP_SCRIPT_PLUGIN"] :
-                        Manager.Plugins.First(_plugin => _plugin.GetType() == pluginType)
+                        Manager.Plugins.First(_plugin => _plugin.GetType().FullName == pluginType.FullName)
                             .Name; // for now we're just returning the name of the plugin, maybe later we'll include more info
                 })
                 .Select(_grp => (_grp.Key, _grp.AsEnumerable()));

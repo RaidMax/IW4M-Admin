@@ -39,7 +39,7 @@ let commands = [{
 
 let plugin = {
     author: 'RaidMax',
-    version: 1.0,
+    version: 1.1,
     name: 'Ping Pong Sample Command Plugin',
 
     onEventAsync: function (gameEvent, server) {
@@ -48,6 +48,38 @@ let plugin = {
     onLoadAsync: function (manager) {
         this.logger = _serviceResolver.ResolveService("ILogger");
         this.logger.WriteDebug("sample plugin loaded");
+
+        const intArray = [
+            1337,
+            1505,
+            999
+        ];
+
+        const stringArray = [
+            "ping",
+            "pong",
+            "hello"
+        ];
+        
+        this.configHandler = _configHandler;
+
+        this.configHandler.SetValue("SampleIntegerValue", 123);
+        this.configHandler.SetValue("SampleStringValue", this.author);
+        this.configHandler.SetValue("SampleFloatValue", this.version);
+        this.configHandler.SetValue("SampleNumericalArray", intArray);
+        this.configHandler.SetValue("SampleStringArray", stringArray);
+
+        this.logger.WriteDebug(this.configHandler.GetValue("SampleIntegerValue"));
+        this.logger.WriteDebug(this.configHandler.GetValue("SampleStringValue"));
+        this.logger.WriteDebug(this.configHandler.GetValue("SampleFloatValue"));
+
+        this.configHandler.GetValue("SampleNumericalArray").forEach((element) => {
+            this.logger.WriteDebug(element);
+        });
+
+        this.configHandler.GetValue("SampleStringArray").forEach((element) => {
+            this.logger.WriteDebug(element);
+        });
     },
 
     onUnloadAsync: function () {

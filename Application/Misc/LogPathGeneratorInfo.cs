@@ -41,5 +41,11 @@ namespace IW4MAdmin.Application.Misc
         /// indicates if running on windows
         /// </summary>
         public bool IsWindows { get; set; } = true;
+        
+        /// <summary>
+        /// indicates that the game does not log to the mods folder (when mod is loaded),
+        /// but rather always to the fs_basegame directory
+        /// </summary>
+        public bool IsOneLog { get; set; }
     }
 }

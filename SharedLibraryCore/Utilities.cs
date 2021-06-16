@@ -322,6 +322,8 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, long? fallback = null)
         {
+            // added for source games that provide the steam ID
+            str = str.Replace("STEAM_1", "").Replace(":", "");
             str = str.Substring(0, Math.Min(str.Length, 19));
             var parsableAsNumber = Regex.Match(str, @"([A-F]|[a-f]|[0-9])+").Value;
 
@@ -732,7 +734,7 @@ namespace SharedLibraryCore
             return await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
         }
 
-        public static Task<(List<EFClient>, string, string)> GetStatusAsync(this Server server)
+        public static Task<IStatusResponse> GetStatusAsync(this Server server)
         {
             return server.RconParser.GetStatusAsync(server.RemoteConnection);
         }

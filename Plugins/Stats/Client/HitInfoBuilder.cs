@@ -15,13 +15,13 @@ namespace Stats.Client
         private readonly IWeaponNameParser _weaponNameParser;
         private readonly ILogger _logger;
         private const int MaximumDamage = 1000;
-        
+
         public HitInfoBuilder(ILogger<HitInfoBuilder> logger, IWeaponNameParser weaponNameParser)
         {
             _weaponNameParser = weaponNameParser;
             _logger = logger;
         }
-        
+
         public HitInfo Build(string[] log, int entityId, bool isSelf, bool isVictim, Server.Game gameName)
         {
             var eventType = log[(uint) ParserRegex.GroupType.EventType].First();
@@ -50,11 +50,19 @@ namespace Stats.Client
                 EntityId = entityId,
                 IsVictim = isVictim,
                 HitType = hitType,
-                Damage = Math.Min(MaximumDamage, int.Parse(log[(uint) ParserRegex.GroupType.Damage])),
-                Location = log[(uint) ParserRegex.GroupType.HitLocation],
-                Weapon = _weaponNameParser.Parse(log[(uint) ParserRegex.GroupType.Weapon], gameName),
-                MeansOfDeath = log[(uint)ParserRegex.GroupType.MeansOfDeath],
-                Game = (Reference.Game)gameName
+                Damage = Math.Min(MaximumDamage,
+                    log.Length > (uint) ParserRegex.GroupType.Damage
+                        ? int.Parse(log[(uint) ParserRegex.GroupType.Damage])
+                        : 0),
+                Location = log.Length > (uint) ParserRegex.GroupType.HitLocation
+                    ? log[(uint) ParserRegex.GroupType.HitLocation]
+                    : "Unknown",
+                Weapon = log.Length == 10 ? _weaponNameParser.Parse(log[8], gameName) 
+                     : _weaponNameParser.Parse(log[(uint) ParserRegex.GroupType.Weapon], gameName),
+                MeansOfDeath = log.Length > (uint) ParserRegex.GroupType.MeansOfDeath
+                    ? log[(uint) ParserRegex.GroupType.MeansOfDeath]
+                    : "Unknown",
+                Game = (Reference.Game) gameName
             };
 
             //_logger.LogDebug("Generated new hitInfo {@hitInfo}", hitInfo);

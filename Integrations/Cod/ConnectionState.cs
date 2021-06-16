@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace IW4MAdmin.Application.RCon
+namespace Integrations.Cod
 {
     /// <summary>
     /// used to keep track of the udp connection state

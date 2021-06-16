@@ -5,7 +5,7 @@ namespace Data.Models
 {
     public class SharedEntity : IPropertyExtender
     {
-        private readonly ConcurrentDictionary<string, object> _additionalProperties;
+        private ConcurrentDictionary<string, object> _additionalProperties;
 
         /// <summary>
         /// indicates if the entity is active
@@ -32,6 +32,11 @@ namespace Data.Models
             {
                 _additionalProperties.TryAdd(name, value);
             }
+        }
+        
+        public void CopyAdditionalProperties(SharedEntity source)
+        {
+            _additionalProperties = source._additionalProperties;
         }
     }
 }

@@ -120,7 +120,7 @@ namespace IW4MAdmin.Application.EventParsers
             if (lineSplit.Length > 1)
             {
                 var type = lineSplit[0];
-                return _eventTypeMap.ContainsKey(type) ? (_eventTypeMap[type], type): (GameEvent.EventType.Unknown, null);
+                return _eventTypeMap.ContainsKey(type) ? (_eventTypeMap[type], type): (GameEvent.EventType.Unknown, lineSplit[0]);
             }
 
             foreach (var (key, value) in _regexMap)

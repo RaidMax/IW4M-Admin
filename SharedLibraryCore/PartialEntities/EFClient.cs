@@ -457,9 +457,10 @@ namespace SharedLibraryCore.Database.Models
 
             using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                if (string.IsNullOrWhiteSpace(Name) || CleanedName.Replace(" ", "").Length < 3)
+                if (string.IsNullOrWhiteSpace(Name) || CleanedName.Replace(" ", "").Length <
+                    (CurrentServer?.Manager?.GetApplicationSettings()?.Configuration()?.MinimumNameLength ?? 3))
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their name is too short", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is too short", ToString());
                     Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }
@@ -468,14 +469,14 @@ namespace SharedLibraryCore.Database.Models
                     .DisallowedClientNames
                     ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their name is not allowed", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is not allowed", ToString());
                     Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }
 
                 if (Name.Where(c => char.IsControl(c)).Count() > 0)
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {client} because their name contains control characters", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name contains control characters", ToString());
                     Kick(loc["SERVER_KICK_CONTROLCHARS"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }
@@ -487,7 +488,7 @@ namespace SharedLibraryCore.Database.Models
                 CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
                 CurrentServer.MaxClients != 0)
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {client} their spot is reserved", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} their spot is reserved", ToString());
                     Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }

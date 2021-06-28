@@ -872,8 +872,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 victimStats.LastScore = 0;
             }
 
-            var estimatedAttackerScore = attacker.Score > 0 ? attacker.Score : attackerStats.SessionKills * 50;
-            var estimatedVictimScore = victim.Score > 0 ? victim.Score : victimStats.SessionKills * 50;
+            var estimatedAttackerScore =  (int)attacker.CurrentServer.GameName != 10 
+                ? attacker.Score 
+                : (attackerStats.SessionKills * 50) / (attacker.ConnectionLength / 60);
+            var estimatedVictimScore = (int)attacker.CurrentServer.GameName != 10  
+                ? victim.Score 
+                : victimStats.SessionKills * 50 / (attacker.ConnectionLength / 60);
 
             attackerStats.SessionScore = estimatedAttackerScore;
             victimStats.SessionScore = estimatedVictimScore;

@@ -146,6 +146,7 @@ namespace SharedLibraryCore.Configuration
         [UIHint("ServerConfiguration")] 
         public ServerConfiguration[] Servers { get; set; }
 
+        [ConfigurationIgnore] public int MinimumNameLength { get; set; } = 3;
         [ConfigurationIgnore] public string Id { get; set; }
         [ConfigurationIgnore] public string SubscriptionId { get; set; }
         [ConfigurationIgnore] public MapConfiguration[] Maps { get; set; }

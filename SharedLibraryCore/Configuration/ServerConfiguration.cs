@@ -65,7 +65,7 @@ namespace SharedLibraryCore.Configuration
             {
                 RConParserVersion = rconParsers.FirstOrDefault(_parser => _parser.Name == selection.Item2)?.Version;
 
-                if (selection.Item1 > 0 && !rconParsers[selection.Item1 - 1].CanGenerateLogPath)
+                if (selection.Item1 > 0 && !rconParsers[selection.Item1].CanGenerateLogPath)
                 {
                     Console.WriteLine(loc["SETUP_SERVER_NO_LOG"]);
                     ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_LOG_PATH"]);

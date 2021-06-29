@@ -53,13 +53,15 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             var serverId = StatManager.GetIdForServer(E.Owner);
 
+            var totalRankedPlayers = await Plugin.Manager.GetTotalRankedPlayers(serverId);
+
             // getting stats for a particular client
             if (E.Target != null)
             {
                 var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
-                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
+                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}/{totalRankedPlayers}";
 
                 // target is currently connected so we want their cached stats if they exist
                 if (E.Owner.GetClientsAsList().Any(client => client.Equals(E.Target)))
@@ -87,7 +89,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
-                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}";
+                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} #{performanceRanking}/{totalRankedPlayers}";
 
                 // check if current client is connected to the server
                 if (E.Owner.GetClientsAsList().Any(client => client.Equals(E.Origin)))

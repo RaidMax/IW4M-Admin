@@ -113,19 +113,33 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return 0;
         }
 
+        public Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(int? clientId = null, long? serverId = null)
+        {
+            return (ranking) => ranking.ServerId == serverId
+                                && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
+                                && ranking.Client.LastConnection >= Extensions.FifteenDaysAgo()
+                                && ranking.ZScore != null
+                                && ranking.PerformanceMetric != null
+                                && ranking.Newest
+                                && ranking.Client.TotalConnectionTime >=
+                                _configHandler.Configuration().TopPlayersMinPlayTime;
+        }
+
+        public async Task<int> GetTotalRankedPlayers(long serverId)
+        {
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
+
+            return await context.Set<EFClientRankingHistory>()
+                .Where(GetNewRankingFunc(serverId: serverId))
+                .CountAsync();
+        }
+
         public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null)
         {
             await using var context = _contextFactory.CreateContext(false);
 
             var clientIdsList = await context.Set<EFClientRankingHistory>()
-                .Where(ranking => ranking.ServerId == serverId)
-                .Where(ranking => ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned)
-                .Where(ranking => ranking.Client.LastConnection >= Extensions.FifteenDaysAgo())
-                .Where(ranking => ranking.ZScore != null)
-                .Where(ranking => ranking.PerformanceMetric != null)
-                .Where(ranking => ranking.Newest)
-                .Where(ranking =>
-                    ranking.Client.TotalConnectionTime >= _configHandler.Configuration().TopPlayersMinPlayTime)
+                .Where(GetNewRankingFunc(serverId: serverId))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
                 .Select(ranking => ranking.ClientId)
                 .Skip(start)

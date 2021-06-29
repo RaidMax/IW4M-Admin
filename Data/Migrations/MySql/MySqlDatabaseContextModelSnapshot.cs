@@ -146,6 +146,9 @@ namespace Data.Migrations.MySql
                     b.Property<int>("Weapon")
                         .HasColumnType("int");
 
+                    b.Property<string>("WeaponReference")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
                     b.Property<DateTime>("When")
                         .HasColumnType("datetime(6)");
 
@@ -237,6 +240,9 @@ namespace Data.Migrations.MySql
                     b.Property<int>("HitLocation")
                         .HasColumnType("int");
 
+                    b.Property<string>("HitLocationReference")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
                     b.Property<int>("HitOriginId")
                         .HasColumnType("int");
 
@@ -254,6 +260,9 @@ namespace Data.Migrations.MySql
 
                     b.Property<double>("RecoilOffset")
                         .HasColumnType("double");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("bigint");
 
                     b.Property<double>("SessionAngleOffset")
                         .HasColumnType("double");
@@ -279,6 +288,9 @@ namespace Data.Migrations.MySql
                     b.Property<int>("WeaponId")
                         .HasColumnType("int");
 
+                    b.Property<string>("WeaponReference")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
                     b.Property<DateTime>("When")
                         .HasColumnType("datetime(6)");
 
@@ -293,6 +305,8 @@ namespace Data.Migrations.MySql
                     b.HasIndex("HitOriginId");
 
                     b.HasIndex("LastStrainAngleId");
+
+                    b.HasIndex("ServerId");
 
                     b.ToTable("EFACSnapshot");
                 });
@@ -1103,6 +1117,10 @@ namespace Data.Migrations.MySql
                         .HasForeignKey("LastStrainAngleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientHitStatistic", b =>

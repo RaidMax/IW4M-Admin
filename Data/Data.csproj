@@ -8,62 +8,9 @@
     <PackageId>RaidMax.IW4MAdmin.Data</PackageId>
     <Title>RaidMax.IW4MAdmin.Data</Title>
     <Authors />
-    <PackageVersion>1.0.1</PackageVersion>
+    <PackageVersion>1.0.3</PackageVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Migrations\MySql\20210210221342_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\MySql\20210210221342_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Postgresql\20210224014503_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Postgresql\20210224014503_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Postgresql\20210224030227_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Postgresql\20210224030227_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Postgresql\20210224031245_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Postgresql\20210224031245_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Postgresql\20210227041237_AddPerformancePercentileToClientStats.cs" />
-    <Compile Remove="Migrations\Postgresql\20210227041237_AddPerformancePercentileToClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Postgresql\20210227161333_AddPerformancePercentileToClientStats.cs" />
-    <Compile Remove="Migrations\Postgresql\20210227161333_AddPerformancePercentileToClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Postgresql\20210307163752_AddRankingHistory.cs" />
-    <Compile Remove="Migrations\Postgresql\20210307163752_AddRankingHistory.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209205243_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209205243_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209205948_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209205948_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209211745_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209211745_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209212725_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210209212725_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210020314_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210020314_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210140835_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210140835_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210154738_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210154738_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210163803_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210163803_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210193852_AddAdditionaClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210210193852_AddAdditionaClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210211033835_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210211033835_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210219013429_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210219013429_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210220171950_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210220171950_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210223163022_AddAdditionalClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210223163022_AddAdditionalClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210226215929_AddPerformancePercentileToClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210226215929_AddPerformancePercentileToClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210227160800_AddPerformancePercentileToClientStats.cs" />
-    <Compile Remove="Migrations\Sqlite\20210227160800_AddPerformancePercentileToClientStats.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210305033616_AddRankingHistory.cs" />
-    <Compile Remove="Migrations\Sqlite\20210305033616_AddRankingHistory.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210305033846_AddRankingHistory.cs" />
-    <Compile Remove="Migrations\Sqlite\20210305033846_AddRankingHistory.Designer.cs" />
-    <Compile Remove="Migrations\Sqlite\20210306223712_AddRankingHistory.cs" />
-    <Compile Remove="Migrations\Sqlite\20210306223712_AddRankingHistory.Designer.cs" />
-  </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.10">

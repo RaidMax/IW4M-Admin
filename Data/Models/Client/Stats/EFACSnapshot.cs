@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Numerics;
+using Data.Models.Server;
 
 namespace Data.Models.Client.Stats
 {
@@ -17,7 +18,9 @@ namespace Data.Models.Client.Stats
         public int ClientId { get; set; }
         [ForeignKey("ClientId")]
         public EFClient Client { get; set; }
-
+        public long? ServerId { get; set; }
+        [ForeignKey(nameof(ServerId))]
+        public EFServer Server { get; set; }
         public DateTime When { get; set; }
         public int CurrentSessionLength { get; set; }
         public int TimeSinceLastEvent { get; set; }
@@ -46,8 +49,11 @@ namespace Data.Models.Client.Stats
         public int CurrentViewAngleId { get; set; }
         [ForeignKey("CurrentViewAngleId")]
         public Vector3 CurrentViewAngle { get; set; }
+        [Obsolete]
         public int WeaponId { get; set; }
+        public string WeaponReference { get; set; }
         public int HitLocation { get; set; }
+        public string HitLocationReference { get; set; }
         public int HitType { get; set; }
         public virtual ICollection<EFACSnapshotVector3> PredictedViewAngles { get; set; }
 
@@ -55,5 +61,7 @@ namespace Data.Models.Client.Stats
         public string CapturedViewAngles => PredictedViewAngles?.Count > 0 ? 
             string.Join(", ", PredictedViewAngles.OrderBy(_angle => _angle.ACSnapshotVector3Id).Select(_angle => _angle.Vector.ToString())) :
             "";
+
+        [NotMapped] public string ServerName => Server?.HostName ?? "--";
     }
 }

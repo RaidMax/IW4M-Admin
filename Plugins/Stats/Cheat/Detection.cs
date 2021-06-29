@@ -38,7 +38,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
         long LastOffset;
-        IW4Info.WeaponName LastWeapon;
+        string LastWeapon;
         ILogger Log;
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
@@ -111,7 +111,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 hit.DeathType != (int)IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
                 hit.HitLoc == (int)IW4Info.HitLocation.none || hit.TimeOffset - LastOffset < 0 ||
                 // hack: prevents false positives
-                ((int)LastWeapon != hit.Weapon && (hit.TimeOffset - LastOffset) == 50))
+                (LastWeapon != hit.WeaponReference && (hit.TimeOffset - LastOffset) == 50))
             {
                 return new[] {new DetectionPenaltyResult()
                 {
@@ -119,7 +119,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 }};
             }
 
-            LastWeapon = (IW4Info.WeaponName)(hit.Weapon);
+            LastWeapon = hit.WeaponReference;
 
             HitLocationCount[(IW4Info.HitLocation)hit.HitLoc].Count++;
             HitCount++;
@@ -309,7 +309,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             try
             {
                 shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Recoil]
-                    .Any(_weaponRegex => Regex.IsMatch(((IW4Info.WeaponName)(hit.Weapon)).ToString(), _weaponRegex));
+                    .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
             catch (KeyNotFoundException)
@@ -341,7 +341,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 shouldIgnoreDetection = false;
                 shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Button]
-                    .Any(_weaponRegex => Regex.IsMatch(((IW4Info.WeaponName)(hit.Weapon)).ToString(), _weaponRegex));
+                    .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
             catch (KeyNotFoundException)
@@ -454,7 +454,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 shouldIgnoreDetection = false; // reset previous value
                 shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Chest]
-                    .Any(_weaponRegex => Regex.IsMatch(((IW4Info.WeaponName)(hit.Weapon)).ToString(), _weaponRegex));
+                    .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
             catch (KeyNotFoundException)
@@ -506,6 +506,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 When = hit.When,
                 ClientId = ClientStats.ClientId,
+                ServerId = ClientStats.ServerId,
                 SessionAngleOffset = AngleDifferenceAverage,
                 RecoilOffset = hitRecoilAverage,
                 CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalMinutes,
@@ -527,7 +528,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 SessionSPM = Math.Round(ClientStats.SessionSPM, 0),
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
-                WeaponId = hit.Weapon,
+                WeaponReference = hit.WeaponReference,
                 SessionSnapHits = sessionSnapHits,
                 SessionAverageSnapValue = sessionAverageSnapAmount
             };

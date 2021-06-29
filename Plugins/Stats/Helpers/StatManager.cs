@@ -610,7 +610,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     DeathType = (int) ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
                     Damage = int.Parse(damage),
                     HitLoc = (int) ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
-                    Weapon = (int) ParseEnum<IW4Info.WeaponName>.Get(weapon, typeof(IW4Info.WeaponName)),
+                    WeaponReference = weapon,
                     ViewAngles = vViewAngles,
                     TimeOffset = long.Parse(offset),
                     When = time,
@@ -872,12 +872,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 victimStats.LastScore = 0;
             }
 
-            var estimatedAttackerScore =  (int)attacker.CurrentServer.GameName != 10 
+            var estimatedAttackerScore = attacker.CurrentServer.GameName != Server.Game.SHG1
                 ? attacker.Score 
-                : (attackerStats.SessionKills * 50) / (attacker.ConnectionLength / 60);
-            var estimatedVictimScore = (int)attacker.CurrentServer.GameName != 10  
+                : attackerStats.SessionKills * 50;
+            var estimatedVictimScore = attacker.CurrentServer.GameName != Server.Game.SHG1  
                 ? victim.Score 
-                : victimStats.SessionKills * 50 / (attacker.ConnectionLength / 60);
+                : victimStats.SessionKills * 50;
 
             attackerStats.SessionScore = estimatedAttackerScore;
             victimStats.SessionScore = estimatedVictimScore;
@@ -1318,7 +1318,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             killSpm *= Math.Max(1, spmMultiplier);
 
             // update this for ac tracking
-            clientStats.SessionSPM = killSpm;
+            clientStats.SessionSPM = clientStats.SessionScore / Math.Max(1, clientStats.Client.ToPartialClient().ConnectionLength / 60.0);
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely

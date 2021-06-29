@@ -183,6 +183,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 .Include(s => s.HitOrigin)
                 .Include(s => s.HitDestination)
                 .Include(s => s.CurrentViewAngle)
+                .Include(s => s.Server)
                 .Include(s => s.PredictedViewAngles)
                 .ThenInclude(_angles => _angles.Vector)
                 .OrderBy(s => s.When)

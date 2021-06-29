@@ -3,15 +3,17 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Data.Migrations.Postgresql
 {
     [DbContext(typeof(PostgresqlDatabaseContext))]
-    partial class PostgresqlDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20210628153932_AddWeaponReferenceToEFClientKill")]
+    partial class AddWeaponReferenceToEFClientKill
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -247,9 +249,6 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("HitLocation")
                         .HasColumnType("integer");
 
-                    b.Property<string>("HitLocationReference")
-                        .HasColumnType("text");
-
                     b.Property<int>("HitOriginId")
                         .HasColumnType("integer");
 
@@ -267,9 +266,6 @@ namespace Data.Migrations.Postgresql
 
                     b.Property<double>("RecoilOffset")
                         .HasColumnType("double precision");
-
-                    b.Property<long?>("ServerId")
-                        .HasColumnType("bigint");
 
                     b.Property<double>("SessionAngleOffset")
                         .HasColumnType("double precision");
@@ -295,9 +291,6 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("WeaponId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("WeaponReference")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("When")
                         .HasColumnType("timestamp without time zone");
 
@@ -312,8 +305,6 @@ namespace Data.Migrations.Postgresql
                     b.HasIndex("HitOriginId");
 
                     b.HasIndex("LastStrainAngleId");
-
-                    b.HasIndex("ServerId");
 
                     b.ToTable("EFACSnapshot");
                 });
@@ -1142,10 +1133,6 @@ namespace Data.Migrations.Postgresql
                         .HasForeignKey("LastStrainAngleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Data.Models.Server.EFServer", "Server")
-                        .WithMany()
-                        .HasForeignKey("ServerId");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientHitStatistic", b =>

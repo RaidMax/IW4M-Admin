@@ -145,6 +145,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("Weapon")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("WeaponReference")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("When")
                         .HasColumnType("TEXT");
 
@@ -236,6 +239,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("HitLocation")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("HitLocationReference")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("HitOriginId")
                         .HasColumnType("INTEGER");
 
@@ -253,6 +259,9 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<double>("RecoilOffset")
                         .HasColumnType("REAL");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<double>("SessionAngleOffset")
                         .HasColumnType("REAL");
@@ -278,6 +287,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("WeaponId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("WeaponReference")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("When")
                         .HasColumnType("TEXT");
 
@@ -292,6 +304,8 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("HitOriginId");
 
                     b.HasIndex("LastStrainAngleId");
+
+                    b.HasIndex("ServerId");
 
                     b.ToTable("EFACSnapshot");
                 });
@@ -1102,6 +1116,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("LastStrainAngleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientHitStatistic", b =>

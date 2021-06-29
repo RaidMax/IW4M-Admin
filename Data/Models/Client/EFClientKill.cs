@@ -18,7 +18,9 @@ namespace Data.Models.Client
         public int HitLoc { get; set; }
         public int DeathType { get; set; }
         public int Damage { get; set; }
+        [Obsolete]
         public int Weapon { get; set; }
+        public string WeaponReference { get; set; }
         public Vector3 KillOrigin { get; set; }
         public Vector3 DeathOrigin { get; set; }
         public Vector3 ViewAngles { get; set; }

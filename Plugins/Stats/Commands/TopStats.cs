@@ -25,7 +25,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             };
 
             var stats = await Plugin.Manager.GetTopStats(0, 5, serverId);
-            var statsList = stats.Select(stats => $"^3{stats.Name}^7 - ^5{stats.KDR} ^7{translationLookup["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
+            var statsList = stats.Select((stats, index) => $"#{index + 1} ^3{stats.Name}^7 - ^5{stats.KDR} ^7{translationLookup["PLUGINS_STATS_TEXT_KDR"]} | ^5{stats.Performance} ^7{translationLookup["PLUGINS_STATS_COMMANDS_PERFORMANCE"]}");
 
             topStatsText.AddRange(statsList);
 

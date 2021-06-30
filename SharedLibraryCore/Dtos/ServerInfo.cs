@@ -23,5 +23,21 @@ namespace SharedLibraryCore.Dtos
         public string IPAddress { get; set; }
         public bool IsPasswordProtected { get; set; }
         public string Endpoint => $"{IPAddress}:{Port}";
+
+        public double? LobbyZScore
+        {
+            get
+            {
+                var valid = Players.Where(player => player.ZScore != null && player.ZScore != 0)
+                    .ToList();
+                
+                if (!valid.Any())
+                {
+                    return null;
+                }
+
+                return Math.Round(valid.Select(player => player.ZScore.Value).Average(), 2);
+            }
+        }
     }
 }

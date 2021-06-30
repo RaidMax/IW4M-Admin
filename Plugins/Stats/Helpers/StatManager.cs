@@ -548,7 +548,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // sync their stats before they leave
             if (clientStats != null)
             {
-                clientStats = UpdateStats(clientStats);
+                clientStats = UpdateStats(clientStats, pl);
                 await SaveClientStats(clientStats);
                 if (_configHandler.Configuration().EnableAdvancedMetrics)
                 {
@@ -900,7 +900,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victim.SetAdditionalProperty(ESTIMATED_SCORE, estimatedVictimScore);
 
             // calculate for the clients
-            CalculateKill(attackerStats, victimStats);
+            CalculateKill(attackerStats, victimStats, attacker, victim);
             // this should fix the negative SPM
             // updates their last score after being calculated
             attackerStats.LastScore = estimatedAttackerScore;
@@ -1252,7 +1252,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="attackerStats">Stats of the attacker</param>
         /// <param name="victimStats">Stats of the victim</param>
-        public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats)
+        public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats, 
+            EFClient attacker, EFClient victim)
         {
             bool suicide = attackerStats.ClientId == victimStats.ClientId;
 
@@ -1271,7 +1272,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.KillStreak = 0;
 
             // process the attacker's stats after the kills
-            attackerStats = UpdateStats(attackerStats);
+            attackerStats = UpdateStats(attackerStats, attacker);
 
             // calculate elo
             var attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) -
@@ -1296,7 +1297,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="clientStats">Client statistics</param>
         /// <returns></returns>
-        private EFClientStatistics UpdateStats(EFClientStatistics clientStats)
+        private EFClientStatistics UpdateStats(EFClientStatistics clientStats, EFClient client)
         {
             // prevent NaN or inactive time lowering SPM
             if ((DateTime.UtcNow - clientStats.LastStatCalculation).TotalSeconds / 60.0 < 0.01 ||
@@ -1332,7 +1333,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             killSpm *= Math.Max(1, spmMultiplier);
 
             // update this for ac tracking
-            clientStats.SessionSPM = clientStats.SessionScore / Math.Max(1, clientStats.Client.ToPartialClient().ConnectionLength / 60.0);
+            clientStats.SessionSPM = clientStats.SessionScore / Math.Max(1, client.ConnectionLength / 60.0);
 
             // calculate how much the KDR should weigh
             // 1.637 is a Eddie-Generated number that weights the KDR nicely

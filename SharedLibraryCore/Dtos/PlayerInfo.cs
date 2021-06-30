@@ -28,5 +28,6 @@ namespace SharedLibraryCore.Dtos
         public string LastConnectionText => (DateTime.UtcNow - LastConnection).HumanizeForCurrentCulture();
         public IDictionary<int, long> LinkedAccounts { get; set; }
         public MetaType? MetaFilterType { get; set; }
+        public double? ZScore { get; set; }
     }
 }

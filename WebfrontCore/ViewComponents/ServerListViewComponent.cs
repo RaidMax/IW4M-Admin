@@ -3,6 +3,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
 using System.Net;
+using Data.Models.Client.Stats;
 using static SharedLibraryCore.Server;
 
 namespace WebfrontCore.ViewComponents
@@ -30,7 +31,8 @@ namespace WebfrontCore.ViewComponents
                     ClientId = p.ClientId,
                     Level = p.Level.ToLocalizedLevelName(),
                     LevelInt = (int)p.Level,
-                    Tag = p.Tag
+                    Tag = p.Tag,
+                    ZScore = p.GetAdditionalProperty<EFClientStatistics>(IW4MAdmin.Plugins.Stats.Helpers.StatManager.CLIENT_STATS_KEY)?.ZScore
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
                 Online = !s.Throttled,

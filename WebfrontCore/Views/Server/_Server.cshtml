@@ -16,8 +16,26 @@
         }
     </div>
 
-    <div class="text-center col-md-4">@Model.Map</div>
-    <div class="text-center text-md-right col-md-4"><span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span></div>
+    <div class="text-center col-md-4">
+        <span>@Model.Map</span>
+        @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
+        {
+            <span>&ndash;</span>
+            <span>@Model.GameType.ToUpper()</span>
+        }
+    </div>
+    <div class="text-center text-md-right col-md-4 d-flex justify-content-center justify-content-md-end flex-column-reverse flex-sm-row">
+        @if (Model.LobbyZScore != null)
+        {
+            <div title="@ViewBag.Localization["WEBFRONT_HOME_RATING_DESC"]" class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">
+                <span>@(Model.LobbyZScore ?? 0)</span>
+                <span class="oi oi-bolt align-self-center mr-1 ml-1"></span>
+            </div>
+        }
+        <div>
+            <span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span>
+        </div>
+    </div>
 
     @if (ViewBag.Authorized)
     {
@@ -27,7 +45,7 @@
     }
 </div>
 
-<div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity pt-2 pb-2">
+<div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity @(Model.ClientCount > 0 ? "pt-2 pb-2" : "")">
     @await Html.PartialAsync("../Server/_ClientActivity", Model)
 </div>
 

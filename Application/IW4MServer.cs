@@ -39,9 +39,11 @@ namespace IW4MAdmin
         private readonly IServiceProvider _serviceProvider;
         private readonly IClientNoticeMessageFormatter _messageFormatter;
         private readonly ILookupCache<EFServer> _serverCache;
+        private readonly CommandConfiguration _commandConfiguration;
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
+            CommandConfiguration commandConfiguration,
             ITranslationLookup lookup,
             IMetaService metaService, 
             IServiceProvider serviceProvider,
@@ -58,6 +60,7 @@ namespace IW4MAdmin
             _serviceProvider = serviceProvider;
             _messageFormatter = messageFormatter;
             _serverCache = serverCache;
+            _commandConfiguration = commandConfiguration;
         }
 
         public override async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -158,7 +161,7 @@ namespace IW4MAdmin
                     {
                         try
                         {
-                            C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E, Manager.GetApplicationSettings().Configuration());
+                            C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E, Manager.GetApplicationSettings().Configuration(), _commandConfiguration);
                         }
 
                         catch (CommandException e)

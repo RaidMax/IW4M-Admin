@@ -22,7 +22,7 @@ namespace IW4MAdmin.Application.Factories
         /// </summary>
         /// <param name="translationLookup"></param>
         /// <param name="rconConnectionFactory"></param>
-        public GameServerInstanceFactory(ITranslationLookup translationLookup, 
+        public GameServerInstanceFactory(ITranslationLookup translationLookup,
             IMetaService metaService,
             IServiceProvider serviceProvider)
         {
@@ -39,7 +39,10 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public Server CreateServer(ServerConfiguration config, IManager manager)
         {
-            return new IW4MServer(config, _translationLookup, _metaService, _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(), _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
+            return new IW4MServer(config,
+                _serviceProvider.GetRequiredService<CommandConfiguration>(), _translationLookup, _metaService,
+                _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
+                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
         }
     }
 }

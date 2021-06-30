@@ -16,7 +16,7 @@
         }
     </div>
 
-    <div class="text-center col-md-4">
+    <div class="text-center col-md-4 align-self-center">
         <span>@Model.Map</span>
         @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
         {
@@ -24,7 +24,7 @@
             <span>@Model.GameType.ToUpper()</span>
         }
     </div>
-    <div class="text-center text-md-right col-md-4 d-flex justify-content-center justify-content-md-end flex-column-reverse flex-sm-row">
+    <div class="text-center text-md-right col-md-4 d-flex align-self-center justify-content-center justify-content-md-end flex-column-reverse flex-sm-row">
         @if (Model.LobbyZScore != null)
         {
             <div title="@ViewBag.Localization["WEBFRONT_HOME_RATING_DESC"]" class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">

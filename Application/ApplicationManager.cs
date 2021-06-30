@@ -240,7 +240,7 @@ namespace IW4MAdmin.Application
                 }
 
                 // remove the update tasks as they have completed
-                foreach (var serverId in serverTasksToRemove)
+                foreach (var serverId in serverTasksToRemove.Where(serverId => runningUpdateTasks.ContainsKey(serverId)))
                 {
                     if (!runningUpdateTasks[serverId].tokenSource.Token.IsCancellationRequested)
                     {

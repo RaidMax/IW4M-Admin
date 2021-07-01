@@ -329,7 +329,7 @@ namespace SharedLibraryCore
                 var y = int.Parse(match.Groups[2].ToString());
                 var z = long.Parse(match.Groups[3].ToString());
 
-                str = (z * 2 + 0x0110000100000000 + y).ToString();
+                return z * 2 + 0x0110000100000000 + y;
             }
    
             str = str.Substring(0, Math.Min(str.Length, 19));

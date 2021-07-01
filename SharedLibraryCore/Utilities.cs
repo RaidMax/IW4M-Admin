@@ -1,5 +1,4 @@
-﻿
-using Humanizer;
+﻿using Humanizer;
 using Humanizer.Localisation;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
@@ -323,7 +322,16 @@ namespace SharedLibraryCore
         public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, long? fallback = null)
         {
             // added for source games that provide the steam ID
-            str = str.Replace("STEAM_1", "").Replace(":", "");
+            var match = Regex.Match(str, @"^STEAM_(\d):(\d):(\d+)$");
+            if (match.Success)
+            {
+                var x = int.Parse(match.Groups[1].ToString());
+                var y = int.Parse(match.Groups[2].ToString());
+                var z = long.Parse(match.Groups[3].ToString());
+
+                str = (z * 2 + 0x0110000100000000 + y).ToString();
+            }
+   
             str = str.Substring(0, Math.Min(str.Length, 19));
             var parsableAsNumber = Regex.Match(str, @"([A-F]|[a-f]|[0-9])+").Value;
 

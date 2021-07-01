@@ -151,6 +151,14 @@ namespace SharedLibraryCore
             /// a client's permission was changed
             /// </summary>
             ChangePermission = 111,
+            /// <summary>
+            /// client logged in to webfront
+            /// </summary>
+            Login = 112,
+            /// <summary>
+            /// client logged out of webfront
+            /// </summary>
+            Logout = 113,
 
             // events "generated" by IW4MAdmin
             /// <summary>

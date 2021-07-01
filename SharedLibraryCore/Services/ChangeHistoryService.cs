@@ -66,7 +66,23 @@ namespace SharedLibraryCore.Services
                         CurrentValue = ((EFClient.Permission)e.Extra).ToString()
                     };
                     break;
-                default:
+                case GameEvent.EventType.Login:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        Comment = "Logged In To Webfront",
+                        TypeOfChange = EFChangeHistory.ChangeType.Command,
+                        CurrentValue = e.Data
+                    };
+                    break;
+                case GameEvent.EventType.Logout:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        Comment = "Logged Out of Webfront",
+                        TypeOfChange = EFChangeHistory.ChangeType.Command,
+                        CurrentValue = e.Data
+                    };
                     break;
             }
 

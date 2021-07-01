@@ -886,10 +886,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 victimStats.LastScore = 0;
             }
 
-            var estimatedAttackerScore = attacker.CurrentServer.GameName != Server.Game.SHG1
+            var estimatedAttackerScore = attacker.CurrentServer.GameName != Server.Game.CSGO
                 ? attacker.Score 
                 : attackerStats.SessionKills * 50;
-            var estimatedVictimScore = attacker.CurrentServer.GameName != Server.Game.SHG1  
+            var estimatedVictimScore = attacker.CurrentServer.GameName != Server.Game.CSGO  
                 ? victim.Score 
                 : victimStats.SessionKills * 50;
 

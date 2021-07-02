@@ -1,13 +1,21 @@
 ﻿$(document).ready(function () {
-	/*
-	Expand alias tab if they have any
-	*/
+    /*
+    Expand alias tab if they have any
+    */
     $('#profile_aliases_btn').click(function (e) {
         const aliases = $('#profile_aliases').text().trim();
         if (aliases && aliases.length !== 0) {
             $('#profile_aliases').slideToggle(150);
             $(this).toggleClass('oi-caret-top');
         }
+    });
+
+    const ipAddresses = $('.ip-lookup-profile');
+    $.each(ipAddresses, function (index, address) {
+        $.get('http://ip-api.com/json/' + $(address).data('ip'), function (result) {
+            const country = result['country'];
+            $('#ip_lookup_country').text(country)
+        });
     });
 
     /* set the end time for initial event query */
@@ -35,7 +43,7 @@
 
         $(this).children().filter('.client-message-prefix').removeClass('oi-chevron-right');
         $(this).children().filter('.client-message-prefix').addClass('oi-chevron-bottom');
-       
+
         $.get('/Stats/GetMessageAsync', {
             'serverId': $(this).data('serverid'),
             'when': $(this).data('when')
@@ -102,7 +110,7 @@
                     $('#mainModal .modal-body').append(response.city);
                 }
                 if (response.region.length > 0) {
-                    $('#mainModal .modal-body').append((response.city.length > 0  ? ', ' : '') + response.region);
+                    $('#mainModal .modal-body').append((response.city.length > 0 ? ', ' : '') + response.region);
                 }
                 if (response.country.length > 0) {
                     $('#mainModal .modal-body').append((response.country.length > 0 ? ', ' : '') + response.country);

@@ -23,7 +23,7 @@
     </div>
     <!-- Name/Level Column -->
     <div class="w-50 d-block d-lg-inline-flex flex-column flex-fill text-center text-lg-left pb-3 pb-lg-0 pt-3 pt-lg-0 pl-3 pr-3 ml-auto mr-auto" style="overflow-wrap: anywhere">
-        <div class="mt-n2 flex-fill d-block d-lg-inline-flex">
+        <div class="mt-n2 d-block d-lg-inline-flex">
             <div id="profile_name" class="client-name h1 mb-0">
                 <color-code value="@Model.Name" allow="@ViewBag.EnableColorCodes"></color-code>
             </div>
@@ -35,6 +35,14 @@
 
         @if (ViewBag.Authorized)
         {
+            <div class="d-flex flex-row justify-content-start flex-fill flex-column flex-md-row mr-2 mb-2 mb-md-0">
+                <div class="ip-lookup-profile align-self-center mr-0 mr-md-2"
+                     data-ip="@Model.IPAddress"
+                     style="background-image: url('http://api.hostip.info/flag.php?ip=@Model.IPAddress'); height: 2.5rem; min-width: 3.0rem; background-size: contain; background-repeat: no-repeat; background-position: center;">
+                </div>
+                <div id="ip_lookup_country" class="h4 mb-0 align-self-center text-muted"></div>
+            </div>
+
             <div id="profile_aliases" class="text-muted pt-0 pt-lg-2 pb-2">
                 @foreach (var linked in Model.LinkedAccounts)
                 {

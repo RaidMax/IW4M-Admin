@@ -12,9 +12,22 @@
 
     const ipAddresses = $('.ip-lookup-profile');
     $.each(ipAddresses, function (index, address) {
-        $.get('http://ip-api.com/json/' + $(address).data('ip'), function (result) {
-            const country = result['country'];
-            $('#ip_lookup_country').text(country)
+        let ip = $(address).data('ip');
+        if (ip.length === 0) {
+            return;
+        }
+        $.get('https://ip2c.org/' + ip, function (result) {
+            const countryCode = result.split(';')[1].toLowerCase();
+            const country = result.split(';')[3];
+
+            if (country === 'Unknown') {
+                return;
+            }
+            
+            $('#ip_lookup_country').text(country);
+            if (countryCode !== 'zz' && countryCode !== '') {
+                $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+            }
         });
     });
 

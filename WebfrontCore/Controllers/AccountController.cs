@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace WebfrontCore.Controllers
 {
@@ -57,7 +58,9 @@ namespace WebfrontCore.Controllers
                         Origin = privilegedClient,
                         Type = GameEvent.EventType.Login,
                         Owner = Manager.GetServers().First(),
-                        Data = HttpContext.Connection.RemoteIpAddress.ToString()
+                        Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                            : HttpContext.Connection.RemoteIpAddress.ToString()
                     });
 
                     return Ok();
@@ -82,7 +85,9 @@ namespace WebfrontCore.Controllers
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.GetServers().First(),
-                    Data = HttpContext.Connection.RemoteIpAddress.ToString()
+                    Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                        : HttpContext.Connection.RemoteIpAddress.ToString()
                 });
             }
 

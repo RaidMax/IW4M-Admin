@@ -125,7 +125,9 @@ namespace WebfrontCore.Controllers.API
                         Origin = privilegedClient,
                         Type = GameEvent.EventType.Login,
                         Owner = Manager.GetServers().First(),
-                        Data = HttpContext.Connection.RemoteIpAddress.ToString()
+                        Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                            : HttpContext.Connection.RemoteIpAddress.ToString()
                     });
 
                     return Ok();
@@ -152,7 +154,9 @@ namespace WebfrontCore.Controllers.API
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.GetServers().First(),
-                    Data = HttpContext.Connection.RemoteIpAddress.ToString()
+                    Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                        : HttpContext.Connection.RemoteIpAddress.ToString()
                 });
             }
             

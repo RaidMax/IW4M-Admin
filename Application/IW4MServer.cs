@@ -613,7 +613,7 @@ namespace IW4MAdmin
                         {
                             try
                             {
-                                message = Manager.GetApplicationSettings().Configuration()
+                                message = _serviceProvider.GetRequiredService<DefaultSettings>()
                                     .QuickMessages
                                     .First(_qm => _qm.Game == GameName)
                                     .Messages[E.Data.Substring(1)];
@@ -1138,8 +1138,14 @@ namespace IW4MAdmin
             {
                 Manager.GetApplicationSettings().Configuration().ContactUri = Website;
             }
+            
+            var defaultConfig = _serviceProvider.GetRequiredService<DefaultSettings>();
+            var gameMaps = defaultConfig?.Maps?.FirstOrDefault(map => map.Game == GameName);
 
-            InitializeMaps();
+            if (gameMaps != null)
+            {
+                Maps.AddRange(gameMaps.Maps);
+            }
 
             WorkingDirectory = basepath.Value;
             this.Hostname = hostname;

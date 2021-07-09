@@ -353,9 +353,7 @@ namespace IW4MAdmin.Application
 
                 _appConfig.AutoMessages = defaultConfig.AutoMessages;
                 _appConfig.GlobalRules = defaultConfig.GlobalRules;
-                _appConfig.Maps = defaultConfig.Maps;
                 _appConfig.DisallowedClientNames = defaultConfig.DisallowedClientNames;
-                _appConfig.QuickMessages = defaultConfig.QuickMessages;
 
                 //if (newConfig.Servers == null)
                 {
@@ -396,6 +394,18 @@ namespace IW4MAdmin.Application
                     await ConfigHandler.Save();
                 }
 
+#pragma warning disable 618
+                if (_appConfig.Maps != null)
+                {
+                    _appConfig.Maps = null;
+                }
+
+                if (_appConfig.QuickMessages != null)
+                {
+                    _appConfig.QuickMessages = null;
+                }
+#pragma warning restore 618
+
                 var validator = new ApplicationConfigurationValidator();
                 var validationResult = validator.Validate(_appConfig);
 
@@ -410,7 +420,7 @@ namespace IW4MAdmin.Application
 
                 foreach (var serverConfig in _appConfig.Servers)
                 {
-                    Migration.ConfigurationMigration.ModifyLogPath020919(serverConfig);
+                    ConfigurationMigration.ModifyLogPath020919(serverConfig);
 
                     if (serverConfig.RConParserVersion == null || serverConfig.EventParserVersion == null)
                     {

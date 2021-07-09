@@ -252,17 +252,6 @@ namespace SharedLibraryCore
         abstract public void InitializeTokens();
 
         /// <summary>
-        /// Read the map configuration
-        /// </summary>
-        protected void InitializeMaps()
-        {
-            Maps = new List<Map>();
-            var gameMaps = Manager.GetApplicationSettings().Configuration().Maps.FirstOrDefault(m => m.Game == GameName);
-            if (gameMaps != null)
-                Maps.AddRange(gameMaps.Maps);
-        }
-
-        /// <summary>
         /// Initialize the messages to be broadcasted
         /// </summary>
         protected void InitializeAutoMessages()

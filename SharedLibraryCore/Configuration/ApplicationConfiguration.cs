@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Newtonsoft.Json;
 using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Configuration
@@ -149,10 +150,13 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore] public int MinimumNameLength { get; set; } = 3;
         [ConfigurationIgnore] public string Id { get; set; }
         [ConfigurationIgnore] public string SubscriptionId { get; set; }
+        [Obsolete("Moved to DefaultSettings")]
         [ConfigurationIgnore] public MapConfiguration[] Maps { get; set; }
+        [Obsolete("Moved to DefaultSettings")]
         [ConfigurationIgnore] public QuickMessageConfiguration[] QuickMessages { get; set; }
 
         [ConfigurationIgnore]
+        [JsonIgnore]
         public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl)
             ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1")
             : ManualWebfrontUrl;

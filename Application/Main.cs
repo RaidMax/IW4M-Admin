@@ -333,6 +333,8 @@ namespace IW4MAdmin.Application
             // setup the static resources (config/master api/translations)
             var serviceCollection = new ServiceCollection();
             var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
+            var defaultConfigHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
+            var defaultConfig = defaultConfigHandler.Configuration();
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
@@ -361,6 +363,7 @@ namespace IW4MAdmin.Application
 
             serviceCollection
                 .AddBaseLogger(appConfig)
+                .AddSingleton(defaultConfig)
                 .AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
                 .AddSingleton<IConfigurationHandler<DefaultSettings>, BaseConfigurationHandler<DefaultSettings>>()
                 .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)

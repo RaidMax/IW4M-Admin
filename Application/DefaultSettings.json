@@ -435,8 +435,8 @@
           "Name": "oilrig"
         },
         {
-          "Name": "Village",
-          "Alias": "co_hunted"
+          "Alias": "Village",
+          "Name": "co_hunted"
         }
       ]
     },

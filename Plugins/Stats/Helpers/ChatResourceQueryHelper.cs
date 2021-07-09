@@ -24,14 +24,14 @@ namespace Stats.Helpers
     {
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ILogger _logger;
-        private readonly ApplicationConfiguration _appConfig;
+        private readonly DefaultSettings _defaultSettings;
         private List<EFServer> serverCache;
 
-        public ChatResourceQueryHelper(ILogger<ChatResourceQueryHelper> logger, IDatabaseContextFactory contextFactory, ApplicationConfiguration appConfig)
+        public ChatResourceQueryHelper(ILogger<ChatResourceQueryHelper> logger, IDatabaseContextFactory contextFactory, DefaultSettings defaultSettings)
         {
             _contextFactory = contextFactory;
             _logger = logger;
-            _appConfig = appConfig;
+            _defaultSettings = defaultSettings;
         }
 
         /// <inheritdoc/>
@@ -106,20 +106,22 @@ namespace Stats.Helpers
             {
                 message.IsHidden = serverCache.Any(server => server.ServerId == message.ServerId && server.IsPasswordProtected);
 
-                if (message.Message.IsQuickMessage())
+                if (!message.Message.IsQuickMessage())
                 {
-                    try
-                    {
-                        var quickMessages = _appConfig
-                            .QuickMessages
-                            .First(_qm => _qm.Game == message.GameName);
-                        message.Message = quickMessages.Messages[message.Message.Substring(1)];
-                        message.IsQuickMessage = true;
-                    }
-                    catch 
-                    {
-                        message.Message = message.Message.Substring(1);
-                    }
+                    continue;
+                }
+                
+                try
+                {
+                    var quickMessages = _defaultSettings
+                        .QuickMessages
+                        .First(_qm => _qm.Game == message.GameName);
+                    message.Message = quickMessages.Messages[message.Message.Substring(1)];
+                    message.IsQuickMessage = true;
+                }
+                catch 
+                {
+                    message.Message = message.Message.Substring(1);
                 }
             }
 

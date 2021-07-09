@@ -1070,6 +1070,31 @@ namespace SharedLibraryCore
             return value?.ToNumericalString(precision);
         }
 
+        public static string[] FragmentMessageForDisplay(this string message)
+        {
+            var messages = new List<string>();
+            var length = 48;
+
+            if (message.Length <= length)
+            {
+                return new[] {message};
+            }
+            int i;
+            for (i = 0; i < message.Length - length; i += length)
+            {
+                messages.Add(new string(message.Skip(i).Take(length).ToArray()));
+            }
+
+            var left = message.Length - length;
+
+            if (left > 0)
+            {
+                messages.Add(new string(message.Skip(i).Take(left).ToArray()));
+            }
+
+            return messages.ToArray();
+        }
+
         public static string FindRuleForReason(this string reason, ApplicationConfiguration appConfig, Server server)
         {
             // allow for penalty presets

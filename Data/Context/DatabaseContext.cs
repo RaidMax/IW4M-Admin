@@ -7,6 +7,7 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Client.Stats.Reference;
+using Data.Models.Misc;
 using Data.Models.Server;
 
 namespace Data.Context
@@ -35,6 +36,12 @@ namespace Data.Context
         public DbSet<EFWeapon> Weapons { get; set; }
         public DbSet<EFWeaponAttachment> WeaponAttachments { get; set; }
         public DbSet<EFMap> Maps { get; set; }
+
+        #endregion
+
+        #region MISC
+
+        public DbSet<EFInboxMessage> InboxMessages { get; set; }
 
         #endregion
 

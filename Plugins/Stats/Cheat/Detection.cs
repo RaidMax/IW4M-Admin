@@ -529,6 +529,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
                 WeaponReference = hit.WeaponReference,
+                HitLocationReference = hit.GetAdditionalProperty<string>("HitLocationReference"),
                 SessionSnapHits = sessionSnapHits,
                 SessionAverageSnapValue = sessionAverageSnapAmount
             };

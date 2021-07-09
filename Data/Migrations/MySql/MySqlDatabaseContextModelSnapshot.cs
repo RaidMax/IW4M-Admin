@@ -935,6 +935,44 @@ namespace Data.Migrations.MySql
                     b.ToTable("EFPenalties");
                 });
 
+            modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
+                {
+                    b.Property<int>("InboxMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DestinationClientId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDelivered")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SourceClientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("InboxMessageId");
+
+                    b.HasIndex("DestinationClientId");
+
+                    b.HasIndex("ServerId");
+
+                    b.HasIndex("SourceClientId");
+
+                    b.ToTable("InboxMessages");
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")
@@ -1279,6 +1317,25 @@ namespace Data.Migrations.MySql
                         .WithMany("AdministeredPenalties")
                         .HasForeignKey("PunisherId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "DestinationClient")
+                        .WithMany()
+                        .HasForeignKey("DestinationClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
+
+                    b.HasOne("Data.Models.Client.EFClient", "SourceClient")
+                        .WithMany()
+                        .HasForeignKey("SourceClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

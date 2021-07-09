@@ -35,7 +35,7 @@ namespace SharedLibraryCore.Commands
 
             if (!gameEvent.CanPerformActionOnTarget())
             {
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_FAIL_PERM"]);
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_FAIL_PERM"].FormatExt(gameEvent.Target.Name));
                 return;
             }
 
@@ -53,11 +53,18 @@ namespace SharedLibraryCore.Commands
             gameEvent.Owner.Manager.AddEvent(impersonatedCommandEvent);
 
             var result = await impersonatedCommandEvent.WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
+            await result.WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
 
             // remove the added command response
-            foreach (var output in result.Output)
+            // todo: something weird happening making this change required
+            var responses = gameEvent.Owner.Manager.ProcessingEvents
+                .Where(ev => ev.Value.CorrelationId == impersonatedCommandEvent.CorrelationId)
+                .SelectMany(ev => ev.Value.Output)
+                .ToList();
+            
+            foreach (var output in responses)
             {
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output));
+                await gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output)).WaitAsync();
             }
         }
     }

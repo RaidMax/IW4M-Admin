@@ -958,6 +958,45 @@ namespace Data.Migrations.Postgresql
                     b.ToTable("EFPenalties");
                 });
 
+            modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
+                {
+                    b.Property<int>("InboxMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn);
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("DestinationClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDelivered")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SourceClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("InboxMessageId");
+
+                    b.HasIndex("DestinationClientId");
+
+                    b.HasIndex("ServerId");
+
+                    b.HasIndex("SourceClientId");
+
+                    b.ToTable("InboxMessages");
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")
@@ -1304,6 +1343,25 @@ namespace Data.Migrations.Postgresql
                         .WithMany("AdministeredPenalties")
                         .HasForeignKey("PunisherId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "DestinationClient")
+                        .WithMany()
+                        .HasForeignKey("DestinationClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
+
+                    b.HasOne("Data.Models.Client.EFClient", "SourceClient")
+                        .WithMany()
+                        .HasForeignKey("SourceClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

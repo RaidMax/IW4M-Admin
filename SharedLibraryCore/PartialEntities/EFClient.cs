@@ -529,7 +529,7 @@ namespace SharedLibraryCore.Database.Models
             using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
                 Utilities.DefaultLogger.LogInformation("Client {client} is joining the game from {source}", ToString(), ipAddress.HasValue ? "Status" : "Log");
-
+                
                 if (ipAddress != null)
                 {
                     IPAddress = ipAddress;

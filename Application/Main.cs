@@ -271,6 +271,7 @@ namespace IW4MAdmin.Application
 
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
+                .Concat(typeof(Program).Assembly.GetTypes().Where(type => type.Namespace == "IW4MAdmin.Application.Commands"))
                 .Where(_command => _command.BaseType == typeof(Command)))
             {
                 defaultLogger.LogDebug("Registered native command type {name}", commandType.Name);

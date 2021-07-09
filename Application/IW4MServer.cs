@@ -22,6 +22,7 @@ using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 using Data.Models;
 using Data.Models.Server;
+using Microsoft.EntityFrameworkCore;
 using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
@@ -341,6 +342,25 @@ namespace IW4MAdmin
                             E.Origin.Tag = clientTag.LinkedMeta.Value;
                         }
 
+                        try
+                        {
+                            var factory = _serviceProvider.GetRequiredService<IDatabaseContextFactory>();
+                            await using var context = factory.CreateContext();
+
+                            var messageCount = await context.InboxMessages
+                                .CountAsync(msg => msg.DestinationClientId == E.Origin.ClientId && !msg.IsDelivered);
+      
+                            if (messageCount > 0)
+                            {
+                                E.Origin.Tell(_translationLookup["SERVER_JOIN_OFFLINE_MESSAGES"]);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ServerLogger.LogError(ex, "Could not get offline message count for {Client}", E.Origin.ToString());
+                            throw;
+                        }
+                        
                         await E.Origin.OnJoin(E.Origin.IPAddress);
                     }
                 }

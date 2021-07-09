@@ -639,6 +639,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     TimeSinceLastAttack = long.Parse(lastAttackTime),
                     GameName = (int) attacker.CurrentServer.GameName
                 };
+                
+                hit.SetAdditionalProperty("HitLocationReference", hitLoc);
 
                 if (hit.HitLoc == (int) IW4Info.HitLocation.shield)
                 {

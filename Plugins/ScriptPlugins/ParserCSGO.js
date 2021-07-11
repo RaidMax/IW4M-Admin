@@ -83,7 +83,7 @@ const plugin = {
         eventParser.Configuration.Kill.AddMapping(2, 7);
         eventParser.Configuration.Kill.AddMapping(8, 8);
         eventParser.Configuration.Kill.AddMapping(9, 9);
-        eventParser.Configuration.Kill.AddMapping(11, 11);
+        eventParser.Configuration.Kill.AddMapping(12, 10);
         
         eventParser.Configuration.Time.Pattern = '^L [01]\\d/[0-3]\\d/\\d+ - [0-2]\\d:[0-5]\\d:[0-5]\\d:';
 

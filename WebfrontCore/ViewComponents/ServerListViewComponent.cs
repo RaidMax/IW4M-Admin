@@ -12,7 +12,7 @@ namespace WebfrontCore.ViewComponents
     {
         public IViewComponentResult Invoke(Game? game)
         {
-            var servers = Program.Manager.GetServers().Where(_server => !game.HasValue ? true : _server.GameName == game);
+            var servers = Program.Manager.GetServers().Where(_server => !game.HasValue || _server.GameName == game);
 
             var serverInfo = servers.Select(s => new ServerInfo()
             {
@@ -36,8 +36,8 @@ namespace WebfrontCore.ViewComponents
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
                 Online = !s.Throttled,
-                IPAddress = $"{(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP)}:{s.Port}",
-                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(IPAddress.Parse(s.IP).IsInternal() ? Program.Manager.ExternalIPAddress : s.IP, s.Port)
+                IPAddress = $"{(s.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : s.IP)}:{s.Port}",
+                ConnectProtocolUrl = s.EventParser.URLProtocolFormat.FormatExt(s.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : s.IP, s.Port)
             }).ToList();
             return View("_List", serverInfo);
         }

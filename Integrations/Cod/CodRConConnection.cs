@@ -32,12 +32,12 @@ namespace Integrations.Cod
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
 
-        public CodRConConnection(string ipAddress, int port, string password, ILogger<CodRConConnection> log, Encoding gameEncoding)
+        public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log, Encoding gameEncoding)
         {
-            Endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
-            _gameEncoding = gameEncoding;
             RConPassword = password;
+            _gameEncoding = gameEncoding;
             _log = log;
+            Endpoint = ipEndpoint;
         }
 
         public void SetConfiguration(IRConParser parser)

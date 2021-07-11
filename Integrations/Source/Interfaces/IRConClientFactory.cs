@@ -1,9 +1,10 @@
-﻿using RconSharp;
+﻿using System.Net;
+using RconSharp;
 
 namespace Integrations.Source.Interfaces
 {
     public interface IRConClientFactory
     {
-        RconClient CreateClient(string hostname, int port);
+        RconClient CreateClient(IPEndPoint ipEndPoint);
     }
 }

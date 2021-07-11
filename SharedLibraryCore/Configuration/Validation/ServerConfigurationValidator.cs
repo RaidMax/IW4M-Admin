@@ -10,10 +10,6 @@ namespace SharedLibraryCore.Configuration.Validation
     {
         public ServerConfigurationValidator()
         {
-            RuleFor(_server => _server.IPAddress)
-                .NotEmpty()
-                .Must(_address => IPAddress.TryParse(_address, out _));
-
             RuleFor(_server => _server.Port)
                 .InclusiveBetween(1, ushort.MaxValue);
 

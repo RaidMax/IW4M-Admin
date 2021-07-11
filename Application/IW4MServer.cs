@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1059,6 +1060,16 @@ namespace IW4MAdmin
 
         public async Task Initialize()
         {
+            try
+            {
+                ResolvedIpEndPoint = new IPEndPoint((await Dns.GetHostAddressesAsync(IP)).First(), Port);
+            }
+            catch (Exception ex)
+            {
+                ServerLogger.LogWarning(ex, "Could not resolve hostname or IP for RCon connection {IP}:{Port}", IP, Port);
+                ResolvedIpEndPoint = new IPEndPoint(IPAddress.Parse(IP), Port);
+            }
+            
             RconParser = Manager.AdditionalRConParsers
                 .FirstOrDefault(_parser => _parser.Version == ServerConfig.RConParserVersion);
 
@@ -1068,7 +1079,7 @@ namespace IW4MAdmin
             RconParser ??= Manager.AdditionalRConParsers[0];
             EventParser ??= Manager.AdditionalEventParsers[0];
 
-            RemoteConnection = RConConnectionFactory.CreateConnection(IP, Port, Password, RconParser.RConEngine);
+            RemoteConnection = RConConnectionFactory.CreateConnection(ResolvedIpEndPoint, Password, RconParser.RConEngine);
             RemoteConnection.SetConfiguration(RconParser);
 
             var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version");

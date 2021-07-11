@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -58,7 +59,9 @@ namespace SharedLibraryCore
             InitializeAutoMessages();
         }
 
-        public long EndPoint => Convert.ToInt64($"{IP.Replace(".", "")}{Port}");
+        public long EndPoint => IPAddress.TryParse(IP, out _) 
+            ? Convert.ToInt64($"{IP.Replace(".", "")}{Port}") 
+            : $"{IP.Replace(".", "")}{Port}".GetStableHashCode();
 
         /// <summary>
         /// Returns list of all current players
@@ -303,7 +306,7 @@ namespace SharedLibraryCore
         {
             get
             {
-                return Clients.Where(p => p != null/* && !p.IsBot*/).Count();
+                return Clients.Count(p => p != null && !p.IsBot);
             }
         }
         public int MaxClients { get; protected set; }
@@ -320,7 +323,11 @@ namespace SharedLibraryCore
         public SemaphoreSlim EventProcessing { get; private set; }
 
         // Internal
+        /// <summary>
+        /// this is actually the hostname now
+        /// </summary>
         public string IP { get; protected set; }
+        public IPEndPoint ResolvedIpEndPoint { get; protected set; }
         public string Version { get; protected set; }
         public bool IsInitialized { get; set; }
         protected readonly ILogger ServerLogger;

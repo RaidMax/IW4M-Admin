@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,8 +21,7 @@ namespace Integrations.Source
     {
         private readonly ILogger _logger;
         private readonly string _password;
-        private readonly string _hostname;
-        private readonly int _port;
+        private readonly IPEndPoint _ipEndPoint;
         private readonly IRConClientFactory _rconClientFactory;
         private readonly SemaphoreSlim _activeQuery;
 
@@ -34,13 +34,12 @@ namespace Integrations.Source
         private bool _needNewSocket = true;
 
         public SourceRConConnection(ILogger<SourceRConConnection> logger, IRConClientFactory rconClientFactory,
-            string hostname, int port, string password)
+            IPEndPoint ipEndPoint, string password)
         {
             _rconClientFactory = rconClientFactory;
             _password = password;
-            _hostname = hostname;
-            _port = port;
             _logger = logger;
+            _ipEndPoint = ipEndPoint;
             _activeQuery = new SemaphoreSlim(1, 1);
         }
 
@@ -67,12 +66,12 @@ namespace Integrations.Source
                         // ignored
                     }
 
-                    _rconClient = _rconClientFactory.CreateClient(_hostname, _port);
+                    _rconClient = _rconClientFactory.CreateClient(_ipEndPoint);
                     _authenticated = false;
                     _needNewSocket = false;
                 }
 
-                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                using (LogContext.PushProperty("Server", _ipEndPoint.ToString()))
                 {
                     _logger.LogDebug("Connecting to RCon socket");
                 }
@@ -90,7 +89,7 @@ namespace Integrations.Source
                 parameters = parameters.ReplaceUnfriendlyCharacters();
                 parameters = parameters.StripColors();
 
-                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                using (LogContext.PushProperty("Server", _ipEndPoint.ToString()))
                 {
                     _logger.LogDebug("Sending query {Type} with parameters \"{Parameters}\"", type, parameters);
                 }
@@ -98,7 +97,7 @@ namespace Integrations.Source
                 var response = await _rconClient.ExecuteCommandAsync(parameters, multiPacket)
                     .WithTimeout(ConnectionTimeout);
 
-                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                using (LogContext.PushProperty("Server", $"{_ipEndPoint}"))
                 {
                     _logger.LogDebug("Received RCon response {Response}", response);
                 }
@@ -115,7 +114,7 @@ namespace Integrations.Source
 
             catch (SocketException ex)
             {
-                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                using (LogContext.PushProperty("Server", _ipEndPoint.ToString()))
                 {
                     _logger.LogError(ex, "Socket exception encountered while attempting to communicate with server");
                 }
@@ -128,7 +127,7 @@ namespace Integrations.Source
             catch (Exception ex) when (ex.GetType() != typeof(NetworkException) &&
                                        ex.GetType() != typeof(ServerException))
             {
-                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                using (LogContext.PushProperty("Server", _ipEndPoint.ToString()))
                 {
                     _logger.LogError(ex, "Could not execute RCon query {Parameters}", parameters);
                 }
@@ -160,7 +159,7 @@ namespace Integrations.Source
         {
             if (!_authenticated)
             {
-                using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                using (LogContext.PushProperty("Server", _ipEndPoint.ToString()))
                 {
                     _logger.LogDebug("Authenticating to RCon socket");
                 }
@@ -170,7 +169,7 @@ namespace Integrations.Source
 
                 if (!_authenticated)
                 {
-                    using (LogContext.PushProperty("Server", $"{_hostname}:{_port}"))
+                    using (LogContext.PushProperty("Server", _ipEndPoint.ToString()))
                     {
                         _logger.LogError("Could not login to server");
                     }

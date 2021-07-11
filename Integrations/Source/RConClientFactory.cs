@@ -1,13 +1,14 @@
-﻿using Integrations.Source.Interfaces;
+﻿using System.Net;
+using Integrations.Source.Interfaces;
 using RconSharp;
 
 namespace Integrations.Source
 {
     public class RConClientFactory : IRConClientFactory
     {
-        public RconClient CreateClient(string hostname, int port)
+        public RconClient CreateClient(IPEndPoint ipEndPoint)
         {
-            return RconClient.Create(hostname, port);
+            return RconClient.Create(ipEndPoint.Address.ToString(), ipEndPoint.Port);
         }
     }
 }

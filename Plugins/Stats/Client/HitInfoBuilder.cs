@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Stats.Client.Abstractions;
+using Stats.Client.Game;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Stats.Client
@@ -22,7 +23,8 @@ namespace Stats.Client
             _logger = logger;
         }
 
-        public HitInfo Build(string[] log, int entityId, bool isSelf, bool isVictim, Server.Game gameName)
+        public HitInfo Build(string[] log, ParserRegex parserRegex, int entityId, bool isSelf, bool isVictim,
+            Server.Game gameName)
         {
             var eventType = log[(uint) ParserRegex.GroupType.EventType].First();
             HitType hitType;
@@ -51,21 +53,21 @@ namespace Stats.Client
                 IsVictim = isVictim,
                 HitType = hitType,
                 Damage = Math.Min(MaximumDamage,
-                    log.Length > (uint) ParserRegex.GroupType.Damage
-                        ? int.Parse(log[(uint) ParserRegex.GroupType.Damage])
+                    log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.Damage]
+                        ? int.Parse(log[parserRegex.GroupMapping[ParserRegex.GroupType.Damage]])
                         : 0),
-                Location = log.Length > (uint) ParserRegex.GroupType.HitLocation
-                    ? log[(uint) ParserRegex.GroupType.HitLocation]
+                Location = log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.HitLocation]
+                    ? log[parserRegex.GroupMapping[ParserRegex.GroupType.HitLocation]]
                     : "Unknown",
-                Weapon = log.Length == 10 ? _weaponNameParser.Parse(log[8], gameName) 
-                     : _weaponNameParser.Parse(log[(uint) ParserRegex.GroupType.Weapon], gameName),
-                MeansOfDeath = log.Length > (uint) ParserRegex.GroupType.MeansOfDeath
-                    ? log[(uint) ParserRegex.GroupType.MeansOfDeath]
+                Weapon = log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.Weapon]
+                    ? _weaponNameParser.Parse(log[parserRegex.GroupMapping[ParserRegex.GroupType.Weapon]], gameName)
+                    : new WeaponInfo {Name = "Unknown"},
+                MeansOfDeath = log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.MeansOfDeath]
+                    ? log[parserRegex.GroupMapping[ParserRegex.GroupType.MeansOfDeath]]
                     : "Unknown",
                 Game = (Reference.Game) gameName
             };
 
-            //_logger.LogDebug("Generated new hitInfo {@hitInfo}", hitInfo);
             return hitInfo;
         }
     }

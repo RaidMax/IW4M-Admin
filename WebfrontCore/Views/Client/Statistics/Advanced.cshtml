@@ -13,6 +13,7 @@
 
     const int maxItems = 5;
     const string headshotKey = "MOD_HEAD_SHOT";
+    const string headshotKey2 = "headshot";
     const string meleeKey = "MOD_MELEE";
 
     var suicideKeys = new[] {"MOD_SUICIDE", "MOD_FALLING"};
@@ -138,7 +139,7 @@
         : null;
 
     var headShots = allPerServer.Any()
-        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey).Sum(hit => hit.HitCount)
+        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey || hit.MeansOfDeath?.Name == headshotKey2).Sum(hit => hit.HitCount)
         : (int?) null; // want to default to -- in ui instead of 0
 
     var meleeKills = allPerServer.Any()

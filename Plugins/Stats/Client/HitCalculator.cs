@@ -170,9 +170,9 @@ namespace IW4MAdmin.Plugins.Stats.Client
                 return;
             }
 
-            var attackerHitInfo = _hitInfoBuilder.Build(match.Values.Skip(1).ToArray(), gameEvent.Origin.ClientId,
+            var attackerHitInfo = _hitInfoBuilder.Build(match.Values.ToArray(), eventRegex, gameEvent.Origin.ClientId,
                 gameEvent.Origin.ClientId == gameEvent.Target.ClientId, false, gameEvent.Owner.GameName);
-            var victimHitInfo = _hitInfoBuilder.Build(match.Values.Skip(1).ToArray(), gameEvent.Target.ClientId,
+            var victimHitInfo = _hitInfoBuilder.Build(match.Values.ToArray(), eventRegex, gameEvent.Target.ClientId,
                 gameEvent.Origin.ClientId == gameEvent.Target.ClientId, true, gameEvent.Owner.GameName);
 
             foreach (var hitInfo in new[] {attackerHitInfo, victimHitInfo})
@@ -240,8 +240,6 @@ namespace IW4MAdmin.Plugins.Stats.Client
                 }
             }
         }
-
-      
 
         private async Task<IEnumerable<EFClientHitStatistic>> RunTasksForHitInfo(HitInfo hitInfo, long? serverId)
         {

@@ -3,7 +3,7 @@ let eventParser;
 
 const plugin = {
     author: 'RaidMax',
-    version: 0.2,
+    version: 0.3,
     name: 'CS:GO Parser',
     engine: 'Source',
     isParser: true,
@@ -66,14 +66,14 @@ const plugin = {
         rconParser.Configuration.CommandPrefixes.Say            = 'say {0}';
         rconParser.Configuration.CommandPrefixes.Tell           = 'say [{0}] {1}'; // no tell exists in vanilla
         
-        eventParser.Configuration.Say.Pattern = '^"(.+)<(\\d+)><(.+)><(.*?)>" say "(.*)"$';
+        eventParser.Configuration.Say.Pattern = '^"(.+)<(\\d+)><(.+)><(.*?)>" (?:say|say_team) "(.*)"$';
         eventParser.Configuration.Say.AddMapping(5, 1);
         eventParser.Configuration.Say.AddMapping(3, 2);
         eventParser.Configuration.Say.AddMapping(1, 3);
         eventParser.Configuration.Say.AddMapping(7, 4);
         eventParser.Configuration.Say.AddMapping(13, 5);
         
-        eventParser.Configuration.Kill.Pattern = '"(.+)<(\\d+)><(.+)><(.*)>" \\[-?\\d+ -?\\d+ -?\\d+\\] killed "(.+)<(\\d+)><(.+)><(.*)>" \\[-?\\d+ -?\\d+ -?\\d+\\] with "(\\S*)"(.*)$';
+        eventParser.Configuration.Kill.Pattern = '^"(.+)<(\\d+)><(.+)><(.*)>" \\[-?\\d+ -?\\d+ -?\\d+\\] killed "(.+)<(\\d+)><(.+)><(.*)>" \\[-?\\d+ -?\\d+ -?\\d+\\] with "(\\S*)" *(?:\\((\\w+)((?: ).+)?\\))?$';
         eventParser.Configuration.Kill.AddMapping(5, 1);
         eventParser.Configuration.Kill.AddMapping(3, 2);
         eventParser.Configuration.Kill.AddMapping(1, 3);
@@ -83,6 +83,7 @@ const plugin = {
         eventParser.Configuration.Kill.AddMapping(2, 7);
         eventParser.Configuration.Kill.AddMapping(8, 8);
         eventParser.Configuration.Kill.AddMapping(9, 9);
+        eventParser.Configuration.Kill.AddMapping(11, 11);
         
         eventParser.Configuration.Time.Pattern = '^L [01]\\d/[0-3]\\d/\\d+ - [0-2]\\d:[0-5]\\d:[0-5]\\d:';
 

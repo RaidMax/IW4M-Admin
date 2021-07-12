@@ -113,6 +113,7 @@ namespace WebfrontCore
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>, AdvancedClientStatsResourceQueryHelper>();
             services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
             // todo: this needs to be handled more gracefully
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<DefaultSettings>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ILoggerFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetService<IDatabaseContextFactory>());

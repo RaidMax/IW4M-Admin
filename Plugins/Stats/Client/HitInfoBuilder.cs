@@ -47,15 +47,25 @@ namespace Stats.Client
                 hitType = eventType == 'D' ? HitType.Damage : HitType.Kill;
             }
 
+            var damage = 0;
+            try
+            {
+                damage = Math.Min(MaximumDamage,
+                    log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.Damage]
+                        ? int.Parse(log[parserRegex.GroupMapping[ParserRegex.GroupType.Damage]])
+                        : 0);
+            }
+            catch
+            {
+                // ignored
+            }
+
             var hitInfo = new HitInfo()
             {
                 EntityId = entityId,
                 IsVictim = isVictim,
                 HitType = hitType,
-                Damage = Math.Min(MaximumDamage,
-                    log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.Damage]
-                        ? int.Parse(log[parserRegex.GroupMapping[ParserRegex.GroupType.Damage]])
-                        : 0),
+                Damage = damage,
                 Location = log.Length > parserRegex.GroupMapping[ParserRegex.GroupType.HitLocation]
                     ? log[parserRegex.GroupMapping[ParserRegex.GroupType.HitLocation]]
                     : "Unknown",

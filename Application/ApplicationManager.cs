@@ -259,7 +259,11 @@ namespace IW4MAdmin.Application
                     {
                         try
                         {
-                            await server.ProcessUpdatesAsync(_tokenSource.Token).WithWaitCancellation(runningUpdateTasks[server.EndPoint].tokenSource.Token);
+                            if (runningUpdateTasks.ContainsKey(server.EndPoint))
+                            {
+                                await server.ProcessUpdatesAsync(_tokenSource.Token)
+                                    .WithWaitCancellation(runningUpdateTasks[server.EndPoint].tokenSource.Token);
+                            }
                         }
 
                         catch (Exception e)

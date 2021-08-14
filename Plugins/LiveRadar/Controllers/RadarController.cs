@@ -5,6 +5,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace LiveRadar.Web.Controllers
 {
@@ -48,16 +49,22 @@ namespace LiveRadar.Web.Controllers
         public IActionResult Map(long? serverId = null)
         {
             var server = serverId == null ? _manager.GetServers().FirstOrDefault() : _manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
+            
+            if (server == null)
+            {
+                return NotFound();
+            }
+            
             var map = _config.Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
 
-            if (map != null)
+            if (map == null)
             {
-                map.Alias = server.CurrentMap.Alias;
-                return Json(map);
+                // occurs if we don't recognize the map
+                return StatusCode(StatusCodes.Status422UnprocessableEntity);
             }
-
-            // occurs if we don't recognize the map
-            return StatusCode(500);
+            
+            map.Alias = server.CurrentMap.Alias;
+            return Json(map);
         }
 
         [HttpGet]

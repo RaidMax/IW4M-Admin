@@ -15,6 +15,7 @@ using Serilog.Context;
 using static Data.Models.Client.EFClient;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Data.Models;
+using SharedLibraryCore.Configuration;
 
 namespace SharedLibraryCore.Services
 {
@@ -22,15 +23,23 @@ namespace SharedLibraryCore.Services
     {
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ILogger _logger;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public ClientService(ILogger<ClientService> logger, IDatabaseContextFactory databaseContextFactory)
+        public ClientService(ILogger<ClientService> logger, IDatabaseContextFactory databaseContextFactory, 
+            ApplicationConfiguration appConfig)
         {
             _contextFactory = databaseContextFactory;
             _logger = logger;
+            _appConfig = appConfig;
         }
 
         public async Task<EFClient> Create(EFClient entity)
         {
+            if (!_appConfig.EnableImplicitAccountLinking)
+            {
+                return await HandleNewCreate(entity);
+            }
+            
             await using var context = _contextFactory.CreateContext(true);
             using (LogContext.PushProperty("Server", entity?.CurrentServer?.ToString()))
             {
@@ -116,6 +125,55 @@ namespace SharedLibraryCore.Services
                 context.Clients.Add(client);
                 await context.SaveChangesAsync();
 
+                return client;
+            }
+        }
+
+        private async Task<EFClient> HandleNewCreate(EFClient entity)
+        {
+            await using var context = _contextFactory.CreateContext(true);
+            using (LogContext.PushProperty("Server", entity.CurrentServer?.ToString()))
+            {
+                var existingAlias = await context.Aliases
+                    .Select(alias => new {alias.AliasId, alias.LinkId, alias.IPAddress, alias.Name})
+                    .Where(alias => alias.IPAddress != null && alias.IPAddress == entity.IPAddress && 
+                                    alias.Name == entity.Name)
+                    .FirstOrDefaultAsync();
+
+                var client = new EFClient
+                {
+                    Level = Permission.User,
+                    FirstConnection = DateTime.UtcNow,
+                    LastConnection = DateTime.UtcNow,
+                    NetworkId = entity.NetworkId
+                };
+                
+                if (existingAlias == null)
+                {
+                    _logger.LogDebug("[{Method}] creating new Link and Alias for {Entity}", nameof(HandleNewCreate), entity.ToString());
+                    var link = new EFAliasLink();
+                    var alias = new EFAlias()
+                    {
+                        Name = entity.Name,
+                        SearchableName = entity.Name.StripColors().ToLower(),
+                        DateAdded = DateTime.UtcNow,
+                        IPAddress = entity.IPAddress,
+                        Link = link
+                    };
+                    client.CurrentAlias = alias;
+                    client.AliasLink = link;
+                }
+
+                else
+                {
+                    _logger.LogDebug("[{Method}] associating new GUID {Guid} with existing alias id {aliasId} for {Entity}", 
+                        nameof(HandleNewCreate), entity.GuidString, existingAlias.AliasId, entity.ToString());
+                    client.CurrentAliasId = existingAlias.AliasId;
+                    client.AliasLinkId = existingAlias.LinkId;
+                }
+                
+                context.Clients.Add(client);
+                await context.SaveChangesAsync();
                 return client;
             }
         }
@@ -255,6 +313,48 @@ namespace SharedLibraryCore.Services
                     await context.SaveChangesAsync();
                 }
             }
+        }
+
+        private async Task UpdateAliasNew(string originalName, int? ip, Data.Models.Client.EFClient entity,
+            DatabaseContext context)
+        {
+            var name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH);
+    
+            var existingAliases = await context.Aliases
+                .Where(alias => alias.Name == name && alias.LinkId == entity.AliasLinkId)
+                .ToListAsync();
+            var defaultAlias = existingAliases.FirstOrDefault(alias => alias.IPAddress == null);
+            var existingExactAlias =
+                existingAliases.FirstOrDefault(alias => alias.IPAddress != null && alias.IPAddress == ip);
+
+            if (defaultAlias != null && existingExactAlias == null)
+            {
+                defaultAlias.IPAddress = ip;
+                entity.CurrentAlias = defaultAlias;
+                await context.SaveChangesAsync();
+                return;
+            }
+
+            if (existingExactAlias != null)
+            {
+                _logger.LogDebug("[{Method}] client {Client} already has an existing exact alias, so we are not updating", nameof(UpdateAliasNew), entity.ToString());
+                return;
+            }
+            
+            _logger.LogDebug("[{Method}] {Entity} is using a new alias", nameof(UpdateAliasNew), entity.ToString());
+
+            var newAlias = new EFAlias()
+            {
+                DateAdded = DateTime.UtcNow,
+                IPAddress = ip,
+                LinkId = entity.AliasLinkId,
+                Name = name,
+                SearchableName = name.StripColors().ToLower(),
+                Active = true,
+            };
+
+            entity.CurrentAlias = newAlias;
+            await context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -421,7 +521,15 @@ namespace SharedLibraryCore.Services
                 .Include(c => c.CurrentAlias)
                 .First(e => e.ClientId == temporalClient.ClientId);
 
-            await UpdateAlias(temporalClient.Name, temporalClient.IPAddress, entity, context);
+            if (_appConfig.EnableImplicitAccountLinking)
+            {
+                await UpdateAlias(temporalClient.Name, temporalClient.IPAddress, entity, context);
+            }
+
+            else
+            {
+                await UpdateAliasNew(temporalClient.Name, temporalClient.IPAddress, entity, context);
+            }
 
             temporalClient.CurrentAlias = entity.CurrentAlias;
             temporalClient.CurrentAliasId = entity.CurrentAliasId;

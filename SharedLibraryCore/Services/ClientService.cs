@@ -321,7 +321,8 @@ namespace SharedLibraryCore.Services
             var name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH);
     
             var existingAliases = await context.Aliases
-                .Where(alias => alias.Name == name && alias.LinkId == entity.AliasLinkId)
+                .Where(alias => alias.Name == name && alias.LinkId == entity.AliasLinkId || 
+                                alias.Name == name && alias.IPAddress != null && alias.IPAddress == ip)
                 .ToListAsync();
             var defaultAlias = existingAliases.FirstOrDefault(alias => alias.IPAddress == null);
             var existingExactAlias =

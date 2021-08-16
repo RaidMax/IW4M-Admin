@@ -524,7 +524,7 @@ namespace SharedLibraryCore.Database.Models
             }
         }
 
-        public async Task OnJoin(int? ipAddress)
+        public async Task OnJoin(int? ipAddress, bool enableImplicitLinking)
         {
             using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
@@ -537,7 +537,7 @@ namespace SharedLibraryCore.Database.Models
                     await CurrentServer.Manager.GetClientService().UpdateAlias(this);
                     await CurrentServer.Manager.GetClientService().Update(this);
 
-                    bool canConnect = await CanConnect(ipAddress);
+                    var canConnect = await CanConnect(ipAddress, enableImplicitLinking);
 
                     if (!canConnect)
                     {
@@ -569,7 +569,7 @@ namespace SharedLibraryCore.Database.Models
             }
         }
 
-        public async Task<bool> CanConnect(int? ipAddress)
+        public async Task<bool> CanConnect(int? ipAddress, bool enableImplicitLinking)
         {
             using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
@@ -594,18 +594,27 @@ namespace SharedLibraryCore.Database.Models
                 // we want to kick them if any account is banned
                 if (banPenalty != null)
                 {
-                    if (Level != Permission.Banned)
+                    if (enableImplicitLinking)
                     {
-                        Utilities.DefaultLogger.LogInformation(
-                            "Client {client} is banned, but using a new GUID, we we're updating their level and kicking them",
-                            ToString());
-                        await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
-                            CurrentServer.Manager.CancellationToken);
+                        if (Level != Permission.Banned)
+                        {
+                            Utilities.DefaultLogger.LogInformation(
+                                "Client {client} is banned, but using a new GUID, we we're updating their level and kicking them",
+                                ToString());
+                            await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
+                                CurrentServer.Manager.CancellationToken);
+                        }
+
+                        Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
+                        Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
+                        return false;
                     }
 
-                    Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
-                    Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
-                    return false;
+                    if (Level != Permission.Banned)
+                    {
+                        Ban(banPenalty.Offense, autoKickClient, true);
+                        return false;
+                    }
                 }
 
                 // we want to kick them if any account is tempbanned

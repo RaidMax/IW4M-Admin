@@ -362,7 +362,7 @@ namespace IW4MAdmin
                             throw;
                         }
                         
-                        await E.Origin.OnJoin(E.Origin.IPAddress);
+                        await E.Origin.OnJoin(E.Origin.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
                     }
                 }
 
@@ -738,7 +738,7 @@ namespace IW4MAdmin
             {
                 try
                 {
-                    await client.OnJoin(origin.IPAddress);
+                    await client.OnJoin(origin.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
                 }
 
                 catch (Exception e)
@@ -754,7 +754,7 @@ namespace IW4MAdmin
                 client.Level == Permission.Banned)
             {
                 ServerLogger.LogWarning("{client} state is Unknown (probably kicked), but they are still connected. trying to kick again...", origin.ToString());
-                await client.CanConnect(client.IPAddress);
+                await client.CanConnect(client.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
             }
         }
 

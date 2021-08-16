@@ -332,13 +332,16 @@ namespace SharedLibraryCore.Services
             {
                 defaultAlias.IPAddress = ip;
                 entity.CurrentAlias = defaultAlias;
+                entity.CurrentAliasId = defaultAlias.AliasId;
                 await context.SaveChangesAsync();
                 return;
             }
 
             if (existingExactAlias != null)
             {
-                _logger.LogDebug("[{Method}] client {Client} already has an existing exact alias, so we are not updating", nameof(UpdateAliasNew), entity.ToString());
+                entity.CurrentAlias = existingExactAlias;
+                entity.CurrentAliasId = existingExactAlias.AliasId;
+                _logger.LogDebug("[{Method}] client {Client} already has an existing exact alias, so we are not making changes", nameof(UpdateAliasNew), entity.ToString());
                 return;
             }
             
@@ -356,6 +359,7 @@ namespace SharedLibraryCore.Services
 
             entity.CurrentAlias = newAlias;
             await context.SaveChangesAsync();
+            entity.CurrentAliasId = newAlias.AliasId;
         }
 
         /// <summary>

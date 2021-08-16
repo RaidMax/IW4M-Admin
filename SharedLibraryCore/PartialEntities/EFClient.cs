@@ -604,10 +604,6 @@ namespace SharedLibraryCore.Database.Models
                             await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
                                 CurrentServer.Manager.CancellationToken);
                         }
-
-                        Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
-                        Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
-                        return false;
                     }
 
                     if (Level != Permission.Banned)
@@ -615,6 +611,10 @@ namespace SharedLibraryCore.Database.Models
                         Ban(banPenalty.Offense, autoKickClient, true);
                         return false;
                     }
+                    
+                    Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
+                    Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
+                    return false;
                 }
 
                 // we want to kick them if any account is tempbanned

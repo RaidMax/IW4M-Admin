@@ -594,22 +594,13 @@ namespace SharedLibraryCore.Database.Models
                 // we want to kick them if any account is banned
                 if (banPenalty != null)
                 {
-                    if (enableImplicitLinking)
-                    {
-                        if (Level != Permission.Banned)
-                        {
-                            Utilities.DefaultLogger.LogInformation(
-                                "Client {client} is banned, but using a new GUID, we we're updating their level and kicking them",
-                                ToString());
-                            await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
-                                CurrentServer.Manager.CancellationToken);
-                        }
-                    }
-
                     if (Level != Permission.Banned)
                     {
-                        Ban(banPenalty.Offense, autoKickClient, true);
-                        return false;
+                        Utilities.DefaultLogger.LogInformation(
+                            "Client {client} has a ban penalty, but they're using a new GUID, we we're updating their level and kicking them",
+                            ToString());
+                        await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
+                            CurrentServer.Manager.CancellationToken);
                     }
                     
                     Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());

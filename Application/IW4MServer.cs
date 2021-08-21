@@ -462,7 +462,7 @@ namespace IW4MAdmin
                         Link = E.Target.AliasLink
                     };
 
-                    var addedPenalty = await Manager.GetPenaltyService().Create(newPenalty);
+                    await Manager.GetPenaltyService().Create(newPenalty);
                     E.Target.SetLevel(Permission.Flagged, E.Origin);
                 }
 

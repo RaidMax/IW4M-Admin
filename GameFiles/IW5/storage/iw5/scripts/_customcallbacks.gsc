@@ -4,24 +4,7 @@
 
 init()
 {
-	level.clientid = 0;
-	level thread onplayerconnect();
-    level thread IW4MA_init();
-}
-
-onplayerconnect()
-{
-	for ( ;; )
-	{
-		level waittill( "connecting", player );
-		player.clientid = level.clientid;
-		level.clientid++;
-	}
-}
-
-
-IW4MA_init()
-{
+	Print("IW4MADMIN Anti-Cheat Loaded");
 	SetDvarIfUninitialized( "sv_customcallbacks", true );
 	SetDvarIfUninitialized( "sv_framewaittime", 0.05 );
 	SetDvarIfUninitialized( "sv_additionalwaittime", 0.1 );
@@ -30,7 +13,7 @@ IW4MA_init()
 	SetDvarIfUninitialized( "sv_printradar_updateinterval", 500 );
 	SetDvarIfUninitialized( "sv_iw4madmin_url", "http://127.0.0.1:1624" );
 	
-	level thread IW4MA_onPlayerConnect();
+	level thread onPlayerConnect();
 	if (getDvarInt("sv_printradarupdates") == 1)
 	{
 		level thread runRadarUpdates();
@@ -42,27 +25,18 @@ IW4MA_init()
 	level.callbackPlayerDisconnect = ::Callback_PlayerDisconnect;
 }
 
-//Does not exist in T6
-SetDvarIfUninitialized(dvar, val)
-{
-	curval = getDvar(dvar);
-	if (curval == "")
-		SetDvar(dvar,val);
-}
-
-IW4MA_onPlayerConnect( player )
+onPlayerConnect( player )
 {
 	for( ;; )
 	{
 		level waittill( "connected", player );	
+		player setClientDvar("cl_demo_enabled", 1);
 		player thread waitForFrameThread();
-		//player thread waitForAttack();
+		player thread waitForAttack();
 	}
 }
 
-
-//Does not work in T6
-/*waitForAttack()
+waitForAttack()
 {
 	self endon( "disconnect" );
 	
@@ -75,7 +49,7 @@ IW4MA_onPlayerConnect( player )
 		
 		self.lastAttackTime = getTime();
 	}
-}*/
+}
 
 runRadarUpdates()
 {
@@ -209,7 +183,7 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 		i++;
 	}
 
-	lastAttack = 100;//int(getTime()) - int(self.lastAttackTime);
+	lastAttack = int(getTime()) - int(self.lastAttackTime);
 	isAlive = isAlive(self);
 
 	logPrint(logString + ";" + anglesStr + ";" + isAlive + ";" + lastAttack + "\n" ); 
@@ -241,43 +215,35 @@ Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 	}
 	
 	location = victim GetTagOrigin( hitLocationToBone( sHitLoc ) );
-	isKillstreakKill = false;
-	if(!isPlayer(attacker))
-	{
-		isKillstreakKill = true;
-	}
-	if(maps/mp/killstreaks/_killstreaks::iskillstreakweapon(sWeapon))
-	{
-		isKillstreakKill = true;
-	}
+	isKillstreakKill = !isPlayer( attacker ) || isKillstreakWeapon( sWeapon );
 
 	logLine = "Script" + type + ";" + _attacker.guid + ";" + victim.guid + ";" + _attacker GetTagOrigin("tag_eye") + ";" + location + ";" + iDamage + ";" + sWeapon + ";" + sHitLoc + ";" + sMeansOfDeath + ";" + _attacker getPlayerAngles() + ";" + int(gettime()) + ";" + isKillstreakKill + ";" +  _attacker playerADS() + ";0;0";
 	attacker thread waitForAdditionalAngles( logLine, 2, 2 );
 }
 
-Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime, boneIndex )
+Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime )
 {
-	if ( level.teamBased && isDefined( attacker ) && ( self != attacker ) && isDefined( attacker.team ) && ( self.pers[ "team" ] == attacker.team ) )
-	{
-		return;
-	}
-		
 	if ( self.health - iDamage > 0 )
 	{
-		self Process_Hit( "Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
+		isFriendlyFire = level.teamBased && isDefined( attacker ) && ( self != attacker ) && isDefined( attacker.team ) && ( self.pers[ "team" ] == attacker.team );
+		
+		if ( !isFriendlyFire )
+		{
+			self Process_Hit( "Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
+		}
 	}
 
-	self [[maps/mp/gametypes/_globallogic_player::callback_playerdamage]]( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime, boneIndex );
+	self maps\mp\gametypes\_damage::Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime );
 }
 
-Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
+Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration )
 {
 	Process_Hit( "Kill", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
-	self [[maps/mp/gametypes/_globallogic_player::callback_playerkilled]]( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
+	self maps\mp\gametypes\_damage::Callback_PlayerKilled( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }
 
 Callback_PlayerDisconnect()
 {
 	level notify( "disconnected", self );
-	self [[maps/mp/gametypes/_globallogic_player::callback_playerdisconnect]]();
+	self maps\mp\gametypes\_playerlogic::Callback_PlayerDisconnect();
 }

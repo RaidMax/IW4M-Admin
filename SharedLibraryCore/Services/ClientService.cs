@@ -394,9 +394,19 @@ namespace SharedLibraryCore.Services
                     var iqMatchingClients = ctx.Clients
                         .Where(_client => _client.AliasLinkId == entity.AliasLinkId);
 
+                    var iqLinkClients = new List<Data.Models.Client.EFClient>().AsQueryable();
+                    if (!_appConfig.EnableImplicitAccountLinking)
+                    {
+                        var linkIds = await ctx.Aliases.Where(alias =>
+                                alias.IPAddress != null && alias.IPAddress == temporalClient.IPAddress)
+                            .Select(alias => alias.LinkId)
+                            .ToListAsync();
+                        iqLinkClients = ctx.Clients.Where(client => linkIds.Contains(client.AliasLinkId));
+                    }
+
                     // this updates the level for all the clients with the same LinkId
                     // only if their new level is flagged or banned
-                    await iqMatchingClients.ForEachAsync(_client =>
+                    await iqMatchingClients.Union(iqLinkClients).ForEachAsync(_client =>
                     {
                         _client.Level = newPermission;
                         _logger.LogInformation("Updated linked {clientId} to {newPermission}", _client.ClientId,

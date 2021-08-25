@@ -178,6 +178,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     KDR = s.Sum(c => (c.Kills / (double) (c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) /
                           s.Sum(c => c.TimePlayed),
                     TotalTimePlayed = s.Sum(c => c.TimePlayed),
+                    UpdatedAt = s.Max(c => c.UpdatedAt)
                 })
                 .ToListAsync();
 
@@ -190,9 +191,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 Deaths = s.Deaths,
                 Kills = s.Kills,
                 KDR = Math.Round(s.KDR, 2),
-                LastSeen = (DateTime.UtcNow - rankingsDict[s.ClientId].First().LastConnection)
+                LastSeen = (DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection))
                     .HumanizeForCurrentCulture(1, TimeUnit.Week, TimeUnit.Second, ",", false),
-                LastSeenValue = (DateTime.UtcNow - rankingsDict[s.ClientId].First().LastConnection),
+                LastSeenValue = DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection),
                 Name = rankingsDict[s.ClientId].First().Name,
                 Performance = Math.Round(rankingsDict[s.ClientId].Last().PerformanceMetric ?? 0, 2),
                 RatingChange = (rankingsDict[s.ClientId].First().Ranking -

@@ -1,15 +1,11 @@
-﻿using System;
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Data.Abstractions;
-using Data.Models.Client;
-using Data.Models.Client.Stats;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -20,33 +16,25 @@ namespace WebfrontCore.Controllers
     {
         private readonly ITranslationLookup _translationLookup;
         private readonly ILogger _logger;
-        private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
-        private const string ServerStatKey = nameof(ServerStatKey);
+        private readonly IServerDataViewer _serverDataViewer;
 
         public HomeController(ILogger<HomeController> logger, IManager manager, ITranslationLookup translationLookup,
-            IDataValueCache<EFClient, (int, int)> serverStatsCache) : base(manager)
+            IServerDataViewer serverDataViewer) : base(manager)
         {
             _logger = logger;
             _translationLookup = translationLookup;
-            _serverStatsCache = serverStatsCache;
-            
-            _serverStatsCache.SetCacheItem(async set =>
-            {
-                var count = await set.CountAsync();
-                var startOfPeriod = DateTime.UtcNow.AddHours(-24);
-                var recentCount = await set.CountAsync(client => client.LastConnection >= startOfPeriod);
-                return (count, recentCount);
-            }, ServerStatKey);
+            _serverDataViewer = serverDataViewer;
         }
 
-        public async Task<IActionResult> Index(Game? game = null)
+        public async Task<IActionResult> Index(Game? game = null, CancellationToken cancellationToken = default)
         {
             ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_HOME"];
             ViewBag.Title = Localization["WEBFRONT_HOME_TITLE"];
             ViewBag.Keywords = Localization["WEBFRONT_KEWORDS_HOME"];
 
             var servers = Manager.GetServers().Where(_server => !game.HasValue || _server.GameName == game);
-            var (count, recentCount) = await _serverStatsCache.GetCacheItem(ServerStatKey);
+            var maxConcurrentClients = await _serverDataViewer.MaxConcurrentClientsAsync(token: cancellationToken);
+            var (count, recentCount) = await _serverDataViewer.ClientCountsAsync(token: cancellationToken);
 
             var model = new IW4MAdminInfo()
             {
@@ -54,6 +42,7 @@ namespace WebfrontCore.Controllers
                 TotalOccupiedClientSlots = servers.SelectMany(_server => _server.GetClientsAsList()).Count(),
                 TotalClientCount = count,
                 RecentClientCount = recentCount,
+                MaxConcurrentClients = maxConcurrentClients,
                 Game = game,
                 ActiveServerGames = Manager.GetServers().Select(_server => _server.GameName).Distinct().ToArray()
             };

@@ -792,8 +792,10 @@ namespace IW4MAdmin
             };
         }
         
-        private async Task<long> GetIdForServer(Server server)
+        public override async Task<long> GetIdForServer(Server server = null)
         {
+            server ??= this;
+            
             if ($"{server.IP}:{server.Port.ToString()}" == "66.150.121.184:28965")
             {
                 return 886229536;

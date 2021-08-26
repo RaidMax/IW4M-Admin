@@ -36,12 +36,13 @@ namespace Data.Context
         public DbSet<EFWeapon> Weapons { get; set; }
         public DbSet<EFWeaponAttachment> WeaponAttachments { get; set; }
         public DbSet<EFMap> Maps { get; set; }
-
+        
         #endregion
 
         #region MISC
 
         public DbSet<EFInboxMessage> InboxMessages { get; set; }
+        public DbSet<EFServerSnapshot> ServerSnapshots { get;set; }
 
         #endregion
 
@@ -133,6 +134,7 @@ namespace Data.Context
             modelBuilder.Entity<EFAlias>().ToTable("EFAlias");
             modelBuilder.Entity<EFAliasLink>().ToTable("EFAliasLinks");
             modelBuilder.Entity<EFPenalty>().ToTable("EFPenalties");
+            modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
 
             Models.Configuration.StatsModelConfiguration.Configure(modelBuilder);
 

@@ -284,6 +284,8 @@ namespace SharedLibraryCore
             }
         }
 
+        public abstract Task<long> GetIdForServer(Server server = null);
+
         // Objects
         public IManager Manager { get; protected set; }
         [Obsolete]

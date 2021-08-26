@@ -185,6 +185,8 @@ namespace IW4MAdmin.Application
                 ? WebfrontCore.Program.Init(ServerManager, serviceProvider, services, ServerManager.CancellationToken)
                 : Task.CompletedTask;
 
+            var collectionService = serviceProvider.GetRequiredService<IServerDataCollector>();
+
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
             // because we can't exit early from waiting on console input, and it prevents us from restarting
             var inputThread = new Thread(async () => await ReadConsoleInput(logger));
@@ -195,7 +197,8 @@ namespace IW4MAdmin.Application
                 ServerManager.Start(),
                 webfrontTask,
                 serviceProvider.GetRequiredService<IMasterCommunication>()
-                    .RunUploadStatus(ServerManager.CancellationToken)
+                    .RunUploadStatus(ServerManager.CancellationToken),
+                collectionService.BeginCollectionAsync(cancellationToken: ServerManager.CancellationToken)
             };
 
             logger.LogDebug("Starting webfront and input tasks");
@@ -410,6 +413,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IHitInfoBuilder, HitInfoBuilder>()
                 .AddSingleton(typeof(ILookupCache<>), typeof(LookupCache<>))
                 .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
+                .AddSingleton<IServerDataViewer, ServerDataViewer>()
+                .AddSingleton<IServerDataCollector, ServerDataCollector>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 

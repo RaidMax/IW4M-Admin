@@ -8,6 +8,7 @@ namespace SharedLibraryCore.Dtos
         public int RecentClientCount { get; set; }
         public int TotalOccupiedClientSlots { get; set; }
         public int TotalAvailableClientSlots { get; set; }
+        public int MaxConcurrentClients { get; set; }
 
         /// <summary>
         /// specifies the game name filter

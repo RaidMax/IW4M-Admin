@@ -20,6 +20,12 @@ namespace IW4MAdmin.Application.Misc
         public string BasePathDirectory { get; set; } = "";
 
         /// <summary>
+        /// directory for local storage
+        /// <remarks>fs_homepath</remarks>
+        /// </summary>
+        public string HomePathDirectory { get; set; } = "";
+
+        /// <summary>
         /// overide game directory
         /// <remarks>plugin driven</remarks>
         /// </summary>

@@ -1114,8 +1114,9 @@ namespace IW4MAdmin
             string mapname = (await this.GetMappedDvarValueOrDefaultAsync<string>("mapname", infoResponse: infoResponse)).Value;
             int maxplayers = (await this.GetMappedDvarValueOrDefaultAsync<int>("sv_maxclients", infoResponse: infoResponse)).Value;
             string gametype = (await this.GetMappedDvarValueOrDefaultAsync<string>("g_gametype", "gametype", infoResponse)).Value;
-            var basepath = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath"));
-            var basegame = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame"));
+            var basepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath");
+            var basegame = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame");
+            var homepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_homepath");
             var game = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_game", infoResponse: infoResponse));
             var logfile = await this.GetMappedDvarValueOrDefaultAsync<string>("g_log");
             var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync");
@@ -1216,6 +1217,7 @@ namespace IW4MAdmin
                 {
                     BaseGameDirectory = basegame.Value,
                     BasePathDirectory = basepath.Value,
+                    HomePathDirectory = homepath.Value,
                     GameDirectory = EventParser.Configuration.GameDirectory ?? "",
                     ModDirectory = game.Value ?? "",
                     LogFile = logfile.Value,
@@ -1266,15 +1268,25 @@ namespace IW4MAdmin
         {
             string logPath;
             var workingDirectory = logInfo.BasePathDirectory;
+            
+            bool IsValidGamePath (string path)
+            {
+                var baseGameIsDirectory = !string.IsNullOrWhiteSpace(path) &&
+                                          path.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
 
-            var baseGameIsDirectory = !string.IsNullOrWhiteSpace(logInfo.BaseGameDirectory) &&
-                logInfo.BaseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
+                var baseGameIsRelative = path.FixDirectoryCharacters()
+                    .Equals(logInfo.GameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
 
-            var baseGameIsRelative = logInfo.BaseGameDirectory.FixDirectoryCharacters()
-                .Equals(logInfo.GameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
+                return baseGameIsDirectory && !baseGameIsRelative;
+            }
 
             // we want to see if base game is provided and it 'looks' like a directory
-            if (baseGameIsDirectory && !baseGameIsRelative)
+            if (IsValidGamePath(logInfo.HomePathDirectory))
+            {
+                workingDirectory = logInfo.HomePathDirectory;
+            }
+            
+            else if (IsValidGamePath(logInfo.BaseGameDirectory))
             {
                 workingDirectory = logInfo.BaseGameDirectory;
             }

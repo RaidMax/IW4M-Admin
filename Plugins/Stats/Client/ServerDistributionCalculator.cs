@@ -45,7 +45,7 @@ namespace Stats.Client
         public async Task Initialize()
         {
             await LoadServers();
-            _distributionCache.SetCacheItem((async set =>
+            _distributionCache.SetCacheItem((async (set, token) =>
             {
                 var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
 
@@ -70,7 +70,7 @@ namespace Stats.Client
                 return distributions;
             }), DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(1));
             
-            _maxZScoreCache.SetCacheItem(async set =>
+            _maxZScoreCache.SetCacheItem(async (set, token) =>
             {
                 var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
 
@@ -78,7 +78,7 @@ namespace Stats.Client
                     .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(validPlayTime))
                     .Where(s => s.Skill > 0)
                     .Where(s => s.EloRating > 0)
-                    .MaxAsync(s => (double?)s.ZScore);
+                    .MaxAsync(s => (double?)s.ZScore, token);
                 return zScore ?? 0;
             }, MaxZScoreCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30));
 

@@ -21,7 +21,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
-            Utilities.IsDevelopment ? TimeSpan.FromSeconds(1) : (TimeSpan?) null;
+            Utilities.IsDevelopment ? TimeSpan.FromSeconds(1) : (TimeSpan?) TimeSpan.FromMinutes(1);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, int> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache)

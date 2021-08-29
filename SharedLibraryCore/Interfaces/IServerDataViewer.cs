@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Helpers;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -22,8 +25,16 @@ namespace SharedLibraryCore.Interfaces
         /// Gets the total number of clients connected and total clients connected in the given time frame
         /// </summary>
         /// <param name="overPeriod">how far in the past to search</param>
-        /// <param name="token"></param>
+        /// <param name="token">CancellationToken</param>
         /// <returns></returns>
         Task<(int, int)> ClientCountsAsync(TimeSpan? overPeriod = null, CancellationToken token = default);
+
+        /// <summary>
+        /// Retrieves the client count and history over the given period
+        /// </summary>
+        /// <param name="overPeriod">how far in the past to search</param>
+        /// <param name="token">CancellationToken</param>
+        /// <returns></returns>
+        Task<IEnumerable<ClientHistoryInfo>> ClientHistoryAsync(TimeSpan? overPeriod = null, CancellationToken token = default);
     }
 }

@@ -10,6 +10,7 @@ using Data.Models.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using SharedLibraryCore.Interfaces;
 
@@ -21,14 +22,16 @@ namespace IW4MAdmin.Application.Misc
         private readonly ILogger _logger;
         private readonly IManager _manager;
         private readonly IDatabaseContextFactory _contextFactory;
+        private readonly ApplicationConfiguration _appConfig;
 
         private bool _inProgress;
         private TimeSpan _period;
 
-        public ServerDataCollector(ILogger<ServerDataCollector> logger, IManager manager,
-            IDatabaseContextFactory contextFactory)
+        public ServerDataCollector(ILogger<ServerDataCollector> logger, ApplicationConfiguration appConfig,
+            IManager manager, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
+            _appConfig = appConfig;
             _manager = manager;
             _contextFactory = contextFactory;
         }
@@ -42,7 +45,9 @@ namespace IW4MAdmin.Application.Misc
 
             _logger.LogDebug("Initializing data collection with {Name}", nameof(ServerDataCollector));
             _inProgress = true;
-            _period = period ?? TimeSpan.FromMinutes(Utilities.IsDevelopment ? 1 : 5);
+            _period = period ?? (Utilities.IsDevelopment
+                ? TimeSpan.FromMinutes(1)
+                : _appConfig.ServerDataCollectionInterval);
 
             while (!cancellationToken.IsCancellationRequested)
             {

@@ -2,7 +2,8 @@
     ///////////////////////////////////////
     // thanks to canvasjs :(
     playerHistory.forEach(function (item, i) {
-        playerHistory[i].x = new Date(playerHistory[i].x);
+        playerHistory[i].x = new Date(playerHistory[i].timeString);
+        playerHistory[i].y = playerHistory[i].clientCount;
     });
 
     return new CanvasJS.Chart(`server_history_${i}`, {
@@ -84,7 +85,7 @@ $(document).ready(function () {
     });
 
     $('.server-history-row').each(function (index, element) {
-        let clientHistory = $(this).data('clienthistory');
+        let clientHistory = $(this).data('clienthistory-ex');
         let serverId = $(this).data('serverid');
         let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
         let primaryColor = $('title').css('background-color');

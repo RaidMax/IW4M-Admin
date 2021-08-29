@@ -1002,10 +1002,13 @@ namespace IW4MAdmin
                 LastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
 
+                var appConfig = _serviceProvider.GetService<ApplicationConfiguration>();
                 // update the player history 
-                if ((lastCount - playerCountStart).TotalMinutes >= PlayerHistory.UpdateInterval)
+                if (lastCount - playerCountStart >= appConfig.ServerDataCollectionInterval)
                 {
-                    while (ClientHistory.Count > ((60 / PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
+                    var maxItems = Math.Ceiling(appConfig.MaxClientHistoryTime.TotalMinutes /
+                                                appConfig.ServerDataCollectionInterval.TotalMinutes);
+                    while ( ClientHistory.Count > maxItems) 
                     {
                         ClientHistory.Dequeue();
                     }

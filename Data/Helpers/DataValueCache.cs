@@ -22,33 +22,36 @@ namespace Data.Helpers
             public TimeSpan ExpirationTime { get; set; }
             public Func<DbSet<T>, CancellationToken, Task<V>> Getter { get; set; }
             public V Value { get; set; }
-            public bool IsExpired => (DateTime.Now - LastRetrieval.Add(ExpirationTime)).TotalSeconds > 0;
+
+            public bool IsExpired => ExpirationTime != TimeSpan.MaxValue &&
+                                     (DateTime.Now - LastRetrieval.Add(ExpirationTime)).TotalSeconds > 0;
         }
-        
+
         public DataValueCache(ILogger<DataValueCache<T, V>> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
             _contextFactory = contextFactory;
         }
-        
-        public void SetCacheItem(Func<DbSet<T>, CancellationToken, Task<V>> getter, string key, TimeSpan? expirationTime = null)
+
+        public void SetCacheItem(Func<DbSet<T>, CancellationToken, Task<V>> getter, string key,
+            TimeSpan? expirationTime = null)
         {
             if (_cacheStates.ContainsKey(key))
             {
                 _logger.LogDebug("Cache key {key} is already added", key);
                 return;
             }
-            
+
             var state = new CacheState()
             {
                 Key = key,
                 Getter = getter,
                 ExpirationTime = expirationTime ?? TimeSpan.FromMinutes(DefaultExpireMinutes)
             };
-  
+
             _cacheStates.Add(key, state);
         }
-        
+
         public async Task<V> GetCacheItem(string keyName, CancellationToken cancellationToken = default)
         {
             if (!_cacheStates.ContainsKey(keyName))
@@ -58,7 +61,7 @@ namespace Data.Helpers
 
             var state = _cacheStates[keyName];
 
-            if (state.IsExpired)
+            if (state.IsExpired || state.Value == null)
             {
                 await RunCacheUpdate(state, cancellationToken);
             }

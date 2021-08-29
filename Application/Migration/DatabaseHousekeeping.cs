@@ -4,8 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models.Client.Stats;
-using SharedLibraryCore.Database;
-using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Migration
 {

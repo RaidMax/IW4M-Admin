@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,8 @@ using Data.Models.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -19,16 +22,19 @@ namespace IW4MAdmin.Application.Misc
         private readonly ILogger _logger;
         private readonly IDataValueCache<EFServerSnapshot, int> _snapshotCache;
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
+        private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
             Utilities.IsDevelopment ? TimeSpan.FromSeconds(1) : (TimeSpan?) TimeSpan.FromMinutes(1);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, int> snapshotCache,
-            IDataValueCache<EFClient, (int, int)> serverStatsCache)
+            IDataValueCache<EFClient, (int, int)> serverStatsCache,
+            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache)
         {
             _logger = logger;
             _snapshotCache = snapshotCache;
             _serverStatsCache = serverStatsCache;
+            _clientHistoryCache = clientHistoryCache;
         }
 
         public async Task<int> MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null,
@@ -45,14 +51,14 @@ namespace IW4MAdmin.Application.Misc
                 {
                     maxClients = await snapshots.Where(snapshot => snapshot.ServerId == serverId)
                         .Where(snapshot => snapshot.CapturedAt >= oldestEntry)
-                        .MaxAsync(snapshot => (int?)snapshot.ClientCount, cancellationToken) ?? 0;
+                        .MaxAsync(snapshot => (int?) snapshot.ClientCount, cancellationToken) ?? 0;
                 }
 
                 else
                 {
                     maxClients = await snapshots.Where(snapshot => snapshot.CapturedAt >= oldestEntry)
                         .GroupBy(snapshot => snapshot.PeriodBlock)
-                        .Select(grp => grp.Sum(snapshot => (int?)snapshot.ClientCount))
+                        .Select(grp => grp.Sum(snapshot => (int?) snapshot.ClientCount))
                         .MaxAsync(cancellationToken) ?? 0;
                 }
 
@@ -93,6 +99,44 @@ namespace IW4MAdmin.Application.Misc
             {
                 _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(ClientCountsAsync));
                 return (0, 0);
+            }
+        }
+
+        public async Task<IEnumerable<ClientHistoryInfo>> ClientHistoryAsync(TimeSpan? overPeriod = null, CancellationToken token = default)
+        {
+            _clientHistoryCache.SetCacheItem(async (set, cancellationToken) =>
+            {
+                var oldestEntry = overPeriod.HasValue
+                    ? DateTime.UtcNow - overPeriod.Value
+                    : DateTime.UtcNow.AddHours(-12);
+
+                var history = await set.Where(snapshot => snapshot.CapturedAt >= oldestEntry)
+                    .Select(snapshot =>
+                        new
+                        {
+                            snapshot.ServerId,
+                            snapshot.CapturedAt,
+                            snapshot.ClientCount
+                        })
+                    .OrderBy(snapshot => snapshot.CapturedAt)
+                    .ToListAsync(cancellationToken);
+
+                return history.GroupBy(snapshot => snapshot.ServerId).Select(byServer => new ClientHistoryInfo
+                {
+                    ServerId = byServer.Key,
+                    ClientCounts = byServer.Select(snapshot => new ClientCountSnapshot()
+                        {Time = snapshot.CapturedAt, ClientCount = snapshot.ClientCount}).ToList()
+                }).ToList();
+            }, nameof(_clientHistoryCache), TimeSpan.MaxValue);
+
+            try
+            {
+                return await _clientHistoryCache.GetCacheItem(nameof(_clientHistoryCache), token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(ClientHistoryAsync));
+                return Enumerable.Empty<ClientHistoryInfo>();
             }
         }
     }

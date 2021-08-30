@@ -14,7 +14,7 @@
         toolTip: {
             contentFormatter: function (e) {
                 const date = moment.utc(e.entries[0].dataPoint.x);
-                return date.local().format('h:mm A') + " - " + e.entries[0].dataPoint.y + " players";
+                return date.local().calendar() + " - " + e.entries[0].dataPoint.y + " players";
             }
         },
         axisX: {

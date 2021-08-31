@@ -339,6 +339,14 @@ namespace SharedLibraryCore.Services
 
             if (existingExactAlias != null)
             {
+                if (existingExactAlias.LinkId != entity.AliasLinkId)
+                {
+                    _logger.LogInformation("[{Method}] client {Client} is linked to link id {OldLinkId}, but since name and IP match exactly, updating to new link id {NewLinkId}", 
+                        nameof(UpdateAliasNew), entity.ToString(), existingExactAlias.LinkId, entity.AliasLinkId);
+                    existingExactAlias.LinkId = entity.AliasLinkId;
+                    await context.SaveChangesAsync();
+                }
+                
                 entity.CurrentAlias = existingExactAlias;
                 entity.CurrentAliasId = existingExactAlias.AliasId;
                 _logger.LogDebug("[{Method}] client {Client} already has an existing exact alias, so we are not making changes", nameof(UpdateAliasNew), entity.ToString());

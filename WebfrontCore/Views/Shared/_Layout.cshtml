@@ -18,10 +18,10 @@
 
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment include="Development">
-        <link rel="stylesheet" href="~/dynamic/css/global.css" />
+        <link rel="stylesheet" href="~/dynamic/css/global.css?version=@ViewBag.Version" />
     </environment>
     <environment include="Production">
-        <link rel="stylesheet" href="~/dynamic/css/global.min.css" />
+        <link rel="stylesheet" href="~/dynamic/css/global.min.css?version=@ViewBag.Version" />
     </environment>
 </head>
 <body>

@@ -128,6 +128,7 @@ namespace SharedLibraryCore
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontUrl;
             ViewBag.User = Client;
+            ViewBag.Version = Manager.Version;
             ViewBag.SocialLink = SocialLink ?? "";
             ViewBag.SocialTitle = SocialTitle;
             ViewBag.Pages = Pages;

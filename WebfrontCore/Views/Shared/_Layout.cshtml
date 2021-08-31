@@ -164,7 +164,7 @@
         <script type="text/javascript" src="~/js/search.js"></script>
     </environment>
     <environment include="Production">
-        <script type="text/javascript" src="~/js/global.min.js"></script>
+        <script type="text/javascript" src="~/js/global.min.js?version=@ViewBag.Version"></script>
     </environment>
     <script>
         let _localizationTmp = @Html.Raw(Json.Serialize(ViewBag.Localization));

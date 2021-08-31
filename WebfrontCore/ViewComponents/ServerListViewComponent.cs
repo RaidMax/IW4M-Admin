@@ -37,7 +37,7 @@ namespace WebfrontCore.ViewComponents
             {
                 var serverId = server.GetIdForServer().Result;
                 var clientHistory = _serverDataViewer.ClientHistoryAsync(_appConfig.MaxClientHistoryTime,
-                                            CancellationToken.None).Result
+                                            CancellationToken.None).Result?
                                         .FirstOrDefault(history => history.ServerId == serverId) ??
                                     new ClientHistoryInfo
                                     {

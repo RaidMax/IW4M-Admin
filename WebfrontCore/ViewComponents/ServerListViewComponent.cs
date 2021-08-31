@@ -59,7 +59,7 @@ namespace WebfrontCore.ViewComponents
                     ID = server.EndPoint,
                     Port = server.Port,
                     Map = server.CurrentMap.Alias,
-                    ClientCount = server.ClientNum,
+                    ClientCount = server.Clients.Count(client => client != null),
                     MaxClients = server.MaxClients,
                     GameType = server.Gametype,
                     PlayerHistory = server.ClientHistory.ToArray(),

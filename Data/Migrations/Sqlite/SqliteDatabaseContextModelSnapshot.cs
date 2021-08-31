@@ -94,6 +94,38 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("EFClients");
                 });
 
+            modelBuilder.Entity("Data.Models.Client.EFClientConnectionHistory", b =>
+                {
+                    b.Property<long>("ClientConnectionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ConnectionType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ServerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ClientConnectionId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("CreatedDateTime");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("EFClientConnectionHistory");
+                });
+
             modelBuilder.Entity("Data.Models.Client.EFClientKill", b =>
                 {
                     b.Property<long>("KillId")
@@ -1104,6 +1136,21 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.EFAlias", "CurrentAlias")
                         .WithMany()
                         .HasForeignKey("CurrentAliasId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Client.EFClientConnectionHistory", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

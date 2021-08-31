@@ -401,6 +401,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>,
                     UpdatedAliasResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>, ConnectionsResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
@@ -415,6 +416,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
+                .AddSingleton<IEventPublisher, EventPublisher>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 

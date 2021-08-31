@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
+using Data.Models.Client;
 using Data.Models.Client.Stats.Reference;
 using Data.Models.Server;
 using Microsoft.EntityFrameworkCore;
@@ -23,17 +24,28 @@ namespace IW4MAdmin.Application.Misc
         private readonly IManager _manager;
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ApplicationConfiguration _appConfig;
+        private readonly IEventPublisher _eventPublisher;
 
         private bool _inProgress;
         private TimeSpan _period;
 
         public ServerDataCollector(ILogger<ServerDataCollector> logger, ApplicationConfiguration appConfig,
-            IManager manager, IDatabaseContextFactory contextFactory)
+            IManager manager, IDatabaseContextFactory contextFactory, IEventPublisher eventPublisher)
         {
             _logger = logger;
             _appConfig = appConfig;
             _manager = manager;
             _contextFactory = contextFactory;
+            _eventPublisher = eventPublisher;
+
+            _eventPublisher.OnClientConnect += SaveConnectionInfo;
+            _eventPublisher.OnClientDisconnect += SaveConnectionInfo;
+        }
+
+        ~ServerDataCollector()
+        {
+            _eventPublisher.OnClientConnect -= SaveConnectionInfo;
+            _eventPublisher.OnClientDisconnect -= SaveConnectionInfo;
         }
 
         public async Task BeginCollectionAsync(TimeSpan? period = null, CancellationToken cancellationToken = default)
@@ -116,6 +128,20 @@ namespace IW4MAdmin.Application.Misc
             await using var context = _contextFactory.CreateContext();
             context.ServerSnapshots.AddRange(snapshots);
             await context.SaveChangesAsync(token);
+        }
+
+        private void SaveConnectionInfo(object sender, GameEvent gameEvent)
+        {
+            using var context = _contextFactory.CreateContext(enableTracking: false);
+            context.ConnectionHistory.Add(new EFClientConnectionHistory
+            {
+                ClientId = gameEvent.Origin.ClientId,
+                ServerId = gameEvent.Owner.GetIdForServer().Result,
+                ConnectionType = gameEvent.Type == GameEvent.EventType.Connect
+                    ? Reference.ConnectionType.Connect
+                    : Reference.ConnectionType.Disconnect
+            });
+            context.SaveChanges();
         }
     }
 }

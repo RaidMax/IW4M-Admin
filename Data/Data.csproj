@@ -8,7 +8,7 @@
     <PackageId>RaidMax.IW4MAdmin.Data</PackageId>
     <Title>RaidMax.IW4MAdmin.Data</Title>
     <Authors />
-    <PackageVersion>1.0.6</PackageVersion>
+    <PackageVersion>1.0.7</PackageVersion>
   </PropertyGroup>
   
   <ItemGroup>

@@ -13,6 +13,7 @@ namespace IW4MAdmin.Application
     {
         private readonly EventLog _eventLog;
         private readonly ILogger _logger;
+        private readonly IEventPublisher _eventPublisher;
         private static readonly GameEvent.EventType[] overrideEvents = new[]
         {
             GameEvent.EventType.Connect,
@@ -21,10 +22,11 @@ namespace IW4MAdmin.Application
             GameEvent.EventType.Stop
         };
 
-        public GameEventHandler(ILogger<GameEventHandler> logger)
+        public GameEventHandler(ILogger<GameEventHandler> logger, IEventPublisher eventPublisher)
         {
             _eventLog = new EventLog();
             _logger = logger;
+            _eventPublisher = eventPublisher;
         }
 
         public void HandleEvent(IManager manager, GameEvent gameEvent)
@@ -32,6 +34,7 @@ namespace IW4MAdmin.Application
             if (manager.IsRunning || overrideEvents.Contains(gameEvent.Type))
             {
                 EventApi.OnGameEvent(gameEvent);
+                _eventPublisher.Publish(gameEvent);
                 Task.Factory.StartNew(() => manager.ExecuteEvent(gameEvent));
             }
             else

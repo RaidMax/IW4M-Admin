@@ -1,0 +1,28 @@
+﻿@using Data.Models
+@model SharedLibraryCore.Dtos.Meta.Responses.ConnectionHistoryResponse
+@{
+    var localizationKey = $"WEBFRONT_CLIENT_META_CONNECTION_{Model.ConnectionType.ToString().ToUpper()}";
+}
+
+@foreach (var token in Utilities.SplitTranslationTokens(localizationKey))
+{
+    if (token.IsInterpolation)
+    {
+        switch (token.MatchValue)
+        {
+            case "action":
+                <span class="@(Model.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-warning")">@token.TranslationValue</span>
+                break;
+            case "server":
+                <span class="text-white">
+                    <color-code value="@Model.ServerName" allow="@ViewBag.EnableColorCodes"></color-code>
+                </span>
+                break;
+        }
+    }
+
+    else
+    {
+        <span class="text-muted">@token.MatchValue</span>
+    }
+}

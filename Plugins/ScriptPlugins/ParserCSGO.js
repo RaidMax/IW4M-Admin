@@ -46,6 +46,7 @@ const plugin = {
         rconParser.Configuration.DefaultDvarValues.Add('version', this.engine);
         rconParser.Configuration.DefaultDvarValues.Add('fs_basepath', '');
         rconParser.Configuration.DefaultDvarValues.Add('fs_basegame', '');
+        rconParser.Configuration.DefaultDvarValues.Add('fs_homepath', '');
         rconParser.Configuration.DefaultDvarValues.Add('g_log', '');
         rconParser.Configuration.DefaultDvarValues.Add('net_ip', 'localhost');
         

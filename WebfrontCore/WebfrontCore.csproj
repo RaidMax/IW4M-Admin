@@ -97,6 +97,6 @@
   </Target>
 
   <Target Name="MyPreCompileTarget" BeforeTargets="Build">
-    <Exec Command="dotnet bundle" />
+   <Exec Command="dotnet bundle" />
   </Target>
 </Project>

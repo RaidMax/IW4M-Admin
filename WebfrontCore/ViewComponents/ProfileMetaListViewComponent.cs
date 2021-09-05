@@ -66,7 +66,8 @@ namespace WebfrontCore.ViewComponents
                     case MetaType.ReceivedPenalty:
                         meta = await metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request, metaType.Value);
                         break;
-                    default:
+                    case MetaType.ConnectionHistory:
+                        meta = await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request, metaType.Value);
                         break;
                 }
             }

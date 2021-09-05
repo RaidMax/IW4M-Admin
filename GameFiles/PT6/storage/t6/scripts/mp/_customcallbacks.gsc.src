@@ -4,24 +4,6 @@
 
 init()
 {
-	level.clientid = 0;
-	level thread onplayerconnect();
-    level thread IW4MA_init();
-}
-
-onplayerconnect()
-{
-	for ( ;; )
-	{
-		level waittill( "connecting", player );
-		player.clientid = level.clientid;
-		level.clientid++;
-	}
-}
-
-
-IW4MA_init()
-{
 	SetDvarIfUninitialized( "sv_customcallbacks", true );
 	SetDvarIfUninitialized( "sv_framewaittime", 0.05 );
 	SetDvarIfUninitialized( "sv_additionalwaittime", 0.1 );
@@ -29,53 +11,52 @@ IW4MA_init()
 	SetDvarIfUninitialized( "sv_printradarupdates", 0 );
 	SetDvarIfUninitialized( "sv_printradar_updateinterval", 500 );
 	SetDvarIfUninitialized( "sv_iw4madmin_url", "http://127.0.0.1:1624" );
-	
-	level thread IW4MA_onPlayerConnect();
+
+	level thread onPlayerConnect();
 	if (getDvarInt("sv_printradarupdates") == 1)
 	{
 		level thread runRadarUpdates();
 	}
-	
+
 	level waittill( "prematch_over" );
 	level.callbackPlayerKilled = ::Callback_PlayerKilled;
 	level.callbackPlayerDamage = ::Callback_PlayerDamage;
 	level.callbackPlayerDisconnect = ::Callback_PlayerDisconnect;
 }
 
-//Does not exist in T6
+//It's called slightly different in T6
+//set_dvar_if_unset(dvar, val, reset)
 SetDvarIfUninitialized(dvar, val)
 {
-	curval = getDvar(dvar);
-	if (curval == "")
-		SetDvar(dvar,val);
+	set_dvar_if_unset(dvar,val);
 }
 
-IW4MA_onPlayerConnect( player )
+onPlayerConnect( player )
 {
 	for( ;; )
 	{
 		level waittill( "connected", player );	
 		player thread waitForFrameThread();
-		//player thread waitForAttack();
+		player thread waitForAttack();
 	}
 }
 
 
-//Does not work in T6
-/*waitForAttack()
+//Got added to T6 on April 2020
+waitForAttack()
 {
 	self endon( "disconnect" );
-	
+
 	self.lastAttackTime = 0;
-	
+
 	for( ;; )
 	{
 		self notifyOnPlayerCommand( "player_shot", "+attack" );
 		self waittill( "player_shot" );
-		
+
 		self.lastAttackTime = getTime();
 	}
-}*/
+}
 
 runRadarUpdates()
 {
@@ -95,7 +76,7 @@ runRadarUpdates()
 		}
 
 		wait( interval / 1000 );
-	}	
+	}
 }
 
 hitLocationToBone( hitloc )
@@ -144,7 +125,7 @@ hitLocationToBone( hitloc )
 waitForFrameThread()
 {
 	self endon( "disconnect" );
-	
+
 	self.currentAnglePosition = 0;
 	self.anglePositions = [];
 
@@ -152,7 +133,7 @@ waitForFrameThread()
 	{
 		self.anglePositions[i] = self getPlayerAngles();
 	}
-		
+
 	for( ;; )
 	{
 		self.anglePositions[self.currentAnglePosition] = self getPlayerAngles();
@@ -165,9 +146,9 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 {
 	currentIndex = self.currentAnglePosition;
 	wait( 0.05 * afterFrameCount );
-	
+
 	self.angleSnapshot = [];
-	
+
 	for( j = 0; j < self.anglePositions.size; j++ )
 	{
 		self.angleSnapshot[j] = self.anglePositions[j];
@@ -209,7 +190,7 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 		i++;
 	}
 
-	lastAttack = 100;//int(getTime()) - int(self.lastAttackTime);
+	lastAttack = int(getTime()) - int(self.lastAttackTime);
 	isAlive = isAlive(self);
 
 	logPrint(logString + ";" + anglesStr + ";" + isAlive + ";" + lastAttack + "\n" ); 
@@ -261,7 +242,7 @@ Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sW
 	{
 		return;
 	}
-		
+
 	if ( self.health - iDamage > 0 )
 	{
 		self Process_Hit( "Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );

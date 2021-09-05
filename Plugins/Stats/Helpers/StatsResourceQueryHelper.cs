@@ -51,7 +51,7 @@ namespace Stats.Helpers
                     Deaths = _stats.Deaths,
                     Performance = Math.Round(_stats.EloRating * 1/3.0 + _stats.Skill * 2/3.0, 2),
                     ScorePerMinute = _stats.SPM,
-                    LastPlayed = _stats.Client.LastConnection,
+                    LastPlayed = _stats.UpdatedAt ?? _stats.Client.LastConnection,
                     TotalSecondsPlayed = _stats.TimePlayed,
                     ServerGame = _stats.Server.GameName.ToString(),
                     ServerName = _stats.Server.HostName,

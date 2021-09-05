@@ -7,6 +7,6 @@ namespace SharedLibraryCore.Interfaces
     public interface IClientMetaResponse
     {
         int ClientId { get;}
-        int MetaId { get; }
+        long MetaId { get; }
     }
 }

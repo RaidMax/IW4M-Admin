@@ -50,5 +50,8 @@
 </div>
 
 <div class="row server-history mb-4">
-    <div class="server-history-row" id="server_history_@Model.ID" data-serverid="@Model.ID" data-clienthistory='@Html.Raw(Json.Serialize(Model.PlayerHistory))' data-online="@Model.Online"></div>
+    <div class="server-history-row" id="server_history_@Model.ID" data-serverid="@Model.ID" 
+         data-clienthistory='@Html.Raw(Json.Serialize(Model.PlayerHistory))'
+         data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientCountHistory))'
+         data-online="@Model.Online"></div>
 </div>

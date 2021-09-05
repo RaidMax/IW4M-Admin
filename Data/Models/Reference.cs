@@ -17,5 +17,11 @@
             SHG1 = 9,
             CSGO = 10
         }
+        
+        public enum ConnectionType
+        {
+            Connect,
+            Disconnect
+        }
     }
 }

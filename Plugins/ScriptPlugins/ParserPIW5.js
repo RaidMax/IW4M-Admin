@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.8,
+    version: 0.9,
     name: 'Plutonium IW5 Parser',
     isParser: true,
 
@@ -34,6 +34,8 @@ var plugin = {
         rconParser.Configuration.Status.AddMapping(102, 4);
         rconParser.Configuration.Status.AddMapping(103, 5);
         rconParser.Configuration.Status.AddMapping(104, 6);
+        // basegame should not contain an absolute directory, but alas...
+        rconParser.Configuration.OverrideDvarNameMapping.Add('fs_homepath', 'fs_basegame');
 
         rconParser.IsOneLog = true;
         rconParser.Version = 'IW5 MP 1.9 build 388110 Fri Sep 14 00:04:28 2012 win-x86';

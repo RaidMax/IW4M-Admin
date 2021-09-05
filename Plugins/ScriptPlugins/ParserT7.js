@@ -33,6 +33,7 @@ var plugin = {
         rconParser.Configuration.DefaultDvarValues.Add('g_gametype', '');
         rconParser.Configuration.DefaultDvarValues.Add('fs_basepath', '');
         rconParser.Configuration.DefaultDvarValues.Add('fs_basegame', '');
+        rconParser.Configuration.DefaultDvarValues.Add('fs_homepath', '');
         rconParser.Configuration.DefaultDvarValues.Add('fs_game', '');
 
         rconParser.Configuration.Status.AddMapping(105, 6); // ip address

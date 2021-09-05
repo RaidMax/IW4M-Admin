@@ -31,7 +31,7 @@ namespace WebfrontCore.Controllers
                 ID = s.EndPoint,
                 Port = s.Port,
                 Map = s.CurrentMap.Alias,
-                ClientCount = s.ClientNum,
+                ClientCount = s.Clients.Count(client => client != null),
                 MaxClients = s.MaxClients,
                 GameType = s.Gametype,
                 Players = s.GetClientsAsList()

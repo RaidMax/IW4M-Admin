@@ -99,6 +99,39 @@ namespace Data.Migrations.Postgresql
                     b.ToTable("EFClients");
                 });
 
+            modelBuilder.Entity("Data.Models.Client.EFClientConnectionHistory", b =>
+                {
+                    b.Property<long>("ClientConnectionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn);
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ConnectionType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<long>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("ClientConnectionId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("CreatedDateTime");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("EFClientConnectionHistory");
+                });
+
             modelBuilder.Entity("Data.Models.Client.EFClientKill", b =>
                 {
                     b.Property<long>("KillId")
@@ -1025,6 +1058,40 @@ namespace Data.Migrations.Postgresql
                     b.ToTable("EFServers");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
+                {
+                    b.Property<long>("ServerSnapshotId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn);
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("ClientCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MapId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PeriodBlock")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("ServerSnapshotId");
+
+                    b.HasIndex("MapId");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("EFServerSnapshot");
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServerStatistics", b =>
                 {
                     b.Property<int>("StatisticId")
@@ -1098,6 +1165,21 @@ namespace Data.Migrations.Postgresql
                     b.HasOne("Data.Models.EFAlias", "CurrentAlias")
                         .WithMany()
                         .HasForeignKey("CurrentAliasId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Client.EFClientConnectionHistory", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1361,6 +1443,21 @@ namespace Data.Migrations.Postgresql
                     b.HasOne("Data.Models.Client.EFClient", "SourceClient")
                         .WithMany()
                         .HasForeignKey("SourceClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
+                        .WithMany()
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

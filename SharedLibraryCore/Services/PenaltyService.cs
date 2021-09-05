@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Services
@@ -16,10 +17,12 @@ namespace SharedLibraryCore.Services
     public class PenaltyService : IEntityService<EFPenalty>
     {
         private readonly IDatabaseContextFactory _contextFactory;
+        private readonly ApplicationConfiguration _appConfig;
         
-        public PenaltyService(IDatabaseContextFactory contextFactory)
+        public PenaltyService(IDatabaseContextFactory contextFactory, ApplicationConfiguration appConfig)
         {
             _contextFactory = contextFactory;
+            _appConfig = appConfig;
         }
         
         public virtual async Task<EFPenalty> Create(EFPenalty newEntity)
@@ -75,7 +78,7 @@ namespace SharedLibraryCore.Services
             await using var context = _contextFactory.CreateContext(false);
             var iqPenalties = context.Penalties
                 .Where(p => showOnly == EFPenalty.PenaltyType.Any ? p.Type != EFPenalty.PenaltyType.Any : p.Type == showOnly)
-                .Where(_penalty => ignoreAutomated ? _penalty.PunisherId != 1 : true)
+                .Where(_penalty => !ignoreAutomated || _penalty.PunisherId != 1)
                 .OrderByDescending(p => p.When)
                 .Skip(offset)
                 .Take(count)
@@ -145,7 +148,7 @@ namespace SharedLibraryCore.Services
         {
             var now = DateTime.UtcNow;
 
-            Expression<Func<EFPenalty, bool>> filter = (p) => (new EFPenalty.PenaltyType[]
+            Expression<Func<EFPenalty, bool>> filter = (p) => (new []
                          {
                             EFPenalty.PenaltyType.TempBan,
                             EFPenalty.PenaltyType.Ban,
@@ -159,33 +162,43 @@ namespace SharedLibraryCore.Services
                 .Where(p => p.LinkId == linkId)
                 .Where(filter);
 
-            var iqIPPenalties = context.Aliases
-                .Where(a => a.IPAddress != null && a.IPAddress == ip)
-                .SelectMany(a => a.Link.ReceivedPenalties)
-                .Where(filter);
+            var iqIpPenalties = _appConfig.EnableImplicitAccountLinking
+                ? context.Aliases
+                    .Where(a => a.IPAddress != null && a.IPAddress == ip)
+                    .SelectMany(a => a.Link.ReceivedPenalties)
+                    .Where(filter)
+                : context.Penalties.Where(penalty =>
+                        penalty.Offender.CurrentAlias.IPAddress != null &&
+                        penalty.Offender.CurrentAlias.IPAddress == ip)
+                    .Where(filter);
 
             var activePenalties = (await iqLinkPenalties.ToListAsync())
-                .Union(await iqIPPenalties.ToListAsync())
+                .Union(await iqIpPenalties.ToListAsync())
                 .Distinct();
 
             // this is a bit more performant in memory (ordering)
             return activePenalties.OrderByDescending(p => p.When).ToList();
         }
 
-        public virtual async Task RemoveActivePenalties(int aliasLinkId)
+        public virtual async Task RemoveActivePenalties(int aliasLinkId, int? ipAddress = null)
         {
             await using var context = _contextFactory.CreateContext();
 
             var now = DateTime.UtcNow;
-            await context.Penalties
+            var penaltiesByLink = context.Penalties
                 .Where(p => p.LinkId == aliasLinkId)
-                .Where(p => p.Expires > now || p.Expires == null)
-                .ForEachAsync(p =>
-                {
-                    p.Active = false;
-                    p.Expires = now;
-                });
+                .Where(p => p.Expires > now || p.Expires == null);
 
+            var penaltiesByIp = context.Penalties
+                .Where(p => p.Offender.CurrentAlias.IPAddress != null && p.Offender.CurrentAlias.IPAddress == null)
+                .Where(p => p.Expires > now || p.Expires == null);
+            
+            await penaltiesByLink.Union(penaltiesByIp).Distinct().ForEachAsync(p =>
+            {
+                p.Active = false;
+                p.Expires = now;
+            });
+  
             await context.SaveChangesAsync();
         }
     }

@@ -284,6 +284,8 @@ namespace SharedLibraryCore
             }
         }
 
+        public abstract Task<long> GetIdForServer(Server server = null);
+
         // Objects
         public IManager Manager { get; protected set; }
         [Obsolete]
@@ -306,7 +308,7 @@ namespace SharedLibraryCore
         {
             get
             {
-                return Clients.Count(p => p != null && !p.IsBot);
+                return Clients.ToArray().Count(p => p != null && !p.IsBot);
             }
         }
         public int MaxClients { get; protected set; }

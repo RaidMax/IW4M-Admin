@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -19,36 +20,39 @@ namespace Data.Helpers
             public string Key { get; set; }
             public DateTime LastRetrieval { get; set; }
             public TimeSpan ExpirationTime { get; set; }
-            public Func<DbSet<T>, Task<V>> Getter { get; set; }
+            public Func<DbSet<T>, CancellationToken, Task<V>> Getter { get; set; }
             public V Value { get; set; }
-            public bool IsExpired => (DateTime.Now - LastRetrieval.Add(ExpirationTime)).TotalSeconds > 0;
+
+            public bool IsExpired => ExpirationTime != TimeSpan.MaxValue &&
+                                     (DateTime.Now - LastRetrieval.Add(ExpirationTime)).TotalSeconds > 0;
         }
-        
+
         public DataValueCache(ILogger<DataValueCache<T, V>> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
             _contextFactory = contextFactory;
         }
-        
-        public void SetCacheItem(Func<DbSet<T>, Task<V>> getter, string key, TimeSpan? expirationTime = null)
+
+        public void SetCacheItem(Func<DbSet<T>, CancellationToken, Task<V>> getter, string key,
+            TimeSpan? expirationTime = null)
         {
             if (_cacheStates.ContainsKey(key))
             {
                 _logger.LogDebug("Cache key {key} is already added", key);
                 return;
             }
-                 
+
             var state = new CacheState()
             {
                 Key = key,
                 Getter = getter,
                 ExpirationTime = expirationTime ?? TimeSpan.FromMinutes(DefaultExpireMinutes)
             };
-  
+
             _cacheStates.Add(key, state);
         }
-        
-        public async Task<V> GetCacheItem(string keyName)
+
+        public async Task<V> GetCacheItem(string keyName, CancellationToken cancellationToken = default)
         {
             if (!_cacheStates.ContainsKey(keyName))
             {
@@ -57,21 +61,21 @@ namespace Data.Helpers
 
             var state = _cacheStates[keyName];
 
-            if (state.IsExpired)
+            if (state.IsExpired || state.Value == null)
             {
-                await RunCacheUpdate(state);
+                await RunCacheUpdate(state, cancellationToken);
             }
 
             return state.Value;
         }
 
-        private async Task RunCacheUpdate(CacheState state)
+        private async Task RunCacheUpdate(CacheState state, CancellationToken token)
         {
             try
             {
                 await using var context = _contextFactory.CreateContext(false);
                 var set = context.Set<T>();
-                var value = await state.Getter(set);
+                var value = await state.Getter(set, token);
                 state.Value = value;
                 state.LastRetrieval = DateTime.Now;
             }

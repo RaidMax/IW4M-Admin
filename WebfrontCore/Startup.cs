@@ -129,6 +129,7 @@ namespace WebfrontCore
                 .GetRequiredService<IConfigurationHandler<DefaultSettings>>());
             services.AddSingleton(Program.ApplicationServiceProvider
                             .GetRequiredService<IConfigurationHandler<StatsConfiguration>>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IServerDataViewer>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

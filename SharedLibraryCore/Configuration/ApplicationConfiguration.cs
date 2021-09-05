@@ -140,6 +140,16 @@ namespace SharedLibraryCore.Configuration
             {{"afk", "Away from keyboard"}, {"ci", "Connection interrupted. Reconnect"}};
         [LocalizedDisplayName(("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY"))]
         public bool EnablePrivilegedUserPrivacy { get; set; }
+
+        [ConfigurationIgnore]
+        public bool EnableImplicitAccountLinking { get; set; } = false;
+
+        [ConfigurationIgnore] 
+        public TimeSpan MaxClientHistoryTime { get; set; } = TimeSpan.FromHours(12);
+
+        [ConfigurationIgnore] 
+        public TimeSpan ServerDataCollectionInterval { get; set; } = TimeSpan.FromMinutes(5);
+        
         public Dictionary<Permission, string> OverridePermissionLevelNames { get; set; } = Enum
             .GetValues(typeof(Permission))
             .Cast<Permission>()

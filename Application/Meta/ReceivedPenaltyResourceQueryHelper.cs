@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -21,11 +23,14 @@ namespace IW4MAdmin.Application.Meta
     {
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public ReceivedPenaltyResourceQueryHelper(ILogger<ReceivedPenaltyResourceQueryHelper> logger, IDatabaseContextFactory contextFactory)
+        public ReceivedPenaltyResourceQueryHelper(ILogger<ReceivedPenaltyResourceQueryHelper> logger, 
+            IDatabaseContextFactory contextFactory, ApplicationConfiguration appConfig)
         {
             _contextFactory = contextFactory;
             _logger = logger;
+            _appConfig = appConfig;
         }
 
         public async Task<ResourceQueryHelperResult<ReceivedPenaltyResponse>> QueryResource(ClientPaginationRequest query)
@@ -39,11 +44,30 @@ namespace IW4MAdmin.Application.Meta
                     .FirstOrDefaultAsync();
 
             var iqPenalties = ctx.Penalties.AsNoTracking()
-                .Where(_penalty => _penalty.OffenderId == query.ClientId || (linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId))
-                .Where(_penalty => _penalty.When < query.Before)
-                .OrderByDescending(_penalty => _penalty.When);
+                .Where(_penalty => _penalty.OffenderId == query.ClientId ||
+                                   linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId);
 
-            var penalties = await iqPenalties
+            var iqIpLinkedPenalties = new List<EFPenalty>().AsQueryable();
+
+            if (!_appConfig.EnableImplicitAccountLinking)
+            {
+                var usedIps = await ctx.Aliases.AsNoTracking()
+                    .Where(alias => alias.LinkId == linkId && alias.IPAddress != null)
+                    .Select(alias => alias.IPAddress).ToListAsync();
+
+                var aliasedIds = await ctx.Aliases.AsNoTracking().Where(alias => usedIps.Contains(alias.IPAddress))
+                    .Select(alias => alias.LinkId)
+                    .ToListAsync();
+
+                iqIpLinkedPenalties = ctx.Penalties.AsNoTracking()
+                    .Where(penalty =>
+                        linkedPenaltyType.Contains(penalty.Type) &&
+                        /*usedIps.Contains(penalty.Offender.CurrentAlias.IPAddress)*/aliasedIds.Contains(penalty.LinkId));
+            }
+
+            var penalties = await iqPenalties.Union(iqIpLinkedPenalties)
+                .Where(_penalty => _penalty.When < query.Before)
+                .OrderByDescending(_penalty => _penalty.When)
                 .Take(query.Count)
                 .Select(_penalty => new ReceivedPenaltyResponse()
                 {

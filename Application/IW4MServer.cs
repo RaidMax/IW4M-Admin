@@ -362,7 +362,7 @@ namespace IW4MAdmin
                             throw;
                         }
                         
-                        await E.Origin.OnJoin(E.Origin.IPAddress);
+                        await E.Origin.OnJoin(E.Origin.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
                     }
                 }
 
@@ -462,7 +462,7 @@ namespace IW4MAdmin
                         Link = E.Target.AliasLink
                     };
 
-                    var addedPenalty = await Manager.GetPenaltyService().Create(newPenalty);
+                    await Manager.GetPenaltyService().Create(newPenalty);
                     E.Target.SetLevel(Permission.Flagged, E.Origin);
                 }
 
@@ -738,7 +738,7 @@ namespace IW4MAdmin
             {
                 try
                 {
-                    await client.OnJoin(origin.IPAddress);
+                    await client.OnJoin(origin.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
                 }
 
                 catch (Exception e)
@@ -754,7 +754,7 @@ namespace IW4MAdmin
                 client.Level == Permission.Banned)
             {
                 ServerLogger.LogWarning("{client} state is Unknown (probably kicked), but they are still connected. trying to kick again...", origin.ToString());
-                await client.CanConnect(client.IPAddress);
+                await client.CanConnect(client.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
             }
         }
 
@@ -792,8 +792,10 @@ namespace IW4MAdmin
             };
         }
         
-        private async Task<long> GetIdForServer(Server server)
+        public override async Task<long> GetIdForServer(Server server = null)
         {
+            server ??= this;
+            
             if ($"{server.IP}:{server.Port.ToString()}" == "66.150.121.184:28965")
             {
                 return 886229536;
@@ -1000,10 +1002,13 @@ namespace IW4MAdmin
                 LastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
 
+                var appConfig = _serviceProvider.GetService<ApplicationConfiguration>();
                 // update the player history 
-                if ((lastCount - playerCountStart).TotalMinutes >= PlayerHistory.UpdateInterval)
+                if (lastCount - playerCountStart >= appConfig.ServerDataCollectionInterval)
                 {
-                    while (ClientHistory.Count > ((60 / PlayerHistory.UpdateInterval) * 12)) // 12 times a hour for 12 hours
+                    var maxItems = Math.Ceiling(appConfig.MaxClientHistoryTime.TotalMinutes /
+                                                appConfig.ServerDataCollectionInterval.TotalMinutes);
+                    while ( ClientHistory.Count > maxItems) 
                     {
                         ClientHistory.Dequeue();
                     }
@@ -1112,8 +1117,9 @@ namespace IW4MAdmin
             string mapname = (await this.GetMappedDvarValueOrDefaultAsync<string>("mapname", infoResponse: infoResponse)).Value;
             int maxplayers = (await this.GetMappedDvarValueOrDefaultAsync<int>("sv_maxclients", infoResponse: infoResponse)).Value;
             string gametype = (await this.GetMappedDvarValueOrDefaultAsync<string>("g_gametype", "gametype", infoResponse)).Value;
-            var basepath = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath"));
-            var basegame = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame"));
+            var basepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath");
+            var basegame = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame");
+            var homepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_homepath");
             var game = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_game", infoResponse: infoResponse));
             var logfile = await this.GetMappedDvarValueOrDefaultAsync<string>("g_log");
             var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync");
@@ -1214,6 +1220,7 @@ namespace IW4MAdmin
                 {
                     BaseGameDirectory = basegame.Value,
                     BasePathDirectory = basepath.Value,
+                    HomePathDirectory = homepath.Value,
                     GameDirectory = EventParser.Configuration.GameDirectory ?? "",
                     ModDirectory = game.Value ?? "",
                     LogFile = logfile.Value,
@@ -1264,15 +1271,25 @@ namespace IW4MAdmin
         {
             string logPath;
             var workingDirectory = logInfo.BasePathDirectory;
+            
+            bool IsValidGamePath (string path)
+            {
+                var baseGameIsDirectory = !string.IsNullOrWhiteSpace(path) &&
+                                          path.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
 
-            var baseGameIsDirectory = !string.IsNullOrWhiteSpace(logInfo.BaseGameDirectory) &&
-                logInfo.BaseGameDirectory.IndexOfAny(Utilities.DirectorySeparatorChars) != -1;
+                var baseGameIsRelative = path.FixDirectoryCharacters()
+                    .Equals(logInfo.GameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
 
-            var baseGameIsRelative = logInfo.BaseGameDirectory.FixDirectoryCharacters()
-                .Equals(logInfo.GameDirectory.FixDirectoryCharacters(), StringComparison.InvariantCultureIgnoreCase);
+                return baseGameIsDirectory && !baseGameIsRelative;
+            }
 
             // we want to see if base game is provided and it 'looks' like a directory
-            if (baseGameIsDirectory && !baseGameIsRelative)
+            if (IsValidGamePath(logInfo.HomePathDirectory))
+            {
+                workingDirectory = logInfo.HomePathDirectory;
+            }
+            
+            else if (IsValidGamePath(logInfo.BaseGameDirectory))
             {
                 workingDirectory = logInfo.BaseGameDirectory;
             }

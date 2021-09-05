@@ -339,14 +339,6 @@ namespace SharedLibraryCore.Services
 
             if (existingExactAlias != null)
             {
-                /*if (existingExactAlias.LinkId != entity.AliasLinkId)
-                {
-                    _logger.LogInformation("[{Method}] client {Client} is linked to link id {OldLinkId}, but since name and IP match exactly, updating to new link id {NewLinkId}", 
-                        nameof(UpdateAliasNew), entity.ToString(), existingExactAlias.LinkId, entity.AliasLinkId);
-                    existingExactAlias.LinkId = entity.AliasLinkId;
-                    await context.SaveChangesAsync();
-                }*/
-                
                 entity.CurrentAlias = existingExactAlias;
                 entity.CurrentAliasId = existingExactAlias.AliasId;
                 await context.SaveChangesAsync();
@@ -680,7 +672,7 @@ namespace SharedLibraryCore.Services
         public async Task<IList<PlayerInfo>> FindClientsByIdentifier(string identifier)
         {
             var trimmedIdentifier = identifier?.Trim();
-            if (trimmedIdentifier?.Length < 3)
+            if (trimmedIdentifier?.Length < _appConfig.MinimumNameLength)
             {
                 return new List<PlayerInfo>();
             }
@@ -718,7 +710,8 @@ namespace SharedLibraryCore.Services
                 .Where(_client => _client.Active);
 
 
-            iqClients = iqClients.Where(_client => networkId == _client.NetworkId || linkIds.Contains(_client.AliasLinkId));
+            iqClients = iqClients.Where(_client => networkId == _client.NetworkId || linkIds.Contains(_client.AliasLinkId) 
+                || !_appConfig.EnableImplicitAccountLinking && _client.CurrentAlias.IPAddress == ipAddress);
 
             // we want to project our results 
             var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)

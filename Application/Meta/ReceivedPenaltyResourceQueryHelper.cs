@@ -40,19 +40,19 @@ namespace IW4MAdmin.Application.Meta
 
             var linkId = await ctx.Clients.AsNoTracking()
                     .Where(_client => _client.ClientId == query.ClientId)
-                    .Select(_client => _client.AliasLinkId)
+                    .Select(_client => new {_client.AliasLinkId, _client.CurrentAliasId })
                     .FirstOrDefaultAsync();
 
             var iqPenalties = ctx.Penalties.AsNoTracking()
                 .Where(_penalty => _penalty.OffenderId == query.ClientId ||
-                                   linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId);
+                                   linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId.AliasLinkId);
 
             var iqIpLinkedPenalties = new List<EFPenalty>().AsQueryable();
 
             if (!_appConfig.EnableImplicitAccountLinking)
             {
                 var usedIps = await ctx.Aliases.AsNoTracking()
-                    .Where(alias => alias.LinkId == linkId && alias.IPAddress != null)
+                    .Where(alias => (alias.LinkId == linkId.AliasLinkId || alias.AliasId == linkId.CurrentAliasId) && alias.IPAddress != null)
                     .Select(alias => alias.IPAddress).ToListAsync();
 
                 var aliasedIds = await ctx.Aliases.AsNoTracking().Where(alias => usedIps.Contains(alias.IPAddress))
@@ -61,8 +61,7 @@ namespace IW4MAdmin.Application.Meta
 
                 iqIpLinkedPenalties = ctx.Penalties.AsNoTracking()
                     .Where(penalty =>
-                        linkedPenaltyType.Contains(penalty.Type) &&
-                        /*usedIps.Contains(penalty.Offender.CurrentAlias.IPAddress)*/aliasedIds.Contains(penalty.LinkId));
+                        linkedPenaltyType.Contains(penalty.Type) && aliasedIds.Contains(penalty.LinkId));
             }
 
             var penalties = await iqPenalties.Union(iqIpLinkedPenalties)

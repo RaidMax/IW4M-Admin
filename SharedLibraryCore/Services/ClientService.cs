@@ -711,7 +711,7 @@ namespace SharedLibraryCore.Services
 
 
             iqClients = iqClients.Where(_client => networkId == _client.NetworkId || linkIds.Contains(_client.AliasLinkId) 
-                || !_appConfig.EnableImplicitAccountLinking && _client.CurrentAlias.IPAddress == ipAddress);
+                || !_appConfig.EnableImplicitAccountLinking && _client.CurrentAlias.IPAddress != null && _client.CurrentAlias.IPAddress == ipAddress);
 
             // we want to project our results 
             var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)

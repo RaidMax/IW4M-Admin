@@ -50,7 +50,7 @@ namespace WebfrontCore.ViewComponents
                 {
                     counts = counts.Union(server.ClientHistory
                         .Select(history => history.ToClientCountSnapshot()).Where(history =>
-                            history.Time > clientHistory.ClientCounts.Last().Time));
+                            history.Time > (clientHistory.ClientCounts.LastOrDefault()?.Time ?? DateTime.MinValue)));
                 }
 
                 serverInfo.Add(new ServerInfo()

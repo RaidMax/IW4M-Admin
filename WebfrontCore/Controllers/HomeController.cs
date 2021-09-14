@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using System;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -33,7 +34,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Keywords = Localization["WEBFRONT_KEWORDS_HOME"];
 
             var servers = Manager.GetServers().Where(_server => !game.HasValue || _server.GameName == game);
-            var maxConcurrentClients = await _serverDataViewer.MaxConcurrentClientsAsync(token: cancellationToken);
+            var (clientCount, time) = await _serverDataViewer.MaxConcurrentClientsAsync(token: cancellationToken);
             var (count, recentCount) = await _serverDataViewer.ClientCountsAsync(token: cancellationToken);
 
             var model = new IW4MAdminInfo()
@@ -42,7 +43,8 @@ namespace WebfrontCore.Controllers
                 TotalOccupiedClientSlots = servers.SelectMany(_server => _server.GetClientsAsList()).Count(),
                 TotalClientCount = count,
                 RecentClientCount = recentCount,
-                MaxConcurrentClients = maxConcurrentClients,
+                MaxConcurrentClients = clientCount ?? 0,
+                MaxConcurrentClientsTime = time ?? DateTime.UtcNow,
                 Game = game,
                 ActiveServerGames = Manager.GetServers().Select(_server => _server.GameName).Distinct().ToArray()
             };

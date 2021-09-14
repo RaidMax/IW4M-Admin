@@ -19,7 +19,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="overPeriod">how far in the past to search</param>
         /// <param name="token">CancellationToken</param>
         /// <returns></returns>
-        Task<int> MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null, CancellationToken token = default);
+        Task<(int?, DateTime?)> MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null, CancellationToken token = default);
         
         /// <summary>
         /// Gets the total number of clients connected and total clients connected in the given time frame

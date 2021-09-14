@@ -95,6 +95,15 @@ $(document).ready(function () {
         historyChart.render();
         charts[serverId] = historyChart;
     });
+    
+    $('.moment-date').each((index, element) => {
+        const title = $(element).attr('title');
+        
+        if (title !== undefined) {
+            const date = new Date(title);
+            $(element).attr('title', moment.utc(date).calendar());
+        }
+    });
 });
 
 setInterval(refreshClientActivity, 2000);

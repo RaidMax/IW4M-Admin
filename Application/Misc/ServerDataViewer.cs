@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -20,14 +19,14 @@ namespace IW4MAdmin.Application.Misc
     public class ServerDataViewer : IServerDataViewer
     {
         private readonly ILogger _logger;
-        private readonly IDataValueCache<EFServerSnapshot, int> _snapshotCache;
+        private readonly IDataValueCache<EFServerSnapshot, (int?, DateTime?)> _snapshotCache;
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
         private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
             Utilities.IsDevelopment ? TimeSpan.FromSeconds(1) : (TimeSpan?) TimeSpan.FromMinutes(1);
 
-        public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, int> snapshotCache,
+        public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
             IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache)
         {
@@ -37,7 +36,7 @@ namespace IW4MAdmin.Application.Misc
             _clientHistoryCache = clientHistoryCache;
         }
 
-        public async Task<int> MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null,
+        public async Task<(int?, DateTime?)> MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null,
             CancellationToken token = default)
         {
             _snapshotCache.SetCacheItem(async (snapshots, cancellationToken) =>
@@ -45,26 +44,45 @@ namespace IW4MAdmin.Application.Misc
                 var oldestEntry = overPeriod.HasValue
                     ? DateTime.UtcNow - overPeriod.Value
                     : DateTime.UtcNow.AddDays(-1);
-                var maxClients = 0;
+                
+                int? maxClients;
+                DateTime? maxClientsTime;
 
                 if (serverId != null)
                 {
-                    maxClients = await snapshots.Where(snapshot => snapshot.ServerId == serverId)
+                    var clients = await snapshots.Where(snapshot => snapshot.ServerId == serverId)
                         .Where(snapshot => snapshot.CapturedAt >= oldestEntry)
-                        .MaxAsync(snapshot => (int?) snapshot.ClientCount, cancellationToken) ?? 0;
+                        .OrderByDescending(snapshot => snapshot.ClientCount)
+                        .Select(snapshot => new
+                        {
+                            snapshot.ClientCount,
+                            snapshot.CapturedAt
+                        })
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    maxClients = clients?.ClientCount;
+                    maxClientsTime = clients?.CapturedAt;
                 }
 
                 else
                 {
-                    maxClients = await snapshots.Where(snapshot => snapshot.CapturedAt >= oldestEntry)
+                    var clients = await snapshots.Where(snapshot => snapshot.CapturedAt >= oldestEntry)
                         .GroupBy(snapshot => snapshot.PeriodBlock)
-                        .Select(grp => grp.Sum(snapshot => (int?) snapshot.ClientCount))
-                        .MaxAsync(cancellationToken) ?? 0;
+                        .Select(grp => new
+                        {
+                            ClientCount = grp.Sum(snapshot => (int?) snapshot.ClientCount),
+                            Time = grp.Max(snapshot => (DateTime?) snapshot.CapturedAt)
+                        })
+                        .OrderByDescending(snapshot => snapshot.ClientCount)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    
+                    maxClients = clients?.ClientCount;
+                    maxClientsTime = clients?.Time;
                 }
 
                 _logger.LogDebug("Max concurrent clients since {Start} is {Clients}", oldestEntry, maxClients);
 
-                return maxClients;
+                return (maxClients, maxClientsTime);
             }, nameof(MaxConcurrentClientsAsync), _cacheTimeSpan);
 
             try
@@ -74,7 +92,7 @@ namespace IW4MAdmin.Application.Misc
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(MaxConcurrentClientsAsync));
-                return 0;
+                return (null, null);
             }
         }
 

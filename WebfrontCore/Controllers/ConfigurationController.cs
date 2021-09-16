@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System;
+using System.IO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -7,7 +9,11 @@ using SharedLibraryCore.Configuration.Validation;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
@@ -36,6 +42,84 @@ namespace WebfrontCore.Controllers
             return View("Index", Manager.GetApplicationSettings().Configuration());
         }
 
+        public async Task<IActionResult> Files()
+        {
+            if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                // todo: move this into a service a some point
+                var model = await Task.WhenAll(System.IO.Directory
+                    .GetFiles(System.IO.Path.Join(Utilities.OperatingDirectory, "Configuration"))
+                    .Where(file => file.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
+                    .Select(async fileName => new ConfigurationFileInfo
+                    {
+                        FileName = fileName.Split(System.IO.Path.DirectorySeparatorChar).Last(),
+                        FileContent = await System.IO.File.ReadAllTextAsync(fileName)
+                    }));
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPatch("{Controller}/File/{fileName}")]
+        public async Task<IActionResult> PatchFiles([FromRoute] string fileName)
+        {
+            if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            {
+                return Unauthorized();
+            }
+
+            if (!fileName.EndsWith(".json"))
+            {
+                return BadRequest("File must be of json format.");
+            }
+
+            using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+            var content = await reader.ReadToEndAsync();
+
+            if (string.IsNullOrEmpty(content))
+            {
+                return BadRequest("File content cannot be empty");
+            }
+
+            try
+            {
+                var file = JObject.Parse(content);
+            }
+            catch (JsonReaderException ex)
+            {
+                return BadRequest($"{fileName}: {ex.Message}");
+            }
+
+            var path = System.IO.Path.Join(Utilities.OperatingDirectory, "Configuration",
+                fileName.Replace($"{System.IO.Path.DirectorySeparatorChar}", ""));
+
+            // todo: move into a service at some point
+            if (!System.IO.File.Exists(path))
+            {
+                return BadRequest($"{fileName} does not exist");
+            }
+
+            try
+            {
+                await System.IO.File.WriteAllTextAsync(path, content);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            }
+
+            return NoContent();
+        }
+
         /// <summary>
         /// Endpoint for the save action
         /// </summary>
@@ -58,12 +142,19 @@ namespace WebfrontCore.Controllers
                 var currentConfiguration = Manager.GetApplicationSettings().Configuration();
                 CopyConfiguration(newConfiguration, currentConfiguration);
                 await Manager.GetApplicationSettings().Save();
-                return Ok(new { message = new[] { Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVED"] } });
+                return Ok(new
+                {
+                    message = new[] {Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVED"]}
+                });
             }
 
             else
             {
-                return BadRequest(new { message = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVE_FAILED"], errors = new[] { validationResult.Errors.Select(_error => _error.ErrorMessage) } });
+                return BadRequest(new
+                {
+                    message = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVE_FAILED"],
+                    errors = new[] {validationResult.Errors.Select(_error => _error.ErrorMessage)}
+                });
             }
         }
 
@@ -76,7 +167,7 @@ namespace WebfrontCore.Controllers
             void cleanProperties(object config)
             {
                 foreach (var property in config.GetType()
-                .GetProperties().Where(_prop => _prop.CanWrite))
+                    .GetProperties().Where(_prop => _prop.CanWrite))
                 {
                     var newPropValue = property.GetValue(config);
 
@@ -106,7 +197,8 @@ namespace WebfrontCore.Controllers
         /// </summary>
         /// <param name="newConfiguration">Source config</param>
         /// <param name="oldConfiguration">Destination config</param>
-        private void CopyConfiguration(ApplicationConfiguration newConfiguration, ApplicationConfiguration oldConfiguration)
+        private void CopyConfiguration(ApplicationConfiguration newConfiguration,
+            ApplicationConfiguration oldConfiguration)
         {
             foreach (var property in newConfiguration.GetType()
                 .GetProperties().Where(_prop => _prop.CanWrite))
@@ -161,7 +253,7 @@ namespace WebfrontCore.Controllers
         /// <param name="info">property info of the current property</param>
         /// <returns></returns>
         private bool ShouldIgnoreProperty(PropertyInfo info) => (info.GetCustomAttributes(false)
-             .Where(_attr => _attr.GetType() == typeof(ConfigurationIgnore))
-             .FirstOrDefault() as ConfigurationIgnore) != null;
+            .Where(_attr => _attr.GetType() == typeof(ConfigurationIgnore))
+            .FirstOrDefault() as ConfigurationIgnore) != null;
     }
 }

@@ -23,6 +23,7 @@
     <environment include="Production">
         <link rel="stylesheet" href="~/dynamic/css/global.min.css?version=@ViewBag.Version" />
     </environment>
+    @await RenderSectionAsync("styles", false)
 </head>
 <body>
     <header>

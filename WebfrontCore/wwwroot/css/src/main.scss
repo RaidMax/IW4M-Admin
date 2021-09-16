@@ -37,6 +37,10 @@ a.nav-link {
     border-bottom: 1px solid $primary !important;
 }
 
+.border-bottom-dark {
+    border-bottom: 1px solid $body-bg !important;
+}
+
 .server-history {
     background-color: $big-dark;
 }

@@ -73,4 +73,49 @@
 
         return false;
     });
+
+    hljs.highlightAll();
+    $('.edit-file' ).on('keydown .editable', function(e){
+        if(e.keyCode === 9) {
+            document.execCommand ( 'styleWithCSS', true, null )
+            document.execCommand ( 'insertText', true, '  ' )
+            e.preventDefault()
+        }
+    });
+
+    $('.expand-file-icon').click((e) => {
+        const selector = $(e.target).data('editor-id');
+        $(selector).toggleClass('d-none').toggleClass('d-flex');
+        $(e.target).toggleClass('oi-expand-up', 'oi-expand-down');
+    });
+
+    $('.file-save-button').click(e => {
+        const id = $(e.target).prev().find('.editable').attr('id');
+        const content = document.getElementById(id).textContent;
+        const file = $(e.target).data('file-name');
+
+        $.ajax({
+            data: content,
+            type: 'PATCH',
+            url: 'File/' + file,
+            contentType: 'text/plain',
+            complete: function(response) {
+                if (response.status !== 204) {
+                    $('#actionModal').modal();
+                    $('#actionModal .modal-message').text(response.responseText);
+                    $('#actionModal .modal-message').addClass('text-danger');
+                    $('#actionModal .modal-message').fadeIn('fast');
+                    $(e.target).toggleClass('btn-danger');
+                    return;
+                }
+
+                $(e.target).removeClass('btn-danger')
+                $(e.target).toggleClass('btn-success')
+                window.setTimeout(function() {
+                    $(e.target).toggleClass('btn-success');
+                }, 500);
+            }
+        });
+    });
 });
+

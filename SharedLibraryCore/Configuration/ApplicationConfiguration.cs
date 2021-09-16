@@ -135,6 +135,7 @@ namespace SharedLibraryCore.Configuration
             TimeSpan.FromDays(30)
         };
 
+        [ConfigurationIgnore]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]
         public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new Dictionary<string, string>
             {{"afk", "Away from keyboard"}, {"ci", "Connection interrupted. Reconnect"}};
@@ -150,6 +151,7 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore] 
         public TimeSpan ServerDataCollectionInterval { get; set; } = TimeSpan.FromMinutes(5);
         
+        [ConfigurationIgnore]
         public Dictionary<Permission, string> OverridePermissionLevelNames { get; set; } = Enum
             .GetValues(typeof(Permission))
             .Cast<Permission>()

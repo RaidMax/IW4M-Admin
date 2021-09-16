@@ -1,0 +1,58 @@
+﻿@model IEnumerable<WebfrontCore.ViewModels.ConfigurationFileInfo>
+@{
+    ViewData["Title"] = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_TITLE"];
+    var noticeText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONFIGURATION_SAVING_CHANGES"];
+    static string FormatHtmlId(string value) => value?.Replace(".", "").Replace(" ", "_");
+}
+
+@section styles
+{
+    <link rel="stylesheet"
+          href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark.min.css">
+
+}
+
+<div class="row">
+    <div class="col-12 text-white-50 ">
+        <h3 class="text-white">@ViewData["Title"]</h3>
+        <h5 class="mb-4">@noticeText</h5>
+
+        <ul class="nav nav-tabs border-bottom-dark">
+            <li class="nav-item">
+                <a class="nav-link" asp-action="Edit">@ViewBag.Localization["WEBFRONT_CONFIGURATION_GUI"]</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#files">@ViewBag.Localization["WEBFRONT_CONFIGURATION_FILES"]</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane" id="editor">
+            </div>
+            <div class="tab-pane active" id="files">
+                @foreach (var file in Model)
+                {
+                    <div class="bg-primary mb-0 pl-3 pr-3 p-2 text-white d-flex border-bottom-dark">
+                        <span class="oi oi-expand-down align-self-center mr-2 expand-file-icon" data-editor-id="#edit_file_@FormatHtmlId(file.FileName)" title="Toggle Expand"></span>
+                        <span>@file.FileName</span>
+                    </div>
+                    <div class="edit-file bg-dark d-none" id="edit_file_@FormatHtmlId(file.FileName)" data-file-name="@file.FileName">
+                        <pre class="mb-0 mr-auto" spellcheck="false"><code class="language-json bg-dark editable" contenteditable="true" id="edit_file_code_@FormatHtmlId(file.FileName)">@file.FileContent</code></pre>
+                        <button type="button" class="btn btn-primary align-self-end m-3 file-save-button" data-file-name="@file.FileName">Save</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+
+    @section scripts
+    {
+        <!-- I don't want to include the entire highlight js into the bundle for this 1 page -->
+        <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+        
+        <environment include="Development">
+            <script type="text/javascript" src="~/js/configuration.js"></script>
+        </environment>
+    }
+</div>

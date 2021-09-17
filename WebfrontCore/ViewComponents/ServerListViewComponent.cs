@@ -41,7 +41,8 @@ namespace WebfrontCore.ViewComponents
                                         .FirstOrDefault(history => history.ServerId == serverId) ??
                                     new ClientHistoryInfo
                                     {
-                                        ServerId = serverId
+                                        ServerId = serverId,
+                                        ClientCounts = new List<ClientCountSnapshot>()
                                     };
 
                 var counts = clientHistory.ClientCounts?.AsEnumerable() ?? Enumerable.Empty<ClientCountSnapshot>();
@@ -50,7 +51,7 @@ namespace WebfrontCore.ViewComponents
                 {
                     counts = counts.Union(server.ClientHistory
                         .Select(history => history.ToClientCountSnapshot()).Where(history =>
-                            history.Time > (clientHistory.ClientCounts.LastOrDefault()?.Time ?? DateTime.MinValue)));
+                            history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)));
                 }
 
                 serverInfo.Add(new ServerInfo()

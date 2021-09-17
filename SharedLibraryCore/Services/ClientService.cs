@@ -35,6 +35,8 @@ namespace SharedLibraryCore.Services
 
         public async Task<EFClient> Create(EFClient entity)
         {
+            entity.Name = entity.Name.CapClientName(EFAlias.MAX_NAME_LENGTH);
+            
             if (!_appConfig.EnableImplicitAccountLinking)
             {
                 return await HandleNewCreate(entity);
@@ -45,7 +47,6 @@ namespace SharedLibraryCore.Services
             {
                 int? linkId = null;
                 int? aliasId = null;
-                entity.Name = entity.Name.CapClientName(EFAlias.MAX_NAME_LENGTH);
 
                 if (entity.IPAddress != null)
                 {

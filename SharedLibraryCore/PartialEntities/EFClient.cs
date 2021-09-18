@@ -457,7 +457,8 @@ namespace SharedLibraryCore.Database.Models
 
             using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                if (string.IsNullOrWhiteSpace(Name) || CleanedName.Replace(" ", "").Length <
+                var nameToCheck = CurrentServer.IsCodGame() ? CleanedName : Name;
+                if (string.IsNullOrWhiteSpace(Name) || nameToCheck.Replace(" ", "").Length <
                     (CurrentServer?.Manager?.GetApplicationSettings()?.Configuration()?.MinimumNameLength ?? 3))
                 {
                     Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is too short", ToString());

@@ -186,6 +186,8 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static bool IsZombieServer(this Server server) => server.GameName == Game.T6 && _zmGameTypes.Contains(server.Gametype.ToLower());
 
+        public static bool IsCodGame(this Server server) => server.RconParser?.RConEngine == "COD";
+
         /// <summary>
         /// Get the IW Engine color code corresponding to an admin level
         /// </summary>

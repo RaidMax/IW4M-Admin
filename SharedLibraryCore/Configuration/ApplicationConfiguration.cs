@@ -150,6 +150,8 @@ namespace SharedLibraryCore.Configuration
 
         [ConfigurationIgnore] 
         public TimeSpan ServerDataCollectionInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+        public int ServerConnectionAttempts { get; set; } = 6;
         
         [ConfigurationIgnore]
         public Dictionary<Permission, string> OverridePermissionLevelNames { get; set; } = Enum

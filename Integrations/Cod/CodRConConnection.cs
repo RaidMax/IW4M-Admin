@@ -31,13 +31,15 @@ namespace Integrations.Cod
         private IRConParserConfiguration config;
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
+        private readonly int _retryAttempts;
 
-        public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log, Encoding gameEncoding)
+        public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log, Encoding gameEncoding, int retryAttempts)
         {
             RConPassword = password;
             _gameEncoding = gameEncoding;
             _log = log;
             Endpoint = ipEndpoint;
+            _retryAttempts = retryAttempts;
         }
 
         public void SetConfiguration(IRConParser parser)
@@ -137,7 +139,7 @@ namespace Integrations.Cod
                     _log.LogInformation(
                         "Retrying RCon message ({connectionAttempts}/{allowedConnectionFailures} attempts) with parameters {payload}", 
                         connectionState.ConnectionAttempts, 
-                        StaticHelpers.AllowedConnectionFails, parameters);
+                        _retryAttempts, parameters);
                 }
             }
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
@@ -155,7 +157,7 @@ namespace Integrations.Cod
                 bool exceptionCaught = false;
 
                 _log.LogDebug("Sending {payloadLength} bytes to [{endpoint}] ({connectionAttempts}/{allowedConnectionFailures})",
-                payload.Length, Endpoint, connectionState.ConnectionAttempts, StaticHelpers.AllowedConnectionFails);
+                payload.Length, Endpoint, connectionState.ConnectionAttempts, _retryAttempts);
 
                 try
                 {
@@ -173,7 +175,7 @@ namespace Integrations.Cod
                 catch
                 {
                     // we want to retry with a delay
-                    if (connectionState.ConnectionAttempts < StaticHelpers.AllowedConnectionFails)
+                    if (connectionState.ConnectionAttempts < _retryAttempts)
                     {
                         exceptionCaught = true;
                         await Task.Delay(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts));

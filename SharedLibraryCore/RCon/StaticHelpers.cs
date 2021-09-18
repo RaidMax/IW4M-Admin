@@ -64,9 +64,5 @@ namespace SharedLibraryCore.RCon
         /// interval in milliseconds to wait before sending the next RCon request
         /// </summary>
         public static readonly int FloodProtectionInterval = 750;
-        /// <summary>
-        /// how many failed connection attempts before aborting connection
-        /// </summary>
-        public static readonly int AllowedConnectionFails = 5;
     }
 }

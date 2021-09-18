@@ -7,6 +7,7 @@ using Integrations.Source;
 using Integrations.Source.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Configuration;
 
 namespace IW4MAdmin.Application.Factories
 {
@@ -33,8 +34,10 @@ namespace IW4MAdmin.Application.Factories
             return rconEngine switch
             {
                 "COD" => new CodRConConnection(ipEndpoint, password,
-                    _serviceProvider.GetRequiredService<ILogger<CodRConConnection>>(), GameEncoding),
-                "Source"  => new SourceRConConnection(_serviceProvider.GetRequiredService<ILogger<SourceRConConnection>>(),
+                    _serviceProvider.GetRequiredService<ILogger<CodRConConnection>>(), GameEncoding,
+                    _serviceProvider.GetRequiredService<ApplicationConfiguration>()?.ServerConnectionAttempts ?? 6),
+                "Source" => new SourceRConConnection(
+                    _serviceProvider.GetRequiredService<ILogger<SourceRConConnection>>(),
                     _serviceProvider.GetRequiredService<IRConClientFactory>(), ipEndpoint, password),
                 _ => throw new ArgumentException($"No supported RCon engine available for '{rconEngine}'")
             };

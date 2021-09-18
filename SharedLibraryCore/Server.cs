@@ -347,6 +347,6 @@ namespace SharedLibraryCore
 
         // only here for performance
         private readonly bool CustomSayEnabled;
-        private readonly string CustomSayName;
+        protected readonly string CustomSayName;
     }
 }

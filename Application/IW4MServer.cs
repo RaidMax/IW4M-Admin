@@ -310,6 +310,11 @@ namespace IW4MAdmin
                         Console.WriteLine(loc["MANAGER_CONNECTION_REST"].FormatExt($"[{IP}:{Port}]"));
                     }
 
+                    if (!string.IsNullOrEmpty(CustomSayName))
+                    {
+                        await this.SetDvarAsync("sv_sayname", CustomSayName);
+                    }
+
                     Throttled = false;
                 }
 

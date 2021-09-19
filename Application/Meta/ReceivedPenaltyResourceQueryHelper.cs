@@ -47,8 +47,8 @@ namespace IW4MAdmin.Application.Meta
                 .Where(_penalty => _penalty.OffenderId == query.ClientId ||
                                    linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId.AliasLinkId);
 
-            var iqIpLinkedPenalties = new List<EFPenalty>().AsQueryable();
-
+            IQueryable<EFPenalty> iqIpLinkedPenalties = null;
+            
             if (!_appConfig.EnableImplicitAccountLinking)
             {
                 var usedIps = await ctx.Aliases.AsNoTracking()
@@ -64,7 +64,14 @@ namespace IW4MAdmin.Application.Meta
                         linkedPenaltyType.Contains(penalty.Type) && aliasedIds.Contains(penalty.LinkId));
             }
 
-            var penalties = await iqPenalties.Union(iqIpLinkedPenalties)
+            var iqAllPenalties = iqPenalties;
+            
+            if (iqIpLinkedPenalties != null)
+            {
+                iqAllPenalties = iqPenalties.Union(iqIpLinkedPenalties);
+            }
+
+             var penalties = await iqAllPenalties
                 .Where(_penalty => _penalty.When < query.Before)
                 .OrderByDescending(_penalty => _penalty.When)
                 .Take(query.Count)

@@ -842,6 +842,24 @@ namespace SharedLibraryCore.Services
             await ctx.Aliases.Where(_alias => _alias.IPAddress == client.CurrentAlias.IPAddress && _alias.IPAddress != null)
                 .ForEachAsync(_alias => _alias.LinkId = newLink.AliasLinkId);
 
+            if (!_appConfig.EnableImplicitAccountLinking)
+            {
+                var clientIdsByIp = await ctx.Clients.Where(c =>
+                        client.CurrentAlias.IPAddress != null &&
+                        c.CurrentAlias.IPAddress == client.CurrentAlias.IPAddress)
+                    .Select(c => c.ClientId)
+                    .ToListAsync();
+
+                await ctx.Penalties.Where(penalty =>
+                        clientIdsByIp.Contains(penalty.OffenderId)
+                        && new[]
+                        {
+                            EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.TempBan, EFPenalty.PenaltyType.Flag
+                        }.Contains(penalty.Type)
+                        && penalty.Expires == null)
+                    .ForEachAsync(penalty => penalty.Expires = DateTime.UtcNow);
+            }
+
             await ctx.SaveChangesAsync();
         }
 

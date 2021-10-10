@@ -31,7 +31,7 @@ namespace SharedLibraryCore.Configuration
             }
         };
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
     }
 
     public class SocialAccountConfiguration

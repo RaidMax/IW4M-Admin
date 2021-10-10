@@ -57,6 +57,7 @@ namespace SharedLibraryCore
             ViewBag.Version = Manager.Version;
             ViewBag.IsFluid = false;
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+            ViewBag.Language = Utilities.CurrentLocalization.Culture.TwoLetterISOLanguageName;
 
             Client ??= new EFClient()
             {
@@ -125,6 +126,9 @@ namespace SharedLibraryCore
                 SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
             }
 
+            var communityName = Manager.GetApplicationSettings().Configuration().CommunityInformation?.Name;
+            var shouldUseCommunityName = !string.IsNullOrWhiteSpace(communityName) && !communityName.Contains("IW4MAdmin");
+            
             ViewBag.Authorized = Authorized;
             ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontUrl;
             ViewBag.User = Client;
@@ -133,7 +137,9 @@ namespace SharedLibraryCore
             ViewBag.SocialTitle = SocialTitle;
             ViewBag.Pages = Pages;
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
-            ViewBag.CustomBranding = Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
+            ViewBag.CustomBranding = shouldUseCommunityName
+                ? communityName
+                : Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
             ViewBag.EnablePrivilegedUserPrivacy = Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy;
 

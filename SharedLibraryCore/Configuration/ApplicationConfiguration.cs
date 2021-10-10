@@ -11,6 +11,9 @@ namespace SharedLibraryCore.Configuration
 {
     public class ApplicationConfiguration : IBaseConfiguration
     {
+        [ConfigurationIgnore]
+        public CommunityInformationConfiguration CommunityInformation { get; set; } = new CommunityInformationConfiguration();
+            
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
         [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor",
             "WebfrontCustomBranding")]

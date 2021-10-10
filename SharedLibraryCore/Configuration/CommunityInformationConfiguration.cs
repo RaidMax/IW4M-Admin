@@ -1,4 +1,6 @@
-﻿namespace SharedLibraryCore.Configuration
+﻿using System.Linq;
+
+namespace SharedLibraryCore.Configuration
 {
     public class CommunityInformationConfiguration
     {
@@ -28,6 +30,8 @@
                 IconUrl = "https://raw.githubusercontent.com/edent/SuperTinyIcons/master/images/svg/youtube.svg"
             }
         };
+
+        public bool IsEnabled { get; set; }
     }
 
     public class SocialAccountConfiguration

@@ -37,8 +37,11 @@
                     <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "Home", new {area = ""}, new {@class = "nav-link nav-icon oi oi-hard-drive", title=@loc["WEBFRONT_NAV_SERVERS"]})</li>
                     <li class="nav-item text-center d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_SERVERS"], "Index", "Home", new {area = ""}, new {@class = "nav-link"})</li>
                     
-                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "About", new {area = ""}, new {@class = "nav-link nav-icon oi oi-list-rich", title=loc["WEBFRONT_NAV_ABOUT"]})</li>
-                    <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_ABOUT"], "Index", "About", new {area = ""}, new {@class = "nav-link"})</li>
+                    @if (ViewBag.Configuration.CommunityInformation.IsEnabled)
+                    {
+                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "About", new {area = ""}, new {@class = "nav-link nav-icon oi oi-list-rich", title = loc["WEBFRONT_NAV_ABOUT"]})</li>
+                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_ABOUT"], "Index", "About", new {area = ""}, new {@class = "nav-link"})</li>
+                    }
                     
                     <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "List", "Penalty", new {area = ""}, new {@class = "nav-link nav-icon oi oi-lock-locked", title=loc["WEBFRONT_NAV_PENALTIES"]})</li>
                     <li class="nav-item text-center d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new {area = ""}, new {@class = "nav-link"})</li>

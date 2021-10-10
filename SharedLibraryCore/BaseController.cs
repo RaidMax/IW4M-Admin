@@ -12,6 +12,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Data.Context;
 using Data.Models;
+using SharedLibraryCore.Configuration;
 
 namespace SharedLibraryCore
 {
@@ -31,22 +32,21 @@ namespace SharedLibraryCore
         private static string SocialLink;
         private static string SocialTitle;
         protected List<Page> Pages;
+        protected ApplicationConfiguration AppConfig { get; }
 
         public BaseController(IManager manager)
         {
             Manager = manager;
+            Localization ??= Utilities.CurrentLocalization.LocalizationIndex;
+            AppConfig = Manager.GetApplicationSettings().Configuration();
 
-            if (Localization == null)
+            if (AppConfig.EnableSocialLink && SocialLink == null)
             {
-                Localization = Utilities.CurrentLocalization.LocalizationIndex;
+                SocialLink = AppConfig.SocialLinkAddress;
+                SocialTitle = AppConfig.SocialLinkTitle;
             }
 
-            if (Manager.GetApplicationSettings().Configuration().EnableSocialLink && SocialLink == null)
-            {
-                SocialLink = Manager.GetApplicationSettings().Configuration().SocialLinkAddress;
-                SocialTitle = Manager.GetApplicationSettings().Configuration().SocialLinkTitle;
-            }
-
+            
             Pages = Manager.GetPageList().Pages
                 .Select(page => new Page
                 {
@@ -56,7 +56,7 @@ namespace SharedLibraryCore
 
             ViewBag.Version = Manager.Version;
             ViewBag.IsFluid = false;
-            ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+            ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
             ViewBag.Language = Utilities.CurrentLocalization.Culture.TwoLetterISOLanguageName;
 
             Client ??= new EFClient()
@@ -126,11 +126,13 @@ namespace SharedLibraryCore
                 SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
             }
 
-            var communityName = Manager.GetApplicationSettings().Configuration().CommunityInformation?.Name;
-            var shouldUseCommunityName = !string.IsNullOrWhiteSpace(communityName) && !communityName.Contains("IW4MAdmin");
+            var communityName = AppConfig.CommunityInformation?.Name;
+            var shouldUseCommunityName = !string.IsNullOrWhiteSpace(communityName) 
+                                         && !communityName.Contains("IW4MAdmin") 
+                                         && AppConfig.CommunityInformation.IsEnabled;
             
             ViewBag.Authorized = Authorized;
-            ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontUrl;
+            ViewBag.Url = AppConfig.WebfrontUrl;
             ViewBag.User = Client;
             ViewBag.Version = Manager.Version;
             ViewBag.SocialLink = SocialLink ?? "";
@@ -139,9 +141,10 @@ namespace SharedLibraryCore
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
             ViewBag.CustomBranding = shouldUseCommunityName
                 ? communityName
-                : Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
-            ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
-            ViewBag.EnablePrivilegedUserPrivacy = Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy;
+                : AppConfig.WebfrontCustomBranding ?? "IW4MAdmin";
+            ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
+            ViewBag.EnablePrivilegedUserPrivacy = AppConfig.EnablePrivilegedUserPrivacy;
+            ViewBag.Configuration = AppConfig;
 
             base.OnActionExecuting(context);
         }

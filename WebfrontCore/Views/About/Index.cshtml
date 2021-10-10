@@ -1,6 +1,12 @@
-﻿@model WebfrontCore.ViewModels.CommunityInfo
+﻿@using SharedLibraryCore.Configuration
+@model WebfrontCore.ViewModels.CommunityInfo
 @{
-    var allRules = Model.ServerRules.Prepend(new KeyValuePair<string, string[]>(ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], Model.GlobalRules));
+    IEnumerable<KeyValuePair<string, string[]>> allRules = new []{new KeyValuePair<string, string[]>(ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], Model.GlobalRules)};
+    var serverRules = Model.ServerRules?.Where(server => server.Value != null && server.Value.Any()).ToList();
+    if (serverRules?.Any() ?? false)
+    {
+        allRules = allRules.Union(serverRules);
+    }
 }
 
 <div class="row">
@@ -22,7 +28,7 @@
             <h4 class="text-primary">@ViewBag.Localization["WEBFRONT_ABOUT_TITLE"]</h4>
             <color-code value="@Model.CommunityInformation.Description" allow="@ViewBag.EnableColorCodes"></color-code>
             <div class="mt-3">
-                @foreach (var social in Model.CommunityInformation.SocialAccounts)
+                @foreach (var social in Model.CommunityInformation.SocialAccounts ?? new SocialAccountConfiguration[0])
                 {
                     <div>
                         <a href="@social.Url" target="_blank" title="@social.Title">
@@ -43,11 +49,14 @@
         </div>
     }
 
-    <h2 class="pb-3 ml-auto mr-auto ml-md-0">@ViewBag.Localization["WEBFRONT_ABOUT_COMMUNITY_GUIDELINES"]</h2>
+    @if (allRules.Any(rule => rule.Value.Any()))
+    {
+        <h2 class="pb-3 ml-auto mr-auto ml-md-0">@ViewBag.Localization["WEBFRONT_ABOUT_COMMUNITY_GUIDELINES"]</h2>
+    }
 
     @foreach (var (serverName, rules) in allRules)
     {
-        if (rules?.Length == 0)
+        if (!rules.Any())
         {
             continue;
         }

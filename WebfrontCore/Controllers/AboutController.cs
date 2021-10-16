@@ -19,7 +19,7 @@ namespace WebfrontCore.Controllers
 
         public IActionResult Index()
         {
-            ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_ABOUT"].FormatExt(
+            ViewBag.Description = Localization["WEBFRONT_ABOUT_DESCRIPTION"].FormatExt(
                 _appConfig.ShouldUseFallbackBranding()
                     ? _appConfig.WebfrontCustomBranding
                     : _appConfig.CommunityInformation.Name);

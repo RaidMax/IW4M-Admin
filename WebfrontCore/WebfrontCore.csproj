@@ -79,10 +79,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Views\Plugins\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Remove="Views\Plugins\**" />
   </ItemGroup>
 
@@ -96,7 +92,7 @@
     <Exec Command="if $(ConfigurationName) == Debug ( &#xD;&#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap.scss&#xD;&#xA;echo d | xcopy /f /y $(ProjectDir)wwwroot\lib\open-iconic\font\fonts $(ProjectDir)wwwroot\font\&#xD;&#xA;)" />
   </Target>
 
-  <Target Name="MyPreCompileTarget" BeforeTargets="Build">
+  <Target Name="MyPreCompileTarget" BeforeTargets="Build" Condition="'$(Configuration)'!='Debug'">
    <Exec Command="dotnet bundle" />
   </Target>
 </Project>

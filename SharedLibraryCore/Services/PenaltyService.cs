@@ -162,15 +162,29 @@ namespace SharedLibraryCore.Services
                 .Where(p => p.LinkId == linkId)
                 .Where(filter);
 
-            var iqIpPenalties = _appConfig.EnableImplicitAccountLinking
-                ? context.Aliases
+            IQueryable<EFPenalty> iqIpPenalties;
+            
+            if (_appConfig.EnableImplicitAccountLinking)
+            {
+               iqIpPenalties = context.Aliases
                     .Where(a => a.IPAddress != null && a.IPAddress == ip)
                     .SelectMany(a => a.Link.ReceivedPenalties)
-                    .Where(filter)
-                : context.Penalties.Where(penalty =>
-                        penalty.Offender.CurrentAlias.IPAddress != null &&
-                        penalty.Offender.CurrentAlias.IPAddress == ip)
                     .Where(filter);
+            }
+            else
+            {
+                var aliasIps = await context.Aliases.Where(alias => alias.LinkId == linkId && alias.IPAddress != null)
+                    .Select(alias => alias.IPAddress)
+                    .ToListAsync();
+                if (ip != null)
+                {
+                    aliasIps.Add(ip);
+                }
+
+                iqIpPenalties = context.Penalties
+                    .Where(penalty => aliasIps.Contains(penalty.Offender.CurrentAlias.IPAddress))
+                    .Where(filter);
+            }
 
             var activePenalties = (await iqLinkPenalties.ToListAsync())
                 .Union(await iqIpPenalties.ToListAsync())

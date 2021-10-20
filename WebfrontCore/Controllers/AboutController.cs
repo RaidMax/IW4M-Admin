@@ -27,14 +27,20 @@ namespace WebfrontCore.Controllers
                 ? Localization["WEBFRONT_NAV_ABOUT"]
                 : _appConfig.CommunityInformation.Name;
 
+            var activeServers = _appConfig.Servers.Where(server =>
+                Manager.GetServers().FirstOrDefault(s => s.IP == server.IPAddress && s.Port == server.Port) != null);
+
             var info = new CommunityInfo
             {
                 GlobalRules = _appConfig.GlobalRules,
-                ServerRules =
-                    _appConfig.Servers.ToDictionary(
-                        config => Manager.GetServers().FirstOrDefault(server =>
-                            server.IP == config.IPAddress && server.Port == config.Port)?.Hostname,
-                        config => config.Rules),
+                ServerRules = activeServers.ToDictionary(
+                    config =>
+                    {
+                        var server = Manager.GetServers().FirstOrDefault(server =>
+                            server.IP == config.IPAddress && server.Port == config.Port);
+                        return (server.Hostname, server.EndPoint);
+                    },
+                    config => config.Rules),
                 CommunityInformation = _appConfig.CommunityInformation
             };
 

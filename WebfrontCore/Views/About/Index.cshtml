@@ -1,7 +1,7 @@
 ﻿@using SharedLibraryCore.Configuration
 @model WebfrontCore.ViewModels.CommunityInfo
 @{
-    IEnumerable<KeyValuePair<string, string[]>> allRules = new[] {new KeyValuePair<string, string[]>(ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], Model.GlobalRules)};
+    IEnumerable<KeyValuePair<(string, long), string[]>> allRules = new[] {new KeyValuePair<(string, long), string[]>((ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], 0), Model.GlobalRules)};
     var serverRules = Model.ServerRules?.Where(server => server.Value != null && server.Value.Any()).ToList();
     if (serverRules?.Any() ?? false)
     {
@@ -56,7 +56,7 @@
         <h2 class="pb-3 p-0 col-12 text-center text-md-left">@ViewBag.Localization["WEBFRONT_ABOUT_COMMUNITY_GUIDELINES"]</h2>
     }
 
-    @foreach (var (serverName, rules) in allRules)
+    @foreach (var ((serverName, id), rules) in allRules)
     {
         if (!rules.Any())
         {

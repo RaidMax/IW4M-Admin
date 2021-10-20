@@ -202,5 +202,6 @@
             });
     </script>
     @await RenderSectionAsync("scripts", required: false)
+    @Html.Raw(ViewBag.ScriptInjection);
 </body>
 </html>

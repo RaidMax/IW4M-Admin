@@ -145,6 +145,7 @@ namespace SharedLibraryCore
             ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
             ViewBag.EnablePrivilegedUserPrivacy = AppConfig.EnablePrivilegedUserPrivacy;
             ViewBag.Configuration = AppConfig;
+            ViewBag.ScriptInjection = AppConfig.Webfront?.ScriptInjection;
 
             base.OnActionExecuting(context);
         }

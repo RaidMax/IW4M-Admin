@@ -38,6 +38,9 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_BRANDING")]
         public string WebfrontCustomBranding { get; set; }
 
+        [ConfigurationIgnore]
+        public WebfrontConfiguration Webfront { get; set; } = new WebfrontConfiguration();
+
         [LocalizedDisplayName("SETUP_ENABLE_MULTIOWN")]
         public bool EnableMultipleOwners { get; set; }
 

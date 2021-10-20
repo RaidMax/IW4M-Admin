@@ -179,7 +179,8 @@ namespace IW4MAdmin.Application.Misc
                                 Id = s.EndPoint,
                                 Port = (short)s.Port,
                                 IPAddress = s.IP
-                            }).ToList()
+                            }).ToList(),
+                WebfrontUrl = _appConfig.WebfrontUrl
             };
 
             Response<ResultMessage> response = null;

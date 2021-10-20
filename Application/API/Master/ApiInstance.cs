@@ -22,7 +22,7 @@ namespace IW4MAdmin.Application.API.Master
         public int Uptime { get; set; }
 
         /// <summary>
-        /// Specifices the version of the instance
+        /// Specifies the version of the instance
         /// </summary>
         [JsonProperty("version")]
         [JsonConverter(typeof(BuildNumberJsonConverter))]
@@ -33,5 +33,11 @@ namespace IW4MAdmin.Application.API.Master
         /// </summary>
         [JsonProperty("servers")]
         public List<ApiServer> Servers { get; set; }
+        
+        /// <summary>
+        /// Url IW4MAdmin is listening on
+        /// </summary>
+        [JsonProperty("webfront_url")]
+        public string WebfrontUrl { get; set; }
     }
 }

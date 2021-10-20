@@ -12,15 +12,15 @@
     <Description>Welcome plugin for IW4MAdmin welcomes clients to the server</Description>
     <Copyright>2018</Copyright>
     <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2.4.9" PrivateAssets="All" />
-  </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(ProjectDir)..\..\Build\Plugins --no-build --no-restore --no-dependencies" />
   </Target>
+
+  <ItemGroup>
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2021.8.31.1" PrivateAssets="All" />
+  </ItemGroup>
 
 </Project>

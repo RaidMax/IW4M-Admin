@@ -6,15 +6,22 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Configuration;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Localization
 {
-    public class Configure
+    public static class Configure
     {
-        public static ITranslationLookup Initialize(bool useLocalTranslation, IMasterApi apiInstance, string customLocale = null)
+        public static ITranslationLookup Initialize(ILogger logger, IMasterApi apiInstance, ApplicationConfiguration applicationConfiguration)
         {
-            string currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
-            string[] localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");
+            var useLocalTranslation = applicationConfiguration?.UseLocalTranslations ?? true;
+            var customLocale = applicationConfiguration?.EnableCustomLocale ?? false
+                ? (applicationConfiguration.CustomLocale ?? "en-US")
+                : "en-US";
+            var currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
+            var localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");
 
             if (!useLocalTranslation)
             {
@@ -25,9 +32,10 @@ namespace IW4MAdmin.Application.Localization
                     return localization.LocalizationIndex;
                 }
 
-                catch (Exception)
+                catch (Exception ex)
                 {
                     // the online localization failed so will default to local files
+                    logger.LogWarning(ex, "Could not download latest translations");
                 }
             }
 
@@ -55,17 +63,19 @@ namespace IW4MAdmin.Application.Localization
             {
                 var localizationContents = File.ReadAllText(filePath, Encoding.UTF8);
                 var eachLocalizationFile = Newtonsoft.Json.JsonConvert.DeserializeObject<SharedLibraryCore.Localization.Layout>(localizationContents);
+                if (eachLocalizationFile == null)
+                {
+                    continue;
+                }
 
                 foreach (var item in eachLocalizationFile.LocalizationIndex.Set)
                 {
                     if (!localizationDict.TryAdd(item.Key, item.Value))
                     {
-                        Program.ServerManager.GetLogger(0).WriteError($"Could not add locale string {item.Key} to localization");
+                        logger.LogError("Could not add locale string {key} to localization", item.Key);
                     }
                 }
             }
-
-            string localizationFile = $"{Path.Join(Utilities.OperatingDirectory, "Localization")}{Path.DirectorySeparatorChar}IW4MAdmin.{currentLocale}-{currentLocale.ToUpper()}.json";
 
             Utilities.CurrentLocalization = new SharedLibraryCore.Localization.Layout(localizationDict)
             {

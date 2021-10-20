@@ -1,7 +1,10 @@
-﻿using SharedLibraryCore;
+﻿using System;
+using Data.Abstractions;
+using Data.Models.Server;
+using Microsoft.Extensions.DependencyInjection;
+using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using System.Collections;
 
 namespace IW4MAdmin.Application.Factories
 {
@@ -11,21 +14,21 @@ namespace IW4MAdmin.Application.Factories
     internal class GameServerInstanceFactory : IGameServerInstanceFactory
     {
         private readonly ITranslationLookup _translationLookup;
-        private readonly IRConConnectionFactory _rconConnectionFactory;
-        private readonly IGameLogReaderFactory _gameLogReaderFactory;
         private readonly IMetaService _metaService;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// base constructor
         /// </summary>
         /// <param name="translationLookup"></param>
         /// <param name="rconConnectionFactory"></param>
-        public GameServerInstanceFactory(ITranslationLookup translationLookup, IRConConnectionFactory rconConnectionFactory, IGameLogReaderFactory gameLogReaderFactory, IMetaService metaService)
+        public GameServerInstanceFactory(ITranslationLookup translationLookup,
+            IMetaService metaService,
+            IServiceProvider serviceProvider)
         {
             _translationLookup = translationLookup;
-            _rconConnectionFactory = rconConnectionFactory;
-            _gameLogReaderFactory = gameLogReaderFactory;
             _metaService = metaService;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -36,7 +39,10 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public Server CreateServer(ServerConfiguration config, IManager manager)
         {
-            return new IW4MServer(manager, config, _translationLookup, _rconConnectionFactory, _gameLogReaderFactory, _metaService);
+            return new IW4MServer(config,
+                _serviceProvider.GetRequiredService<CommandConfiguration>(), _translationLookup, _metaService,
+                _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
+                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
         }
     }
 }

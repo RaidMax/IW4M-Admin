@@ -8,13 +8,16 @@
     }
 }
 <div class="row mb-4 border-bottom border-top pt-3 pb-3 bg-dark">
-    <div class="col-xl-4 col-12">
+    <div class="col-xl-3 col-12">
         <div class="text-muted text-center text-xl-left">@Html.Raw(formatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</div>
     </div>
-    <div class="col-xl-4 col-12">
+    <div class="col-xl-3 col-12 moment-date" title="@Model.MaxConcurrentClientsTime">
+            <div class="text-muted text-center text-xl-left">@Html.Raw(formatTranslation("WEBFRONT_HOME_MAX_CONCURRENT_CLIENTS", Model.MaxConcurrentClients.ToString("#,##0")))</div>
+        </div>
+    <div class="col-xl-3 col-12">
         <div class="text-muted text-center">@Html.Raw(formatTranslation("WEBFRONT_HOME_RECENT_CLIENTS", Model.RecentClientCount.ToString("#,##0")))</div>
     </div>
-    <div class="col-xl-4 col-12">
+    <div class="col-xl-3 col-12">
         <div class="text-muted text-center text-xl-right">@Html.Raw(formatTranslation("WEBFRONT_HOME_TOTAL_CLIENTS", Model.TotalClientCount.ToString("#,##0")))</div>
     </div>
 </div>

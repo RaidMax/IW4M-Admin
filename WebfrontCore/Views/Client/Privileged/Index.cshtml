@@ -7,7 +7,7 @@
         foreach (var key in Model.Keys)
         {
             <div class="col-12 bg-primary pt-2 pb-2">
-                @key.ToString()
+                @Utilities.ToLocalizedLevelName(key)
             </div>
 
             <div class="col-12 bg-dark pt-2 pb-2">

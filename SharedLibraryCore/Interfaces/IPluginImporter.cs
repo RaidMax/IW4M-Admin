@@ -12,7 +12,7 @@ namespace SharedLibraryCore.Interfaces
         /// discovers C# assembly plugin and command types
         /// </summary>
         /// <returns>tuple of IPlugin implementation type definitions, and IManagerCommand type definitions</returns>
-        (IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations();
+        (IEnumerable<Type>, IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations();
 
         /// <summary>
         /// discovers the script plugins

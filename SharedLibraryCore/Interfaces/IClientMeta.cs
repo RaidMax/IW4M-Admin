@@ -26,6 +26,7 @@ namespace SharedLibraryCore.Interfaces
         ChatMessage,
         Penalized,
         ReceivedPenalty,
-        QuickMessage
+        QuickMessage,
+        ConnectionHistory
     }
 }

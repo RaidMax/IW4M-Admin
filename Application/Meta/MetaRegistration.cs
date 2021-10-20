@@ -6,6 +6,8 @@ using SharedLibraryCore.QueryHelper;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
 {
@@ -18,11 +20,14 @@ namespace IW4MAdmin.Application.Meta
         private readonly IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse> _receivedPenaltyHelper;
         private readonly IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> _administeredPenaltyHelper;
         private readonly IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> _updatedAliasHelper;
+        private readonly IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>
+            _connectionHistoryHelper;
 
-        public MetaRegistration(ILogger logger, IMetaService metaService, ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
+        public MetaRegistration(ILogger<MetaRegistration> logger, IMetaService metaService, ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
             IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse> receivedPenaltyHelper,
             IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> administeredPenaltyHelper,
-            IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> updatedAliasHelper)
+            IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> updatedAliasHelper,
+            IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse> connectionHistoryHelper)
         {
             _logger = logger;
             _transLookup = transLookup;
@@ -31,6 +36,7 @@ namespace IW4MAdmin.Application.Meta
             _receivedPenaltyHelper = receivedPenaltyHelper;
             _administeredPenaltyHelper = administeredPenaltyHelper;
             _updatedAliasHelper = updatedAliasHelper;
+            _connectionHistoryHelper = connectionHistoryHelper;
         }
 
         public void Register()
@@ -39,6 +45,7 @@ namespace IW4MAdmin.Application.Meta
             _metaService.AddRuntimeMeta<ClientPaginationRequest, ReceivedPenaltyResponse>(MetaType.ReceivedPenalty, GetReceivedPenaltiesMeta);
             _metaService.AddRuntimeMeta<ClientPaginationRequest, AdministeredPenaltyResponse>(MetaType.Penalized, GetAdministeredPenaltiesMeta);
             _metaService.AddRuntimeMeta<ClientPaginationRequest, UpdatedAliasResponse>(MetaType.AliasUpdate, GetUpdatedAliasMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, ConnectionHistoryResponse>(MetaType.ConnectionHistory, GetConnectionHistoryMeta);
         }
 
         private async Task<IEnumerable<InformationResponse>> GetProfileMeta(ClientPaginationRequest request)
@@ -82,7 +89,7 @@ namespace IW4MAdmin.Application.Meta
 
             if (client == null)
             {
-                _logger.WriteWarning($"No client found with id {request.ClientId} when generating profile meta");
+                _logger.LogWarning("No client found with id {clientId} when generating profile meta", request.ClientId);
                 return metaList;
             }
 
@@ -160,6 +167,12 @@ namespace IW4MAdmin.Application.Meta
         {
             var aliases = await _updatedAliasHelper.QueryResource(request);
             return aliases.Results;
+        }
+        
+        private async Task<IEnumerable<ConnectionHistoryResponse>> GetConnectionHistoryMeta(ClientPaginationRequest request)
+        {
+            var connections = await _connectionHistoryHelper.QueryResource(request);
+            return connections.Results;
         }
     }
 }

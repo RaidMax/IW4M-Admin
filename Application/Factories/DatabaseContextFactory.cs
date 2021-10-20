@@ -1,5 +1,9 @@
-﻿using SharedLibraryCore.Database;
-using SharedLibraryCore.Interfaces;
+﻿using System;
+using Data.Abstractions;
+using Data.Context;
+using Data.MigrationContext;
+using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Configuration;
 
 namespace IW4MAdmin.Application.Factories
 {
@@ -8,6 +12,15 @@ namespace IW4MAdmin.Application.Factories
     /// </summary>
     public class DatabaseContextFactory : IDatabaseContextFactory
     {
+        private readonly DbContextOptions _contextOptions;
+        private readonly string _activeProvider;
+
+        public DatabaseContextFactory(ApplicationConfiguration appConfig, DbContextOptions contextOptions)
+        {
+            _contextOptions = contextOptions;
+            _activeProvider = appConfig.DatabaseProvider?.ToLower();
+        }
+
         /// <summary>
         /// creates a new database context
         /// </summary>
@@ -15,7 +28,35 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public DatabaseContext CreateContext(bool? enableTracking = true)
         {
-            return enableTracking.HasValue ? new DatabaseContext(disableTracking: !enableTracking.Value) : new DatabaseContext();
+            var context = BuildContext();
+
+            enableTracking ??= true;
+
+            if (enableTracking.Value)
+            {
+                context.ChangeTracker.AutoDetectChangesEnabled = true;
+                context.ChangeTracker.LazyLoadingEnabled = true;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            }
+            else
+            {
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.LazyLoadingEnabled = false;
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            }
+
+            return context;
+        }
+
+        private DatabaseContext BuildContext()
+        {
+            return _activeProvider switch
+            {
+                "sqlite" => new SqliteDatabaseContext(_contextOptions),
+                "mysql" => new MySqlDatabaseContext(_contextOptions),
+                "postgresql" => new PostgresqlDatabaseContext(_contextOptions),
+                _ => throw new ArgumentException($"No context found for {_activeProvider}")
+            };
         }
     }
 }

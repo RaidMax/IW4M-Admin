@@ -1,0 +1,81 @@
+﻿@using SharedLibraryCore.Configuration
+@model WebfrontCore.ViewModels.CommunityInfo
+@{
+    IEnumerable<KeyValuePair<(string, long), string[]>> allRules = new[] {new KeyValuePair<(string, long), string[]>((ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], 0), Model.GlobalRules)};
+    var serverRules = Model.ServerRules?.Where(server => server.Value != null && server.Value.Any()).ToList();
+    if (serverRules?.Any() ?? false)
+    {
+        allRules = allRules.Union(serverRules);
+    }
+}
+
+<div class="row text-break">
+    @if (Model.CommunityInformation.EnableBanner)
+    {
+        <img class="img-fluid mb-3" style="max-height: 250px" src="images/community/banner.png" alt="@Model.CommunityInformation.Name"/>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.CommunityInformation.Name))
+    {
+        <h2 class="mb-4 p-0 col-12 text-center text-md-left">
+            <color-code value="@Model.CommunityInformation.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+        </h2>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.CommunityInformation.Description))
+    {
+        <div class="p-4 bg-dark border border-primary mb-4 text-white-50 col-12">
+            <h4 class="text-primary">@ViewBag.Localization["WEBFRONT_ABOUT_TITLE"]</h4>
+            <color-code value="@Model.CommunityInformation.Description" allow="@ViewBag.EnableColorCodes"></color-code>
+            <div class="mt-3">
+                @foreach (var social in Model.CommunityInformation.SocialAccounts ?? new SocialAccountConfiguration[0])
+                {
+                    <div>
+                        <a href="@social.Url" target="_blank" title="@social.Title">
+                            @if (!string.IsNullOrWhiteSpace(social.IconId))
+                            {
+                                <span class="oi @social.IconId"></span>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(social.IconUrl))
+                            {
+                                var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl) 
+                                    ? parsedUrl.AbsoluteUri 
+                                    : $"images/community/{social.IconUrl}";
+                                <img class="img-fluid" style="max-width: 1rem; fill: white" src="@url" alt="@social.Title"/>
+                            }
+                            <span class="ml-1">@social.Title</span>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (allRules.Any(rule => rule.Value.Any()))
+    {
+        <h2 class="pb-3 p-0 col-12 text-center text-md-left">@ViewBag.Localization["WEBFRONT_ABOUT_COMMUNITY_GUIDELINES"]</h2>
+    }
+
+    @foreach (var ((serverName, id), rules) in allRules)
+    {
+        if (!rules.Any())
+        {
+            continue;
+        }
+
+        var start = 1;
+        <div class="col-12 bg-dark p-4 border border-primary mb-4 col-12">
+            <div class="text-primary h4">
+                <color-code value="@serverName" allow="@ViewBag.EnableColorCodes"></color-code>
+            </div>
+            @foreach (var rule in rules)
+            {
+                <div class="text-white-50">
+                    <span class="text-white">@start.</span>
+                    <color-code value="@rule" allow="@ViewBag.EnableColorCodes"></color-code>
+                </div>
+                start++;
+            }
+        </div>
+    }
+</div>

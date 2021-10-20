@@ -1,0 +1,11 @@
+﻿@{ 
+    Layout = null; 
+}
+@model IList<SharedLibraryCore.Dtos.PenaltyInfo>
+
+@{
+    foreach (var penalty in Model)
+    {
+        await Html.RenderPartialAsync("_Penalty", penalty);
+    }
+}

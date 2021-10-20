@@ -1,13 +1,34 @@
 ﻿$(document).ready(function () {
-	/*
-	Expand alias tab if they have any
-	*/
+    /*
+    Expand alias tab if they have any
+    */
     $('#profile_aliases_btn').click(function (e) {
         const aliases = $('#profile_aliases').text().trim();
         if (aliases && aliases.length !== 0) {
             $('#profile_aliases').slideToggle(150);
             $(this).toggleClass('oi-caret-top');
         }
+    });
+
+    const ipAddresses = $('.ip-lookup-profile');
+    $.each(ipAddresses, function (index, address) {
+        let ip = $(address).data('ip');
+        if (ip.length === 0) {
+            return;
+        }
+        $.get('https://ip2c.org/' + ip, function (result) {
+            const countryCode = result.split(';')[1].toLowerCase();
+            const country = result.split(';')[3];
+
+            if (country === 'Unknown') {
+                return;
+            }
+            
+            $('#ip_lookup_country').text(country);
+            if (countryCode !== 'zz' && countryCode !== '') {
+                $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+            }
+        });
     });
 
     /* set the end time for initial event query */
@@ -35,7 +56,7 @@
 
         $(this).children().filter('.client-message-prefix').removeClass('oi-chevron-right');
         $(this).children().filter('.client-message-prefix').addClass('oi-chevron-bottom');
-       
+
         $.get('/Stats/GetMessageAsync', {
             'serverId': $(this).data('serverid'),
             'when': $(this).data('when')
@@ -102,7 +123,7 @@
                     $('#mainModal .modal-body').append(response.city);
                 }
                 if (response.region.length > 0) {
-                    $('#mainModal .modal-body').append((response.city.length > 0  ? ', ' : '') + response.region);
+                    $('#mainModal .modal-body').append((response.city.length > 0 ? ', ' : '') + response.region);
                 }
                 if (response.country.length > 0) {
                     $('#mainModal .modal-body').append((response.country.length > 0 ? ', ' : '') + response.country);

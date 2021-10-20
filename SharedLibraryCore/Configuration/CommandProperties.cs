@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using static SharedLibraryCore.Database.Models.EFClient;
+using static Data.Models.Client.EFClient;
 using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Configuration

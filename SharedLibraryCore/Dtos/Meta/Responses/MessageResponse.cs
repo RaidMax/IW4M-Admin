@@ -27,6 +27,11 @@ namespace SharedLibraryCore.Dtos.Meta.Responses
         /// indicates if the chat message is a quick message phrase
         /// </summary>
         public bool IsQuickMessage { get; set; }
+        
+        /// <summary>
+        /// indicates if the message was sent ingame
+        /// </summary>
+        public bool SentIngame { get; set; }
 
         public string HiddenMessage => string.Concat(Enumerable.Repeat('●', Message.Length));
     }

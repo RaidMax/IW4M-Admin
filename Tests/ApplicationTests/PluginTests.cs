@@ -11,11 +11,9 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -53,7 +51,7 @@ namespace ApplicationTests
         [Test]
         public async Task Test_GenericGuidClientIsKicked()
         {
-            var plugin = new ScriptPlugin(Path.Join(PLUGIN_DIR, "SharedGUIDKick.js"), PLUGIN_DIR);
+            var plugin = new ScriptPlugin(serviceProvider.GetRequiredService<ILogger>(), Path.Join(PLUGIN_DIR, "SharedGUIDKick.js"), PLUGIN_DIR);
             var server = serviceProvider.GetRequiredService<IW4MServer>();
             server.GameName = Server.Game.IW4;
             var client = ClientGenerators.CreateBasicClient(server, hasIp: false, clientState: EFClient.ClientState.Connecting);

@@ -26,6 +26,8 @@ var plugin = {
         try {
             var cl = new System.Net.Http.HttpClient();
             var re = cl.GetAsync('https://api.xdefcon.com/proxy/check/?ip=' + origin.IPAddressString).Result;
+            var userAgent = 'IW4MAdmin-' + this.manager.GetApplicationSettings().Configuration().Id;
+            cl.DefaultRequestHeaders.Add('User-Agent', userAgent);
             var co = re.Content;
             var parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
             co.Dispose();
@@ -38,7 +40,12 @@ var plugin = {
 
         if (usingVPN) {
             this.logger.WriteInfo(origin + ' is using a VPN (' + origin.IPAddressString + ')');
-            origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], _IW4MAdminClient);
+            var contactUrl = this.manager.GetApplicationSettings().Configuration().ContactUri;
+            var additionalInfo = '';
+            if (contactUrl) {
+                additionalInfo = _localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED_INFO"] + ' ' + contactUrl;
+            }
+            origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"] + ' ' + additionalInfo, _IW4MAdminClient);
         }
     },
 

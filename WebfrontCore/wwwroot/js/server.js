@@ -2,7 +2,8 @@
     ///////////////////////////////////////
     // thanks to canvasjs :(
     playerHistory.forEach(function (item, i) {
-        playerHistory[i].x = new Date(playerHistory[i].x);
+        playerHistory[i].x = new Date(playerHistory[i].timeString);
+        playerHistory[i].y = playerHistory[i].clientCount;
     });
 
     return new CanvasJS.Chart(`server_history_${i}`, {
@@ -13,7 +14,7 @@
         toolTip: {
             contentFormatter: function (e) {
                 const date = moment.utc(e.entries[0].dataPoint.x);
-                return date.local().format('h:mm A') + " - " + e.entries[0].dataPoint.y + " players";
+                return date.local().calendar() + " - " + e.entries[0].dataPoint.y + " players";
             }
         },
         axisX: {
@@ -84,7 +85,7 @@ $(document).ready(function () {
     });
 
     $('.server-history-row').each(function (index, element) {
-        let clientHistory = $(this).data('clienthistory');
+        let clientHistory = $(this).data('clienthistory-ex');
         let serverId = $(this).data('serverid');
         let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
         let primaryColor = $('title').css('background-color');
@@ -93,6 +94,15 @@ $(document).ready(function () {
         let historyChart = getPlayerHistoryChart(clientHistory, serverId, width, color, maxClients);
         historyChart.render();
         charts[serverId] = historyChart;
+    });
+    
+    $('.moment-date').each((index, element) => {
+        const title = $(element).attr('title');
+        
+        if (title !== undefined) {
+            const date = new Date(title);
+            $(element).attr('title', moment.utc(date).calendar());
+        }
     });
 });
 

@@ -1,4 +1,4 @@
-﻿{
+{
   "AutoMessagePeriod": 60,
   "AutoMessages": [
     "This server uses ^5IW4M Admin v{{VERSION}} ^7get it at ^5raidmax.org/IW4MAdmin",
@@ -16,7 +16,13 @@
     "Keep grenade launcher use to a minimum",
     "Balance teams at ALL times"
   ],
-  "DisallowedClientNames": [ "Unknown Soldier", "VickNet", "UnknownSoldier", "CHEATER", "Play77" ],
+  "DisallowedClientNames": [
+    "Unknown Soldier",
+    "VickNet",
+    "UnknownSoldier",
+    "CHEATER",
+    "Play77"
+  ],
   "QuickMessages": [
     {
       "Game": "IW4",
@@ -164,12 +170,28 @@
           "Name": "mp_asylum"
         },
         {
+          "Alias": "Banzai",
+          "Name": "mp_kwai"
+        },
+        {
+          "Alias": "Battery",
+          "Name": "mp_drum"
+        },
+        {
+          "Alias": "Breach",
+          "Name": "mp_bgate"
+        },
+        {
           "Alias": "Castle",
           "Name": "mp_castle"
         },
         {
           "Alias": "Cliffside",
           "Name": "mp_shrine"
+        },
+        {
+          "Alias": "Corrosion",
+          "Name": "mp_stalingrad"
         },
         {
           "Alias": "Courtyard",
@@ -184,60 +206,52 @@
           "Name": "mp_downfall"
         },
         {
-          "Alias": "Hanger",
+          "Alias": "Hangar",
           "Name": "mp_hangar"
-        },
-        {
-          "Alias": "Makin",
-          "Name": "mp_makin"
-        },
-        {
-          "Alias": "Outskirts",
-          "Name": "mp_outskirts"
-        },
-        {
-          "Alias": "Roundhouse",
-          "Name": "mp_roundhouse"
-        },
-        {
-          "Alias": "Upheaval",
-          "Name": "mp_suburban"
         },
         {
           "Alias": "Knee Deep",
           "Name": "mp_kneedeep"
         },
         {
+          "Alias": "Makin",
+          "Name": "mp_makin"
+        },
+        {
+          "Alias": "Makin Day",
+          "Name": "mp_makin_day"
+        },
+        {
           "Alias": "Nightfire",
           "Name": "mp_nachtfeuer"
+        },
+        {
+          "Alias": "Outskirts",
+          "Name": "mp_outskirts"
+        },
+        {
+          "Alias": "Revolution",
+          "Name": "mp_vodka"
+        },
+        {
+          "Alias": "Roundhouse",
+          "Name": "mp_roundhouse"
+        },
+        {
+          "Alias": "Seelow",
+          "Name": "mp_seelow"
         },
         {
           "Alias": "Station",
           "Name": "mp_subway"
         },
         {
-          "Alias": "Banzai",
-          "Name": "mp_kwai"
-        },
-        {
-          "Alias": "Corrosion",
-          "Name": "mp_stalingrad"
-        },
-        {
           "Alias": "Sub Pens",
           "Name": "mp_docks"
         },
         {
-          "Alias": "Battery",
-          "Name": "mp_drum"
-        },
-        {
-          "Alias": "Breach",
-          "Name": "mp_bgate"
-        },
-        {
-          "Alias": "Revolution",
-          "Name": "mp_vodka"
+          "Alias": "Upheaval",
+          "Name": "mp_suburban"
         }
       ]
     },
@@ -248,225 +262,181 @@
           "Alias": "Rust",
           "Name": "mp_rust"
         },
-
         {
           "Alias": "Terminal",
           "Name": "mp_terminal"
         },
-
         {
           "Alias": "Crash",
           "Name": "mp_crash"
         },
-
         {
           "Alias": "Afghan",
           "Name": "mp_afghan"
         },
-
         {
           "Alias": "Derail",
           "Name": "mp_derail"
         },
-
         {
           "Alias": "Estate",
           "Name": "mp_estate"
         },
-
         {
           "Alias": "Favela",
           "Name": "mp_favela"
         },
-
         {
           "Alias": "Highrise",
           "Name": "mp_highrise"
         },
-
         {
           "Alias": "Invasion",
           "Name": "mp_invasion"
         },
-
         {
           "Alias": "Karachi",
           "Name": "mp_checkpoint"
         },
-
         {
           "Alias": "Quarry",
           "Name": "mp_quarry"
         },
-
         {
           "Alias": "Rundown",
           "Name": "mp_rundown"
         },
-
         {
           "Alias": "Scrapyard",
           "Name": "mp_boneyard"
         },
-
         {
           "Alias": "Skidrow",
           "Name": "mp_nightshift"
         },
-
         {
           "Alias": "Sub Base",
           "Name": "mp_subbase"
         },
-
         {
           "Alias": "Underpass",
           "Name": "mp_underpass"
         },
-
         {
           "Alias": "Wasteland",
           "Name": "mp_brecourt"
         },
-
         {
           "Alias": "Overgrown",
           "Name": "mp_overgrown"
         },
-
         {
           "Alias": "Strike",
           "Name": "mp_strike"
         },
-
         {
           "Alias": "Vacant",
           "Name": "mp_vacant"
         },
-
         {
           "Alias": "Carnival",
           "Name": "mp_abandon"
         },
-
         {
           "Alias": "Trailer Park",
           "Name": "mp_trailerpark"
         },
-
         {
           "Alias": "Fuel",
           "Name": "mp_fuel2"
         },
-
         {
           "Alias": "Storm",
           "Name": "mp_storm"
         },
-
         {
           "Alias": "Bailout",
           "Name": "mp_complex"
         },
-
         {
           "Alias": "Salvage",
           "Name": "mp_compact"
         },
-
         {
           "Alias": "Nuketown",
           "Name": "mp_nuked"
         },
-
         {
           "Alias": "Test map",
           "Name": "iw4_credits"
         },
-
         {
           "Alias": "Killhouse",
           "Name": "mp_killhouse"
         },
-
         {
           "Alias": "Bog",
           "Name": "mp_bog_sh"
         },
-
         {
           "Alias": "Freighter",
           "Name": "mp_cargoship_sh"
         },
-
         {
           "Alias": "Cargoship",
           "Name": "mp_cargoship"
         },
-
         {
           "Alias": "Shipment",
           "Name": "mp_shipment"
         },
-
         {
           "Alias": "Shipment - Long",
           "Name": "mp_shipment_long"
         },
-
         {
           "Alias": "Rust - Long",
           "Name": "mp_rust_long"
         },
-
         {
           "Alias": "Firing Range",
           "Name": "mp_firingrange"
         },
-
         {
           "Alias": "Chemical Plant",
           "Name": "mp_storm_spring"
         },
-
         {
           "Alias": "Tropical Favela",
           "Name": "mp_fav_tropical"
         },
-
         {
           "Alias": "Tropical Estate",
           "Name": "mp_estate_tropical"
         },
-
         {
           "Alias": "Tropical Crash",
           "Name": "mp_crash_tropical"
         },
-
         {
           "Alias": "Forgotten City",
           "Name": "mp_bloc_sh"
         },
-
         {
           "Alias": "Crossfire",
           "Name": "mp_cross_fire"
         },
-
         {
           "Alias": "Bloc",
           "Name": "mp_bloc"
         },
-
         {
           "Alias": "Oilrig",
           "Name": "oilrig"
         },
-
         {
-          "Name": "Village",
-          "Alias": "co_hunted"
+          "Alias": "Village",
+          "Name": "co_hunted"
         }
       ]
     },
@@ -519,7 +489,7 @@
         },
         {
           "Alias": "Havana",
-          "Name":  "mp_cairo"
+          "Name": "mp_cairo"
         },
         {
           "Alias": "Hazard",
@@ -725,6 +695,14 @@
         {
           "Alias": "Terminal",
           "Name": "mp_terminal_cls"
+        },
+        {
+          "Alias": "Rust",
+          "Name": "mp_rust"
+        },
+        {
+          "Alias": "Highrise",
+          "Name": "mp_highrise"
         }
       ]
     },
@@ -884,6 +862,717 @@
           "Name": "zm_transit"
         }
       ]
+    },
+    {
+      "Game": "T7",
+      "Maps": [
+        {
+          "Alias": "Evac",
+          "Name": "mp_apartments"
+        },
+        {
+          "Alias": "Aquarium",
+          "Name": "mp_biodome"
+        },
+        {
+          "Alias": "Exodus",
+          "Name": "mp_chinatown"
+        },
+        {
+          "Alias": "Hunted",
+          "Name": "mp_ethiopia"
+        },
+        {
+          "Alias": "Havoc",
+          "Name": "mp_havoc"
+        },
+        {
+          "Alias": "Infection",
+          "Name": "mp_infection"
+        },
+        {
+          "Alias": "Metro",
+          "Name": "mp_metro"
+        },
+        {
+          "Alias": "Redwood",
+          "Name": "mp_redwood"
+        },
+        {
+          "Alias": "Combine",
+          "Name": "mp_sector"
+        },
+        {
+          "Alias": "Breach",
+          "Name": "mp_spire"
+        },
+        {
+          "Alias": "Stronghold",
+          "Name": "mp_stronghold"
+        },
+        {
+          "Alias": "Fringe",
+          "Name": "mp_veiled"
+        },
+        {
+          "Alias": "Nuk3town",
+          "Name": "mp_nuketown_x"
+        },
+        {
+          "Alias": "Gauntlet",
+          "Name": "mp_crucible"
+        },
+        {
+          "Alias": "Rise",
+          "Name": "mp_rise"
+        },
+        {
+          "Alias": "Skyjacked",
+          "Name": "mp_skyjacked"
+        },
+        {
+          "Alias": "Splash",
+          "Name": "mp_waterpark"
+        },
+        {
+          "Alias": "Spire",
+          "Name": "mp_aerospace"
+        },
+        {
+          "Alias": "Verge",
+          "Name": "mp_banzai"
+        },
+        {
+          "Alias": "Rift",
+          "Name": "mp_conduit"
+        },
+        {
+          "Alias": "Knockout",
+          "Name": "mp_kung_fu"
+        },
+        {
+          "Alias": "Rumble",
+          "Name": "mp_arena"
+        },
+        {
+          "Alias": "Cyrogen",
+          "Name": "mp_cryogen"
+        },
+        {
+          "Alias": "Empire",
+          "Name": "mp_rome"
+        },
+        {
+          "Alias": "Berserk",
+          "Name": "mp_shrine"
+        },
+        {
+          "Alias": "Rupture",
+          "Name": "mp_city"
+        },
+        {
+          "Alias": "Micro",
+          "Name": "mp_miniature"
+        },
+        {
+          "Alias": "Citadel",
+          "Name": "mp_ruins"
+        },
+        {
+          "Alias": "Outlaw",
+          "Name": "mp_western"
+        }
+      ]
+    },
+    {
+      "Game": "IW6",
+      "Maps": [
+        {
+          "Alias": "Prison Break",
+          "Name": "mp_prisonbreak"
+        },
+        {
+          "Alias": "Octane",
+          "Name": "mp_dart"
+        },
+        {
+          "Alias": "Tremor",
+          "Name": "mp_lonestar"
+        },
+        {
+          "Alias": "Freight",
+          "Name": "mp_frag"
+        },
+        {
+          "Alias": "Whiteout",
+          "Name": "mp_snow"
+        },
+        {
+          "Alias": "Stormfront",
+          "Name": "mp_fahrenheit"
+        },
+        {
+          "Alias": "Siege",
+          "Name": "mp_hashima"
+        },
+        {
+          "Alias": "Warhawk",
+          "Name": "mp_warhawk"
+        },
+        {
+          "Alias": "Sovereign",
+          "Name": "mp_sovereign"
+        },
+        {
+          "Alias": "Overload",
+          "Name": "mp_zebra"
+        },
+        {
+          "Alias": "Stonehaven",
+          "Name": "mp_skeleton"
+        },
+        {
+          "Alias": "Chasm",
+          "Name": "mp_chasm"
+        },
+        {
+          "Alias": "Flooded",
+          "Name": "mp_flooded"
+        },
+        {
+          "Alias": "Strikezone",
+          "Name": "mp_strikezone"
+        },
+        {
+          "Alias": "Free Fall",
+          "Name": "mp_descent_new"
+        },
+        {
+          "Alias": "Unearthed",
+          "Name": "mp_dome_ns"
+        },
+        {
+          "Alias": "Collision",
+          "Name": "mp_ca_impact"
+        },
+        {
+          "Alias": "Behemoth",
+          "Name": "mp_ca_behemoth"
+        },
+        {
+          "Alias": "Ruins",
+          "Name": "mp_battery3"
+        },
+        {
+          "Alias": "Pharaoh",
+          "Name": "mp_dig"
+        },
+        {
+          "Alias": "Favela",
+          "Name": "mp_favela_iw6"
+        },
+        {
+          "Alias": "Mutiny",
+          "Name": "mp_pirate"
+        },
+        {
+          "Alias": "Departed",
+          "Name": "mp_zulu"
+        },
+        {
+          "Alias": "Dynasty",
+          "Name": "mp_conflict"
+        },
+        {
+          "Alias": "Goldrush",
+          "Name": "mp_mine"
+        },
+        {
+          "Alias": "Showtime",
+          "Name": "mp_shipment_ns"
+        },
+        {
+          "Alias": "Subzero",
+          "Name": "mp_zerosub"
+        },
+        {
+          "Alias": "Ignition",
+          "Name": "mp_boneyard_ns"
+        },
+        {
+          "Alias": "Containment",
+          "Name": "mp_ca_red_river"
+        },
+        {
+          "Alias": "Bayview",
+          "Name": "mp_ca_rumble"
+        },
+        {
+          "Alias": "Fog",
+          "Name": "mp_swamp"
+        },
+        {
+          "Alias": "Point of Contact",
+          "Name": "mp_alien_town"
+        },
+        {
+          "Alias": "Nightfall",
+          "Name": "mp_alien_armory"
+        },
+        {
+          "Alias": "Mayday",
+          "Name": "mp_alien_beacon"
+        },
+        {
+          "Alias": "Awakening",
+          "Name": "mp_alien_dlc3"
+        },
+        {
+          "Alias": "Exodus",
+          "Name": "mp_alien_last"
+        }
+      ]
+    },
+    {
+      "Game": "SHG1",
+      "Maps": [
+        {
+          "Alias": "Ascend",
+          "Name": "mp_refraction"
+        },
+        {
+          "Alias": "Bio Lab",
+          "Name": "mp_lab2"
+        },
+        {
+          "Alias": "Comeback",
+          "Name": "mp_comeback"
+        },
+        {
+          "Alias": "Defender",
+          "Name": "mp_laser2"
+        },
+        {
+          "Alias": "Detroit",
+          "Name": "mp_detroit"
+        },
+        {
+          "Alias": "Greenband",
+          "Name": "mp_greenband"
+        },
+        {
+          "Alias": "Horizon",
+          "Name": "mp_levity"
+        },
+        {
+          "Alias": "Instinct",
+          "Name": "mp_instinct"
+        },
+        {
+          "Alias": "Recovery",
+          "Name": "mp_recovery"
+        },
+        {
+          "Alias": "Retreat",
+          "Name": "mp_venus"
+        },
+        {
+          "Alias": "Riot",
+          "Name": "mp_prison"
+        },
+        {
+          "Alias": "Solar",
+          "Name": "mp_solar"
+        },
+        {
+          "Alias": "Terrace",
+          "Name": "mp_terrace"
+        },
+        {
+          "Alias": "Atlas Gorge",
+          "Name": "mp_dam"
+        },
+        {
+          "Alias": "Chop Shop",
+          "Name": "mp_spark"
+        },
+        {
+          "Alias": "Climate",
+          "Name": "mp_climate_3"
+        },
+        {
+          "Alias": "Compound",
+          "Name": "mp_sector17"
+        },
+        {
+          "Alias": "Core",
+          "Name": "mp_lost"
+        },
+        {
+          "Alias": "Drift",
+          "Name": "mp_torqued"
+        },
+        {
+          "Alias": "Fracture",
+          "Name": "mp_fracture"
+        },
+        {
+          "Alias": "Kremlin",
+          "Name": "mp_kremlin"
+        },
+        {
+          "Alias": "Overload",
+          "Name": "mp_lair"
+        },
+        {
+          "Alias": "Parliament",
+          "Name": "mp_bigben2"
+        },
+        {
+          "Alias": "Perplex",
+          "Name": "mp_perplex_1"
+        },
+        {
+          "Alias": "Quarantine",
+          "Name": "mp_liberty"
+        },
+        {
+          "Alias": "Sideshow",
+          "Name": "mp_clowntown3"
+        },
+        {
+          "Alias": "Site 244",
+          "Name": "mp_blackbox"
+        },
+        {
+          "Alias": "Skyrise",
+          "Name": "mp_highrise2"
+        },
+        {
+          "Alias": "Swarn",
+          "Name": "mp_seoul2"
+        },
+        {
+          "Alias": "Urban",
+          "Name": "mp_urban"
+        }
+      ]
+    },
+    {
+      "Game": "CSGO",
+      "Maps": [
+        {
+          "Name": "ar_baggage",
+          "Alias": "Baggage"
+        },
+        {
+          "Name": "ar_dizzy",
+          "Alias": "Dizzy"
+        },
+        {
+          "Name": "ar_lunacy",
+          "Alias": "Lunacy"
+        },
+        {
+          "Name": "ar_monastery",
+          "Alias": "Monastery"
+        },
+        {
+          "Name": "ar_shoots",
+          "Alias": "Shoots"
+        },
+        {
+          "Name": "cs_agency",
+          "Alias": "Agency"
+        },
+        {
+          "Name": "cs_assault",
+          "Alias": "Assault"
+        },
+        {
+          "Name": "cs_italy",
+          "Alias": "Italy"
+        },
+        {
+          "Name": "cs_militia",
+          "Alias": "Militia"
+        },
+        {
+          "Name": "cs_office",
+          "Alias": "Office"
+        },
+        {
+          "Name": "de_ancient",
+          "Alias": "Ancient"
+        },
+        {
+          "Name": "de_bank",
+          "Alias": "Bank"
+        },
+        {
+          "Name": "de_cache",
+          "Alias": "Cache"
+        },
+        {
+          "Name": "de_calavera",
+          "Alias": "Calavera"
+        },
+        {
+          "Name": "de_canals",
+          "Alias": "Canals"
+        },
+        {
+          "Name": "de_cbble",
+          "Alias": "Cobblestone"
+        },
+        {
+          "Name": "de_dust2",
+          "Alias": "Dust II"
+        },
+        {
+          "Name": "de_grind",
+          "Alias": "Grind"
+        },
+        {
+          "Name": "de_inferno",
+          "Alias": "Inferno"
+        },
+        {
+          "Name": "de_lake",
+          "Alias": "Lake"
+        },
+        {
+          "Name": "de_mirage",
+          "Alias": "Mirage"
+        },
+        {
+          "Name": "de_mocha",
+          "Alias": "Mocha"
+        },
+        {
+          "Name": "de_nuke",
+          "Alias": "Nuke"
+        },
+        {
+          "Name": "de_overpass",
+          "Alias": "Overpass"
+        },
+        {
+          "Name": "de_pitstop",
+          "Alias": "Pitstop"
+        },
+        {
+          "Name": "de_safehouse",
+          "Alias": "Safehouse"
+        },
+        {
+          "Name": "de_shortdust",
+          "Alias": "Shortdust"
+        },
+        {
+          "Name": "de_shortnuke",
+          "Alias": "Shortnuke"
+        },
+        {
+          "Name": "de_stmarc",
+          "Alias": "St. Marc"
+        },
+        {
+          "Name": "de_sugarcane",
+          "Alias": "Sugarcane"
+        },
+        {
+          "Name": "de_train",
+          "Alias": "Train"
+        },
+        {
+          "Name": "de_vertigo",
+          "Alias": "Vertigo"
+        },
+        {
+          "Name": "dz_blacksite",
+          "Alias": "Blacksite"
+        },
+        {
+          "Name": "dz_frostbite",
+          "Alias": "Frostbite"
+        },
+        {
+          "Name": "dz_sirocco",
+          "Alias": "Sirocco"
+        }
+      ]
     }
-  ]
+  ],
+  "GameStrings": {
+    "IW4": {
+      "torso_upper": "Upper Torso",
+      "torso_lower": "Lower Torso",
+      "right_leg_upper": "Upper Right Leg",
+      "right_leg_lower": "Lower Right Leg",
+      "right_hand": "Right Hand",
+      "right_foot": "Right Foot",
+      "right_arm_upper": "Upper Right Arm",
+      "right_arm_lower": "Lower Right Arm",
+      "left_leg_upper": "Upper Left Leg",
+      "left_leg_lower": "Lower Left Leg",
+      "left_hand": "Left Hand",
+      "left_foot": "Left Foot",
+      "left_arm_upper": "Upper Left Arm",
+      "left_arm_lower": "Lower Left Arm",
+      "acog": "ACOG Sight",
+      "eotech": "Holographic Sight",
+      "fmj": "FMJ",
+      "gl": "Grenade Launcher",
+      "heartbeat": "Heartbeat Sensor",
+      "reflex": "Red Dot Sight",
+      "rof": "Rapid Fire",
+      "thermal": "Thermal",
+      "xmags": "Extended Mags",
+      "m4": "M4A1",
+      "m40a3": "M40A3",
+      "ak47": "AK-47",
+      "ak47classic": "AK-47 Classic",
+      "fn2000": "F2000",
+      "masada": "ACR",
+      "famas": "FAMAS",
+      "fal": "FAL",
+      "scar": "SCAR-H",
+      "tavor": "TAR-21",
+      "m16": "M16A4",
+      "mp5k": "MP5K",
+      "ump45": "UMP45",
+      "kriss": "Vector",
+      "uzi": "Mini-Uzi",
+      "rpd": "RPD",
+      "sa80": "L86 LSW",
+      "mg4": "MG4",
+      "aug": "AUG HBAR",
+      "cheytac": "Intervention",
+      "barrett": "Barrett .50cal",
+      "wa2000": "WA2000",
+      "m21": "M21 EBR",
+      "pp2000": "PP2000",
+      "glock": "G18",
+      "beretta": "M93 Raffica",
+      "tmp": "TMP",
+      "spas12": "SPAS-12",
+      "aa12": "AA-12",
+      "model1887": "Model 1887",
+      "usp": "USP .45",
+      "coltanaconda": ".44 Magnum",
+      "deserteagle": "Desert Eagle",
+      "deserteaglegold": "Desert Eagle Gold",
+      "at4": "AT4-HS",
+      "m79": "Thumper",
+      "rpg": "RPG-7",
+      "concussion": "Stun",
+      "throwingknife": "Throwing Knife",
+      "ffar": "Airstrike",
+      "pavelow": "Pave Low",
+      "cobra": "Attack Helicopter",
+      "ac130": "AC-130",
+      "remotemissile": "Predator Missile",
+      "artillery": "Precision Airstrike",
+      "player": "",
+      "attach": ""
+    },
+    "IW3": {
+      "torso_upper": "Upper Torso",
+      "torso_lower": "Lower Torso",
+      "right_leg_upper": "Upper Right Leg",
+      "right_leg_lower": "Lower Right Leg",
+      "right_hand": "Right Hand",
+      "right_foot": "Right Foot",
+      "right_arm_upper": "Upper Right Arm",
+      "right_arm_lower": "Lower Right Arm",
+      "left_leg_upper": "Upper Left Leg",
+      "left_leg_lower": "Lower Left Leg",
+      "left_hand": "Left Hand",
+      "left_foot": "Left Foot",
+      "left_arm_upper": "Upper Left Arm",
+      "left_arm_lower": "Lower Left Arm",
+      "acog": "ACOG Sight",
+      "gl": "Grenade Launcher",
+      "reflex": "Red Dot Sight",
+      "grip": "Grip",
+      "m4": "M4 Carbine",
+      "m40a3": "M40A3",
+      "ak47": "AK-47",
+      "ak74u": "AK-74u",
+      "rpg": "RPG-7",
+      "deserteagle": "Desert Eagle",
+      "deserteaglegold": "Desert Eagle Gold",
+      "m16": "M16A4",
+      "g36c": "G36C",
+      "uzi": "Mini-Uzi",
+      "m60e4": "M60E4",
+      "mp5": "MP5",
+      "barrett": "Barrett .50cal",
+      "mp44": "MP44",
+      "remington700": "R700",
+      "rpd": "RDP",
+      "saw": " M249 SAW",
+      "usp": "USP .45",
+      "winchester1200": "W1200",
+      "concussion": "Stun",
+      "melee": "Knife",
+      "Frag" : "Grenade",
+      "airstrike": "Airstrike",
+      "helicopter": "Attack Helicopter",
+      "player": "",
+      "attach": ""
+    },
+    "T4": {	
+	  "torso_upper": "Upper Torso",
+	  "torso_lower": "Lower Torso",
+	  "right_leg_upper": "Upper Right Leg",
+	  "right_leg_lower": "Lower Right Leg",
+	  "right_hand": "Right Hand",
+	  "right_foot": "Right Foot",
+	  "right_arm_upper": "Upper Right Arm",
+	  "right_arm_lower": "Lower Right Arm",
+	  "left_leg_upper": "Upper Left Leg",
+	  "left_leg_lower": "Lower Left Leg",
+	  "left_hand": "Left Hand",
+	  "left_foot": "Left Foot",
+	  "left_arm_upper": "Upper Left Arm",
+	  "left_arm_lower": "Lower Left Arm",
+	  "gl": "Rifle Grenade",
+	  "bigammo": "Round Drum",
+	  "scoped": "Sniper Scope",
+	  "telescopic": "Telescopic Sight",
+	  "aperture": "Aperture Sight",
+	  "flash": "Flash Hider",
+	  "silenced": "Silencer",
+	  "molotov": "Molotov Cocktail",
+	  "sticky": "N° 74 ST",
+	  "m2": "M2 Flamethrower",
+	  "artillery": "Artillery Strike",
+	  "dog": "Attack Dogs",
+	  "colt":	"Colt M1911",
+	  "357magnum": ".357 Magnum",
+	  "walther": "Walther P38",
+	  "tokarev": "Tokarev TT-33",
+	  "shotgun": "M1897 Trench Gun",
+	  "doublebarreledshotgun": "Double-Barreled Shotgun",
+	  "mp40": "MP40",
+	  "type100smg": "Type 100",
+	  "ppsh": "PPSh-41",
+	  "svt40": "SVT-40",
+	  "gewehr43": "Gewehr 43",
+	  "m1garand": "M1 Garand",
+	  "stg44": "STG-44",
+	  "m1carbine": "M1A1 Carbine",
+	  "type99lmg": "Type 99",
+	  "bar": "BAR",
+	  "dp28": "DP-28",
+	  "mg42": "MG42",
+	  "fg42": "FG42",
+	  "30cal": "Browning M1919",
+	  "type99rifle": "Arisaka",
+	  "mosinrifle": "Mosin-Nagant",
+	  "ptrs41":"PTRS-41"
+	}
+  }
 }

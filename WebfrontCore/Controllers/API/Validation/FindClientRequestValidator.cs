@@ -1,5 +1,5 @@
-﻿using FluentValidation;
-using SharedLibraryCore.Database.Models;
+﻿using Data.Models;
+using FluentValidation;
 using SharedLibraryCore.Dtos;
 
 namespace WebfrontCore.Controllers.API.Validation

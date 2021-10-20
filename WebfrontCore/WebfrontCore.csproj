@@ -5,7 +5,7 @@
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-    <PreserveCompilationContext Condition="'$(CONFIG)'!='Debug'">false</PreserveCompilationContext>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
     <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
     <Version>2.0.0</Version>
@@ -28,28 +28,12 @@
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Remove="bower.json" />
-    <Content Remove="bundleconfig.json" />
-    <Content Remove="compilerconfig.json" />
-    <Content Remove="Views\Plugins\Stats\Components\TopPlayers\_List.cshtml" />
-    <Content Remove="Views\Plugins\Stats\Index.cshtml" />
-    <Content Remove="Views\Plugins\Stats\_MessageContext.cshtml" />
-    <Content Remove="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
-    <Content Remove="Views\Plugins\_ViewImports.cshtml" />
-  </ItemGroup>
-
+  
   <ItemGroup>
     <None Include="bundleconfig.json" />
     <None Include="compilerconfig.json" />
-    <None Include="Views\Plugins\Stats\Components\TopPlayers\_List.cshtml" />
-    <None Include="Views\Plugins\Stats\Index.cshtml" />
-    <None Include="Views\Plugins\Stats\_MessageContext.cshtml" />
-    <None Include="Views\Plugins\Stats\_PenaltyInfo.cshtml" />
-    <None Include="Views\Plugins\_ViewImports.cshtml" />
     <None Include="wwwroot\css\src\global.css" />
   </ItemGroup>
 
@@ -61,13 +45,14 @@
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
+    <Content Remove="wwwroot\images\icons\crosshair.png" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BuildWebCompiler" Version="1.12.405" />
     <PackageReference Include="BundlerMinifier.Core" Version="3.2.449" />
-    <PackageReference Include="FluentValidation.AspNetCore" Version="9.1.2" />
-    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.76" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="9.3.0" />
+    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.113" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,7 +68,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Plugins\Web\StatsWeb\StatsWeb.csproj" />
+    <ProjectReference Include="..\Plugins\Stats\Stats.csproj" />
     <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
   </ItemGroup>
 
@@ -91,6 +76,14 @@
     <Content Update="libman.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Views\Plugins\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Views\Plugins\**" />
   </ItemGroup>
 
   <ProjectExtensions>
@@ -104,6 +97,6 @@
   </Target>
 
   <Target Name="MyPreCompileTarget" BeforeTargets="Build">
-    <Exec Command="dotnet bundle" />
+   <Exec Command="dotnet bundle" />
   </Target>
 </Project>

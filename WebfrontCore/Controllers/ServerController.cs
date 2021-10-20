@@ -3,6 +3,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
+using Data.Models.Client.Stats;
 
 namespace WebfrontCore.Controllers
 {
@@ -30,7 +31,7 @@ namespace WebfrontCore.Controllers
                 ID = s.EndPoint,
                 Port = s.Port,
                 Map = s.CurrentMap.Alias,
-                ClientCount = s.ClientNum,
+                ClientCount = s.Clients.Count(client => client != null),
                 MaxClients = s.MaxClients,
                 GameType = s.Gametype,
                 Players = s.GetClientsAsList()
@@ -39,7 +40,8 @@ namespace WebfrontCore.Controllers
                     Name = p.Name,
                     ClientId = p.ClientId,
                     Level = p.Level.ToLocalizedLevelName(),
-                    LevelInt = (int)p.Level
+                    LevelInt = (int)p.Level,
+                    ZScore = p.GetAdditionalProperty<EFClientStatistics>(IW4MAdmin.Plugins.Stats.Helpers.StatManager.CLIENT_STATS_KEY)?.ZScore
                 }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
                 PlayerHistory = s.ClientHistory.ToArray(),

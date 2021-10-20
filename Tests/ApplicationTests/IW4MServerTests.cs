@@ -11,9 +11,11 @@ using SharedLibraryCore.Database.Models;
 using System.Threading.Tasks;
 using ApplicationTests.Mocks;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Configuration;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
@@ -39,6 +41,8 @@ namespace ApplicationTests
             fakeRConParser = serviceProvider.GetRequiredService<IRConParser>();
             mockEventHandler = serviceProvider.GetRequiredService<EventHandlerMock>();
             appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
+            serviceProvider.GetService<IW4MServer>().RconParser =
+                serviceProvider.GetService<IRConParser>();
 
             var rconConnectionFactory = serviceProvider.GetRequiredService<IRConConnectionFactory>();
 
@@ -213,7 +217,7 @@ namespace ApplicationTests
 
             await server.Ban("test reason", target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -288,7 +292,7 @@ namespace ApplicationTests
 
             await server.TempBan("test reason", TimeSpan.Zero, target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -310,7 +314,7 @@ namespace ApplicationTests
 
             await server.TempBan("test reason", TimeSpan.Zero, target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
         #endregion
@@ -346,7 +350,7 @@ namespace ApplicationTests
 
             await server.Kick("test reason", target, origin);
 
-            A.CallTo(() => fakeRConParser.ExecuteCommandAsync(fakeRConConnection, "kick"))
+            A.CallTo(() => server.RconParser.ExecuteCommandAsync(A<IRConConnection>.Ignored, "kick"))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -529,9 +533,6 @@ namespace ApplicationTests
             {
                 await server.ProcessUpdatesAsync(new System.Threading.CancellationToken());
             }
-
-            A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
-              .MustNotHaveHappened();
         }
 
         [Test]
@@ -554,9 +555,6 @@ namespace ApplicationTests
             {
                 await server.ExecuteEvent(e);
             }
-
-            A.CallTo(() => fakeLogger.WriteError(A<string>.Ignored))
-                .MustHaveHappenedOnceExactly();
 
             Assert.IsNotEmpty(mockEventHandler.Events.Where(_event => _event.Type == GameEvent.EventType.ConnectionLost));
             Assert.AreEqual("err", (mockEventHandler.Events[0].Extra as NetworkException).Message);

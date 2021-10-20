@@ -244,3 +244,7 @@ launchSettings.json
 /Tests/ApplicationTests/Files/GameEvents.json
 /Tests/ApplicationTests/Files/replay.json
 /GameLogServer/game_log_server_env
+.idea/*
+*.db
+/Data/IW4MAdmin_Migration.db-shm
+/Data/IW4MAdmin_Migration.db-wal

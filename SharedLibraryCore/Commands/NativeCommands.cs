@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -12,7 +11,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static SharedLibraryCore.Database.Models.EFClient;
+using Data.Abstractions;
+using Data.Models;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
+using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Commands
 {
@@ -99,7 +102,8 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class WarnCommand : Command
     {
-        public WarnCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        public WarnCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "warn";
             Description = _translationLookup["COMMANDS_WARN_DESC"];
@@ -119,13 +123,15 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            if (E.Target.Warn(E.Data, E.Origin).Failed)
+            var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
+            if (gameEvent.Target.Warn(reason, gameEvent.Origin).Failed)
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_WARN_FAIL"].FormatExt(E.Target.Name));
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_WARN_FAIL"].FormatExt(gameEvent.Target.Name));
             }
 
             return Task.CompletedTask;
@@ -170,7 +176,9 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class KickCommand : Command
     {
-        public KickCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        
+        public KickCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "kick";
             Description = _translationLookup["COMMANDS_KICK_DESC"];
@@ -190,20 +198,22 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            switch ((await E.Target.Kick(E.Data, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+            var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
+            switch ((await gameEvent.Target.Kick(reason, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.None:
-                    E.Origin.Tell(_translationLookup["COMMANDS_KICK_SUCCESS"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_KICK_SUCCESS"].FormatExt(gameEvent.Target.Name));
                     break;
                 case GameEvent.EventFailReason.Exception:
-                    E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     break;
                 default:
-                    E.Origin.Tell(_translationLookup["COMMANDS_KICK_FAIL"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_KICK_FAIL"].FormatExt(gameEvent.Target.Name));
                     break;
             }
         }
@@ -280,7 +290,9 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class TempBanCommand : Command
     {
-        public TempBanCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        
+        public TempBanCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "tempban";
             Description = _translationLookup["COMMANDS_TEMPBAN_DESC"];
@@ -305,35 +317,36 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
         private static readonly string TempBanRegex = @"([0-9]+\w+)\ (.+)";
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var match = Regex.Match(E.Data, TempBanRegex);
+            var match = Regex.Match(gameEvent.Data, TempBanRegex);
             if (match.Success)
             {
-                string tempbanReason = match.Groups[2].ToString();
+                var tempbanReason = match.Groups[2].ToString().FindRuleForReason(_appConfig, gameEvent.Owner);
                 var length = match.Groups[1].ToString().ParseTimespan();
 
-                if (length > E.Owner.Manager.GetApplicationSettings().Configuration().MaximumTempBanTime)
+                if (length > gameEvent.Owner.Manager.GetApplicationSettings().Configuration().MaximumTempBanTime)
                 {
-                    E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL_TOOLONG"]);
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL_TOOLONG"]);
                 }
 
                 else
                 {
-                    switch ((await E.Target.TempBan(tempbanReason, length, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+                    switch ((await gameEvent.Target.TempBan(tempbanReason, length, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
                     {
                         case GameEvent.EventFailReason.None:
-                            E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(E.Target, length.HumanizeForCurrentCulture()));
+                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(gameEvent.Target, length.HumanizeForCurrentCulture()));
                             break;
                         case GameEvent.EventFailReason.Exception:
-                            E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                            gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                             break;
                         default:
-                            E.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL"].FormatExt(E.Target.Name));
+                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL"].FormatExt(gameEvent.Target.Name));
                             break;
                     }
                 }
@@ -346,7 +359,8 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class BanCommand : Command
     {
-        public BanCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly ApplicationConfiguration _appConfig;
+        public BanCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "ban";
             Description = _translationLookup["COMMANDS_BAN_DESC"];
@@ -366,20 +380,22 @@ namespace SharedLibraryCore.Commands
                     Required = true
                 }
             };
+            _appConfig = appConfig;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            switch ((await E.Target.Ban(E.Data, E.Origin, false).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+            var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
+            switch ((await gameEvent.Target.Ban(reason, gameEvent.Origin, false).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.None:
-                    E.Origin.Tell(_translationLookup["COMMANDS_BAN_SUCCESS"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_BAN_SUCCESS"].FormatExt(gameEvent.Target.Name));
                     break;
                 case GameEvent.EventFailReason.Exception:
-                    E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     break;
                 default:
-                    E.Origin.Tell(_translationLookup["COMMANDS_BAN_FAIL"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_BAN_FAIL"].FormatExt(gameEvent.Target.Name));
                     break;
             }
         }
@@ -450,10 +466,11 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            string you = string.Format("{0} [^3#{1}^7] {2} ^7[^3@{3}^7] ^7[{4}^7] IP: {5}", E.Origin.Name, E.Origin.ClientNumber, E.Origin.NetworkId, E.Origin.ClientId, Utilities.ConvertLevelToColor(E.Origin.Level, E.Origin.ClientPermission.Name), E.Origin.IPAddressString);
-            E.Origin.Tell(you);
+            var you = _translationLookup["COMMANDS_WHOAMI_FORMAT"].FormatExt(gameEvent.Origin.ClientNumber, gameEvent.Origin.ClientId, gameEvent.Origin.GuidString,
+                gameEvent.Origin.IPAddressString, gameEvent.Origin.ClientPermission.Name, string.IsNullOrEmpty(gameEvent.Origin.Tag) ? "" : $" {gameEvent.Origin.Tag}^7", gameEvent.Origin.Name);
+            gameEvent.Origin.Tell(you);
 
             return Task.CompletedTask;
         }
@@ -473,46 +490,14 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            StringBuilder playerList = new StringBuilder();
-            int count = 0;
-            for (int i = 0; i < E.Owner.Clients.Count; i++)
-            {
-                var P = E.Owner.Clients[i];
+            var clientList = gameEvent.Owner.GetClientsAsList()
+                .Select(client => _translationLookup["COMMANDS_LIST_FORMAT"]
+                .FormatExt(client.ClientPermission.Name, string.IsNullOrEmpty(client.Tag) ? "" : $" {client.Tag}^7", client.ClientNumber, client.Name))
+                .ToArray();
 
-                if (P == null)
-                {
-                    continue;
-                }
-                // todo: fix spacing
-                // todo: make this better :)
-                if (P.Masked)
-                {
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(EFClient.Permission.User, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(EFClient.Permission.SeniorAdmin.ToString().Length - EFClient.Permission.User.ToString().Length));
-                }
-                else
-                {
-                    playerList.AppendFormat("[^3{0}^7]{3}[^3{1}^7] {2}", Utilities.ConvertLevelToColor(P.Level, P.ClientPermission.Name), P.ClientNumber, P.Name, Utilities.GetSpaces(EFClient.Permission.SeniorAdmin.ToString().Length - P.Level.ToString().Length));
-                }
-
-                if (count == 2 || E.Owner.GetClientsAsList().Count == 1)
-                {
-                    E.Origin.Tell(playerList.ToString());
-                    count = 0;
-                    playerList = new StringBuilder();
-                    continue;
-                }
-
-                count++;
-            }
-
-            if (playerList.Length > 0)
-            {
-                E.Origin.Tell(playerList.ToString());
-            }
-
-            // todo: make no players response for webfront
+            gameEvent.Origin.Tell(clientList);
 
             return Task.CompletedTask;
         }
@@ -646,7 +631,7 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class SetLevelCommand : Command
     {
-        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup, ILogger logger) : base(config, translationLookup)
+        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup, ILogger<SetLevelCommand> logger) : base(config, translationLookup)
         {
             Name = "setlevel";
             Description = _translationLookup["COMMANDS_SETLEVEL_DESC"];
@@ -710,13 +695,19 @@ namespace SharedLibraryCore.Commands
                 gameEvent.Origin.Tell($"{_translationLookup["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} ^5{gameEvent.Target.Name}");
                 return;
             }
+            
+            else if (gameEvent.Target.Level == Permission.Flagged)
+            {
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_FLAGGED"].FormatExt(gameEvent.Target.Name));
+                return;
+            }
 
             // stepped privilege is enabled, but the new level is too high
             else if (steppedPrivileges && !canPromoteSteppedPriv)
             {
                 // can't promote a client to higher than your current perms
                 // or your peer
-                gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_SETLEVEL_LEVELTOOHIGH"], gameEvent.Target.Name, (gameEvent.Origin.Level - 1).ToString()));
+                gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_SETLEVEL_LEVELTOOHIGH"], gameEvent.Target.Name, (gameEvent.Origin.Level - 1).ToLocalizedLevelName()));
                 return;
             }
 
@@ -727,13 +718,26 @@ namespace SharedLibraryCore.Commands
                     gameEvent.Owner.Manager.GetActiveClients()
                     .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient : targetClient;
 
-                logger.WriteInfo($"Beginning set level of client {gameEvent.Origin} to {newPerm}");
+                logger.LogDebug("Beginning set level of client {origin} to {newPermission}", gameEvent.Origin.ToString(), newPerm);
 
                 var result = await targetClient.SetLevel(newPerm, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
 
                 if (result.Failed)
                 {
-                    logger.WriteInfo($"Failed to set level of client {gameEvent.Origin}");
+                    // user is the same level
+                    if (result.FailReason == GameEvent.EventFailReason.Invalid)
+                    {
+                        gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_INVALID"]
+                            .FormatExt(gameEvent.Target.Name, newPerm.ToString()));
+                        return;
+                    }
+                    
+                    using (LogContext.PushProperty("Server", gameEvent.Origin.CurrentServer?.ToString()))
+                    {
+                        logger.LogWarning("Failed to set level of client {origin} {reason}", 
+                            gameEvent.Origin.ToString(), 
+                            result.FailReason);
+                    }
                     gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     return;
                 }
@@ -796,9 +800,9 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            TimeSpan uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
+            var uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
             var loc = _translationLookup;
-            E.Origin.Tell(loc["COMMANDS_UPTIME_TEXT"].FormatExt(uptime.Days, uptime.Hours, uptime.Minutes));
+            E.Origin.Tell(loc["COMMANDS_UPTIME_TEXT"].FormatExt(uptime.HumanizeForCurrentCulture(4)));
             return Task.CompletedTask;
         }
     }
@@ -875,7 +879,7 @@ namespace SharedLibraryCore.Commands
                  E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(foundMap.Alias));
 
             await Task.Delay(delay);
-            await E.Owner.LoadMap(newMap);
+            await E.Owner.LoadMap(foundMap?.Name ?? newMap);
         }
     }
 
@@ -957,9 +961,14 @@ namespace SharedLibraryCore.Commands
                     rules.AddRange(E.Owner.ServerConfig.Rules);
                 }
 
-                foreach (string r in rules)
+                var ruleFomat = rules.Select(r => $"- {r}");
+                if (E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
                 {
-                    var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix) ? E.Owner.Broadcast($"- {r}") : E.Origin.Tell($"- {r}");
+                    E.Owner.Broadcast(ruleFomat);
+                }
+                else
+                {
+                    E.Origin.Tell(ruleFomat);
                 }
             }
 
@@ -1350,13 +1359,13 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var Response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
-            foreach (string S in Response)
+            var response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
+            foreach (var item in response)
             {
-                E.Origin.Tell(S);
+                E.Origin.Tell(item);
             }
 
-            if (Response.Length == 0)
+            if (response.Length == 0)
             {
                 E.Origin.Tell(_translationLookup["COMMANDS_RCON_SUCCESS"]);
             }
@@ -1416,13 +1425,17 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class PruneAdminsCommand : Command
     {
-        public PruneAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly IDatabaseContextFactory _contextFactory;
+        
+        public PruneAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup, 
+            IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
             Name = "prune";
             Description = _translationLookup["COMMANDS_PRUNE_DESC"];
             Alias = "pa";
             Permission = Permission.Owner;
             RequiresTarget = false;
+            _contextFactory = contextFactory;
             Arguments = new[]
             {
                 new CommandArgument()
@@ -1458,16 +1471,16 @@ namespace SharedLibraryCore.Commands
             List<EFClient> inactiveUsers = null;
             // todo: make an event for this
             // update user roles
-            using (var context = new DatabaseContext())
-            {
-                var lastActive = DateTime.UtcNow.AddDays(-inactiveDays);
-                inactiveUsers = await context.Clients
-                    .Where(c => c.Level > Permission.Flagged && c.Level <= Permission.Moderator)
-                    .Where(c => c.LastConnection < lastActive)
-                    .ToListAsync();
-                inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
-                await context.SaveChangesAsync();
-            }
+            await using var context = _contextFactory.CreateContext();
+            var lastActive = DateTime.UtcNow.AddDays(-inactiveDays);
+            inactiveUsers = await context.Clients
+                .Where(c => c.Level > Permission.Flagged && c.Level <= Permission.Moderator)
+                .Where(c => c.LastConnection < lastActive)
+                .Select(c => c.ToPartialClient())
+                .ToListAsync();
+            inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
+            await context.SaveChangesAsync();
+      
             E.Origin.Tell(_translationLookup["COMMANDS_PRUNE_SUCCESS"].FormatExt(inactiveUsers.Count));
         }
     }

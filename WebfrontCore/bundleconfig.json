@@ -5,7 +5,8 @@
     "outputFileName": "wwwroot/css/global.min.css",
     // An array of relative input file paths. Globbing patterns supported
     "inputFiles": [
-      "wwwroot/css/global.css"
+      "wwwroot/css/global.css",
+      "wwwroot/lib/chart.js/dist/Chart.min.css"
     ]
   },
   {
@@ -17,6 +18,7 @@
       "wwwroot/lib/moment-timezone/moment-timezone.min.js",
       "wwwroot/lib/bootstrap/dist/js/bootstrap.bundle.min.js",
       "wwwroot/lib/canvas.js/canvasjs.js",
+      "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",
@@ -25,7 +27,8 @@
       "wwwroot/js/search.js",
       "wwwroot/js/loader.js",
       "wwwroot/js/stats.js",
-      "wwwroot/js/configuration.js"
+      "wwwroot/js/configuration.js",
+      "wwwroot/js/advanced_stats.js"
     ],
     // Optionally specify minification options
     "minify": {

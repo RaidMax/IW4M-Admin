@@ -1,4 +1,4 @@
-﻿using SharedLibraryCore.Database.Models;
+﻿using Data.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {

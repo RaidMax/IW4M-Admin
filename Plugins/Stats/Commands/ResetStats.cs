@@ -1,42 +1,47 @@
-﻿using IW4MAdmin.Plugins.Stats.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models.Client.Stats;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
-        public ResetStats(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly IDatabaseContextFactory _contextFactory;
+        
+        public ResetStats(CommandConfiguration config, ITranslationLookup translationLookup, 
+            IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
             Name = "resetstats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_RESET_DESC"];
             Alias = "rs";
             Permission = EFClient.Permission.User;
             RequiresTarget = false;
-            //AllowImpersonation = true;
+            AllowImpersonation = true;
+
+            _contextFactory = contextFactory;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            if (E.Origin.ClientNumber >= 0)
+            if (gameEvent.Origin.ClientNumber >= 0)
             {
+                var serverId = Helpers.StatManager.GetIdForServer(gameEvent.Owner);
 
-                long serverId = Helpers.StatManager.GetIdForServer(E.Owner);
-
-                EFClientStatistics clientStats;
-                using (var ctx = new DatabaseContext(disableTracking: true))
+                await using var context = _contextFactory.CreateContext();
+                var clientStats = await context.Set<EFClientStatistics>()
+                    .Where(s => s.ClientId == gameEvent.Origin.ClientId)
+                    .Where(s => s.ServerId == serverId)
+                    .FirstOrDefaultAsync();
+                
+                // want to prevent resetting stats before they've gotten any kills
+                if (clientStats != null)
                 {
-                    clientStats = await ctx.Set<EFClientStatistics>()
-                        .Where(s => s.ClientId == E.Origin.ClientId)
-                        .Where(s => s.ServerId == serverId)
-                        .FirstAsync();
-
                     clientStats.Deaths = 0;
                     clientStats.Kills = 0;
                     clientStats.SPM = 0.0;
@@ -44,19 +49,18 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     clientStats.TimePlayed = 0;
                     // todo: make this more dynamic
                     clientStats.EloRating = 200.0;
-
-                    // reset the cached version
-                    Plugin.Manager.ResetStats(E.Origin);
-
-                    // fixme: this doesn't work properly when another context exists
-                    await ctx.SaveChangesAsync();
+                    await context.SaveChangesAsync();
                 }
-                E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
+
+                // reset the cached version
+                Plugin.Manager.ResetStats(gameEvent.Origin);
+
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }
 
             else
             {
-                E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_FAIL"]);
             }
         }
     }

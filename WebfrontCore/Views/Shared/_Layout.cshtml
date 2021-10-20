@@ -2,7 +2,7 @@
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html" lang="@ViewBag.Language">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -18,11 +18,12 @@
 
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment include="Development">
-        <link rel="stylesheet" href="~/dynamic/css/global.css" />
+        <link rel="stylesheet" href="~/dynamic/css/global.css?version=@ViewBag.Version" />
     </environment>
     <environment include="Production">
-        <link rel="stylesheet" href="~/dynamic/css/global.min.css" />
+        <link rel="stylesheet" href="~/dynamic/css/global.min.css?version=@ViewBag.Version" />
     </environment>
+    @await RenderSectionAsync("styles", false)
 </head>
 <body>
     <header>
@@ -33,15 +34,49 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_HOME"], "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li class="nav-item text-center text-lg-left">@Html.ActionLink(loc["WEBFRONT_NAV_HELP"], "Help", "Home", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "Home", new {area = ""}, new {@class = "nav-link nav-icon oi oi-hard-drive", title=@loc["WEBFRONT_NAV_SERVERS"]})</li>
+                    <li class="nav-item text-center d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_SERVERS"], "Index", "Home", new {area = ""}, new {@class = "nav-link"})</li>
+                    
+                    @if (ViewBag.Configuration.CommunityInformation.IsEnabled)
+                    {
+                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "About", new {area = ""}, new {@class = "nav-link nav-icon oi oi-list-rich", title = loc["WEBFRONT_NAV_ABOUT"]})</li>
+                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_ABOUT"], "Index", "About", new {area = ""}, new {@class = "nav-link"})</li>
+                    }
+                    
+                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "List", "Penalty", new {area = ""}, new {@class = "nav-link nav-icon oi oi-lock-locked", title=loc["WEBFRONT_NAV_PENALTIES"]})</li>
+                    <li class="nav-item text-center d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new {area = ""}, new {@class = "nav-link"})</li>
+                    
+                    @if (ViewBag.Authorized)
+                    {
+                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link nav-icon oi oi-people", title=loc["WEBFRONT_NAV_PRIVILEGED"]})</li>
+                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link"})</li>
+                    }
+                    else if (!ViewBag.Authorized && !ViewBag.EnablePrivilegedUserPrivacy)
+                    {
+                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link nav-icon oi oi-people", title=loc["WEBFRONT_NAV_PRIVILEGED"]})</li>
+                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link"})</li>
+                    }
+                    
+                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Help", "Home", new {area = ""}, new {@class = "nav-link nav-icon oi oi-question-mark", title=loc["WEBFRONT_NAV_HELP"]})</li>
+                    <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_HELP"], "Help", "Home", new {area = ""}, new {@class = "nav-link"})</li>
+                    
                     @foreach (var _page in ViewBag.Pages)
                     {
-                        <li class="nav-item text-center text-lg-left">
-                            <a class="nav-link" href="@_page.Location">@_page.Name</a>
-                        </li>
+                        if (_page.Location == "/Stats/TopPlayersAsync")
+                        {
+                            <li class="nav-item d-none d-lg-inline-block d-xl-none">
+                                <a class="nav-link nav-icon oi oi-bar-chart" href="@_page.Location" title="@_page.Name"></a>
+                            </li>
+                            <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">
+                                <a class="nav-link" href="@_page.Location">@_page.Name</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item text-center text-lg-left">
+                                <a class="nav-link" href="@_page.Location">@_page.Name</a>
+                            </li>
+                        }
                     }
                     <li class="nav-item text-center text-lg-left"></li>
                     @if (!string.IsNullOrEmpty(ViewBag.SocialLink))
@@ -152,11 +187,12 @@
         <script type="text/javascript" src="~/lib/moment-timezone/moment-timezone.js"></script>
         <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
         <script type="text/javascript" src="~/lib/canvas.js/canvasjs.js"></script>
+        <script type="text/javascript" src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
         <script type="text/javascript" src="~/js/action.js"></script>
         <script type="text/javascript" src="~/js/search.js"></script>
     </environment>
     <environment include="Production">
-        <script type="text/javascript" src="~/js/global.min.js"></script>
+        <script type="text/javascript" src="~/js/global.min.js?version=@ViewBag.Version"></script>
     </environment>
     <script>
         let _localizationTmp = @Html.Raw(Json.Serialize(ViewBag.Localization));
@@ -165,6 +201,7 @@
             _localization[key] = value;
             });
     </script>
-    @RenderSection("scripts", required: false)
+    @await RenderSectionAsync("scripts", required: false)
+    @Html.Raw(ViewBag.ScriptInjection);
 </body>
 </html>

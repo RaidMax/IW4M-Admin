@@ -1,10 +1,7 @@
 ﻿using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
-using IW4MAdmin.Plugins.Stats.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
-using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -14,6 +11,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models.Client;
+using Data.Models.Client.Stats;
+using Data.Models.Server;
+using Humanizer;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Commands;
+using IW4MAdmin.Plugins.Stats.Client.Abstractions;
+using Stats.Client.Abstractions;
+using EFClient = SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin.Plugins.Stats
 {
@@ -28,23 +35,29 @@ namespace IW4MAdmin.Plugins.Stats
         public static StatManager Manager { get; private set; }
         public static IManager ServerManager;
         public static IConfigurationHandler<StatsConfiguration> Config { get; private set; }
-#if DEBUG
-        int scriptDamageCount;
-        int scriptKillCount;
-#endif
+
         private readonly IDatabaseContextFactory _databaseContextFactory;
         private readonly ITranslationLookup _translationLookup;
         private readonly IMetaService _metaService;
         private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatQueryHelper;
+        private readonly ILogger<StatManager> _managerLogger;
+        private readonly ILogger<Plugin> _logger;
+        private readonly List<IClientStatisticCalculator> _statCalculators;
+        private readonly IServerDistributionCalculator _serverDistributionCalculator;
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
-            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper)
+        public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
+            ITranslationLookup translationLookup, IMetaService metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper, ILogger<StatManager> managerLogger, 
+            IEnumerable<IClientStatisticCalculator> statCalculators, IServerDistributionCalculator serverDistributionCalculator)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
             _translationLookup = translationLookup;
             _metaService = metaService;
             _chatQueryHelper = chatQueryHelper;
+            _managerLogger = managerLogger;
+            _logger = logger;
+            _statCalculators = statCalculators.ToList();
+            _serverDistributionCalculator = serverDistributionCalculator;
         }
 
         public async Task OnEventAsync(GameEvent E, Server S)
@@ -54,11 +67,6 @@ namespace IW4MAdmin.Plugins.Stats
                 case GameEvent.EventType.Start:
                     Manager.AddServer(S);
                     break;
-                case GameEvent.EventType.Stop:
-                    break;
-                case GameEvent.EventType.PreConnect:
-                    await Manager.AddPlayer(E.Origin);
-                    break;
                 case GameEvent.EventType.Disconnect:
                     await Manager.RemovePlayer(E.Origin);
                     break;
@@ -66,7 +74,7 @@ namespace IW4MAdmin.Plugins.Stats
                     if (!string.IsNullOrEmpty(E.Data) &&
                         E.Origin.ClientId > 1)
                     {
-                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), E.Data);
+                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), true, E.Data);
                     }
                     break;
                 case GameEvent.EventType.MapChange:
@@ -75,23 +83,16 @@ namespace IW4MAdmin.Plugins.Stats
                     await Manager.Sync(S);
                     break;
                 case GameEvent.EventType.MapEnd:
+                    Manager.ResetKillstreaks(S);
                     await Manager.Sync(S);
                     break;
-                case GameEvent.EventType.JoinTeam:
-                    break;
-                case GameEvent.EventType.Broadcast:
-                    break;
-                case GameEvent.EventType.Tell:
-                    break;
-                case GameEvent.EventType.Kick:
-                    break;
-                case GameEvent.EventType.Ban:
-                    break;
-                case GameEvent.EventType.Unknown:
-                    break;
-                case GameEvent.EventType.Report:
-                    break;
-                case GameEvent.EventType.Flag:
+                case GameEvent.EventType.Command:
+                    var shouldPersist = !string.IsNullOrEmpty(E.Data) &&
+                                        E.Extra is SayCommand;
+                    if (shouldPersist)
+                    {
+                        await Manager.AddMessageAsync(E.Origin.ClientId, StatManager.GetIdForServer(S), false, E.Data);
+                    }
                     break;
                 case GameEvent.EventType.ScriptKill:
                     string[] killInfo = (E.Data != null) ? E.Data.Split(';') : new string[0];
@@ -103,22 +104,14 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
-#if DEBUG
-                        scriptKillCount++;
-                        S.Logger.WriteInfo($"Start ScriptKill {scriptKillCount}");
-#endif
-
+                        await EnsureClientsAdded(E.Origin, E.Target);
                         await Manager.AddScriptHit(false, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
-
-#if DEBUG
-                        S.Logger.WriteInfo($"End ScriptKill {scriptKillCount}");
-#endif
                     }
 
                     else
                     {
-                        S.Logger.WriteDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
+                        _logger.LogDebug("Skipping script kill as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
                 case GameEvent.EventType.Kill:
@@ -130,6 +123,7 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
+                        await EnsureClientsAdded(E.Origin, E.Target);
                         await Manager.AddStandardKill(E.Origin, E.Target);
                     }
                     break;
@@ -155,24 +149,26 @@ namespace IW4MAdmin.Plugins.Stats
                             E.Origin = E.Target;
                         }
 
-#if DEBUG
-                        scriptDamageCount++;
-                        S.Logger.WriteInfo($"Start ScriptDamage {scriptDamageCount}");
-#endif
-
+                        await EnsureClientsAdded(E.Origin, E.Target);
                         await Manager.AddScriptHit(true, E.Time, E.Origin, E.Target, StatManager.GetIdForServer(S), S.CurrentMap.Name, killInfo[7], killInfo[8],
                             killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11], killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
-
-#if DEBUG
-                        S.Logger.WriteInfo($"End ScriptDamage {scriptDamageCount}");
-#endif
                     }
 
                     else
                     {
-                        S.Logger.WriteDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
+                        _logger.LogDebug("Skipping script damage as it is ignored or data in customcallbacks is outdated/missing");
                     }
                     break;
+            }
+
+            if (!Config.Configuration().EnableAdvancedMetrics)
+            {
+                return;
+            }
+            
+            foreach (var calculator in _statCalculators)
+            {
+                await calculator.CalculateForEvent(E);
             }
         }
 
@@ -198,11 +194,9 @@ namespace IW4MAdmin.Plugins.Stats
             {
                 IList<EFClientStatistics> clientStats;
                 int messageCount = 0;
-                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
-                {
-                    clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
-                    messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);
-                }
+                await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
+                clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
+                messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);
 
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
@@ -277,13 +271,11 @@ namespace IW4MAdmin.Plugins.Stats
             {
                 IList<EFClientStatistics> clientStats;
 
-                using (var ctx = _databaseContextFactory.CreateContext(enableTracking: false))
-                {
-                    clientStats = await ctx.Set<EFClientStatistics>()
-                        .Include(c => c.HitLocations)
-                        .Where(c => c.ClientId == request.ClientId)
-                        .ToListAsync();
-                }
+                await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
+                clientStats = await ctx.Set<EFClientStatistics>()
+                    .Include(c => c.HitLocations)
+                    .Where(c => c.ClientId == request.ClientId)
+                    .ToListAsync();
 
                 double headRatio = 0;
                 double chestRatio = 0;
@@ -296,20 +288,20 @@ namespace IW4MAdmin.Plugins.Stats
                 if (clientStats.Where(cs => cs.HitLocations.Count > 0).FirstOrDefault() != null)
                 {
                     chestRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
-                    c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
+                    c.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_upper).HitCount) /
                     (double)clientStats.Where(c => c.HitLocations.Count > 0)
-                    .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
+                    .Sum(c => c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
 
                     abdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(c =>
-                         c.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount) /
-                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
+                         c.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_lower).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(c => c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
 
-                    chestAbdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_upper).HitCount) /
-                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.torso_lower).HitCount)) * 100.0, 0);
+                    chestAbdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_upper).HitCount) /
+                         (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.torso_lower).HitCount)) * 100.0, 0);
 
-                    headRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == IW4Info.HitLocation.head).HitCount) /
+                    headRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs => cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.head).HitCount) /
                          (double)clientStats.Where(c => c.HitLocations.Count > 0)
-                            .Sum(c => c.HitLocations.Where(hl => hl.Location != IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
+                            .Sum(c => c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none).Sum(f => f.HitCount))) * 100.0, 0);
 
                     var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0).SelectMany(hl => hl.HitLocations);
                     hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) / (double)validOffsets.Sum(o => o.HitCount);
@@ -416,20 +408,16 @@ namespace IW4MAdmin.Plugins.Stats
 
             async Task<string> totalKills(Server server)
             {
-                using (var ctx = new DatabaseContext(disableTracking: true))
-                {
-                    long kills = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
-                    return kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
-                }
+                await using var context = _databaseContextFactory.CreateContext(false);
+                long kills = await context.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
+                return kills.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
             }
 
             async Task<string> totalPlayTime(Server server)
             {
-                using (var ctx = new DatabaseContext(disableTracking: true))
-                {
-                    long playTime = await ctx.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
-                    return (playTime / 3600.0).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
-                }
+                await using var context = _databaseContextFactory.CreateContext(false);
+                long playTime = await context.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
+                return (playTime / 3600.0).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
             }
 
             async Task<string> topStats(Server s)
@@ -441,7 +429,7 @@ namespace IW4MAdmin.Plugins.Stats
             async Task<string> mostPlayed(Server s)
             {
                 // todo: this needs to needs to be updated when we DI the lookup
-                return string.Join(Environment.NewLine, await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex));
+                return string.Join(Environment.NewLine, await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex, _databaseContextFactory));
             }
 
             async Task<string> mostKills(Server gameServer)
@@ -456,8 +444,17 @@ namespace IW4MAdmin.Plugins.Stats
             manager.GetMessageTokens().Add(new MessageToken("MOSTPLAYED", mostPlayed));
             manager.GetMessageTokens().Add(new MessageToken("MOSTKILLS", mostKills));
 
+            if (Config.Configuration().EnableAdvancedMetrics)
+            {
+                foreach (var calculator in _statCalculators)
+                {
+                    await calculator.GatherDependencies();
+                }
+            }
+
             ServerManager = manager;
-            Manager = new StatManager(manager, _databaseContextFactory, Config);
+            Manager = new StatManager(_managerLogger, manager, _databaseContextFactory, Config, _serverDistributionCalculator);
+            await _serverDistributionCalculator.Initialize();
         }
 
         public Task OnTickAsync(Server S)
@@ -498,5 +495,21 @@ namespace IW4MAdmin.Plugins.Stats
         /// <param name="s"></param>
         /// <returns></returns>
         private bool ShouldOverrideAnticheatSetting(Server s) => Config.Configuration().AnticheatConfiguration.Enable && s.GameName == Server.Game.IW5;
+
+        /// <summary>
+        /// Makes sure both clients are added
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private async Task EnsureClientsAdded(EFClient origin, EFClient target)
+        {
+            await Manager.AddPlayer(origin);
+
+            if (!origin.Equals(target))
+            {
+                await Manager.AddPlayer(target);
+            }
+        }
     }
 }

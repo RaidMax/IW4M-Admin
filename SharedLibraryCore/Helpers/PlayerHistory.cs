@@ -1,4 +1,5 @@
 ﻿using System;
+using SharedLibraryCore.Dtos;
 
 namespace SharedLibraryCore.Helpers
 {
@@ -31,5 +32,14 @@ namespace SharedLibraryCore.Helpers
         /// Used by CanvasJS as a point on the y axis
         /// </summary>
         public int y { get; }
+
+        public ClientCountSnapshot ToClientCountSnapshot()
+        {
+            return new ClientCountSnapshot
+            {
+                ClientCount = y,
+                Time = When
+            };
+        }
     }
 }

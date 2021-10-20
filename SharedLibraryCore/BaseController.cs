@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
@@ -12,6 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Data.Context;
+using Data.Models;
+using SharedLibraryCore.Configuration;
 
 namespace SharedLibraryCore
 {
@@ -25,28 +26,27 @@ namespace SharedLibraryCore
         public IManager Manager { get; private set; }
         protected readonly DatabaseContext Context;
         protected bool Authorized { get; set; }
-        protected SharedLibraryCore.Localization.TranslationLookup Localization { get; private set; }
+        protected Localization.TranslationLookup Localization { get; private set; }
         protected EFClient Client { get; private set; }
         private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
         private static string SocialLink;
         private static string SocialTitle;
         protected List<Page> Pages;
+        protected ApplicationConfiguration AppConfig { get; }
 
         public BaseController(IManager manager)
         {
             Manager = manager;
+            Localization ??= Utilities.CurrentLocalization.LocalizationIndex;
+            AppConfig = Manager.GetApplicationSettings().Configuration();
 
-            if (Localization == null)
+            if (AppConfig.EnableSocialLink && SocialLink == null)
             {
-                Localization = Utilities.CurrentLocalization.LocalizationIndex;
+                SocialLink = AppConfig.SocialLinkAddress;
+                SocialTitle = AppConfig.SocialLinkTitle;
             }
 
-            if (Manager.GetApplicationSettings().Configuration().EnableSocialLink && SocialLink == null)
-            {
-                SocialLink = Manager.GetApplicationSettings().Configuration().SocialLinkAddress;
-                SocialTitle = Manager.GetApplicationSettings().Configuration().SocialLinkTitle;
-            }
-
+            
             Pages = Manager.GetPageList().Pages
                 .Select(page => new Page
                 {
@@ -56,12 +56,13 @@ namespace SharedLibraryCore
 
             ViewBag.Version = Manager.Version;
             ViewBag.IsFluid = false;
-            ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+            ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
+            ViewBag.Language = Utilities.CurrentLocalization.Culture.TwoLetterISOLanguageName;
 
             Client ??= new EFClient()
             {
                 ClientId = -1,
-                Level = EFClient.Permission.User,
+                Level = EFClient.Permission.Banned,
                 CurrentAlias = new EFAlias() { Name = "Webfront Guest" }
             };
         }
@@ -125,15 +126,26 @@ namespace SharedLibraryCore
                 SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
             }
 
+            var communityName = AppConfig.CommunityInformation?.Name;
+            var shouldUseCommunityName = !string.IsNullOrWhiteSpace(communityName) 
+                                         && !communityName.Contains("IW4MAdmin") 
+                                         && AppConfig.CommunityInformation.IsEnabled;
+            
             ViewBag.Authorized = Authorized;
-            ViewBag.Url = Manager.GetApplicationSettings().Configuration().WebfrontUrl;
+            ViewBag.Url = AppConfig.WebfrontUrl;
             ViewBag.User = Client;
+            ViewBag.Version = Manager.Version;
             ViewBag.SocialLink = SocialLink ?? "";
             ViewBag.SocialTitle = SocialTitle;
             ViewBag.Pages = Pages;
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
-            ViewBag.CustomBranding = Manager.GetApplicationSettings().Configuration().WebfrontCustomBranding ?? "IW4MAdmin";
-            ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
+            ViewBag.CustomBranding = shouldUseCommunityName
+                ? communityName
+                : AppConfig.WebfrontCustomBranding ?? "IW4MAdmin";
+            ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
+            ViewBag.EnablePrivilegedUserPrivacy = AppConfig.EnablePrivilegedUserPrivacy;
+            ViewBag.Configuration = AppConfig;
+            ViewBag.ScriptInjection = AppConfig.Webfront?.ScriptInjection;
 
             base.OnActionExecuting(context);
         }

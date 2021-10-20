@@ -1,8 +1,11 @@
 ﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
 
 namespace SharedLibraryCore
 {
@@ -148,6 +151,14 @@ namespace SharedLibraryCore
             /// a client's permission was changed
             /// </summary>
             ChangePermission = 111,
+            /// <summary>
+            /// client logged in to webfront
+            /// </summary>
+            Login = 112,
+            /// <summary>
+            /// client logged out of webfront
+            /// </summary>
+            Logout = 113,
 
             // events "generated" by IW4MAdmin
             /// <summary>
@@ -233,7 +244,7 @@ namespace SharedLibraryCore
         /// <summary>
         /// Specifies the game time offset as printed in the log
         /// </summary>
-        public int? GameTime { get; set; }
+        public long? GameTime { get; set; }
         public EFClient Origin;
         public EFClient Target;
         public EFClient ImpersonationOrigin { get; set; }
@@ -245,6 +256,8 @@ namespace SharedLibraryCore
         public long Id { get; private set; }
         public EventFailReason FailReason { get; set; }
         public bool Failed => FailReason != EventFailReason.None;
+        public Guid CorrelationId { get; set; } = Guid.NewGuid();
+        public List<string> Output { get; set; } = new List<string>();
 
         /// <summary>
         /// Indicates if the event should block until it is complete
@@ -254,9 +267,11 @@ namespace SharedLibraryCore
         public void Complete()
         {
             _eventFinishedWaiter.Set();
-#if DEBUG
-            Owner?.Logger.WriteDebug($"Completed internal for event {Id}");
-#endif
+        }
+
+        public async Task<GameEvent> WaitAsync()
+        {
+            return await WaitAsync(Utilities.DefaultCommandTimeout, new CancellationToken());
         }
 
         /// <summary>
@@ -266,11 +281,7 @@ namespace SharedLibraryCore
         public async Task<GameEvent> WaitAsync(TimeSpan timeSpan, CancellationToken token)
         {
             bool processed = false;
-
-#if DEBUG
-            Owner?.Logger.WriteDebug($"Begin wait for event {Id}");
-#endif
-
+            Utilities.DefaultLogger.LogDebug("Begin wait for event {Id}", Id);
             try
             {
                 processed = await Task.Run(() => _eventFinishedWaiter.WaitOne(timeSpan), token);
@@ -283,13 +294,11 @@ namespace SharedLibraryCore
 
             if (!processed)
             {
-                Owner?.Logger.WriteError("Waiting for event to complete timed out");
-                Owner?.Logger.WriteDebug($"{Id}, {Type}, {Data}, {Extra}, {FailReason.ToString()}, {Message}, {Origin}, {Target}");
-#if DEBUG
-                //throw new Exception();
-#endif
+                using(LogContext.PushProperty("Server", Owner?.ToString()))
+                {
+                    Utilities.DefaultLogger.LogError("Waiting for event to complete timed out {@eventData}", new { Event = this, Message, Origin = Origin?.ToString(), Target = Target?.ToString()});
+                }
             }
-
 
             // this lets us know if the the action timed out
             FailReason = FailReason == EventFailReason.None && !processed ? EventFailReason.Timeout : FailReason;

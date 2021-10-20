@@ -1,13 +1,16 @@
-﻿using IW4MAdmin.Plugins.Stats.Models;
-using SharedLibraryCore;
-using SharedLibraryCore.Database.Models;
+﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using Data.Models;
+using Data.Models.Client;
+using Data.Models.Client.Stats;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
 {
@@ -35,7 +38,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
         long LastOffset;
-        IW4Info.WeaponName LastWeapon;
+        string LastWeapon;
         ILogger Log;
         Strain Strain;
         readonly DateTime ConnectionTime = DateTime.UtcNow;
@@ -66,6 +69,33 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             Tracker = new ChangeTracking<EFACSnapshot>();
             TrackedHits = new List<EFClientKill>();
         }
+        
+        private static double SnapDistance(Vector3 a, Vector3 b, Vector3 c)
+        {
+            a = a.FixIW4Angles();
+            b = b.FixIW4Angles();
+            c = c.FixIW4Angles();
+            
+
+            float preserveDirectionAngle(float a1, float b1)
+            {
+                float difference = b1 - a1;
+                while (difference < -180) difference += 360;
+                while (difference > 180) difference -= 360;
+                return difference;
+            }
+
+            var directions = new[]
+            {
+                new Vector3(preserveDirectionAngle(b.X, a.X),preserveDirectionAngle(b.Y, a.Y), 0),
+                new Vector3( preserveDirectionAngle(c.X, b.X), preserveDirectionAngle(c.Y, b.Y), 0)
+            };
+
+            var distance = new Vector3(Math.Abs(directions[1].X - directions[0].X),
+                Math.Abs(directions[1].Y - directions[0].Y), 0);
+
+            return Math.Sqrt((distance.X * distance.X) + (distance.Y * distance.Y));
+        }
 
         /// <summary>
         /// Analyze kill and see if performed by a cheater
@@ -76,12 +106,12 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         {
             var results = new List<DetectionPenaltyResult>();
 
-            if ((hit.DeathType != IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
-                hit.DeathType != IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
-                hit.DeathType != IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
-                hit.HitLoc == IW4Info.HitLocation.none || hit.TimeOffset - LastOffset < 0 ||
+            if ((hit.DeathType != (int)IW4Info.MeansOfDeath.MOD_PISTOL_BULLET &&
+                hit.DeathType != (int)IW4Info.MeansOfDeath.MOD_RIFLE_BULLET &&
+                hit.DeathType != (int)IW4Info.MeansOfDeath.MOD_HEAD_SHOT) ||
+                hit.HitLoc == (int)IW4Info.HitLocation.none || hit.TimeOffset - LastOffset < 0 ||
                 // hack: prevents false positives
-                (LastWeapon != hit.Weapon && (hit.TimeOffset - LastOffset) == 50))
+                (LastWeapon != hit.WeaponReference && (hit.TimeOffset - LastOffset) == 50))
             {
                 return new[] {new DetectionPenaltyResult()
                 {
@@ -89,9 +119,9 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 }};
             }
 
-            LastWeapon = hit.Weapon;
+            LastWeapon = hit.WeaponReference;
 
-            HitLocationCount[hit.HitLoc].Count++;
+            HitLocationCount[(IW4Info.HitLocation)hit.HitLoc].Count++;
             HitCount++;
 
             if (hit.IsKill)
@@ -116,7 +146,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 {
                     ClientStats.SnapHitCount++;
                     sessionSnapHits++;
-                    var currentSnapDistance = Vector3.SnapDistance(hit.AnglesList[0], hit.AnglesList[1], hit.ViewAngles);
+                    var currentSnapDistance = SnapDistance(hit.AnglesList[0], hit.AnglesList[1], hit.ViewAngles);
                     double previousAverage = ClientStats.AverageSnapValue;
                     ClientStats.AverageSnapValue = (previousAverage * (ClientStats.SnapHitCount - 1) + currentSnapDistance) / ClientStats.SnapHitCount;
                     double previousSessionAverage = sessionAverageSnapAmount;
@@ -211,7 +241,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 }
 
                 // SESSION
-                var sessionHitLoc = HitLocationCount[hit.HitLoc];
+                var sessionHitLoc = HitLocationCount[(IW4Info.HitLocation)hit.HitLoc];
                 sessionHitLoc.Offset = (sessionHitLoc.Offset * (sessionHitLoc.Count - 1) + realAgainstPredict) / sessionHitLoc.Count;
 
                 int totalSessionHits = HitLocationCount.Sum(_hit => _hit.Value.Count);
@@ -223,32 +253,23 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 if (weightedSessionAverage > Thresholds.MaxOffset(totalSessionHits) &&
                     totalSessionHits >= (Thresholds.MediumSampleMinKills * 2))
                 {
-                    Log.WriteDebug("*** Reached Max Session Average for Angle Difference ***");
-                    Log.WriteDebug($"Session Average = {weightedSessionAverage}");
-                    Log.WriteDebug($"HitCount = {HitCount}");
-                    Log.WriteDebug($"ID = {hit.AttackerId}");
-
                     results.Add(new DetectionPenaltyResult()
                     {
                         ClientPenalty = EFPenalty.PenaltyType.Ban,
                         Value = weightedSessionAverage,
                         HitCount = HitCount,
                         Type = DetectionType.Offset,
-                        Location = hitLoc.Location
+                        Location = (IW4Info.HitLocation)hitLoc.Location
                     });
                 }
-
-#if DEBUG
-                Log.WriteDebug($"PredictVsReal={realAgainstPredict}");
-#endif
+                
+                Log.LogDebug("PredictVsReal={realAgainstPredict}", realAgainstPredict);
             }
             #endregion
 
             #region STRAIN
             double currentStrain = Strain.GetStrain(hit.Distance / 0.0254, hit.ViewAngles, Math.Max(50, LastOffset == 0 ? 50 : (hit.TimeOffset - LastOffset)));
-#if DEBUG == true
-            Log.WriteDebug($"Current Strain: {currentStrain}");
-#endif
+            Log.LogDebug("Current Strain: {currentStrain}", currentStrain);
             LastOffset = hit.TimeOffset;
 
             if (currentStrain > ClientStats.MaxStrain)
@@ -287,8 +308,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             bool shouldIgnoreDetection = false;
             try
             {
-                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[hit.GameName][DetectionType.Recoil]
-                    .Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex));
+                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Recoil]
+                    .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
             catch (KeyNotFoundException)
@@ -319,8 +340,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             try
             {
                 shouldIgnoreDetection = false;
-                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[hit.GameName][DetectionType.Button]
-                    .Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex));
+                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Button]
+                    .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
             catch (KeyNotFoundException)
@@ -432,8 +453,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             try
             {
                 shouldIgnoreDetection = false; // reset previous value
-                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[hit.GameName][DetectionType.Chest]
-                    .Any(_weaponRegex => Regex.IsMatch(hit.Weapon.ToString(), _weaponRegex));
+                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Chest]
+                    .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
             catch (KeyNotFoundException)
@@ -485,6 +506,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             {
                 When = hit.When,
                 ClientId = ClientStats.ClientId,
+                ServerId = ClientStats.ServerId,
                 SessionAngleOffset = AngleDifferenceAverage,
                 RecoilOffset = hitRecoilAverage,
                 CurrentSessionLength = (int)(DateTime.UtcNow - ConnectionTime).TotalMinutes,
@@ -506,7 +528,8 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 SessionSPM = Math.Round(ClientStats.SessionSPM, 0),
                 StrainAngleBetween = Strain.LastDistance,
                 TimeSinceLastEvent = (int)Strain.LastDeltaTime,
-                WeaponId = hit.Weapon,
+                WeaponReference = hit.WeaponReference,
+                HitLocationReference = hit.GetAdditionalProperty<string>("HitLocationReference"),
                 SessionSnapHits = sessionSnapHits,
                 SessionAverageSnapValue = sessionAverageSnapAmount
             };

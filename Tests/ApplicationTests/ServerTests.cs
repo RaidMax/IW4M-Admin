@@ -1,41 +1,32 @@
 ﻿using FakeItEasy;
 using IW4MAdmin;
-using IW4MAdmin.Application;
 using IW4MAdmin.Application.EventParsers;
 using NUnit.Framework;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
-using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace ApplicationTests
 {
     [TestFixture]
     public class ServerTests
     {
-        ILogger logger;
-
+        private IServiceProvider _serviceProvider;
+        
         [SetUp]
         public void Setup()
         {
-            logger = A.Fake<ILogger>();
-
-            void testLog(string msg) => Console.WriteLine(msg);
-
-            A.CallTo(() => logger.WriteError(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteWarning(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteInfo(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
-            A.CallTo(() => logger.WriteDebug(A<string>.Ignored)).Invokes((string msg) => testLog(msg));
+            _serviceProvider = new ServiceCollection()
+                .BuildBase()
+                .BuildServiceProvider();
         }
 
         [Test]
         public void GameTimeFalseQuitTest()
         {
-            var mgr = A.Fake<IManager>();
-            var server = new IW4MServer(mgr,
-                new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>());
-
+            var server = _serviceProvider.GetRequiredService<IW4MServer>();
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
@@ -55,13 +46,7 @@ namespace ApplicationTests
         [Test]
         public void LogFileReplay()
         {
-            var mgr = A.Fake<IManager>();
-            A.CallTo(() => mgr.GetLogger(A<long>.Ignored)).Returns(logger);
-
-            var server = new IW4MServer(mgr,
-                new SharedLibraryCore.Configuration.ServerConfiguration() { IPAddress = "127.0.0.1", Port = 28960 },
-                A.Fake<ITranslationLookup>(), A.Fake<IRConConnectionFactory>(), A.Fake<IGameLogReaderFactory>(), A.Fake<IMetaService>());
-
+            var server = _serviceProvider.GetRequiredService<IW4MServer>();
             var parser = new BaseEventParser(A.Fake<IParserRegexFactory>(), A.Fake<ILogger>(), A.Fake<ApplicationConfiguration>());
             parser.Configuration.GuidNumberStyle = System.Globalization.NumberStyles.Integer;
 
@@ -70,7 +55,6 @@ namespace ApplicationTests
             foreach (string line in log)
             {
                 var e = parser.GenerateGameEvent(line);
-                server.Logger.WriteInfo($"{e.GameTime}");
                 if (e.Origin != null)
                 {
                     e.Origin.CurrentServer = server;

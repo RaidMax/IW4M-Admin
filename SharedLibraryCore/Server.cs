@@ -1,18 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Database.Models;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Data.Models;
 
 namespace SharedLibraryCore
 {
-    public abstract class Server
+    public abstract class Server : IGameServer
     {
         public enum Game
         {
@@ -25,21 +29,23 @@ namespace SharedLibraryCore
             T4 = 5,
             T5 = 6,
             T6 = 7,
-            T7 = 8
+            T7 = 8,
+            SHG1 = 9,
+            CSGO = 10
         }
 
-        public Server(ServerConfiguration config, IManager mgr, IRConConnectionFactory rconConnectionFactory, IGameLogReaderFactory gameLogReaderFactory)
+        public Server(ILogger<Server> logger, SharedLibraryCore.Interfaces.ILogger deprecatedLogger, 
+            ServerConfiguration config, IManager mgr, IRConConnectionFactory rconConnectionFactory, 
+            IGameLogReaderFactory gameLogReaderFactory)
         {
             Password = config.Password;
             IP = config.IPAddress;
             Port = config.Port;
             Manager = mgr;
-            Logger = Manager.GetLogger(this.EndPoint);
-            Logger.WriteInfo(this.ToString());
+            Logger = deprecatedLogger;
             ServerConfig = config;
-            RemoteConnection = rconConnectionFactory.CreateConnection(IP, Port, Password);
             EventProcessing = new SemaphoreSlim(1, 1);
-            Clients = new List<EFClient>(new EFClient[18]);
+            Clients = new List<EFClient>(new EFClient[64]);
             Reports = new List<Report>();
             ClientHistory = new Queue<PlayerHistory>();
             ChatHistory = new List<ChatInfo>();
@@ -47,11 +53,15 @@ namespace SharedLibraryCore
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
             CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
             this.gameLogReaderFactory = gameLogReaderFactory;
+            RConConnectionFactory = rconConnectionFactory;
+            ServerLogger = logger;
             InitializeTokens();
             InitializeAutoMessages();
         }
 
-        public long EndPoint => Convert.ToInt64($"{IP.Replace(".", "")}{Port}");
+        public long EndPoint => IPAddress.TryParse(IP, out _) 
+            ? Convert.ToInt64($"{IP.Replace(".", "")}{Port}") 
+            : $"{IP.Replace(".", "")}{Port}".GetStableHashCode();
 
         /// <summary>
         /// Returns list of all current players
@@ -100,10 +110,10 @@ namespace SharedLibraryCore
             }
             if (literal)
             {
-                return GetClientsAsList().Where(p => p.Name?.ToLower() == pName.ToLower()).ToList();
+                return GetClientsAsList().Where(p => p.Name?.StripColors()?.ToLower() == pName.ToLower()).ToList();
             }
 
-            return GetClientsAsList().Where(p => (p.Name?.ToLower() ?? "").Contains(pName.ToLower())).ToList();
+            return GetClientsAsList().Where(p => (p.Name?.StripColors()?.ToLower() ?? "").Contains(pName.ToLower())).ToList();
         }
 
         virtual public Task<bool> ProcessUpdatesAsync(CancellationToken cts) => (Task<bool>)Task.CompletedTask;
@@ -123,9 +133,7 @@ namespace SharedLibraryCore
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
             string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "", $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
-#if DEBUG == true
-            Logger.WriteVerbose(message.StripColors());
-#endif
+            ServerLogger.LogDebug("All->" + message.StripColors());
 
             var e = new GameEvent()
             {
@@ -138,44 +146,52 @@ namespace SharedLibraryCore
             Manager.AddEvent(e);
             return e;
         }
+        
+        public void Broadcast(IEnumerable<string> messages, EFClient sender = null)
+        {
+            foreach (var message in messages)
+            {
+#pragma warning disable 4014
+                Broadcast(message, sender).WaitAsync();
+#pragma warning restore 4014
+            }
+        }
+        
 
         /// <summary>
         /// Send a message to a particular players
         /// </summary>
         /// <param name="message">Message to send</param>
-        /// <param name="target">EFClient to send message to</param>
-        protected async Task Tell(string message, EFClient target)
+        /// <param name="targetClient">EFClient to send message to</param>
+        protected async Task Tell(string message, EFClient targetClient)
         {
-#if !DEBUG
-            string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell, target.ClientNumber, $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
-            if (target.ClientNumber > -1 && message.Length > 0 && target.Level != EFClient.Permission.Console)
-                await this.ExecuteCommandAsync(formattedMessage);
-#else
-            Logger.WriteVerbose($"{target.ClientNumber}->{message.StripColors()}");
-            await Task.CompletedTask;
-#endif
+            if (!Utilities.IsDevelopment)
+            {
+                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
+                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
 
-            if (target.Level == EFClient.Permission.Console)
+                var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell,
+                    clientNumber,
+                    $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
+                if (targetClient.ClientNumber > -1 && message.Length > 0 && targetClient.Level != EFClient.Permission.Console)
+                    await this.ExecuteCommandAsync(formattedMessage);
+            }
+            else
+            {
+                ServerLogger.LogDebug("Tell[{clientNumber}]->{message}", targetClient.ClientNumber, message.StripColors());
+            }
+
+
+            if (targetClient.Level == EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
+                using (LogContext.PushProperty("Server", ToString()))
+                {
+                    ServerLogger.LogInformation("Command output received: {message}", message);
+                }
                 Console.WriteLine(message.StripColors());
                 Console.ForegroundColor = ConsoleColor.Gray;
-            }
-
-            // prevent this from queueing up too many command responses
-            if (CommandResult.Count > 15)
-            {
-                CommandResult.RemoveAt(0);
-            }
-
-            // it was a remote command so we need to add it to the command result queue
-            if (target.ClientNumber < 0)
-            {
-                CommandResult.Add(new CommandResponseInfo()
-                {
-                    Response = message.StripColors(),
-                    ClientId = target.ClientId
-                });
             }
         }
 
@@ -194,9 +210,10 @@ namespace SharedLibraryCore
         /// <summary>
         /// Kick a player from the server
         /// </summary>
-        /// <param name="Reason">Reason for kicking</param>
+        /// <param name="reason">Reason for kicking</param>
         /// <param name="Target">EFClient to kick</param>
-        abstract public Task Kick(String Reason, EFClient Target, EFClient Origin);
+        public Task Kick(String reason, EFClient Target, EFClient Origin) => Kick(reason, Target, Origin, null);
+        public abstract Task Kick(string reason, EFClient target, EFClient origin, EFPenalty originalPenalty);
 
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server
@@ -238,17 +255,6 @@ namespace SharedLibraryCore
         abstract public void InitializeTokens();
 
         /// <summary>
-        /// Read the map configuration
-        /// </summary>
-        protected void InitializeMaps()
-        {
-            Maps = new List<Map>();
-            var gameMaps = Manager.GetApplicationSettings().Configuration().Maps.FirstOrDefault(m => m.Game == GameName);
-            if (gameMaps != null)
-                Maps.AddRange(gameMaps.Maps);
-        }
-
-        /// <summary>
         /// Initialize the messages to be broadcasted
         /// </summary>
         protected void InitializeAutoMessages()
@@ -269,7 +275,7 @@ namespace SharedLibraryCore
         {
             try
             {
-                return (await this.GetDvarAsync<string>("sv_customcallbacks")).Value == "1";
+                return (await this.GetDvarAsync("sv_customcallbacks", "0")).Value == "1";
             }
 
             catch (Exceptions.DvarException)
@@ -278,9 +284,12 @@ namespace SharedLibraryCore
             }
         }
 
+        public abstract Task<long> GetIdForServer(Server server = null);
+
         // Objects
         public IManager Manager { get; protected set; }
-        public ILogger Logger { get; private set; }
+        [Obsolete]
+        public SharedLibraryCore.Interfaces.ILogger Logger { get; private set; }
         public ServerConfiguration ServerConfig { get; private set; }
         public List<Map> Maps { get; protected set; } = new List<Map>();
         public List<Report> Reports { get; set; }
@@ -299,7 +308,7 @@ namespace SharedLibraryCore
         {
             get
             {
-                return Clients.Where(p => p != null/* && !p.IsBot*/).Count();
+                return Clients.ToArray().Count(p => p != null && !p.IsBot);
             }
         }
         public int MaxClients { get; protected set; }
@@ -316,9 +325,14 @@ namespace SharedLibraryCore
         public SemaphoreSlim EventProcessing { get; private set; }
 
         // Internal
+        /// <summary>
+        /// this is actually the hostname now
+        /// </summary>
         public string IP { get; protected set; }
+        public IPEndPoint ResolvedIpEndPoint { get; protected set; }
         public string Version { get; protected set; }
         public bool IsInitialized { get; set; }
+        protected readonly ILogger ServerLogger;
 
         public int Port { get; private set; }
         protected string FSGame;
@@ -329,12 +343,10 @@ namespace SharedLibraryCore
         protected DateTime LastPoll;
         protected ManualResetEventSlim OnRemoteCommandResponse;
         protected IGameLogReaderFactory gameLogReaderFactory;
+        protected IRConConnectionFactory RConConnectionFactory;
 
         // only here for performance
         private readonly bool CustomSayEnabled;
-        private readonly string CustomSayName;
-
-        //Remote
-        public IList<CommandResponseInfo> CommandResult = new List<CommandResponseInfo>();
+        protected readonly string CustomSayName;
     }
 }

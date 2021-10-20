@@ -1,21 +1,26 @@
-﻿using SharedLibraryCore.Database;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Database.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Data.Models;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore.Services
 {
-    public class ChangeHistoryService : IEntityService<EFChangeHistory>
+    public class ChangeHistoryService
     {
-        public Task<EFChangeHistory> Create(EFChangeHistory entity)
+        private readonly ILogger _logger;
+        private readonly IDatabaseContextFactory _contextFactory;
+        
+        public ChangeHistoryService(ILogger<ChangeHistoryService> logger, IDatabaseContextFactory contextFactory)
         {
-            throw new NotImplementedException();
+            _logger = logger;
+            _contextFactory = contextFactory;
         }
 
-        public async Task<EFChangeHistory> Add(GameEvent e, DatabaseContext ctx = null)
+        public async Task Add(GameEvent e)
         {
             EFChangeHistory change = null;
 
@@ -61,63 +66,44 @@ namespace SharedLibraryCore.Services
                         CurrentValue = ((EFClient.Permission)e.Extra).ToString()
                     };
                     break;
-                default:
+                case GameEvent.EventType.Login:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        Comment = "Logged In To Webfront",
+                        TypeOfChange = EFChangeHistory.ChangeType.Command,
+                        CurrentValue = e.Data
+                    };
+                    break;
+                case GameEvent.EventType.Logout:
+                    change = new EFChangeHistory()
+                    {
+                        OriginEntityId = e.Origin.ClientId,
+                        Comment = "Logged Out of Webfront",
+                        TypeOfChange = EFChangeHistory.ChangeType.Command,
+                        CurrentValue = e.Data
+                    };
                     break;
             }
 
-            if (change != null)
+            if (change == null)
             {
-                bool existingCtx = ctx != null;
-                ctx = ctx ?? new DatabaseContext(true);
-
-                ctx.EFChangeHistory.Add(change);
-
-                try
-                {
-                    await ctx.SaveChangesAsync();
-                }
-
-                catch (Exception ex)
-                {
-                    e.Owner.Logger.WriteWarning(ex.Message);
-                    e.Owner.Logger.WriteDebug(ex.GetExceptionInfo());
-                }
-
-                finally
-                {
-                    if (!existingCtx)
-                    {
-                        ctx.Dispose();
-                    }
-                }
+                return;
             }
 
-            return change;
-        }
+            await using var context = _contextFactory.CreateContext(false);
 
-        public Task<EFChangeHistory> Delete(EFChangeHistory entity)
-        {
-            throw new NotImplementedException();
-        }
+            context.EFChangeHistory.Add(change);
 
-        public Task<IList<EFChangeHistory>> Find(Func<EFChangeHistory, bool> expression)
-        {
-            throw new NotImplementedException();
-        }
+            try
+            {
+                await context.SaveChangesAsync();
+            }
 
-        public Task<EFChangeHistory> Get(int entityID)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<EFChangeHistory> GetUnique(long entityProperty)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<EFChangeHistory> Update(EFChangeHistory entity)
-        {
-            throw new NotImplementedException();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not persist change @{change}", change);
+            }
         }
     }
 }

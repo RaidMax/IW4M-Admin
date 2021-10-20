@@ -1,4 +1,5 @@
-﻿using static SharedLibraryCore.Server;
+﻿using System;
+using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Dtos
 {
@@ -8,6 +9,8 @@ namespace SharedLibraryCore.Dtos
         public int RecentClientCount { get; set; }
         public int TotalOccupiedClientSlots { get; set; }
         public int TotalAvailableClientSlots { get; set; }
+        public int MaxConcurrentClients { get; set; }
+        public DateTime MaxConcurrentClientsTime { get; set; }
 
         /// <summary>
         /// specifies the game name filter

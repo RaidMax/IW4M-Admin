@@ -6,6 +6,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Models;
 
 namespace WebfrontCore.Controllers
 {
@@ -26,9 +27,9 @@ namespace WebfrontCore.Controllers
                 ID = s.EndPoint,
             });
 
-            ViewBag.Description = "Use the IW4MAdmin web console to execute commands";
+            ViewBag.Description = Localization["WEFBRONT_DESCRIPTION_CONSOLE"];
             ViewBag.Title = Localization["WEBFRONT_CONSOLE_TITLE"];
-            ViewBag.Keywords = "IW4MAdmin, console, execute, commands";
+            ViewBag.Keywords = Localization["WEBFRONT_KEYWORDS_CONSOLE"];
 
             return View(activeServers);
         }
@@ -52,8 +53,10 @@ namespace WebfrontCore.Controllers
             var remoteEvent = new GameEvent()
             {
                 Type = GameEvent.EventType.Command,
-                Data = command.StartsWith(_appconfig.CommandPrefix) || command.StartsWith(_appconfig.BroadcastCommandPrefix) ? 
-                command : $"{_appconfig.CommandPrefix}{command}",
+                Data = command.StartsWith(_appconfig.CommandPrefix) ||
+                       command.StartsWith(_appconfig.BroadcastCommandPrefix)
+                    ? command
+                    : $"{_appconfig.CommandPrefix}{command}",
                 Origin = client,
                 Owner = server,
                 IsRemote = true
@@ -65,7 +68,8 @@ namespace WebfrontCore.Controllers
             try
             {
                 // wait for the event to process
-                var completedEvent = await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
+                var completedEvent =
+                    await remoteEvent.WaitAsync(Utilities.DefaultCommandTimeout, server.Manager.CancellationToken);
 
                 if (completedEvent.FailReason == GameEvent.EventFailReason.Timeout)
                 {
@@ -81,13 +85,11 @@ namespace WebfrontCore.Controllers
 
                 else
                 {
-                    response = response = server.CommandResult.Where(c => c.ClientId == client.ClientId).ToArray();
-                }
-
-                // remove the added command response
-                for (int i = 0; i < response?.Length; i++)
-                {
-                    server.CommandResult.Remove(response[i]);
+                    response = completedEvent.Output.Select(output => new CommandResponseInfo()
+                    {
+                        Response = output,
+                        ClientId = client.ClientId
+                    }).ToArray();
                 }
             }
 

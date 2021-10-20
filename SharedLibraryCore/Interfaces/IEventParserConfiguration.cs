@@ -46,6 +46,16 @@ namespace SharedLibraryCore.Interfaces
         ParserRegex Time { get; set; }
 
         /// <summary>
+        /// stores the regex information for the map change game log
+        /// </summary>
+        ParserRegex MapChange { get; }
+        
+        /// <summary>
+        /// stores the regex information for the map end game log
+        /// </summary>
+        ParserRegex MapEnd { get; }
+
+        /// <summary>
         /// indicates the format expected for parsed guids
         /// </summary>
         NumberStyles GuidNumberStyle { get; set; }

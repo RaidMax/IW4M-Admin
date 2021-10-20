@@ -20,6 +20,12 @@ namespace IW4MAdmin.Application.Misc
         public string BasePathDirectory { get; set; } = "";
 
         /// <summary>
+        /// directory for local storage
+        /// <remarks>fs_homepath</remarks>
+        /// </summary>
+        public string HomePathDirectory { get; set; } = "";
+
+        /// <summary>
         /// overide game directory
         /// <remarks>plugin driven</remarks>
         /// </summary>
@@ -41,5 +47,11 @@ namespace IW4MAdmin.Application.Misc
         /// indicates if running on windows
         /// </summary>
         public bool IsWindows { get; set; } = true;
+        
+        /// <summary>
+        /// indicates that the game does not log to the mods folder (when mod is loaded),
+        /// but rather always to the fs_basegame directory
+        /// </summary>
+        public bool IsOneLog { get; set; }
     }
 }

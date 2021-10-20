@@ -6,6 +6,9 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Abstractions;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
 {
@@ -18,7 +21,7 @@ namespace IW4MAdmin.Application.Meta
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
 
-        public UpdatedAliasResourceQueryHelper(ILogger logger, IDatabaseContextFactory contextFactory)
+        public UpdatedAliasResourceQueryHelper(ILogger<UpdatedAliasResourceQueryHelper> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
             _contextFactory = contextFactory;
@@ -26,7 +29,7 @@ namespace IW4MAdmin.Application.Meta
 
         public async Task<ResourceQueryHelperResult<UpdatedAliasResponse>> QueryResource(ClientPaginationRequest query)
         {
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
             int linkId = ctx.Clients.First(_client => _client.ClientId == query.ClientId).AliasLinkId;
 
             var iqAliasUpdates = ctx.Aliases

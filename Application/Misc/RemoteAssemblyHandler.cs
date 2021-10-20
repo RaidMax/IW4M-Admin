@@ -1,5 +1,4 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
+﻿using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -7,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -20,7 +21,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly ApplicationConfiguration _appconfig;
         private readonly ILogger _logger;
 
-        public RemoteAssemblyHandler(ILogger logger, ApplicationConfiguration appconfig)
+        public RemoteAssemblyHandler(ILogger<RemoteAssemblyHandler> logger, ApplicationConfiguration appconfig)
         {
             _appconfig = appconfig;
             _logger = logger;
@@ -41,7 +42,7 @@ namespace IW4MAdmin.Application.Misc
         {
             if (string.IsNullOrEmpty(_appconfig.Id) || string.IsNullOrWhiteSpace(_appconfig.SubscriptionId))
             {
-                _logger.WriteWarning($"{nameof(_appconfig.Id)} and {nameof(_appconfig.SubscriptionId)} must be provided to attempt loading remote assemblies/scripts");
+                _logger.LogWarning($"{nameof(_appconfig.Id)} and {nameof(_appconfig.SubscriptionId)} must be provided to attempt loading remote assemblies/scripts");
                 return new byte[0][];
             }
 
@@ -63,8 +64,7 @@ namespace IW4MAdmin.Application.Misc
 
                 catch (CryptographicException ex)
                 {
-                    _logger.WriteError("Could not obtain remote plugin assemblies");
-                    _logger.WriteDebug(ex.GetExceptionInfo());
+                    _logger.LogError(ex, "Could not decrypt remote plugin assemblies");
                 }
 
                 return decryptedContent;

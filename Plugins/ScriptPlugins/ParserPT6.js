@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, Xerxes',
-    version: 0.8,
+    version: 1.0,
     name: 'Plutonium T6 Parser',
     isParser: true,
 
@@ -26,6 +26,7 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(106, 1);
         rconParser.Configuration.Dvar.AddMapping(107, 2);
         rconParser.Configuration.WaitForResponse = false;
+        rconParser.Configuration.NoticeLineSeparator = '. ';
 
         rconParser.Configuration.StatusHeader.Pattern = 'num +score +bot +ping +guid +name +lastmsg +address +qport +rate *';
         rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+|0) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';
@@ -36,7 +37,7 @@ var plugin = {
         rconParser.Configuration.Status.AddMapping(104, 5);
         rconParser.Configuration.Status.AddMapping(105, 6);
         
-        eventParser.Configuration.GameDirectory = 't6r\\data';
+        eventParser.Configuration.GameDirectory = '';
         eventParser.Configuration.GuidNumberStyle = 7; // Integer
 
         rconParser.Version = 'Call of Duty Multiplayer - Ship COD_T6_S MP build 1.0.44 CL(1759941) CODPCAB2 CEG Fri May 9 19:19:19 2014 win-x86 813e66d5';

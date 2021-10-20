@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.IO
 {
@@ -20,7 +22,7 @@ namespace IW4MAdmin.Application.IO
         private readonly string _safeLogPath;
         private string lastKey = "next";
 
-        public GameLogReaderHttp(Uri[] gameLogServerUris, IEventParser parser, ILogger logger)
+        public GameLogReaderHttp(Uri[] gameLogServerUris, IEventParser parser, ILogger<GameLogReaderHttp> logger)
         {
             _eventParser = parser;
             _logServerApi = RestClient.For<IGameLogServer>(gameLogServerUris[0].ToString());
@@ -40,7 +42,7 @@ namespace IW4MAdmin.Application.IO
 
             if (!response.Success && string.IsNullOrEmpty(lastKey))
             {
-                _logger.WriteError($"Could not get log server info of {_safeLogPath}");
+                _logger.LogError("Could not get log server info of {logPath}", _safeLogPath);
                 return events;
             }
 
@@ -62,9 +64,7 @@ namespace IW4MAdmin.Application.IO
 
                     catch (Exception e)
                     {
-                        _logger.WriteError("Could not properly parse event line from http");
-                        _logger.WriteDebug(e.Message);
-                        _logger.WriteDebug(eventLine);
+                        _logger.LogError(e, "Could not properly parse event line from http {eventLine}", eventLine);
                     }
                 }
             }

@@ -8,6 +8,8 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -24,10 +26,9 @@ namespace IW4MAdmin.Application.Misc
         private readonly ApplicationConfiguration _appConfig;
         private readonly BuildNumber _fallbackVersion = BuildNumber.Parse("99.99.99.99");
         private readonly int _apiVersion = 1;
-
         private bool firstHeartBeat = true;
 
-        public MasterCommunication(ILogger logger, ApplicationConfiguration appConfig, ITranslationLookup translationLookup, IMasterApi apiInstance, IManager manager)
+        public MasterCommunication(ILogger<MasterCommunication> logger, ApplicationConfiguration appConfig, ITranslationLookup translationLookup, IMasterApi apiInstance, IManager manager)
         {
             _logger = logger;
             _transLookup = translationLookup;
@@ -55,13 +56,7 @@ namespace IW4MAdmin.Application.Misc
 
             catch (Exception e)
             {
-                _logger.WriteWarning(_transLookup["MANAGER_VERSION_FAIL"]);
-                while (e.InnerException != null)
-                {
-                    e = e.InnerException;
-                }
-
-                _logger.WriteDebug(e.Message);
+                _logger.LogWarning(e, "Unable to retrieve IW4MAdmin version information");
             }
 
             if (version.CurrentVersionStable == _fallbackVersion)
@@ -110,12 +105,12 @@ namespace IW4MAdmin.Application.Misc
 
                 catch (System.Net.Http.HttpRequestException e)
                 {
-                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    _logger.LogWarning(e, "Could not send heartbeat");
                 }
 
                 catch (AggregateException e)
                 {
-                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    _logger.LogWarning(e, "Could not send heartbeat");
                     var exceptions = e.InnerExceptions.Where(ex => ex.GetType() == typeof(ApiException));
 
                     foreach (var ex in exceptions)
@@ -129,7 +124,7 @@ namespace IW4MAdmin.Application.Misc
 
                 catch (ApiException e)
                 {
-                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    _logger.LogWarning(e, "Could not send heartbeat");
                     if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
                         connected = false;
@@ -138,7 +133,7 @@ namespace IW4MAdmin.Application.Misc
 
                 catch (Exception e)
                 {
-                    _logger.WriteWarning($"Could not send heartbeat - {e.Message}");
+                    _logger.LogWarning(e, "Could not send heartbeat");
                 }
 
 
@@ -202,7 +197,7 @@ namespace IW4MAdmin.Application.Misc
 
             if (response.ResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                _logger.WriteWarning($"Response code from master is {response.ResponseMessage.StatusCode}, message is {response.StringContent}");
+                _logger.LogWarning("Non success response code from master is {statusCode}, message is {message}", response.ResponseMessage.StatusCode, response.StringContent);
             }
         }
     }

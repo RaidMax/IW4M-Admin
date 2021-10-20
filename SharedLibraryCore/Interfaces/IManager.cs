@@ -6,6 +6,8 @@ using SharedLibraryCore.Database.Models;
 using System.Threading;
 using System.Collections;
 using System;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -15,6 +17,7 @@ namespace SharedLibraryCore.Interfaces
         Task Start();
         void Stop();
         void Restart();
+        [Obsolete]
         ILogger GetLogger(long serverId);
         IList<Server> GetServers();
         IList<IManagerCommand> GetCommands();
@@ -22,7 +25,6 @@ namespace SharedLibraryCore.Interfaces
         IList<EFClient> GetActiveClients();
         IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();
         ClientService GetClientService();
-        AliasService GetAliasService();
         PenaltyService GetPenaltyService();
         /// <summary>
         /// enumerates the registered plugin instances
@@ -85,5 +87,6 @@ namespace SharedLibraryCore.Interfaces
         /// event executed when event has finished executing 
         /// </summary>
         event EventHandler<GameEvent> OnGameEventExecuted;
+        ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; }
     }
 }

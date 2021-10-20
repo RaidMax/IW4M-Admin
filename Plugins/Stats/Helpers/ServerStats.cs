@@ -1,12 +1,11 @@
-﻿using IW4MAdmin.Plugins.Stats.Cheat;
-using IW4MAdmin.Plugins.Stats.Models;
-using SharedLibraryCore;
-using SharedLibraryCore.Database.Models;
+﻿using SharedLibraryCore;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Data.Models.Client;
+using Data.Models.Client.Stats;
+using Data.Models.Server;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
@@ -39,9 +38,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Select(_c => _c.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY))
                 .Where(_c => _c != null);
 
-            if (PlayerStats.Count(p => p.Team == IW4Info.Team.None) / (double)PlayerStats.Count() <= 0.25)
+            if (PlayerStats.Count(p => p.Team == (int)IW4Info.Team.None) / (double)PlayerStats.Count() <= 0.25)
             {
-                return IsTeamBased ? Math.Max(PlayerStats.Count(p => p.Team == teamName), 1) : Math.Max(PlayerStats.Count() - 1, 1);
+                return IsTeamBased ? Math.Max(PlayerStats.Count(p => p.Team == (int)teamName), 1) : Math.Max(PlayerStats.Count() - 1, 1);
             }
 
             else

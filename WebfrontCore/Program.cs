@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Middleware;
 
@@ -12,15 +14,12 @@ namespace WebfrontCore
     public class Program
     {
         public static IManager Manager;
+        public static IServiceCollection Services;
         public static IServiceProvider ApplicationServiceProvider;
 
-        static void Main()
+        public static Task Init(IManager mgr, IServiceProvider existingServiceProvider, IServiceCollection services, CancellationToken cancellationToken)
         {
-            throw new Exception("Webfront core cannot be run as a standalone application");
-        }
-
-        public static Task Init(IManager mgr, IServiceProvider existingServiceProvider, CancellationToken cancellationToken)
-        {
+            Services = services;
             Manager = mgr;
             ApplicationServiceProvider = existingServiceProvider;
             var config = Manager.GetApplicationSettings().Configuration();

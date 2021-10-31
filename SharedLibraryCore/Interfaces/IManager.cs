@@ -7,7 +7,6 @@ using System.Threading;
 using System.Collections;
 using System;
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -23,6 +22,7 @@ namespace SharedLibraryCore.Interfaces
         IList<IManagerCommand> GetCommands();
         IList<Helpers.MessageToken> GetMessageTokens();
         IList<EFClient> GetActiveClients();
+        EFClient FindActiveClient(EFClient client);
         IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();
         ClientService GetClientService();
         PenaltyService GetPenaltyService();

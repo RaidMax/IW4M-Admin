@@ -83,6 +83,7 @@ namespace SharedLibraryCore.Commands
                         var found = await Manager.GetClientService().Get(dbID);
                         if (found != null)
                         {
+                            found = Manager.FindActiveClient(found);
                             E.Target = found;
                             E.Target.CurrentServer = E.Owner;
                             E.Data = String.Join(" ", Args.Skip(1));

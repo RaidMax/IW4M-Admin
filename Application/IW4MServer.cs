@@ -725,11 +725,11 @@ namespace IW4MAdmin
 
         private async Task OnClientUpdate(EFClient origin)
         {
-            var client = GetClientsAsList().FirstOrDefault(_client => _client.Equals(origin));
+            var client = Manager.GetActiveClients().FirstOrDefault(c => c.NetworkId == origin.NetworkId);
 
             if (client == null)
             {
-                ServerLogger.LogWarning("{origin} expected to exist in client list for update, but they do not", origin.ToString());
+                ServerLogger.LogWarning("{Origin} expected to exist in client list for update, but they do not", origin.ToString());
                 return;
             }
 
@@ -755,10 +755,10 @@ namespace IW4MAdmin
                 }
             }
 
-            else if ((client.IPAddress != null && client.State == ClientState.Disconnecting) ||
+            else if (client.IPAddress != null && client.State == ClientState.Disconnecting ||
                 client.Level == Permission.Banned)
             {
-                ServerLogger.LogWarning("{client} state is Unknown (probably kicked), but they are still connected. trying to kick again...", origin.ToString());
+                ServerLogger.LogWarning("{Client} state is Unknown (probably kicked), but they are still connected. trying to kick again...", origin.ToString());
                 await client.CanConnect(client.IPAddress, Manager.GetApplicationSettings().Configuration().EnableImplicitAccountLinking);
             }
         }
@@ -1321,12 +1321,9 @@ namespace IW4MAdmin
         public override async Task Warn(string reason, EFClient targetClient, EFClient targetOrigin)
         {
             // ensure player gets warned if command not performed on them in game
-            targetClient = targetClient.ClientNumber < 0 ?
-                Manager.GetActiveClients()
-                .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient :
-                targetClient;
+            var activeClient = Manager.FindActiveClient(targetClient);
 
-            var newPenalty = new EFPenalty()
+            var newPenalty = new EFPenalty
             {
                 Type = EFPenalty.PenaltyType.Warning,
                 Expires = DateTime.UtcNow,
@@ -1336,31 +1333,28 @@ namespace IW4MAdmin
                 Link = targetClient.AliasLink
             };
 
-            ServerLogger.LogDebug("Creating warn penalty for {targetClient}", targetClient.ToString());
+            ServerLogger.LogDebug("Creating warn penalty for {TargetClient}", targetClient.ToString());
             await newPenalty.TryCreatePenalty(Manager.GetPenaltyService(), ServerLogger);
 
-            if (targetClient.IsIngame)
+            if (activeClient.IsIngame)
             {
-                if (targetClient.Warnings >= 4)
+                if (activeClient.Warnings >= 4)
                 {
-                    targetClient.Kick(loc["SERVER_WARNLIMT_REACHED"], Utilities.IW4MAdminClient(this));
+                    activeClient.Kick(loc["SERVER_WARNLIMT_REACHED"], Utilities.IW4MAdminClient(this));
                     return;
                 }
 
-                // todo: move to translation sheet
-                string message = $"^1{loc["SERVER_WARNING"]} ^7[^3{targetClient.Warnings}^7]: ^3{targetClient.Name}^7, {reason}";
-                targetClient.CurrentServer.Broadcast(message);
+                var message = loc["COMMANDS_WARNING_FORMAT"]
+                    .FormatExt(activeClient.Warnings, activeClient.Name, reason);
+                activeClient.CurrentServer.Broadcast(message);
             }
         }
 
         public override async Task Kick(string reason, EFClient targetClient, EFClient originClient, EFPenalty previousPenalty)
         {
-            targetClient = targetClient.ClientNumber < 0 ?
-                Manager.GetActiveClients()
-                .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient :
-                targetClient;
+            var activeClient = Manager.FindActiveClient(targetClient);
 
-            var newPenalty = new EFPenalty()
+            var newPenalty = new EFPenalty
             {
                 Type = EFPenalty.PenaltyType.Kick,
                 Expires = DateTime.UtcNow,
@@ -1370,77 +1364,64 @@ namespace IW4MAdmin
                 Link = targetClient.AliasLink
             };
 
-            ServerLogger.LogDebug("Creating kick penalty for {targetClient}", targetClient.ToString());
+            ServerLogger.LogDebug("Creating kick penalty for {TargetClient}", targetClient.ToString());
             await newPenalty.TryCreatePenalty(Manager.GetPenaltyService(), ServerLogger);
 
-            if (targetClient.IsIngame)
+            if (activeClient.IsIngame)
             {
-                var e = new GameEvent()
+                var gameEvent = new GameEvent
                 {
                     Type = GameEvent.EventType.PreDisconnect,
-                    Origin = targetClient,
+                    Origin = activeClient,
                     Owner = this
                 };
 
-                Manager.AddEvent(e);
-
-                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
-                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
-                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
+                Manager.AddEvent(gameEvent);
 
                 var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    clientNumber, 
+                    activeClient.TemporalClientNumber, 
                     _messageFormatter.BuildFormattedMessage(RconParser.Configuration, 
                         newPenalty, 
                         previousPenalty));
-                await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);
+                ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
+                await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
         }
 
-        public override async Task TempBan(string Reason, TimeSpan length, EFClient targetClient, EFClient originClient)
+        public override async Task TempBan(string reason, TimeSpan length, EFClient targetClient, EFClient originClient)
         {
             // ensure player gets kicked if command not performed on them in the same server
-            targetClient = targetClient.ClientNumber < 0 ?
-                Manager.GetActiveClients()
-                .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient :
-                targetClient;
+            var activeClient = Manager.FindActiveClient(targetClient);
 
-            var newPenalty = new EFPenalty()
+            var newPenalty = new EFPenalty
             {
                 Type = EFPenalty.PenaltyType.TempBan,
                 Expires = DateTime.UtcNow + length,
                 Offender = targetClient,
-                Offense = Reason,
+                Offense = reason,
                 Punisher = originClient,
                 Link = targetClient.AliasLink
             };
 
-            ServerLogger.LogDebug("Creating tempban penalty for {targetClient}", targetClient.ToString());
+            ServerLogger.LogDebug("Creating tempban penalty for {TargetClient}", targetClient.ToString());
             await newPenalty.TryCreatePenalty(Manager.GetPenaltyService(), ServerLogger);
 
-            if (targetClient.IsIngame)
+            if (activeClient.IsIngame)
             {
-                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
-                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
-                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
-                
                 var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
-                    clientNumber,
+                    activeClient.TemporalClientNumber,
                     _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
-                ServerLogger.LogDebug("Executing tempban kick command for {targetClient}", targetClient.ToString());
-                await targetClient.CurrentServer.ExecuteCommandAsync(formattedKick);
+                ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
+                await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
         }
 
         public override async Task Ban(string reason, EFClient targetClient, EFClient originClient, bool isEvade = false)
         {
             // ensure player gets kicked if command not performed on them in the same server
-            targetClient = targetClient.ClientNumber < 0 ?
-                Manager.GetActiveClients()
-                .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient :
-                targetClient;
+            var activeClient = Manager.FindActiveClient(targetClient);
 
-            EFPenalty newPenalty = new EFPenalty()
+            var newPenalty = new EFPenalty
             {
                 Type = EFPenalty.PenaltyType.Ban,
                 Expires = null,
@@ -1451,46 +1432,42 @@ namespace IW4MAdmin
                 IsEvadedOffense = isEvade
             };
 
-            ServerLogger.LogDebug("Creating ban penalty for {targetClient}", targetClient.ToString());
-            targetClient.SetLevel(Permission.Banned, originClient);
+            ServerLogger.LogDebug("Creating ban penalty for {TargetClient}", targetClient.ToString());
+            activeClient.SetLevel(Permission.Banned, originClient);
             await newPenalty.TryCreatePenalty(Manager.GetPenaltyService(), ServerLogger);
 
-            if (targetClient.IsIngame)
+            if (activeClient.IsIngame)
             {
-                ServerLogger.LogDebug("Attempting to kicking newly banned client {targetClient}", targetClient.ToString());
-                
-                var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
-                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
-                var clientNumber = parsedClientId ?? targetClient.ClientNumber;
+                ServerLogger.LogDebug("Attempting to kicking newly banned client {ActiveClient}", activeClient.ToString());
                 
                 var formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    clientNumber, 
+                    activeClient.TemporalClientNumber, 
                     _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
-                await targetClient.CurrentServer.ExecuteCommandAsync(formattedString);
+                await activeClient.CurrentServer.ExecuteCommandAsync(formattedString);
             }
         }
 
-        override public async Task Unban(string reason, EFClient Target, EFClient Origin)
+        public override async Task Unban(string reason, EFClient targetClient, EFClient originClient)
         {
-            var unbanPenalty = new EFPenalty()
+            var unbanPenalty = new EFPenalty
             {
                 Type = EFPenalty.PenaltyType.Unban,
                 Expires = DateTime.Now,
-                Offender = Target,
+                Offender = targetClient,
                 Offense = reason,
-                Punisher = Origin,
+                Punisher = originClient,
                 When = DateTime.UtcNow,
                 Active = true,
-                Link = Target.AliasLink
+                Link = targetClient.AliasLink
             };
 
-            ServerLogger.LogDebug("Creating unban penalty for {targetClient}", Target.ToString());
-            Target.SetLevel(Permission.User, Origin);
-            await Manager.GetPenaltyService().RemoveActivePenalties(Target.AliasLink.AliasLinkId);
+            ServerLogger.LogDebug("Creating unban penalty for {targetClient}", targetClient.ToString());
+            targetClient.SetLevel(Permission.User, originClient);
+            await Manager.GetPenaltyService().RemoveActivePenalties(targetClient.AliasLink.AliasLinkId);
             await Manager.GetPenaltyService().Create(unbanPenalty);
         }
 
-        override public void InitializeTokens()
+        public override void InitializeTokens()
         {
             Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
             Manager.GetMessageTokens().Add(new MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));

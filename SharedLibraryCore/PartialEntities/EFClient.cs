@@ -684,6 +684,17 @@ namespace SharedLibraryCore.Database.Models
         }
 
         [NotMapped]
+        public int TemporalClientNumber
+        {
+            get
+            {
+                var temporalClientId = GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?) null : int.Parse(temporalClientId);
+                return parsedClientId ?? ClientNumber;
+            }
+        }
+
+        [NotMapped]
         private readonly SemaphoreSlim _processingEvent;
 
         public async Task Lock()

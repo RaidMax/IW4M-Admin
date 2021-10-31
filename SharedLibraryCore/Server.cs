@@ -218,9 +218,9 @@ namespace SharedLibraryCore
         /// <summary>
         /// Temporarily ban a player ( default 1 hour ) from the server
         /// </summary>
-        /// <param name="Reason">Reason for banning the player</param>
+        /// <param name="reason">Reason for banning the player</param>
         /// <param name="Target">The player to ban</param>
-        abstract public Task TempBan(String Reason, TimeSpan length, EFClient Target, EFClient Origin);
+        abstract public Task TempBan(String reason, TimeSpan length, EFClient Target, EFClient Origin);
 
         /// <summary>
         /// Perm ban a player from the server
@@ -236,9 +236,9 @@ namespace SharedLibraryCore
         /// Unban a player by npID / GUID
         /// </summary>
         /// <param name="npID">npID of the player</param>
-        /// <param name="Target">I don't remember what this is for</param>
+        /// <param name="targetClient">I don't remember what this is for</param>
         /// <returns></returns>
-        abstract public Task Unban(string reason, EFClient Target, EFClient Origin);
+        abstract public Task Unban(string reason, EFClient targetClient, EFClient originClient);
 
         /// <summary>
         /// Change the current searver map

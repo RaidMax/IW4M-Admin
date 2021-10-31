@@ -605,6 +605,11 @@ namespace IW4MAdmin.Application
             return _servers.SelectMany(s => s.Clients).ToList().Where(p => p != null).ToList();
         }
 
+        public EFClient FindActiveClient(EFClient client) =>client.ClientNumber < 0 ?
+                GetActiveClients()
+                    .FirstOrDefault(c => c.NetworkId == client.NetworkId) ?? client :
+                client;
+
         public ClientService GetClientService()
         {
             return ClientSvc;

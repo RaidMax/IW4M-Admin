@@ -19,6 +19,7 @@ using SharedLibraryCore.Services;
 using Stats.Dtos;
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -342,7 +343,12 @@ namespace IW4MAdmin.Application
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
-            var masterRestClient = RestClient.For<IMasterApi>(masterUri);
+            var httpClient = new HttpClient
+            {
+                BaseAddress = masterUri,
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+            var masterRestClient = RestClient.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
 
             if (appConfig == null)

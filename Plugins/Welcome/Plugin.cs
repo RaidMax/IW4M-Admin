@@ -104,24 +104,22 @@ namespace IW4MAdmin.Plugins.Welcome
         /// <returns></returns>
         private async Task<string> GetCountryName(string ip)
         {
-            using (var wc = new WebClient())
+            using var wc = new WebClient();
+            try
             {
-                try
-                {
-                    string response =
-                        await wc.DownloadStringTaskAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}"));
-                    var responseObj = JObject.Parse(response);
-                    response = responseObj["country"].ToString();
+                var response =
+                    await wc.DownloadStringTaskAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}?key=demo"));
+                var responseObj = JObject.Parse(response);
+                response = responseObj["country"]?.ToString();
 
-                    return string.IsNullOrEmpty(response)
-                        ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]
-                        : response;
-                }
+                return string.IsNullOrEmpty(response)
+                    ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]
+                    : response;
+            }
 
-                catch
-                {
-                    return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_IP"];
-                }
+            catch
+            {
+                return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_IP"];
             }
         }
     }

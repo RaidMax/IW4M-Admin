@@ -26,14 +26,13 @@
             
             $('#ip_lookup_country').text(country);
             if (countryCode !== 'zz' && countryCode !== '') {
-                $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+                $(address).css('background-image', `url('https://flagcdn.com/w80/${countryCode}.png')`);
             }
         });
     });
 
     /* set the end time for initial event query */
     startAt = $('.loader-data-time').last().data('time');
-
 
     $('#filter_meta_container_button').click(function () {
         $('#filter_meta_container').hide();

@@ -99,7 +99,7 @@ $(document).ready(function () {
                 $.get('https://ip2c.org/' + $(address).data('ip'), function (result) {
                     const countryCode = result.split(';')[1].toLowerCase();
                     if (countryCode !== 'zz') {
-                        $(address).css('background-image', `url(https://www.countryflags.io/${countryCode}/flat/64.png)`);
+                        $(address).css('background-image', `url('https://flagcdn.com/w80/${countryCode}.png')`);
                     }
                 });
             });

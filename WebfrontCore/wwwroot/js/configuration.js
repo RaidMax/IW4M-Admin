@@ -73,8 +73,7 @@
 
         return false;
     });
-
-    hljs.highlightAll();
+    
     $('.edit-file' ).on('keydown .editable', function(e){
         if(e.keyCode === 9) {
             document.execCommand ( 'styleWithCSS', true, null )

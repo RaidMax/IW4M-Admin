@@ -50,9 +50,15 @@
     {
         <!-- I don't want to include the entire highlight js into the bundle for this 1 page -->
         <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
-        
+        <script>
+            if (hljs !== undefined) {
+                hljs.highlightAll();
+            }
+        </script>
+
         <environment include="Development">
             <script type="text/javascript" src="~/js/configuration.js"></script>
         </environment>
     }
+
 </div>

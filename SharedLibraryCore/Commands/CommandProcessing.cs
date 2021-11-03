@@ -85,8 +85,8 @@ namespace SharedLibraryCore.Commands
                         {
                             found = Manager.FindActiveClient(found);
                             E.Target = found;
-                            E.Target.CurrentServer = E.Owner;
-                            E.Data = String.Join(" ", Args.Skip(1));
+                            E.Target.CurrentServer = found.CurrentServer ?? E.Owner;
+                            E.Data = string.Join(" ", Args.Skip(1));
                         }
                     }
 

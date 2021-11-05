@@ -703,6 +703,18 @@
         {
           "Alias": "Highrise",
           "Name": "mp_highrise"
+        },
+        {
+          "Alias": "Favela",
+          "Name": "mp_favela"
+        },
+        {
+          "Alias": "Nuketown",
+          "Name": "mp_nuked"
+        },
+        {
+          "Alias": "Skidrow",
+          "Name": "mp_nightshift"
         }
       ]
     },

@@ -96,7 +96,7 @@
     $('.ip-locate-link').click(function (e) {
         e.preventDefault();
         const ip = $(this).data("ip");
-        $.getJSON('https://extreme-ip-lookup.com/json/' + ip)
+        $.getJSON('https://extreme-ip-lookup.com/json/' + ip + '?key=demo')
             .done(function (response) {
                 $('#mainModal .modal-title').text(ip);
                 $('#mainModal .modal-body').text('');

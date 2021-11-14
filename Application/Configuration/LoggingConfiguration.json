@@ -18,6 +18,13 @@
           "rollingInterval": "Day",
           "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}"
         }
+      },
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+          "RestrictedToMinimumLevel": "Critical"
+        }
       }
     ],
     "Enrich": [

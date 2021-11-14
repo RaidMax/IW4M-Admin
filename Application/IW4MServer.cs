@@ -242,11 +242,11 @@ namespace IW4MAdmin
 
             try
             {
-                await (plugin.OnEventAsync(gameEvent, this)).WithWaitCancellation(tokenSource.Token);
+                await plugin.OnEventAsync(gameEvent, this).WithWaitCancellation(tokenSource.Token);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(loc["SERVER_PLUGIN_ERROR"]);
+                Console.WriteLine(loc["SERVER_PLUGIN_ERROR"].FormatExt(plugin.Name), ex.GetType().Name);
                 ServerLogger.LogError(ex, "Could not execute {methodName} for plugin {plugin}", 
                     nameof(plugin.OnEventAsync), plugin.Name);
             }

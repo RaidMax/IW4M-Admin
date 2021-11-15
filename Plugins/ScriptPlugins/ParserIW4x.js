@@ -18,7 +18,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Say     = 'sayraw {0}';
         rconParser.Configuration.CommandPrefixes.Kick    = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban     = 'clientkick {0} "{1}"';
-        rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"'
+        rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"';
         
         rconParser.Configuration.DefaultRConPort                = 28960;
         rconParser.Configuration.DefaultInstallationDirectoryHint   = 'HKEY_CURRENT_USER\\Software\\Classes\\iw4x\\shell\\open\\command';

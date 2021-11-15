@@ -123,9 +123,9 @@ namespace SharedLibraryCore.Configuration
                     if (passwords.Length > 1)
                     {
                         var (index, value) =
-                            loc["SETUP_RCON_PASSWORD_PROMPT"].PromptSelection("Other", null,
+                            loc["SETUP_RCON_PASSWORD_PROMPT"].PromptSelection(loc["SETUP_RCON_PASSWORD_MANUAL"], null,
                                 passwords.Select(pw =>
-                                    $"{pw.Item1}{(string.IsNullOrEmpty(pw.Item2) ? "" : " " + pw.Item2)}").ToArray());
+                                    $"{pw.Item1}{(string.IsNullOrEmpty(pw.Item2) ? "" : "        " + pw.Item2)}").ToArray());
 
                         if (index > 0)
                         {

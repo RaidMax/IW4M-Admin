@@ -546,7 +546,7 @@ namespace SharedLibraryCore
         /// <param name="description">description of the question's value</param>
         /// <param name="defaultValue">default value to set if no input is entered</param>
         /// <returns></returns>
-        public static bool PromptBool(string question, string description = null, bool defaultValue = true)
+        public static bool PromptBool(this string question, string description = null, bool defaultValue = true)
         {
             Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? " " : $" ({description}) ")}[y/n]: ");
             char response = Console.ReadLine().ToLower().FirstOrDefault();
@@ -562,7 +562,7 @@ namespace SharedLibraryCore
         /// <param name="description">description of the question's value</param>
         /// <param name="selections">array of possible selections (should be able to convert to string)</param>
         /// <returns></returns>
-        public static Tuple<int, T> PromptSelection<T>(string question, T defaultValue, string description = null, params T[] selections)
+        public static Tuple<int, T> PromptSelection<T>(this string question, T defaultValue, string description = null, params T[] selections)
         {
             bool hasDefault = false;
 
@@ -634,7 +634,7 @@ namespace SharedLibraryCore
         /// <param name="description">description of the question's value</param>
         /// <param name="defaultValue">default value to set the return value to</param>
         /// <returns></returns>
-        public static string PromptString(string question, string description = null, string defaultValue = null)
+        public static string PromptString(this string question, string description = null, string defaultValue = null)
         {
             string inputOrDefault()
             {

@@ -87,5 +87,15 @@ namespace SharedLibraryCore.Interfaces
         /// specifies the characters used to split a line
         /// </summary>
         string NoticeLineSeparator { get; }
+        
+        /// <summary>
+        /// Default port the game listens to RCon requests on
+        /// </summary>
+        int? DefaultRConPort { get; }
+        
+        /// <summary>
+        /// Default Indicator of where the game is installed (ex file path or registry entry)
+        /// </summary>
+        string DefaultInstallationDirectoryHint { get; }
     }
 }

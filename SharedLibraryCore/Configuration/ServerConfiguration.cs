@@ -3,6 +3,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SharedLibraryCore.Configuration.Extensions;
 
 namespace SharedLibraryCore.Configuration
 {
@@ -10,95 +11,144 @@ namespace SharedLibraryCore.Configuration
     {
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_IP")]
         public string IPAddress { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PORT")]
         public int Port { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PASSWORD")]
         public string Password { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RULES")]
         public string[] Rules { get; set; } = new string[0];
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_AUTO_MESSAGES")]
         public string[] AutoMessages { get; set; } = new string[0];
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_PATH")]
         [ConfigurationOptional]
         public string ManualLogPath { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RCON_PARSER")]
         public string RConParserVersion { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_EVENT_PARSER")]
         public string EventParserVersion { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_RESERVED_SLOT")]
         public int ReservedSlotNumber { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_GAME_LOG_SERVER")]
         [ConfigurationOptional]
         public Uri GameLogServerUrl { get; set; }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_CUSTOM_HOSTNAME")]
         [ConfigurationOptional]
         public string CustomHostname { get; set; }
 
-        private readonly IList<IRConParser> rconParsers;
-        private readonly IList<IEventParser> eventParsers;
+        private readonly IList<IRConParser> _rconParsers;
+        private IRConParser _selectedParser;
 
         public ServerConfiguration()
         {
-            rconParsers = new List<IRConParser>();
-            eventParsers = new List<IEventParser>();
+            _rconParsers = new List<IRConParser>();
             Rules = new string[0];
             AutoMessages = new string[0];
         }
 
         public void AddRConParser(IRConParser parser)
         {
-            rconParsers.Add(parser);
+            _rconParsers.Add(parser);
         }
 
         public void AddEventParser(IEventParser parser)
         {
-            eventParsers.Add(parser);
         }
 
         public void ModifyParsers()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            var parserVersions = rconParsers.Select(_parser => _parser.Name).ToArray();
-            var selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_RCON_PARSER_VERSION"]} ({IPAddress}:{Port})", parserVersions[0], null, parserVersions);
+            var parserVersions = _rconParsers.Select(p => p.Name).ToArray();
+            var (index, parser) = loc["SETUP_SERVER_RCON_PARSER_VERSION"].PromptSelection(parserVersions[0],
+                null, parserVersions);
 
-            if (selection.Item1 >= 0)
+            if (index < 0)
             {
-                RConParserVersion = rconParsers.FirstOrDefault(_parser => _parser.Name == selection.Item2)?.Version;
-
-                if (selection.Item1 > 0 && !rconParsers[selection.Item1].CanGenerateLogPath)
-                {
-                    Console.WriteLine(loc["SETUP_SERVER_NO_LOG"]);
-                    ManualLogPath = Utilities.PromptString(loc["SETUP_SERVER_LOG_PATH"]);
-                }
+                return;
             }
 
-            parserVersions = eventParsers.Select(_parser => _parser.Name).ToArray();
-            selection = Utilities.PromptSelection($"{loc["SETUP_SERVER_EVENT_PARSER_VERSION"]} ({IPAddress}:{Port})", parserVersions[0], null, parserVersions);
+            _selectedParser = _rconParsers.FirstOrDefault(p => p.Name == parser);
+            RConParserVersion = _selectedParser?.Version;
+            EventParserVersion = _selectedParser?.Version;
 
-            if (selection.Item1 >= 0)
+            if (index <= 0 || _rconParsers[index].CanGenerateLogPath)
             {
-                EventParserVersion = eventParsers.FirstOrDefault(_parser => _parser.Name == selection.Item2)?.Version;
+                return;
             }
+
+            Console.WriteLine(loc["SETUP_SERVER_NO_LOG"]);
+            ManualLogPath = loc["SETUP_SERVER_LOG_PATH"].PromptString();
         }
 
         public IBaseConfiguration Generate()
         {
+            ModifyParsers();
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            var shouldTryFindIp = loc["SETUP_SERVER_IP_AUTO"].PromptBool(defaultValue: true);
 
-            while (string.IsNullOrEmpty(IPAddress))
+            if (shouldTryFindIp)
             {
-                var input = Utilities.PromptString(loc["SETUP_SERVER_IP"]);
-                IPAddress = input;
+                this.TrySetIpAddress();
+                Console.WriteLine(loc["SETUP_SERVER_IP_AUTO_RESULT"].FormatExt(IPAddress));
             }
 
-            Port = Utilities.PromptInt(loc["SETUP_SERVER_PORT"], null, 1, ushort.MaxValue);
-            Password = Utilities.PromptString(loc["SETUP_SERVER_RCON"]);
+            else
+            {
+                while (string.IsNullOrEmpty(IPAddress))
+                {
+                    var input = loc["SETUP_SERVER_IP"].PromptString();
+                    IPAddress = input;
+                }
+            }
+
+            var defaultPort = _selectedParser.Configuration.DefaultRConPort;
+            Port = loc["SETUP_SERVER_PORT"].PromptInt(null, 1, ushort.MaxValue, defaultValue:defaultPort);
+
+            if (!string.IsNullOrEmpty(_selectedParser.Configuration.DefaultInstallationDirectoryHint))
+            {
+                var shouldTryFindPassword = loc["SETUP_RCON_PASSWORD_AUTO"].PromptBool(defaultValue: true);
+
+                if (shouldTryFindPassword)
+                {
+                    var passwords = _selectedParser.TryGetRConPasswords();
+                    if (passwords.Length > 1)
+                    {
+                        var (index, value) =
+                            loc["SETUP_RCON_PASSWORD_PROMPT"].PromptSelection("Other", null,
+                                passwords.Select(pw =>
+                                    $"{pw.Item1}{(string.IsNullOrEmpty(pw.Item2) ? "" : " " + pw.Item2)}").ToArray());
+
+                        if (index > 0)
+                        {
+                            Password = passwords[index - 1].Item1;
+                        }
+                    }
+
+                    else if (passwords.Length > 0)
+                    {
+                        Password = passwords[0].Item1;
+                        Console.WriteLine(loc["SETUP_RCON_PASSWORD_RESULT"].FormatExt(Password));
+                    }
+                }
+            }
+  
+            if (string.IsNullOrEmpty(Password))
+            {
+                Password = loc["SETUP_SERVER_RCON"].PromptString();
+            }
+
             AutoMessages = new string[0];
             Rules = new string[0];
-            ReservedSlotNumber = loc["SETUP_SERVER_RESERVEDSLOT"].PromptInt(null, 0, 32);
             ManualLogPath = null;
-
-            ModifyParsers();
 
             return this;
         }

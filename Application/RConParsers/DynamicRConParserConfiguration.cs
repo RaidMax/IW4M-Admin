@@ -28,6 +28,8 @@ namespace IW4MAdmin.Application.RConParsers
         public int NoticeMaximumLines { get; set; } = 8;
         public int NoticeMaxCharactersPerLine { get; set; } = 50;
         public string NoticeLineSeparator { get; set; } = Environment.NewLine;
+        public int? DefaultRConPort { get; set; }
+        public string DefaultInstallationDirectoryHint { get; set; }
 
         public DynamicRConParserConfiguration(IParserRegexFactory parserRegexFactory)
         {

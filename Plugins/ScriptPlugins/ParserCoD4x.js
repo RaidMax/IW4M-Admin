@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'FrenchFry, RaidMax',
-    version: 0.7,
+    version: 0.8,
     name: 'CoD4x Parser',
     isParser: true,
 
@@ -25,6 +25,7 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(110, 4); // dvar info
         rconParser.Configuration.GuidNumberStyle = 7; // Integer
         rconParser.Configuration.NoticeLineSeparator = '. '; // CoD4x does not support \n in the client notice
+        rconParser.Configuration.DefaultRConPort = 28960;
         rconParser.Version = 'CoD4 X - win_mingw-x86 build 1056 Dec 12 2020';
         rconParser.GameName = 1; // IW3
 

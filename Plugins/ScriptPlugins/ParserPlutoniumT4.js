@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, Chase',
-    version: 0.2,
+    version: 0.3,
     name: 'Plutonium T4 Parser',
     isParser: true,
 
@@ -19,6 +19,9 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.TempBan      = 'clientkick {0}';
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
         rconParser.Configuration.GuidNumberStyle              = 7; // Integer
+        rconParser.Configuration.DefaultRConPort              = 28960;
+        
+        rconParser.Configuration.DefaultInstallationDirectoryHint = '{LocalAppData}/Plutonium/storage/t4';
         
         rconParser.Version  = 'Plutonium T4';
         rconParser.GameName = 5; // T4

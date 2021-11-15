@@ -3,7 +3,7 @@ let eventParser;
 
 const plugin = {
     author: 'RaidMax',
-    version: 0.3,
+    version: 0.4,
     name: 'CS:GO Parser',
     engine: 'Source',
     isParser: true,
@@ -58,6 +58,7 @@ const plugin = {
         rconParser.Configuration.OverrideDvarNameMapping.Add('g_password', 'sv_password');
 
         rconParser.Configuration.NoticeLineSeparator = '. ';
+        rconParser.Configuration.DefaultRConPort = 27015;
         rconParser.CanGenerateLogPath = false;
 
         rconParser.Configuration.CommandPrefixes.RConGetInfo    = undefined;

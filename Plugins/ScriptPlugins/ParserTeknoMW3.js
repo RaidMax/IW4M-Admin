@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.8,
+    version: 0.9,
     name: 'Tekno MW3 Parser',
     isParser: true,
 
@@ -28,6 +28,7 @@ var plugin = {
         rconParser.Configuration.Dvar.AddMapping(107, 1); // RCon DvarValue
         rconParser.Configuration.Dvar.Pattern = '^(.*)$';
         rconParser.Configuration.NoticeLineSeparator = '. ';
+        rconParser.Configuration.DefaultRConPort = 8766;
 
         rconParser.Configuration.DefaultDvarValues.Add('sv_running', '1');
         rconParser.Configuration.OverrideDvarNameMapping.Add('_website', 'sv_clanWebsite');

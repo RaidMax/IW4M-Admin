@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'Diavolo, RaidMax',
-    version: 0.1,
+    version: 0.2,
     name: 'S1x Parser',
     isParser: true,
 
@@ -24,6 +24,7 @@ var plugin = {
         rconParser.Configuration.Status.AddMapping(103, 5);
         rconParser.Configuration.Status.AddMapping(104, 6);
         rconParser.Configuration.WaitForResponse = false;
+        rconParser.Configuration.DefaultRConPort = 27016;
 
         eventParser.Configuration.GameDirectory = '';
 

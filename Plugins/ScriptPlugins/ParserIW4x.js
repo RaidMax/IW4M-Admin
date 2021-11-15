@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.4,
+    version: 0.5,
     name: 'IW4x Parser',
     isParser: true,
 
@@ -18,7 +18,11 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Say     = 'sayraw {0}';
         rconParser.Configuration.CommandPrefixes.Kick    = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.Ban     = 'clientkick {0} "{1}"';
-        rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"';
+        rconParser.Configuration.CommandPrefixes.TempBan = 'tempbanclient {0} "{1}"'
+        
+        rconParser.Configuration.DefaultRConPort                = 28960;
+        rconParser.Configuration.DefaultInstallationDirectoryHint   = 'HKEY_CURRENT_USER\\Software\\Classes\\iw4x\\shell\\open\\command';
+
         eventParser.Configuration.GameDirectory          = 'userraw';
 
         rconParser.Version = 'IW4x (v0.6.0)';

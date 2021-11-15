@@ -24,7 +24,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
-            Utilities.IsDevelopment ? TimeSpan.FromSeconds(1) : (TimeSpan?) TimeSpan.FromMinutes(1);
+            Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?) TimeSpan.FromMinutes(10);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
@@ -36,7 +36,8 @@ namespace IW4MAdmin.Application.Misc
             _clientHistoryCache = clientHistoryCache;
         }
 
-        public async Task<(int?, DateTime?)> MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null,
+        public async Task<(int?, DateTime?)> 
+            MaxConcurrentClientsAsync(long? serverId = null, TimeSpan? overPeriod = null,
             CancellationToken token = default)
         {
             _snapshotCache.SetCacheItem(async (snapshots, cancellationToken) =>
@@ -83,7 +84,7 @@ namespace IW4MAdmin.Application.Misc
                 _logger.LogDebug("Max concurrent clients since {Start} is {Clients}", oldestEntry, maxClients);
 
                 return (maxClients, maxClientsTime);
-            }, nameof(MaxConcurrentClientsAsync), _cacheTimeSpan);
+            }, nameof(MaxConcurrentClientsAsync), _cacheTimeSpan, true);
 
             try
             {
@@ -107,7 +108,7 @@ namespace IW4MAdmin.Application.Misc
                     cancellationToken);
 
                 return (count, recentCount);
-            }, nameof(_serverStatsCache), _cacheTimeSpan);
+            }, nameof(_serverStatsCache), _cacheTimeSpan, true);
 
             try
             {

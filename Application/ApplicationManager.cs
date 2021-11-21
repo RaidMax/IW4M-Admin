@@ -15,6 +15,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -216,6 +217,8 @@ namespace IW4MAdmin.Application
         {
             return _commands;
         }
+
+        public IReadOnlyList<IManagerCommand> Commands => _commands.ToImmutableList();
 
         public async Task UpdateServerStates()
         {

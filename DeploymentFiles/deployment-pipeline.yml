@@ -139,35 +139,35 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
     replaceExistingArchive: true
 
-#- task: FtpUpload@2
-#  displayName: 'Upload zip file to website'
-#  inputs:
-#    credentialsOption: 'inputs'
-#    serverUrl: '$(FTPUrl)'
-#    username: '$(FTPUsername)'
-#    password: '$(FTPPassword)'
-#    rootDirectory: '$(Build.ArtifactStagingDirectory)'
-#    filePatterns: '*.zip'
-#    remoteDirectory: 'IW4MAdmin/Download'
-#    clean: false
-#    cleanContents: false
-#    preservePaths: false
-#    trustSSL: false
+- task: FtpUpload@2
+  displayName: 'Upload zip file to website'
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: '*.zip'
+    remoteDirectory: 'IW4MAdmin/Download'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false
 
-#- task: FtpUpload@2
-#  displayName: 'Upload version info to website'
-#  inputs:
-#    credentialsOption: 'inputs'
-#    serverUrl: '$(FTPUrl)'
-#    username: '$(FTPUsername)'
-#    password: '$(FTPPassword)'
-#    rootDirectory: '$(Build.ArtifactStagingDirectory)'
-#    filePatterns: 'version_$(releaseType).txt'
-#    remoteDirectory: 'IW4MAdmin'
-#    clean: false
-#    cleanContents: false
-#    preservePaths: false
-#    trustSSL: false
+- task: FtpUpload@2
+  displayName: 'Upload version info to website'
+  inputs:
+    credentialsOption: 'inputs'
+    serverUrl: '$(FTPUrl)'
+    username: '$(FTPUsername)'
+    password: '$(FTPPassword)'
+    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+    filePatterns: 'version_$(releaseType).txt'
+    remoteDirectory: 'IW4MAdmin'
+    clean: false
+    cleanContents: false
+    preservePaths: false
+    trustSSL: false
 
 - task: GitHubRelease@1
   displayName: 'Make GitHub release'

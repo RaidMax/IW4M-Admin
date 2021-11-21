@@ -23,6 +23,7 @@ namespace SharedLibraryCore
         {
             _config = config;
             _translationLookup = layout;
+            SupportedGames = new Game[0];
         }
 
         /// <summary>

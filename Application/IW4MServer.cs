@@ -246,7 +246,7 @@ namespace IW4MAdmin
             }
             catch (Exception ex)
             {
-                Console.WriteLine(loc["SERVER_PLUGIN_ERROR"].FormatExt(plugin.Name), ex.GetType().Name);
+                Console.WriteLine(loc["SERVER_PLUGIN_ERROR"].FormatExt(plugin.Name, ex.GetType().Name));
                 ServerLogger.LogError(ex, "Could not execute {methodName} for plugin {plugin}", 
                     nameof(plugin.OnEventAsync), plugin.Name);
             }

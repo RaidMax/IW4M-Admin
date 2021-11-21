@@ -15,20 +15,21 @@ namespace Data.Helpers
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
 
-        private readonly ConcurrentDictionary<string, CacheState> _cacheStates =
-            new ConcurrentDictionary<string, CacheState>();
+        private readonly ConcurrentDictionary<string, CacheState<TReturnType>> _cacheStates =
+            new ConcurrentDictionary<string, CacheState<TReturnType>>();
 
         private bool _autoRefresh;
         private const int DefaultExpireMinutes = 15;
         private Timer _timer;
 
-        private class CacheState
+        private class CacheState<TCacheType>
         {
             public string Key { get; set; }
             public DateTime LastRetrieval { get; set; }
             public TimeSpan ExpirationTime { get; set; }
-            public Func<DbSet<TEntityType>, CancellationToken, Task<TReturnType>> Getter { get; set; }
-            public TReturnType Value { get; set; }
+            public Func<DbSet<TEntityType>, CancellationToken, Task<TCacheType>> Getter { get; set; }
+            public TCacheType Value { get; set; }
+            public bool IsSet { get; set; }
 
             public bool IsExpired => ExpirationTime != TimeSpan.MaxValue &&
                                      (DateTime.Now - LastRetrieval.Add(ExpirationTime)).TotalSeconds > 0;
@@ -56,7 +57,7 @@ namespace Data.Helpers
                 return;
             }
 
-            var state = new CacheState
+            var state = new CacheState<TReturnType>
             {
                 Key = key,
                 Getter = getter,
@@ -88,7 +89,7 @@ namespace Data.Helpers
 
             // when auto refresh is off we want to check the expiration and value
             // when auto refresh is on, we want to only check the value, because it'll be refreshed automatically
-            if ((state.IsExpired || state.Value == null) && !_autoRefresh || _autoRefresh && state.Value == null)
+            if ((state.IsExpired || !state.IsSet) && !_autoRefresh || _autoRefresh && !state.IsSet)
             {
                 await RunCacheUpdate(state, cancellationToken);
             }
@@ -96,7 +97,7 @@ namespace Data.Helpers
             return state.Value;
         }
 
-        private async Task RunCacheUpdate(CacheState state, CancellationToken token)
+        private async Task RunCacheUpdate(CacheState<TReturnType> state, CancellationToken token)
         {
             try
             {
@@ -105,6 +106,7 @@ namespace Data.Helpers
                 var set = context.Set<TEntityType>();
                 var value = await state.Getter(set, token);
                 state.Value = value;
+                state.IsSet = true;
                 state.LastRetrieval = DateTime.Now;
             }
             catch (Exception ex)

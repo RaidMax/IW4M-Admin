@@ -100,8 +100,9 @@ namespace SharedLibraryCore.Database.Models
                 CorrelationId = CurrentServer.Manager.ProcessingEvents.Values
                     .FirstOrDefault(ev => ev.Type == GameEvent.EventType.Command && (ev.Origin?.ClientId == ClientId || ev.ImpersonationOrigin?.ClientId == ClientId))?.CorrelationId ?? Guid.NewGuid()
             };
-            
-            e.Output.Add(message.StripColors());
+
+            e.Output.Add(message.FormatMessageForEngine(CurrentServer?.RconParser.Configuration.ColorCodeMapping)
+                .StripColors());
 
             CurrentServer?.Manager.AddEvent(e);
             return e;

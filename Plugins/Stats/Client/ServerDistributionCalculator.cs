@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Stats.Client.Abstractions;
+using Stats.Config;
 using Stats.Helpers;
 
 namespace Stats.Client

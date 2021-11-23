@@ -23,7 +23,9 @@ using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 using Data.Models;
 using Data.Models.Server;
+using IW4MAdmin.Application.Commands;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Formatting;
 using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
@@ -433,7 +435,7 @@ namespace IW4MAdmin
 
                         if (E.Origin.Level > Permission.Moderator)
                         {
-                            E.Origin.Tell(string.Format(loc["SERVER_REPORT_COUNT"], E.Owner.Reports.Count));
+                            E.Origin.Tell(loc["SERVER_REPORT_COUNT_V2"].FormatExt(E.Owner.Reports.Count));
                         }
                     }
 
@@ -1109,6 +1111,15 @@ namespace IW4MAdmin
                 Version = RconParser.Version;
             }
 
+            if (!RconParser.Configuration.ColorCodeMapping.ContainsKey(ColorCodes.Accent.ToString()))
+            {
+                var accentKey = Manager.GetApplicationSettings().Configuration().IngameAccentColorKey;
+                RconParser.Configuration.ColorCodeMapping.Add(ColorCodes.Accent.ToString(),
+                    RconParser.Configuration.ColorCodeMapping.TryGetValue(accentKey, out var colorCode)
+                        ? colorCode
+                        : "");
+            }
+
             var svRunning = await this.GetMappedDvarValueOrDefaultAsync<string>("sv_running");
 
             if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")
@@ -1344,7 +1355,7 @@ namespace IW4MAdmin
                     return;
                 }
 
-                var message = loc["COMMANDS_WARNING_FORMAT"]
+                var message = loc["COMMANDS_WARNING_FORMAT_V2"]
                     .FormatExt(activeClient.Warnings, activeClient.Name, reason);
                 activeClient.CurrentServer.Broadcast(message);
             }
@@ -1472,7 +1483,7 @@ namespace IW4MAdmin
             Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
             Manager.GetMessageTokens().Add(new MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));
             Manager.GetMessageTokens().Add(new MessageToken("NEXTMAP", (Server s) => SharedLibraryCore.Commands.NextMapCommand.GetNextMap(s, _translationLookup)));
-            Manager.GetMessageTokens().Add(new MessageToken("ADMINS", (Server s) => Task.FromResult(SharedLibraryCore.Commands.ListAdminsCommand.OnlineAdmins(s, _translationLookup))));
+            Manager.GetMessageTokens().Add(new MessageToken("ADMINS", (Server s) => Task.FromResult(ListAdminsCommand.OnlineAdmins(s, _translationLookup))));
         }
     }
 }

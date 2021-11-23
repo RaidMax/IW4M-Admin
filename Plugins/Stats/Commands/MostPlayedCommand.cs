@@ -20,9 +20,9 @@ namespace IW4MAdmin.Plugins.Stats.Commands
         {
             var serverId = StatManager.GetIdForServer(s);
 
-            var mostPlayed = new List<string>()
+            var mostPlayed = new List<string>
             {
-                $"^5--{translationLookup["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
+                $"(Color::Accent)--{translationLookup["PLUGINS_STATS_COMMANDS_MOSTPLAYED_TEXT"]}--"
             };
 
             await using var context = contextFactory.CreateContext(false);
@@ -48,7 +48,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             var iqList = await iqStats.ToListAsync();
 
             mostPlayed.AddRange(iqList.Select((stats, index) =>
-                $"#{index + 1} " + translationLookup["COMMANDS_MOST_PLAYED_FORMAT"].FormatExt(stats.Name, stats.Kills,
+                $"#{index + 1} " + translationLookup["COMMANDS_MOST_PLAYED_FORMAT_V2"].FormatExt(stats.Name, stats.Kills,
                     (DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-stats.TimePlayed))
                     .HumanizeForCurrentCulture())));
 

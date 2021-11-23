@@ -108,13 +108,16 @@ namespace SharedLibraryCore.Configuration
         public string ConnectionString { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_RCON_POLLRATE")]
-        public int RConPollRate { get; set; } = 5000;
+        public int RConPollRate { get; set; } = 8000;
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
         public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
         public bool EnableColorCodes { get; set; }
+
+        [ConfigurationIgnore] 
+        public string IngameAccentColorKey { get; set; } = "Cyan";
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
         public int AutoMessagePeriod { get; set; }

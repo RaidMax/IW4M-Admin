@@ -45,16 +45,16 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public Task OnTickAsync(Server S) => Task.CompletedTask;
 
-        public async Task OnEventAsync(GameEvent E, Server S)
+        public async Task OnEventAsync(GameEvent gameEvent, Server server)
         {
-            if (E.Type == GameEvent.EventType.Join)
+            if (gameEvent.Type == GameEvent.EventType.Join)
             {
-                var newPlayer = E.Origin;
-                if ((newPlayer.Level >= Permission.Trusted && !E.Origin.Masked) ||
-                    (!string.IsNullOrEmpty(newPlayer.GetAdditionalProperty<string>("ClientTag")) &&
+                var newPlayer = gameEvent.Origin;
+                if (newPlayer.Level >= Permission.Trusted && !gameEvent.Origin.Masked||
+                    !string.IsNullOrEmpty(newPlayer.GetAdditionalProperty<string>("ClientTag")) &&
                      newPlayer.Level != Permission.Flagged && newPlayer.Level != Permission.Banned &&
-                     !newPlayer.Masked))
-                    E.Owner.Broadcast(
+                     !newPlayer.Masked)
+                    gameEvent.Owner.Broadcast(
                         await ProcessAnnouncement(_configHandler.Configuration().PrivilegedAnnouncementMessage,
                             newPlayer));
 
@@ -73,10 +73,11 @@ namespace IW4MAdmin.Plugins.Welcome
                             .FirstOrDefaultAsync();
                     }
 
-                    E.Owner.ToAdmins($"^1NOTICE: ^7Flagged player ^5{newPlayer.Name} ^7({penaltyReason}) has joined!");
+                    gameEvent.Owner.ToAdmins(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_FLAG_MESSAGE"]
+                        .FormatExt(newPlayer.Name, penaltyReason));
                 }
                 else
-                    E.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().UserAnnouncementMessage,
+                    gameEvent.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().UserAnnouncementMessage,
                         newPlayer));
             }
         }
@@ -85,7 +86,7 @@ namespace IW4MAdmin.Plugins.Welcome
         {
             msg = msg.Replace("{{ClientName}}", joining.Name);
             msg = msg.Replace("{{ClientLevel}}",
-                $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.GetAdditionalProperty<string>("ClientTag")) ? "" : $" ^7({joining.GetAdditionalProperty<string>("ClientTag")}^7)")}");
+                $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.GetAdditionalProperty<string>("ClientTag")) ? "" : $" (Color::White)({joining.GetAdditionalProperty<string>("ClientTag")}(Color::White))")}");
             // this prevents it from trying to evaluate it every message
             if (msg.Contains("{{ClientLocation}}"))
             {

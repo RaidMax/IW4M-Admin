@@ -26,6 +26,7 @@ using Data.Abstractions;
 using Data.Helpers;
 using IW4MAdmin.Plugins.Stats.Config;
 using Stats.Client.Abstractions;
+using Stats.Config;
 using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 

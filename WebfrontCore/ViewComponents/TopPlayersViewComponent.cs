@@ -5,6 +5,7 @@ using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Interfaces;
+using Stats.Config;
 
 namespace WebfrontCore.ViewComponents
 {

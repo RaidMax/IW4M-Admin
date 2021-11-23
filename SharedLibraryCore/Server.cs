@@ -132,10 +132,12 @@ namespace SharedLibraryCore
         /// <param name="message">Message to be sent to all players</param>
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
-            string formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "", $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
-            ServerLogger.LogDebug("All->" + message.StripColors());
+            var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "",
+                $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping)}");
+            ServerLogger.LogDebug("All-> {Message}",
+                message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping).StripColors());
 
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Broadcast,
                 Data = formattedMessage,
@@ -165,6 +167,8 @@ namespace SharedLibraryCore
         /// <param name="targetClient">EFClient to send message to</param>
         protected async Task Tell(string message, EFClient targetClient)
         {
+            var engineMessage = message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping);
+            
             if (!Utilities.IsDevelopment)
             {
                 var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
@@ -173,24 +177,25 @@ namespace SharedLibraryCore
 
                 var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell,
                     clientNumber,
-                    $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FixIW4ForwardSlash()}");
+                    $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{engineMessage}");
                 if (targetClient.ClientNumber > -1 && message.Length > 0 && targetClient.Level != EFClient.Permission.Console)
                     await this.ExecuteCommandAsync(formattedMessage);
             }
             else
             {
-                ServerLogger.LogDebug("Tell[{clientNumber}]->{message}", targetClient.ClientNumber, message.StripColors());
+                ServerLogger.LogDebug("Tell[{ClientNumber}]->{Message}", targetClient.ClientNumber,
+                    message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping).StripColors());
             }
-
 
             if (targetClient.Level == EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 using (LogContext.PushProperty("Server", ToString()))
                 {
-                    ServerLogger.LogInformation("Command output received: {message}", message);
+                    ServerLogger.LogInformation("Command output received: {Message}",
+                        engineMessage.StripColors());
                 }
-                Console.WriteLine(message.StripColors());
+                Console.WriteLine(engineMessage.StripColors());
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
         }

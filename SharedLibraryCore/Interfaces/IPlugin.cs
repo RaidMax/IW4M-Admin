@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -10,9 +9,9 @@ namespace SharedLibraryCore.Interfaces
         Task OnEventAsync(GameEvent E, Server S);
         Task OnTickAsync(Server S);
 
-        //for logging purposes
-        String Name { get; }
+        string Name { get; }
         float Version { get; }  
-        String Author { get; }
+        string Author { get; }
+        bool IsParser => false;
     }
 }

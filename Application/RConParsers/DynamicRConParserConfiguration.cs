@@ -3,6 +3,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
 using System.Collections.Generic;
 using System.Globalization;
+using SharedLibraryCore.Formatting;
 
 namespace IW4MAdmin.Application.RConParsers
 {
@@ -30,6 +31,22 @@ namespace IW4MAdmin.Application.RConParsers
         public string NoticeLineSeparator { get; set; } = Environment.NewLine;
         public int? DefaultRConPort { get; set; }
         public string DefaultInstallationDirectoryHint { get; set; }
+
+        public ColorCodeMapping ColorCodeMapping { get; set; } = new ColorCodeMapping
+        {
+            // this is the default mapping (IW4), but can be overridden as needed in the parsers
+            {ColorCodes.Black.ToString(), "^0"},
+            {ColorCodes.Red.ToString(), "^1"},
+            {ColorCodes.Green.ToString(), "^2"},
+            {ColorCodes.Yellow.ToString(), "^3"},
+            {ColorCodes.Blue.ToString(), "^4"},
+            {ColorCodes.Cyan.ToString(), "^5"},
+            {ColorCodes.Pink.ToString(), "^6"},
+            {ColorCodes.White.ToString(), "^7"},
+            {ColorCodes.Map.ToString(), "^8"},
+            {ColorCodes.Grey.ToString(), "^9"},
+            {ColorCodes.Wildcard.ToString(), ":^"},
+        };
 
         public DynamicRConParserConfiguration(IParserRegexFactory parserRegexFactory)
         {

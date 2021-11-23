@@ -716,12 +716,15 @@ namespace SharedLibraryCore.Services
 
             // we want to project our results 
             var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)
-                .Select(_client => new PlayerInfo()
+                .Select(_client => new PlayerInfo
                 {
                     Name = _client.CurrentAlias.Name,
-                    LevelInt = (int)_client.Level,
+                    LevelInt = (int) _client.Level,
                     LastConnection = _client.LastConnection,
                     ClientId = _client.ClientId,
+                    IPAddress = _client.CurrentAlias.IPAddress.HasValue
+                        ? _client.CurrentAlias.IPAddress.Value.ToString()
+                        : ""
                 });
 
             var clients = await iqClientProjection.ToListAsync();

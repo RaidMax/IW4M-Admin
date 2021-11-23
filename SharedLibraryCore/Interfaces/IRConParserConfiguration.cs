@@ -1,6 +1,8 @@
 ﻿using SharedLibraryCore.RCon;
 using System.Collections.Generic;
 using System.Globalization;
+using SharedLibraryCore.Formatting;
+using SharedLibraryCore.Localization;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -97,5 +99,7 @@ namespace SharedLibraryCore.Interfaces
         /// Default Indicator of where the game is installed (ex file path or registry entry)
         /// </summary>
         string DefaultInstallationDirectoryHint { get; }
+
+        ColorCodeMapping ColorCodeMapping { get; }
     }
 }

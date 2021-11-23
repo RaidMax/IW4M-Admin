@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Data.Abstractions;
 using IW4MAdmin.Plugins.Stats.Config;
+using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 {

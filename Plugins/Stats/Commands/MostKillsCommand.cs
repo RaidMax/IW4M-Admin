@@ -9,8 +9,8 @@ using Data.Models.Client.Stats;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
+using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -76,7 +76,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             var iqList = await iqStats.ToListAsync();
 
-            return iqList.Select((stats, index) => translationLookup["PLUGINS_STATS_COMMANDS_MOSTKILLS_FORMAT"]
+            return iqList.Select((stats, index) => translationLookup["PLUGINS_STATS_COMMANDS_MOSTKILLS_FORMAT_V2"]
                     .FormatExt(index + 1, stats.Name, stats.Kills))
                 .Prepend(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_MOSTKILLS_HEADER"]);
         }

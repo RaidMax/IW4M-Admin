@@ -1,11 +1,11 @@
 {
   "AutoMessagePeriod": 60,
   "AutoMessages": [
-    "This server uses ^5IW4M Admin v{{VERSION}} ^7get it at ^5raidmax.org/IW4MAdmin",
-    "^5IW4M Admin ^7sees ^5YOU!",
+    "This server uses (Color::Accent)IW4M Admin v{{VERSION}} (Color::White)get it at (Color::Accent)raidmax.org/IW4MAdmin",
+    "(Color::Accent)IW4M Admin (Color::White)sees (Color::Accent)YOU!",
     "{{TOPSTATS}}",
-    "This server has seen a total of ^5{{TOTALPLAYERS}} ^7players!",
-    "Cheaters are ^1unwelcome ^7 on this server",
+    "This server has seen a total of (Color::Accent){{TOTALPLAYERS}} (Color::White)players!",
+    "Cheaters are (Color::Red)unwelcome (Color::White)on this server",
     "Did you know 8/10 people agree with unverified statistics?"
   ],
   "GlobalRules": [

@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, Xerxes',
-    version: 1.1,
+    version: 1.2,
     name: 'Plutonium T6 Parser',
     isParser: true,
 
@@ -38,6 +38,21 @@ var plugin = {
         rconParser.Configuration.Status.AddMapping(103, 4);
         rconParser.Configuration.Status.AddMapping(104, 5);
         rconParser.Configuration.Status.AddMapping(105, 6);
+
+        // this is mostly default but just an example on how to map
+        rconParser.Configuration.ColorCodeMapping.Clear();
+        rconParser.Configuration.ColorCodeMapping.Add('Black', '^0');
+        rconParser.Configuration.ColorCodeMapping.Add('Red', '^1');
+        rconParser.Configuration.ColorCodeMapping.Add('Green', '^2');
+        rconParser.Configuration.ColorCodeMapping.Add('Yellow', '^3');
+        rconParser.Configuration.ColorCodeMapping.Add('Blue', '^4');
+        rconParser.Configuration.ColorCodeMapping.Add('Cyan', '^5');
+        rconParser.Configuration.ColorCodeMapping.Add('Pink', '^6');
+        rconParser.Configuration.ColorCodeMapping.Add('White', '^7');
+        rconParser.Configuration.ColorCodeMapping.Add('Map', '^8');
+        rconParser.Configuration.ColorCodeMapping.Add('Grey', '^9');
+        rconParser.Configuration.ColorCodeMapping.Add('LightBlue', '^;');
+        rconParser.Configuration.ColorCodeMapping.Add('LightYellow', '^:');
         
         eventParser.Configuration.GameDirectory = '';
         eventParser.Configuration.GuidNumberStyle = 7; // Integer

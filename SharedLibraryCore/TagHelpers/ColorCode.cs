@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Linq;
+﻿using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace SharedLibraryCore
+namespace SharedLibraryCore.TagHelpers
 {
     [HtmlTargetElement("color-code")]
     public class ColorCode : TagHelper

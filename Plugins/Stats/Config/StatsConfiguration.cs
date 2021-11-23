@@ -1,11 +1,11 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
-using Stats.Config;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using IW4MAdmin.Plugins.Stats.Config;
+using SharedLibraryCore;
+using SharedLibraryCore.Interfaces;
 using static IW4MAdmin.Plugins.Stats.Cheat.Detection;
 
-namespace IW4MAdmin.Plugins.Stats.Config
+namespace Stats.Config
 {
     public class StatsConfiguration : IBaseConfiguration
     {
@@ -74,28 +74,28 @@ namespace IW4MAdmin.Plugins.Stats.Config
         public IBaseConfiguration Generate()
         {
             AnticheatConfiguration.Enable =
-                Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_SETUP_ENABLEAC"]);
-            KillstreakMessages = new List<StreakMessageConfiguration>()
+                Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_SETUP_ENABLEAC"].PromptBool();
+            KillstreakMessages = new List<StreakMessageConfiguration>
             {
-                new StreakMessageConfiguration()
+                new StreakMessageConfiguration
                 {
                     Count = -1,
-                    Message = "Try not to kill yourself anymore"
+                    Message = Utilities.CurrentLocalization.LocalizationIndex["STATS_STREAK_MESSAGE_SUICIDE"]
                 },
-                new StreakMessageConfiguration()
+                new StreakMessageConfiguration
                 {
                     Count = 5,
-                    Message = "Great job! You're on a ^55 killstreak!"
+                    Message = Utilities.CurrentLocalization.LocalizationIndex["STATS_STREAK_MESSAGE_5"]
                 },
-                new StreakMessageConfiguration()
+                new StreakMessageConfiguration
                 {
                     Count = 10,
-                    Message = "Amazing! ^510 kills ^7without dying!"
+                    Message = Utilities.CurrentLocalization.LocalizationIndex["STATS_STREAK_MESSAGE_10"]
                 },
-                new StreakMessageConfiguration()
+                new StreakMessageConfiguration
                 {
                     Count = 25,
-                    Message = "You better call in that nuke, ^525 killstreak^7!"
+                    Message = Utilities.CurrentLocalization.LocalizationIndex["STATS_STREAK_MESSAGE_25"]
                 }
             };
 
@@ -104,12 +104,12 @@ namespace IW4MAdmin.Plugins.Stats.Config
                 new StreakMessageConfiguration()
                 {
                     Count = 5,
-                    Message = "Pick it up soldier, you've died ^55 times ^7in a row..."
+                    Message = Utilities.CurrentLocalization.LocalizationIndex["STATS_DEATH_STREAK_MESSAGE_5"]
                 },
                 new StreakMessageConfiguration()
                 {
                     Count = 10,
-                    Message = "Seriously? ^510 deaths ^7without getting a kill?"
+                    Message = Utilities.CurrentLocalization.LocalizationIndex["STATS_DEATH_STREAK_MESSAGE_10"]
                 },
             };
 

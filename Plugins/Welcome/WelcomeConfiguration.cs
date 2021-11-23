@@ -11,9 +11,9 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public IBaseConfiguration Generate()
         {
-            UserAnnouncementMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_USERANNOUNCE"];
-            UserWelcomeMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_USERWELCOME"];
-            PrivilegedAnnouncementMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_PRIVANNOUNCE"];
+            UserAnnouncementMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_USERANNOUNCE_V2"];
+            UserWelcomeMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_USERWELCOME_V2"];
+            PrivilegedAnnouncementMessage = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_PRIVANNOUNCE_V2"];
             return this;
         }
 

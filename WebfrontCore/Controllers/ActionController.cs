@@ -46,7 +46,8 @@ namespace WebfrontCore.Controllers
                     case nameof(UnbanCommand):
                         _unbanCommandName = cmd.Name;
                         break;
-                    case nameof(SayCommand):
+                    // todo: this should be flag driven
+                    case "SayCommand":
                         _sayCommandName = cmd.Name;
                         break;
                     case nameof(KickCommand):

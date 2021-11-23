@@ -21,6 +21,7 @@ using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using static Data.Models.Client.EFClient;
 using Data.Models;
+using SharedLibraryCore.Formatting;
 using static Data.Models.EFPenalty;
 
 namespace SharedLibraryCore
@@ -178,6 +179,24 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static string FixIW4ForwardSlash(this string str) => str.Replace("//", "/ /");
 
+        public static string FormatMessageForEngine(this string str, ColorCodeMapping mapping)
+        {
+            if (mapping == null || string.IsNullOrEmpty(str))
+            {
+                return str;
+            }
+
+            var output = str;
+            var colorCodeMatches = Regex.Matches(output, @"\(Color::(.{1,16})\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            foreach (var match in colorCodeMatches.Where(m => m.Success))
+            {
+                var key = match.Groups[1].ToString();
+                output = output.Replace(match.Value, mapping.TryGetValue(key, out var code) ? code : "");
+            }
+
+            return output.FixIW4ForwardSlash() + mapping[ColorCodes.White.ToString()];
+        }
+
         private static readonly IList<string> _zmGameTypes = new[] { "zclassic", "zstandard", "zcleansed", "zgrief" };
         /// <summary>
         /// indicates if the given server is running a zombie game mode
@@ -189,36 +208,25 @@ namespace SharedLibraryCore
         public static bool IsCodGame(this Server server) => server.RconParser?.RConEngine == "COD";
 
         /// <summary>
-        /// Get the IW Engine color code corresponding to an admin level
+        /// Get the color key corresponding to a given user level
         /// </summary>
         /// <param name="level">Specified player level</param>
+        /// <param name="localizedLevel"></param>
         /// <returns></returns>
-        public static String ConvertLevelToColor(EFClient.Permission level, string localizedLevel)
+        public static string ConvertLevelToColor(Permission level, string localizedLevel)
         {
-            char colorCode = '6';
-            // todo: maybe make this game independant?
-            switch (level)
+            // todo: make configurable
+            var colorCode = level switch
             {
-                case EFClient.Permission.Banned:
-                    colorCode = '1';
-                    break;
-                case EFClient.Permission.Flagged:
-                    colorCode = '9';
-                    break;
-                case EFClient.Permission.Owner:
-                    colorCode = '5';
-                    break;
-                case EFClient.Permission.User:
-                    colorCode = '2';
-                    break;
-                case EFClient.Permission.Trusted:
-                    colorCode = '3';
-                    break;
-                default:
-                    break;
-            }
+                Permission.Banned => "Red",
+                Permission.Flagged => "Map",
+                Permission.Owner => "Accent",
+                Permission.User => "Yellow",
+                Permission.Trusted => "Green",
+                _ => "Pink"
+            };
 
-            return $"^{colorCode}{localizedLevel ?? level.ToString()}";
+            return $"(Color::{colorCode}){localizedLevel ?? level.ToString()}";
         }
 
         public static string ToLocalizedLevelName(this Permission permission)

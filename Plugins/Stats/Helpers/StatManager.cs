@@ -21,6 +21,7 @@ using Data.Models.Server;
 using Humanizer.Localisation;
 using Microsoft.Extensions.Logging;
 using Stats.Client.Abstractions;
+using Stats.Config;
 using Stats.Helpers;
 using static IW4MAdmin.Plugins.Stats.Cheat.Detection;
 using EFClient = SharedLibraryCore.Database.Models.EFClient;

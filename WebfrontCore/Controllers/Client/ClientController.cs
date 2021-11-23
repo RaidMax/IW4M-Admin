@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Data.Models;
 using IW4MAdmin.Plugins.Stats.Config;
+using Stats.Config;
 using WebfrontCore.ViewComponents;
 
 namespace WebfrontCore.Controllers

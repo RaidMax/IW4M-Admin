@@ -136,7 +136,7 @@ namespace SharedLibraryCore.Commands
                         E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         foreach (var p in matchingPlayers)
                         {
-                            E.Origin.Tell($"[^3{p.ClientNumber}^7] {p.Name}");
+                            E.Origin.Tell($"[(Color::Yellow){p.ClientNumber}(Color::White)] {p.Name}");
                         }
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }

@@ -27,6 +27,7 @@ using IW4MAdmin.Application.Migration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using SharedLibraryCore.Formatting;
 using static SharedLibraryCore.GameEvent;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using ObsoleteLogger = SharedLibraryCore.Interfaces.ILogger;
@@ -454,6 +455,17 @@ namespace IW4MAdmin.Application
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(_appConfig.CustomParserEncoding) ? _appConfig.CustomParserEncoding : "windows-1252");
+
+            foreach (var parser in AdditionalRConParsers)
+            {
+                if (!parser.Configuration.ColorCodeMapping.ContainsKey(ColorCodes.Accent.ToString()))
+                {
+                    parser.Configuration.ColorCodeMapping.Add(ColorCodes.Accent.ToString(),
+                        parser.Configuration.ColorCodeMapping.TryGetValue(_appConfig.IngameAccentColorKey, out var colorCode)
+                            ? colorCode
+                            : "");
+                }
+            }
 
             #endregion
 

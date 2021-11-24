@@ -1111,15 +1111,6 @@ namespace IW4MAdmin
                 Version = RconParser.Version;
             }
 
-            if (!RconParser.Configuration.ColorCodeMapping.ContainsKey(ColorCodes.Accent.ToString()))
-            {
-                var accentKey = Manager.GetApplicationSettings().Configuration().IngameAccentColorKey;
-                RconParser.Configuration.ColorCodeMapping.Add(ColorCodes.Accent.ToString(),
-                    RconParser.Configuration.ColorCodeMapping.TryGetValue(accentKey, out var colorCode)
-                        ? colorCode
-                        : "");
-            }
-
             var svRunning = await this.GetMappedDvarValueOrDefaultAsync<string>("sv_running");
 
             if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")

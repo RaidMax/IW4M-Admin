@@ -3,7 +3,7 @@ let eventParser;
 
 const plugin = {
     author: 'RaidMax',
-    version: 0.4,
+    version: 0.5,
     name: 'CS:GO (SourceMod) Parser',
     engine: 'Source',
     isParser: true,
@@ -41,7 +41,7 @@ const plugin = {
         rconParser.Configuration.Status.AddMapping(104, 3);
         rconParser.Configuration.Status.AddMapping(105, 10);
         rconParser.Configuration.Status.AddMapping(200, 1);
-
+        
         rconParser.Configuration.DefaultDvarValues.Add('sv_running', '1');
         rconParser.Configuration.DefaultDvarValues.Add('version', this.engine);
         rconParser.Configuration.DefaultDvarValues.Add('fs_basepath', '');
@@ -56,6 +56,25 @@ const plugin = {
         rconParser.Configuration.OverrideDvarNameMapping.Add('g_gametype', 'game_type');
         rconParser.Configuration.OverrideDvarNameMapping.Add('fs_game', 'game_mode');
         rconParser.Configuration.OverrideDvarNameMapping.Add('g_password', 'sv_password');
+
+        rconParser.Configuration.ColorCodeMapping.Clear();
+        rconParser.Configuration.ColorCodeMapping.Add('White', '\x01');
+        rconParser.Configuration.ColorCodeMapping.Add('Red', '\x07');
+        rconParser.Configuration.ColorCodeMapping.Add('LightRed', '\x0F');
+        rconParser.Configuration.ColorCodeMapping.Add('DarkRed', '\x02');
+        rconParser.Configuration.ColorCodeMapping.Add('Blue', '\x0B');
+        rconParser.Configuration.ColorCodeMapping.Add('DarkBlue', '\x0C');
+        rconParser.Configuration.ColorCodeMapping.Add('Purple', '\x03');
+        rconParser.Configuration.ColorCodeMapping.Add('Orchid', '\x0E');
+        rconParser.Configuration.ColorCodeMapping.Add('Yellow', '\x09');
+        rconParser.Configuration.ColorCodeMapping.Add('Gold', '\x10');
+        rconParser.Configuration.ColorCodeMapping.Add('LightGreen', '\x05');
+        rconParser.Configuration.ColorCodeMapping.Add('Green', '\x04');
+        rconParser.Configuration.ColorCodeMapping.Add('Lime', '\x06');
+        rconParser.Configuration.ColorCodeMapping.Add('Grey', '\x08');
+        rconParser.Configuration.ColorCodeMapping.Add('Grey2', '\x0D');
+        // only adding there here for the default accent color
+        rconParser.Configuration.ColorCodeMapping.Add('Cyan', '\x0B');
 
         rconParser.Configuration.NoticeLineSeparator    = '. ';
         rconParser.Configuration.DefaultRConPort = 27015;

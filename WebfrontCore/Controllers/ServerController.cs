@@ -4,14 +4,17 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using Data.Models.Client.Stats;
+using SharedLibraryCore.Configuration;
 
 namespace WebfrontCore.Controllers
 {
     public class ServerController : BaseController
     {
-        public ServerController(IManager manager) : base(manager)
+        private readonly DefaultSettings _defaultSettings;
+        
+        public ServerController(IManager manager, DefaultSettings defaultSettings) : base(manager)
         {
-
+            _defaultSettings = defaultSettings;
         }
 
         [HttpGet]
@@ -33,7 +36,7 @@ namespace WebfrontCore.Controllers
                 Map = s.CurrentMap.Alias,
                 ClientCount = s.Clients.Count(client => client != null),
                 MaxClients = s.MaxClients,
-                GameType = s.Gametype,
+                GameType =  s.GametypeName,
                 Players = s.GetClientsAsList()
                 .Select(p => new PlayerInfo
                 {

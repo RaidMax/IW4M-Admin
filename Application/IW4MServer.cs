@@ -57,7 +57,7 @@ namespace IW4MAdmin
             serverConfiguration,
             serviceProvider.GetRequiredService<IManager>(), 
             serviceProvider.GetRequiredService<IRConConnectionFactory>(),
-            serviceProvider.GetRequiredService<IGameLogReaderFactory>())
+            serviceProvider.GetRequiredService<IGameLogReaderFactory>(), serviceProvider)
         {
             _translationLookup = lookup;
             _metaService = metaService;

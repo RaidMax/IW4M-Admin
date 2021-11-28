@@ -13,11 +13,13 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Database.Models;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Data.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SharedLibraryCore
 {
     public abstract class Server : IGameServer
     {
+        protected readonly DefaultSettings DefaultSettings;
         public enum Game
         {
             COD = -1,
@@ -36,7 +38,7 @@ namespace SharedLibraryCore
 
         public Server(ILogger<Server> logger, SharedLibraryCore.Interfaces.ILogger deprecatedLogger, 
             ServerConfiguration config, IManager mgr, IRConConnectionFactory rconConnectionFactory, 
-            IGameLogReaderFactory gameLogReaderFactory)
+            IGameLogReaderFactory gameLogReaderFactory, IServiceProvider serviceProvider)
         {
             Password = config.Password;
             IP = config.IPAddress;
@@ -55,6 +57,7 @@ namespace SharedLibraryCore
             this.gameLogReaderFactory = gameLogReaderFactory;
             RConConnectionFactory = rconConnectionFactory;
             ServerLogger = logger;
+            DefaultSettings = serviceProvider.GetRequiredService<DefaultSettings>();
             InitializeTokens();
             InitializeAutoMessages();
         }
@@ -307,6 +310,8 @@ namespace SharedLibraryCore
         public string Hostname { get => ServerConfig.CustomHostname ?? hostname; protected set => hostname = value; }
         public string Website { get; protected set; }
         public string Gametype { get; set; }
+        public string GametypeName => DefaultSettings.Gametypes.FirstOrDefault(gt => gt.Game == GameName)?.Gametypes
+            ?.FirstOrDefault(gt => gt.Name == Gametype)?.Alias ?? Gametype;
         public string GamePassword { get; protected set; }
         public Map CurrentMap { get; set; }
         public int ClientNum

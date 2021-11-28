@@ -68,6 +68,504 @@
       }
     }
   ],
+  "Gametypes": [
+    {
+      "Game": "IW4",
+      "Gametypes": [
+        {
+          "Name": "arena",
+          "Alias": "Arena"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dd",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "gtnw",
+          "Alias": "Global Thermo-Nuclear War"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "oneflag",
+          "Alias": "One-Flag CTF"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+    },
+    {
+      "Game": "T4",
+      "Gametypes": [
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "tdm",
+          "Alias": "Team Deathmatch"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "twar",
+          "Alias": "War"
+        }
+      ]
+    },
+    {
+      "Game": "IW5",
+      "Gametypes": [
+        {
+          "Name": "tdm",
+          "Alias": "Team Deathmatch"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dd",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dz",
+          "Alias": "Drop Zone"
+        },
+        {
+          "Name": "ffa",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "gg",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "hq",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "inf",
+          "Alias": "Infected"
+        },
+        {
+          "Name": "jug",
+          "Alias": "Juggernaut"
+        },
+        {
+          "Name": "kc",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "oic",
+          "Alias": "One In The Chamber"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "tdef",
+          "Alias": "Team Defender"
+        },
+        {
+          "Name": "tj",
+          "Alias": "Team Juggernaut"
+        }
+      ]
+    },
+    {
+      "Game": "T5",
+      "Gametypes": [
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dem",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "hlnd",
+          "Alias": "Sticks & Stones"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "oic",
+          "Alias": "One In The Chamber"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "shrp",
+          "Alias": "Sharpshooter"
+        },
+        {
+          "Name": "tdm",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+    },
+    {
+      "Game": "IW6",
+      "Gametypes": [
+        {
+          "Name": "blitz",
+          "Alias": "Blitz"
+        },
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "cranked",
+          "Alias": "Cranked"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "grind",
+          "Alias": "Grind"
+        },
+        {
+          "Name": "grnd",
+          "Alias": "Drop Zone"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "horde",
+          "Alias": "Safeguard"
+        },
+        {
+          "Name": "infect",
+          "Alias": "Infected"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "siege",
+          "Alias": "Reinforce"
+        },
+        {
+          "Name": "sotf",
+          "Alias": "Hunted"
+        },
+        {
+          "Name": "sotf_ffa",
+          "Alias": "Hunted FFA"
+        },
+        {
+          "Name": "sr",
+          "Alias": "Search & Rescue"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+    },
+    {
+      "Game": "T6",
+      "Gametypes": [
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dem",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "hq",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "oic",
+          "Alias": "One In The Chamber"
+        },
+        {
+          "Name": "oneflag",
+          "Alias": "One-Flag CTF"
+        },
+        {
+          "Name": "sas",
+          "Alias": "Sticks & Stones"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "shrp",
+          "Alias": "Sharpshooter"
+        },
+        {
+          "Name": "tdm",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+    },
+    {
+      "Game": "T7",
+      "Gametypes": [
+        {
+          "Name": "ball",
+          "Alias": "Uplink"
+        },
+        {
+          "Name": "clean",
+          "Alias": "Fracture"
+        },
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "dem",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "escort",
+          "Alias": "Safeguard"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "tdm",
+          "Alias": "Team Deathmatch"
+        },
+        {
+          "Name": "hc_ball",
+          "Alias": "Hardcore Uplink"
+        },
+        {
+          "Name": "hc_clean",
+          "Alias": "Hardcore Fracture"
+        },
+        {
+          "Name": "hc_conf",
+          "Alias": "Hardcore Kill Confirmed"
+        },
+        {
+          "Name": "hc_ctf",
+          "Alias": "Hardcore Capture The Flag"
+        },
+        {
+          "Name": "hc_dom",
+          "Alias": "Hardcore Domination"
+        },
+        {
+          "Name": "hc_dem",
+          "Alias": "Hardcore Demolition"
+        },
+        {
+          "Name": "hc_dm",
+          "Alias": "Hardcore Free For All"
+        },
+        {
+          "Name": "hc_escort",
+          "Alias": "Hardcore Safeguard"
+        },
+        {
+          "Name": "hc_gun",
+          "Alias": "Hardcore Gun Game"
+        },
+        {
+          "Name": "hc_koth",
+          "Alias": "Hardcore Hardpoint"
+        },
+        {
+          "Name": "hc_sd",
+          "Alias": "Hardcore Search & Destroy"
+        },
+        {
+          "Name": "hc_tdm",
+          "Alias": "Hardcore Team Deathmatch"
+        }
+      ]
+    },
+    {
+      "Game": "SHG1",
+      "Gametypes": [
+        {
+          "Name": "ball",
+          "Alias": "Uplink"
+        },
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "hp",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "infect",
+          "Alias": "Infected"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "sr",
+          "Alias": "Search & Rescue"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        },
+        {
+          "Name": "twar",
+          "Alias": "Momentum"
+        }
+      ]
+    }
+  ],
   "Maps": [
     {
       "Game": "IW3",
@@ -1529,62 +2027,62 @@
       "winchester1200": "W1200",
       "concussion": "Stun",
       "melee": "Knife",
-      "Frag" : "Grenade",
+      "Frag": "Grenade",
       "airstrike": "Airstrike",
       "helicopter": "Attack Helicopter",
       "player": "",
       "attach": ""
     },
-    "T4": {	
-	  "torso_upper": "Upper Torso",
-	  "torso_lower": "Lower Torso",
-	  "right_leg_upper": "Upper Right Leg",
-	  "right_leg_lower": "Lower Right Leg",
-	  "right_hand": "Right Hand",
-	  "right_foot": "Right Foot",
-	  "right_arm_upper": "Upper Right Arm",
-	  "right_arm_lower": "Lower Right Arm",
-	  "left_leg_upper": "Upper Left Leg",
-	  "left_leg_lower": "Lower Left Leg",
-	  "left_hand": "Left Hand",
-	  "left_foot": "Left Foot",
-	  "left_arm_upper": "Upper Left Arm",
-	  "left_arm_lower": "Lower Left Arm",
-	  "gl": "Rifle Grenade",
-	  "bigammo": "Round Drum",
-	  "scoped": "Sniper Scope",
-	  "telescopic": "Telescopic Sight",
-	  "aperture": "Aperture Sight",
-	  "flash": "Flash Hider",
-	  "silenced": "Silencer",
-	  "molotov": "Molotov Cocktail",
-	  "sticky": "N° 74 ST",
-	  "m2": "M2 Flamethrower",
-	  "artillery": "Artillery Strike",
-	  "dog": "Attack Dogs",
-	  "colt":	"Colt M1911",
-	  "357magnum": ".357 Magnum",
-	  "walther": "Walther P38",
-	  "tokarev": "Tokarev TT-33",
-	  "shotgun": "M1897 Trench Gun",
-	  "doublebarreledshotgun": "Double-Barreled Shotgun",
-	  "mp40": "MP40",
-	  "type100smg": "Type 100",
-	  "ppsh": "PPSh-41",
-	  "svt40": "SVT-40",
-	  "gewehr43": "Gewehr 43",
-	  "m1garand": "M1 Garand",
-	  "stg44": "STG-44",
-	  "m1carbine": "M1A1 Carbine",
-	  "type99lmg": "Type 99",
-	  "bar": "BAR",
-	  "dp28": "DP-28",
-	  "mg42": "MG42",
-	  "fg42": "FG42",
-	  "30cal": "Browning M1919",
-	  "type99rifle": "Arisaka",
-	  "mosinrifle": "Mosin-Nagant",
-	  "ptrs41":"PTRS-41"
-	}
+    "T4": {
+      "torso_upper": "Upper Torso",
+      "torso_lower": "Lower Torso",
+      "right_leg_upper": "Upper Right Leg",
+      "right_leg_lower": "Lower Right Leg",
+      "right_hand": "Right Hand",
+      "right_foot": "Right Foot",
+      "right_arm_upper": "Upper Right Arm",
+      "right_arm_lower": "Lower Right Arm",
+      "left_leg_upper": "Upper Left Leg",
+      "left_leg_lower": "Lower Left Leg",
+      "left_hand": "Left Hand",
+      "left_foot": "Left Foot",
+      "left_arm_upper": "Upper Left Arm",
+      "left_arm_lower": "Lower Left Arm",
+      "gl": "Rifle Grenade",
+      "bigammo": "Round Drum",
+      "scoped": "Sniper Scope",
+      "telescopic": "Telescopic Sight",
+      "aperture": "Aperture Sight",
+      "flash": "Flash Hider",
+      "silenced": "Silencer",
+      "molotov": "Molotov Cocktail",
+      "sticky": "N° 74 ST",
+      "m2": "M2 Flamethrower",
+      "artillery": "Artillery Strike",
+      "dog": "Attack Dogs",
+      "colt": "Colt M1911",
+      "357magnum": ".357 Magnum",
+      "walther": "Walther P38",
+      "tokarev": "Tokarev TT-33",
+      "shotgun": "M1897 Trench Gun",
+      "doublebarreledshotgun": "Double-Barreled Shotgun",
+      "mp40": "MP40",
+      "type100smg": "Type 100",
+      "ppsh": "PPSh-41",
+      "svt40": "SVT-40",
+      "gewehr43": "Gewehr 43",
+      "m1garand": "M1 Garand",
+      "stg44": "STG-44",
+      "m1carbine": "M1A1 Carbine",
+      "type99lmg": "Type 99",
+      "bar": "BAR",
+      "dp28": "DP-28",
+      "mg42": "MG42",
+      "fg42": "FG42",
+      "30cal": "Browning M1919",
+      "type99rifle": "Arisaka",
+      "mosinrifle": "Mosin-Nagant",
+      "ptrs41": "PTRS-41"
+    }
   }
 }

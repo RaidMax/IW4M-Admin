@@ -1,8 +1,8 @@
 ﻿namespace SharedLibraryCore.Configuration
 {
-    public class MapConfiguration
+    public class GametypeConfiguration
     {
         public Server.Game Game { get; set; }
-        public Map[] Maps { get; set; }
+        public Gametype[] Gametypes { get; set; }
     }
 }

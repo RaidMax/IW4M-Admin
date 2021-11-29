@@ -112,10 +112,12 @@ namespace IW4MAdmin.Application.Commands
             {
                 case Server.Game.IW5:
                     await gameEvent.Owner.ExecuteCommandAsync(
-                        $"load_dsr {(hasMatchingGametype ? gametype.ToUpper() + "_default" : gametype)};map {map}");
+                        $"load_dsr {(hasMatchingGametype ? gametype.ToUpper() + "_default" : gametype)}");
+                    await gameEvent.Owner.ExecuteCommandAsync($"map {map}");
                     break;
                 case Server.Game.T6:
-                    await gameEvent.Owner.ExecuteCommandAsync($"exec {gametype}.cfg;map {map}");
+                    await gameEvent.Owner.ExecuteCommandAsync($"exec {gametype}.cfg");
+                    await gameEvent.Owner.ExecuteCommandAsync($"map {map}");
                     break;
                 default:
                     await gameEvent.Owner.ExecuteCommandAsync($"map {map}");

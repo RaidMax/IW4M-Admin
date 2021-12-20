@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace SharedLibraryCore.TagHelpers
+namespace SharedLibraryCore
 {
     [HtmlTargetElement("color-code")]
     public class ColorCode : TagHelper

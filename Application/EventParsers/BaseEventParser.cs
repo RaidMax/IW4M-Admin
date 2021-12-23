@@ -50,7 +50,7 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginName, 4);
 
-            Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,24})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,32});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,32})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Damage.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);
@@ -65,7 +65,7 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Damage.AddMapping(ParserRegex.GroupType.MeansOfDeath, 12);
             Configuration.Damage.AddMapping(ParserRegex.GroupType.HitLocation, 13);
 
-            Configuration.Kill.Pattern = @"^(K);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,24});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,24})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
+            Configuration.Kill.Pattern = @"^(K);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,32});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,32})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Kill.AddMapping(ParserRegex.GroupType.EventType, 1);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetNetworkId, 2);
             Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetClientNumber, 3);

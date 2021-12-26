@@ -1,5 +1,4 @@
-﻿using IW4MAdmin.Plugins.Stats.Config;
-using IW4MAdmin.Plugins.Stats.Helpers;
+﻿using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos.Meta.Responses;
@@ -15,9 +14,7 @@ using Data.Abstractions;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Server;
-using Humanizer;
 using Microsoft.Extensions.Logging;
-using SharedLibraryCore.Commands;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using Stats.Client.Abstractions;
 using Stats.Config;

@@ -19,7 +19,10 @@ using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Server;
 using Humanizer.Localisation;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
+using MySql.Data.MySqlClient;
+using Npgsql;
 using Stats.Client.Abstractions;
 using Stats.Config;
 using Stats.Helpers;
@@ -432,6 +435,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     return null;
                 }
 
+                if (pl.ClientId <= 0)
+                {
+                    _log.LogWarning("Stats for {Client} are not yet initialized", pl.ToString());
+                    return null;
+                }
+
                 // get the client's stats from the database if it exists, otherwise create and attach a new one
                 // if this fails we want to throw an exception
 
@@ -509,6 +518,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 _log.LogDebug("Added {client} to stats", pl.ToString());
 
                 return clientStats;
+            }
+
+            catch (DbUpdateException updateException) when (
+                updateException.InnerException is PostgresException {SqlState: "23503"}
+                || updateException.InnerException is SqliteException {SqliteErrorCode: 787}
+                || updateException.InnerException is MySqlException {SqlState: "23503"})
+            {
+                _log.LogWarning("Trying to add {Client} to stats before they have been added to the database",
+                    pl.ToString());
             }
 
             catch (Exception ex)
@@ -652,6 +670,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var clientDetection = attacker.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY);
                 var clientStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
+
+                if (clientDetection == null || clientStats?.ClientId == null)
+                {
+                    _log.LogWarning("Client stats state for {Client} is not yet initialized", attacker.ToString());
+                    return;
+                }
 
                 waiter = clientStats.ProcessingHit;
                 await waiter.WaitAsync(Utilities.DefaultCommandTimeout, Plugin.ServerManager.CancellationToken);

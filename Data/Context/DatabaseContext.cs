@@ -118,7 +118,7 @@ namespace Data.Context
                 ent.HasIndex(a => a.Name);
                 ent.Property(_alias => _alias.SearchableName).HasMaxLength(24);
                 ent.HasIndex(_alias => _alias.SearchableName);
-                ent.HasIndex(_alias => new {_alias.Name, _alias.IPAddress}).IsUnique();
+                ent.HasIndex(_alias => new {_alias.Name, _alias.IPAddress});
             });
 
             modelBuilder.Entity<EFMeta>(ent =>

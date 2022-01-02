@@ -153,7 +153,7 @@ namespace SharedLibraryCore.Services
                 {
                     _logger.LogDebug("[{Method}] creating new Link and Alias for {Entity}", nameof(HandleNewCreate), entity.ToString());
                     var link = new EFAliasLink();
-                    var alias = new EFAlias()
+                    var alias = new EFAlias
                     {
                         Name = entity.Name,
                         SearchableName = entity.Name.StripColors().ToLower(),
@@ -167,9 +167,18 @@ namespace SharedLibraryCore.Services
 
                 else
                 {
-                    _logger.LogDebug("[{Method}] associating new GUID {Guid} with existing alias id {aliasId} for {Entity}", 
-                        nameof(HandleNewCreate), entity.GuidString, existingAlias.AliasId, entity.ToString());
-                    client.CurrentAliasId = existingAlias.AliasId;
+                    _logger.LogDebug("[{Method}] associating new GUID {Guid} with new exact alias match with linkId {LinkId} for {Entity}", 
+                        nameof(HandleNewCreate), entity.GuidString, existingAlias.LinkId, entity.ToString());
+                    
+                    var alias = new EFAlias
+                    {
+                        Name = existingAlias.Name,
+                        SearchableName = entity.Name.StripColors().ToLower(),
+                        DateAdded = DateTime.UtcNow,
+                        IPAddress = entity.IPAddress,
+                        LinkId = existingAlias.LinkId
+                    };
+                    client.CurrentAlias = alias;
                     client.AliasLinkId = existingAlias.LinkId;
                 }
                 
@@ -338,7 +347,7 @@ namespace SharedLibraryCore.Services
                 return;
             }
 
-            if (existingExactAlias != null)
+            if (existingExactAlias != null && entity.AliasLinkId == existingExactAlias.LinkId)
             {
                 entity.CurrentAlias = existingExactAlias;
                 entity.CurrentAliasId = existingExactAlias.AliasId;

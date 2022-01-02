@@ -3,14 +3,16 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Data.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteDatabaseContext))]
-    partial class SqliteDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20220102214442_RemoveUniqueAliasIndexConstraint")]
+    partial class RemoveUniqueAliasIndexConstraint
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

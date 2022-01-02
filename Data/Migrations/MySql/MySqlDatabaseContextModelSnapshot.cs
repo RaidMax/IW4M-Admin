@@ -816,8 +816,7 @@ namespace Data.Migrations.MySql
 
                     b.HasIndex("SearchableName");
 
-                    b.HasIndex("Name", "IPAddress")
-                        .IsUnique();
+                    b.HasIndex("Name", "IPAddress");
 
                     b.ToTable("EFAlias");
                 });

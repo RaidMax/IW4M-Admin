@@ -836,8 +836,7 @@ namespace Data.Migrations.Postgresql
 
                     b.HasIndex("SearchableName");
 
-                    b.HasIndex("Name", "IPAddress")
-                        .IsUnique();
+                    b.HasIndex("Name", "IPAddress");
 
                     b.ToTable("EFAlias");
                 });

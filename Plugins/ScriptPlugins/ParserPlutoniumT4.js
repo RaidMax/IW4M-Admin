@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, Chase',
-    version: 0.3,
+    version: 0.4,
     name: 'Plutonium T4 MP Parser',
     isParser: true,
 
@@ -20,15 +20,16 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
         rconParser.Configuration.GuidNumberStyle              = 7; // Integer
         rconParser.Configuration.DefaultRConPort              = 28960;
-        
+        rconParser.Configuration.OverrideDvarNameMapping.Add('fs_homepath', 'fs_localAppData');
+
         rconParser.Configuration.DefaultInstallationDirectoryHint = '{LocalAppData}/Plutonium/storage/t4';
         
         rconParser.Version  = 'Plutonium T4';
         rconParser.GameName = 5; // T4
 
         eventParser.Configuration.GuidNumberStyle = 7; // Integer
-        eventParser.Configuration.GameDirectory   = 'raw';
- 
+        eventParser.Configuration.GameDirectory   = 'main';
+
         eventParser.Version  = 'Plutonium T4';
     },
 

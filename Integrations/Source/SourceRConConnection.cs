@@ -66,6 +66,7 @@ namespace Integrations.Source
                         // ignored
                     }
 
+                    await Task.Delay(ConnectionTimeout);
                     _rconClient = _rconClientFactory.CreateClient(_ipEndPoint);
                     _authenticated = false;
                     _needNewSocket = false;

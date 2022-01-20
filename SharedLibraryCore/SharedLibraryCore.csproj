@@ -19,7 +19,7 @@
         <IsPackable>true</IsPackable>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>Shared Library for IW4MAdmin</Description>
-        <PackageVersion>2022.01.08.2</PackageVersion>
+        <PackageVersion>2022.01.20.1</PackageVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">

@@ -114,7 +114,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Title += " " + Localization["WEBFRONT_CLIENT_PROFILE_TITLE"];
             ViewBag.Description = $"Client information for {strippedName}";
             ViewBag.Keywords = $"IW4MAdmin, client, profile, {strippedName}";
-            ViewBag.UseNewStats = _configurationHandler.Configuration().EnableAdvancedMetrics;
+            ViewBag.UseNewStats = _configurationHandler.Configuration()?.EnableAdvancedMetrics ?? true;
 
             return View("Profile/Index", clientDto);
         }

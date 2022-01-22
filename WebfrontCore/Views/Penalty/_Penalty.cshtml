@@ -9,7 +9,7 @@
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
     <td>
         <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.OffenderId" class="link-inverse">
-            <color-code value="@Model.OffenderName" allow="@ViewBag.EnableColorCodes"></color-code>
+            <color-code value="@Model.OffenderName"></color-code>
         </a>
     </td>
 </tr>
@@ -24,7 +24,7 @@
 <tr class="d-table-row d-lg-none bg-dark">
     <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
     <td class="text-light">
-        <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")" allow="@ViewBag.EnableColorCodes"></color-code>
+        <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>
     </td>
 </tr>
 
@@ -59,14 +59,14 @@
 <tr class="d-none d-lg-table-row">
     <td>
         <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.OffenderId" class="link-inverse">
-            <color-code value="@Model.OffenderName" allow="@ViewBag.EnableColorCodes"></color-code>
+            <color-code value="@Model.OffenderName"></color-code>
         </a>
     </td>
     <td class="penalties-color-@Model.PenaltyTypeText.ToLower()">
         @Model.PenaltyType
     </td>
     <td class="text-light w-50">
-        <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")" allow="@ViewBag.EnableColorCodes"></color-code>
+        <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>
     </td>
     <td>
         @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", 

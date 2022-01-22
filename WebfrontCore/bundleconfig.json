@@ -27,6 +27,7 @@
       "wwwroot/js/search.js",
       "wwwroot/js/loader.js",
       "wwwroot/js/stats.js",
+      "wwwroot/js/scoreboard.js",
       "wwwroot/js/configuration.js",
       "wwwroot/js/advanced_stats.js"
     ],

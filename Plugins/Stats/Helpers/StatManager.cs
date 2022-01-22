@@ -1289,12 +1289,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (!suicide)
             {
                 attackerStats.Kills += 1;
+                attackerStats.MatchData.Kills += 1;
                 attackerStats.SessionKills += 1;
                 attackerStats.KillStreak += 1;
                 attackerStats.DeathStreak = 0;
             }
 
             victimStats.Deaths += 1;
+            victimStats.MatchData.Deaths += 1;
             victimStats.SessionDeaths += 1;
             victimStats.DeathStreak += 1;
             victimStats.KillStreak = 0;
@@ -1444,6 +1446,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 session.stat?.StartNewSession();
                 session.detection?.OnMapChange();
+                session.stat?.MatchData?.StartNewMatch();
             }
         }
 

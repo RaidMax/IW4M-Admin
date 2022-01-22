@@ -7,21 +7,21 @@
     <tr class="d-none d-lg-table-row">
         <td>
             <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@message.ClientId" class="link-inverse">
-                <color-code value="@message.ClientName" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@message.ClientName"></color-code>
             </a>
         </td>
         <td class="text-light w-50 text-break">
             @if (message.IsHidden && !ViewBag.Authorized)
             {
-                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)"></color-code>
             }
             else
             {
-                <color-code value="@message.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@message.Message"></color-code>
             }
         </td>
         <td class="text-light">
-            <color-code value="@(message.ServerName ?? "--")" allow="@ViewBag.EnableColorCodes"></color-code>
+            <color-code value="@(message.ServerName ?? "--")"></color-code>
         </td>
         <td class="text-right text-light">
             @message.When
@@ -33,7 +33,7 @@
         <th scope="row" class="bg-primary">@ViewBag.Localization["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
         <td class="text-light">
             <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@message.ClientId" class="link-inverse">
-                <color-code value="@message.ClientName" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@message.ClientName"></color-code>
             </a>
         </td>
     </tr>
@@ -43,11 +43,11 @@
         <td class="text-light">
             @if (message.IsHidden && !ViewBag.Authorized)
             {
-                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)"></color-code>
             }
             else
             {
-                <color-code value="@message.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@message.Message"></color-code>
             }
         </td>
     </tr>
@@ -55,7 +55,7 @@
     <tr class="d-table-row d-lg-none bg-dark">
         <th scope="row" class="bg-primary">@ViewBag.Localization["WEBFRONT_STATS_MESSAGE_SERVER_NAME"]</th>
         <td class="text-light">
-            <color-code value="@(message.ServerName ?? "--")" allow="@ViewBag.EnableColorCodes"></color-code>
+            <color-code value="@(message.ServerName ?? "--")"></color-code>
         </td>
     </tr>
 

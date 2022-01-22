@@ -11,12 +11,12 @@
         
         @if (Model.IsHidden && !ViewBag.Authorized)
         {
-            <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], Model.HiddenMessage)" allow="@ViewBag.EnableColorCodes"></color-code>
+            <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], Model.HiddenMessage)"></color-code>
         }
 
         else
         {
-            <color-code value="@Model.Message" allow="@ViewBag.EnableColorCodes"></color-code>
+            <color-code value="@Model.Message"></color-code>
         }
     </span>
 </span>

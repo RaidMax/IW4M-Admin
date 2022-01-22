@@ -21,24 +21,24 @@
             {
                 <span class="text-light">
                     <span class="oi oi-account-login mr-2 text-success"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
                 </span><br />
             }
             if (Model.ChatHistory[i].Message == "DISCONNECTED")
             {
                 <span class="text-light">
                     <span class="oi oi-account-logout mr-2 text-danger"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
                 </span><br />
             }
             if (Model.ChatHistory[i].Message != "CONNECTED" && Model.ChatHistory[i].Message != "DISCONNECTED")
             {
                 <span class="text-light">
-                    <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
                 </span>
                 <span>
                     &mdash;
-                    <color-code value="@message.CapClientName(48)" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@message.CapClientName(48)"></color-code>
                 </span><br />
             }
         }
@@ -63,7 +63,7 @@
                         }
 
                         <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
-                            <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                            <color-code value="@Model.Players[i].Name"></color-code>
                         </a>
 
                         @if (ViewBag.Authorized)
@@ -88,7 +88,7 @@
 
                     <div>
                         <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
-                            <color-code value="@Model.Players[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                            <color-code value="@Model.Players[i].Name"></color-code>
                         </a>
                         @if (ViewBag.Authorized)
                         {
@@ -122,24 +122,24 @@
             {
                 <span class="text-light">
                     <span class="oi oi-account-login mr-2 text-success"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
                 </span><br />
             }
             if (Model.ChatHistory[i].Message == "DISCONNECTED")
             {
                 <span class="text-light">
                     <span class="oi oi-account-logout mr-2 text-danger"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
                 </span><br />
             }
             if (Model.ChatHistory[i].Message != "CONNECTED" && Model.ChatHistory[i].Message != "DISCONNECTED")
             {
                 <span class="text-light">
-                    <color-code value="@Model.ChatHistory[i].Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
                 </span>
                 <span>
                     &mdash;
-                    <color-code value="@message.CapClientName(48)" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@message.CapClientName(48)"></color-code>
                 </span><br />
             }
         }

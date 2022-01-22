@@ -17,7 +17,7 @@
         <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
         <td>
             <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.OriginId" class="link-inverse">
-                <color-code value="@info.OriginName" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@info.OriginName"></color-code>
             </a>
         </td>
     </tr>
@@ -27,7 +27,7 @@
             @if (info.TargetId != null)
             {
                 <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.TargetId" class="link-inverse">
-                    <color-code value="@info.TargetName" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@info.TargetName"></color-code>
                 </a>
             }
             else
@@ -68,14 +68,14 @@
         </td>
         <td>
             <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.OriginId" class="link-inverse">
-                <color-code value="@info.OriginName" allow="@ViewBag.EnableColorCodes"></color-code>
+                <color-code value="@info.OriginName"></color-code>
             </a>
         </td>
         <td>
             @if (info.TargetId != null)
             {
                 <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.TargetId" class="link-inverse">
-                    <color-code value="@info.TargetName" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@info.TargetName"></color-code>
                 </a>
             }
             else

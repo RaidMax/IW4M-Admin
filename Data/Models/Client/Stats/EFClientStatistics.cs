@@ -57,10 +57,11 @@ namespace Data.Models.Client.Stats
         public double MaxStrain { get; set; }
 
         [NotMapped]
-        public float AverageHitOffset
-        {
-            get => (float)Math.Round(HitLocations.Sum(c => c.HitOffsetAverage) / Math.Max(1, HitLocations.Where(c => c.HitOffsetAverage > 0).Count()), 4);
-        }
+        public float AverageHitOffset =>
+            (float) Math.Round(
+                HitLocations.Sum(c => c.HitOffsetAverage) /
+                Math.Max(1, HitLocations.Count(c => c.HitOffsetAverage > 0)), 4);
+
         [NotMapped]
         public int SessionKills { get; set; }
         [NotMapped]
@@ -82,26 +83,26 @@ namespace Data.Models.Client.Stats
             KillStreak = 0;
             DeathStreak = 0;
             LastScore = 0;
-            SessionScores.Add(0);
+            _sessionScores.Add(0);
             Team = 0;
         }
         [NotMapped]
         public int SessionScore
         {
-            set => SessionScores[SessionScores.Count - 1] = value;
+            set => _sessionScores[^1] = value;
 
             get
             {
-                lock (SessionScores)
+                lock (_sessionScores)
                 {
-                    return new List<int>(SessionScores).Sum();
+                    return new List<int>(_sessionScores).Sum();
                 }
             }
         }
         [NotMapped]
-        public int RoundScore => SessionScores[SessionScores.Count - 1];
+        public int RoundScore => _sessionScores[^1];
         [NotMapped]
-        private readonly List<int> SessionScores = new List<int>() { 0 };
+        private readonly List<int> _sessionScores = new List<int> { 0 };
         [NotMapped]
         public int Team { get; set; }
         [NotMapped]
@@ -109,6 +110,21 @@ namespace Data.Models.Client.Stats
         [NotMapped]
         public double SessionSPM { get; set; }
         [NotMapped]
-        public SemaphoreSlim ProcessingHit { get; private set; }
+        public SemaphoreSlim ProcessingHit { get; }
+
+        [NotMapped] public MatchData MatchData { get; } = new MatchData();
+    }
+
+    public class MatchData
+    {
+        public int Kills { get; set; }
+        public int Deaths { get; set; }
+        public double Kdr => Deaths == 0 ? Kills : Math.Round(Kills / (double) Deaths, 2);
+
+        public void StartNewMatch()
+        {
+            Kills = 0;
+            Deaths = 0;
+        }
     }
 }

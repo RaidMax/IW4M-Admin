@@ -14,7 +14,7 @@
                 @foreach (var client in Model[key])
                 {
                     <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
-                        <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                        <color-code value="@client.Name"></color-code>
                     </a>
                     <br />
                 }

@@ -17,7 +17,7 @@
             <div class="row pt-2 pb-2 bg-dark">
                 <div class="col-5">
                     <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
-                        <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                        <color-code value="@client.Name"></color-code>
                     </a>
                 </div>
                 @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
@@ -45,7 +45,7 @@
         <div class="col-7 bg-dark border-bottom">
             <div class="p-2">
                 <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="link-inverse">
-                    <color-code value="@client.Name" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@client.Name"></color-code>
                 </a>
             </div>
              @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)

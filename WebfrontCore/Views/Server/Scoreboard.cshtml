@@ -1,0 +1,30 @@
+﻿@model IEnumerable<WebfrontCore.ViewModels.ScoreboardInfo>
+
+<ul class="nav nav-tabs border-top border-bottom nav-fill row" role="tablist" id="scoreboard_servers">
+    @{ var i = 0; }
+    @foreach (var server in Model)
+    {
+        <li class="nav-item">
+            <a class="nav-link" href="#server_@server.ServerId" role="tab" data-toggle="tab" id="server_@(server.ServerId)_nav" data-serverid="@server.ServerId">
+                <color-code value="@server.ServerName"></color-code>
+            </a>
+        </li>
+        i++;
+    }
+</ul>
+<div class="tab-content border-bottom row">
+    @{ i = 0; }
+    @foreach (var server in Model)
+    {
+        <div role="tabpanel" class="scoreboard-container tab-pane striped flex-fill" id="server_@server.ServerId" data-server-id="@server.ServerId">
+            @await Html.PartialAsync("_Scoreboard", server)
+        </div>
+        i++;
+    }
+</div>
+
+@section scripts {
+    <environment include="Development">
+        <script type="text/javascript" src="~/js/scoreboard.js" defer="defer"></script>
+    </environment>
+}

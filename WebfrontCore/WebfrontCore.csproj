@@ -45,7 +45,6 @@
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
-    <Content Remove="wwwroot\images\icons\crosshair.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -17,7 +17,7 @@
             @foreach (SharedLibraryCore.Dtos.ServerInfo server in ViewBag.Servers)
             {
                 <li class="nav-item">
-                    <a asp-controller="Radar" asp-action="Index" asp-route-serverId="@server.ID" class="nav-link @(server.ID == ViewBag.ActiveServerId ? "active": "")" aria-selected="@(server.ID == ViewBag.ActiveServerId ? "true": "false")"><color-code value="@server.Name" allow="@ViewBag.EnableColorCodes"></color-code></a>
+                    <a asp-controller="Radar" asp-action="Index" asp-route-serverId="@server.ID" class="nav-link @(server.ID == ViewBag.ActiveServerId ? "active": "")" aria-selected="@(server.ID == ViewBag.ActiveServerId ? "true": "false")"><color-code value="@server.Name"></color-code></a>
                 </li>
             }
         </ul>

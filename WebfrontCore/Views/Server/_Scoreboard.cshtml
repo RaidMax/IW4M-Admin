@@ -1,0 +1,32 @@
+﻿@model WebfrontCore.ViewModels.ScoreboardInfo
+@{
+    Layout = null;
+}
+
+<table class="table table-striped thead-light bg-dark mb-0 table-responsive-md">
+    <tr class="bg-dark border-bottom">
+        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]</th>
+        <th>@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]</th>
+        <th>@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]</th>
+        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]</th>
+        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]</th>
+        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]</th>
+        <th class="text-right">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]</th>
+    </tr>
+    @foreach (var client in Model.ClientInfo.OrderByDescending(c => c.Score))
+    {
+        <tr>
+            <td>
+                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
+                    <color-code value="@client.ClientName"></color-code>
+                </a>
+            </td>
+            <td>@client.Score</td>
+            <td>@(client.Kills ?? 0)</td>
+            <td>@(client.Deaths ?? 0)</td>
+            <td>@Math.Round(client.Kdr ?? 0, 2)</td>
+            <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
+            <td class="text-right">@client.Ping</td>
+        </tr>
+    }
+</table>

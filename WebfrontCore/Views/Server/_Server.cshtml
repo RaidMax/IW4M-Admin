@@ -5,15 +5,19 @@
 
 <div class="row server-header pt-1 pb-1 bg-primary " id="server_header_@Model.ID">
     <div class="col-md-4 text-center text-md-left d-inline-flex justify-content-center justify-content-md-start">
-        <color-code value="@Model.Name" allow="@ViewBag.EnableColorCodes"></color-code>
-        <a href="@Model.ConnectProtocolUrl" class="ml-2 mr-2 align-self-center d-none d-md-flex server-join-button" title="@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
+        <color-code value="@Model.Name"></color-code>
+        <a href="@Model.ConnectProtocolUrl" class="ml-2 mr-2 align-self-center d-none d-md-flex server-join-button" title="@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
             <span class="oi oi-play-circle mr-1 align-self-center"></span>
             <span class="server-header-ip-address" style="display:none;">@Model.IPAddress</span>
         </a>
         @if (ViewBag.Authorized)
         {
-            <span class="oi oi-chat align-self-center profile-action d-none d-md-flex" data-action="chat" data-action-id="@Model.ID"></span>
+            <span class="oi oi-chat align-self-center profile-action d-none d-md-flex mr-2" data-action="chat" data-action-id="@Model.ID"></span>
         }
+        <a asp-controller="Server" asp-action="Scoreboard" asp-fragment="server_@Model.ID" title="@ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]"
+           class="align-self-center d-none d-md-flex">
+            <span class="oi oi-spreadsheet ml-1"></span>
+        </a>
     </div>
 
     <div class="text-center col-md-4 align-self-center">
@@ -39,10 +43,14 @@
 
     @if (ViewBag.Authorized)
     {
-        <div class=" p-1 d-flex d-md-none justify-content-center col-12">
+        <div class="p-1 d-flex d-md-none justify-content-center col-12">
             <span class="oi oi-chat align-self-center profile-action d-flex d-md-none" data-action="chat" data-action-id="@Model.ID"></span>
         </div>
     }
+    <a asp-controller="Server" asp-action="Scoreboard" title="@ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]"
+               class="p-1 d-flex d-md-none justify-content-center col-12">
+                <span class="oi oi-spreadsheet ml-1"></span>
+    </a>
 </div>
 
 <div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity @(Model.ClientCount > 0 ? "pt-2 pb-2" : "")">

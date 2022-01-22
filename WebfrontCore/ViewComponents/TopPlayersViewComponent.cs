@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using IW4MAdmin.Plugins.Stats;
-using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Interfaces;
@@ -33,9 +32,9 @@ namespace WebfrontCore.ViewComponents
             }
 
 
-            ViewBag.UseNewStats = _configurationHandler.Configuration().EnableAdvancedMetrics;
+            ViewBag.UseNewStats = _configurationHandler.Configuration()?.EnableAdvancedMetrics ?? true;
             return View("~/Views/Client/Statistics/Components/TopPlayers/_List.cshtml",
-                _configurationHandler.Configuration().EnableAdvancedMetrics
+                ViewBag.UseNewStats
                     ? await Plugin.Manager.GetNewTopStats(offset, count, serverId)
                     : await Plugin.Manager.GetTopStats(offset, count, serverId));
         }

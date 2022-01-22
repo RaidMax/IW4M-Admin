@@ -492,13 +492,17 @@ namespace IW4MAdmin.Application
 
             // this is because I want to store the command prefix in IW4MAdminSettings, but can't easily
             // inject it to all the places that need it
-            cmdConfig.CommandPrefix = _appConfig.CommandPrefix;
-            cmdConfig.BroadcastCommandPrefix = _appConfig.BroadcastCommandPrefix;
+            cmdConfig.CommandPrefix = _appConfig?.CommandPrefix ?? "!";
+            cmdConfig.BroadcastCommandPrefix = _appConfig?.BroadcastCommandPrefix ?? "@";
 
             foreach (var cmd in commandsToAddToConfig)
             {
+                if (cmdConfig.Commands.ContainsKey(cmd.CommandConfigNameForType()))
+                {
+                    continue;
+                }
                 cmdConfig.Commands.Add(cmd.CommandConfigNameForType(),
-                new CommandProperties()
+                new CommandProperties
                 {
                     Name = cmd.Name,
                     Alias = cmd.Alias,

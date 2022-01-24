@@ -13,9 +13,9 @@
 
     string GetColumnSortDisplay(string propertyName)
     {
-        if (propertyName == Model.OrderByKey)
+        if (propertyName == (Model.OrderByKey ?? nameof(ClientScoreboardInfo.Score)))
         {
-            return Model.ShouldOrderDescending ? "<span class=\"oi oi-sort-ascending ml-2 align-middle\"></span>" : "<span class=\"oi oi-sort-descending ml-2 align-middle\"></span>";
+            return Model.ShouldOrderDescending ? "<span class=\"ml-2\">▼</span>" : "<span class=\"ml-2\">▲</span>";
         }
 
         return null;
@@ -23,7 +23,7 @@
 }
 
 <table class="table table-striped thead-light bg-dark mb-0 table-responsive-md table-sort"
-       data-sort-column="@Model.OrderByKey"
+       data-sort-column="@(Model.OrderByKey ?? nameof(ClientScoreboardInfo.Score))"
        data-sort-down="@Model.ShouldOrderDescending.ToString().ToLower()">
     <tr class="bg-dark border-bottom">
         <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ClientName)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ClientName)))</th>

@@ -48,7 +48,7 @@
             <td>@(client.Deaths ?? 0)</td>
             <td>@Math.Round(client.Kdr ?? 0, 2)</td>
             <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
-            <td>@Math.Round(client.ZScore ?? 0)</td>
+            <td>@Math.Round(client.ZScore ?? 0, 2)</td>
             <td class="text-right">@client.Ping</td>
         </tr>
     }

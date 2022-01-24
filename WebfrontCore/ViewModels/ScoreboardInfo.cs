@@ -8,6 +8,8 @@ namespace WebfrontCore.ViewModels
        public string ServerName { get; set; }
        public long ServerId { get; set; }
        public string MapName { get; set; }
+       public string OrderByKey { get; set; }
+       public bool ShouldOrderDescending { get; set; }
        public List<ClientScoreboardInfo> ClientInfo { get; set; }
     }
     
@@ -21,5 +23,6 @@ namespace WebfrontCore.ViewModels
         public int? Deaths { get; set; }
         public double? ScorePerMinute { get; set; }
         public double? Kdr { get; set; }
+        public double? ZScore { get; set; }
     }
 }

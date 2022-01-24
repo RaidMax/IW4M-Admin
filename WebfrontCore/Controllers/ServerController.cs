@@ -58,11 +58,11 @@ namespace WebfrontCore.Controllers
         {
             ViewBag.Title = Localization["WEBFRONT_TITLE_SCOREBOARD"];
             
-            return View(ProjectScoreboard(Manager.GetServers()));
+            return View(ProjectScoreboard(Manager.GetServers(), null, true));
         }
 
         [HttpGet("[controller]/{id}/scoreboard")]
-        public ActionResult Scoreboard(long id)
+        public ActionResult Scoreboard(long id, [FromQuery]string order = null, [FromQuery] bool down = true)
         {
             var server = Manager.GetServers().FirstOrDefault(srv => srv.EndPoint == id);
 
@@ -71,13 +71,16 @@ namespace WebfrontCore.Controllers
                 return NotFound();
             }
 
-            return View("_Scoreboard", ProjectScoreboard(new[] {server}).First());
+            return View("_Scoreboard", ProjectScoreboard(new[] {server}, order, down).First());
         }
 
-        private IEnumerable<ScoreboardInfo> ProjectScoreboard(IEnumerable<Server> servers)
+        private static IEnumerable<ScoreboardInfo> ProjectScoreboard(IEnumerable<Server> servers, string order,
+            bool down)
         {
             return servers.Select(server => new ScoreboardInfo
             {
+                OrderByKey = order,
+                ShouldOrderDescending = down,
                 MapName = server.CurrentMap.ToString(),
                 ServerName = server.Hostname,
                 ServerId = server.EndPoint,
@@ -96,7 +99,8 @@ namespace WebfrontCore.Controllers
                         Kills = clientData.stats?.MatchData?.Kills,
                         Deaths = clientData.stats?.MatchData?.Deaths,
                         ScorePerMinute = clientData.stats?.SessionSPM,
-                        Kdr = clientData.stats?.MatchData?.Kdr
+                        Kdr = clientData.stats?.MatchData?.Kdr,
+                        ZScore = clientData.stats?.ZScore
                     })
                     .ToList()
             }).ToList();

@@ -1,19 +1,41 @@
-﻿@model WebfrontCore.ViewModels.ScoreboardInfo
+﻿@using WebfrontCore.ViewModels
+@model WebfrontCore.ViewModels.ScoreboardInfo
 @{
     Layout = null;
+
+    object OrderByFunc(ClientScoreboardInfo item)
+    {
+        var property = typeof(ClientScoreboardInfo).GetProperties().FirstOrDefault(prop =>
+            prop.CanRead && prop.Name.Equals(Model.OrderByKey, StringComparison.InvariantCultureIgnoreCase));
+
+        return property != null ? property.GetValue(item) : item.Score;
+    }
+
+    string GetColumnSortDisplay(string propertyName)
+    {
+        if (propertyName == Model.OrderByKey)
+        {
+            return Model.ShouldOrderDescending ? "<span class=\"oi oi-sort-ascending ml-2 align-middle\"></span>" : "<span class=\"oi oi-sort-descending ml-2 align-middle\"></span>";
+        }
+
+        return null;
+    }
 }
 
-<table class="table table-striped thead-light bg-dark mb-0 table-responsive-md">
+<table class="table table-striped thead-light bg-dark mb-0 table-responsive-md table-sort"
+       data-sort-column="@Model.OrderByKey"
+       data-sort-down="@Model.ShouldOrderDescending.ToString().ToLower()">
     <tr class="bg-dark border-bottom">
-        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]</th>
-        <th>@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]</th>
-        <th>@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]</th>
-        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]</th>
-        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]</th>
-        <th>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]</th>
-        <th class="text-right">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ClientName)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ClientName)))</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Score)">@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Score)))</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Kills)">@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Kills)))</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Deaths)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Deaths)))</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Kdr)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Kdr)))</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ScorePerMinute)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ScorePerMinute)))</th>
+        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ZScore)">@ViewBag.Localization["WEBFRONT_ADV_STATS_ZSCORE"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ZScore)))</th>
+        <th class="text-right table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Ping)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Ping)))</th>
     </tr>
-    @foreach (var client in Model.ClientInfo.OrderByDescending(c => c.Score))
+    @foreach (var client in Model.ShouldOrderDescending ? Model.ClientInfo.OrderByDescending(OrderByFunc) : Model.ClientInfo.OrderBy(OrderByFunc))
     {
         <tr>
             <td>
@@ -26,6 +48,7 @@
             <td>@(client.Deaths ?? 0)</td>
             <td>@Math.Round(client.Kdr ?? 0, 2)</td>
             <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
+            <td>@Math.Round(client.ZScore ?? 0)</td>
             <td class="text-right">@client.Ping</td>
         </tr>
     }

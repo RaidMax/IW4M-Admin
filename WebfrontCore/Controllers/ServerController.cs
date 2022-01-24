@@ -95,7 +95,7 @@ namespace WebfrontCore.Controllers
                     {
                         ClientName = clientData.client.Name,
                         ClientId = clientData.client.ClientId,
-                        Score = Math.Max(clientData.client.Score, clientData.stats?.SessionScore ?? 0),
+                        Score = Math.Max(clientData.client.Score, clientData.stats?.RoundScore ?? 0),
                         Ping = clientData.client.Ping,
                         Kills = clientData.stats?.MatchData?.Kills,
                         Deaths = clientData.stats?.MatchData?.Deaths,

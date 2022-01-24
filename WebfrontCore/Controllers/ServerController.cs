@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -94,7 +95,7 @@ namespace WebfrontCore.Controllers
                     {
                         ClientName = clientData.client.Name,
                         ClientId = clientData.client.ClientId,
-                        Score = clientData.client.Score,
+                        Score = Math.Max(clientData.client.Score, clientData.stats.SessionScore),
                         Ping = clientData.client.Ping,
                         Kills = clientData.stats?.MatchData?.Kills,
                         Deaths = clientData.stats?.MatchData?.Deaths,

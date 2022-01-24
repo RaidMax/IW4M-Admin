@@ -121,7 +121,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             return (ranking) => ranking.ServerId == serverId
                                 && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
-                                && ranking.Client.LastConnection >= Extensions.FifteenDaysAgo()
+                                && ranking.CreatedDateTime >= Extensions.FifteenDaysAgo()
                                 && ranking.ZScore != null
                                 && ranking.PerformanceMetric != null
                                 && ranking.Newest
@@ -895,13 +895,25 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task AddStandardKill(EFClient attacker, EFClient victim)
         {
-            long serverId = GetIdForServer(attacker.CurrentServer);
+            var serverId = GetIdForServer(attacker.CurrentServer);
 
             var attackerStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             var victimStats = victim.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
 
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
+            
+            if (attackerStats == null)
+            {
+                _log.LogWarning("Stats for {Client} are not yet initialized", attacker.ToString());
+                return;
+            }
+            
+            if (victimStats == null)
+            {
+                _log.LogWarning("Stats for {Client} are not yet initialized", victim.ToString());
+                return;
+            }
             
             // this happens when the round has changed
             if (attackerStats.SessionScore == 0)
@@ -961,7 +973,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update their performance 
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >=
-                (Utilities.IsDevelopment ? 0.5 : _configHandler.Configuration().EnableAdvancedMetrics ? 10.0 : 2.5))
+                (Utilities.IsDevelopment ? 0.5 : _configHandler.Configuration().EnableAdvancedMetrics ? 5.0 : 2.5))
             {
                 try
                 {
@@ -1178,16 +1190,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public async Task UpdateHistoricalRanking(int clientId, EFClientStatistics clientStats, long serverId)
         {
             await using var context = _contextFactory.CreateContext();
+            var minPlayTime = _configHandler.Configuration().TopPlayersMinPlayTime;
             
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
                 .Where(stats => stats.UpdatedAt >= Extensions.FifteenDaysAgo())
-                .Where(stats => stats.TimePlayed >= _configHandler.Configuration().TopPlayersMinPlayTime)
+                .Where(stats => stats.TimePlayed >= minPlayTime)
                 .ToListAsync();
             
-            if (clientStats.TimePlayed >= _configHandler.Configuration().TopPlayersMinPlayTime)
+            if (clientStats.TimePlayed >= minPlayTime)
             {
                 clientStats.ZScore = await _serverDistributionCalculator.GetZScoreForServer(serverId,
                     clientStats.Performance);
@@ -1198,7 +1211,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         _configHandler.Configuration().TopPlayersMinPlayTime, clientStats.ZScore, serverId))
                     .CountAsync();
 
-                var serverRankingSnapshot = new EFClientRankingHistory()
+                var serverRankingSnapshot = new EFClientRankingHistory
                 {
                     ClientId = clientId,
                     ServerId = serverId,
@@ -1215,27 +1228,35 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 performances.Add(clientStats);
             }
 
-            if (performances.Any(performance => performance.TimePlayed >= _configHandler.Configuration().TopPlayersMinPlayTime))
+            if (performances.Any(performance => performance.TimePlayed >= minPlayTime))
             {
-                var aggregateZScore = performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), _configHandler.Configuration().TopPlayersMinPlayTime);
+                var aggregateZScore = performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
                 
                 int? aggregateRanking = await context.Set<EFClientStatistics>()
                     .Where(stat => stat.ClientId != clientId)
-                    .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(_configHandler.Configuration()
-                        .TopPlayersMinPlayTime))
+                    .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime))
                     .GroupBy(stat => stat.ClientId)
                     .Where(group =>
                         group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
                         aggregateZScore)
                     .Select(c => c.Key)
                     .CountAsync();
+
+                var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore);
+
+                if (newPerformanceMetric == null)
+                {
+                    _log.LogWarning("Could not determine performance metric for {Client} {AggregateZScore}",
+                        clientStats.Client?.ToString(), aggregateZScore);
+                    return;
+                }
                 
-                var aggregateRankingSnapshot = new EFClientRankingHistory()
+                var aggregateRankingSnapshot = new EFClientRankingHistory
                 {
                     ClientId = clientId,
                     ZScore = aggregateZScore,
                     Ranking = aggregateRanking,
-                    PerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore),
+                    PerformanceMetric = newPerformanceMetric,
                     Newest = true,
                 };
 

@@ -22,7 +22,7 @@ namespace Stats.Client
 
         private readonly IDataValueCache<EFClientStatistics, Dictionary<long, Extensions.LogParams>>
             _distributionCache;
-        
+
         private readonly IDataValueCache<EFClientStatistics, double>
             _maxZScoreCache;
 
@@ -51,9 +51,9 @@ namespace Stats.Client
                 var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
 
                 var distributions = new Dictionary<long, Extensions.LogParams>();
-                
+
                 await LoadServers();
-                
+
                 foreach (var serverId in _serverIds)
                 {
                     var performance = await set
@@ -63,14 +63,14 @@ namespace Stats.Client
                         .Where(s => s.Client.Level != EFClient.Permission.Banned)
                         .Where(s => s.TimePlayed >= validPlayTime)
                         .Where(s => s.UpdatedAt >= Extensions.FifteenDaysAgo())
-                        .Select(s => s.EloRating * 1/3.0 + s.Skill * 2/3.0).ToListAsync();
+                        .Select(s => s.EloRating * 1 / 3.0 + s.Skill * 2 / 3.0).ToListAsync();
                     var distributionParams = performance.GenerateDistributionParameters();
                     distributions.Add(serverId, distributionParams);
                 }
 
                 return distributions;
             }), DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(1));
-            
+
             _maxZScoreCache.SetCacheItem(async (set, token) =>
             {
                 var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
@@ -79,13 +79,16 @@ namespace Stats.Client
                     .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(validPlayTime))
                     .Where(s => s.Skill > 0)
                     .Where(s => s.EloRating > 0)
-                    .MaxAsync(s => (double?)s.ZScore, token);
+                    .GroupBy(stat => stat.ClientId)
+                    .Select(group =>
+                        group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed))
+                    .MaxAsync(avgZScore => (double?) avgZScore, token);
                 return zScore ?? 0;
             }, MaxZScoreCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30));
 
             await _distributionCache.GetCacheItem(DistributionCacheKey);
-            await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey); 
-            
+            await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey);
+
             /*foreach (var serverId in _serverIds)
             {
                 await using var ctx = _contextFactory.CreateContext(enableTracking: true);
@@ -138,6 +141,7 @@ namespace Stats.Client
             {
                 return 0.0;
             }
+
             var zScore = (Math.Log(value) - sdParams.Mean) / sdParams.Sigma;
             return zScore;
         }
@@ -145,7 +149,7 @@ namespace Stats.Client
         public async Task<double?> GetRatingForZScore(double? value)
         {
             var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey);
-            return maxZScore == 0 ? 0 : value.GetRatingForZScore(maxZScore);
+            return maxZScore == 0 ? null : value.GetRatingForZScore(maxZScore);
         }
     }
 }

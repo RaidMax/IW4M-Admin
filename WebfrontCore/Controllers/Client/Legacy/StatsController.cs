@@ -91,14 +91,15 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
             var whenUpper = whenTime.AddMinutes(5);
             var whenLower = whenTime.AddMinutes(-5);
 
-            var messages = await _chatResourceQueryHelper.QueryResource(new ChatSearchQuery()
+            var messages = await _chatResourceQueryHelper.QueryResource(new ChatSearchQuery
             {
                 ServerId = serverId,
                 SentBefore = whenUpper,
                 SentAfter = whenLower
             });
 
-            return View("~/Views/Client/_MessageContext.cshtml", messages.Results.ToList());
+            return View("~/Views/Client/_MessageContext.cshtml",
+                messages.Results.OrderBy(message => message.When).ToList());
         }
 
         [HttpGet("Message/Find")]

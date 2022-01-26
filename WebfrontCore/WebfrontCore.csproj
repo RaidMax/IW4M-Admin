@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
     <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
@@ -50,16 +50,13 @@
   <ItemGroup>
     <PackageReference Include="BuildWebCompiler" Version="1.12.405" />
     <PackageReference Include="BundlerMinifier.Core" Version="3.2.449" />
-    <PackageReference Include="FluentValidation.AspNetCore" Version="9.3.0" />
-    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.113" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.161" />
   </ItemGroup>
 
   <ItemGroup>
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="3.2.449" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)'=='Debug'">
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -92,6 +89,6 @@
   </Target>
 
   <Target Name="MyPreCompileTarget" BeforeTargets="Build" Condition="'$(Configuration)'!='Debug'">
-   <Exec Command="dotnet bundle" />
+   <!--<Exec Command="dotnet bundle" />-->
   </Target>
 </Project>

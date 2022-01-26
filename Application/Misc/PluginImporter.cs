@@ -83,19 +83,47 @@ namespace IW4MAdmin.Application.Misc
                         .GroupBy(_assembly => _assembly.FullName).Select(_assembly => _assembly.OrderByDescending(_assembly => _assembly.GetName().Version).First());
 
                     pluginTypes = assemblies
-                        .SelectMany(_asm => _asm.GetTypes())
+                        .SelectMany(_asm =>
+                        {
+                            try
+                            {
+                                return _asm.GetTypes();
+                            }
+                            catch
+                            {
+                                return Enumerable.Empty<Type>();
+                            }
+                        })
                         .Where(_assemblyType => _assemblyType.GetInterface(nameof(IPlugin), false) != null);
 
                     _logger.LogDebug("Discovered {count} plugin implementations", pluginTypes.Count());
 
                     commandTypes = assemblies
-                        .SelectMany(_asm => _asm.GetTypes())
+                        .SelectMany(_asm =>{
+                            try
+                            {
+                                return _asm.GetTypes();
+                            }
+                            catch
+                            {
+                                return Enumerable.Empty<Type>();
+                            }
+                        })
                         .Where(_assemblyType => _assemblyType.IsClass && _assemblyType.BaseType == typeof(Command));
 
                     _logger.LogDebug("Discovered {count} plugin commands", commandTypes.Count());
 
                     configurationTypes = assemblies
-                        .SelectMany(asm => asm.GetTypes())
+                        .SelectMany(asm => {
+                            try
+                            {
+                                return asm.GetTypes();
+                            }
+                            catch
+                            {
+                                return Enumerable.Empty<Type>();
+                            }
+                        })
                         .Where(asmType =>
                             asmType.IsClass && asmType.GetInterface(nameof(IBaseConfiguration), false) != null);
 

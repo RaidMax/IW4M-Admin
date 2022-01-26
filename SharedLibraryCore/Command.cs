@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Models.Client;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -11,13 +11,17 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 namespace SharedLibraryCore
 {
     /// <summary>
-    /// Abstract class for command
+    ///     Abstract class for command
     /// </summary>
     public abstract class Command : IManagerCommand
     {
         protected readonly CommandConfiguration _config;
         protected readonly ITranslationLookup _translationLookup;
+        private string alias;
         protected ILogger logger;
+        private string name;
+        private EFClient.Permission permission;
+        private Game[] supportedGames;
 
         public Command(CommandConfiguration config, ITranslationLookup layout)
         {
@@ -27,14 +31,25 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// Executes the command
+        ///     Helper property to determine the number of required args
+        /// </summary>
+        public int RequiredArgumentCount => Arguments.Count(c => c.Required);
+
+
+        /// <summary>
+        ///     Argument list for the command
+        /// </summary>
+        public CommandArgument[] Arguments { get; protected set; } = new CommandArgument[0];
+
+        /// <summary>
+        ///     Executes the command
         /// </summary>
         /// <param name="gameEvent"></param>
         /// <returns></returns>
-        abstract public Task ExecuteAsync(GameEvent gameEvent);
+        public abstract Task ExecuteAsync(GameEvent gameEvent);
 
         /// <summary>
-        /// Specifies the name and string that triggers the command
+        ///     Specifies the name and string that triggers the command
         /// </summary>
         public string Name
         {
@@ -52,20 +67,20 @@ namespace SharedLibraryCore
                 }
             }
         }
-        private string name;
 
         /// <summary>
-        /// Specifies the command description
+        ///     Specifies the command description
         /// </summary>
         public string Description { get; protected set; }
 
         /// <summary>
-        /// Helper property to provide the syntax of the command
+        ///     Helper property to provide the syntax of the command
         /// </summary>
-        public string Syntax => $"{_translationLookup["COMMAND_HELP_SYNTAX"]} {_config.CommandPrefix ?? "!"}{Alias} {string.Join(" ", Arguments.Select(a => $"<{(a.Required ? "" : _translationLookup["COMMAND_HELP_OPTIONAL"] + " ")}{a.Name}>"))}";
+        public string Syntax =>
+            $"{_translationLookup["COMMAND_HELP_SYNTAX"]} {_config.CommandPrefix ?? "!"}{Alias} {string.Join(" ", Arguments.Select(a => $"<{(a.Required ? "" : _translationLookup["COMMAND_HELP_OPTIONAL"] + " ")}{a.Name}>"))}";
 
         /// <summary>
-        /// Alternate name for this command to be executed by
+        ///     Alternate name for this command to be executed by
         /// </summary>
         public string Alias
         {
@@ -83,20 +98,14 @@ namespace SharedLibraryCore
                 }
             }
         }
-        private string alias;
 
         /// <summary>
-        /// Helper property to determine the number of required args
-        /// </summary>
-        public int RequiredArgumentCount => Arguments.Count(c => c.Required);
-
-        /// <summary>
-        /// Indicates if the command requires a target to execute on
+        ///     Indicates if the command requires a target to execute on
         /// </summary>
         public bool RequiresTarget { get; protected set; }
 
         /// <summary>
-        /// Minimum permission level to execute command
+        ///     Minimum permission level to execute command
         /// </summary>
         public EFClient.Permission Permission
         {
@@ -114,7 +123,6 @@ namespace SharedLibraryCore
                 }
             }
         }
-        private EFClient.Permission permission;
 
         public Game[] SupportedGames
         {
@@ -124,7 +132,7 @@ namespace SharedLibraryCore
                 try
                 {
                     var savedGames = _config?.Commands[GetType().Name].SupportedGames;
-                    supportedGames =  savedGames?.Length != 0 ? savedGames : value;
+                    supportedGames = savedGames?.Length != 0 ? savedGames : value;
                 }
 
                 catch (KeyNotFoundException)
@@ -133,16 +141,9 @@ namespace SharedLibraryCore
                 }
             }
         }
-        private Game[] supportedGames;
-
 
         /// <summary>
-        /// Argument list for the command
-        /// </summary>
-        public CommandArgument[] Arguments { get; protected set; } = new CommandArgument[0];
-
-        /// <summary>
-        /// indicates if this command allows impersonation (run as)
+        ///     indicates if this command allows impersonation (run as)
         /// </summary>
         public bool AllowImpersonation { get; set; }
 

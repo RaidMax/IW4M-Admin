@@ -1,10 +1,9 @@
 ﻿using FluentValidation;
-using System.Net;
 
 namespace SharedLibraryCore.Configuration.Validation
 {
     /// <summary>
-    /// Validation class for server configuration
+    ///     Validation class for server configuration
     /// </summary>
     public class ServerConfigurationValidator : AbstractValidator<ServerConfiguration>
     {

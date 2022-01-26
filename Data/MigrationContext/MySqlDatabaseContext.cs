@@ -24,9 +24,9 @@ namespace Data.MigrationContext
         {
             if (MigrationExtensions.IsMigration)
             {
-                optionsBuilder.UseMySql("Server=127.0.0.1;Database=IW4MAdmin_Migration;Uid=root;Pwd=password;")
-                    .EnableDetailedErrors(true)
-                    .EnableSensitiveDataLogging(true);
+                optionsBuilder.UseMySql(ServerVersion.AutoDetect("Server=127.0.0.1;Database=IW4MAdmin_Migration;Uid=root;Pwd=password;"))
+                    .EnableDetailedErrors()
+                    .EnableSensitiveDataLogging();
             }
         }
     }

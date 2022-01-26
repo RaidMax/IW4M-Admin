@@ -15,6 +15,9 @@
             return false;
         }
 
-        public override int GetHashCode() => $"{Name.StripColors()}{IPAddress}".GetStableHashCode();
+        public override int GetHashCode()
+        {
+            return $"{Name.StripColors()}{IPAddress}".GetStableHashCode();
+        }
     }
 }

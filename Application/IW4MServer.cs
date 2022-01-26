@@ -53,7 +53,9 @@ namespace IW4MAdmin
             IServiceProvider serviceProvider,
             IClientNoticeMessageFormatter messageFormatter,
             ILookupCache<EFServer> serverCache) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
+#pragma warning disable CS0612
             serviceProvider.GetRequiredService<SharedLibraryCore.Interfaces.ILogger>(), 
+#pragma warning restore CS0612
             serverConfiguration,
             serviceProvider.GetRequiredService<IManager>(), 
             serviceProvider.GetRequiredService<IRConConnectionFactory>(),

@@ -93,9 +93,6 @@ namespace IW4MAdmin.Application.Misc
 
         public async Task RunUploadStatus(CancellationToken token)
         {
-            // todo: clean up this logic
-            bool connected;
-
             while (!token.IsCancellationRequested)
             {
                 try
@@ -103,39 +100,10 @@ namespace IW4MAdmin.Application.Misc
                     await UploadStatus();
                 }
 
-                catch (System.Net.Http.HttpRequestException e)
+                catch (Exception ex)
                 {
-                    _logger.LogWarning(e, "Could not send heartbeat");
+                    _logger.LogWarning(ex, "Could not send heartbeat");
                 }
-
-                catch (AggregateException e)
-                {
-                    _logger.LogWarning(e, "Could not send heartbeat");
-                    var exceptions = e.InnerExceptions.Where(ex => ex.GetType() == typeof(ApiException));
-
-                    foreach (var ex in exceptions)
-                    {
-                        if (((ApiException)ex).StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                        {
-                            connected = false;
-                        }
-                    }
-                }
-
-                catch (ApiException e)
-                {
-                    _logger.LogWarning(e, "Could not send heartbeat");
-                    if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                    {
-                        connected = false;
-                    }
-                }
-
-                catch (Exception e)
-                {
-                    _logger.LogWarning(e, "Could not send heartbeat");
-                }
-
 
                 try
                 {

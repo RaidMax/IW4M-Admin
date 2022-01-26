@@ -9,27 +9,27 @@ namespace SharedLibraryCore.Dtos.Meta.Responses
         public bool IsHidden { get; set; }
 
         /// <summary>
-        /// name of the client
+        ///     name of the client
         /// </summary>
         public string ClientName { get; set; }
 
         /// <summary>
-        /// hostname of the server
+        ///     hostname of the server
         /// </summary>
         public string ServerName { get; set; }
 
         /// <summary>
-        /// specifies the game the chat occured on
+        ///     specifies the game the chat occured on
         /// </summary>
         public Server.Game GameName { get; set; }
 
         /// <summary>
-        /// indicates if the chat message is a quick message phrase
+        ///     indicates if the chat message is a quick message phrase
         /// </summary>
         public bool IsQuickMessage { get; set; }
-        
+
         /// <summary>
-        /// indicates if the message was sent ingame
+        ///     indicates if the message was sent ingame
         /// </summary>
         public bool SentIngame { get; set; }
 

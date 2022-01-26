@@ -8,12 +8,18 @@ namespace SharedLibraryCore.Configuration
         public string[] GlobalRules { get; set; }
         public MapConfiguration[] Maps { get; set; }
         public GametypeConfiguration[] Gametypes { get; set; }
-        public QuickMessageConfiguration[] QuickMessages {get; set;}
+        public QuickMessageConfiguration[] QuickMessages { get; set; }
         public string[] DisallowedClientNames { get; set; }
         public GameStringConfiguration GameStrings { get; set; }
 
-        public IBaseConfiguration Generate() => this;
+        public IBaseConfiguration Generate()
+        {
+            return this;
+        }
 
-        public string Name() => "DefaultConfiguration";
+        public string Name()
+        {
+            return "DefaultConfiguration";
+        }
     }
 }

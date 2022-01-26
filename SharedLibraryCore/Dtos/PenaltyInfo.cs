@@ -22,11 +22,20 @@ namespace SharedLibraryCore.Dtos
         public string PenaltyTypeText => PenaltyType.ToString();
         public DateTime TimePunished { get; set; }
         public string TimePunishedString => TimePunished.HumanizeForCurrentCulture();
-        public string TimeRemaining => DateTime.UtcNow > Expires ? "" : $"{((Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? TimePunishedString : ((Expires ?? DateTime.MaxValue) - DateTime.UtcNow).HumanizeForCurrentCulture())}";
+
+        public string TimeRemaining => DateTime.UtcNow > Expires
+            ? ""
+            : $"{((Expires ?? DateTime.MaxValue).Year == DateTime.MaxValue.Year ? TimePunishedString : ((Expires ?? DateTime.MaxValue) - DateTime.UtcNow).HumanizeForCurrentCulture())}";
+
         public bool Expired => Expires.HasValue && Expires <= DateTime.UtcNow;
         public DateTime? Expires { get; set; }
-        public override bool Sensitive => PenaltyType == EFPenalty.PenaltyType.Flag || PenaltyType == EFPenalty.PenaltyType.Unflag;
+
+        public override bool Sensitive =>
+            PenaltyType == EFPenalty.PenaltyType.Flag || PenaltyType == EFPenalty.PenaltyType.Unflag;
+
         public bool IsEvade { get; set; }
-        public string AdditionalPenaltyInformation => $"{(!string.IsNullOrEmpty(AutomatedOffense) ? $" ({AutomatedOffense})" : "")}{(IsEvade ? $" ({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]})" : "")}";
+
+        public string AdditionalPenaltyInformation =>
+            $"{(!string.IsNullOrEmpty(AutomatedOffense) ? $" ({AutomatedOffense})" : "")}{(IsEvade ? $" ({Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PENALTY_EVADE"]})" : "")}";
     }
 }

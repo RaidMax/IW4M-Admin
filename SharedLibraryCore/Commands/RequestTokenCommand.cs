@@ -1,12 +1,12 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
+﻿using System.Threading.Tasks;
+using Data.Models.Client;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Commands
 {
     /// <summary>
-    /// Generates a token for use in webfront login
+    ///     Generates a token for use in webfront login
     /// </summary>
     public class RequestTokenCommand : Command
     {
@@ -22,7 +22,8 @@ namespace SharedLibraryCore.Commands
         public override Task ExecuteAsync(GameEvent E)
         {
             var state = E.Owner.Manager.TokenAuthenticator.GenerateNextToken(E.Origin.NetworkId);
-            E.Origin.Tell(string.Format(_translationLookup["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token, $"{state.RemainingTime} {_translationLookup["GLOBAL_MINUTES"]}", E.Origin.ClientId));
+            E.Origin.Tell(string.Format(_translationLookup["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token,
+                $"{state.RemainingTime} {_translationLookup["GLOBAL_MINUTES"]}", E.Origin.ClientId));
 
             return Task.CompletedTask;
         }

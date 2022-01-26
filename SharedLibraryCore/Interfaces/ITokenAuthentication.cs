@@ -1,21 +1,18 @@
 ﻿using SharedLibraryCore.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SharedLibraryCore.Interfaces
 {
     public interface ITokenAuthentication
     {
         /// <summary>
-        /// generates and returns a token for the given network id
+        ///     generates and returns a token for the given network id
         /// </summary>
         /// <param name="networkId">network id of the players to generate the token for</param>
         /// <returns>4 character string token</returns>
         TokenState GenerateNextToken(long networkId);
 
         /// <summary>
-        /// authorizes given token
+        ///     authorizes given token
         /// </summary>
         /// <param name="token">token to authorize</param>
         /// <returns>true if token authorized successfully, false otherwise</returns>

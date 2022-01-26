@@ -6,6 +6,7 @@ using SharedLibraryCore.Database.Models;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using Humanizer;
 using Data.Abstractions;
@@ -105,11 +106,11 @@ namespace IW4MAdmin.Plugins.Welcome
         /// <returns></returns>
         private async Task<string> GetCountryName(string ip)
         {
-            using var wc = new WebClient();
+            using var wc = new HttpClient();
             try
             {
                 var response =
-                    await wc.DownloadStringTaskAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}?key=demo"));
+                    await wc.GetStringAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}?key=demo"));
                 var responseObj = JObject.Parse(response);
                 response = responseObj["country"]?.ToString();
 

@@ -3,7 +3,7 @@
 namespace SharedLibraryCore.Interfaces
 {
     /// <summary>
-    /// describes all the base attributes of a client meta object
+    ///     describes all the base attributes of a client meta object
     /// </summary>
     public interface IClientMeta
     {

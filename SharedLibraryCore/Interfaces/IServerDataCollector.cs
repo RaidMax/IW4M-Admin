@@ -7,7 +7,7 @@ namespace SharedLibraryCore.Interfaces
     public interface IServerDataCollector
     {
         /// <summary>
-        /// Begins to collection on servers for analytical purposes
+        ///     Begins to collection on servers for analytical purposes
         /// </summary>
         /// <param name="period">interval at which to collect data</param>
         /// <param name="cancellationToken">Token</param>

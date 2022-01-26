@@ -1,36 +1,35 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Exceptions;
 
 namespace SharedLibraryCore.Commands
 {
     public class CommandProcessing
     {
-        public static async Task<Command> ValidateCommand(GameEvent E, ApplicationConfiguration appConfig, CommandConfiguration commandConfig)
+        public static async Task<Command> ValidateCommand(GameEvent E, ApplicationConfiguration appConfig,
+            CommandConfiguration commandConfig)
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             var Manager = E.Owner.Manager;
-            bool isBroadcast = E.Data.StartsWith(appConfig.BroadcastCommandPrefix);
-            int prefixLength = isBroadcast ? appConfig.BroadcastCommandPrefix.Length : appConfig.CommandPrefix.Length;
+            var isBroadcast = E.Data.StartsWith(appConfig.BroadcastCommandPrefix);
+            var prefixLength = isBroadcast ? appConfig.BroadcastCommandPrefix.Length : appConfig.CommandPrefix.Length;
 
-            string CommandString = E.Data.Substring(prefixLength, E.Data.Length - prefixLength).Split(' ')[0];
+            var CommandString = E.Data.Substring(prefixLength, E.Data.Length - prefixLength).Split(' ')[0];
             E.Message = E.Data;
 
             Command C = null;
             foreach (Command cmd in Manager.GetCommands()
-                .Where(c => c.Name != null))
-            {
-                if (cmd.Name.Equals(CommandString, StringComparison.OrdinalIgnoreCase) || 
+                         .Where(c => c.Name != null))
+                if (cmd.Name.Equals(CommandString, StringComparison.OrdinalIgnoreCase) ||
                     (cmd.Alias ?? "").Equals(CommandString, StringComparison.OrdinalIgnoreCase))
                 {
                     C = cmd;
                 }
-            }
 
             if (C == null)
             {
@@ -43,7 +42,7 @@ namespace SharedLibraryCore.Commands
             var allowImpersonation = commandConfig?.Commands?.ContainsKey(C.GetType().Name) ?? false
                 ? commandConfig.Commands[C.GetType().Name].AllowImpersonation
                 : C.AllowImpersonation;
-            
+
             if (!allowImpersonation && E.ImpersonationOrigin != null)
             {
                 E.ImpersonationOrigin.Tell(loc["COMMANDS_RUN_AS_FAIL"]);
@@ -51,7 +50,7 @@ namespace SharedLibraryCore.Commands
             }
 
             E.Data = E.Data.RemoveWords(1);
-            String[] Args = E.Data.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var Args = E.Data.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             // todo: the code below can be cleaned up 
 
             if (E.Origin.Level < C.Permission)
@@ -60,7 +59,7 @@ namespace SharedLibraryCore.Commands
                 throw new CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
             }
 
-            if (Args.Length < (C.RequiredArgumentCount))
+            if (Args.Length < C.RequiredArgumentCount)
             {
                 E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
                 E.Origin.Tell(C.Syntax);
@@ -71,14 +70,14 @@ namespace SharedLibraryCore.Commands
             {
                 if (Args.Length > 0)
                 {
-                    if (!Int32.TryParse(Args[0], out int cNum))
+                    if (!int.TryParse(Args[0], out var cNum))
                     {
                         cNum = -1;
                     }
 
                     if (Args[0][0] == '@') // user specifying target by database ID
                     {
-                        int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out int dbID);
+                        int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out var dbID);
 
                         var found = await Manager.GetClientService().Get(dbID);
                         if (found != null)
@@ -90,12 +89,13 @@ namespace SharedLibraryCore.Commands
                         }
                     }
 
-                    else if (Args[0].Length < 3 && cNum > -1 && cNum < E.Owner.MaxClients) // user specifying target by client num
+                    else if (Args[0].Length < 3 && cNum > -1 && cNum < E.Owner.MaxClients
+                            ) // user specifying target by client num
                     {
                         if (E.Owner.Clients[cNum] != null)
                         {
                             E.Target = E.Owner.Clients[cNum];
-                            E.Data = String.Join(" ", Args.Skip(1));
+                            E.Data = string.Join(" ", Args.Skip(1));
                         }
                     }
                 }
@@ -111,11 +111,11 @@ namespace SharedLibraryCore.Commands
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
 
-                    else if (matchingPlayers.Count == 1)
+                    if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
 
-                        string escapedName = Regex.Escape(E.Target.CleanedName);
+                        var escapedName = Regex.Escape(E.Target.CleanedName);
                         var reg = new Regex($"(\"{escapedName}\")|({escapedName})", RegexOptions.IgnoreCase);
                         E.Data = reg.Replace(E.Data, "", 1).Trim();
 
@@ -135,23 +135,21 @@ namespace SharedLibraryCore.Commands
                     {
                         E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         foreach (var p in matchingPlayers)
-                        {
                             E.Origin.Tell($"[(Color::Yellow){p.ClientNumber}(Color::White)] {p.Name}");
-                        }
                         throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
                     }
 
-                    else if (matchingPlayers.Count == 1)
+                    if (matchingPlayers.Count == 1)
                     {
                         E.Target = matchingPlayers.First();
 
-                        string escapedName = Regex.Escape(E.Target.CleanedName);
-                        string escapedArg = Regex.Escape(Args[0]);
+                        var escapedName = Regex.Escape(E.Target.CleanedName);
+                        var escapedArg = Regex.Escape(Args[0]);
                         var reg = new Regex($"({escapedName})|({escapedArg})", RegexOptions.IgnoreCase);
                         E.Data = reg.Replace(E.Data, "", 1).Trim();
 
                         if ((E.Data.Trim() == E.Target.CleanedName.ToLower().Trim() ||
-                            E.Data == String.Empty) &&
+                             E.Data == string.Empty) &&
                             C.RequiresTarget)
                         {
                             E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);

@@ -1,16 +1,16 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
-using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using Data.Models.Client;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 using static SharedLibraryCore.Server;
 
 namespace SharedLibraryCore.Commands
 {
     public class PrivateMessageAdminsCommand : Command
     {
-        public PrivateMessageAdminsCommand(CommandConfiguration config, ITranslationLookup lookup) : base(config, lookup)
+        public PrivateMessageAdminsCommand(CommandConfiguration config, ITranslationLookup lookup) : base(config,
+            lookup)
         {
             Name = "privatemessageadmin";
             Description = lookup["COMMANDS_PMADMINS_DESC"];
@@ -21,12 +21,14 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            bool isGameSupported = _config.Commands[nameof(PrivateMessageAdminsCommand)].SupportedGames.Length > 0 &&
-                _config.Commands[nameof(PrivateMessageAdminsCommand)].SupportedGames.Contains(E.Owner.GameName);
+            var isGameSupported = _config.Commands[nameof(PrivateMessageAdminsCommand)].SupportedGames.Length > 0 &&
+                                  _config.Commands[nameof(PrivateMessageAdminsCommand)].SupportedGames
+                                      .Contains(E.Owner.GameName);
 
             if (!isGameSupported)
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_GAME_NOT_SUPPORTED"].FormatExt(nameof(PrivateMessageAdminsCommand)));
+                E.Origin.Tell(_translationLookup["COMMANDS_GAME_NOT_SUPPORTED"]
+                    .FormatExt(nameof(PrivateMessageAdminsCommand)));
                 return Task.CompletedTask;
             }
 

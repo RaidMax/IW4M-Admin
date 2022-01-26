@@ -1,12 +1,12 @@
-﻿using System.Linq;
-
-namespace SharedLibraryCore.Configuration
+﻿namespace SharedLibraryCore.Configuration
 {
     public class CommunityInformationConfiguration
     {
         public string Name { get; set; } = "IW4MAdmin - Configure In IW4MAdminSettings.json";
+
         public string Description { get; set; } =
             "IW4MAdmin is an administration tool for IW4x, Pluto T6, Pluto IW5, CoD4x, TeknoMW3, and most Call of Duty® dedicated servers. It allows complete control of your server; from changing maps, to banning players, IW4MAdmin monitors and records activity on your server(s). With plugin support, extending its functionality is a breeze.";
+
         public bool EnableBanner { get; set; } = true;
 
         public SocialAccountConfiguration[] SocialAccounts { get; set; } =

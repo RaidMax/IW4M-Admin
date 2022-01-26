@@ -1,12 +1,21 @@
-﻿using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Localization
 {
     public class Layout
     {
         private string localizationName;
+
+        public Layout(Dictionary<string, string> set)
+        {
+            LocalizationIndex = new TranslationLookup
+            {
+                Set = set
+            };
+        }
+
         public string LocalizationName
         {
             get => localizationName;
@@ -16,16 +25,9 @@ namespace SharedLibraryCore.Localization
                 Culture = new CultureInfo(value);
             }
         }
+
         public TranslationLookup LocalizationIndex { get; set; }
         public CultureInfo Culture { get; private set; }
-
-        public Layout(Dictionary<string, string> set)
-        {
-            LocalizationIndex = new TranslationLookup()
-            {
-                Set = set
-            };
-        }
     }
 
     public class TranslationLookup : ITranslationLookup
@@ -36,13 +38,13 @@ namespace SharedLibraryCore.Localization
         {
             get
             {
-                if (!Set.TryGetValue(key, out string value))
+                if (!Set.TryGetValue(key, out var value))
                 {
                     return key;
                 }
+
                 return value;
             }
         }
     }
-
 }

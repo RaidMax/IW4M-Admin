@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Helpers
 
             catch (Exception)
             {
-                return (T)(Enum.GetValues(type).GetValue(0));
+                return (T)Enum.GetValues(type).GetValue(0);
             }
         }
     }

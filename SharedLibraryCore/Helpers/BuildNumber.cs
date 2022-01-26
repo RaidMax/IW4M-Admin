@@ -6,12 +6,41 @@ namespace SharedLibraryCore.Helpers
 {
     public class BuildNumber : IComparable
     {
+        private BuildNumber()
+        {
+        }
+
         public int Major { get; private set; }
         public int Minor { get; private set; }
         public int Build { get; private set; }
         public int Revision { get; private set; }
 
-        private BuildNumber() { }
+        public int CompareTo(object obj)
+        {
+            if (obj == null)
+            {
+                return 1;
+            }
+
+            var buildNumber = obj as BuildNumber;
+            if (buildNumber == null)
+            {
+                return 1;
+            }
+
+            if (ReferenceEquals(this, buildNumber))
+            {
+                return 0;
+            }
+
+            return Major == buildNumber.Major
+                ? Minor == buildNumber.Minor
+                    ? Build == buildNumber.Build
+                        ? Revision.CompareTo(buildNumber.Revision)
+                        : Build.CompareTo(buildNumber.Build)
+                    : Minor.CompareTo(buildNumber.Minor)
+                : Major.CompareTo(buildNumber.Major);
+        }
 
         public static bool TryParse(string input, out BuildNumber buildNumber)
         {
@@ -28,23 +57,32 @@ namespace SharedLibraryCore.Helpers
         }
 
         /// <summary>
-        /// Parses a build number string into a BuildNumber class
+        ///     Parses a build number string into a BuildNumber class
         /// </summary>
         /// <param name="buildNumber">The build number string to parse</param>
         /// <returns>A new BuildNumber class set from the buildNumber string</returns>
-        /// <exception cref="ArgumentException">Thrown if there are less than 2 or 
-        /// more than 4 version parts to the build number</exception>
-        /// <exception cref="FormatException">Thrown if string cannot be parsed 
-        /// to a series of integers</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown if any version 
-        /// integer is less than zero</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if there are less than 2 or
+        ///     more than 4 version parts to the build number
+        /// </exception>
+        /// <exception cref="FormatException">
+        ///     Thrown if string cannot be parsed
+        ///     to a series of integers
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown if any version
+        ///     integer is less than zero
+        /// </exception>
         public static BuildNumber Parse(string buildNumber)
         {
-            if (buildNumber == null) throw new ArgumentNullException("buildNumber");
+            if (buildNumber == null)
+            {
+                throw new ArgumentNullException("buildNumber");
+            }
 
             var versions = buildNumber
                 .Split(new[] { '.' },
-                       StringSplitOptions.RemoveEmptyEntries)
+                    StringSplitOptions.RemoveEmptyEntries)
                 .Select(v => v.Trim())
                 .ToList();
 
@@ -90,39 +128,23 @@ namespace SharedLibraryCore.Helpers
         public override string ToString()
         {
             return string.Format("{0}.{1}{2}{3}", Major, Minor,
-                                 Build < 0 ? "" : "." + Build,
-                                 Revision < 0 ? "" : "." + Revision);
-        }
-
-        public int CompareTo(object obj)
-        {
-            if (obj == null) return 1;
-            var buildNumber = obj as BuildNumber;
-            if (buildNumber == null) return 1;
-            if (ReferenceEquals(this, buildNumber)) return 0;
-
-            return (Major == buildNumber.Major)
-                       ? (Minor == buildNumber.Minor)
-                             ? (Build == buildNumber.Build)
-                                   ? Revision.CompareTo(buildNumber.Revision)
-                                   : Build.CompareTo(buildNumber.Build)
-                             : Minor.CompareTo(buildNumber.Minor)
-                       : Major.CompareTo(buildNumber.Major);
+                Build < 0 ? "" : "." + Build,
+                Revision < 0 ? "" : "." + Revision);
         }
 
         public static bool operator >(BuildNumber first, BuildNumber second)
         {
-            return (first.CompareTo(second) > 0);
+            return first.CompareTo(second) > 0;
         }
 
         public static bool operator <(BuildNumber first, BuildNumber second)
         {
-            return (first.CompareTo(second) < 0);
+            return first.CompareTo(second) < 0;
         }
 
         public override bool Equals(object obj)
         {
-            return (CompareTo(obj) == 0);
+            return CompareTo(obj) == 0;
         }
 
         public override int GetHashCode()

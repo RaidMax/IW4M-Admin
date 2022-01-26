@@ -1,8 +1,8 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using Data.Models.Client;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Commands
 {
@@ -17,7 +17,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = lookup["COMMANDS_ARGS_COMMANDS"],
                     Required = true
@@ -40,7 +40,7 @@ namespace SharedLibraryCore.Commands
             }
 
             var cmd = $"{Utilities.CommandPrefix}{gameEvent.Data}";
-            var impersonatedCommandEvent = new GameEvent()
+            var impersonatedCommandEvent = new GameEvent
             {
                 Type = GameEvent.EventType.Command,
                 Origin = gameEvent.Target,
@@ -52,7 +52,8 @@ namespace SharedLibraryCore.Commands
             };
             gameEvent.Owner.Manager.AddEvent(impersonatedCommandEvent);
 
-            var result = await impersonatedCommandEvent.WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
+            var result = await impersonatedCommandEvent.WaitAsync(Utilities.DefaultCommandTimeout,
+                gameEvent.Owner.Manager.CancellationToken);
             await result.WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
 
             // remove the added command response
@@ -61,11 +62,10 @@ namespace SharedLibraryCore.Commands
                 .Where(ev => ev.Value.CorrelationId == impersonatedCommandEvent.CorrelationId)
                 .SelectMany(ev => ev.Value.Output)
                 .ToList();
-            
+
             foreach (var output in responses)
-            {
-                await gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output)).WaitAsync();
-            }
+                await gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output))
+                    .WaitAsync();
         }
     }
 }

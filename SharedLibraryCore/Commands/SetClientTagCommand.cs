@@ -1,9 +1,9 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Data.Models;
+using Data.Models.Client;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Commands
 {
@@ -12,7 +12,8 @@ namespace SharedLibraryCore.Commands
         private readonly IMetaService _metaService;
 
 
-        public SetClientTagCommand(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) : base(config, layout)
+        public SetClientTagCommand(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) :
+            base(config, layout)
         {
             Name = "setclienttag";
             Description = layout["COMMANDS_SET_CLIENT_TAG_DESC"];
@@ -21,7 +22,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGUMENT_TAG"],
                     Required = true

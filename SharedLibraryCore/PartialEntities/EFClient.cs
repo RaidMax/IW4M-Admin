@@ -1,14 +1,14 @@
-﻿using SharedLibraryCore.Localization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
-using Data.Models;
+using SharedLibraryCore.Localization;
 
 namespace SharedLibraryCore.Database.Models
 {
@@ -17,27 +17,29 @@ namespace SharedLibraryCore.Database.Models
         public enum ClientState
         {
             /// <summary>
-            /// default client state
+            ///     default client state
             /// </summary>
             Unknown,
 
             /// <summary>
-            /// represents when the client has been detected as joining
-            /// by the log file, but has not be authenticated by RCon
+            ///     represents when the client has been detected as joining
+            ///     by the log file, but has not be authenticated by RCon
             /// </summary>
             Connecting,
 
             /// <summary>
-            /// represents when the client has been authenticated by RCon
-            /// and validated by the database
+            ///     represents when the client has been authenticated by RCon
+            ///     and validated by the database
             /// </summary>
             Connected,
 
             /// <summary>
-            /// represents when the client is leaving (either through RCon or log file)
+            ///     represents when the client is leaving (either through RCon or log file)
             /// </summary>
             Disconnecting
         }
+
+        [NotMapped] private readonly SemaphoreSlim _processingEvent;
 
         public EFClient()
         {
@@ -48,6 +50,84 @@ namespace SharedLibraryCore.Database.Models
             _processingEvent = new SemaphoreSlim(1, 1);
         }
 
+        [NotMapped]
+        public virtual string Name
+        {
+            get => CurrentAlias?.Name ?? "--";
+            set
+            {
+                if (CurrentAlias != null)
+                {
+                    CurrentAlias.Name = value;
+                }
+            }
+        }
+
+        [NotMapped] public string CleanedName => Name?.StripColors();
+
+        [NotMapped]
+        public virtual int? IPAddress
+        {
+            get => CurrentAlias.IPAddress;
+            set => CurrentAlias.IPAddress = value;
+        }
+
+        [NotMapped] public string IPAddressString => IPAddress.ConvertIPtoString();
+
+        [NotMapped] public bool IsIngame => ClientNumber >= 0;
+
+        [NotMapped] public virtual IDictionary<int, long> LinkedAccounts { get; set; }
+
+        [NotMapped] public int ClientNumber { get; set; }
+
+        [NotMapped] public int Ping { get; set; }
+
+        [NotMapped] public int Warnings { get; set; }
+
+        [NotMapped] public DateTime ConnectionTime { get; set; }
+
+        [NotMapped] public int ConnectionLength => (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds;
+
+        [NotMapped] public Server CurrentServer { get; set; }
+
+        [NotMapped] public int Score { get; set; }
+
+        [NotMapped] public bool IsBot => NetworkId == Name.GenerateGuidFromString();
+
+        [NotMapped] public bool IsZombieClient => IsBot && Name == "Zombie";
+
+        [NotMapped] public string XuidString => (NetworkId + 0x110000100000000).ToString("x");
+
+        [NotMapped] public string GuidString => NetworkId.ToString("x");
+
+        [NotMapped] public ClientState State { get; set; }
+
+        [NotMapped]
+        // this is kinda dirty, but I need localizable level names
+        public ClientPermission ClientPermission => new ClientPermission
+        {
+            Level = Level,
+            Name = Level.ToLocalizedLevelName()
+        };
+
+        [NotMapped]
+        public string Tag
+        {
+            get => GetAdditionalProperty<string>(EFMeta.ClientTag);
+            set => SetAdditionalProperty(EFMeta.ClientTag, value);
+        }
+
+        [NotMapped]
+        public int TemporalClientNumber
+        {
+            get
+            {
+                var temporalClientId = GetAdditionalProperty<string>("ConnectionClientId");
+                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
+                return parsedClientId ?? ClientNumber;
+            }
+        }
+
         ~EFClient()
         {
             _processingEvent?.Dispose();
@@ -55,42 +135,17 @@ namespace SharedLibraryCore.Database.Models
 
         public override string ToString()
         {
-            return $"[Name={CurrentAlias?.Name ?? "--"}, NetworkId={NetworkId.ToString("X")}, IP={(string.IsNullOrEmpty(IPAddressString) ? "--" : IPAddressString)}, ClientSlot={ClientNumber}]";
+            return
+                $"[Name={CurrentAlias?.Name ?? "--"}, NetworkId={NetworkId.ToString("X")}, IP={(string.IsNullOrEmpty(IPAddressString) ? "--" : IPAddressString)}, ClientSlot={ClientNumber}]";
         }
-
-        [NotMapped]
-        public virtual string Name
-        {
-            get { return CurrentAlias?.Name ?? "--"; }
-            set { if (CurrentAlias != null) CurrentAlias.Name = value; }
-        }
-
-        [NotMapped]
-        public string CleanedName => Name?.StripColors();
-
-        [NotMapped]
-        public virtual int? IPAddress
-        {
-            get { return CurrentAlias.IPAddress; }
-            set { CurrentAlias.IPAddress = value; }
-        }
-
-        [NotMapped]
-        public string IPAddressString => IPAddress.ConvertIPtoString();
-
-        [NotMapped]
-        public bool IsIngame => ClientNumber >= 0;
-
-        [NotMapped]
-        public virtual IDictionary<int, long> LinkedAccounts { get; set; }
 
         /// <summary>
-        /// send a message directly to the connected client
+        ///     send a message directly to the connected client
         /// </summary>
         /// <param name="message">message content to send to client</param>
         public GameEvent Tell(string message)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Message = message,
                 Target = this,
@@ -98,7 +153,10 @@ namespace SharedLibraryCore.Database.Models
                 Type = GameEvent.EventType.Tell,
                 Data = message,
                 CorrelationId = CurrentServer.Manager.ProcessingEvents.Values
-                    .FirstOrDefault(ev => ev.Type == GameEvent.EventType.Command && (ev.Origin?.ClientId == ClientId || ev.ImpersonationOrigin?.ClientId == ClientId))?.CorrelationId ?? Guid.NewGuid()
+                    .FirstOrDefault(ev =>
+                        ev.Type == GameEvent.EventType.Command && (ev.Origin?.ClientId == ClientId ||
+                                                                   ev.ImpersonationOrigin?.ClientId == ClientId))
+                    ?.CorrelationId ?? Guid.NewGuid()
             };
 
             e.Output.Add(message.FormatMessageForEngine(CurrentServer?.RconParser.Configuration.ColorCodeMapping)
@@ -110,7 +168,7 @@ namespace SharedLibraryCore.Database.Models
 
         public void Tell(IEnumerable<string> messages)
         {
-            foreach(var message in messages)
+            foreach (var message in messages)
             {
 #pragma warning disable 4014
                 Tell(message).WaitAsync();
@@ -119,13 +177,13 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// warn a client with given reason
+        ///     warn a client with given reason
         /// </summary>
         /// <param name="warnReason">reason for warn</param>
         /// <param name="sender">client performing the warn</param>
-        public GameEvent Warn(String warnReason, EFClient sender)
+        public GameEvent Warn(string warnReason, EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Warn,
                 Message = warnReason,
@@ -151,13 +209,13 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// clear all warnings for a client
+        ///     clear all warnings for a client
         /// </summary>
         /// <param name="sender">client performing the warn clear</param>
         /// <returns></returns>
         public GameEvent WarnClear(EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.WarnClear,
                 Origin = sender,
@@ -179,14 +237,14 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// report a client for a given reason
+        ///     report a client for a given reason
         /// </summary>
         /// <param name="reportReason">reason for the report</param>
         /// <param name="sender">client performing the report</param>
         /// <returns></returns>
         public GameEvent Report(string reportReason, EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Report,
                 Message = reportReason,
@@ -196,7 +254,7 @@ namespace SharedLibraryCore.Database.Models
                 Owner = sender.CurrentServer
             };
 
-            int reportCount = sender.GetAdditionalProperty<int>("_reportCount");
+            var reportCount = sender.GetAdditionalProperty<int>("_reportCount");
 
             if (Equals(sender))
             {
@@ -208,8 +266,8 @@ namespace SharedLibraryCore.Database.Models
                 e.FailReason = GameEvent.EventFailReason.Throttle;
             }
 
-            else if (CurrentServer.Reports.Count(report => (report.Origin.NetworkId == sender.NetworkId &&
-                report.Target.NetworkId == NetworkId)) > 0)
+            else if (CurrentServer.Reports.Count(report => report.Origin.NetworkId == sender.NetworkId &&
+                                                           report.Target.NetworkId == NetworkId) > 0)
             {
                 e.FailReason = GameEvent.EventFailReason.Exception;
             }
@@ -220,14 +278,14 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// flag a client for a given reason
+        ///     flag a client for a given reason
         /// </summary>
         /// <param name="flagReason">reason for flagging</param>
         /// <param name="sender">client performing the flag</param>
         /// <returns>game event for the flag</returns>
         public GameEvent Flag(string flagReason, EFClient sender, TimeSpan? flagLength = null)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Flag,
                 Origin = sender,
@@ -253,14 +311,14 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// unflag a client for a given reason
+        ///     unflag a client for a given reason
         /// </summary>
         /// <param name="unflagReason">reason to unflag a player for</param>
         /// <param name="sender">client performing the unflag</param>
         /// <returns>game event for the un flug</returns>
         public GameEvent Unflag(string unflagReason, EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Unflag,
                 Origin = sender,
@@ -285,21 +343,24 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// kick a client for the given reason
+        ///     kick a client for the given reason
         /// </summary>
         /// <param name="kickReason">reason to kick for</param>
         /// <param name="sender">client performing the kick</param>
-        public GameEvent Kick(string kickReason, EFClient sender) => Kick(kickReason, sender, null);
+        public GameEvent Kick(string kickReason, EFClient sender)
+        {
+            return Kick(kickReason, sender, null);
+        }
 
         /// <summary>
-        /// kick a client for the given reason
+        ///     kick a client for the given reason
         /// </summary>
         /// <param name="kickReason">reason to kick for</param>
         /// <param name="sender">client performing the kick</param>
         /// <param name="originalPenalty">original client penalty</param>
         public GameEvent Kick(string kickReason, EFClient sender, EFPenalty originalPenalty)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Kick,
                 Message = kickReason,
@@ -322,14 +383,14 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// temporarily ban a client for the given time span
+        ///     temporarily ban a client for the given time span
         /// </summary>
         /// <param name="tempbanReason">reason for the temp ban</param>
         /// <param name="banLength">how long the temp ban lasts</param>
         /// <param name="sender">client performing the tempban</param>
-        public GameEvent TempBan(String tempbanReason, TimeSpan banLength, EFClient sender)
+        public GameEvent TempBan(string tempbanReason, TimeSpan banLength, EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.TempBan,
                 Message = tempbanReason,
@@ -352,13 +413,13 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// permanently ban a client
+        ///     permanently ban a client
         /// </summary>
         /// <param name="banReason">reason for the ban</param>
         /// <param name="sender">client performing the ban</param>
-        public GameEvent Ban(String banReason, EFClient sender, bool isEvade)
+        public GameEvent Ban(string banReason, EFClient sender, bool isEvade)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Ban,
                 Message = banReason,
@@ -386,14 +447,14 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// unban a client
+        ///     unban a client
         /// </summary>
         /// <param name="unbanReason">reason for the unban</param>
         /// <param name="sender">client performing the unban</param>
         /// <returns></returns>
         public GameEvent Unban(string unbanReason, EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.Unban,
                 Message = unbanReason,
@@ -414,14 +475,14 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// sets the level of the client
+        ///     sets the level of the client
         /// </summary>
         /// <param name="newPermission">new permission to set client to</param>
         /// <param name="sender">user performing the set level</param>
         /// <returns></returns>
         public GameEvent SetLevel(Permission newPermission, EFClient sender)
         {
-            var e = new GameEvent()
+            var e = new GameEvent
             {
                 Type = GameEvent.EventType.ChangePermission,
                 Extra = newPermission,
@@ -450,7 +511,7 @@ namespace SharedLibraryCore.Database.Models
         }
 
         /// <summary>
-        /// Handles any client related logic on connection
+        ///     Handles any client related logic on connection
         /// </summary>
         public bool IsAbleToConnectSimple()
         {
@@ -462,33 +523,38 @@ namespace SharedLibraryCore.Database.Models
                 if (string.IsNullOrWhiteSpace(Name) || nameToCheck.Replace(" ", "").Length <
                     (CurrentServer?.Manager?.GetApplicationSettings()?.Configuration()?.MinimumNameLength ?? 3))
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is too short", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is too short",
+                        ToString());
                     Kick(loc["SERVER_KICK_MINNAME"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }
 
                 if (CurrentServer.Manager.GetApplicationSettings().Configuration()
-                    .DisallowedClientNames
-                    ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
+                        .DisallowedClientNames
+                        ?.Any(_name => Regex.IsMatch(Name, _name)) ?? false)
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is not allowed", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name is not allowed",
+                        ToString());
                     Kick(loc["SERVER_KICK_GENERICNAME"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }
 
                 if (Name.Where(c => char.IsControl(c)).Count() > 0)
                 {
-                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because their name contains control characters", ToString());
+                    Utilities.DefaultLogger.LogInformation(
+                        "Kicking {Client} because their name contains control characters", ToString());
                     Kick(loc["SERVER_KICK_CONTROLCHARS"], Utilities.IW4MAdminClient(CurrentServer));
                     return false;
                 }
 
                 // reserved slots stuff
                 // todo: bots don't seem to honor party_maxplayers/sv_maxclients
-                if (CurrentServer.MaxClients - (CurrentServer.GetClientsAsList().Count(_client => !_client.IsPrivileged() && !_client.IsBot)) < CurrentServer.ServerConfig.ReservedSlotNumber &&
-                !this.IsPrivileged() &&
-                CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
-                CurrentServer.MaxClients != 0)
+                if (CurrentServer.MaxClients - CurrentServer.GetClientsAsList()
+                        .Count(_client => !_client.IsPrivileged() && !_client.IsBot) <
+                    CurrentServer.ServerConfig.ReservedSlotNumber &&
+                    !this.IsPrivileged() &&
+                    CurrentServer.GetClientsAsList().Count <= CurrentServer.MaxClients &&
+                    CurrentServer.MaxClients != 0)
                 {
                     Utilities.DefaultLogger.LogInformation("Kicking {Client} their spot is reserved", ToString());
                     Kick(loc["SERVER_KICK_SLOT_IS_RESERVED"], Utilities.IW4MAdminClient(CurrentServer));
@@ -515,8 +581,8 @@ namespace SharedLibraryCore.Database.Models
 
                 catch (Exception e)
                 {
-                        Utilities.DefaultLogger.LogError(e, "Could not update disconnected client {client}",
-                            ToString());
+                    Utilities.DefaultLogger.LogError(e, "Could not update disconnected client {client}",
+                        ToString());
                 }
 
                 finally
@@ -530,8 +596,9 @@ namespace SharedLibraryCore.Database.Models
         {
             using (LogContext.PushProperty("Server", CurrentServer?.ToString()))
             {
-                Utilities.DefaultLogger.LogInformation("Client {client} is joining the game from {source}", ToString(), ipAddress.HasValue ? "Status" : "Log");
-                
+                Utilities.DefaultLogger.LogInformation("Client {client} is joining the game from {source}", ToString(),
+                    ipAddress.HasValue ? "Status" : "Log");
+
                 if (ipAddress != null)
                 {
                     IPAddress = ipAddress;
@@ -550,12 +617,12 @@ namespace SharedLibraryCore.Database.Models
                     else
                     {
                         Utilities.DefaultLogger.LogDebug("Creating join event for {client}", ToString());
-                        var e = new GameEvent()
+                        var e = new GameEvent
                         {
                             Type = GameEvent.EventType.Join,
                             Origin = this,
                             Target = this,
-                            Owner = CurrentServer,
+                            Owner = CurrentServer
                         };
 
                         CurrentServer.Manager.AddEvent(e);
@@ -577,7 +644,7 @@ namespace SharedLibraryCore.Database.Models
             {
                 var loc = Utilities.CurrentLocalization.LocalizationIndex;
                 var autoKickClient = Utilities.IW4MAdminClient(CurrentServer);
-                bool isAbleToConnectSimple = IsAbleToConnectSimple();
+                var isAbleToConnectSimple = IsAbleToConnectSimple();
 
                 if (!isAbleToConnectSimple)
                 {
@@ -604,7 +671,7 @@ namespace SharedLibraryCore.Database.Models
                         await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
                             CurrentServer.Manager.CancellationToken);
                     }
-                    
+
                     Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
                     Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
                     return false;
@@ -643,71 +710,16 @@ namespace SharedLibraryCore.Database.Models
             return true;
         }
 
-        [NotMapped]
-        public int ClientNumber { get; set; }
-        [NotMapped]
-        public int Ping { get; set; }
-        [NotMapped]
-        public int Warnings { get; set; }
-        [NotMapped]
-        public DateTime ConnectionTime { get; set; }
-        [NotMapped]
-        public int ConnectionLength => (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds;
-        [NotMapped]
-        public Server CurrentServer { get; set; }
-        [NotMapped]
-        public int Score { get; set; }
-        [NotMapped]
-        public bool IsBot => NetworkId == Name.GenerateGuidFromString();
-        [NotMapped]
-        public bool IsZombieClient => IsBot && Name == "Zombie";
-        [NotMapped]
-        public string XuidString => (NetworkId + 0x110000100000000).ToString("x");
-        [NotMapped]
-        public string GuidString => NetworkId.ToString("x");
-
-        [NotMapped]
-        public ClientState State { get; set; }
-
-        [NotMapped]
-        // this is kinda dirty, but I need localizable level names
-        public ClientPermission ClientPermission => new ClientPermission()
-        {
-            Level = Level,
-            Name = Level.ToLocalizedLevelName()
-        };
-
-        [NotMapped]
-        public string Tag
-        {
-            get => GetAdditionalProperty<string>(EFMeta.ClientTag);
-            set => SetAdditionalProperty(EFMeta.ClientTag, value);
-        }
-
-        [NotMapped]
-        public int TemporalClientNumber
-        {
-            get
-            {
-                var temporalClientId = GetAdditionalProperty<string>("ConnectionClientId");
-                var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?) null : int.Parse(temporalClientId);
-                return parsedClientId ?? ClientNumber;
-            }
-        }
-
-        [NotMapped]
-        private readonly SemaphoreSlim _processingEvent;
-
         public async Task Lock()
         {
-            bool result = await _processingEvent.WaitAsync(Utilities.DefaultCommandTimeout);
+            var result = await _processingEvent.WaitAsync(Utilities.DefaultCommandTimeout);
 
 #if DEBUG
             if (!result)
             {
                 throw new InvalidOperationException();
             }
-#endif 
+#endif
         }
 
         public void Unlock()
@@ -720,7 +732,7 @@ namespace SharedLibraryCore.Database.Models
 
         public override bool Equals(object obj)
         {
-            return obj.GetType() == typeof(EFClient) && ((EFClient)obj).NetworkId == this.NetworkId;
+            return obj.GetType() == typeof(EFClient) && ((EFClient)obj).NetworkId == NetworkId;
         }
 
         public override int GetHashCode()

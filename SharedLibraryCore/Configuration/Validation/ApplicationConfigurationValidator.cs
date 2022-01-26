@@ -1,11 +1,12 @@
-﻿using FluentValidation;
-using System;
+﻿using System;
 using System.Linq;
+using System.Net;
+using FluentValidation;
 
 namespace SharedLibraryCore.Configuration.Validation
 {
     /// <summary>
-    /// Validation class for main application configuration
+    ///     Validation class for main application configuration
     /// </summary>
     public class ApplicationConfigurationValidator : AbstractValidator<ApplicationConfiguration>
     {
@@ -23,27 +24,27 @@ namespace SharedLibraryCore.Configuration.Validation
                 .When(_app => _app.EnableSocialLink);
 
             RuleFor(_app => _app.SocialLinkTitle)
-               .NotEmpty()
-               .When(_app => _app.EnableSocialLink);
+                .NotEmpty()
+                .When(_app => _app.EnableSocialLink);
 
             RuleFor(_app => _app.CustomParserEncoding)
-              .NotEmpty()
-              .When(_app => _app.EnableCustomParserEncoding);
+                .NotEmpty()
+                .When(_app => _app.EnableCustomParserEncoding);
 
             RuleFor(_app => _app.WebfrontConnectionWhitelist)
                 .NotEmpty()
                 .When(_app => _app.EnableWebfrontConnectionWhitelist);
 
             RuleForEach(_app => _app.WebfrontConnectionWhitelist)
-                .Must(_address => System.Net.IPAddress.TryParse(_address, out _));
+                .Must(_address => IPAddress.TryParse(_address, out _));
 
             RuleFor(_app => _app.CustomLocale)
-              .NotEmpty()
-              .When(_app => _app.EnableCustomLocale);
+                .NotEmpty()
+                .When(_app => _app.EnableCustomLocale);
 
             RuleFor(_app => _app.DatabaseProvider)
-                  .NotEmpty()
-                  .Must(_provider => new[] { "sqlite", "mysql", "postgresql" }.Contains(_provider));
+                .NotEmpty()
+                .Must(_provider => new[] { "sqlite", "mysql", "postgresql" }.Contains(_provider));
 
             RuleFor(_app => _app.ConnectionString)
                 .NotEmpty()

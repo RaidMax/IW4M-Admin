@@ -6,8 +6,8 @@ namespace SharedLibraryCore.Interfaces
     public sealed class ParserRegex
     {
         /// <summary>
-        /// represents the logical mapping of information provided by 
-        /// game logs, get status, and get dvar information
+        ///     represents the logical mapping of information provided by
+        ///     game logs, get status, and get dvar information
         /// </summary>
         public enum GroupType
         {
@@ -43,11 +43,18 @@ namespace SharedLibraryCore.Interfaces
             AdditionalGroup = 200
         }
 
-        public IParserPatternMatcher PatternMatcher { get; private set; }
-
         private string pattern;
+
+        public ParserRegex(IParserPatternMatcher pattern)
+        {
+            GroupMapping = new Dictionary<GroupType, int>();
+            PatternMatcher = pattern;
+        }
+
+        public IParserPatternMatcher PatternMatcher { get; }
+
         /// <summary>
-        /// stores the regular expression groups that will be mapped to group types
+        ///     stores the regular expression groups that will be mapped to group types
         /// </summary>
         public string Pattern
         {
@@ -60,20 +67,20 @@ namespace SharedLibraryCore.Interfaces
         }
 
         /// <summary>
-        /// stores the mapping from group type to group index in the regular expression
+        ///     stores the mapping from group type to group index in the regular expression
         /// </summary>
-        public Dictionary<GroupType, int> GroupMapping { get; private set; }
+        public Dictionary<GroupType, int> GroupMapping { get; }
 
         /// <summary>
-        /// helper method to enable script parsers to app regex mapping
-        /// the first parameter specifies the group type contained in the regex pattern
-        /// the second parameter specifies the group index to retrieve in the matched regex pattern
+        ///     helper method to enable script parsers to app regex mapping
+        ///     the first parameter specifies the group type contained in the regex pattern
+        ///     the second parameter specifies the group index to retrieve in the matched regex pattern
         /// </summary>
         /// <param name="mapKey">group type</param>
         /// <param name="mapValue">group index</param>
         public void AddMapping(object mapKey, object mapValue)
         {
-            if (int.TryParse(mapKey.ToString(), out int key) && int.TryParse(mapValue.ToString(), out int value))
+            if (int.TryParse(mapKey.ToString(), out var key) && int.TryParse(mapValue.ToString(), out var value))
             {
                 if (GroupMapping.ContainsKey((GroupType)key))
                 {
@@ -88,8 +95,8 @@ namespace SharedLibraryCore.Interfaces
 
             if (mapKey.GetType() == typeof(GroupType) && mapValue.GetType().ToString() == "System.Int32")
             {
-                GroupType k = (GroupType)Enum.Parse(typeof(GroupType), mapKey.ToString());
-                int v = int.Parse(mapValue.ToString());
+                var k = (GroupType)Enum.Parse(typeof(GroupType), mapKey.ToString());
+                var v = int.Parse(mapValue.ToString());
 
                 if (GroupMapping.ContainsKey(k))
                 {
@@ -101,12 +108,6 @@ namespace SharedLibraryCore.Interfaces
                     GroupMapping.Add(k, v);
                 }
             }
-        }
-
-        public ParserRegex(IParserPatternMatcher pattern)
-        {
-            GroupMapping = new Dictionary<GroupType, int>();
-            PatternMatcher = pattern;
         }
     }
 }

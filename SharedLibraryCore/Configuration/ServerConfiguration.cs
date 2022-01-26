@@ -1,14 +1,24 @@
-﻿using SharedLibraryCore.Configuration.Attributes;
-using SharedLibraryCore.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SharedLibraryCore.Configuration.Attributes;
 using SharedLibraryCore.Configuration.Extensions;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Configuration
 {
     public class ServerConfiguration : IBaseConfiguration
     {
+        private readonly IList<IRConParser> _rconParsers;
+        private IRConParser _selectedParser;
+
+        public ServerConfiguration()
+        {
+            _rconParsers = new List<IRConParser>();
+            Rules = new string[0];
+            AutoMessages = new string[0];
+        }
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_IP")]
         public string IPAddress { get; set; }
 
@@ -45,14 +55,74 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationOptional]
         public string CustomHostname { get; set; }
 
-        private readonly IList<IRConParser> _rconParsers;
-        private IRConParser _selectedParser;
-
-        public ServerConfiguration()
+        public IBaseConfiguration Generate()
         {
-            _rconParsers = new List<IRConParser>();
-            Rules = new string[0];
+            ModifyParsers();
+            var loc = Utilities.CurrentLocalization.LocalizationIndex;
+            var shouldTryFindIp = loc["SETUP_SERVER_IP_AUTO"].PromptBool(defaultValue: true);
+
+            if (shouldTryFindIp)
+            {
+                this.TrySetIpAddress();
+                Console.WriteLine(loc["SETUP_SERVER_IP_AUTO_RESULT"].FormatExt(IPAddress));
+            }
+
+            else
+            {
+                while (string.IsNullOrEmpty(IPAddress))
+                {
+                    var input = loc["SETUP_SERVER_IP"].PromptString();
+                    IPAddress = input;
+                }
+            }
+
+            var defaultPort = _selectedParser.Configuration.DefaultRConPort;
+            Port = loc["SETUP_SERVER_PORT"].PromptInt(null, 1, ushort.MaxValue, defaultPort);
+
+            if (!string.IsNullOrEmpty(_selectedParser.Configuration.DefaultInstallationDirectoryHint))
+            {
+                var shouldTryFindPassword = loc["SETUP_RCON_PASSWORD_AUTO"].PromptBool(defaultValue: true);
+
+                if (shouldTryFindPassword)
+                {
+                    var passwords = _selectedParser.TryGetRConPasswords();
+                    if (passwords.Length > 1)
+                    {
+                        var (index, value) =
+                            loc["SETUP_RCON_PASSWORD_PROMPT"].PromptSelection(loc["SETUP_RCON_PASSWORD_MANUAL"], null,
+                                passwords.Select(pw =>
+                                        $"{pw.Item1}{(string.IsNullOrEmpty(pw.Item2) ? "" : "        " + pw.Item2)}")
+                                    .ToArray());
+
+                        if (index > 0)
+                        {
+                            Password = passwords[index - 1].Item1;
+                        }
+                    }
+
+                    else if (passwords.Length > 0)
+                    {
+                        Password = passwords[0].Item1;
+                        Console.WriteLine(loc["SETUP_RCON_PASSWORD_RESULT"].FormatExt(Password));
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(Password))
+            {
+                Password = loc["SETUP_SERVER_RCON"].PromptString();
+            }
+
             AutoMessages = new string[0];
+            Rules = new string[0];
+            ManualLogPath = null;
+
+            return this;
+        }
+
+        public string Name()
+        {
+            return "ServerConfiguration";
         }
 
         public void AddRConParser(IRConParser parser)
@@ -87,75 +157,6 @@ namespace SharedLibraryCore.Configuration
 
             Console.WriteLine(loc["SETUP_SERVER_NO_LOG"]);
             ManualLogPath = loc["SETUP_SERVER_LOG_PATH"].PromptString();
-        }
-
-        public IBaseConfiguration Generate()
-        {
-            ModifyParsers();
-            var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            var shouldTryFindIp = loc["SETUP_SERVER_IP_AUTO"].PromptBool(defaultValue: true);
-
-            if (shouldTryFindIp)
-            {
-                this.TrySetIpAddress();
-                Console.WriteLine(loc["SETUP_SERVER_IP_AUTO_RESULT"].FormatExt(IPAddress));
-            }
-
-            else
-            {
-                while (string.IsNullOrEmpty(IPAddress))
-                {
-                    var input = loc["SETUP_SERVER_IP"].PromptString();
-                    IPAddress = input;
-                }
-            }
-
-            var defaultPort = _selectedParser.Configuration.DefaultRConPort;
-            Port = loc["SETUP_SERVER_PORT"].PromptInt(null, 1, ushort.MaxValue, defaultValue:defaultPort);
-
-            if (!string.IsNullOrEmpty(_selectedParser.Configuration.DefaultInstallationDirectoryHint))
-            {
-                var shouldTryFindPassword = loc["SETUP_RCON_PASSWORD_AUTO"].PromptBool(defaultValue: true);
-
-                if (shouldTryFindPassword)
-                {
-                    var passwords = _selectedParser.TryGetRConPasswords();
-                    if (passwords.Length > 1)
-                    {
-                        var (index, value) =
-                            loc["SETUP_RCON_PASSWORD_PROMPT"].PromptSelection(loc["SETUP_RCON_PASSWORD_MANUAL"], null,
-                                passwords.Select(pw =>
-                                    $"{pw.Item1}{(string.IsNullOrEmpty(pw.Item2) ? "" : "        " + pw.Item2)}").ToArray());
-
-                        if (index > 0)
-                        {
-                            Password = passwords[index - 1].Item1;
-                        }
-                    }
-
-                    else if (passwords.Length > 0)
-                    {
-                        Password = passwords[0].Item1;
-                        Console.WriteLine(loc["SETUP_RCON_PASSWORD_RESULT"].FormatExt(Password));
-                    }
-                }
-            }
-  
-            if (string.IsNullOrEmpty(Password))
-            {
-                Password = loc["SETUP_SERVER_RCON"].PromptString();
-            }
-
-            AutoMessages = new string[0];
-            Rules = new string[0];
-            ManualLogPath = null;
-
-            return this;
-        }
-
-        public string Name()
-        {
-            return "ServerConfiguration";
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Data.Models;
+using Data.Models.Client;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Commands
 {
@@ -10,7 +10,8 @@ namespace SharedLibraryCore.Commands
     {
         private readonly IMetaService _metaService;
 
-        public RemoveClientTag(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) : base(config, layout)
+        public RemoveClientTag(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) : base(
+            config, layout)
         {
             Name = "removeclienttag";
             Description = layout["COMMANDS_REMOVE_CLIENT_TAG_DESC"];
@@ -19,7 +20,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGUMENT_TAG"],
                     Required = true

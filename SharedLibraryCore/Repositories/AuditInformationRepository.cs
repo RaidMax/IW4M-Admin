@@ -1,15 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Abstractions;
+using Data.Models;
+using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Repositories
 {
     /// <summary>
-    /// implementation if IAuditInformationRepository
+    ///     implementation if IAuditInformationRepository
     /// </summary>
     public class AuditInformationRepository : IAuditInformationRepository
     {
@@ -20,31 +21,31 @@ namespace SharedLibraryCore.Repositories
             _contextFactory = contextFactory;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<IList<AuditInfo>> ListAuditInformation(PaginationRequest paginationInfo)
         {
-            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = _contextFactory.CreateContext(false);
             var iqItems = (from change in ctx.EFChangeHistory
-                           where change.TypeOfChange != Data.Models.EFChangeHistory.ChangeType.Ban
-                           orderby change.TimeChanged descending
-                           join originClient in ctx.Clients
-                           on (change.ImpersonationEntityId ?? change.OriginEntityId) equals originClient.ClientId
-                           join targetClient in ctx.Clients
-                           on change.TargetEntityId equals targetClient.ClientId
-                           into targetChange
-                           from targetClient in targetChange.DefaultIfEmpty()
-                           select new AuditInfo()
-                           {
-                               Action = change.TypeOfChange.ToString(),
-                               OriginName = originClient.CurrentAlias.Name,
-                               OriginId = originClient.ClientId,
-                               TargetName = targetClient == null ? "" : targetClient.CurrentAlias.Name,
-                               TargetId = targetClient == null ? new int?() : targetClient.ClientId,
-                               When = change.TimeChanged,
-                               Data = change.Comment,
-                               OldValue = change.PreviousValue,
-                               NewValue = change.CurrentValue
-                           })
+                    where change.TypeOfChange != EFChangeHistory.ChangeType.Ban
+                    orderby change.TimeChanged descending
+                    join originClient in ctx.Clients
+                        on change.ImpersonationEntityId ?? change.OriginEntityId equals originClient.ClientId
+                    join targetClient in ctx.Clients
+                        on change.TargetEntityId equals targetClient.ClientId
+                        into targetChange
+                    from targetClient in targetChange.DefaultIfEmpty()
+                    select new AuditInfo
+                    {
+                        Action = change.TypeOfChange.ToString(),
+                        OriginName = originClient.CurrentAlias.Name,
+                        OriginId = originClient.ClientId,
+                        TargetName = targetClient == null ? "" : targetClient.CurrentAlias.Name,
+                        TargetId = targetClient == null ? new int?() : targetClient.ClientId,
+                        When = change.TimeChanged,
+                        Data = change.Comment,
+                        OldValue = change.PreviousValue,
+                        NewValue = change.CurrentValue
+                    })
                 .Skip(paginationInfo.Offset)
                 .Take(paginationInfo.Count);
 

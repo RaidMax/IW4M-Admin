@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Helpers
 {
     public class MessageToken
     {
-        public string Name { get; private set; }
         private readonly Func<Server, Task<string>> _asyncValue;
 
 
@@ -16,9 +14,11 @@ namespace SharedLibraryCore.Helpers
             _asyncValue = Value;
         }
 
+        public string Name { get; }
+
         public async Task<string> ProcessAsync(Server server)
         {
-            string result = await _asyncValue(server);
+            var result = await _asyncValue(server);
             return result;
         }
     }

@@ -1,8 +1,8 @@
-﻿using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Interfaces;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Data.Models;
+using Data.Models.Client;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Commands
 {
@@ -10,7 +10,8 @@ namespace SharedLibraryCore.Commands
     {
         private readonly IMetaService _metaService;
 
-        public AddClientTagCommand(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) : base(config, layout)
+        public AddClientTagCommand(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) :
+            base(config, layout)
         {
             Name = "addclienttag";
             Description = layout["COMMANDS_ADD_CLIENT_TAG_DESC"];
@@ -19,7 +20,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGUMENT_TAG"],
                     Required = true
@@ -31,8 +32,8 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-                await _metaService.AddPersistentMeta(EFMeta.ClientTagName, gameEvent.Data);
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_ADD_CLIENT_TAG_SUCCESS"].FormatExt(gameEvent.Data));
+            await _metaService.AddPersistentMeta(EFMeta.ClientTagName, gameEvent.Data);
+            gameEvent.Origin.Tell(_translationLookup["COMMANDS_ADD_CLIENT_TAG_SUCCESS"].FormatExt(gameEvent.Data));
         }
     }
 }

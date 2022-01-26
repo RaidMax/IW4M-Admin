@@ -412,7 +412,9 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
                 .AddSingleton<IManager, ApplicationManager>()
+#pragma warning disable CS0612
                 .AddSingleton<SharedLibraryCore.Interfaces.ILogger, Logger>()
+#pragma warning restore CS0612
                 .AddSingleton<IClientNoticeMessageFormatter, ClientNoticeMessageFormatter>()
                 .AddSingleton<IClientStatisticCalculator, HitCalculator>()
                 .AddSingleton<IServerDistributionCalculator, ServerDistributionCalculator>()

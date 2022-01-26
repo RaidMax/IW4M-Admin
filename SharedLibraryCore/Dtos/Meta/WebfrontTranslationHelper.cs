@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharedLibraryCore.Dtos.Meta
+﻿namespace SharedLibraryCore.Dtos.Meta
 {
     public class WebfrontTranslationHelper
     {

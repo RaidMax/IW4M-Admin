@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SharedLibraryCore.Helpers;
 
 namespace SharedLibraryCore.Dtos
 {
@@ -16,7 +15,7 @@ namespace SharedLibraryCore.Dtos
         public int MaxClients { get; set; }
         public List<ChatInfo> ChatHistory { get; set; }
         public List<PlayerInfo> Players { get; set; }
-        public Helpers.PlayerHistory[] PlayerHistory { get; set; }
+        public PlayerHistory[] PlayerHistory { get; set; }
         public List<ClientCountSnapshot> ClientCountHistory { get; set; }
         public long ID { get; set; }
         public bool Online { get; set; }
@@ -31,7 +30,7 @@ namespace SharedLibraryCore.Dtos
             {
                 var valid = Players.Where(player => player.ZScore != null && player.ZScore != 0)
                     .ToList();
-                
+
                 if (!valid.Any())
                 {
                     return null;

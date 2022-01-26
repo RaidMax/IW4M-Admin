@@ -201,7 +201,7 @@ namespace IW4MAdmin.Plugins.Stats.Client
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Could not retrieve previous hit data for client {client}");
+                    _logger.LogError(ex, "Could not retrieve previous hit data for client {Client}", hitInfo.EntityId);
                     continue;
                 }
 

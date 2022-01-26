@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using SharedLibraryCore.Interfaces;
@@ -43,6 +43,11 @@ namespace SharedLibraryCore.Configuration.Extensions
             string searchPath = null;
             var isRegistryKey = parser.Configuration.DefaultInstallationDirectoryHint.Contains("HKEY_");
 
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return null;
+            }
+
             try
             {
                 if (isRegistryKey)
@@ -51,10 +56,10 @@ namespace SharedLibraryCore.Configuration.Extensions
 
                     if (result == null)
                     {
-                        return new (string, string)[0];
+                        return Array.Empty<(string, string)>();
                     }
 
-                    searchPath = Path.Combine(result.ToString().Split(Path.DirectorySeparatorChar)
+                    searchPath = Path.Combine(result.ToString()!.Split(Path.DirectorySeparatorChar)
                         .Where(p => !p.Contains(".exe"))
                         .Select(p => p.Replace("\"", "")).ToArray());
                 }
@@ -72,14 +77,14 @@ namespace SharedLibraryCore.Configuration.Extensions
 
                 if (string.IsNullOrEmpty(searchPath))
                 {
-                    return new (string, string)[0];
+                    return Array.Empty<(string, string)>();
                 }
 
                 var possibleFiles = Directory.GetFiles(searchPath, "*.cfg", SearchOption.AllDirectories);
 
                 if (!possibleFiles.Any())
                 {
-                    return new (string, string)[0];
+                    return Array.Empty<(string, string)>();
                 }
 
                 var possiblePasswords = possibleFiles.SelectMany(File.ReadAllLines)
@@ -95,7 +100,7 @@ namespace SharedLibraryCore.Configuration.Extensions
             }
             catch
             {
-                return new (string, string)[0];
+                return Array.Empty<(string, string)>();
             }
         }
     }

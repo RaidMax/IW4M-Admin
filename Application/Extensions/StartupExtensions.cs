@@ -78,8 +78,10 @@ namespace IW4MAdmin.Application.Extensions
                 case "mysql":
                     var appendTimeout = !appConfig.ConnectionString.Contains("default command timeout",
                         StringComparison.InvariantCultureIgnoreCase);
+                    var connectionString =
+                        appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : "");
                     services.AddSingleton(sp => (DbContextOptions) new DbContextOptionsBuilder<MySqlDatabaseContext>()
-                        .UseMySql(appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : ""),
+                        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
                             mysqlOptions => mysqlOptions.EnableRetryOnFailure())
                         .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Options);
                     return services;

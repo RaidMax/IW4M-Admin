@@ -1,10 +1,9 @@
 ﻿using System;
-using static SharedLibraryCore.GameEvent;
 
 namespace SharedLibraryCore.Dtos
 {
     /// <summary>
-    /// This class wraps the information related to a generated event for the API
+    ///     This class wraps the information related to a generated event for the API
     /// </summary>
     public class EventInfo
     {
@@ -15,6 +14,6 @@ namespace SharedLibraryCore.Dtos
         public EntityInfo OwnerEntity { get; set; }
         public DateTime EventTime { get; set; }
         public string ExtraInfo { get; set; }
-        public string Id { get; private set; } = Guid.NewGuid().ToString();
+        public string Id { get; } = Guid.NewGuid().ToString();
     }
 }

@@ -1,19 +1,18 @@
-﻿using SharedLibraryCore.Database.Models;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
+using Data.Models.Client;
 using Microsoft.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore.Services
 {
     public class ChangeHistoryService
     {
-        private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
-        
+        private readonly ILogger _logger;
+
         public ChangeHistoryService(ILogger<ChangeHistoryService> logger, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
@@ -27,7 +26,7 @@ namespace SharedLibraryCore.Services
             switch (e.Type)
             {
                 case GameEvent.EventType.Ban:
-                    change = new EFChangeHistory()
+                    change = new EFChangeHistory
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target.ClientId,
@@ -42,10 +41,12 @@ namespace SharedLibraryCore.Services
                     {
                         if (cmd.Name == "login" || cmd.Name == "setpassword")
                         {
-                            e.Message = string.Join(' ', e.Message.Split(" ").Select((arg, index) => index > 0 ? "*****" : arg));
+                            e.Message = string.Join(' ',
+                                e.Message.Split(" ").Select((arg, index) => index > 0 ? "*****" : arg));
                         }
                     }
-                    change = new EFChangeHistory()
+
+                    change = new EFChangeHistory
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target?.ClientId ?? 0,
@@ -56,7 +57,7 @@ namespace SharedLibraryCore.Services
                     };
                     break;
                 case GameEvent.EventType.ChangePermission:
-                    change = new EFChangeHistory()
+                    change = new EFChangeHistory
                     {
                         OriginEntityId = e.Origin.ClientId,
                         TargetEntityId = e.Target.ClientId,
@@ -67,7 +68,7 @@ namespace SharedLibraryCore.Services
                     };
                     break;
                 case GameEvent.EventType.Login:
-                    change = new EFChangeHistory()
+                    change = new EFChangeHistory
                     {
                         OriginEntityId = e.Origin.ClientId,
                         Comment = "Logged In To Webfront",
@@ -76,7 +77,7 @@ namespace SharedLibraryCore.Services
                     };
                     break;
                 case GameEvent.EventType.Logout:
-                    change = new EFChangeHistory()
+                    change = new EFChangeHistory
                     {
                         OriginEntityId = e.Origin.ClientId,
                         Comment = "Logged Out of Webfront",

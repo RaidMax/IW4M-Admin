@@ -56,7 +56,6 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             return mostPlayed;
         }
 
-        private readonly CommandConfiguration _config;
         private readonly IDatabaseContextFactory _contextFactory;
 
         public MostPlayedCommand(CommandConfiguration config, ITranslationLookup translationLookup,
@@ -68,7 +67,6 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             Permission = EFClient.Permission.User;
             RequiresTarget = false;
 
-            _config = config;
             _contextFactory = contextFactory;
         }
 

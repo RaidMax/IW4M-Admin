@@ -21,7 +21,7 @@ using Data.Models.Server;
 using Humanizer.Localisation;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Npgsql;
 using Stats.Client.Abstractions;
 using Stats.Config;

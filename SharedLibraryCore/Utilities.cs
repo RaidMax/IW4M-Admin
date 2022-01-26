@@ -1,28 +1,32 @@
-﻿using Humanizer;
-using Humanizer.Localisation;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Dtos.Meta;
-using SharedLibraryCore.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
+using Humanizer;
+using Humanizer.Localisation;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
-using static SharedLibraryCore.Server;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
-using static Data.Models.Client.EFClient;
-using Data.Models;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Dtos.Meta;
 using SharedLibraryCore.Formatting;
+using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Localization;
+using SharedLibraryCore.RCon;
+using static SharedLibraryCore.Server;
+using static Data.Models.Client.EFClient;
 using static Data.Models.EFPenalty;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore
 {
@@ -33,48 +37,53 @@ namespace SharedLibraryCore
 #if DEBUG == true
         public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}{Path.DirectorySeparatorChar}";
 #else
-        public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
+        public static string OperatingDirectory =>
+            $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
 #endif
         public static Encoding EncodingType;
-        public static Localization.Layout CurrentLocalization = new Localization.Layout(new Dictionary<string, string>());
+        public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
         public static TimeSpan DefaultCommandTimeout { get; set; } = new TimeSpan(0, 0, 25);
-        public static char[] DirectorySeparatorChars = new[] { '\\', '/' };
+        public static char[] DirectorySeparatorChars = { '\\', '/' };
         public static char CommandPrefix { get; set; } = '!';
+
         public static EFClient IW4MAdminClient(Server server = null)
         {
-            return new EFClient()
+            return new EFClient
             {
                 ClientId = 1,
                 State = EFClient.ClientState.Connected,
-                Level = EFClient.Permission.Console,
+                Level = Permission.Console,
                 CurrentServer = server,
-                CurrentAlias = new EFAlias()
+                CurrentAlias = new EFAlias
                 {
                     Name = "IW4MAdmin"
                 },
                 AdministeredPenalties = new List<EFPenalty>()
             };
         }
+
         /// <summary>
-        /// fallback id for world events
+        ///     fallback id for world events
         /// </summary>
         public const long WORLD_ID = -1;
-        public static Dictionary<Permission, string> PermissionLevelOverrides { get; } = new Dictionary<Permission, string>();
+
+        public static Dictionary<Permission, string> PermissionLevelOverrides { get; } =
+            new Dictionary<Permission, string>();
 
         public static string HttpRequest(string location, string header, string headerValue)
         {
-            using (var RequestClient = new System.Net.Http.HttpClient())
+            using (var RequestClient = new HttpClient())
             {
                 RequestClient.DefaultRequestHeaders.Add(header, headerValue);
-                string response = RequestClient.GetStringAsync(location).Result;
+                var response = RequestClient.GetStringAsync(location).Result;
                 return response;
             }
         }
 
         //Get string with specified number of spaces -- really only for visual output
-        public static String GetSpaces(int Num)
+        public static string GetSpaces(int Num)
         {
-            String SpaceString = String.Empty;
+            var SpaceString = string.Empty;
             while (Num > 0)
             {
                 SpaceString += ' ';
@@ -85,48 +94,46 @@ namespace SharedLibraryCore
         }
 
         //Remove words from a space delimited string
-        public static String RemoveWords(this string str, int num)
+        public static string RemoveWords(this string str, int num)
         {
             if (str == null || str.Length == 0)
             {
                 return "";
             }
 
-            String newStr = String.Empty;
-            String[] tmp = str.Split(' ');
+            var newStr = string.Empty;
+            var tmp = str.Split(' ');
 
-            for (int i = 0; i < tmp.Length; i++)
-            {
+            for (var i = 0; i < tmp.Length; i++)
                 if (i >= num)
                 {
                     newStr += tmp[i] + ' ';
                 }
-            }
 
             return newStr;
         }
 
         /// <summary>
-        /// caps client name to the specified character length - 3
-        /// and adds ellipses to the end of the reamining client name
+        ///     caps client name to the specified character length - 3
+        ///     and adds ellipses to the end of the reamining client name
         /// </summary>
         /// <param name="str">client name</param>
         /// <param name="maxLength">max number of characters for the name</param>
         /// <returns></returns>
-        public static string CapClientName(this string str, int maxLength) =>
-            str.Length > maxLength ?
-            $"{str.Substring(0, maxLength - 3)}..." :
-            str;
+        public static string CapClientName(this string str, int maxLength)
+        {
+            return str.Length > maxLength ? $"{str.Substring(0, maxLength - 3)}..." : str;
+        }
 
         /// <summary>
-        /// helper method to get the information about an exception and inner exceptions
+        ///     helper method to get the information about an exception and inner exceptions
         /// </summary>
         /// <param name="ex"></param>
         /// <returns></returns>
         public static string GetExceptionInfo(this Exception ex)
         {
             var sb = new StringBuilder();
-            int depth = 0;
+            var depth = 0;
             while (ex != null)
             {
                 sb.AppendLine($"Exception[{depth}] Name: {ex.GetType().FullName}");
@@ -140,24 +147,23 @@ namespace SharedLibraryCore
             return sb.ToString();
         }
 
-        public static EFClient.Permission MatchPermission(String str)
+        public static Permission MatchPermission(string str)
         {
-            String lookingFor = str.ToLower();
+            var lookingFor = str.ToLower();
 
-            for (EFClient.Permission Perm = EFClient.Permission.User; Perm < EFClient.Permission.Console; Perm++)
-            {
+            for (var Perm = Permission.User; Perm < Permission.Console; Perm++)
                 if (lookingFor.Contains(Perm.ToString().ToLower())
-                    || lookingFor.Contains(CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{Perm.ToString().ToUpper()}"].ToLower()))
+                    || lookingFor.Contains(CurrentLocalization
+                        .LocalizationIndex[$"GLOBAL_PERMISSION_{Perm.ToString().ToUpper()}"].ToLower()))
                 {
                     return Perm;
                 }
-            }
 
-            return EFClient.Permission.Banned;
+            return Permission.Banned;
         }
 
         /// <summary>
-        /// Remove all IW Engine color codes
+        ///     Remove all IW Engine color codes
         /// </summary>
         /// <param name="str">String containing color codes</param>
         /// <returns></returns>
@@ -173,11 +179,14 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// returns a "fixed" string that prevents message truncation in IW4 (and probably other Q3 clients)
+        ///     returns a "fixed" string that prevents message truncation in IW4 (and probably other Q3 clients)
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        public static string FixIW4ForwardSlash(this string str) => str.Replace("//", "/ /");
+        public static string FixIW4ForwardSlash(this string str)
+        {
+            return str.Replace("//", "/ /");
+        }
 
         public static string FormatMessageForEngine(this string str, ColorCodeMapping mapping)
         {
@@ -187,7 +196,8 @@ namespace SharedLibraryCore
             }
 
             var output = str;
-            var colorCodeMatches = Regex.Matches(output, @"\(Color::(.{1,16})\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            var colorCodeMatches = Regex.Matches(output, @"\(Color::(.{1,16})\)",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
             foreach (var match in colorCodeMatches.Where(m => m.Success))
             {
                 var key = match.Groups[1].ToString();
@@ -198,17 +208,24 @@ namespace SharedLibraryCore
         }
 
         private static readonly IList<string> _zmGameTypes = new[] { "zclassic", "zstandard", "zcleansed", "zgrief" };
+
         /// <summary>
-        /// indicates if the given server is running a zombie game mode
+        ///     indicates if the given server is running a zombie game mode
         /// </summary>
         /// <param name="server"></param>
         /// <returns></returns>
-        public static bool IsZombieServer(this Server server) => server.GameName == Game.T6 && _zmGameTypes.Contains(server.Gametype.ToLower());
+        public static bool IsZombieServer(this Server server)
+        {
+            return server.GameName == Game.T6 && _zmGameTypes.Contains(server.Gametype.ToLower());
+        }
 
-        public static bool IsCodGame(this Server server) => server.RconParser?.RConEngine == "COD";
+        public static bool IsCodGame(this Server server)
+        {
+            return server.RconParser?.RConEngine == "COD";
+        }
 
         /// <summary>
-        /// Get the color key corresponding to a given user level
+        ///     Get the color key corresponding to a given user level
         /// </summary>
         /// <param name="level">Specified player level</param>
         /// <param name="localizedLevel"></param>
@@ -231,19 +248,20 @@ namespace SharedLibraryCore
 
         public static string ToLocalizedLevelName(this Permission permission)
         {
-            var localized = CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{permission.ToString().ToUpper()}"];
+            var localized =
+                CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{permission.ToString().ToUpper()}"];
             return PermissionLevelOverrides.ContainsKey(permission) && PermissionLevelOverrides[permission] != localized
                 ? PermissionLevelOverrides[permission]
                 : localized;
         }
 
-        public async static Task<string> ProcessMessageToken(this Server server, IList<Helpers.MessageToken> tokens, String str)
+        public static async Task<string> ProcessMessageToken(this Server server, IList<MessageToken> tokens, string str)
         {
-            MatchCollection RegexMatches = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
+            var RegexMatches = Regex.Matches(str, @"\{\{[A-Z]+\}\}", RegexOptions.IgnoreCase);
             foreach (Match M in RegexMatches)
             {
-                String Match = M.Value;
-                String Identifier = M.Value.Substring(2, M.Length - 4);
+                var Match = M.Value;
+                var Identifier = M.Value.Substring(2, M.Length - 4);
 
                 var found = tokens.FirstOrDefault(t => t.Name.ToLower() == Identifier.ToLower());
 
@@ -267,11 +285,11 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// Get the full gametype name
+        ///     Get the full gametype name
         /// </summary>
         /// <param name="input">Shorthand gametype reported from server</param>
         /// <returns></returns>
-        public static string GetLocalizedGametype(String input)
+        public static string GetLocalizedGametype(string input)
         {
             switch (input)
             {
@@ -323,7 +341,7 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// converts a string to numerical guid
+        ///     converts a string to numerical guid
         /// </summary>
         /// <param name="str">source string for guid</param>
         /// <param name="numberStyle">how to parse the guid</param>
@@ -341,7 +359,7 @@ namespace SharedLibraryCore
 
                 return z * 2 + 0x0110000100000000 + y;
             }
-   
+
             str = str.Substring(0, Math.Min(str.Length, 19));
             var parsableAsNumber = Regex.Match(str, @"([A-F]|[a-f]|[0-9])+").Value;
 
@@ -365,7 +383,8 @@ namespace SharedLibraryCore
 
                 else
                 {
-                    long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, numberStyle, CultureInfo.InvariantCulture, out id);
+                    long.TryParse(str.Length > 16 ? str.Substring(0, 16) : str, numberStyle,
+                        CultureInfo.InvariantCulture, out id);
                 }
             }
 
@@ -384,8 +403,8 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// determines if the guid provided appears to be a bot guid
-        /// "1277538174" - (Pluto?)WaW (T4)
+        ///     determines if the guid provided appears to be a bot guid
+        ///     "1277538174" - (Pluto?)WaW (T4)
         /// </summary>
         /// <param name="guid">value of the guid</param>
         /// <returns>true if is bot guid, otherwise false</returns>
@@ -395,38 +414,44 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// generates a numerical hashcode from a string value
+        ///     generates a numerical hashcode from a string value
         /// </summary>
         /// <param name="value">value string</param>
         /// <returns></returns>
-        public static long GenerateGuidFromString(this string value) => string.IsNullOrEmpty(value) ? -1 : GetStableHashCode(value.StripColors());
+        public static long GenerateGuidFromString(this string value)
+        {
+            return string.IsNullOrEmpty(value) ? -1 : GetStableHashCode(value.StripColors());
+        }
 
         /// https://stackoverflow.com/questions/36845430/persistent-hashcode-for-strings
         public static int GetStableHashCode(this string str)
         {
             unchecked
             {
-                int hash1 = 5381;
-                int hash2 = hash1;
+                var hash1 = 5381;
+                var hash2 = hash1;
 
-                for (int i = 0; i < str.Length && str[i] != '\0'; i += 2)
+                for (var i = 0; i < str.Length && str[i] != '\0'; i += 2)
                 {
                     hash1 = ((hash1 << 5) + hash1) ^ str[i];
                     if (i == str.Length - 1 || str[i + 1] == '\0')
+                    {
                         break;
+                    }
+
                     hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
                 }
 
-                return hash1 + (hash2 * 1566083941);
+                return hash1 + hash2 * 1566083941;
             }
         }
 
         public static int? ConvertToIP(this string str)
         {
-            bool success = IPAddress.TryParse(str, out IPAddress ip);
-            return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4 ?
-                (int?)BitConverter.ToInt32(ip.GetAddressBytes(), 0) :
-                null;
+            var success = IPAddress.TryParse(str, out var ip);
+            return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4
+                ? (int?)BitConverter.ToInt32(ip.GetAddressBytes(), 0)
+                : null;
         }
 
         public static string ConvertIPtoString(this int? ip)
@@ -488,8 +513,8 @@ namespace SharedLibraryCore
                 return new TimeSpan(1, 0, 0);
             }
 
-            char lengthDenote = expressionMatch.Groups[2].ToString()[0];
-            int length = Int32.Parse(expressionMatch.Groups[1].ToString());
+            var lengthDenote = expressionMatch.Groups[2].ToString()[0];
+            var length = int.Parse(expressionMatch.Groups[1].ToString());
 
             var loc = CurrentLocalization.LocalizationIndex;
 
@@ -522,7 +547,7 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// returns a list of penalty types that should be shown across all profiles
+        ///     returns a list of penalty types that should be shown across all profiles
         /// </summary>
         /// <returns></returns>
         public static PenaltyType[] LinkedPenaltyTypes()
@@ -533,22 +558,22 @@ namespace SharedLibraryCore
                 PenaltyType.Unban,
                 PenaltyType.TempBan,
                 PenaltyType.Flag,
-                PenaltyType.Unflag,
+                PenaltyType.Unflag
             };
         }
 
         /// <summary>
-        /// Helper extension that determines if a user is a privileged client
+        ///     Helper extension that determines if a user is a privileged client
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
         public static bool IsPrivileged(this EFClient p)
         {
-            return p.Level > EFClient.Permission.Flagged;
+            return p.Level > Permission.Flagged;
         }
 
         /// <summary>
-        /// prompt user to answer a yes/no question
+        ///     prompt user to answer a yes/no question
         /// </summary>
         /// <param name="question">question to prompt the user with</param>
         /// <param name="description">description of the question's value</param>
@@ -557,12 +582,12 @@ namespace SharedLibraryCore
         public static bool PromptBool(this string question, string description = null, bool defaultValue = true)
         {
             Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? " " : $" ({description}) ")}[y/n]: ");
-            char response = Console.ReadLine().ToLower().FirstOrDefault();
+            var response = Console.ReadLine().ToLower().FirstOrDefault();
             return response != 0 ? response == 'y' : defaultValue;
         }
 
         /// <summary>
-        /// prompt user to make a selection
+        ///     prompt user to make a selection
         /// </summary>
         /// <typeparam name="T">type of selection</typeparam>
         /// <param name="question">question to prompt the user with</param>
@@ -570,38 +595,38 @@ namespace SharedLibraryCore
         /// <param name="description">description of the question's value</param>
         /// <param name="selections">array of possible selections (should be able to convert to string)</param>
         /// <returns></returns>
-        public static Tuple<int, T> PromptSelection<T>(this string question, T defaultValue, string description = null, params T[] selections)
+        public static Tuple<int, T> PromptSelection<T>(this string question, T defaultValue, string description = null,
+            params T[] selections)
         {
-            bool hasDefault = false;
+            var hasDefault = false;
 
             if (defaultValue != null)
             {
                 hasDefault = true;
-                selections = (new T[] { defaultValue }).Union(selections).ToArray();
+                selections = new[] { defaultValue }.Union(selections).ToArray();
             }
 
-            Console.WriteLine($"{question}{(string.IsNullOrEmpty(description) ? "" : $" [{ description}:]")}");
+            Console.WriteLine($"{question}{(string.IsNullOrEmpty(description) ? "" : $" [{description}:]")}");
             Console.WriteLine(new string('=', 52));
-            for (int index = 0; index < selections.Length; index++)
-            {
+            for (var index = 0; index < selections.Length; index++)
                 Console.WriteLine($"{(hasDefault ? index : index + 1)}] {selections[index]}");
-            }
             Console.WriteLine(new string('=', 52));
 
-            int selectionIndex = PromptInt(CurrentLocalization.LocalizationIndex["SETUP_PROMPT_MAKE_SELECTION"], null, hasDefault ? 0 : 1, selections.Length, hasDefault ? 0 : (int?)null);
+            var selectionIndex = PromptInt(CurrentLocalization.LocalizationIndex["SETUP_PROMPT_MAKE_SELECTION"], null,
+                hasDefault ? 0 : 1, selections.Length, hasDefault ? 0 : (int?)null);
 
             if (!hasDefault)
             {
                 selectionIndex--;
             }
 
-            T selection = selections[selectionIndex];
+            var selection = selections[selectionIndex];
 
             return Tuple.Create(selectionIndex, selection);
         }
 
         /// <summary>
-        /// prompt user to enter a number
+        ///     prompt user to enter a number
         /// </summary>
         /// <param name="question">question to prompt with</param>
         /// <param name="maxValue">maximum value to allow</param>
@@ -609,26 +634,29 @@ namespace SharedLibraryCore
         /// <param name="defaultValue">default value to set the return value to</param>
         /// <param name="description">a description of the question's value</param>
         /// <returns>integer from user's input</returns>
-        public static int PromptInt(this string question, string description = null, int minValue = 0, int maxValue = int.MaxValue, int? defaultValue = null)
+        public static int PromptInt(this string question, string description = null, int minValue = 0,
+            int maxValue = int.MaxValue, int? defaultValue = null)
         {
-            Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue.Value.ToString()}]")}: ");
+            Console.Write(
+                $"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue.Value.ToString()}]")}: ");
             int response;
 
             string inputOrDefault()
             {
-                string input = Console.ReadLine();
+                var input = Console.ReadLine();
                 return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue.ToString() : input;
             }
 
             while (!int.TryParse(inputOrDefault(), out response) ||
-                response < minValue ||
-                response > maxValue)
+                   response < minValue ||
+                   response > maxValue)
             {
-                string range = "";
+                var range = "";
                 if (minValue != 0 || maxValue != int.MaxValue)
                 {
                     range = $" [{minValue}-{maxValue}]";
                 }
+
                 Console.Write($"{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_INT"]}{range}: ");
             }
 
@@ -636,7 +664,7 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// prompt use to enter a string response
+        ///     prompt use to enter a string response
         /// </summary>
         /// <param name="question">question to prompt with</param>
         /// <param name="description">description of the question's value</param>
@@ -646,14 +674,15 @@ namespace SharedLibraryCore
         {
             string inputOrDefault()
             {
-                string input = Console.ReadLine();
-                return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue.ToString() : input;
+                var input = Console.ReadLine();
+                return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue : input;
             }
 
             string response;
             do
             {
-                Console.Write($"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue}]")}: ");
+                Console.Write(
+                    $"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue}]")}: ");
                 response = inputOrDefault();
             } while (string.IsNullOrWhiteSpace(response) && response != defaultValue);
 
@@ -662,17 +691,15 @@ namespace SharedLibraryCore
 
         public static Dictionary<string, string> DictionaryFromKeyValue(this string eventLine)
         {
-            string[] values = eventLine.Substring(1).Split('\\');
+            var values = eventLine.Substring(1).Split('\\');
 
             Dictionary<string, string> dict = null;
 
             if (values.Length > 1)
             {
                 dict = new Dictionary<string, string>();
-                for (int i = values.Length % 2 == 0 ? 0 : 1; i < values.Length; i += 2)
-                {
+                for (var i = values.Length % 2 == 0 ? 0 : 1; i < values.Length; i += 2)
                     dict.Add(values[i], values[i + 1]);
-                }
             }
 
             return dict;
@@ -681,29 +708,29 @@ namespace SharedLibraryCore
         /* https://loune.net/2017/06/running-shell-bash-commands-in-net-core/ */
         public static string GetCommandLine(int pId)
         {
-            var cmdProcess = new Process()
+            var cmdProcess = new Process
             {
-                StartInfo = new ProcessStartInfo()
+                StartInfo = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
                     Arguments = $"/c wmic process where processid={pId} get CommandLine",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true,
+                    CreateNoWindow = true
                 }
             };
 
             cmdProcess.Start();
             cmdProcess.WaitForExit();
 
-            string[] cmdLine = cmdProcess.StandardOutput.ReadToEnd().Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+            var cmdLine = cmdProcess.StandardOutput.ReadToEnd().Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
             cmdProcess.Dispose();
 
             return cmdLine.Length > 1 ? cmdLine[1] : cmdLine[0];
         }
 
         /// <summary>
-        /// indicates if the given log path is a remote (http) uri
+        ///     indicates if the given log path is a remote (http) uri
         /// </summary>
         /// <param name="log"></param>
         /// <returns></returns>
@@ -714,7 +741,8 @@ namespace SharedLibraryCore
 
         public static string ToBase64UrlSafeString(this string src)
         {
-            return Convert.ToBase64String(src.Select(c => Convert.ToByte(c)).ToArray()).Replace('+', '-').Replace('/', '_');
+            return Convert.ToBase64String(src.Select(c => Convert.ToByte(c)).ToArray()).Replace('+', '-')
+                .Replace('/', '_');
         }
 
         public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName, T fallbackValue = default)
@@ -722,13 +750,17 @@ namespace SharedLibraryCore
             return server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue);
         }
 
-        public static async Task<Dvar<T>> GetMappedDvarValueOrDefaultAsync<T>(this Server server, string dvarName, string infoResponseName = null, IDictionary<string, string> infoResponse = null, T overrideDefault = default)
+        public static async Task<Dvar<T>> GetMappedDvarValueOrDefaultAsync<T>(this Server server, string dvarName,
+            string infoResponseName = null, IDictionary<string, string> infoResponse = null,
+            T overrideDefault = default)
         {
             // todo: unit test this
-            string mappedKey = server.RconParser.GetOverrideDvarName(dvarName);
+            var mappedKey = server.RconParser.GetOverrideDvarName(dvarName);
             var defaultValue = server.RconParser.GetDefaultDvarValue<T>(mappedKey) ?? overrideDefault;
 
-            string foundKey = infoResponse?.Keys.Where(_key => new[] { mappedKey, dvarName, infoResponseName ?? dvarName }.Contains(_key)).FirstOrDefault();
+            var foundKey = infoResponse?.Keys
+                .Where(_key => new[] { mappedKey, dvarName, infoResponseName ?? dvarName }.Contains(_key))
+                .FirstOrDefault();
 
             if (!string.IsNullOrEmpty(foundKey))
             {
@@ -758,7 +790,7 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// Retrieves the key value pairs for server information usually checked after map rotation
+        ///     Retrieves the key value pairs for server information usually checked after map rotation
         /// </summary>
         /// <param name="server"></param>
         /// <param name="delay">How long to wait after the map has rotated to query</param>
@@ -770,16 +802,16 @@ namespace SharedLibraryCore
                 await Task.Delay(delay.Value);
             }
 
-            var response = await server.RemoteConnection.SendQueryAsync(RCon.StaticHelpers.QueryType.GET_INFO);
-            string combinedResponse = response.Length > 1 ?
-                string.Join('\\', response.Where(r => r.Length > 0 && r[0] == '\\')) :
-                response[0];
+            var response = await server.RemoteConnection.SendQueryAsync(StaticHelpers.QueryType.GET_INFO);
+            var combinedResponse = response.Length > 1
+                ? string.Join('\\', response.Where(r => r.Length > 0 && r[0] == '\\'))
+                : response[0];
             return combinedResponse.DictionaryFromKeyValue();
         }
 
         public static double GetVersionAsDouble()
         {
-            string version = Assembly.GetCallingAssembly().GetName().Version.ToString();
+            var version = Assembly.GetCallingAssembly().GetName().Version.ToString();
             version = version.Replace(".", "");
             return double.Parse(version) / 1000.0;
         }
@@ -792,11 +824,11 @@ namespace SharedLibraryCore
         public static string FormatExt(this string input, params object[] values)
         {
             var matches = Regex.Matches(Regex.Unescape(input), @"{{\w+}}");
-            string output = input;
-            int index = 0;
+            var output = input;
+            var index = 0;
             foreach (Match match in matches)
             {
-                output = output.Replace(match.Value.ToString(), $"{{{index.ToString()}}}");
+                output = output.Replace(match.Value, $"{{{index.ToString()}}}");
                 index++;
             }
 
@@ -804,12 +836,15 @@ namespace SharedLibraryCore
             {
                 return string.Format(output, values);
             }
-            catch { return input; }
+            catch
+            {
+                return input;
+            }
         }
 
         /// <summary>
-        /// https://stackoverflow.com/questions/8113546/how-to-determine-whether-an-ip-address-in-private/39120248
-        /// An extension method to determine if an IP address is internal, as specified in RFC1918
+        ///     https://stackoverflow.com/questions/8113546/how-to-determine-whether-an-ip-address-in-private/39120248
+        ///     An extension method to determine if an IP address is internal, as specified in RFC1918
         /// </summary>
         /// <param name="toTest">The IP address that will be tested</param>
         /// <returns>Returns true if the IP is internal, false if it is external</returns>
@@ -820,7 +855,7 @@ namespace SharedLibraryCore
                 return true;
             }
 
-            byte[] bytes = toTest.GetAddressBytes();
+            var bytes = toTest.GetAddressBytes();
             switch (bytes[0])
             {
                 case 0:
@@ -837,17 +872,15 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// retrieves the external IP address of the current running machine
+        ///     retrieves the external IP address of the current running machine
         /// </summary>
         /// <returns></returns>
         public static async Task<string> GetExternalIP()
         {
             try
             {
-                using (var wc = new WebClient())
-                {
-                    return await wc.DownloadStringTaskAsync("https://api.ipify.org");
-                }
+                using var wc = new HttpClient();
+                return await wc.GetStringAsync("https://api.ipify.org");
             }
 
             catch
@@ -857,7 +890,7 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// Determines if the given message is a quick message
+        ///     Determines if the given message is a quick message
         /// </summary>
         /// <param name="message"></param>
         /// <returns>true if the </returns>
@@ -867,41 +900,51 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// trims new line and whitespace from string
+        ///     trims new line and whitespace from string
         /// </summary>
         /// <param name="str">source string</param>
         /// <returns></returns>
-        public static string TrimNewLine(this string str) => str.Trim().TrimEnd('\r', '\n');
+        public static string TrimNewLine(this string str)
+        {
+            return str.Trim().TrimEnd('\r', '\n');
+        }
 
         public static Vector3 FixIW4Angles(this Vector3 vector)
         {
-            float X = vector.X >= 0 ? vector.X : 360.0f + vector.X;
-            float Y = vector.Y >= 0 ? vector.Y : 360.0f + vector.Y;
-            float Z = vector.Z >= 0 ? vector.Z : 360.0f + vector.Z;
+            var X = vector.X >= 0 ? vector.X : 360.0f + vector.X;
+            var Y = vector.Y >= 0 ? vector.Y : 360.0f + vector.Y;
+            var Z = vector.Z >= 0 ? vector.Z : 360.0f + vector.Z;
 
             return new Vector3(Y, X, Z);
         }
 
-        public static float ToRadians(this float value) => (float)Math.PI * value / 180.0f;
+        public static float ToRadians(this float value)
+        {
+            return (float)Math.PI * value / 180.0f;
+        }
 
-        public static float ToDegrees(this float value) => value * 180.0f / (float)Math.PI;
+        public static float ToDegrees(this float value)
+        {
+            return value * 180.0f / (float)Math.PI;
+        }
 
         public static double[] AngleStuff(Vector3 a, Vector3 b)
         {
-            double deltaX = 180.0 - Math.Abs(Math.Abs(a.X - b.X) - 180.0);
-            double deltaY = 180.0 - Math.Abs(Math.Abs(a.Y - b.Y) - 180.0);
+            var deltaX = 180.0 - Math.Abs(Math.Abs(a.X - b.X) - 180.0);
+            var deltaY = 180.0 - Math.Abs(Math.Abs(a.Y - b.Y) - 180.0);
 
             return new[] { deltaX, deltaY };
         }
 
         /// <summary>
-        /// attempts to create and persist a penalty
+        ///     attempts to create and persist a penalty
         /// </summary>
         /// <param name="penalty"></param>
         /// <param name="penaltyService"></param>
         /// <param name="logger"></param>
         /// <returns>true of the create succeeds, false otherwise</returns>
-        public static async Task<bool> TryCreatePenalty(this EFPenalty penalty, IEntityService<EFPenalty> penaltyService, ILogger logger)
+        public static async Task<bool> TryCreatePenalty(this EFPenalty penalty,
+            IEntityService<EFPenalty> penaltyService, ILogger logger)
         {
             try
             {
@@ -918,12 +961,12 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// https://www.planetgeek.ch/2016/12/08/async-method-without-cancellation-support-do-it-my-way/
+        ///     https://www.planetgeek.ch/2016/12/08/async-method-without-cancellation-support-do-it-my-way/
         /// </summary>
         public static async Task WithWaitCancellation(this Task task,
-              CancellationToken cancellationToken)
+            CancellationToken cancellationToken)
         {
-            Task completedTask = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cancellationToken));
+            var completedTask = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cancellationToken));
             if (completedTask == task)
             {
                 await task;
@@ -936,36 +979,39 @@ namespace SharedLibraryCore
         }
 
         public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout)
-        { 
-             await Task.WhenAny(task, Task.Delay(timeout));
-             return await task;
+        {
+            await Task.WhenAny(task, Task.Delay(timeout));
+            return await task;
         }
-        
+
         public static async Task WithTimeout(this Task task, TimeSpan timeout)
-        { 
+        {
             await Task.WhenAny(task, Task.Delay(timeout));
         }
-        
 
-        public static bool ShouldHideLevel(this Permission perm) => perm == Permission.Flagged;
+
+        public static bool ShouldHideLevel(this Permission perm)
+        {
+            return perm == Permission.Flagged;
+        }
 
         /// <summary>
-        /// parses translation string into tokens that are able to be formatted by the webfront
+        ///     parses translation string into tokens that are able to be formatted by the webfront
         /// </summary>
         /// <param name="translationKey">key for translation lookup</param>
         /// <returns></returns>
         public static WebfrontTranslationHelper[] SplitTranslationTokens(string translationKey)
         {
-            string translationString = CurrentLocalization.LocalizationIndex[translationKey];
+            var translationString = CurrentLocalization.LocalizationIndex[translationKey];
             var builder = new StringBuilder();
             var results = new List<WebfrontTranslationHelper>();
 
-            foreach (string word in translationString.Split(' '))
+            foreach (var word in translationString.Split(' '))
             {
-                string finalWord = word;
+                var finalWord = word;
 
-                if ((word.StartsWith("{{") && !word.EndsWith("}}")) ||
-                    (builder.Length > 0 && !word.EndsWith("}}")))
+                if (word.StartsWith("{{") && !word.EndsWith("}}") ||
+                    builder.Length > 0 && !word.EndsWith("}}"))
                 {
                     builder.Append($"{word} ");
                     continue;
@@ -979,12 +1025,14 @@ namespace SharedLibraryCore
                 }
 
                 var match = Regex.Match(finalWord, @"{{([^}|^-]+)(?:->)([^}]+)}}|{{([^}]+)}}");
-                bool isInterpolation = match.Success;
+                var isInterpolation = match.Success;
 
                 results.Add(new WebfrontTranslationHelper
                 {
                     IsInterpolation = isInterpolation,
-                    MatchValue = isInterpolation ? match.Groups[3].Length > 0 ? match.Groups[3].ToString() : match.Groups[1].ToString() : finalWord,
+                    MatchValue = isInterpolation
+                        ? match.Groups[3].Length > 0 ? match.Groups[3].ToString() : match.Groups[1].ToString()
+                        : finalWord,
                     TranslationValue = isInterpolation && match.Groups[2].Length > 0 ? match.Groups[2].ToString() : ""
                 });
             }
@@ -993,39 +1041,41 @@ namespace SharedLibraryCore
         }
 
         /// <summary>
-        /// indicates if running in development mode
+        ///     indicates if running in development mode
         /// </summary>
         /// <returns></returns>
-        public static bool IsDevelopment => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+        public static bool IsDevelopment =>
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
         /// <summary>
-        /// replaces any directory separator chars with the platform specific character
+        ///     replaces any directory separator chars with the platform specific character
         /// </summary>
         /// <param name="path">original file path</param>
         /// <returns></returns>
         public static string FixDirectoryCharacters(this string path)
         {
-            foreach (char separator in DirectorySeparatorChars)
-            {
+            foreach (var separator in DirectorySeparatorChars)
                 path = (path ?? "").Replace(separator, Path.DirectorySeparatorChar);
-            }
 
             return path;
         }
 
         /// <summary>
-        /// wrapper method for humanizee that uses current current culture
+        ///     wrapper method for humanizee that uses current current culture
         /// </summary>
-        public static string HumanizeForCurrentCulture(this TimeSpan timeSpan, int precision = 1, TimeUnit maxUnit = TimeUnit.Week,
+        public static string HumanizeForCurrentCulture(this TimeSpan timeSpan, int precision = 1,
+            TimeUnit maxUnit = TimeUnit.Week,
             TimeUnit minUnit = TimeUnit.Second, string collectionSeparator = ", ", bool toWords = false)
         {
-            return timeSpan.Humanize(precision, CurrentLocalization.Culture, maxUnit, minUnit, collectionSeparator, toWords);
+            return timeSpan.Humanize(precision, CurrentLocalization.Culture, maxUnit, minUnit, collectionSeparator,
+                toWords);
         }
 
         /// <summary>
-        /// wrapper method for humanizee that uses current current culture
+        ///     wrapper method for humanizee that uses current current culture
         /// </summary>
-        public static string HumanizeForCurrentCulture(this DateTime input, bool utcDate = true, DateTime? dateToCompareAgainst = null, CultureInfo culture = null)
+        public static string HumanizeForCurrentCulture(this DateTime input, bool utcDate = true,
+            DateTime? dateToCompareAgainst = null, CultureInfo culture = null)
         {
             return input.Humanize(utcDate, dateToCompareAgainst, CurrentLocalization.Culture);
         }
@@ -1037,7 +1087,7 @@ namespace SharedLibraryCore
 
         public static EFClient ToPartialClient(this Data.Models.Client.EFClient client)
         {
-            return new EFClient()
+            return new EFClient
             {
                 ClientId = client.ClientId,
                 NetworkId = client.NetworkId,
@@ -1069,10 +1119,12 @@ namespace SharedLibraryCore
         {
             return value.ToString("#,##0", CurrentLocalization.Culture);
         }
-        
+
         public static string ToNumericalString(this double value, int precision = 0)
         {
-            return value.ToString("#,##0" + $"{(precision > 0 ? "." : "")}" + new string(Enumerable.Repeat('0', precision).ToArray()), CurrentLocalization.Culture);
+            return value.ToString(
+                "#,##0" + $"{(precision > 0 ? "." : "")}" + new string(Enumerable.Repeat('0', precision).ToArray()),
+                CurrentLocalization.Culture);
         }
 
         public static string ToNumericalString(this double? value, int precision = 0)
@@ -1087,13 +1139,12 @@ namespace SharedLibraryCore
 
             if (message.Length <= length)
             {
-                return new[] {message};
+                return new[] { message };
             }
+
             int i;
             for (i = 0; i < message.Length - length; i += length)
-            {
                 messages.Add(new string(message.Skip(i).Take(length).ToArray()));
-            }
 
             var left = message.Length - length;
 
@@ -1112,7 +1163,7 @@ namespace SharedLibraryCore
             {
                 return appConfig.PresetPenaltyReasons[reason.ToLower()];
             }
-            
+
             var regex = Regex.Match(reason, @"rule(\d+)", RegexOptions.IgnoreCase);
             if (!regex.Success)
             {

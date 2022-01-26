@@ -2,9 +2,9 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <PackageId>RaidMax.IW4MAdmin.SharedLibraryCore</PackageId>
-        <Version>2022.01.20.1</Version>
+        <Version>2022.01.25.2</Version>
         <Authors>RaidMax</Authors>
         <Company>Forever None</Company>
         <Configurations>Debug;Release;Prerelease</Configurations>
@@ -19,7 +19,7 @@
         <IsPackable>true</IsPackable>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>Shared Library for IW4MAdmin</Description>
-        <PackageVersion>2022.01.20.1</PackageVersion>
+        <PackageVersion>2022.01.25.2</PackageVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">
@@ -28,23 +28,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="9.3.0"/>
-        <PackageReference Include="Humanizer.Core" Version="2.8.26"/>
-        <PackageReference Include="Humanizer.Core.ru" Version="2.8.26"/>
-        <PackageReference Include="Humanizer.Core.de" Version="2.8.26"/>
-        <PackageReference Include="Humanizer.Core.es" Version="2.8.26"/>
-        <PackageReference Include="Humanizer.Core.pt" Version="2.8.26"/>
+        <PackageReference Include="FluentValidation" Version="10.3.6"/>
+        <PackageReference Include="Humanizer.Core" Version="2.13.14"/>
+        <PackageReference Include="Humanizer.Core.ru" Version="2.13.14"/>
+        <PackageReference Include="Humanizer.Core.de" Version="2.13.14"/>
+        <PackageReference Include="Humanizer.Core.es" Version="2.13.14"/>
+        <PackageReference Include="Humanizer.Core.pt" Version="2.13.14"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.10"/>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.10"/>
-        <PackageReference Include="Newtonsoft.Json" Version="12.0.3"/>
-        <PackageReference Include="Serilog.AspNetCore" Version="3.4.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="6.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="4.1.0"/>
         <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0"/>
     </ItemGroup>
 

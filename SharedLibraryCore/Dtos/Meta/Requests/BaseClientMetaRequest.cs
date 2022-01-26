@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharedLibraryCore.Dtos.Meta.Requests
+﻿namespace SharedLibraryCore.Dtos.Meta.Requests
 {
     public class BaseClientMetaRequest : PaginationRequest
     {

@@ -7,7 +7,7 @@ namespace SharedLibraryCore.Interfaces
     public interface IGameServer
     {
         /// <summary>
-        /// kicks target on behalf of origin for given reason
+        ///     kicks target on behalf of origin for given reason
         /// </summary>
         /// <param name="reason">reason client is being kicked</param>
         /// <param name="target">client to kick</param>

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharedLibraryCore.Dtos
+﻿namespace SharedLibraryCore.Dtos
 {
     /// <summary>
-    /// This class holds the basic info for api entities
+    ///     This class holds the basic info for api entities
     /// </summary>
     public class EntityInfo
     {

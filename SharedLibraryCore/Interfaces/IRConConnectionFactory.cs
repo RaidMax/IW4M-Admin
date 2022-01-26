@@ -3,12 +3,12 @@
 namespace SharedLibraryCore.Interfaces
 {
     /// <summary>
-    /// defines the capabilities of an RCon connection factory
+    ///     defines the capabilities of an RCon connection factory
     /// </summary>
     public interface IRConConnectionFactory
     {
         /// <summary>
-        /// creates an rcon connection instance
+        ///     creates an rcon connection instance
         /// </summary>
         /// <param name="ipEndpoint">ip address and port of the server</param>
         /// <param name="password"> password of the server</param>

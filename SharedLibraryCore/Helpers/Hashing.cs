@@ -5,13 +5,12 @@ namespace SharedLibraryCore.Helpers
     public class Hashing
     {
         /// <summary>
-        /// Generate password hash and salt
+        ///     Generate password hash and salt
         /// </summary>
         /// <param name="password">plaintext password</param>
         /// <returns></returns>
         public static string[] Hash(string password, string saltStr = null)
         {
-
             string hash;
             string salt;
             var CryptoSvc = new PBKDF2();
@@ -21,22 +20,19 @@ namespace SharedLibraryCore.Helpers
             {
                 hash = CryptoSvc.Compute(password);
                 salt = CryptoSvc.Salt;
-                return new string[]
+                return new[]
                 {
                     hash,
                     salt
                 };
             }
 
-            else
+            hash = CryptoSvc.Compute(password, saltStr);
+            return new[]
             {
-                hash = CryptoSvc.Compute(password, saltStr);
-                return new string[]
-                {
-                    hash,
-                    ""
-                };
-            }
+                hash,
+                ""
+            };
         }
     }
 }

@@ -1,28 +1,29 @@
-﻿using SharedLibraryCore.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Configuration
 {
     /// <summary>
-    /// Basic command configuration
+    ///     Basic command configuration
     /// </summary>
     public class CommandConfiguration : IBaseConfiguration
     {
         /// <summary>
-        /// Dict of command class names mapped to configurable properties
+        ///     Dict of command class names mapped to configurable properties
         /// </summary>
-        public Dictionary<string, CommandProperties> Commands { get; set; } = new Dictionary<string, CommandProperties>();
+        public Dictionary<string, CommandProperties> Commands { get; set; } =
+            new Dictionary<string, CommandProperties>();
 
         /// <summary>
-        /// prefix indicated the chat message is a command
+        ///     prefix indicated the chat message is a command
         /// </summary>
         [JsonIgnore]
         public string CommandPrefix { get; set; }
 
         /// <summary>
-        /// prefix indicating that the chat message is a broadcast command
+        ///     prefix indicating that the chat message is a broadcast command
         /// </summary>
         [JsonIgnore]
         public string BroadcastCommandPrefix { get; set; }
@@ -32,6 +33,9 @@ namespace SharedLibraryCore.Configuration
             throw new NotImplementedException();
         }
 
-        public string Name() => nameof(CommandConfiguration);
+        public string Name()
+        {
+            return nameof(CommandConfiguration);
+        }
     }
 }

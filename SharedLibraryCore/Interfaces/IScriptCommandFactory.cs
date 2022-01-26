@@ -4,12 +4,12 @@ using System.Collections.Generic;
 namespace SharedLibraryCore.Interfaces
 {
     /// <summary>
-    /// defines capabilities of script command factory
+    ///     defines capabilities of script command factory
     /// </summary>
     public interface IScriptCommandFactory
     {
         /// <summary>
-        /// generate a new script command from parsed source
+        ///     generate a new script command from parsed source
         /// </summary>
         /// <param name="name">name of command</param>
         /// <param name="alias">alias of command</param>
@@ -19,6 +19,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="args">command arguments (name, is required)</param>
         /// <param name="executeAction">action to peform when commmand is executed</param>
         /// <returns></returns>
-        IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction);
+        IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission,
+            bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction);
     }
 }

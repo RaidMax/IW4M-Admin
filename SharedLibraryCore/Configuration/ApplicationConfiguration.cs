@@ -1,10 +1,10 @@
-﻿using SharedLibraryCore.Configuration.Attributes;
-using SharedLibraryCore.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Newtonsoft.Json;
+using SharedLibraryCore.Configuration.Attributes;
+using SharedLibraryCore.Interfaces;
 using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Configuration
@@ -12,8 +12,9 @@ namespace SharedLibraryCore.Configuration
     public class ApplicationConfiguration : IBaseConfiguration
     {
         [ConfigurationIgnore]
-        public CommunityInformationConfiguration CommunityInformation { get; set; } = new CommunityInformationConfiguration();
-            
+        public CommunityInformationConfiguration CommunityInformation { get; set; } =
+            new CommunityInformationConfiguration();
+
         [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
         [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor",
             "WebfrontCustomBranding")]
@@ -38,8 +39,7 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_BRANDING")]
         public string WebfrontCustomBranding { get; set; }
 
-        [ConfigurationIgnore]
-        public WebfrontConfiguration Webfront { get; set; } = new WebfrontConfiguration();
+        [ConfigurationIgnore] public WebfrontConfiguration Webfront { get; set; } = new WebfrontConfiguration();
 
         [LocalizedDisplayName("SETUP_ENABLE_MULTIOWN")]
         public bool EnableMultipleOwners { get; set; }
@@ -116,8 +116,7 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
         public bool EnableColorCodes { get; set; }
 
-        [ConfigurationIgnore] 
-        public string IngameAccentColorKey { get; set; } = "Cyan";
+        [ConfigurationIgnore] public string IngameAccentColorKey { get; set; } = "Cyan";
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
         public int AutoMessagePeriod { get; set; }
@@ -135,7 +134,8 @@ namespace SharedLibraryCore.Configuration
         public int MapChangeDelaySeconds { get; set; } = 5;
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BAN_DURATIONS")]
-        public TimeSpan[] BanDurations { get; set; } = {
+        public TimeSpan[] BanDurations { get; set; } =
+        {
             TimeSpan.FromHours(1),
             TimeSpan.FromHours(6),
             TimeSpan.FromDays(1),
@@ -147,36 +147,38 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]
         public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new Dictionary<string, string>
-            {{"afk", "Away from keyboard"}, {"ci", "Connection interrupted. Reconnect"}};
-        [LocalizedDisplayName(("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY"))]
+            { { "afk", "Away from keyboard" }, { "ci", "Connection interrupted. Reconnect" } };
+
+        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY")]
         public bool EnablePrivilegedUserPrivacy { get; set; }
 
-        [ConfigurationIgnore]
-        public bool EnableImplicitAccountLinking { get; set; } = false;
+        [ConfigurationIgnore] public bool EnableImplicitAccountLinking { get; set; } = false;
 
-        [ConfigurationIgnore] 
-        public TimeSpan MaxClientHistoryTime { get; set; } = TimeSpan.FromHours(12);
+        [ConfigurationIgnore] public TimeSpan MaxClientHistoryTime { get; set; } = TimeSpan.FromHours(12);
 
-        [ConfigurationIgnore] 
-        public TimeSpan ServerDataCollectionInterval { get; set; } = TimeSpan.FromMinutes(5);
+        [ConfigurationIgnore] public TimeSpan ServerDataCollectionInterval { get; set; } = TimeSpan.FromMinutes(5);
 
         public int ServerConnectionAttempts { get; set; } = 6;
-        
+
         [ConfigurationIgnore]
         public Dictionary<Permission, string> OverridePermissionLevelNames { get; set; } = Enum
             .GetValues(typeof(Permission))
             .Cast<Permission>()
             .ToDictionary(perm => perm, perm => perm.ToString());
-        [UIHint("ServerConfiguration")] 
-        public ServerConfiguration[] Servers { get; set; }
+
+        [UIHint("ServerConfiguration")] public ServerConfiguration[] Servers { get; set; }
 
         [ConfigurationIgnore] public int MinimumNameLength { get; set; } = 3;
         [ConfigurationIgnore] public string Id { get; set; }
         [ConfigurationIgnore] public string SubscriptionId { get; set; }
+
         [Obsolete("Moved to DefaultSettings")]
-        [ConfigurationIgnore] public MapConfiguration[] Maps { get; set; }
+        [ConfigurationIgnore]
+        public MapConfiguration[] Maps { get; set; }
+
         [Obsolete("Moved to DefaultSettings")]
-        [ConfigurationIgnore] public QuickMessageConfiguration[] QuickMessages { get; set; }
+        [ConfigurationIgnore]
+        public QuickMessageConfiguration[] QuickMessages { get; set; }
 
         [ConfigurationIgnore]
         [JsonIgnore]
@@ -192,30 +194,30 @@ namespace SharedLibraryCore.Configuration
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             Id = Guid.NewGuid().ToString();
 
-            EnableWebFront = Utilities.PromptBool(loc["SETUP_ENABLE_WEBFRONT"]);
-            EnableMultipleOwners = Utilities.PromptBool(loc["SETUP_ENABLE_MULTIOWN"]);
-            EnableSteppedHierarchy = Utilities.PromptBool(loc["SETUP_ENABLE_STEPPEDPRIV"]);
-            EnableCustomSayName = Utilities.PromptBool(loc["SETUP_ENABLE_CUSTOMSAY"]);
+            EnableWebFront = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
+            EnableMultipleOwners = loc["SETUP_ENABLE_MULTIOWN"].PromptBool();
+            EnableSteppedHierarchy = loc["SETUP_ENABLE_STEPPEDPRIV"].PromptBool();
+            EnableCustomSayName = loc["SETUP_ENABLE_CUSTOMSAY"].PromptBool();
 
-            bool useCustomParserEncoding = Utilities.PromptBool(loc["SETUP_USE_CUSTOMENCODING"]);
+            var useCustomParserEncoding = loc["SETUP_USE_CUSTOMENCODING"].PromptBool();
             if (useCustomParserEncoding)
             {
-                CustomParserEncoding = Utilities.PromptString(loc["SETUP_ENCODING_STRING"]);
+                CustomParserEncoding = loc["SETUP_ENCODING_STRING"].PromptString();
             }
 
             WebfrontBindUrl = "http://0.0.0.0:1624";
 
             if (EnableCustomSayName)
             {
-                CustomSayName = Utilities.PromptString(loc["SETUP_SAY_NAME"]);
+                CustomSayName = loc["SETUP_SAY_NAME"].PromptString();
             }
 
-            EnableSocialLink = Utilities.PromptBool(loc["SETUP_DISPLAY_SOCIAL"]);
+            EnableSocialLink = loc["SETUP_DISPLAY_SOCIAL"].PromptBool();
 
             if (EnableSocialLink)
             {
-                SocialLinkTitle = Utilities.PromptString(loc["SETUP_SOCIAL_TITLE"]);
-                SocialLinkAddress = Utilities.PromptString(loc["SETUP_SOCIAL_LINK"]);
+                SocialLinkTitle = loc["SETUP_SOCIAL_TITLE"].PromptString();
+                SocialLinkAddress = loc["SETUP_SOCIAL_LINK"].PromptString();
             }
 
             RConPollRate = 5000;

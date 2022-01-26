@@ -3,15 +3,18 @@
     public class FindClientRequest : PaginationRequest
     {
         /// <summary>
-        /// name of client
+        ///     name of client
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// network id of client
+        ///     network id of client
         /// </summary>
         public string Xuid { get; set; }
 
-        public string ToDebugString() => $"[Name={Name}, Xuid={Xuid}]";
+        public string ToDebugString()
+        {
+            return $"[Name={Name}, Xuid={Xuid}]";
+        }
     }
 }

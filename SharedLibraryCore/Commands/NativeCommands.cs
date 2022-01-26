@@ -1,30 +1,30 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Helpers;
-using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Services;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Helpers;
+using SharedLibraryCore.Interfaces;
 using static Data.Models.Client.EFClient;
 
 namespace SharedLibraryCore.Commands
 {
     /// <summary>
-    /// Quits IW4MAdmin
+    ///     Quits IW4MAdmin
     /// </summary>
     public class QuitCommand : Command
     {
-        public QuitCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public QuitCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "quit";
             Description = _translationLookup["COMMANDS_QUIT_DESC"];
@@ -41,11 +41,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Restarts IW4MAdmin
+    ///     Restarts IW4MAdmin
     /// </summary>
     public class RestartCommand : Command
     {
-        public RestartCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public RestartCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "restart";
             Description = _translationLookup["COMMANDS_RESTART_DESC"];
@@ -63,11 +64,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Claims ownership of the server
+    ///     Claims ownership of the server
     /// </summary>
     public class OwnerCommand : Command
     {
-        public OwnerCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public OwnerCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "owner";
             Description = _translationLookup["COMMANDS_OWNER_DESC"];
@@ -85,8 +87,8 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            if (await (E.Owner.Manager.GetClientService() as ClientService).GetOwnerCount() == 0 &&
-                !E.Origin.SetLevel(EFClient.Permission.Owner, Utilities.IW4MAdminClient(E.Owner)).Failed)
+            if (await E.Owner.Manager.GetClientService().GetOwnerCount() == 0 &&
+                !E.Origin.SetLevel(Permission.Owner, Utilities.IW4MAdminClient(E.Owner)).Failed)
             {
                 E.Origin.Tell(_translationLookup["COMMANDS_OWNER_SUCCESS"]);
             }
@@ -98,12 +100,14 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Warns given client for reason
+    ///     Warns given client for reason
     /// </summary>
     public class WarnCommand : Command
     {
         private readonly ApplicationConfiguration _appConfig;
-        public WarnCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+
+        public WarnCommand(ApplicationConfiguration appConfig, CommandConfiguration config,
+            ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "warn";
             Description = _translationLookup["COMMANDS_WARN_DESC"];
@@ -112,12 +116,12 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
                     Required = true
@@ -139,11 +143,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Clears all warnings for given client
+    ///     Clears all warnings for given client
     /// </summary>
     public class WarnClearCommand : Command
     {
-        public WarnClearCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public WarnClearCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "warnclear";
             Description = _translationLookup["COMMANDS_WARNCLEAR_DESC"];
@@ -152,7 +157,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
@@ -172,13 +177,14 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Kicks client for given reason
+    ///     Kicks client for given reason
     /// </summary>
     public class KickCommand : Command
     {
         private readonly ApplicationConfiguration _appConfig;
-        
-        public KickCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+
+        public KickCommand(ApplicationConfiguration appConfig, CommandConfiguration config,
+            ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "kick";
             Description = _translationLookup["COMMANDS_KICK_DESC"];
@@ -187,12 +193,12 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
                     Required = true
@@ -204,7 +210,8 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
             var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
-            switch ((await gameEvent.Target.Kick(reason, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
+            switch ((await gameEvent.Target.Kick(reason, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout,
+                        gameEvent.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.None:
                     gameEvent.Origin.Tell(_translationLookup["COMMANDS_KICK_SUCCESS"].FormatExt(gameEvent.Target.Name));
@@ -220,13 +227,15 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Temporarily bans a client
+    ///     Temporarily bans a client
     /// </summary>
     public class TempBanCommand : Command
     {
+        private static readonly string TempBanRegex = @"([0-9]+\w+)\ (.+)";
         private readonly ApplicationConfiguration _appConfig;
-        
-        public TempBanCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+
+        public TempBanCommand(ApplicationConfiguration appConfig, CommandConfiguration config,
+            ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "tempban";
             Description = _translationLookup["COMMANDS_TEMPBAN_DESC"];
@@ -235,17 +244,17 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_DURATION"],
-                    Required = true,
+                    Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
                     Required = true
@@ -253,8 +262,6 @@ namespace SharedLibraryCore.Commands
             };
             _appConfig = appConfig;
         }
-
-        private static readonly string TempBanRegex = @"([0-9]+\w+)\ (.+)";
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
@@ -271,16 +278,20 @@ namespace SharedLibraryCore.Commands
 
                 else
                 {
-                    switch ((await gameEvent.Target.TempBan(tempbanReason, length, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
+                    switch ((await gameEvent.Target.TempBan(tempbanReason, length, gameEvent.Origin)
+                                .WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken))
+                            .FailReason)
                     {
                         case GameEvent.EventFailReason.None:
-                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"].FormatExt(gameEvent.Target, length.HumanizeForCurrentCulture()));
+                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_SUCCESS"]
+                                .FormatExt(gameEvent.Target, length.HumanizeForCurrentCulture()));
                             break;
                         case GameEvent.EventFailReason.Exception:
                             gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                             break;
                         default:
-                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL"].FormatExt(gameEvent.Target.Name));
+                            gameEvent.Origin.Tell(_translationLookup["COMMANDS_TEMPBAN_FAIL"]
+                                .FormatExt(gameEvent.Target.Name));
                             break;
                     }
                 }
@@ -289,12 +300,14 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Permanently bans a client
+    ///     Permanently bans a client
     /// </summary>
     public class BanCommand : Command
     {
         private readonly ApplicationConfiguration _appConfig;
-        public BanCommand(ApplicationConfiguration appConfig, CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+
+        public BanCommand(ApplicationConfiguration appConfig, CommandConfiguration config,
+            ITranslationLookup translationLookup) : base(config, translationLookup)
         {
             Name = "ban";
             Description = _translationLookup["COMMANDS_BAN_DESC"];
@@ -303,12 +316,12 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
                     Required = true
@@ -320,7 +333,9 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
             var reason = gameEvent.Data.FindRuleForReason(_appConfig, gameEvent.Owner);
-            switch ((await gameEvent.Target.Ban(reason, gameEvent.Origin, false).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
+            switch ((await gameEvent.Target.Ban(reason, gameEvent.Origin, false)
+                        .WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken))
+                    .FailReason)
             {
                 case GameEvent.EventFailReason.None:
                     gameEvent.Origin.Tell(_translationLookup["COMMANDS_BAN_SUCCESS"].FormatExt(gameEvent.Target.Name));
@@ -336,11 +351,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Unbans a banned client
+    ///     Unbans a banned client
     /// </summary>
     public class UnbanCommand : Command
     {
-        public UnbanCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public UnbanCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "unban";
             Description = _translationLookup["COMMANDS_UNBAN_DESC"];
@@ -349,15 +365,15 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_CLIENTID"],
-                    Required = true,
+                    Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
-                    Required  = true
+                    Required = true
                 }
             };
         }
@@ -366,9 +382,11 @@ namespace SharedLibraryCore.Commands
         {
             // todo: don't do the lookup here
             var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId);
-            if (penalties.Where(p => p.Type == EFPenalty.PenaltyType.Ban || p.Type == EFPenalty.PenaltyType.TempBan).FirstOrDefault() != null)
+            if (penalties.Where(p => p.Type == EFPenalty.PenaltyType.Ban || p.Type == EFPenalty.PenaltyType.TempBan)
+                    .FirstOrDefault() != null)
             {
-                switch ((await E.Target.Unban(E.Data, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+                switch ((await E.Target.Unban(E.Data, E.Origin)
+                            .WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
                 {
                     case GameEvent.EventFailReason.None:
                         E.Origin.Tell(_translationLookup["COMMANDS_UNBAN_SUCCESS"].FormatExt(E.Target));
@@ -387,11 +405,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Fast restarts the map
+    ///     Fast restarts the map
     /// </summary>
     public class FastRestartCommand : Command
     {
-        public FastRestartCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public FastRestartCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "fastrestart";
             Description = _translationLookup["COMMANDS_FASTRESTART_DESC"];
@@ -404,18 +423,20 @@ namespace SharedLibraryCore.Commands
         {
             await E.Owner.ExecuteCommandAsync("fast_restart");
 
-            var _ = !E.Origin.Masked ?
-                  E.Owner.Broadcast($"(Color::Accent){E.Origin.Name} (Color::White){_translationLookup["COMMANDS_FASTRESTART_UNMASKED"]}") :
-                 E.Owner.Broadcast(_translationLookup["COMMANDS_FASTRESTART_MASKED"]);
+            var _ = !E.Origin.Masked
+                ? E.Owner.Broadcast(
+                    $"(Color::Accent){E.Origin.Name} (Color::White){_translationLookup["COMMANDS_FASTRESTART_UNMASKED"]}")
+                : E.Owner.Broadcast(_translationLookup["COMMANDS_FASTRESTART_MASKED"]);
         }
     }
 
     /// <summary>
-    /// Cycles to the next map in rotation
+    ///     Cycles to the next map in rotation
     /// </summary>
     public class MapRotateCommand : Command
     {
-        public MapRotateCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public MapRotateCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "maprotate";
             Description = _translationLookup["COMMANDS_MAPROTATE_DESC"];
@@ -426,9 +447,11 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            _ = !E.Origin.Masked ?
-                E.Owner.Broadcast($"{_translationLookup["COMMANDS_MAPROTATE"]} [(Color::Accent){E.Origin.Name}(Color::White)]", E.Origin) :
-                E.Owner.Broadcast(_translationLookup["COMMANDS_MAPROTATE"], E.Origin);
+            _ = !E.Origin.Masked
+                ? E.Owner.Broadcast(
+                    $"{_translationLookup["COMMANDS_MAPROTATE"]} [(Color::Accent){E.Origin.Name}(Color::White)]",
+                    E.Origin)
+                : E.Owner.Broadcast(_translationLookup["COMMANDS_MAPROTATE"], E.Origin);
 
             await Task.Delay(E.Owner.Manager.GetApplicationSettings().Configuration().MapChangeDelaySeconds * 1000);
             await E.Owner.ExecuteCommandAsync("map_rotate");
@@ -436,11 +459,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Sets the level of given client
+    ///     Sets the level of given client
     /// </summary>
     public class SetLevelCommand : Command
     {
-        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup, ILogger<SetLevelCommand> logger) : base(config, translationLookup)
+        public SetLevelCommand(CommandConfiguration config, ITranslationLookup translationLookup,
+            ILogger<SetLevelCommand> logger) : base(config, translationLookup)
         {
             Name = "setlevel";
             Description = _translationLookup["COMMANDS_SETLEVEL_DESC"];
@@ -449,44 +473,44 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                 new CommandArgument()
-                 {
-                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
-                     Required = true
-                 },
-                 new CommandArgument()
-                 {
-                     Name = _translationLookup["COMMANDS_ARGS_LEVEL"],
-                     Required = true
-                 }
+                new CommandArgument
+                {
+                    Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
+                    Required = true
+                },
+                new CommandArgument
+                {
+                    Name = _translationLookup["COMMANDS_ARGS_LEVEL"],
+                    Required = true
+                }
             };
             this.logger = logger;
         }
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            Permission oldPerm = gameEvent.Target.Level;
-            Permission newPerm = Utilities.MatchPermission(gameEvent.Data);
-            bool allowMultiOwner = gameEvent.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners;
-            bool steppedPrivileges = gameEvent.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy;
+            var oldPerm = gameEvent.Target.Level;
+            var newPerm = Utilities.MatchPermission(gameEvent.Data);
+            var allowMultiOwner = gameEvent.Owner.Manager.GetApplicationSettings().Configuration().EnableMultipleOwners;
+            var steppedPrivileges =
+                gameEvent.Owner.Manager.GetApplicationSettings().Configuration().EnableSteppedHierarchy;
             var targetClient = gameEvent.Target;
 
             // pre setup logic
-            bool canPromoteSteppedPriv = gameEvent.Origin.Level > newPerm || gameEvent.Origin.Level == Permission.Owner;
-            bool hasOwner = await gameEvent.Owner.Manager.GetClientService().GetOwnerCount() > 0;
+            var canPromoteSteppedPriv = gameEvent.Origin.Level > newPerm || gameEvent.Origin.Level == Permission.Owner;
+            var hasOwner = await gameEvent.Owner.Manager.GetClientService().GetOwnerCount() > 0;
 
             // trying to set self
             if (gameEvent.Target == gameEvent.Origin)
             {
                 gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_SELF"]);
-                return;
             }
 
             // origin permission not high enough
             else if (gameEvent.Origin.Level < gameEvent.Target.Level)
             {
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_PERMISSION"].FormatExt(gameEvent.Target.Name));
-                return;
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_PERMISSION"]
+                    .FormatExt(gameEvent.Target.Name));
             }
 
             // trying to set owner without enabling multiple owners
@@ -494,21 +518,20 @@ namespace SharedLibraryCore.Commands
             {
                 // only one owner is allowed
                 gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_OWNER"]);
-                return;
             }
 
             // trying to set level when only owner is allowed to
             else if (gameEvent.Origin.Level < Permission.Owner && !steppedPrivileges)
             {
                 // only the owner is allowed to set levels
-                gameEvent.Origin.Tell($"{_translationLookup["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} (Color::White){gameEvent.Target.Name}");
-                return;
+                gameEvent.Origin.Tell(
+                    $"{_translationLookup["COMMANDS_SETLEVEL_STEPPEDDISABLED"]} (Color::White){gameEvent.Target.Name}");
             }
-            
+
             else if (gameEvent.Target.Level == Permission.Flagged)
             {
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_FLAGGED"].FormatExt(gameEvent.Target.Name + "(Color::White)"));
-                return;
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_FLAGGED"]
+                    .FormatExt(gameEvent.Target.Name + "(Color::White)"));
             }
 
             // stepped privilege is enabled, but the new level is too high
@@ -523,13 +546,16 @@ namespace SharedLibraryCore.Commands
             // valid
             else if (newPerm > Permission.Banned)
             {
-                targetClient = targetClient.ClientNumber < 0 ?
-                    gameEvent.Owner.Manager.GetActiveClients()
-                    .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient : targetClient;
+                targetClient = targetClient.ClientNumber < 0
+                    ? gameEvent.Owner.Manager.GetActiveClients()
+                        .FirstOrDefault(c => c.ClientId == targetClient?.ClientId) ?? targetClient
+                    : targetClient;
 
-                logger.LogDebug("Beginning set level of client {origin} to {newPermission}", gameEvent.Origin.ToString(), newPerm);
+                logger.LogDebug("Beginning set level of client {origin} to {newPermission}",
+                    gameEvent.Origin.ToString(), newPerm);
 
-                var result = await targetClient.SetLevel(newPerm, gameEvent.Origin).WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
+                var result = await targetClient.SetLevel(newPerm, gameEvent.Origin)
+                    .WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken);
 
                 if (result.Failed)
                 {
@@ -540,13 +566,14 @@ namespace SharedLibraryCore.Commands
                             .FormatExt(gameEvent.Target.Name + "(Color::White)", newPerm.ToString()));
                         return;
                     }
-                    
+
                     using (LogContext.PushProperty("Server", gameEvent.Origin.CurrentServer?.ToString()))
                     {
-                        logger.LogWarning("Failed to set level of client {origin} {reason}", 
-                            gameEvent.Origin.ToString(), 
+                        logger.LogWarning("Failed to set level of client {origin} {reason}",
+                            gameEvent.Origin.ToString(),
                             result.FailReason);
                     }
+
                     gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                     return;
                 }
@@ -559,9 +586,11 @@ namespace SharedLibraryCore.Commands
                 }
 
                 // inform the origin that the client has been updated
-                _ = newPerm < oldPerm ?
-                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"].FormatExt(targetClient.Name)) :
-                    gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_SUCCESS"].FormatExt(targetClient.Name));
+                _ = newPerm < oldPerm
+                    ? gameEvent.Origin.Tell(_translationLookup["COMMANDS_SETLEVEL_DEMOTE_SUCCESS"]
+                        .FormatExt(targetClient.Name))
+                    : gameEvent.Origin.Tell(
+                        _translationLookup["COMMANDS_SETLEVEL_SUCCESS"].FormatExt(targetClient.Name));
             }
 
             // all other tests failed so it's invalid group
@@ -573,11 +602,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Prints the amount of memory IW4MAdmin is using
+    ///     Prints the amount of memory IW4MAdmin is using
     /// </summary>
     public class MemoryUsageCommand : Command
     {
-        public MemoryUsageCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public MemoryUsageCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "usage";
             Description = _translationLookup["COMMANDS_USAGE_DESC"];
@@ -588,17 +618,19 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            E.Origin.Tell(_translationLookup["COMMANDS_USAGE_TEXT"].FormatExt(Math.Round(((System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 2048f) / 1200f), 1)));
+            E.Origin.Tell(_translationLookup["COMMANDS_USAGE_TEXT"]
+                .FormatExt(Math.Round(Process.GetCurrentProcess().PrivateMemorySize64 / 2048f / 1200f, 1)));
             return Task.CompletedTask;
         }
     }
 
     /// <summary>
-    /// Prints out how long IW4MAdmin has been running
+    ///     Prints out how long IW4MAdmin has been running
     /// </summary>
     public class UptimeCommand : Command
     {
-        public UptimeCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public UptimeCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "uptime";
             Description = _translationLookup["COMMANDS_UPTIME_DESC"];
@@ -609,7 +641,7 @@ namespace SharedLibraryCore.Commands
 
         public override Task ExecuteAsync(GameEvent E)
         {
-            var uptime = DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime;
+            var uptime = DateTime.Now - Process.GetCurrentProcess().StartTime;
             var loc = _translationLookup;
             E.Origin.Tell(loc["COMMANDS_UPTIME_TEXT"].FormatExt(uptime.HumanizeForCurrentCulture(4)));
             return Task.CompletedTask;
@@ -618,11 +650,12 @@ namespace SharedLibraryCore.Commands
 
 
     /// <summary>
-    /// Attempts to load the specified map
+    ///     Attempts to load the specified map
     /// </summary>
     public class LoadMapCommand : Command
     {
-        public LoadMapCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public LoadMapCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "map";
             Description = _translationLookup["COMMANDS_MAP_DESC"];
@@ -631,25 +664,26 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
             Arguments = new[]
             {
-                 new CommandArgument()
-                 {
-                     Name = _translationLookup["COMMANDS_ARGS_MAP"],
-                     Required = true
-                 }
+                new CommandArgument
+                {
+                    Name = _translationLookup["COMMANDS_ARGS_MAP"],
+                    Required = true
+                }
             };
         }
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            string newMap = E.Data.Trim();
-            int delay = E.Owner.Manager.GetApplicationSettings().Configuration().MapChangeDelaySeconds * 1000;
+            var newMap = E.Data.Trim();
+            var delay = E.Owner.Manager.GetApplicationSettings().Configuration().MapChangeDelaySeconds * 1000;
 
-            var foundMap = E.Owner.Maps.FirstOrDefault(_map => _map.Name.Equals(newMap, StringComparison.InvariantCultureIgnoreCase) ||
-            _map.Alias.Equals(newMap, StringComparison.InvariantCultureIgnoreCase));
+            var foundMap = E.Owner.Maps.FirstOrDefault(_map =>
+                _map.Name.Equals(newMap, StringComparison.InvariantCultureIgnoreCase) ||
+                _map.Alias.Equals(newMap, StringComparison.InvariantCultureIgnoreCase));
 
-            _ = foundMap == null ?
-                E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_UKN"].FormatExt(newMap)) :
-                 E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(foundMap.Alias));
+            _ = foundMap == null
+                ? E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_UKN"].FormatExt(newMap))
+                : E.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(foundMap.Alias));
 
             await Task.Delay(delay);
             await E.Owner.LoadMap(foundMap?.Name ?? newMap);
@@ -658,11 +692,12 @@ namespace SharedLibraryCore.Commands
 
 
     /// <summary>
-    /// Lists server and global rules
+    ///     Lists server and global rules
     /// </summary>
     public class ListRulesCommands : Command
     {
-        public ListRulesCommands(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public ListRulesCommands(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "rules";
             Description = _translationLookup["COMMANDS_RULES_DESC"];
@@ -676,9 +711,9 @@ namespace SharedLibraryCore.Commands
             if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Length < 1 &&
                 E.Owner.ServerConfig.Rules?.Length < 1)
             {
-                var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix) ?
-                      E.Owner.Broadcast(_translationLookup["COMMANDS_RULES_NONE"]) :
-                      E.Origin.Tell(_translationLookup["COMMANDS_RULES_NONE"]);
+                var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix)
+                    ? E.Owner.Broadcast(_translationLookup["COMMANDS_RULES_NONE"])
+                    : E.Origin.Tell(_translationLookup["COMMANDS_RULES_NONE"]);
             }
 
             else
@@ -705,14 +740,14 @@ namespace SharedLibraryCore.Commands
         }
     }
 
-  
 
     /// <summary>
-    /// Flag given client for specified reason
+    ///     Flag given client for specified reason
     /// </summary>
     public class FlagClientCommand : Command
     {
-        public FlagClientCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public FlagClientCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "flag";
             Description = _translationLookup["COMMANDS_FLAG_DESC"];
@@ -721,12 +756,12 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
                     Required = true
@@ -736,7 +771,8 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            switch ((await E.Target.Flag(E.Data, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+            switch ((await E.Target.Flag(E.Data, E.Origin)
+                        .WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.Permission:
                     E.Origin.Tell(_translationLookup["COMMANDS_FLAG_FAIL"].FormatExt(E.Target.Name));
@@ -755,11 +791,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Unflag given client for specified reason
+    ///     Unflag given client for specified reason
     /// </summary>
     public class UnflagClientCommand : Command
     {
-        public UnflagClientCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public UnflagClientCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "unflag";
             Description = _translationLookup["COMMANDS_UNFLAG_DESC"];
@@ -768,12 +805,12 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
                 },
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_REASON"],
                     Required = true
@@ -783,7 +820,8 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            switch ((await E.Target.Unflag(E.Data, E.Origin).WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+            switch ((await E.Target.Unflag(E.Data, E.Origin)
+                        .WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
             {
                 case GameEvent.EventFailReason.None:
                     E.Origin.Tell(_translationLookup["COMMANDS_FLAG_UNFLAG"].FormatExt(E.Target.Name));
@@ -802,16 +840,17 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Masks client from announcements and online admin list
+    ///     Masks client from announcements and online admin list
     /// </summary>
     public class MaskCommand : Command
     {
-        public MaskCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public MaskCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "mask";
             Description = _translationLookup["COMMANDS_MASK_DESC"];
             Alias = "hide";
-            Permission = EFClient.Permission.Moderator;
+            Permission = Permission.Moderator;
             RequiresTarget = false;
         }
 
@@ -833,11 +872,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Lists ban information for given client
+    ///     Lists ban information for given client
     /// </summary>
     public class ListBanInfoCommand : Command
     {
-        public ListBanInfoCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public ListBanInfoCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "baninfo";
             Description = _translationLookup["COMMANDS_BANINFO_DESC"];
@@ -846,7 +886,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = true
@@ -856,7 +896,8 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            var existingPenalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.IPAddress);
+            var existingPenalties = await E.Owner.Manager.GetPenaltyService()
+                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.IPAddress);
             var penalty = existingPenalties.FirstOrDefault(b => b.Type > EFPenalty.PenaltyType.Kick);
 
             if (penalty == null)
@@ -872,18 +913,20 @@ namespace SharedLibraryCore.Commands
 
             else
             {
-                string remainingTime = (penalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture();
-                E.Origin.Tell(_translationLookup["COMMANDS_BANINFO_TB_SUCCESS"].FormatExt(E.Target.Name, penalty.Offense, remainingTime));
+                var remainingTime = (penalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture();
+                E.Origin.Tell(_translationLookup["COMMANDS_BANINFO_TB_SUCCESS"]
+                    .FormatExt(E.Target.Name, penalty.Offense, remainingTime));
             }
         }
     }
 
     /// <summary>
-    /// Executes RCon command
+    ///     Executes RCon command
     /// </summary>
     public class ExecuteRConCommand : Command
     {
-        public ExecuteRConCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public ExecuteRConCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "rcon";
             Description = _translationLookup["COMMANDS_RCON_DESC"];
@@ -892,7 +935,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_COMMANDS"],
                     Required = true
@@ -904,9 +947,7 @@ namespace SharedLibraryCore.Commands
         {
             var response = await E.Owner.ExecuteCommandAsync(E.Data.Trim());
             foreach (var item in response)
-            {
                 E.Origin.Tell(item);
-            }
 
             if (response.Length == 0)
             {
@@ -916,11 +957,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Lists external IP
+    ///     Lists external IP
     /// </summary>
     public class ListExternalIPCommand : Command
     {
-        public ListExternalIPCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public ListExternalIPCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "getexternalip";
             Description = _translationLookup["COMMANDS_IP_DESC"];
@@ -937,13 +979,13 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Prunes inactive privileged clients
+    ///     Prunes inactive privileged clients
     /// </summary>
     public class PruneAdminsCommand : Command
     {
         private readonly IDatabaseContextFactory _contextFactory;
-        
-        public PruneAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup, 
+
+        public PruneAdminsCommand(CommandConfiguration config, ITranslationLookup translationLookup,
             IDatabaseContextFactory contextFactory) : base(config, translationLookup)
         {
             Name = "prune";
@@ -954,7 +996,7 @@ namespace SharedLibraryCore.Commands
             _contextFactory = contextFactory;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_INACTIVE"],
                     Required = false
@@ -964,7 +1006,7 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent E)
         {
-            int inactiveDays = 30;
+            var inactiveDays = 30;
 
             try
             {
@@ -996,18 +1038,19 @@ namespace SharedLibraryCore.Commands
                 .ToListAsync();
             inactiveUsers.ForEach(c => c.SetLevel(Permission.User, E.Origin));
             await context.SaveChangesAsync();
-      
+
             E.Origin.Tell(_translationLookup["COMMANDS_PRUNE_SUCCESS"].FormatExt(inactiveUsers.Count));
         }
     }
 
 
     /// <summary>
-    /// Sets login password
+    ///     Sets login password
     /// </summary>
     public class SetPasswordCommand : Command
     {
-        public SetPasswordCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public SetPasswordCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "setpassword";
             Description = _translationLookup["COMMANDS_SETPASSWORD_DESC"];
@@ -1017,7 +1060,7 @@ namespace SharedLibraryCore.Commands
             AllowImpersonation = true;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PASSWORD"],
                     Required = true
@@ -1033,7 +1076,7 @@ namespace SharedLibraryCore.Commands
                 return;
             }
 
-            string[] hashedPassword = Helpers.Hashing.Hash(E.Data);
+            var hashedPassword = Hashing.Hash(E.Data);
 
             E.Origin.Password = hashedPassword[0];
             E.Origin.PasswordSalt = hashedPassword[1];
@@ -1044,11 +1087,12 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Gets the ping of a client
+    ///     Gets the ping of a client
     /// </summary>
     public class GetClientPingCommand : Command
     {
-        public GetClientPingCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public GetClientPingCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "ping";
             Description = _translationLookup["COMMANDS_PING_DESC"];
@@ -1057,7 +1101,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_PLAYER"],
                     Required = false
@@ -1086,13 +1130,14 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Sets the email for gravatar in webfront
+    ///     Sets the email for gravatar in webfront
     /// </summary>
     public class SetGravatarCommand : Command
     {
         private readonly IMetaService _metaService;
 
-        public SetGravatarCommand(CommandConfiguration config, ITranslationLookup translationLookup, IMetaService metaService) : base(config, translationLookup)
+        public SetGravatarCommand(CommandConfiguration config, ITranslationLookup translationLookup,
+            IMetaService metaService) : base(config, translationLookup)
         {
             Name = "setgravatar";
             Description = _translationLookup["COMMANDS_GRAVATAR_DESC"];
@@ -1101,7 +1146,7 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
             Arguments = new[]
             {
-                new CommandArgument()
+                new CommandArgument
                 {
                     Name = _translationLookup["COMMANDS_ARGS_GRAVATAR"],
                     Required = true
@@ -1115,8 +1160,9 @@ namespace SharedLibraryCore.Commands
         {
             using (var md5 = MD5.Create())
             {
-                string gravatarEmail = string.Concat(md5.ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
-                                .Select(h => h.ToString("x2")));
+                var gravatarEmail = string.Concat(md5
+                    .ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
+                    .Select(h => h.ToString("x2")));
                 await _metaService.AddPersistentMeta("GravatarEmail", gravatarEmail, E.Origin);
             }
 
@@ -1125,23 +1171,26 @@ namespace SharedLibraryCore.Commands
     }
 
     /// <summary>
-    /// Retrieves the next map in rotation
+    ///     Retrieves the next map in rotation
     /// </summary>
     public class NextMapCommand : Command
     {
-        public NextMapCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        public NextMapCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+            translationLookup)
         {
             Name = "nextmap";
             Description = _translationLookup["COMMANDS_NEXTMAP_DESC"];
             Alias = "nm";
-            Permission = EFClient.Permission.User;
+            Permission = Permission.User;
             RequiresTarget = false;
         }
 
         public static async Task<string> GetNextMap(Server s, ITranslationLookup lookup)
         {
-            string mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value?.ToLower() ?? "";
-            var regexMatches = Regex.Matches(mapRotation, @"((?:gametype|exec) +(?:([a-z]{1,4})(?:.cfg)?))? *map ([a-z|_|\d]+)", RegexOptions.IgnoreCase).ToList();
+            var mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value?.ToLower() ?? "";
+            var regexMatches = Regex.Matches(mapRotation,
+                    @"((?:gametype|exec) +(?:([a-z]{1,4})(?:.cfg)?))? *map ([a-z|_|\d]+)", RegexOptions.IgnoreCase)
+                .ToList();
 
             // find the current map in the rotation
             var currentMap = regexMatches.Where(m => m.Groups[3].ToString() == s.CurrentMap.Name);
@@ -1151,7 +1200,8 @@ namespace SharedLibraryCore.Commands
             // no maprotation at all
             if (regexMatches.Count() == 0)
             {
-                return lookup["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(s.CurrentMap.Alias, Utilities.GetLocalizedGametype(s.Gametype));
+                return lookup["COMMANDS_NEXTMAP_SUCCESS"]
+                    .FormatExt(s.CurrentMap.Alias, Utilities.GetLocalizedGametype(s.Gametype));
             }
 
             // the current map is not in rotation
@@ -1161,7 +1211,8 @@ namespace SharedLibraryCore.Commands
             }
 
             // there's duplicate maps in rotation
-            else if (currentMap.Count() > 1)
+
+            if (currentMap.Count() > 1)
             {
                 // gametype has been manually specified
                 var duplicateMaps = currentMap.Where(m => !string.IsNullOrEmpty(m.Groups[1].ToString()));
@@ -1176,16 +1227,17 @@ namespace SharedLibraryCore.Commands
             }
 
             // if the current map is the last map, the next map is the first map
-            var nextMapMatch = currentMap.First().Index != lastMap.Index ?
-               regexMatches[regexMatches.IndexOf(currentMap.First()) + 1] :
-               regexMatches.First();
+            var nextMapMatch = currentMap.First().Index != lastMap.Index
+                ? regexMatches[regexMatches.IndexOf(currentMap.First()) + 1]
+                : regexMatches.First();
 
-            string nextMapName = nextMapMatch.Groups[3].ToString();
+            var nextMapName = nextMapMatch.Groups[3].ToString();
 
-            nextMap = s.Maps.FirstOrDefault(m => m.Name == nextMapMatch.Groups[3].ToString()) ?? new Map() { Alias = nextMapName, Name = nextMapName };
-            string nextGametype = nextMapMatch.Groups[2].ToString().Length == 0 ?
-                Utilities.GetLocalizedGametype(s.Gametype) :
-                Utilities.GetLocalizedGametype(nextMapMatch.Groups[2].ToString());
+            nextMap = s.Maps.FirstOrDefault(m => m.Name == nextMapMatch.Groups[3].ToString()) ??
+                      new Map { Alias = nextMapName, Name = nextMapName };
+            var nextGametype = nextMapMatch.Groups[2].ToString().Length == 0
+                ? Utilities.GetLocalizedGametype(s.Gametype)
+                : Utilities.GetLocalizedGametype(nextMapMatch.Groups[2].ToString());
 
             return lookup["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(nextMap.Alias, nextGametype);
         }

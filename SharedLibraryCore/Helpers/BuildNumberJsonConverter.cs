@@ -1,10 +1,10 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace SharedLibraryCore.Helpers
 {
     /// <summary>
-    /// JSON converter for the build number
+    ///     JSON converter for the build number
     /// </summary>
     public class BuildNumberJsonConverter : JsonConverter
     {
@@ -13,7 +13,8 @@ namespace SharedLibraryCore.Helpers
             return objectType == typeof(string);
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
+            JsonSerializer serializer)
         {
             return BuildNumber.Parse(reader.Value.ToString());
         }

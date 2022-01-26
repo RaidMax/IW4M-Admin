@@ -52,7 +52,7 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public Task Save()
+        public async Task Save()
         {
             var settings = new JsonSerializerSettings()
             {
@@ -60,8 +60,8 @@ namespace IW4MAdmin.Application.Misc
             };
             settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
 
-            var appConfigJSON = JsonConvert.SerializeObject(_configuration, settings);
-            return File.WriteAllTextAsync(FileName, appConfigJSON);
+            var appConfigJson = JsonConvert.SerializeObject(_configuration, settings);
+            await File.WriteAllTextAsync(FileName, appConfigJson);
         }
 
         public T Configuration()

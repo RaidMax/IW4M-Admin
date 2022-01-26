@@ -1,5 +1,4 @@
-﻿
-namespace SharedLibraryCore.Dtos
+﻿namespace SharedLibraryCore.Dtos
 {
     public class SharedInfo
     {

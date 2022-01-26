@@ -21,6 +21,5 @@ namespace SharedLibraryCore.Formatting
 
     public class ColorCodeMapping : Dictionary<string, string>
     {
-        
     }
 }

@@ -551,7 +551,7 @@ namespace IW4MAdmin.Application
 
                         _servers.Add(ServerInstance);
                         Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(ServerInstance.Hostname.StripColors()));
-                        _logger.LogInformation("Finishing initialization and now monitoring [{server}]", ServerInstance.Hostname, ServerInstance.ToString());
+                        _logger.LogInformation("Finishing initialization and now monitoring [{Server}]", ServerInstance.Hostname);
                     }
 
                     // add the start event for this server

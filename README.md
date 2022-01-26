@@ -13,9 +13,9 @@ Latest binary builds are always available at:
 ## Setup
 **IW4MAdmin** requires minimal effort to get up and running.
 ### Prerequisites
-* [.NET Core 3.1.x Runtime](https://www.microsoft.com/net/download) *or newer*
-    * [Direct Download (Windows)](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-aspnetcore-3.1.4-windows-hosting-bundle-installer)
-    * [Package Installation (Linux)](https://docs.microsoft.com/en-us/dotnet/core/install/linux-package-manager-ubuntu-1910)
+* [.NET Core 6.0.x Runtime](https://www.microsoft.com/net/download)
+    * [Direct Download (Windows)](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-aspnetcore-6.0.1-windows-x64-installer)
+    * [Package Installation Instructions (Linux)](https://docs.microsoft.com/en-us/dotnet/core/install/linux)
 ### Installation
 1. Install .NET Core Runtime
 2.  Extract `IW4MAdmin-<version>.zip`  

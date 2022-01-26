@@ -10,7 +10,7 @@ trigger:
 pr: none
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'windows-2022'
 
 variables:
   solution: 'IW4MAdmin.sln'
@@ -21,6 +21,15 @@ variables:
   isPreRelease: false
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET Core 6 SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '6.0.x'
+    includePreviewVersions: true
+
+- task: NuGetToolInstaller@1
+
 - task: PowerShell@2
   displayName: 'Setup Pre-Release configuration'
   condition: eq(variables['Build.SourceBranch'], 'refs/heads/release/pre')
@@ -31,7 +40,7 @@ steps:
             echo '##vso[task.setvariable variable=buildConfiguration]Prerelease'
             echo '##vso[task.setvariable variable=isPreRelease]true'
     failOnStderr: true
-
+  
 - task: NuGetCommand@2
   displayName: 'Restore nuget packages'
   inputs:
@@ -55,6 +64,20 @@ steps:
     msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+      
+- task: PowerShell@2
+  displayName: 'Bundle JS Files'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host 'Getting dotnet bundle'
+      wget http://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip -o $(Build.Repository.LocalPath)\WebfrontCore\dotnet-bundle.zip
+      Write-Host 'Unzipping download'
+      Expand-Archive -LiteralPath $(Build.Repository.LocalPath)\WebfrontCore\dotnet-bundle.zip -DestinationPath $(Build.Repository.LocalPath)\WebfrontCore
+      Write-Host 'Executing dotnet-bundle'
+      $(Build.Repository.LocalPath)\WebfrontCore\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
+    failOnStderr: true
+    workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore'
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish projects'

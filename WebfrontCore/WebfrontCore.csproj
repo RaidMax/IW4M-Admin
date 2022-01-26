@@ -49,7 +49,6 @@
 
   <ItemGroup>
     <PackageReference Include="BuildWebCompiler" Version="1.12.405" />
-    <PackageReference Include="BundlerMinifier.Core" Version="3.2.449" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.6" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.1" />
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.161" />
@@ -86,9 +85,5 @@
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="if $(ConfigurationName) == Debug ( &#xD;&#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap.scss&#xD;&#xA;echo d | xcopy /f /y $(ProjectDir)wwwroot\lib\open-iconic\font\fonts $(ProjectDir)wwwroot\font\&#xD;&#xA;)" />
-  </Target>
-
-  <Target Name="MyPreCompileTarget" BeforeTargets="Build" Condition="'$(Configuration)'!='Debug'">
-   <!--<Exec Command="dotnet bundle" />-->
   </Target>
 </Project>

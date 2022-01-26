@@ -25,7 +25,17 @@ namespace WebfrontCore.Controllers.API
                 Id = server.EndPoint,
                 server.Hostname,
                 server.IP,
-                server.Port
+                server.Port,
+                Game = server.GameName.ToString(),
+                server.ClientNum,
+                server.MaxClients,
+                server.CurrentMap,
+                currentGameType = new
+                {
+                  type = server.Gametype,
+                  name = server.GametypeName
+                },
+                Parser = server.RconParser.Name,
             }));
         }
 
@@ -44,7 +54,17 @@ namespace WebfrontCore.Controllers.API
                 Id = foundServer.EndPoint,
                 foundServer.Hostname,
                 foundServer.IP,
-                foundServer.Port
+                foundServer.Port,
+                Game = foundServer.GameName.ToString(),
+                foundServer.ClientNum,
+                foundServer.MaxClients,
+                foundServer.CurrentMap,
+                currentGameType = new
+                {
+                    type = foundServer.Gametype,
+                    name = foundServer.GametypeName
+                },
+                Parser = foundServer.RconParser.Name,
             });
         }
 

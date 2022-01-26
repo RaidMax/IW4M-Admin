@@ -4,6 +4,7 @@ using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IW4MAdmin.Application.Misc
@@ -15,16 +16,23 @@ namespace IW4MAdmin.Application.Misc
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
         T _configuration;
+        private readonly SemaphoreSlim _onSaving;
 
         public BaseConfigurationHandler(string fn)
         {
+            _onSaving = new SemaphoreSlim(1, 1);
             FileName = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{fn}.json");
             Build();
         }
 
         public BaseConfigurationHandler() : this(typeof(T).Name)
         {
-            
+            _onSaving = new SemaphoreSlim(1, 1);
+        }
+
+        ~BaseConfigurationHandler()
+        {
+            _onSaving.Dispose();
         }
 
         public string FileName { get; }
@@ -54,14 +62,26 @@ namespace IW4MAdmin.Application.Misc
 
         public async Task Save()
         {
-            var settings = new JsonSerializerSettings()
+            try
             {
-                Formatting = Formatting.Indented
-            };
-            settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+                await _onSaving.WaitAsync();
+                var settings = new JsonSerializerSettings()
+                {
+                    Formatting = Formatting.Indented
+                };
+                settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
 
-            var appConfigJson = JsonConvert.SerializeObject(_configuration, settings);
-            await File.WriteAllTextAsync(FileName, appConfigJson);
+                var appConfigJson = JsonConvert.SerializeObject(_configuration, settings);
+                await File.WriteAllTextAsync(FileName, appConfigJson);
+            }
+
+            finally
+            {
+                if (_onSaving.CurrentCount == 0)
+                {
+                    _onSaving.Release(1);
+                }
+            }
         }
 
         public T Configuration()

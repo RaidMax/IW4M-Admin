@@ -268,17 +268,17 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public Task OnLoadAsync(IManager manager)
+        public async Task OnLoadAsync(IManager manager)
         {
             _logger.LogDebug("OnLoad executing for {name}", Name);
             _scriptEngine.SetValue("_manager", manager);
-            return Task.FromResult(_scriptEngine.Execute("plugin.onLoadAsync(_manager)").GetCompletionValue());
+            await Task.FromResult(_scriptEngine.Execute("plugin.onLoadAsync(_manager)").GetCompletionValue());
         }
 
-        public Task OnTickAsync(Server S)
+        public async Task OnTickAsync(Server S)
         {
             _scriptEngine.SetValue("_server", S);
-            return Task.FromResult(_scriptEngine.Execute("plugin.onTickAsync(_server)").GetCompletionValue());
+            await Task.FromResult(_scriptEngine.Execute("plugin.onTickAsync(_server)").GetCompletionValue());
         }
 
         public async Task OnUnloadAsync()

@@ -40,7 +40,7 @@ namespace IW4MAdmin.Application
 {
     public class Program
     {
-        public static BuildNumber Version { get; private set; } = BuildNumber.Parse(Utilities.GetVersionAsString());
+        public static BuildNumber Version { get; } = BuildNumber.Parse(Utilities.GetVersionAsString());
         public static ApplicationManager ServerManager;
         private static Task ApplicationTask;
         private static ServiceProvider serviceProvider;
@@ -56,7 +56,7 @@ namespace IW4MAdmin.Application
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
 
-            Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKey);
+            Console.CancelKeyPress += OnCancelKey;
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4MAdmin");
@@ -93,8 +93,8 @@ namespace IW4MAdmin.Application
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
             IServiceCollection services = null;
-            logger.LogInformation("Begin IW4MAdmin startup. Version is {version} {@args}", Version, args);
-
+            logger.LogInformation("Begin IW4MAdmin startup. Version is {Version} {@Args}", Version, args);
+            
             try
             {
                 // do any needed housekeeping file/folder migrations
@@ -108,16 +108,23 @@ namespace IW4MAdmin.Application
                 ServerManager = (ApplicationManager) serviceProvider.GetRequiredService<IManager>();
                 translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
 
-                await versionChecker.CheckVersion();
-                await ServerManager.Init();
+                ApplicationTask = RunApplicationTasksAsync(logger, services);
+                var tasks = new[]
+                {
+                    versionChecker.CheckVersion(),
+                    ServerManager.Init(),
+                    ApplicationTask
+                };
+
+                await Task.WhenAll(tasks);
             }
 
             catch (Exception e)
             {
-                string failMessage = translationLookup == null
+                var failMessage = translationLookup == null
                     ? "Failed to initialize IW4MAdmin"
                     : translationLookup["MANAGER_INIT_FAIL"];
-                string exitMessage = translationLookup == null
+                var exitMessage = translationLookup == null
                     ? "Press enter to exit..."
                     : translationLookup["MANAGER_EXIT"];
 
@@ -137,7 +144,7 @@ namespace IW4MAdmin.Application
                             .FormatExt(configException.ConfigurationFileName));
                     }
 
-                    foreach (string error in configException.Errors)
+                    foreach (var error in configException.Errors)
                     {
                         Console.WriteLine(error);
                     }
@@ -153,27 +160,12 @@ namespace IW4MAdmin.Application
                 return;
             }
 
-            try
-            {
-                ApplicationTask = RunApplicationTasksAsync(logger, services);
-                await ApplicationTask;
-            }
-
-            catch (Exception e)
-            {
-                logger.LogCritical(e, "Failed to launch IW4MAdmin");
-                string failMessage = translationLookup == null
-                    ? "Failed to launch IW4MAdmin"
-                    : translationLookup["MANAGER_INIT_FAIL"];
-                Console.WriteLine($"{failMessage}: {e.GetExceptionInfo()}");
-            }
-
             if (ServerManager.IsRestartRequested)
             {
                 goto restart;
             }
 
-            serviceProvider.Dispose();
+            await serviceProvider.DisposeAsync();
         }
 
         /// <summary>
@@ -190,13 +182,15 @@ namespace IW4MAdmin.Application
 
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
             // because we can't exit early from waiting on console input, and it prevents us from restarting
-            var inputThread = new Thread(async () => await ReadConsoleInput(logger));
+            async void ReadInput() => await ReadConsoleInput(logger);
+
+            var inputThread = new Thread(ReadInput);
             inputThread.Start();
 
             var tasks = new[]
             {
-                ServerManager.Start(),
                 webfrontTask,
+                ServerManager.Start(),
                 serviceProvider.GetRequiredService<IMasterCommunication>()
                     .RunUploadStatus(ServerManager.CancellationToken),
                 collectionService.BeginCollectionAsync(cancellationToken: ServerManager.CancellationToken)
@@ -208,8 +202,7 @@ namespace IW4MAdmin.Application
             logger.LogInformation("Shutdown completed successfully");
             Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_SHUTDOWN_SUCCESS"]);
         }
-
-
+        
         /// <summary>
         /// reads input from the console and executes entered commands on the default server
         /// </summary>
@@ -223,7 +216,7 @@ namespace IW4MAdmin.Application
             }
 
             string lastCommand;
-            var Origin = Utilities.IW4MAdminClient(ServerManager.Servers[0]);
+            EFClient origin = null;
 
             try
             {
@@ -231,23 +224,27 @@ namespace IW4MAdmin.Application
                 {
                     lastCommand = await Console.In.ReadLineAsync();
 
-                    if (lastCommand?.Length > 0)
+                    if (lastCommand == null)
                     {
-                        if (lastCommand?.Length > 0)
-                        {
-                            GameEvent E = new GameEvent()
-                            {
-                                Type = GameEvent.EventType.Command,
-                                Data = lastCommand,
-                                Origin = Origin,
-                                Owner = ServerManager.Servers[0]
-                            };
-
-                            ServerManager.AddEvent(E);
-                            await E.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
-                            Console.Write('>');
-                        }
+                        continue;
                     }
+
+                    if (!lastCommand.Any())
+                    {
+                        continue;
+                    }
+
+                    var gameEvent = new GameEvent
+                    {
+                        Type = GameEvent.EventType.Command,
+                        Data = lastCommand,
+                        Origin = origin ??= Utilities.IW4MAdminClient(ServerManager.Servers.FirstOrDefault()),
+                        Owner = ServerManager.Servers[0]
+                    };
+
+                    ServerManager.AddEvent(gameEvent);
+                    await gameEvent.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
+                    Console.Write('>');
                 }
             }
             catch (OperationCanceledException)
@@ -355,7 +352,7 @@ namespace IW4MAdmin.Application
             {
                 appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
                 appConfigHandler.Set(appConfig);
-                appConfigHandler.Save();
+                appConfigHandler.Save().RunSynchronously();
             }
 
             // register override level names

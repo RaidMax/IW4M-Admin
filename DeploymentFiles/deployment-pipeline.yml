@@ -71,11 +71,11 @@ steps:
     targetType: 'inline'
     script: |
       Write-Host 'Getting dotnet bundle'
-      wget http://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip -o $(Build.Repository.LocalPath)\WebfrontCore\dotnet-bundle.zip
+      wget http://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip -o $(Build.Repository.LocalPath)\dotnet-bundle.zip
       Write-Host 'Unzipping download'
-      Expand-Archive -LiteralPath $(Build.Repository.LocalPath)\WebfrontCore\dotnet-bundle.zip -DestinationPath $(Build.Repository.LocalPath)\WebfrontCore
+      Expand-Archive -LiteralPath $(Build.Repository.LocalPath)\dotnet-bundle.zip -DestinationPath $(Build.Repository.LocalPath)
       Write-Host 'Executing dotnet-bundle'
-      $(Build.Repository.LocalPath)\WebfrontCore\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
+      $(Build.Repository.LocalPath)\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore'
 
@@ -104,7 +104,7 @@ steps:
   inputs:
     filename: 'Application\BuildScripts\PostPublish.bat'
     workingFolder: '$(Build.Repository.LocalPath)'
-    arguments: '$(outputFolder)'
+    arguments: '$(outputFolder) $(Build.Repository.LocalPath)'
     failOnStandardError: true
 
 - task: PowerShell@2
@@ -161,6 +161,11 @@ steps:
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
     replaceExistingArchive: true
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
+    artifact: 'IW4MAdmin-$(Build.BuildNumber).zip'
 
 - task: FtpUpload@2
   displayName: 'Upload zip file to website'

@@ -23,6 +23,7 @@ echo setting up default folders
 if not exist "%PublishDir%\Configuration" md "%PublishDir%\Configuration"
 move "%PublishDir%\DefaultSettings.json" "%PublishDir%\Configuration\"
 if not exist "%PublishDir%\Lib\" md "%PublishDir%\Lib\"
+del "%PublishDir%\Microsoft.CodeAnalysis*.dll" /F /Q
 move "%PublishDir%\*.dll" "%PublishDir%\Lib\"
 move "%PublishDir%\*.json" "%PublishDir%\Lib\"
 move "%PublishDir%\runtimes" "%PublishDir%\Lib\runtimes"
@@ -30,6 +31,16 @@ move "%PublishDir%\ru" "%PublishDir%\Lib\ru"
 move "%PublishDir%\de" "%PublishDir%\Lib\de"
 move "%PublishDir%\pt" "%PublishDir%\Lib\pt"
 move "%PublishDir%\es" "%PublishDir%\Lib\es"
+rmdir /Q /S "%PublishDir%\cs"
+rmdir /Q /S "%PublishDir%\fr"
+rmdir /Q /S "%PublishDir%\it"
+rmdir /Q /S "%PublishDir%\ja"
+rmdir /Q /S "%PublishDir%\ko"
+rmdir /Q /S "%PublishDir%\pl"
+rmdir /Q /S "%PublishDir%\pt-BR"
+rmdir /Q /S "%PublishDir%\tr"
+rmdir /Q /S "%PublishDir%\zh-Hans"
+rmdir /Q /S "%PublishDir%\zh-Hant"
 if exist "%PublishDir%\refs" move "%PublishDir%\refs" "%PublishDir%\Lib\refs"
 
 echo making start scripts
@@ -40,6 +51,13 @@ echo moving front-end library dependencies
 if not exist "%PublishDir%\wwwroot\font" mkdir "%PublishDir%\wwwroot\font"
 move "WebfrontCore\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\font\"
 if exist "%PublishDir%\wwwroot\lib" rd /s /q "%PublishDir%\wwwroot\lib"
+if not exist "%PublishDir%\wwwroot\css" mkdir "%PublishDir%\wwwroot\css"
+move "WebfrontCore\wwwroot\css\global.min.css" "%PublishDir%\wwwroot\css\global.min.css"
+if not exist "%PublishDir%\wwwroot\js" mkdir "%PublishDir%\wwwroot\js"
+move "%SourceDir%\WebfrontCore\wwwroot\js\global.min.js" "%PublishDir%\wwwroot\js\global.min.js"
+if not exist "%PublishDir%\wwwroot\images" mkdir "%PublishDir%\wwwroot\images"
+xcopy "%SourceDir%\WebfrontCore\wwwroot\images" "%PublishDir%\wwwroot\images" /E /H /C /I
+
 
 echo setting permissions...
 cacls "%PublishDir%" /t /e /p Everyone:F

@@ -331,6 +331,9 @@ namespace IW4MAdmin.Application
         /// </summary>
         private static IServiceCollection ConfigureServices(string[] args)
         {
+            // todo: this is a quick fix
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             // setup the static resources (config/master api/translations)
             var serviceCollection = new ServiceCollection();
             var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");

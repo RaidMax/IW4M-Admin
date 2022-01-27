@@ -41,9 +41,9 @@ namespace IW4MAdmin.Application
     public class Program
     {
         public static BuildNumber Version { get; } = BuildNumber.Parse(Utilities.GetVersionAsString());
-        public static ApplicationManager ServerManager;
-        private static Task ApplicationTask;
-        private static ServiceProvider serviceProvider;
+        private static ApplicationManager _serverManager;
+        private static Task _applicationTask;
+        private static ServiceProvider _serviceProvider;
 
         /// <summary>
         /// entrypoint of the application
@@ -75,10 +75,10 @@ namespace IW4MAdmin.Application
         /// <param name="e"></param>
         private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
         {
-            ServerManager?.Stop();
-            if (ApplicationTask != null)
+            _serverManager?.Stop();
+            if (_applicationTask != null)
             {
-                await ApplicationTask;
+                await _applicationTask;
             }
         }
 
@@ -92,7 +92,6 @@ namespace IW4MAdmin.Application
             ITranslationLookup translationLookup = null;
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
-            IServiceCollection services = null;
             logger.LogInformation("Begin IW4MAdmin startup. Version is {Version} {@Args}", Version, args);
             
             try
@@ -102,18 +101,18 @@ namespace IW4MAdmin.Application
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
                 logger.LogDebug("Configuring services...");
-                services = ConfigureServices(args);
-                serviceProvider = services.BuildServiceProvider();
-                var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
-                ServerManager = (ApplicationManager) serviceProvider.GetRequiredService<IManager>();
-                translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
+                var services = await ConfigureServices(args);
+                _serviceProvider = services.BuildServiceProvider();
+                var versionChecker = _serviceProvider.GetRequiredService<IMasterCommunication>();
+                _serverManager = (ApplicationManager) _serviceProvider.GetRequiredService<IManager>();
+                translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
 
-                ApplicationTask = RunApplicationTasksAsync(logger, services);
+                _applicationTask = RunApplicationTasksAsync(logger, services);
                 var tasks = new[]
                 {
                     versionChecker.CheckVersion(),
-                    ServerManager.Init(),
-                    ApplicationTask
+                    _serverManager.Init(),
+                    _applicationTask
                 };
 
                 await Task.WhenAll(tasks);
@@ -160,12 +159,12 @@ namespace IW4MAdmin.Application
                 return;
             }
 
-            if (ServerManager.IsRestartRequested)
+            if (_serverManager.IsRestartRequested)
             {
                 goto restart;
             }
 
-            await serviceProvider.DisposeAsync();
+            await _serviceProvider.DisposeAsync();
         }
 
         /// <summary>
@@ -174,11 +173,11 @@ namespace IW4MAdmin.Application
         /// <returns></returns>
         private static async Task RunApplicationTasksAsync(ILogger logger, IServiceCollection services)
         {
-            var webfrontTask = ServerManager.GetApplicationSettings().Configuration().EnableWebFront
-                ? WebfrontCore.Program.Init(ServerManager, serviceProvider, services, ServerManager.CancellationToken)
+            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
+                ? WebfrontCore.Program.Init(_serverManager, _serviceProvider, services, _serverManager.CancellationToken)
                 : Task.CompletedTask;
 
-            var collectionService = serviceProvider.GetRequiredService<IServerDataCollector>();
+            var collectionService = _serviceProvider.GetRequiredService<IServerDataCollector>();
 
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
             // because we can't exit early from waiting on console input, and it prevents us from restarting
@@ -190,10 +189,10 @@ namespace IW4MAdmin.Application
             var tasks = new[]
             {
                 webfrontTask,
-                ServerManager.Start(),
-                serviceProvider.GetRequiredService<IMasterCommunication>()
-                    .RunUploadStatus(ServerManager.CancellationToken),
-                collectionService.BeginCollectionAsync(cancellationToken: ServerManager.CancellationToken)
+                _serverManager.Start(),
+                _serviceProvider.GetRequiredService<IMasterCommunication>()
+                    .RunUploadStatus(_serverManager.CancellationToken),
+                collectionService.BeginCollectionAsync(cancellationToken: _serverManager.CancellationToken)
             };
 
             logger.LogDebug("Starting webfront and input tasks");
@@ -215,14 +214,19 @@ namespace IW4MAdmin.Application
                 return;
             }
 
-            string lastCommand;
             EFClient origin = null;
 
             try
             {
-                while (!ServerManager.CancellationToken.IsCancellationRequested)
+                while (!_serverManager.CancellationToken.IsCancellationRequested)
                 {
-                    lastCommand = await Console.In.ReadLineAsync();
+                    if (!_serverManager.IsInitialized)
+                    {
+                        await Task.Delay(1000);
+                        continue;
+                    }
+                    
+                    var lastCommand = await Console.In.ReadLineAsync();
 
                     if (lastCommand == null)
                     {
@@ -238,12 +242,12 @@ namespace IW4MAdmin.Application
                     {
                         Type = GameEvent.EventType.Command,
                         Data = lastCommand,
-                        Origin = origin ??= Utilities.IW4MAdminClient(ServerManager.Servers.FirstOrDefault()),
-                        Owner = ServerManager.Servers[0]
+                        Origin = origin ??= Utilities.IW4MAdminClient(_serverManager.Servers.FirstOrDefault()),
+                        Owner = _serverManager.Servers[0]
                     };
 
-                    ServerManager.AddEvent(gameEvent);
-                    await gameEvent.WaitAsync(Utilities.DefaultCommandTimeout, ServerManager.CancellationToken);
+                    _serverManager.AddEvent(gameEvent);
+                    await gameEvent.WaitAsync(Utilities.DefaultCommandTimeout, _serverManager.CancellationToken);
                     Console.Write('>');
                 }
             }
@@ -273,9 +277,9 @@ namespace IW4MAdmin.Application
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
                 .Concat(typeof(Program).Assembly.GetTypes().Where(type => type.Namespace == "IW4MAdmin.Application.Commands"))
-                .Where(_command => _command.BaseType == typeof(Command)))
+                .Where(command => command.BaseType == typeof(Command)))
             {
-                defaultLogger.LogDebug("Registered native command type {name}", commandType.Name);
+                defaultLogger.LogDebug("Registered native command type {Name}", commandType.Name);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
             }
 
@@ -283,23 +287,23 @@ namespace IW4MAdmin.Application
             var (plugins, commands, configurations) = pluginImporter.DiscoverAssemblyPluginImplementations();
             foreach (var pluginType in plugins)
             {
-                defaultLogger.LogDebug("Registered plugin type {name}", pluginType.FullName);
+                defaultLogger.LogDebug("Registered plugin type {Name}", pluginType.FullName);
                 serviceCollection.AddSingleton(typeof(IPlugin), pluginType);
             }
 
             // register the plugin commands
             foreach (var commandType in commands)
             {
-                defaultLogger.LogDebug("Registered plugin command type {name}", commandType.FullName);
+                defaultLogger.LogDebug("Registered plugin command type {Name}", commandType.FullName);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
             }
 
             foreach (var configurationType in configurations)
             {
-                defaultLogger.LogDebug("Registered plugin config type {name}", configurationType.Name);
+                defaultLogger.LogDebug("Registered plugin config type {Name}", configurationType.Name);
                 var configInstance = (IBaseConfiguration) Activator.CreateInstance(configurationType);
                 var handlerType = typeof(BaseConfigurationHandler<>).MakeGenericType(configurationType);
-                var handlerInstance = Activator.CreateInstance(handlerType, new[] {configInstance.Name()});
+                var handlerInstance = Activator.CreateInstance(handlerType, configInstance.Name());
                 var genericInterfaceType = typeof(IConfigurationHandler<>).MakeGenericType(configurationType);
                 
                 serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
@@ -313,10 +317,10 @@ namespace IW4MAdmin.Application
 
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
-                .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))
-                .Union(plugins.SelectMany(_asm => _asm.Assembly.GetTypes())
+                .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
+                .Union(plugins.SelectMany(asm => asm.Assembly.GetTypes())
                     .Distinct()
-                    .Where(_asmType => typeof(IRegisterEvent).IsAssignableFrom(_asmType))))
+                    .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
             {
                 var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
                 serviceCollection.AddSingleton(instance);
@@ -329,7 +333,7 @@ namespace IW4MAdmin.Application
         /// <summary>
         /// Configures the dependency injection services
         /// </summary>
-        private static IServiceCollection ConfigureServices(string[] args)
+        private static async Task<IServiceCollection> ConfigureServices(string[] args)
         {
             // todo: this is a quick fix
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -355,7 +359,7 @@ namespace IW4MAdmin.Application
             {
                 appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
                 appConfigHandler.Set(appConfig);
-                appConfigHandler.Save().RunSynchronously();
+                await appConfigHandler.Save();
             }
 
             // register override level names
@@ -373,15 +377,15 @@ namespace IW4MAdmin.Application
             serviceCollection
                 .AddBaseLogger(appConfig)
                 .AddSingleton(defaultConfig)
-                .AddSingleton<IServiceCollection>(_serviceProvider => serviceCollection)
+                .AddSingleton<IServiceCollection>(serviceCollection)
                 .AddSingleton<IConfigurationHandler<DefaultSettings>, BaseConfigurationHandler<DefaultSettings>>()
                 .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
                 .AddSingleton(
                     new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as
                         IConfigurationHandler<CommandConfiguration>)
                 .AddSingleton(appConfig)
-                .AddSingleton(_serviceProvider =>
-                    _serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
+                .AddSingleton(serviceProvider =>
+                    serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
                         .Configuration() ?? new CommandConfiguration())
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()

@@ -102,7 +102,7 @@ namespace Data.Helpers
         {
             try
             {
-                await using var context = _contextFactory.CreateContext();
+                await using var context = _contextFactory.CreateContext(false);
                 _cachedItems = await context.Set<T>().ToDictionaryAsync(item => item.Id);
             }
             catch (Exception ex)

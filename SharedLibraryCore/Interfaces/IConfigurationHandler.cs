@@ -6,7 +6,7 @@ namespace SharedLibraryCore.Interfaces
     {
         string FileName { get; }
         Task Save();
-        void Build();
+        Task BuildAsync();
         T Configuration();
         void Set(T config);
     }

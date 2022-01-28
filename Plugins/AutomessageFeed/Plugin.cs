@@ -65,6 +65,7 @@ namespace AutomessageFeed
 
         public async Task OnLoadAsync(IManager manager)
         {
+            await _configurationHandler.BuildAsync();
             if (_configurationHandler.Configuration() == null)
             {
                 _configurationHandler.Set((Configuration)new Configuration().Generate());

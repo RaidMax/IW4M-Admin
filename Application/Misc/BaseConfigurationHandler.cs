@@ -1,11 +1,13 @@
-﻿using Newtonsoft.Json;
-using SharedLibraryCore;
+﻿using SharedLibraryCore;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -15,19 +17,24 @@ namespace IW4MAdmin.Application.Misc
     /// <typeparam name="T">base configuration type</typeparam>
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
-        T _configuration;
+        private T _configuration;
         private readonly SemaphoreSlim _onSaving;
+        private readonly JsonSerializerOptions _serializerOptions;
 
-        public BaseConfigurationHandler(string fn)
+
+        public BaseConfigurationHandler(string fileName)
         {
+            _serializerOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            _serializerOptions.Converters.Add(new JsonStringEnumConverter());
             _onSaving = new SemaphoreSlim(1, 1);
-            FileName = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{fn}.json");
-            Build();
+            FileName = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{fileName}.json");
         }
 
         public BaseConfigurationHandler() : this(typeof(T).Name)
         {
-            _onSaving = new SemaphoreSlim(1, 1);
         }
 
         ~BaseConfigurationHandler()
@@ -37,12 +44,12 @@ namespace IW4MAdmin.Application.Misc
 
         public string FileName { get; }
 
-        public void Build()
+        public async Task BuildAsync()
         {
             try
             {
-                var configContent = File.ReadAllText(FileName);
-                _configuration = JsonConvert.DeserializeObject<T>(configContent);
+                await using var fileStream = File.OpenRead(FileName);
+                _configuration = await JsonSerializer.DeserializeAsync<T>(fileStream, _serializerOptions);
             }
 
             catch (FileNotFoundException)
@@ -65,14 +72,9 @@ namespace IW4MAdmin.Application.Misc
             try
             {
                 await _onSaving.WaitAsync();
-                var settings = new JsonSerializerSettings()
-                {
-                    Formatting = Formatting.Indented
-                };
-                settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
 
-                var appConfigJson = JsonConvert.SerializeObject(_configuration, settings);
-                await File.WriteAllTextAsync(FileName, appConfigJson);
+                await using var fileStream = File.OpenWrite(FileName);
+                await JsonSerializer.SerializeAsync(fileStream, _configuration, _serializerOptions);
             }
 
             finally

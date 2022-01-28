@@ -1,29 +1,25 @@
 ﻿using LiveRadar.Configuration;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
 namespace LiveRadar.Web.Controllers
 {
     public class RadarController : BaseController
     {
-        private static readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings()
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
-        };
-
         private readonly IManager _manager;
-        private readonly LiveRadarConfiguration _config;
+        private static LiveRadarConfiguration _config;
+        private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
 
         public RadarController(IManager manager, IConfigurationHandlerFactory configurationHandlerFactory) : base(manager)
         {
             _manager = manager;
-            _config = configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration").Configuration() ?? new LiveRadarConfiguration();
+            _configurationHandler =
+                configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
         }
 
         [HttpGet]
@@ -46,13 +42,19 @@ namespace LiveRadar.Web.Controllers
 
         [HttpGet]
         [Route("Radar/{serverId}/Map")]
-        public IActionResult Map(long? serverId = null)
+        public async Task<IActionResult> Map(long? serverId = null)
         {
             var server = serverId == null ? _manager.GetServers().FirstOrDefault() : _manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
             
             if (server == null)
             {
                 return NotFound();
+            }
+
+            if (_config == null)
+            {
+                await _configurationHandler.BuildAsync();
+                _config = _configurationHandler.Configuration() ?? new LiveRadarConfiguration();
             }
             
             var map = _config.Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);

@@ -1,4 +1,5 @@
-﻿using IW4MAdmin.Application.Misc;
+﻿using System.Threading.Tasks;
+using IW4MAdmin.Application.Misc;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Factories
@@ -17,7 +18,17 @@ namespace IW4MAdmin.Application.Factories
         /// <returns></returns>
         public IConfigurationHandler<T> GetConfigurationHandler<T>(string name) where T : IBaseConfiguration
         {
-            return new BaseConfigurationHandler<T>(name);
+            var handler = new BaseConfigurationHandler<T>(name);
+            handler.BuildAsync().Wait();
+            return handler;
+        }
+
+        /// <inheritdoc/>
+        public async Task<IConfigurationHandler<T>> GetConfigurationHandlerAsync<T>(string name) where T : IBaseConfiguration
+        {
+            var handler = new BaseConfigurationHandler<T>(name);
+            await handler.BuildAsync();
+            return handler;
         }
     }
 }

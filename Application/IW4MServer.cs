@@ -355,7 +355,7 @@ namespace IW4MAdmin
                         try
                         {
                             var factory = _serviceProvider.GetRequiredService<IDatabaseContextFactory>();
-                            await using var context = factory.CreateContext();
+                            await using var context = factory.CreateContext(enableTracking: false);
 
                             var messageCount = await context.InboxMessages
                                 .CountAsync(msg => msg.DestinationClientId == E.Origin.ClientId && !msg.IsDelivered);

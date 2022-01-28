@@ -341,7 +341,11 @@ namespace IW4MAdmin.Application
             // setup the static resources (config/master api/translations)
             var serviceCollection = new ServiceCollection();
             var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
+            await appConfigHandler.BuildAsync();
             var defaultConfigHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
+            await defaultConfigHandler.BuildAsync();
+            var commandConfigHandler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
+            await commandConfigHandler.BuildAsync();
             var defaultConfig = defaultConfigHandler.Configuration();
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
@@ -380,9 +384,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IServiceCollection>(serviceCollection)
                 .AddSingleton<IConfigurationHandler<DefaultSettings>, BaseConfigurationHandler<DefaultSettings>>()
                 .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
-                .AddSingleton(
-                    new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration") as
-                        IConfigurationHandler<CommandConfiguration>)
+                .AddSingleton<IConfigurationHandler<CommandConfiguration>>(commandConfigHandler)
                 .AddSingleton(appConfig)
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()

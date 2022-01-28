@@ -48,6 +48,7 @@ namespace Stats.Client
             await LoadServers();
             _distributionCache.SetCacheItem((async (set, token) =>
             {
+                await _configurationHandler.BuildAsync();
                 var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
 
                 var distributions = new Dictionary<long, Extensions.LogParams>();
@@ -73,6 +74,7 @@ namespace Stats.Client
 
             _maxZScoreCache.SetCacheItem(async (set, token) =>
             {
+                await _configurationHandler.BuildAsync();
                 var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
 
                 var zScore = await set

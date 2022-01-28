@@ -172,6 +172,7 @@ namespace IW4MAdmin.Plugins.Stats
 
         public async Task OnLoadAsync(IManager manager)
         {
+            await Config.BuildAsync();
             // load custom configuration
             if (Config.Configuration() == null)
             {

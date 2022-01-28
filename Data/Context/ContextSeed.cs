@@ -23,7 +23,7 @@ namespace Data.Context
             {
                 var link = new EFAliasLink();
 
-                context.Clients.Add(new EFClient()
+                context.Clients.Add(new EFClient
                 {
                     Active = false,
                     Connections = 0,
@@ -33,7 +33,7 @@ namespace Data.Context
                     Masked = true,
                     NetworkId = 0,
                     AliasLink = link,
-                    CurrentAlias = new EFAlias()
+                    CurrentAlias = new EFAlias
                     {
                         Link = link,
                         Active = true,

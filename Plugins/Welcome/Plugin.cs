@@ -35,6 +35,7 @@ namespace IW4MAdmin.Plugins.Welcome
 
         public async Task OnLoadAsync(IManager manager)
         {
+            await _configHandler.BuildAsync();
             if (_configHandler.Configuration() == null)
             {
                 _configHandler.Set((WelcomeConfiguration) new WelcomeConfiguration().Generate());

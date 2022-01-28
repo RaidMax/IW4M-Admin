@@ -109,6 +109,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
 
         public async Task OnLoadAsync(IManager manager)
         {
+            await _configHandler.BuildAsync();
             if (_configHandler.Configuration() == null)
             {
                 _configHandler.Set((Configuration)new Configuration().Generate());

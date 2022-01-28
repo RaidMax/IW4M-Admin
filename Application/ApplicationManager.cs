@@ -355,10 +355,10 @@ namespace IW4MAdmin.Application
             // copy over default config if it doesn't exist
             if (!_appConfig.Servers?.Any() ?? true)
             {
-                var defaultConfig = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings").Configuration();
-                //ConfigHandler.Set((ApplicationConfiguration)new ApplicationConfiguration().Generate());
-                //var newConfig = ConfigHandler.Configuration();
-
+                var defaultHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
+                await defaultHandler.BuildAsync();
+                var defaultConfig = defaultHandler.Configuration();
+        
                 _appConfig.AutoMessages = defaultConfig.AutoMessages;
                 _appConfig.GlobalRules = defaultConfig.GlobalRules;
                 _appConfig.DisallowedClientNames = defaultConfig.DisallowedClientNames;

@@ -12,17 +12,22 @@ namespace IW4MAdmin.Application.Misc
     public class ScriptPluginConfigurationWrapper
     {
         private readonly BaseConfigurationHandler<ScriptPluginConfiguration> _handler;
-        private readonly ScriptPluginConfiguration _config;
+        private ScriptPluginConfiguration _config;
         private readonly string _pluginName;
         private readonly Engine _scriptEngine;
 
         public ScriptPluginConfigurationWrapper(string pluginName, Engine scriptEngine)
         {
             _handler = new BaseConfigurationHandler<ScriptPluginConfiguration>("ScriptPluginSettings");
-            _config = _handler.Configuration() ??
-                      (ScriptPluginConfiguration) new ScriptPluginConfiguration().Generate();
             _pluginName = pluginName;
             _scriptEngine = scriptEngine;
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _handler.BuildAsync();
+            _config = _handler.Configuration() ??
+                      (ScriptPluginConfiguration) new ScriptPluginConfiguration().Generate();
         }
 
         private static int? AsInteger(double d)

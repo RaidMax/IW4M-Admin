@@ -76,6 +76,7 @@ namespace IW4MAdmin.Plugins.Login
         {
             AuthorizedClients = new ConcurrentDictionary<int, bool>();
 
+            await _configHandler.BuildAsync();
             if (_configHandler.Configuration() == null)
             {
                 _configHandler.Set((Configuration)new Configuration().Generate());

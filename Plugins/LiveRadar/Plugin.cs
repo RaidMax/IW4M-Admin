@@ -103,6 +103,7 @@ namespace LiveRadar
 
         public async Task OnLoadAsync(IManager manager)
         {
+            await _configurationHandler.BuildAsync();
             if (_configurationHandler.Configuration() == null)
             {
                 _configurationHandler.Set((LiveRadarConfiguration)new LiveRadarConfiguration().Generate());

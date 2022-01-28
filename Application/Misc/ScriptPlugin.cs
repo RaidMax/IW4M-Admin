@@ -168,9 +168,6 @@ namespace IW4MAdmin.Application.Misc
                     }
                 }
 
-                _scriptEngine.SetValue("_configHandler", new ScriptPluginConfigurationWrapper(Name, _scriptEngine));
-                await OnLoadAsync(manager);
-
                 try
                 {
                     if (pluginObject.isParser)
@@ -180,6 +177,14 @@ namespace IW4MAdmin.Application.Misc
                         IRConParser rconParser = (IRConParser)_scriptEngine.GetValue("rconParser").ToObject();
                         manager.AdditionalEventParsers.Add(eventParser);
                         manager.AdditionalRConParsers.Add(rconParser);
+                    }
+
+                    else
+                    {
+                        var configWrapper = new ScriptPluginConfigurationWrapper(Name, _scriptEngine);
+                        await configWrapper.InitializeAsync();
+                        _scriptEngine.SetValue("_configHandler", configWrapper);
+                        await OnLoadAsync(manager);
                     }
                 }
 

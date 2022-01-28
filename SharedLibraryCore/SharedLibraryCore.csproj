@@ -9,7 +9,7 @@
         <Company>Forever None</Company>
         <Configurations>Debug;Release;Prerelease</Configurations>
         <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
-        <LangVersion>8.0</LangVersion>
+        <LangVersion>default</LangVersion>
         <PackageTags>IW4MAdmin</PackageTags>
         <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin/</RepositoryUrl>
         <PackageProjectUrl>https://www.raidmax.org/IW4MAdmin/</PackageProjectUrl>

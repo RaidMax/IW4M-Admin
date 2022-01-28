@@ -25,7 +25,7 @@ namespace Data.MigrationContext
             {
                 optionsBuilder.UseNpgsql(
                         "Host=127.0.0.1;Database=IW4MAdmin_Migration;Username=postgres;Password=password;",
-                        options => options.SetPostgresVersion(new Version("9.4")))
+                        options => options.SetPostgresVersion(new Version("12.9")))
                     .EnableDetailedErrors(true)
                     .EnableSensitiveDataLogging(true);
             }

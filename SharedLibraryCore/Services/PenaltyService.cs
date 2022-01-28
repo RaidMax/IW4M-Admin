@@ -181,19 +181,36 @@ namespace SharedLibraryCore.Services
                 var aliasIps = await context.Aliases.Where(alias => alias.LinkId == linkId && alias.IPAddress != null)
                     .Select(alias => alias.IPAddress)
                     .ToListAsync();
+                
                 if (ip != null)
                 {
                     aliasIps.Add(ip);
                 }
 
-                iqIpPenalties = context.Penalties
-                    .Where(penalty => aliasIps.Contains(penalty.Offender.CurrentAlias.IPAddress))
-                    .Where(filter);
+                var clientIds = new List<int>();
+                
+                if (aliasIps.Any())
+                {
+                    clientIds = await context.Clients.Where(client => aliasIps.Contains(client.CurrentAlias.IPAddress))
+                        .Select(client => client.ClientId).ToListAsync();
+
+                }
+
+                if (clientIds.Any())
+                {
+                    iqIpPenalties = context.Penalties.Where(penalty => clientIds.Contains(penalty.OffenderId))
+                        .Where(filter);
+                }
+
+                else
+                {
+                    iqIpPenalties = Enumerable.Empty<EFPenalty>().AsQueryable();
+                }
             }
 
-            var activePenalties = (await iqLinkPenalties.ToListAsync())
-                .Union(await iqIpPenalties.ToListAsync())
-                .Distinct();
+            var activeLinkPenalties = await iqLinkPenalties.ToListAsync();
+            var activeIpPenalties = await iqIpPenalties.ToListAsync();
+            var activePenalties = activeLinkPenalties.Concat(activeIpPenalties).Distinct();
 
             // this is a bit more performant in memory (ordering)
             return activePenalties.OrderByDescending(p => p.When).ToList();

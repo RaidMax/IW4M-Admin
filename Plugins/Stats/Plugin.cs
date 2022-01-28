@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Abstractions;
-using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Server;
 using Microsoft.Extensions.Logging;
@@ -195,7 +194,6 @@ namespace IW4MAdmin.Plugins.Stats
                 int messageCount = 0;
                 await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
                 clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
-                messageCount = await ctx.Set<EFClientMessage>().CountAsync(_message => _message.ClientId == request.ClientId);
 
                 int kills = clientStats.Sum(c => c.Kills);
                 int deaths = clientStats.Sum(c => c.Deaths);
@@ -253,14 +251,6 @@ namespace IW4MAdmin.Plugins.Stats
                         Value = spm.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Column = 0,
                         Order = 5,
-                        Type = MetaType.Information
-                    },
-                    new InformationResponse()
-                    {
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_MESSAGES"],
-                        Value = messageCount.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
-                        Column = 1,
-                        Order = 4,
                         Type = MetaType.Information
                     }
                 };

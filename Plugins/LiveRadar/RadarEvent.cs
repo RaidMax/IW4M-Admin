@@ -3,6 +3,7 @@ using SharedLibraryCore;
 using System;
 using System.Linq;
 // ReSharper disable CompareOfFloatsByEqualityOperator
+#pragma warning disable CS0659
 
 namespace LiveRadar
 {
@@ -23,9 +24,7 @@ namespace LiveRadar
         public Vector3 RadianAngles => new Vector3(ViewAngles.X.ToRadians(), ViewAngles.Y.ToRadians(), ViewAngles.Z.ToRadians());
         public int Id => GetHashCode();
 
-#pragma warning disable CS0659
         public override bool Equals(object obj)
-#pragma warning restore CS0659
         {
             if (obj is RadarEvent re)
             {

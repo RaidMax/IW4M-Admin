@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 // ReSharper disable CompareOfFloatsByEqualityOperator
+#pragma warning disable CS0659
 
 namespace Data.Models
 {
@@ -29,9 +30,7 @@ namespace Data.Models
             return $"({X}, {Y}, {Z})";
         }
 
-#pragma warning disable CS0659
         public override bool Equals(object obj)
-#pragma warning restore CS0659
         {
             if (obj is Vector3 vec)
             {

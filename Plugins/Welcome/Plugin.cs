@@ -94,7 +94,7 @@ namespace IW4MAdmin.Plugins.Welcome
                 msg = msg.Replace("{{ClientLocation}}", await GetCountryName(joining.IPAddressString));
             }
 
-            msg = msg.Replace("{{TimesConnected}}", joining.Connections.Ordinalize());
+            msg = msg.Replace("{{TimesConnected}}", joining.Connections.Ordinalize(Utilities.CurrentLocalization.Culture));
 
             return msg;
         }

@@ -653,7 +653,7 @@ namespace SharedLibraryCore.Database.Models
 
                 // we want to get any penalties that are tied to their IP or AliasLink (but not necessarily their GUID)
                 var activePenalties = await CurrentServer.Manager.GetPenaltyService()
-                    .GetActivePenaltiesAsync(AliasLinkId, ipAddress);
+                    .GetActivePenaltiesAsync(AliasLinkId, CurrentAliasId, ipAddress);
                 var banPenalty = activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.Ban);
                 var tempbanPenalty =
                     activePenalties.FirstOrDefault(_penalty => _penalty.Type == EFPenalty.PenaltyType.TempBan);

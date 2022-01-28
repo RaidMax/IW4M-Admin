@@ -148,7 +148,7 @@ namespace SharedLibraryCore.Services
             return await iqPenalties.Distinct().ToListAsync();
         }
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int? ip = null,
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int currentAliasId, int? ip = null,
             bool includePunisherName = false)
         {
             var now = DateTime.UtcNow;
@@ -178,7 +178,7 @@ namespace SharedLibraryCore.Services
             }
             else
             {
-                var aliasIps = await context.Aliases.Where(alias => alias.LinkId == linkId && alias.IPAddress != null)
+                /* var aliasIps = await context.Aliases.Where(alias => (alias.LinkId == linkId || alias.AliasId == currentAliasId) && alias.IPAddress != null)
                     .Select(alias => alias.IPAddress)
                     .ToListAsync();
                 
@@ -205,7 +205,19 @@ namespace SharedLibraryCore.Services
                 else
                 {
                     iqIpPenalties = Enumerable.Empty<EFPenalty>().AsQueryable();
-                }
+                }*/
+                
+                var usedIps = await context.Aliases.AsNoTracking()
+                    .Where(alias => (alias.LinkId == linkId || alias.AliasId == currentAliasId) && alias.IPAddress != null)
+                    .Select(alias => alias.IPAddress).ToListAsync();
+
+                var aliasedIds = await context.Aliases.AsNoTracking().Where(alias => usedIps.Contains(alias.IPAddress))
+                    .Select(alias => alias.LinkId)
+                    .ToListAsync();
+
+                iqIpPenalties = context.Penalties.AsNoTracking()
+                    .Where(penalty => aliasedIds.Contains(penalty.LinkId))
+                    .Where(filter);
             }
 
             var activeLinkPenalties = await iqLinkPenalties.ToListAsync();

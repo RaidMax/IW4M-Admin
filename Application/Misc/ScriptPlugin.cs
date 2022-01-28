@@ -172,9 +172,10 @@ namespace IW4MAdmin.Application.Misc
                 {
                     if (pluginObject.isParser)
                     {
+                        await OnLoadAsync(manager);
                         IsParser = true;
-                        IEventParser eventParser = (IEventParser)_scriptEngine.GetValue("eventParser").ToObject();
-                        IRConParser rconParser = (IRConParser)_scriptEngine.GetValue("rconParser").ToObject();
+                        var eventParser = (IEventParser)_scriptEngine.GetValue("eventParser").ToObject();
+                        var rconParser = (IRConParser)_scriptEngine.GetValue("rconParser").ToObject();
                         manager.AdditionalEventParsers.Add(eventParser);
                         manager.AdditionalRConParsers.Add(rconParser);
                     }

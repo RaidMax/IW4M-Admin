@@ -381,9 +381,10 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             // todo: don't do the lookup here
-            var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId);
-            if (penalties.Where(p => p.Type == EFPenalty.PenaltyType.Ban || p.Type == EFPenalty.PenaltyType.TempBan)
-                    .FirstOrDefault() != null)
+            var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId);
+            if (penalties
+                    .FirstOrDefault(p =>
+                        p.Type == EFPenalty.PenaltyType.Ban || p.Type == EFPenalty.PenaltyType.TempBan) != null)
             {
                 switch ((await E.Target.Unban(E.Data, E.Origin)
                             .WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
@@ -897,7 +898,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var existingPenalties = await E.Owner.Manager.GetPenaltyService()
-                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.IPAddress);
+                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId, E.Target.IPAddress);
             var penalty = existingPenalties.FirstOrDefault(b => b.Type > EFPenalty.PenaltyType.Kick);
 
             if (penalty == null)

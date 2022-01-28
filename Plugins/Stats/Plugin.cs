@@ -442,7 +442,7 @@ namespace IW4MAdmin.Plugins.Stats
             }
 
             ServerManager = manager;
-            Manager = new StatManager(_managerLogger, manager, _databaseContextFactory, Config, _serverDistributionCalculator);
+            Manager = new StatManager(_managerLogger, manager, _databaseContextFactory, Config.Configuration(), _serverDistributionCalculator);
             await _serverDistributionCalculator.Initialize();
         }
 

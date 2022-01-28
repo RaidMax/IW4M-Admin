@@ -27,19 +27,18 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatResourceQueryHelper;
         private readonly ITranslationLookup _translationLookup;
         private readonly IDatabaseContextFactory _contextFactory;
-        private readonly IConfigurationHandler<StatsConfiguration> _configurationHandler;
+        private readonly StatsConfiguration _config;
 
         public StatsController(ILogger<StatsController> logger, IManager manager, IResourceQueryHelper<ChatSearchQuery,
                 MessageResponse> resourceQueryHelper, ITranslationLookup translationLookup,
-            IDatabaseContextFactory contextFactory,
-            IConfigurationHandler<StatsConfiguration> configurationHandler) : base(manager)
+            IDatabaseContextFactory contextFactory, StatsConfiguration config) : base(manager)
         {
             _logger = logger;
             _manager = manager;
             _chatResourceQueryHelper = resourceQueryHelper;
             _translationLookup = translationLookup;
             _contextFactory = contextFactory;
-            _configurationHandler = configurationHandler;
+            _config = config;
         }
 
         [HttpGet]
@@ -70,7 +69,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 serverId = StatManager.GetIdForServer(server);
             }
 
-            var results = _configurationHandler.Configuration().EnableAdvancedMetrics
+            var results = _config?.EnableAdvancedMetrics ?? true
                 ? await Plugin.Manager.GetNewTopStats(offset, count, serverId)
                 : await Plugin.Manager.GetTopStats(offset, count, serverId);
 
@@ -80,7 +79,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 return Ok();
             }
 
-            ViewBag.UseNewStats = _configurationHandler.Configuration().EnableAdvancedMetrics;
+            ViewBag.UseNewStats = _config?.EnableAdvancedMetrics;
             return View("~/Views/Client/Statistics/Components/TopPlayers/_List.cshtml", results);
         }
 

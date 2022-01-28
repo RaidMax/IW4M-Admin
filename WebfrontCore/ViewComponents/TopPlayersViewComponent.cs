@@ -3,18 +3,17 @@ using System.Threading.Tasks;
 using IW4MAdmin.Plugins.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Mvc;
-using SharedLibraryCore.Interfaces;
 using Stats.Config;
 
 namespace WebfrontCore.ViewComponents
 {
     public class TopPlayersViewComponent : ViewComponent
     {
-        private readonly IConfigurationHandler<StatsConfiguration> _configurationHandler;
+        private readonly StatsConfiguration _config;
 
-        public TopPlayersViewComponent(IConfigurationHandler<StatsConfiguration> configurationHandler)
+        public TopPlayersViewComponent(StatsConfiguration config)
         {
-            _configurationHandler = configurationHandler;
+            _config = config;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(int count, int offset, long? serverId = null)
@@ -32,7 +31,7 @@ namespace WebfrontCore.ViewComponents
             }
 
 
-            ViewBag.UseNewStats = _configurationHandler.Configuration()?.EnableAdvancedMetrics ?? true;
+            ViewBag.UseNewStats = _config?.EnableAdvancedMetrics ?? true;
             return View("~/Views/Client/Statistics/Components/TopPlayers/_List.cshtml",
                 ViewBag.UseNewStats
                     ? await Plugin.Manager.GetNewTopStats(offset, count, serverId)

@@ -129,7 +129,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider
                 .GetRequiredService<IConfigurationHandler<DefaultSettings>>());
             services.AddSingleton(Program.ApplicationServiceProvider
-                            .GetRequiredService<IConfigurationHandler<StatsConfiguration>>());
+                            .GetRequiredService<StatsConfiguration>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IServerDataViewer>());
         }
 

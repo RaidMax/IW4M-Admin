@@ -19,13 +19,12 @@ namespace WebfrontCore.Controllers
     public class ClientController : BaseController
     {
         private readonly IMetaService _metaService;
-        private readonly IConfigurationHandler<StatsConfiguration> _configurationHandler;
+        private readonly StatsConfiguration _config;
 
-        public ClientController(IManager manager, IMetaService metaService,
-            IConfigurationHandler<StatsConfiguration> configurationHandler) : base(manager)
+        public ClientController(IManager manager, IMetaService metaService, StatsConfiguration config) : base(manager)
         {
             _metaService = metaService;
-            _configurationHandler = configurationHandler;
+            _config = config;
         }
 
         public async Task<IActionResult> ProfileAsync(int id, MetaType? metaFilterType)
@@ -114,7 +113,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Title += " " + Localization["WEBFRONT_CLIENT_PROFILE_TITLE"];
             ViewBag.Description = $"Client information for {strippedName}";
             ViewBag.Keywords = $"IW4MAdmin, client, profile, {strippedName}";
-            ViewBag.UseNewStats = _configurationHandler.Configuration()?.EnableAdvancedMetrics ?? true;
+            ViewBag.UseNewStats = _config?.EnableAdvancedMetrics ?? true;
 
             return View("Profile/Index", clientDto);
         }

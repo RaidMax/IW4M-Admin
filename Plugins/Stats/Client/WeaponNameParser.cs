@@ -3,9 +3,7 @@ using Stats.Client.Abstractions;
 using Stats.Client.Game;
 using System.Collections.Generic;
 using System.Linq;
-using IW4MAdmin.Plugins.Stats.Config;
 using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
 using Stats.Config;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -16,10 +14,10 @@ namespace Stats.Client
         private readonly ILogger _logger;
         private readonly StatsConfiguration _config;
 
-        public WeaponNameParser(ILogger<WeaponNameParser> logger, IConfigurationHandler<StatsConfiguration> config)
+        public WeaponNameParser(ILogger<WeaponNameParser> logger, StatsConfiguration config)
         {
             _logger = logger;
-            _config = config.Configuration();
+            _config = config;
         }
 
         public WeaponInfo Parse(string weaponName, Server.Game gameName)

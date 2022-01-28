@@ -179,17 +179,15 @@ namespace IW4MAdmin.Application.Misc
                         manager.AdditionalEventParsers.Add(eventParser);
                         manager.AdditionalRConParsers.Add(rconParser);
                     }
-
-                    else
-                    {
-                        var configWrapper = new ScriptPluginConfigurationWrapper(Name, _scriptEngine);
-                        await configWrapper.InitializeAsync();
-                        _scriptEngine.SetValue("_configHandler", configWrapper);
-                        await OnLoadAsync(manager);
-                    }
                 }
 
-                catch (RuntimeBinderException) { }
+                catch (RuntimeBinderException)
+                {
+                    var configWrapper = new ScriptPluginConfigurationWrapper(Name, _scriptEngine);
+                    await configWrapper.InitializeAsync();
+                    _scriptEngine.SetValue("_configHandler", configWrapper);
+                    await OnLoadAsync(manager);
+                }
 
                 if (!firstRun)
                 {

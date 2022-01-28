@@ -38,7 +38,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private readonly ConcurrentDictionary<long, ServerStats> _servers;
         private readonly ILogger _log;
         private readonly IDatabaseContextFactory _contextFactory;
-        private readonly IConfigurationHandler<StatsConfiguration> _configHandler;
+        private readonly StatsConfiguration _config;
         private static List<EFServer> serverModels;
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
@@ -47,13 +47,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private readonly IServerDistributionCalculator _serverDistributionCalculator;
 
         public StatManager(ILogger<StatManager> logger, IManager mgr, IDatabaseContextFactory contextFactory,
-            IConfigurationHandler<StatsConfiguration> configHandler,
+            StatsConfiguration statsConfig,
             IServerDistributionCalculator serverDistributionCalculator)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
             _log = logger;
             _contextFactory = contextFactory;
-            _configHandler = configHandler;
+            _config = statsConfig;
             _serverDistributionCalculator = serverDistributionCalculator;
         }
 
@@ -75,7 +75,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                           r.When > fifteenDaysAgo &&
                           r.RatingHistory.Client.Level != EFClient.Permission.Banned &&
                           r.Newest &&
-                          r.ActivityAmount >= _configHandler.Configuration().TopPlayersMinPlayTime;
+                          r.ActivityAmount >= _config.TopPlayersMinPlayTime;
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             await using var context = _contextFactory.CreateContext(enableTracking: false);
             
-            if (_configHandler.Configuration().EnableAdvancedMetrics)
+            if (_config.EnableAdvancedMetrics)
             {
                 var clientRanking = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == clientId)
@@ -126,7 +126,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                 && ranking.PerformanceMetric != null
                                 && ranking.Newest
                                 && ranking.Client.TotalConnectionTime >=
-                                _configHandler.Configuration().TopPlayersMinPlayTime;
+                                _config.TopPlayersMinPlayTime;
         }
 
         public async Task<int> GetTotalRankedPlayers(long serverId)
@@ -217,7 +217,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null)
         {
-            if (_configHandler.Configuration().EnableAdvancedMetrics)
+            if (_config.EnableAdvancedMetrics)
             {
                 return await GetNewTopStats(start, count, serverId);
             }
@@ -570,7 +570,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats = UpdateStats(clientStats, pl);
                 await SaveClientStats(clientStats);
-                if (_configHandler.Configuration().EnableAdvancedMetrics)
+                if (_config.EnableAdvancedMetrics)
                 {
                     await UpdateHistoricalRanking(pl.ClientId, clientStats, serverId);
                 }
@@ -973,7 +973,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update their performance 
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >=
-                (Utilities.IsDevelopment ? 0.5 : _configHandler.Configuration().EnableAdvancedMetrics ? 5.0 : 2.5))
+                (Utilities.IsDevelopment ? 0.5 : _config.EnableAdvancedMetrics ? 5.0 : 2.5))
             {
                 try
                 {
@@ -982,7 +982,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     // for stat history update, but one is already processing that invalidates the original
                     await attackerStats.ProcessingHit.WaitAsync(Utilities.DefaultCommandTimeout,
                         Plugin.ServerManager.CancellationToken);
-                    if (_configHandler.Configuration().EnableAdvancedMetrics)
+                    if (_config.EnableAdvancedMetrics)
                     {
                         await UpdateHistoricalRanking(attacker.ClientId, attackerStats, serverId);
                     }
@@ -1190,7 +1190,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public async Task UpdateHistoricalRanking(int clientId, EFClientStatistics clientStats, long serverId)
         {
             await using var context = _contextFactory.CreateContext();
-            var minPlayTime = _configHandler.Configuration().TopPlayersMinPlayTime;
+            var minPlayTime = _config.TopPlayersMinPlayTime;
             
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
@@ -1208,7 +1208,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var serverRanking = await context.Set<EFClientStatistics>()
                     .Where(stats => stats.ClientId != clientStats.ClientId)
                     .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(
-                        _configHandler.Configuration().TopPlayersMinPlayTime, clientStats.ZScore, serverId))
+                        _config.TopPlayersMinPlayTime, clientStats.ZScore, serverId))
                     .CountAsync();
 
                 var serverRankingSnapshot = new EFClientRankingHistory

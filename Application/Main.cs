@@ -34,6 +34,7 @@ using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Client;
 using Stats.Client.Abstractions;
 using Stats.Client;
+using Stats.Config;
 using Stats.Helpers;
 
 namespace IW4MAdmin.Application
@@ -346,6 +347,8 @@ namespace IW4MAdmin.Application
             await defaultConfigHandler.BuildAsync();
             var commandConfigHandler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
             await commandConfigHandler.BuildAsync();
+            var statsCommandHandler = new BaseConfigurationHandler<StatsConfiguration>();
+            await statsCommandHandler.BuildAsync();
             var defaultConfig = defaultConfigHandler.Configuration();
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
@@ -386,6 +389,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
                 .AddSingleton<IConfigurationHandler<CommandConfiguration>>(commandConfigHandler)
                 .AddSingleton(appConfig)
+                .AddSingleton(statsCommandHandler.Configuration() ?? new StatsConfiguration())
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
                         .Configuration() ?? new CommandConfiguration())

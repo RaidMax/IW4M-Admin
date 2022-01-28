@@ -16,10 +16,10 @@ namespace WebfrontCore.Controllers
 
         public ClientStatisticsController(IManager manager,
             IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> queryHelper,
-            IConfigurationHandler<DefaultSettings> configurationHandler) : base(manager)
+            DefaultSettings defaultConfig) : base(manager)
         {
             _queryHelper = queryHelper;
-            _defaultConfig = configurationHandler.Configuration();
+            _defaultConfig = defaultConfig;
         }
 
         [HttpGet("{id:int}/advanced")]

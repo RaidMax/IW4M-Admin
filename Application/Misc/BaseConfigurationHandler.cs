@@ -73,7 +73,7 @@ namespace IW4MAdmin.Application.Misc
             {
                 await _onSaving.WaitAsync();
 
-                await using var fileStream = File.OpenWrite(FileName);
+                await using var fileStream = File.Create(FileName);
                 await JsonSerializer.SerializeAsync(fileStream, _configuration, _serializerOptions);
             }
 

@@ -120,8 +120,8 @@ steps:
   inputs:
     script: |
       echo changing to encoding for linux start script
-      dos2unix $(outputFolder)\DeploymentFiles\StartIW4MAdmin.sh
-      dos2unix $(outputFolder)\DeploymentFiles\UpdateIW4MAdmin.sh
+      dos2unix $(outputFolder)\StartIW4MAdmin.sh
+      dos2unix $(outputFolder)\UpdateIW4MAdmin.sh
       echo creating website version filename
       @echo IW4MAdmin-$(Build.BuildNumber) > $(Build.ArtifactStagingDirectory)\version_$(releaseType).txt
     workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'

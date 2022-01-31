@@ -96,7 +96,7 @@
     $('.ip-locate-link').click(function (e) {
         e.preventDefault();
         const ip = $(this).data("ip");
-        $.getJSON( `http://ip-api.com/json/${ip}`)
+        $.getJSON(`https://ipwhois.app/json/${ip}`)
             .done(function (response) {
                 $('#mainModal .modal-title').text(ip);
                 $('#mainModal .modal-body').text('');
@@ -106,17 +106,20 @@
                 if (response.org.length > 0) {
                     $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ORG']} &mdash; ${response.org}<br/>`);
                 }
-                if (response.regionName.length > 0 || response.city.length > 0 || response.country.length > 0) {
+                if (response.region.length > 0 || response.city.length > 0 || response.country.length > 0 || response.timezone_gmt.length > 0) {
                     $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_LOCATION']} &mdash; `);
                 }
                 if (response.city.length > 0) {
                     $('#mainModal .modal-body').append(response.city);
                 }
-                if (response.regionName.length > 0) {
-                    $('#mainModal .modal-body').append((response.regionName.length > 0 ? ', ' : '') + response.region);
+                if (response.region.length > 0) {
+                    $('#mainModal .modal-body').append((response.region.length > 0 ? ', ' : '') + response.region);
                 }
                 if (response.country.length > 0) {
                     $('#mainModal .modal-body').append((response.country.length > 0 ? ', ' : '') + response.country);
+                }
+                if (response.timezone_gmt.length > 0) {
+                    $('#mainModal .modal-body').append((response.timezone_gmt.length > 0 ? ', ' : '') + response.timezone_gmt);
                 }
 
                 $('#mainModal').modal();

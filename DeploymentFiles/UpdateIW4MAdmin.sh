@@ -99,5 +99,7 @@ then
   exit 1
 fi
 
+chmod +x "$directory/StartIW4MAdmin.sh"
+
 executionTime=$(($SECONDS - start))
 echo "Update completed successfully in $executionTime seconds!"

@@ -48,8 +48,8 @@ echo making start scripts
 @(echo #!/bin/bash&& echo export DOTNET_CLI_TELEMETRY_OPTOUT=1&& echo dotnet Lib/IW4MAdmin.dll) > "%PublishDir%\StartIW4MAdmin.sh"
 
 echo copying update scripts
-xcopy "%SourceDir%\UpdateIW4MAdmin.ps1" "%PublishDir%\UpdateIW4MAdmin.ps1"
-xcopy "%SourceDir%\UpdateIW4MAdmin.sh" "%PublishDir%\UpdateIW4MAdmin.sh"
+xcopy "%SourceDir%\DeploymentFiles\UpdateIW4MAdmin.ps1" "%PublishDir%\UpdateIW4MAdmin.ps1"
+xcopy "%SourceDir%\DeploymentFiles\UpdateIW4MAdmin.sh" "%PublishDir%\UpdateIW4MAdmin.sh"
 
 echo moving front-end library dependencies
 if not exist "%PublishDir%\wwwroot\font" mkdir "%PublishDir%\wwwroot\font"

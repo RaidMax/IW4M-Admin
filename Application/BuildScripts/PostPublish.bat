@@ -47,6 +47,10 @@ echo making start scripts
 @(echo @echo off && echo @title IW4MAdmin && echo set DOTNET_CLI_TELEMETRY_OPTOUT=1 && echo dotnet Lib\IW4MAdmin.dll && echo pause) > "%PublishDir%\StartIW4MAdmin.cmd"
 @(echo #!/bin/bash&& echo export DOTNET_CLI_TELEMETRY_OPTOUT=1&& echo dotnet Lib/IW4MAdmin.dll) > "%PublishDir%\StartIW4MAdmin.sh"
 
+echo copying update scripts
+xcopy "%SourceDir%\UpdateIW4MAdmin.ps1" "%PublishDir%\UpdateIW4MAdmin.ps1"
+xcopy "%SourceDir%\UpdateIW4MAdmin.sh" "%PublishDir%\UpdateIW4MAdmin.sh"
+
 echo moving front-end library dependencies
 if not exist "%PublishDir%\wwwroot\font" mkdir "%PublishDir%\wwwroot\font"
 move "WebfrontCore\wwwroot\lib\open-iconic\font\fonts\*.*" "%PublishDir%\wwwroot\font\"

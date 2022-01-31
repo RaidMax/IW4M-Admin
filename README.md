@@ -35,10 +35,21 @@ Linux
     * You will need to retrieve your login credentials by typing `!rt` ingame
 
 ### Updating
+**Manually**  
 1. Download the latest version of **IW4MAdmin**
 2. Extract the newer version of **IW4MAdmin** into pre-existing **IW4MAdmin** folder and overwrite existing files
 
     _Your configuration and database will be saved_
+
+**OR**  
+Use the provided `UpdateIW4MAdmin` script to download and install automatically
+
+| Argument Windows (Linux) | Description                                              |
+|--------------------------|----------------------------------------------------------|
+| -Silent (s)              | Do not prompt for any user input                         |
+| -Clean (c)               | Clean unneeded files listed in `_dlete.txt` after update |
+| -Verified (v)            | Only update releases in the verified stream              |
+ | -Directory (d)           | Directory to install to                                  |
 
 ## Help
 Feel free to join the **IW4MAdmin** [Discord](https://discord.gg/ZZFK5p3)  

@@ -96,33 +96,24 @@
     $('.ip-locate-link').click(function (e) {
         e.preventDefault();
         const ip = $(this).data("ip");
-        $.getJSON('https://extreme-ip-lookup.com/json/' + ip + '?key=demo')
+        $.getJSON( `http://ip-api.com/json/${ip}`)
             .done(function (response) {
                 $('#mainModal .modal-title').text(ip);
                 $('#mainModal .modal-body').text('');
-                if (response.ipName.length > 0) {
-                    $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_HOSTNAME']} &mdash; ${response.ipName}<br/>`);
-                }
                 if (response.isp.length > 0) {
                     $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ISP']} &mdash; ${response.isp}<br/>`);
                 }
                 if (response.org.length > 0) {
                     $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ORG']} &mdash; ${response.org}<br/>`);
                 }
-                if (response['businessName'].length > 0) {
-                    $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_BUSINESS']} &mdash; ${response.businessName}<br/>`);
-                }
-                if (response['businessWebsite'].length > 0) {
-                    $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_WEBSITE']} &mdash; ${response.businessWebsite}<br/>`);
-                }
-                if (response.city.length > 0 || response.region.length > 0 || response.country.length > 0) {
+                if (response.regionName.length > 0 || response.city.length > 0 || response.country.length > 0) {
                     $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_LOCATION']} &mdash; `);
                 }
                 if (response.city.length > 0) {
                     $('#mainModal .modal-body').append(response.city);
                 }
-                if (response.region.length > 0) {
-                    $('#mainModal .modal-body').append((response.city.length > 0 ? ', ' : '') + response.region);
+                if (response.regionName.length > 0) {
+                    $('#mainModal .modal-body').append((response.regionName.length > 0 ? ', ' : '') + response.region);
                 }
                 if (response.country.length > 0) {
                     $('#mainModal .modal-body').append((response.country.length > 0 ? ', ' : '') + response.country);

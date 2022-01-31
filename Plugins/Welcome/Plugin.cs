@@ -111,7 +111,7 @@ namespace IW4MAdmin.Plugins.Welcome
             try
             {
                 var response =
-                    await wc.GetStringAsync(new Uri($"http://extreme-ip-lookup.com/json/{ip}?key=demo"));
+                    await wc.GetStringAsync(new Uri($"http://ip-api.com/json/{ip}"));
                 var responseObj = JObject.Parse(response);
                 response = responseObj["country"]?.ToString();
 

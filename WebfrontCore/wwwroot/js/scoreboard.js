@@ -11,6 +11,10 @@
 }
 
 $(document).ready(() => {
+    if ($('.scoreboard-container').length === 0) {
+        return 0;
+    }
+    
     $(window.location.hash).tab('show');
     $(`${window.location.hash}_nav`).addClass('active');
 

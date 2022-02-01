@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -25,7 +26,6 @@ using Data.Models;
 using Data.Models.Server;
 using IW4MAdmin.Application.Commands;
 using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore.Formatting;
 using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
@@ -1076,7 +1076,10 @@ namespace IW4MAdmin
         {
             try
             {
-                ResolvedIpEndPoint = new IPEndPoint((await Dns.GetHostAddressesAsync(IP)).First(), Port);
+                ResolvedIpEndPoint =
+                    new IPEndPoint(
+                        (await Dns.GetHostAddressesAsync(IP)).First(address =>
+                            address.AddressFamily == AddressFamily.InterNetwork), Port);
             }
             catch (Exception ex)
             {

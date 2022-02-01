@@ -94,7 +94,7 @@ namespace IW4MAdmin.Application.Extensions
                                 postgresqlOptions =>
                                 {
                                     postgresqlOptions.EnableRetryOnFailure();
-                                    postgresqlOptions.SetPostgresVersion(new Version("9.4"));
+                                    postgresqlOptions.SetPostgresVersion(new Version("12.9"));
                                 })
                             .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Options);
                     return services;

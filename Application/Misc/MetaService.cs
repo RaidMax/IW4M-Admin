@@ -207,42 +207,30 @@ namespace IW4MAdmin.Application.Misc
 
         public async Task<IEnumerable<IClientMeta>> GetRuntimeMeta(ClientPaginationRequest request)
         {
-            var meta = new List<IClientMeta>();
+            var metas = await Task.WhenAll(_metaActions.Where(kvp => kvp.Key != MetaType.Information)
+                .Select(async kvp => await kvp.Value[0](request)));
 
-            foreach (var (type, actions) in _metaActions)
-            {
-                // information is not listed chronologically
-                if (type != MetaType.Information)
-                {
-                    var metaItems = await actions[0](request);
-                    meta.AddRange(metaItems);
-                }
-            }
-
-            return meta.OrderByDescending(_meta => _meta.When)
+            return metas.SelectMany(m => (IEnumerable<IClientMeta>)m)
+                .OrderByDescending(m => m.When)
                 .Take(request.Count)
                 .ToList();
         }
 
         public async Task<IEnumerable<T>> GetRuntimeMeta<T>(ClientPaginationRequest request, MetaType metaType) where T : IClientMeta
         {
-            IEnumerable<T> meta;
             if (metaType == MetaType.Information)
             {
                 var allMeta = new List<T>();
 
-                foreach (var individualMetaRegistration in _metaActions[metaType])
-                {
-                    allMeta.AddRange(await individualMetaRegistration(request));
-                }
-
+                var completedMeta = await Task.WhenAll(_metaActions[metaType].Select(async individualMetaRegistration =>
+                    (IEnumerable<T>)await individualMetaRegistration(request)));
+                
+                allMeta.AddRange(completedMeta.SelectMany(meta => meta));
+                
                 return ProcessInformationMeta(allMeta);
             }
 
-            else
-            {
-                meta = await _metaActions[metaType][0](request) as IEnumerable<T>;
-            }
+            var meta = await _metaActions[metaType][0](request) as IEnumerable<T>;
 
             return meta;
         }

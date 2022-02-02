@@ -191,7 +191,6 @@ namespace IW4MAdmin.Plugins.Stats
             async Task<IEnumerable<InformationResponse>> getStats(ClientPaginationRequest request)
             {
                 IList<EFClientStatistics> clientStats;
-                int messageCount = 0;
                 await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
                 clientStats = await ctx.Set<EFClientStatistics>().Where(c => c.ClientId == request.ClientId).ToListAsync();
 

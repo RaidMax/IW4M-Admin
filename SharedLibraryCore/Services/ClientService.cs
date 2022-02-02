@@ -168,10 +168,9 @@ namespace SharedLibraryCore.Services
 
         public async Task<EFClient> Get(int entityId)
         {
-            // todo: this needs to be optimized for large linked accounts
             await using var context = _contextFactory.CreateContext(false);
 
-            var client = context.Clients
+            var client = await context.Clients
                 .Select(_client => new EFClient
                 {
                     ClientId = _client.ClientId,
@@ -187,26 +186,28 @@ namespace SharedLibraryCore.Services
                         Name = _client.CurrentAlias.Name,
                         IPAddress = _client.CurrentAlias.IPAddress
                     },
-                    TotalConnectionTime = _client.TotalConnectionTime
+                    TotalConnectionTime = _client.TotalConnectionTime,
+                    AliasLink = new EFAliasLink
+                    {
+                        AliasLinkId = _client.AliasLinkId,
+                        Children = _client.AliasLink.Children
+                    },
+                    LinkedAccounts = new Dictionary<int, long>()
+                    {
+                        {_client.ClientId, _client.NetworkId}   
+                    }
                 })
-                .FirstOrDefault(_client => _client.ClientId == entityId);
+                .FirstOrDefaultAsync(_client => _client.ClientId == entityId);
 
             if (client == null)
             {
                 return null;
             }
 
-            client.AliasLink = new EFAliasLink
+            if (!_appConfig.EnableImplicitAccountLinking)
             {
-                AliasLinkId = client.AliasLinkId,
-                Children = await context.Aliases
-                    .Where(_alias => _alias.LinkId == client.AliasLinkId)
-                    .Select(_alias => new EFAlias
-                    {
-                        Name = _alias.Name,
-                        IPAddress = _alias.IPAddress
-                    }).ToListAsync()
-            };
+                return client;
+            }
 
             var foundClient = new
             {
@@ -219,11 +220,6 @@ namespace SharedLibraryCore.Services
                     })
                     .ToListAsync()
             };
-
-            if (foundClient == null)
-            {
-                return null;
-            }
 
             foundClient.Client.LinkedAccounts = new Dictionary<int, long>();
             // todo: find out the best way to do this

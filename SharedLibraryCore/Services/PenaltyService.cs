@@ -163,9 +163,6 @@ namespace SharedLibraryCore.Services
                                                             (p.Expires == null || p.Expires > now);
 
             await using var context = _contextFactory.CreateContext(false);
-            var iqLinkPenalties = context.Penalties
-                .Where(p => p.LinkId == linkId)
-                .Where(filter);
 
             IQueryable<EFPenalty> iqIpPenalties;
 
@@ -178,35 +175,6 @@ namespace SharedLibraryCore.Services
             }
             else
             {
-                /* var aliasIps = await context.Aliases.Where(alias => (alias.LinkId == linkId || alias.AliasId == currentAliasId) && alias.IPAddress != null)
-                    .Select(alias => alias.IPAddress)
-                    .ToListAsync();
-                
-                if (ip != null)
-                {
-                    aliasIps.Add(ip);
-                }
-
-                var clientIds = new List<int>();
-                
-                if (aliasIps.Any())
-                {
-                    clientIds = await context.Clients.Where(client => aliasIps.Contains(client.CurrentAlias.IPAddress))
-                        .Select(client => client.ClientId).ToListAsync();
-
-                }
-
-                if (clientIds.Any())
-                {
-                    iqIpPenalties = context.Penalties.Where(penalty => clientIds.Contains(penalty.OffenderId))
-                        .Where(filter);
-                }
-
-                else
-                {
-                    iqIpPenalties = Enumerable.Empty<EFPenalty>().AsQueryable();
-                }*/
-                
                 var usedIps = await context.Aliases.AsNoTracking()
                     .Where(alias => (alias.LinkId == linkId || alias.AliasId == currentAliasId) && alias.IPAddress != null)
                     .Select(alias => alias.IPAddress).ToListAsync();
@@ -216,13 +184,12 @@ namespace SharedLibraryCore.Services
                     .ToListAsync();
 
                 iqIpPenalties = context.Penalties.AsNoTracking()
-                    .Where(penalty => aliasedIds.Contains(penalty.LinkId))
+                    .Where(penalty => aliasedIds.Contains(penalty.LinkId) || penalty.LinkId == linkId)
                     .Where(filter);
             }
 
-            var activeLinkPenalties = await iqLinkPenalties.ToListAsync();
             var activeIpPenalties = await iqIpPenalties.ToListAsync();
-            var activePenalties = activeLinkPenalties.Concat(activeIpPenalties).Distinct();
+            var activePenalties = activeIpPenalties.Distinct();
 
             // this is a bit more performant in memory (ordering)
             return activePenalties.OrderByDescending(p => p.When).ToList();

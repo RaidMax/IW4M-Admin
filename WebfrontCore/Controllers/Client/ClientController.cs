@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Models;
-using IW4MAdmin.Plugins.Stats.Config;
 using Stats.Config;
 using WebfrontCore.ViewComponents;
 
@@ -38,7 +37,16 @@ namespace WebfrontCore.Controllers
 
             var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.CurrentAliasId, client.IPAddress);
 
-            var tag = await _metaService.GetPersistentMeta(EFMeta.ClientTag, client);
+            var persistentMetaTask = new[]
+            {
+                _metaService.GetPersistentMeta(EFMeta.ClientTag, client),
+                _metaService.GetPersistentMeta("GravatarEmail", client)
+            };
+
+            var persistentMeta = await Task.WhenAll(persistentMetaTask);
+            var tag = persistentMeta[0];
+            var gravatar = persistentMeta[1];
+
             if (tag?.LinkedMeta != null)
             {
                 client.SetAdditionalProperty(EFMeta.ClientTag, tag.LinkedMeta.Value);
@@ -55,7 +63,7 @@ namespace WebfrontCore.Controllers
 
             displayLevel = string.IsNullOrEmpty(client.Tag) ? displayLevel : $"{displayLevel} ({client.Tag})";
 
-            var clientDto = new PlayerInfo()
+            var clientDto = new PlayerInfo
             {
                 Name = client.Name,
                 Level = displayLevel,
@@ -92,7 +100,6 @@ namespace WebfrontCore.Controllers
                 Before = DateTime.UtcNow
             }, MetaType.Information);
 
-            var gravatar = await _metaService.GetPersistentMeta("GravatarEmail", client);
             if (gravatar != null)
             {
                 clientDto.Meta.Add(new InformationResponse()
@@ -106,7 +113,7 @@ namespace WebfrontCore.Controllers
             clientDto.ActivePenalty = activePenalties.OrderByDescending(_penalty => _penalty.Type).FirstOrDefault();
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.IsSensitive));
 
-            string strippedName = clientDto.Name.StripColors();
+            var strippedName = clientDto.Name.StripColors();
             ViewBag.Title = strippedName.Substring(strippedName.Length - 1).ToLower()[0] == 's' ?
                 strippedName + "'" :
                 strippedName + "'s";

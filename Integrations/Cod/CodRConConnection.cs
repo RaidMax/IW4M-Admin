@@ -150,9 +150,9 @@ namespace Integrations.Cod
             })
             {
                 connectionState.SendEventArgs.UserToken = socket;
-                connectionState.OnSentData.Reset();
-                connectionState.OnReceivedData.Reset();
                 connectionState.ConnectionAttempts++;
+                await connectionState.OnSentData.WaitAsync();
+                await connectionState.OnReceivedData.WaitAsync();
                 connectionState.BytesReadPerSegment.Clear();
                 bool exceptionCaught = false;
 
@@ -198,6 +198,16 @@ namespace Integrations.Cod
                     if (connectionState.OnComplete.CurrentCount == 0 && !exceptionCaught)
                     {
                         connectionState.OnComplete.Release(1);
+                    }
+
+                    if (connectionState.OnSentData.CurrentCount == 0)
+                    {
+                        connectionState.OnSentData.Release();
+                    }
+
+                    if (connectionState.OnReceivedData.CurrentCount == 0)
+                    {
+                        connectionState.OnReceivedData.Release();
                     }
                 }
             }
@@ -328,7 +338,8 @@ namespace Integrations.Cod
             {
                 // the send has not been completed asynchronously
                 // this really shouldn't ever happen because it's UDP
-                if (!await Task.Run(() => connectionState.OnSentData.Wait(StaticHelpers.SocketTimeout(1))))
+                
+                if(!await connectionState.OnSentData.WaitAsync(StaticHelpers.SocketTimeout(1)))
                 {
                     using(LogContext.PushProperty("Server", Endpoint.ToString()))
                     {
@@ -342,7 +353,7 @@ namespace Integrations.Cod
 
             if (!waitForResponse)
             {
-                return new byte[0][];
+                return Array.Empty<byte[]>();
             }
 
             connectionState.ReceiveEventArgs.SetBuffer(connectionState.ReceiveBuffer);
@@ -353,12 +364,12 @@ namespace Integrations.Cod
             if (receiveDataPending)
             {
                 _log.LogDebug("Waiting to asynchronously receive data on attempt #{connectionAttempts}", connectionState.ConnectionAttempts);
-                if (!await Task.Run(() => connectionState.OnReceivedData.Wait(
+                if (!await connectionState.OnReceivedData.WaitAsync(
                     new[]
                     {
                         StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts), 
                         overrideTimeout
-                    }.Max())))
+                    }.Max()))
                 {
                     if (connectionState.ConnectionAttempts > 1) // this reduces some spam for unstable connections
                     {
@@ -407,12 +418,24 @@ namespace Integrations.Cod
             if (e.BytesTransferred == 0)
             {
                 _log.LogDebug("No bytes were transmitted so the connection was probably closed");
-                ActiveQueries[this.Endpoint].OnReceivedData.Set();
+               
+                var semaphore = ActiveQueries[this.Endpoint].OnReceivedData;
+                if (semaphore.CurrentCount == 0)
+                {
+                    semaphore.Release();
+                }
+                
                 return;
             }
 
-            if (!(sender is Socket sock))
+            if (sender is not Socket sock)
             {
+                var semaphore = ActiveQueries[this.Endpoint].OnReceivedData;
+                if (semaphore.CurrentCount == 0)
+                {
+                    semaphore.Release();
+                }
+                
                 return;
             }
             
@@ -427,16 +450,19 @@ namespace Integrations.Cod
             try
             {
                 var totalBytesTransferred = e.BytesTransferred;
-                _log.LogDebug("{total} total bytes transferred with {available} bytes remaining", totalBytesTransferred, sock.Available);
+                _log.LogDebug("{total} total bytes transferred with {available} bytes remaining", totalBytesTransferred,
+                    sock.Available);
                 // we still have available data so the payload was segmented
                 while (sock.Available > 0)
                 {
                     _log.LogDebug("{available} more bytes to be read", sock.Available);
 
                     var bufferSpaceAvailable = sock.Available + totalBytesTransferred - state.ReceiveBuffer.Length;
-                    if (bufferSpaceAvailable >= 0 )
+                    if (bufferSpaceAvailable >= 0)
                     {
-                        _log.LogWarning("Not enough buffer space to store incoming data {bytesNeeded} additional bytes required", bufferSpaceAvailable);
+                        _log.LogWarning(
+                            "Not enough buffer space to store incoming data {bytesNeeded} additional bytes required",
+                            bufferSpaceAvailable);
                         continue;
                     }
 
@@ -447,27 +473,39 @@ namespace Integrations.Cod
                         _log.LogDebug("Remaining bytes are async");
                         continue;
                     }
-                        
-                    _log.LogDebug("Read {bytesTransferred} synchronous bytes from {endpoint}", state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint);
+
+                    _log.LogDebug("Read {bytesTransferred} synchronous bytes from {endpoint}",
+                        state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint);
                     // we need to increment this here because the callback isn't executed if there's no pending IO
                     state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
                     totalBytesTransferred += state.ReceiveEventArgs.BytesTransferred;
                 }
-                    
-                ActiveQueries[this.Endpoint].OnReceivedData.Set();
             }
 
             catch (ObjectDisposedException)
             {
                 _log.LogDebug("Socket was disposed while receiving data");
-                ActiveQueries[this.Endpoint].OnReceivedData.Set();
+            }
+
+            finally
+            {
+                var semaphore = ActiveQueries[this.Endpoint].OnReceivedData;
+                if (semaphore.CurrentCount == 0)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
         private void OnDataSent(object sender, SocketAsyncEventArgs e)
         {
             _log.LogDebug("Sent {byteCount} bytes to {endpoint}", e.Buffer?.Length, e.ConnectSocket?.RemoteEndPoint);
-            ActiveQueries[this.Endpoint].OnSentData.Set();
+            
+            var semaphore = ActiveQueries[this.Endpoint].OnSentData;
+            if (semaphore.CurrentCount == 0)
+            {
+                semaphore.Release();
+            }
         }
     }
 }

@@ -249,7 +249,7 @@ namespace SharedLibraryCore
         }
 
         private static long NextEventId;
-        private readonly ManualResetEvent _eventFinishedWaiter;
+        private readonly SemaphoreSlim _eventFinishedWaiter = new(0, 1);
         public string Data; // Data is usually the message sent by player
         public string Message;
         public EFClient Origin;
@@ -260,9 +260,13 @@ namespace SharedLibraryCore
 
         public GameEvent()
         {
-            _eventFinishedWaiter = new ManualResetEvent(false);
             Time = DateTime.UtcNow;
             Id = GetNextEventId();
+        }
+        
+        ~GameEvent()
+        {
+            _eventFinishedWaiter.Dispose();
         }
 
         public EventSource Source { get; set; }
@@ -299,15 +303,12 @@ namespace SharedLibraryCore
             return Interlocked.Increment(ref NextEventId);
         }
 
-        ~GameEvent()
-        {
-            _eventFinishedWaiter.Set();
-            _eventFinishedWaiter.Dispose();
-        }
-
         public void Complete()
         {
-            _eventFinishedWaiter.Set();
+            if (_eventFinishedWaiter.CurrentCount == 0)
+            {
+                _eventFinishedWaiter.Release();
+            }
         }
 
         public async Task<GameEvent> WaitAsync()
@@ -325,7 +326,7 @@ namespace SharedLibraryCore
             Utilities.DefaultLogger.LogDebug("Begin wait for event {Id}", Id);
             try
             {
-                processed = await Task.Run(() => _eventFinishedWaiter.WaitOne(timeSpan), token);
+                processed = await _eventFinishedWaiter.WaitAsync(timeSpan, token);
             }
 
             catch (TaskCanceledException)

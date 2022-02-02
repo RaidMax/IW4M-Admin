@@ -26,7 +26,8 @@ namespace IW4MAdmin.Application.Misc
         private readonly ApplicationConfiguration _appConfig;
         private readonly BuildNumber _fallbackVersion = BuildNumber.Parse("99.99.99.99");
         private readonly int _apiVersion = 1;
-        private bool firstHeartBeat = true;
+        private bool _firstHeartBeat = true;
+        private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
 
         public MasterCommunication(ILogger<MasterCommunication> logger, ApplicationConfiguration appConfig, ITranslationLookup translationLookup, IMasterApi apiInstance, IManager manager)
         {
@@ -97,7 +98,10 @@ namespace IW4MAdmin.Application.Misc
             {
                 try
                 {
-                    await UploadStatus();
+                    if (_manager.IsRunning)
+                    {
+                        await UploadStatus();
+                    }
                 }
 
                 catch (Exception ex)
@@ -107,7 +111,7 @@ namespace IW4MAdmin.Application.Misc
 
                 try
                 {
-                    await Task.Delay(30000, token);
+                    await Task.Delay(Interval, token);
                 }
 
                 catch
@@ -119,7 +123,7 @@ namespace IW4MAdmin.Application.Misc
 
         private async Task UploadStatus()
         {
-            if (firstHeartBeat)
+            if (_firstHeartBeat)
             {
                 var token = await _apiInstance.Authenticate(new AuthenticationId
                 {
@@ -153,7 +157,7 @@ namespace IW4MAdmin.Application.Misc
 
             Response<ResultMessage> response = null;
 
-            if (firstHeartBeat)
+            if (_firstHeartBeat)
             {
                 response = await _apiInstance.AddInstance(instance);
             }
@@ -161,7 +165,7 @@ namespace IW4MAdmin.Application.Misc
             else
             {
                 response = await _apiInstance.UpdateInstance(instance.Id, instance);
-                firstHeartBeat = false;
+                _firstHeartBeat = false;
             }
 
             if (response.ResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)

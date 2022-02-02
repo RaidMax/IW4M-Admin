@@ -147,8 +147,8 @@ namespace SharedLibraryCore.Configuration
             }
 
             _selectedParser = _rconParsers.FirstOrDefault(p => p.Name == parser);
-            RConParserVersion = _selectedParser?.Version;
-            EventParserVersion = _selectedParser?.Version;
+            RConParserVersion = _selectedParser?.Name;
+            EventParserVersion = _selectedParser?.Name;
 
             if (index <= 0 || _rconParsers[index].CanGenerateLogPath)
             {

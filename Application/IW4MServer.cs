@@ -1086,12 +1086,16 @@ namespace IW4MAdmin
                 ServerLogger.LogWarning(ex, "Could not resolve hostname or IP for RCon connection {IP}:{Port}", IP, Port);
                 ResolvedIpEndPoint = new IPEndPoint(IPAddress.Parse(IP), Port);
             }
-            
+
             RconParser = Manager.AdditionalRConParsers
-                .FirstOrDefault(_parser => _parser.Version == ServerConfig.RConParserVersion);
+                .FirstOrDefault(parser =>
+                    parser.Version == ServerConfig.RConParserVersion ||
+                    parser.Name == ServerConfig.RConParserVersion);
 
             EventParser = Manager.AdditionalEventParsers
-                .FirstOrDefault(_parser => _parser.Version == ServerConfig.EventParserVersion);
+                .FirstOrDefault(parser =>
+                    parser.Version == ServerConfig.EventParserVersion ||
+                    parser.Name == ServerConfig.RConParserVersion);
 
             RconParser ??= Manager.AdditionalRConParsers[0];
             EventParser ??= Manager.AdditionalEventParsers[0];
@@ -1108,7 +1112,7 @@ namespace IW4MAdmin
                 GameName = RconParser.GameName;
             }
 
-            if (version?.Value?.Length != 0)
+            if (version.Value?.Length != 0)
             {
                 var matchedRconParser = Manager.AdditionalRConParsers.FirstOrDefault(_parser => _parser.Version == version.Value);
                 RconParser.Configuration = matchedRconParser != null ? matchedRconParser.Configuration : RconParser.Configuration;

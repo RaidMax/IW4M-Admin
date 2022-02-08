@@ -419,7 +419,7 @@ namespace IW4MAdmin.Application
 
                 if (!validationResult.IsValid)
                 {
-                    throw new ConfigurationException("MANAGER_CONFIGURATION_ERROR")
+                    throw new ConfigurationException(_translationLookup["MANAGER_CONFIGURATION_ERROR"])
                     {
                         Errors = validationResult.Errors.Select(_error => _error.ErrorMessage).ToArray(),
                         ConfigurationFileName = ConfigHandler.FileName

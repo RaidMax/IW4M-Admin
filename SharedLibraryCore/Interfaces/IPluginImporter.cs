@@ -18,6 +18,6 @@ namespace SharedLibraryCore.Interfaces
         ///     discovers the script plugins
         /// </summary>
         /// <returns>initialized script plugin collection</returns>
-        IEnumerable<IPlugin> DiscoverScriptPlugins(IServiceProvider serviceProvider);
+        IEnumerable<Func<IServiceProvider, IPlugin>> DiscoverScriptPlugins();
     }
 }

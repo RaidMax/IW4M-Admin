@@ -38,13 +38,13 @@ namespace IW4MAdmin.Application.Misc
         /// discovers all the script plugins in the plugins dir
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<IPlugin> DiscoverScriptPlugins(IServiceProvider serviceProvider)
+        public IEnumerable<Func<IServiceProvider, IPlugin>> DiscoverScriptPlugins()
         {
             var pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
 
             if (!Directory.Exists(pluginDir))
             {
-                return Enumerable.Empty<IPlugin>();
+                return Enumerable.Empty<Func<IServiceProvider, IPlugin>>();
             }
 
             var scriptPluginFiles =
@@ -52,7 +52,7 @@ namespace IW4MAdmin.Application.Misc
 
             _logger.LogDebug("Discovered {count} potential script plugins", scriptPluginFiles.Count);
 
-            return scriptPluginFiles.Select(fileName =>
+            return scriptPluginFiles.Select<string, Func<IServiceProvider, IPlugin>>(fileName => serviceProvider =>
             {
                 _logger.LogDebug("Discovered script plugin {fileName}", fileName);
                 return new ScriptPlugin(_logger,

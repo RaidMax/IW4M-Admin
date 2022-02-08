@@ -15,21 +15,28 @@ let plugin = {
     author: 'RaidMax',
     version: 1.0,
     name: 'Game Interface',
-    enabled: true, // indicates if the plugin is enabled
 
     onEventAsync: (gameEvent, server) => {
         const eventType = eventTypes[gameEvent.Type];
 
+        if (servers[server.EndPoint] != null && !servers[server.EndPoint].enabled) {
+            return;
+        }
+
         switch (eventType) {
             case 'start':
-                this.enabled = initialize(server);
+                const enabled = initialize(server);
+                
+                if (!enabled) {
+                    return;
+                }
                 break;
             case 'preconnect':
                 // when the plugin is reloaded after the servers are started
                 if (servers[server.EndPoint] == null) {
-                    this.enabled = initialize(server);
+                    const enabled = initialize(server);
 
-                    if (!this.enabled) {
+                    if (!enabled) {
                         return;
                     }
                 }
@@ -265,9 +272,12 @@ const initialize = (server) => {
         logger.WriteError(`Could not get integration status of ${server.EndPoint} - ${error}`);
     }
 
-    logger.WriteDebug(`GSC Integration enabled = ${enabled}`);
+    logger.WriteDebug(`GSC Integration enabledGSC Integration enabled = ${enabled}`);
 
     if (!enabled) {
+        servers[server.EndPoint] = {
+            enabled: false
+        }
         return false;
     }
 
@@ -277,7 +287,8 @@ const initialize = (server) => {
     timer.OnTick(() => pollForEvents(server), `GameEventPoller ${server.ToString()}`)
 
     servers[server.EndPoint] = {
-        timer: timer
+        timer: timer,
+        enabled: true
     }
 
     try {

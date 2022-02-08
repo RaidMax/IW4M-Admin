@@ -311,7 +311,10 @@ namespace IW4MAdmin.Application
             }
 
             // register any script plugins
-            serviceCollection.AddSingleton(sp => pluginImporter.DiscoverScriptPlugins(sp));
+            foreach (var func in pluginImporter.DiscoverScriptPlugins())
+            {
+                serviceCollection.AddSingleton(sp => func(sp));
+            }
 
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()

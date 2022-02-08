@@ -64,9 +64,9 @@ namespace Integrations.Cod
 
             var timeSinceLastQuery = (DateTime.Now - connectionState.LastQuery).TotalMilliseconds;
 
-            if (timeSinceLastQuery < StaticHelpers.FloodProtectionInterval)
+            if (timeSinceLastQuery < config.FloodProtectInterval)
             {
-                await Task.Delay(StaticHelpers.FloodProtectionInterval - (int)timeSinceLastQuery);
+                await Task.Delay(config.FloodProtectInterval - (int)timeSinceLastQuery);
             }
 
             connectionState.LastQuery = DateTime.Now;

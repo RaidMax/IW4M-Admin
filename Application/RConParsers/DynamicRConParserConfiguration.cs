@@ -31,6 +31,7 @@ namespace IW4MAdmin.Application.RConParsers
         public string NoticeLineSeparator { get; set; } = Environment.NewLine;
         public int? DefaultRConPort { get; set; }
         public string DefaultInstallationDirectoryHint { get; set; }
+        public short FloodProtectInterval { get; set; } = 750;
 
         public ColorCodeMapping ColorCodeMapping { get; set; } = new ColorCodeMapping
         {

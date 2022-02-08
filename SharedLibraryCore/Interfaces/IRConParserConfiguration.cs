@@ -100,5 +100,7 @@ namespace SharedLibraryCore.Interfaces
         string DefaultInstallationDirectoryHint { get; }
 
         ColorCodeMapping ColorCodeMapping { get; }
+        
+        short FloodProtectInterval { get; }
     }
 }

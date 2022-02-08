@@ -26,7 +26,7 @@ let plugin = {
         switch (eventType) {
             case 'start':
                 const enabled = initialize(server);
-                
+
                 if (!enabled) {
                     return;
                 }
@@ -189,7 +189,11 @@ let commands = [{
         targetRequired: true,
         // optional
         arguments: [{
-            name: 'alert message',
+            name: 'player',
+            required: true
+        },
+        {
+            name: 'message',
             required: true
         }],
         supportedGames: ['IW4'],
@@ -203,9 +207,11 @@ let commands = [{
     }];
 
 const sendScriptCommand = (server, command, target, data) => {
-    if (plugin.enabled) {
-        sendEvent(server, false, 'ExecuteCommandRequested', command, target, data);
+    const state = servers[server.EndPoint];
+    if (state === undefined || !state.enabled) {
+        return;
     }
+    sendEvent(server, false, 'ExecuteCommandRequested', command, target, data);
 }
 
 const sendEvent = (server, responseExpected, event, subtype, client, data) => {
@@ -272,7 +278,7 @@ const initialize = (server) => {
         logger.WriteError(`Could not get integration status of ${server.EndPoint} - ${error}`);
     }
 
-    logger.WriteDebug(`GSC Integration enabledGSC Integration enabled = ${enabled}`);
+    logger.WriteInfo(`GSC Integration enabled = ${enabled}`);
 
     if (!enabled) {
         servers[server.EndPoint] = {
@@ -320,13 +326,13 @@ const pollForEvents = server => {
 
         const event = parseEvent(input)
 
-        logger.WriteInfo(`Processing input... ${event.eventType}`);
+        logger.WriteDebug(`Processing input... ${event.eventType} ${event.subType} ${event.data} ${event.clientNumber}`);
 
         if (event.eventType === 'ClientDataRequested') {
             const client = server.GetClientByNumber(event.clientNumber);
 
             if (client != null) {
-                logger.WriteInfo(`Found client ${client.Name}`);
+                logger.WriteDebug(`Found client ${client.Name}`);
 
                 let data = [];
 
@@ -342,9 +348,9 @@ const pollForEvents = server => {
                 }
 
                 sendEvent(server, false, 'ClientDataReceived', event.subType, client, data);
+            } else {
+                logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
             }
-
-            logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
         }
 
         try {

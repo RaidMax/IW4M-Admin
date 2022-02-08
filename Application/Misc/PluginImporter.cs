@@ -6,6 +6,7 @@ using SharedLibraryCore.Interfaces;
 using System.Linq;
 using SharedLibraryCore;
 using IW4MAdmin.Application.API.Master;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -37,26 +38,26 @@ namespace IW4MAdmin.Application.Misc
         /// discovers all the script plugins in the plugins dir
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<IPlugin> DiscoverScriptPlugins()
+        public IEnumerable<IPlugin> DiscoverScriptPlugins(IServiceProvider serviceProvider)
         {
-            string pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
+            var pluginDir = $"{Utilities.OperatingDirectory}{PLUGIN_DIR}{Path.DirectorySeparatorChar}";
 
-            if (Directory.Exists(pluginDir))
+            if (!Directory.Exists(pluginDir))
             {
-                var scriptPluginFiles = Directory.GetFiles(pluginDir, "*.js").AsEnumerable().Union(GetRemoteScripts());
-
-                _logger.LogDebug("Discovered {count} potential script plugins", scriptPluginFiles.Count());
-
-                if (scriptPluginFiles.Count() > 0)
-                {
-                    foreach (string fileName in scriptPluginFiles)
-                    {
-                        _logger.LogDebug("Discovered script plugin {fileName}", fileName);
-                        var plugin = new ScriptPlugin(_logger, fileName);
-                        yield return plugin;
-                    }
-                }
+                return Enumerable.Empty<IPlugin>();
             }
+
+            var scriptPluginFiles =
+                Directory.GetFiles(pluginDir, "*.js").AsEnumerable().Union(GetRemoteScripts()).ToList();
+
+            _logger.LogDebug("Discovered {count} potential script plugins", scriptPluginFiles.Count);
+
+            return scriptPluginFiles.Select(fileName =>
+            {
+                _logger.LogDebug("Discovered script plugin {fileName}", fileName);
+                return new ScriptPlugin(_logger,
+                    serviceProvider.GetRequiredService<IScriptPluginTimerHelper>(), fileName);
+            }).ToList();
         }
 
         /// <summary>

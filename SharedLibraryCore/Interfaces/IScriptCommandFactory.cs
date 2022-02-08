@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -18,8 +19,10 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="isTargetRequired">target required or not</param>
         /// <param name="args">command arguments (name, is required)</param>
         /// <param name="executeAction">action to peform when commmand is executed</param>
+        /// <param name="supportedGames"></param>
         /// <returns></returns>
         IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission,
-            bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction);
+            bool isTargetRequired, IEnumerable<(string, bool)> args, Func<GameEvent, Task> executeAction,
+            Server.Game[] supportedGames);
     }
 }

@@ -387,5 +387,23 @@ namespace SharedLibraryCore
         }
 
         public abstract Task<long> GetIdForServer(Server server = null);
+
+        public string[] ExecuteServerCommand(string command)
+        {
+            return this.ExecuteCommandAsync(command).GetAwaiter().GetResult();
+        }
+
+        public string GetServerDvar(string dvarName)
+        {
+            return this.GetDvarAsync<string>(dvarName).GetAwaiter().GetResult()?.Value;
+        }
+
+        public void SetServerDvar(string dvarName, string dvarValue)
+        {
+            this.SetDvarAsync(dvarName, dvarValue).GetAwaiter().GetResult();
+        }
+
+        public EFClient GetClientByNumber(int clientNumber) =>
+            GetClientsAsList().FirstOrDefault(client => client.ClientNumber == clientNumber);
     }
 }

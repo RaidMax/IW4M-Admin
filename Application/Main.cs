@@ -311,10 +311,7 @@ namespace IW4MAdmin.Application
             }
 
             // register any script plugins
-            foreach (var scriptPlugin in pluginImporter.DiscoverScriptPlugins())
-            {
-                serviceCollection.AddSingleton(scriptPlugin);
-            }
+            serviceCollection.AddSingleton(sp => pluginImporter.DiscoverScriptPlugins(sp));
 
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
@@ -435,6 +432,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
                 .AddSingleton<IEventPublisher, EventPublisher>()
+                .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 

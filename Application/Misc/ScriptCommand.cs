@@ -6,7 +6,6 @@ using System;
 using System.Threading.Tasks;
 using Data.Models.Client;
 using Microsoft.Extensions.Logging;
-using static SharedLibraryCore.Database.Models.EFClient;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
@@ -16,14 +15,15 @@ namespace IW4MAdmin.Application.Misc
     /// </summary>
     public class ScriptCommand : Command
     {
-        private readonly Action<GameEvent> _executeAction;
+        private readonly Func<GameEvent, Task> _executeAction;
         private readonly ILogger _logger;
 
-        public ScriptCommand(string name, string alias, string description, bool isTargetRequired, EFClient.Permission permission,
-            CommandArgument[] args, Action<GameEvent> executeAction, CommandConfiguration config, ITranslationLookup layout, ILogger<ScriptCommand> logger)
+        public ScriptCommand(string name, string alias, string description, bool isTargetRequired,
+            EFClient.Permission permission,
+            CommandArgument[] args, Func<GameEvent, Task> executeAction, CommandConfiguration config,
+            ITranslationLookup layout, ILogger<ScriptCommand> logger, Server.Game[] supportedGames)
             : base(config, layout)
         {
-
             _executeAction = executeAction;
             _logger = logger;
             Name = name;
@@ -32,6 +32,7 @@ namespace IW4MAdmin.Application.Misc
             RequiresTarget = isTargetRequired;
             Permission = permission;
             Arguments = args;
+            SupportedGames = supportedGames;
         }
 
         public override async Task ExecuteAsync(GameEvent e)
@@ -43,7 +44,7 @@ namespace IW4MAdmin.Application.Misc
 
             try
             {
-                await Task.Run(() => _executeAction(e));
+                await _executeAction(e);
             }
             catch (Exception ex)
             {

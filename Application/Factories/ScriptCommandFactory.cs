@@ -6,6 +6,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Data.Models.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ namespace IW4MAdmin.Application.Factories
 
         /// <inheritdoc/>
         public IManagerCommand CreateScriptCommand(string name, string alias, string description, string permission, 
-            bool isTargetRequired, IEnumerable<(string, bool)> args, Action<GameEvent> executeAction)
+            bool isTargetRequired, IEnumerable<(string, bool)> args, Func<GameEvent, Task> executeAction, Server.Game[] supportedGames)
         {
             var permissionEnum = Enum.Parse<EFClient.Permission>(permission);
             var argsArray = args.Select(_arg => new CommandArgument
@@ -40,7 +41,7 @@ namespace IW4MAdmin.Application.Factories
             }).ToArray();
 
             return new ScriptCommand(name, alias, description, isTargetRequired, permissionEnum, argsArray, executeAction,
-                _config, _transLookup, _serviceProvider.GetRequiredService<ILogger<ScriptCommand>>());
+                _config, _transLookup, _serviceProvider.GetRequiredService<ILogger<ScriptCommand>>(), supportedGames);
         }
     }
 }

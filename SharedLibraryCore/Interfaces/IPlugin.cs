@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Interfaces
         bool IsParser => false;
         Task OnLoadAsync(IManager manager);
         Task OnUnloadAsync();
-        Task OnEventAsync(GameEvent E, Server S);
+        Task OnEventAsync(GameEvent gameEvent, Server server);
         Task OnTickAsync(Server S);
     }
 }

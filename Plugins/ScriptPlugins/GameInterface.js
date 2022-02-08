@@ -8,7 +8,7 @@
 const servers = {};
 const inDvar = 'sv_iw4madmin_in';
 const outDvar = 'sv_iw4madmin_out';
-const pollRate = 5000;
+const pollRate = 1000;
 let logger = {};
 
 let plugin = {

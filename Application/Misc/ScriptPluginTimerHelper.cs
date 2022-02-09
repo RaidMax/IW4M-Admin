@@ -120,7 +120,7 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
         {
             if (!_onRunningTick.IsSet)
             {
-                _logger.LogWarning("Previous {OnTick} is still running, so we are skipping this one",
+                _logger.LogDebug("Previous {OnTick} is still running, so we are skipping this one",
                     nameof(OnTick));
                 return;
             }
@@ -129,7 +129,9 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
 
             // the js engine is not thread safe so we need to ensure we're not executing OnTick and OnEventAsync simultaneously
             _onDependentAction?.WaitAsync().Wait();
+            var start = DateTime.Now;
             _jsAction.DynamicInvoke(JsValue.Undefined, new[] { JsValue.Undefined });
+            _logger.LogDebug("OnTick took {Time}ms", (DateTime.Now - start).TotalMilliseconds);
             ReleaseThreads();
         }
 

@@ -8,7 +8,7 @@
 const servers = {};
 const inDvar = 'sv_iw4madmin_in';
 const outDvar = 'sv_iw4madmin_out';
-const pollRate = 1000;
+const pollRate = 750;
 let logger = {};
 
 let plugin = {
@@ -67,7 +67,9 @@ let plugin = {
 
     onUnloadAsync: () => {
         for (let i = 0; i < servers.length; i++) {
-            servers[i].timer.Stop();
+            if (servers[i].enabled) {
+                servers[i].timer.Stop();
+            }
         }
     },
 
@@ -219,9 +221,12 @@ const sendEvent = (server, responseExpected, event, subtype, client, data) => {
 
     let pendingOut = true;
     let pendingCheckCount = 0;
-    while (pendingOut === true && pendingCheckCount <= 10) {
+    const start = new Date();
+    
+    while (pendingOut && pendingCheckCount <= 30) {
         try {
-            pendingOut = server.GetServerDvar(outDvar) !== null;
+            const out = server.GetServerDvar(outDvar);
+            pendingOut =  !(out == null || out === '' || out === 'null');
         } catch (error) {
             logger.WriteError(`Could not check server output dvar for IO status ${error}`);
         }
@@ -233,22 +238,16 @@ const sendEvent = (server, responseExpected, event, subtype, client, data) => {
         pendingCheckCount++;
     }
 
-    if (pendingCheckCount === true) {
+    if (pendingOut) {
         logger.WriteWarning(`Reached maximum attempts waiting for output to be available for ${server.EndPoint}`)
     }
 
-    let clientNumber = '';
-    if (client !== undefined) {
-        clientNumber = client.ClientNumber;
-    }
-    if (responseExpected === undefined) {
-        responseExpected = 0;
-    }
-    const output = `${responseExpected ? '1' : '0'};${event};${subtype};${clientNumber};${buildDataString(data)}`;
+    const output = `${responseExpected ? '1' : '0'};${event};${subtype};${client.ClientNumber};${buildDataString(data)}`;
     logger.WriteDebug(`Sending output to server ${output}`);
 
     try {
         server.SetServerDvar(outDvar, output);
+        logger.WriteDebug(`SendEvent took ${(new Date() - start) / 1000}ms`);
     } catch (error) {
         logger.WriteError(`Could not set server output dvar ${error}`);
     }
@@ -289,8 +288,10 @@ const initialize = (server) => {
 
     logger.WriteDebug(`Setting up bus timer for ${server.EndPoint}`);
 
-    let timer = _timerHelper;
-    timer.OnTick(() => pollForEvents(server), `GameEventPoller ${server.ToString()}`)
+    let timer = _serviceResolver.ResolveService('IScriptPluginTimerHelper');
+    timer.OnTick(() => pollForEvents(server), `GameEventPoller ${server.ToString()}`);
+    // necessary to prevent multi-threaded access to the JS context
+    timer.SetDependency(_lock);
 
     servers[server.EndPoint] = {
         timer: timer,
@@ -323,7 +324,6 @@ const pollForEvents = server => {
     }
 
     if (input.length > 0) {
-
         const event = parseEvent(input)
 
         logger.WriteDebug(`Processing input... ${event.eventType} ${event.subType} ${event.data} ${event.clientNumber}`);
@@ -350,6 +350,7 @@ const pollForEvents = server => {
                 sendEvent(server, false, 'ClientDataReceived', event.subType, client, data);
             } else {
                 logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
+                sendEvent(server, false, 'ClientDataReceived', 'Fail', { ClientNumber: event.clientNumber }, undefined);
             }
         }
 

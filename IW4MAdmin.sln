@@ -6,7 +6,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{26E8
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C8F3945-0AEF-4949-A1F7-B18E952E50BC}"
 	ProjectSection(SolutionItems) = preProject
-		GameFiles\IW4x\userraw\scripts\_commands.gsc = GameFiles\IW4x\userraw\scripts\_commands.gsc
 		GameFiles\IW4x\userraw\scripts\_customcallbacks.gsc = GameFiles\IW4x\userraw\scripts\_customcallbacks.gsc
 		DeploymentFiles\deployment-pipeline.yml = DeploymentFiles\deployment-pipeline.yml
 		DeploymentFiles\PostPublish.ps1 = DeploymentFiles\PostPublish.ps1

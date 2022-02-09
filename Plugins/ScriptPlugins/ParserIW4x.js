@@ -22,7 +22,7 @@ var plugin = {
         
         rconParser.Configuration.DefaultRConPort = 28960;
         rconParser.Configuration.DefaultInstallationDirectoryHint = 'HKEY_CURRENT_USER\\Software\\Classes\\iw4x\\shell\\open\\command';
-        rconParser.Configuration.FloodProtectInterval = 50;
+        rconParser.Configuration.FloodProtectInterval = 150;
 
         eventParser.Configuration.GameDirectory = 'userraw';
 

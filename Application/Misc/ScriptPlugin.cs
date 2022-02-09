@@ -45,9 +45,8 @@ namespace IW4MAdmin.Application.Misc
         private bool _successfullyLoaded;
         private readonly List<string> _registeredCommandNames;
         private readonly ILogger _logger;
-        private readonly IScriptPluginTimerHelper _timerHelper;
 
-        public ScriptPlugin(ILogger logger, IScriptPluginTimerHelper timerHelper, string filename, string workingDirectory = null)
+        public ScriptPlugin(ILogger logger, string filename, string workingDirectory = null)
         {
             _logger = logger;
             _fileName = filename;
@@ -60,8 +59,6 @@ namespace IW4MAdmin.Application.Misc
 
             Watcher.EnableRaisingEvents = true;
             _registeredCommandNames = new List<string>();
-            _timerHelper = timerHelper;
-            _timerHelper.SetDependency(_onProcessing);
         }
 
         ~ScriptPlugin()
@@ -127,6 +124,7 @@ namespace IW4MAdmin.Application.Misc
                 _scriptEngine.Execute(script);
                 _scriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
                 _scriptEngine.SetValue("_serviceResolver", serviceResolver);
+                _scriptEngine.SetValue("_lock", _onProcessing);
                 dynamic pluginObject = _scriptEngine.Evaluate("plugin").ToObject();
 
                 Author = pluginObject.author;
@@ -276,7 +274,6 @@ namespace IW4MAdmin.Application.Misc
             {
                 _logger.LogDebug("OnLoad executing for {Name}", Name);
                 _scriptEngine.SetValue("_manager", manager);
-                _scriptEngine.SetValue("_timerHelper", _timerHelper);
                 _scriptEngine.Evaluate("plugin.onLoadAsync(_manager)");
 
                 return Task.CompletedTask;

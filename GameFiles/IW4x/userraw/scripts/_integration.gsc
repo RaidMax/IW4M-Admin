@@ -6,11 +6,15 @@
 init()
 {
     // setup default vars
-    level.eventBus          = spawnstruct();
-    level.eventBus.inVar    = "sv_iw4madmin_in";
-    level.eventBus.outVar   = "sv_iw4madmin_out";
-    level.clientDataKey     = "clientData";
+    level.eventBus              = spawnstruct();
+    level.eventBus.inVar        = "sv_iw4madmin_in";
+    level.eventBus.outVar       = "sv_iw4madmin_out";
+    level.eventBus.failKey      = "fail";
+    level.eventBus.timeoutKey   = "timeout";
+    level.eventBus.timeout      = 10;
     
+    level.clientDataKey = "clientData";
+
     level.eventTypes                            = spawnstruct();
     level.eventTypes.clientDataReceived         = "ClientDataReceived";
     level.eventTypes.clientDataRequested        = "ClientDataRequested";
@@ -19,6 +23,7 @@ init()
     SetDvarIfUninitialized( level.eventBus.inVar, "" );
     SetDvarIfUninitialized( level.eventBus.outVar, "" );
     SetDvarIfUninitialized( "sv_iw4madmin_integration_enabled", 1 );
+    SetDvarIfUninitialized( "sv_iw4madmin_integration_debug", 0 );
     
     // map the event type to the handler
     level.eventCallbacks = [];
@@ -42,7 +47,14 @@ OnPlayerConnect()
     for ( ;; )
     {
         level waittill( "connected", player );
-        player.pers[level.clientDataKey] = spawnstruct();
+        
+        level.iw4adminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
+        
+        if ( !isDefined( player.pers[level.clientDataKey] ) )
+        {
+            player.pers[level.clientDataKey] = spawnstruct();
+        }
+        
         player thread OnPlayerSpawned();
     }
 }
@@ -64,7 +76,10 @@ DisplayWelcomeData()
 
     clientData = self.pers[level.clientDataKey];
     
-    self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
+    if ( clientData.permissionLevel != "User" )
+    { 
+        self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
+    }
     wait (2.0);
     self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection );
 }
@@ -75,11 +90,14 @@ PlayerConnectEvents()
     
     clientData = self.pers[level.clientDataKey];
     
+    // this gives IW4MAdmin some time to register the player before making the request;
+    wait ( 2 );
+
     if ( isDefined( clientData.state ) && clientData.state == "complete" ) 
     {
         return;
     }
-
+    
     self RequestClientBasicData();
     // example of requesting meta from IW4MAdmin
     // self RequestClientMeta( "LastServerPlayed" );
@@ -94,7 +112,10 @@ PlayerWaitEvents()
     {
         level waittill( "client_event", client );
  
-        /#self IPrintLn("Processing Event " + client.event.type + "-" + client.event.subtype );#/
+        if ( level.iw4adminIntegrationDebug == 1 )
+        {
+            self IPrintLn( "Processing Event " + client.event.type + "-" + client.event.subtype );
+        }
         
         eventHandler = level.eventCallbacks[client.event.type];
 
@@ -166,8 +187,10 @@ MonitorBus()
         {
             continue;
         }
-        
-        /#IPrintLn( "-> " + eventString );#/
+        if ( level.iw4adminIntegrationDebug == 1 )
+        {
+            IPrintLn( "-> " + eventString );
+        }
         
         NotifyClientEvent( strtok( eventString, ";" ) );
         
@@ -180,16 +203,19 @@ QueueEvent( request, eventType )
     self endon( "disconnect" );
    
     start = GetTime();
-    maxWait = 15 * 1000; // 15 seconds
+    maxWait = level.eventBus.timeout * 1000; // 10 seconds
     timedOut = "";
    
     while ( GetDvar( level.eventBus.inVar ) != "" && ( GetTime() - start ) < maxWait )
     {
-        level waittill_notify_or_timeout( "bus_ready", 5 );
+        level waittill_notify_or_timeout( "bus_ready", 1 );
         
         if ( GetDvar( level.eventBus.inVar ) != "" )
         {
-            /#self IPrintLn("A request is already in progress...");#/
+            if ( level.iw4adminIntegrationDebug == 1 )
+            {
+                self IPrintLn( "A request is already in progress..." );
+            }
             timedOut = "set";
             continue;
         }
@@ -199,15 +225,21 @@ QueueEvent( request, eventType )
    
     if ( timedOut == "set")
     {
-        /# self IPrintLn("Timed out waiting for response...");#/
-        if ( eventType == level.eventTypes.clientDataRequested ) // todo: this is dirty fix
+        if ( level.iw4adminIntegrationDebug == 1 )
         {
-            self.pers["clientData"].state = "failed";
+            self IPrintLn( "Timed out waiting for response..." );
         }
+        
+        NotifyClientEventTimeout( eventType );
+
         return;
     }
-   
-    /#IPrintLn("<- " + request);#/
+    
+    if ( level.iw4adminIntegrationDebug == 1 )
+    {
+        IPrintLn("<- " + request);
+    }
+    
     SetDvar( level.eventBus.inVar, request );
 }
 
@@ -230,6 +262,15 @@ ParseDataString( data )
     return dict;
 }
 
+NotifyClientEventTimeout( eventType ) 
+{
+    // todo: make this actual eventing
+    if ( eventType == level.eventTypes.clientDataRequested )
+    {
+        self.pers["clientData"].state = level.eventBus.timeoutKey;
+    }
+}
+
 NotifyClientEvent( eventInfo )
 {
     client = getPlayerFromClientNum( int( eventInfo[3] ) );
@@ -239,7 +280,10 @@ NotifyClientEvent( eventInfo )
     event.subtype = eventInfo[2];
     event.data = eventInfo[4];
     
-    /#IPrintLn(event.data);#/
+    if ( level.iw4adminIntegrationDebug == 1 )
+    {
+        IPrintLn(event.data);
+    }
     
     client.event = event;
 
@@ -254,6 +298,16 @@ OnClientDataReceived( event )
 {
     event.data = ParseDataString( event.data );
     clientData = self.pers[level.clientDataKey];
+
+    if ( event.subtype == "Fail" ) 
+    {
+        if ( level.iw4adminIntegrationDebug == 1 )
+        {
+            IPrintLn( "Received fail response" );
+        }
+        clientData.state = level.eventBus.failKey;
+        return;
+    }
 
     if ( event.subtype == "Meta" )
     {

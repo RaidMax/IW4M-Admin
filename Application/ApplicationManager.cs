@@ -236,13 +236,6 @@ namespace IW4MAdmin.Application
                     .Select(ut => ut.Key)
                     .ToList();
 
-                // this is to prevent the log reader from starting before the initial
-                // query of players on the server
-                if (serverTasksToRemove.Count > 0)
-                {
-                    IsInitialized = true;
-                }
-
                 // remove the update tasks as they have completed
                 foreach (var serverId in serverTasksToRemove.Where(serverId => runningUpdateTasks.ContainsKey(serverId)))
                 {
@@ -530,6 +523,7 @@ namespace IW4MAdmin.Application
 
             Console.WriteLine(_translationLookup["MANAGER_COMMUNICATION_INFO"]);
             await InitializeServers();
+            IsInitialized = true;
         }
 
         private async Task InitializeServers()

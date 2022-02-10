@@ -20,6 +20,35 @@ namespace SharedLibraryCore.Interfaces
         Task AddPersistentMeta(string metaKey, string metaValue, EFClient client, EFMeta linkedMeta = null);
 
         /// <summary>
+        /// adds or updates meta key and value to the database
+        /// </summary>
+        /// <param name="metaKey">key of meta data</param>
+        /// <param name="metaValue">value of the meta data</param>
+        /// <param name="clientId">id of the client to save the meta for</param>
+        /// <returns></returns>
+        Task SetPersistentMeta(string metaKey, string metaValue, int clientId);
+
+        /// <summary>
+        /// increments meta value and persists to the database
+        /// <remarks>if the meta value does not already exist it will be set to the increment amount</remarks>
+        /// </summary>
+        /// <param name="metaKey">key of meta data</param>
+        /// <param name="incrementAmount">value to increment by</param>
+        /// <param name="clientId">id of the client to save the meta for</param>
+        /// <returns></returns>
+        Task IncrementPersistentMeta(string metaKey, int incrementAmount, int clientId);
+        
+        /// <summary>
+        /// decrements meta value and persists to the database
+        /// <remarks>if the meta value does not already exist it will be set to the decrement amount</remarks>
+        /// </summary>
+        /// <param name="metaKey">key of meta data</param>
+        /// <param name="decrementAmount">value to increment by</param>
+        /// <param name="clientId">id of the client to save the meta for</param>
+        /// <returns></returns>
+        Task DecrementPersistentMeta(string metaKey, int decrementAmount, int clientId);
+
+        /// <summary>
         ///     adds or updates meta key and value to the database
         /// </summary>
         /// <param name="metaKey">key of meta data</param>

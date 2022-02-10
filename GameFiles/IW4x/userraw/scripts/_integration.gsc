@@ -11,13 +11,16 @@ init()
     level.eventBus.outVar       = "sv_iw4madmin_out";
     level.eventBus.failKey      = "fail";
     level.eventBus.timeoutKey   = "timeout";
-    level.eventBus.timeout      = 10;
+    level.eventBus.timeout      = 30;
     
     level.clientDataKey = "clientData";
 
     level.eventTypes                            = spawnstruct();
+    level.eventTypes.localClientEvent           = "client_event";
     level.eventTypes.clientDataReceived         = "ClientDataReceived";
     level.eventTypes.clientDataRequested        = "ClientDataRequested";
+    level.eventTypes.setClientDataRequested     = "SetClientDataRequested";
+    level.eventTypes.setClientDataCompleted     = "SetClientDataCompleted";
     level.eventTypes.executeCommandRequested    = "ExecuteCommandRequested";
                                                                              
     SetDvarIfUninitialized( level.eventBus.inVar, "" );
@@ -27,11 +30,12 @@ init()
     
     // map the event type to the handler
     level.eventCallbacks = [];
-    level.eventCallbacks[level.eventTypes.clientDataReceived] = ::OnClientDataReceived;
-    level.eventCallbacks[level.eventTypes.executeCommandRequested] = ::OnExecuteCommand;
+    level.eventCallbacks[level.eventTypes.clientDataReceived]       = ::OnClientDataReceived;
+    level.eventCallbacks[level.eventTypes.executeCommandRequested]  = ::OnExecuteCommand; 
+    level.eventCallbacks[level.eventTypes.setClientDataCompleted]   = ::OnSetClientDataCompleted;
 
     // start long running tasks
-    level thread PlayerWaitEvents();
+    level thread MonitorClientEvents();
     level thread MonitorBus();
     level thread OnPlayerConnect();
 }
@@ -56,6 +60,7 @@ OnPlayerConnect()
         }
         
         player thread OnPlayerSpawned();
+        player thread PlayerTrackingOnInterval();
     }
 }
 
@@ -70,17 +75,42 @@ OnPlayerSpawned()
     }
 }
 
+OnPlayerDisconnect()
+{
+    level endon ( "disconnect" );
+
+    for ( ;; )
+    {
+        self waittill( "disconnect" );
+        self SaveTrackingMetrics();
+    }
+}
+
+OnGameEnded() 
+{
+    level endon ( "disconnect" );
+    
+    for ( ;; )
+    {
+        level waittill( "game_ended" );
+        // note: you can run data code here but it's possible for 
+        // data to get trucated, so we will try a timer based approach for now
+    }
+}
+
 DisplayWelcomeData()
 {
     self endon( "disconnect" );
 
     clientData = self.pers[level.clientDataKey];
     
-    if ( clientData.permissionLevel != "User" )
-    { 
-        self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
-    }
-    wait (2.0);
+    if ( clientData.permissionLevel == "User" || clientData.permissionLevel == "Flagged" ) 
+    {
+        return;
+    } 
+    
+    self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
+    wait( 2.0 );
     self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection );
 }
 
@@ -91,6 +121,7 @@ PlayerConnectEvents()
     clientData = self.pers[level.clientDataKey];
     
     // this gives IW4MAdmin some time to register the player before making the request;
+    // although probably not necessary some users might have a slow database or poll rate
     wait ( 2 );
 
     if ( isDefined( clientData.state ) && clientData.state == "complete" ) 
@@ -103,14 +134,28 @@ PlayerConnectEvents()
     // self RequestClientMeta( "LastServerPlayed" );
 }
 
-PlayerWaitEvents()
+PlayerTrackingOnInterval() 
 {
-    level endon( "game_ended" );
+    self endon( "disconnect" );
+
+    for ( ;; )
+    {
+        wait ( 120 );
+        if ( IsAlive( self ) )
+        {
+            self SaveTrackingMetrics();
+        }
+    }
+}
+
+MonitorClientEvents()
+{
+    level endon( "disconnect" );
     self endon( "disconnect" );
     
     for ( ;; ) 
     {
-        level waittill( "client_event", client );
+        level waittill( level.eventTypes.localClientEvent, client );
  
         if ( level.iw4adminIntegrationDebug == 1 )
         {
@@ -135,16 +180,81 @@ PlayerWaitEvents()
 RequestClientMeta( metaKey )
 {
     getClientMetaEvent = BuildEventRequest( true, level.eventTypes.clientDataRequested, "Meta", self, metaKey );
-    self thread QueueEvent( getClientMetaEvent, level.eventTypes.clientDataRequested );
+    level thread QueueEvent( getClientMetaEvent, level.eventTypes.clientDataRequested, self );
 }
 
 RequestClientBasicData()
 {
     getClientDataEvent = BuildEventRequest( true, level.eventTypes.clientDataRequested, "None", self, "" );
-    self thread QueueEvent( getClientDataEvent, level.eventTypes.clientDataRequested );
+    level thread QueueEvent( getClientDataEvent, level.eventTypes.clientDataRequested, self );
 }
 
-BuildEventRequest( responseExpected, eventType, eventSubtype, client, data ) 
+IncrementClientMeta( metaKey, incrementValue, clientId )
+{
+    SetClientMeta( metaKey, incrementValue, clientId, "increment" );
+}
+
+DecrementClientMeta( metaKey, decrementValue, clientId )
+{
+    SetClientMeta( metaKey, decrementValue, clientId, "decrement" );
+}
+
+SetClientMeta( metaKey, metaValue, clientId, direction )
+{
+    data = "key=" + metaKey + "|value=" + metaValue;
+    clientNumber = -1;
+
+    if ( IsDefined ( clientId ) )
+    {
+        data = data + "|clientId=" + clientId;
+        clientNumber = -1;
+    }
+
+    if ( IsDefined( direction ) )
+    {
+        data = data + "|direction=" + direction;
+    }
+
+    if ( IsPlayer( self ) )
+    {
+        clientNumber = self getEntityNumber();
+    }
+
+    setClientMetaEvent = BuildEventRequest( true, level.eventTypes.setClientDataRequested, "Meta", clientNumber, data );
+    level thread QueueEvent( setClientMetaEvent, level.eventTypes.setClientDataRequested, self );
+}
+
+SaveTrackingMetrics()
+{
+    if ( level.iw4adminIntegrationDebug == 1 )
+    {
+        self IPrintLn( "Saving tracking metrics for " + self.persistentClientId );
+    }
+
+    currentShotCount = self getPlayerStat( "mostshotsfired" );
+    change = currentShotCount - self.lastShotCount;
+
+    if ( level.iw4adminIntegrationDebug == 1 )
+    {
+        self IPrintLn( "Total Shots Fired increased by " + change );
+    }
+
+    if ( !IsDefined( change ) )
+    {
+        change = 0;
+    }
+    
+    if ( change == 0 )
+    {
+        return;
+    }
+
+    IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
+
+    self.lastShotCount = currentShotCount;
+}
+
+BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data ) 
 {
     if ( !isDefined( data ) )
     {
@@ -155,6 +265,11 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, client, data )
     {
         eventSubtype = "None";
     }
+
+    if ( IsPlayer( entOrId ) )
+    {
+        entOrId = entOrId getEntityNumber();
+    }
     
     request = "0";
     
@@ -163,7 +278,7 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, client, data )
         request = "1";
     }
   
-    request = request + ";" + eventType + ";" + eventSubtype + ";" + client getEntityNumber() + ";" + data;
+    request = request + ";" + eventType + ";" + eventSubtype + ";" + entOrId + ";" + data;
     return request;
 }
 
@@ -173,7 +288,7 @@ MonitorBus()
     
     for( ;; )
     {
-        wait ( 0.25 );
+        wait ( 0.1 );
         
         // check to see if IW4MAdmin is ready to receive more data
         if ( getDvar( level.eventBus.inVar ) == "" ) 
@@ -198,12 +313,12 @@ MonitorBus()
     }
 }
 
-QueueEvent( request, eventType ) 
+QueueEvent( request, eventType, notifyEntity ) 
 {
-    self endon( "disconnect" );
-   
+    level endon( "disconnect" );
+
     start = GetTime();
-    maxWait = level.eventBus.timeout * 1000; // 10 seconds
+    maxWait = level.eventBus.timeout * 1000; // 30 seconds
     timedOut = "";
    
     while ( GetDvar( level.eventBus.inVar ) != "" && ( GetTime() - start ) < maxWait )
@@ -214,7 +329,7 @@ QueueEvent( request, eventType )
         {
             if ( level.iw4adminIntegrationDebug == 1 )
             {
-                self IPrintLn( "A request is already in progress..." );
+                IPrintLn( "A request is already in progress..." );
             }
             timedOut = "set";
             continue;
@@ -227,10 +342,13 @@ QueueEvent( request, eventType )
     {
         if ( level.iw4adminIntegrationDebug == 1 )
         {
-            self IPrintLn( "Timed out waiting for response..." );
+            IPrintLn( "Timed out waiting for response..." );
         }
         
-        NotifyClientEventTimeout( eventType );
+        if ( IsDefined( notifyEntity) )
+        {
+            notifyEntity NotifyClientEventTimeout( eventType );
+        }
 
         return;
     }
@@ -287,7 +405,7 @@ NotifyClientEvent( eventInfo )
     
     client.event = event;
 
-    level notify( "client_event", client );
+    level notify( level.eventTypes.localClientEvent, client );
 }
 
 //////////////////////////////////
@@ -311,20 +429,22 @@ OnClientDataReceived( event )
 
     if ( event.subtype == "Meta" )
     {
-        if ( !isDefined( clientData["meta"] ) )
+        if ( !isDefined( clientData.meta ) )
         {
             clientData.meta = [];
         }
         
         metaKey = event.data[0];
-        clientData["meta"][metaKey] = event.data[metaKey];
+        clientData.meta[metaKey] = event.data[metaKey];
         
         return;
     }
     
     clientData.permissionLevel = event.data["level"];
+    clientData.clientId = event.data["clientId"];
     clientData.lastConnection = event.data["lastConnection"];
     clientData.state = "complete";
+    self.persistentClientId = event.data["clientId"];
 
     self thread DisplayWelcomeData();
 }
@@ -352,6 +472,16 @@ OnExecuteCommand( event )
         case "Alert":
             self AlertImpl( data );
             break;
+    }
+}
+
+OnSetClientDataCompleted( event )
+{
+    // IW4MAdmin let us know it persisted (success or fail)
+    
+    if ( level.iw4adminIntegrationDebug == 1 )
+    {
+        IPrintLn( "Set Client Data -> subtype = " + event.subType + " status = " + event.data["status"] );
     }
 }
 

@@ -45,11 +45,6 @@ let plugin = {
                     timer.Start(0, pollRate);
                 }
                 break;
-            case 'disconnect':
-                if (server.ClientNum === 0 && servers[server.EndPoint] != null) {
-                    servers[server.EndPoint].timer.Stop();
-                }
-                break;
             case 'warn':
                 const warningTitle = _localization.LocalizationIndex['GLOBAL_WARNING'];
                 sendScriptCommand(server, 'Alert', gameEvent.Target, {
@@ -194,10 +189,10 @@ let commands = [{
             name: 'player',
             required: true
         },
-        {
-            name: 'message',
-            required: true
-        }],
+            {
+                name: 'message',
+                required: true
+            }],
         supportedGames: ['IW4'],
         // required
         execute: (gameEvent) => {
@@ -222,11 +217,11 @@ const sendEvent = (server, responseExpected, event, subtype, client, data) => {
     let pendingOut = true;
     let pendingCheckCount = 0;
     const start = new Date();
-    
+
     while (pendingOut && pendingCheckCount <= 30) {
         try {
             const out = server.GetServerDvar(outDvar);
-            pendingOut =  !(out == null || out === '' || out === 'null');
+            pendingOut = !(out == null || out === '' || out === 'null');
         } catch (error) {
             logger.WriteError(`Could not check server output dvar for IO status ${error}`);
         }
@@ -264,7 +259,7 @@ const parseEvent = (input) => {
         eventType: eventInfo[1],
         subType: eventInfo[2],
         clientNumber: eventInfo[3],
-        data: eventInfo.length > 4 ? eventInfo [4] : undefined
+        data: eventInfo.length > 4 ? parseDataString(eventInfo[4]) : undefined
     }
 }
 
@@ -328,6 +323,7 @@ const pollForEvents = server => {
 
         logger.WriteDebug(`Processing input... ${event.eventType} ${event.subType} ${event.data} ${event.clientNumber}`);
 
+        // todo: refactor to mapping if possible
         if (event.eventType === 'ClientDataRequested') {
             const client = server.GetClientByNumber(event.clientNumber);
 
@@ -338,11 +334,12 @@ const pollForEvents = server => {
 
                 if (event.subType === 'Meta') {
                     const metaService = _serviceResolver.ResolveService('IMetaService');
-                    const meta = metaService.GetPersistentMeta(event.data, client).Result;
+                    const meta = metaService.GetPersistentMeta(event.data, client).GetAwaiter().GetResult().Value;
                     data[event.data] = meta === null ? '' : meta.Value;
                 } else {
                     data = {
                         level: client.Level,
+                        clientId: client.ClientId,
                         lastConnection: client.LastConnection
                     };
                 }
@@ -350,7 +347,42 @@ const pollForEvents = server => {
                 sendEvent(server, false, 'ClientDataReceived', event.subType, client, data);
             } else {
                 logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
-                sendEvent(server, false, 'ClientDataReceived', 'Fail', { ClientNumber: event.clientNumber }, undefined);
+                sendEvent(server, false, 'ClientDataReceived', 'Fail', {ClientNumber: event.clientNumber}, undefined);
+            }
+        }
+
+        if (event.eventType === 'SetClientDataRequested') {
+            let client = server.GetClientByNumber(event.clientNumber);
+            let clientId;
+            
+            if (client != null){
+                clientId = client.ClientId;
+            } else {
+                clientId = parseInt(event.data.clientId);
+            }
+
+            logger.WriteDebug(`ClientId=${clientId}`);
+
+            if (clientId == null) {
+                logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
+                sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, {status: 'Fail'});
+            } else {
+                if (event.subType === 'Meta') {
+                    const metaService = _serviceResolver.ResolveService('IMetaService');
+                    try {
+                        logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}`);
+                        if (event.data['direction'] != null) {
+                            event.data['direction'] = 'up'
+                                ? metaService.IncrementPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult()
+                                : metaService.DecrementPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult();
+                        } else {
+                            metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult();
+                        }
+                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, {status: 'Complete'});
+                    } catch (error) {
+                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, {status: 'Fail'});
+                    }
+                }
             }
         }
 
@@ -359,6 +391,9 @@ const pollForEvents = server => {
         } catch (error) {
             logger.WriteError(`Could not reset in bus value for ${server.EndPoint} - ${error}`);
         }
+    }
+    else if (server.ClientNum === 0) {
+        servers[server.EndPoint].timer.Stop();
     }
 }
 
@@ -374,4 +409,22 @@ const buildDataString = data => {
     }
 
     return formattedData.substring(0, Math.max(0, formattedData.length - 1));
+}
+
+const parseDataString = data => {
+    if (data === undefined) {
+        return '';
+    }
+
+    const dict = {}
+
+    for (const segment of data.split('|')) {
+        const keyValue = segment.split('=');
+        if (keyValue.length !== 2) {
+            continue;
+        }
+        dict[keyValue[0]] = keyValue[1];
+    }
+
+    return dict.length === 0 ? data : dict;
 }

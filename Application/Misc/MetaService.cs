@@ -68,6 +68,29 @@ namespace IW4MAdmin.Application.Misc
             await ctx.SaveChangesAsync();
         }
 
+        public async Task SetPersistentMeta(string metaKey, string metaValue, int clientId)
+        {
+            await AddPersistentMeta(metaKey, metaValue, new EFClient { ClientId = clientId });
+        }
+
+        public async Task IncrementPersistentMeta(string metaKey, int incrementAmount, int clientId)
+        {
+            var existingMeta = await GetPersistentMeta(metaKey, new EFClient { ClientId = clientId });
+            
+            if (!long.TryParse(existingMeta?.Value ?? "0", out var existingValue))
+            {
+                existingValue = 0;
+            }
+
+            var newValue = existingValue + incrementAmount;
+            await SetPersistentMeta(metaKey, newValue.ToString(), clientId);
+        }
+
+        public async Task DecrementPersistentMeta(string metaKey, int decrementAmount, int clientId)
+        {
+            await IncrementPersistentMeta(metaKey, -decrementAmount, clientId);
+        }
+
         public async Task AddPersistentMeta(string metaKey, string metaValue)
         {
             await using var ctx = _contextFactory.CreateContext();

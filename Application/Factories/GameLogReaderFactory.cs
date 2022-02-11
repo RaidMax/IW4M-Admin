@@ -18,14 +18,22 @@ namespace IW4MAdmin.Application.Factories
         public IGameLogReader CreateGameLogReader(Uri[] logUris, IEventParser eventParser)
         {
             var baseUri = logUris[0];
-            if (baseUri.Scheme == Uri.UriSchemeHttp)
+            if (baseUri.Scheme == Uri.UriSchemeHttp || baseUri.Scheme == Uri.UriSchemeHttps)
             {
-                return new GameLogReaderHttp(logUris, eventParser, _serviceProvider.GetRequiredService<ILogger<GameLogReaderHttp>>());
+                return new GameLogReaderHttp(logUris, eventParser,
+                    _serviceProvider.GetRequiredService<ILogger<GameLogReaderHttp>>());
             }
 
-            else if (baseUri.Scheme == Uri.UriSchemeFile)
+            if (baseUri.Scheme == Uri.UriSchemeFile)
             {
-                return new GameLogReader(baseUri.LocalPath, eventParser, _serviceProvider.GetRequiredService<ILogger<GameLogReader>>());
+                return new GameLogReader(baseUri.LocalPath, eventParser,
+                    _serviceProvider.GetRequiredService<ILogger<GameLogReader>>());
+            }
+
+            if (baseUri.Scheme == Uri.UriSchemeNetTcp)
+            {
+                return new NetworkGameLogReader(logUris, eventParser,
+                    _serviceProvider.GetRequiredService<ILogger<NetworkGameLogReader>>());
             }
 
             throw new NotImplementedException($"No log reader implemented for Uri scheme \"{baseUri.Scheme}\"");

@@ -334,7 +334,7 @@ const pollForEvents = server => {
 
                 if (event.subType === 'Meta') {
                     const metaService = _serviceResolver.ResolveService('IMetaService');
-                    const meta = metaService.GetPersistentMeta(event.data, client).GetAwaiter().GetResult().Value;
+                    const meta = metaService.GetPersistentMeta(event.data, client).GetAwaiter().GetResult();
                     data[event.data] = meta === null ? '' : meta.Value;
                 } else {
                     data = {

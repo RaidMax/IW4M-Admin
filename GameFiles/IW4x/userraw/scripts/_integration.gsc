@@ -33,7 +33,12 @@ init()
     level.eventCallbacks[level.eventTypes.clientDataReceived]       = ::OnClientDataReceived;
     level.eventCallbacks[level.eventTypes.executeCommandRequested]  = ::OnExecuteCommand; 
     level.eventCallbacks[level.eventTypes.setClientDataCompleted]   = ::OnSetClientDataCompleted;
-
+    
+    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
+    {
+        return;
+    }
+    
     // start long running tasks
     level thread MonitorClientEvents();
     level thread MonitorBus();
@@ -233,6 +238,7 @@ SaveTrackingMetrics()
 
     currentShotCount = self getPlayerStat( "mostshotsfired" );
     change = currentShotCount - self.lastShotCount;
+    self.lastShotCount = currentShotCount;
 
     if ( level.iw4adminIntegrationDebug == 1 )
     {
@@ -251,7 +257,6 @@ SaveTrackingMetrics()
 
     IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
 
-    self.lastShotCount = currentShotCount;
 }
 
 BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data ) 

@@ -17,12 +17,16 @@ let plugin = {
     name: 'Game Interface',
 
     onEventAsync: (gameEvent, server) => {
-        const eventType = eventTypes[gameEvent.Type];
-
         if (servers[server.EndPoint] != null && !servers[server.EndPoint].enabled) {
             return;
         }
 
+        const eventType = eventTypes[gameEvent.Type];
+        
+        if (eventType === undefined) {
+            return;
+        }
+        
         switch (eventType) {
             case 'start':
                 const enabled = initialize(server);
@@ -265,6 +269,11 @@ const parseEvent = (input) => {
 
 const initialize = (server) => {
     const logger = _serviceResolver.ResolveService('ILogger');
+
+    servers[server.EndPoint] = {
+        enabled: false
+    }
+    
     let enabled = false;
     try {
         enabled = server.GetServerDvar('sv_iw4madmin_integration_enabled') === '1';
@@ -275,9 +284,6 @@ const initialize = (server) => {
     logger.WriteInfo(`GSC Integration enabled = ${enabled}`);
 
     if (!enabled) {
-        servers[server.EndPoint] = {
-            enabled: false
-        }
         return false;
     }
 
@@ -288,10 +294,8 @@ const initialize = (server) => {
     // necessary to prevent multi-threaded access to the JS context
     timer.SetDependency(_lock);
 
-    servers[server.EndPoint] = {
-        timer: timer,
-        enabled: true
-    }
+    servers[server.EndPoint].timer = timer;
+    servers[server.EndPoint].enabled = true;
 
     try {
         server.SetServerDvar(inDvar, '');

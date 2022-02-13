@@ -23,7 +23,8 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="fileSizeDiff"></param>
         /// <param name="startPosition"></param>
+        /// <param name="server"></param>
         /// <returns></returns>
-        Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition);
+        Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition, Server server);
     }
 }

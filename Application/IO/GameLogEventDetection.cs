@@ -21,7 +21,7 @@ namespace IW4MAdmin.Application.IO
         {
             _reader = gameLogReaderFactory.CreateGameLogReader(gameLogUris, server.EventParser);
             _server = server;
-            _ignoreBots = server?.Manager.GetApplicationSettings().Configuration().IgnoreBots ?? false;
+            _ignoreBots = server.Manager.GetApplicationSettings().Configuration()?.IgnoreBots ?? false;
             _logger = logger;
         }
 
@@ -69,7 +69,7 @@ namespace IW4MAdmin.Application.IO
                 return;
             }
 
-            var events = await _reader.ReadEventsFromLog(fileDiff, previousFileSize);
+            var events = await _reader.ReadEventsFromLog(fileDiff, previousFileSize, _server);
 
             foreach (var gameEvent in events)
             {

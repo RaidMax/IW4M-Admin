@@ -34,7 +34,7 @@ namespace IW4MAdmin.Application.IO
 
         public int UpdateInterval => 500;
 
-        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition)
+        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition, Server server = null)
         {
             var events = new List<GameEvent>();
             var response = await _logServerApi.Log(_safeLogPath, lastKey);

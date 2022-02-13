@@ -28,7 +28,7 @@ namespace IW4MAdmin.Application.IO
             _logger = logger;
         }
 
-        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition)
+        public async Task<IEnumerable<GameEvent>> ReadEventsFromLog(long fileSizeDiff, long startPosition, Server server = null)
         {
             // allocate the bytes for the new log lines
             List<string> logLines = new List<string>();

@@ -37,7 +37,7 @@ let plugin = {
                 break;
             case 'preconnect':
                 // when the plugin is reloaded after the servers are started
-                if (servers[server.EndPoint] == null) {
+                if (servers[server.EndPoint] === undefined || servers[server.EndPoint] == null) {
                     const enabled = initialize(server);
 
                     if (!enabled) {
@@ -222,7 +222,7 @@ const sendEvent = (server, responseExpected, event, subtype, client, data) => {
     let pendingCheckCount = 0;
     const start = new Date();
 
-    while (pendingOut && pendingCheckCount <= 30) {
+    while (pendingOut && pendingCheckCount <= 10) {
         try {
             const out = server.GetServerDvar(outDvar);
             pendingOut = !(out == null || out === '' || out === 'null');

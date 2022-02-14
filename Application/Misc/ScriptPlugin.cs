@@ -223,47 +223,49 @@ namespace IW4MAdmin.Application.Misc
 
         public async Task OnEventAsync(GameEvent gameEvent, Server server)
         {
-            if (_successfullyLoaded)
+            if (!_successfullyLoaded)
             {
-                try
-                {
-                    await _onProcessing.WaitAsync();
-                    _scriptEngine.SetValue("_gameEvent", gameEvent);
-                    _scriptEngine.SetValue("_server", server);
-                    _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(server));
-                    _scriptEngine.Evaluate("plugin.onEventAsync(_gameEvent, _server)");
-                }
-                
-                catch (JavaScriptException ex)
-                {
-                    using (LogContext.PushProperty("Server", server.ToString()))
-                    {
-                        _logger.LogError(ex,
-                            "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {EventType} {@LocationInfo}",
-                            nameof(OnEventAsync), Path.GetFileName(_fileName), gameEvent.Type, ex.Location);
-                    }
+                return;
+            }
 
-                    throw new PluginException("An error occured while executing action for script plugin");
-                }
+            try
+            {
+                await _onProcessing.WaitAsync();
+                _scriptEngine.SetValue("_gameEvent", gameEvent);
+                _scriptEngine.SetValue("_server", server);
+                _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(server));
+                _scriptEngine.Evaluate("plugin.onEventAsync(_gameEvent, _server)");
+            }
 
-                catch (Exception ex)
+            catch (JavaScriptException ex)
+            {
+                using (LogContext.PushProperty("Server", server.ToString()))
                 {
-                    using (LogContext.PushProperty("Server", server.ToString()))
-                    {
-                        _logger.LogError(ex,
-                            "Encountered error while running {MethodName} for script plugin {Plugin} with event type {EventType}",
-                            nameof(OnEventAsync), _fileName, gameEvent.Type);
-                    }
-
-                    throw new PluginException("An error occured while executing action for script plugin");
+                    _logger.LogError(ex,
+                        "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {EventType} {@LocationInfo}",
+                        nameof(OnEventAsync), Path.GetFileName(_fileName), gameEvent.Type, ex.Location);
                 }
 
-                finally
+                throw new PluginException("An error occured while executing action for script plugin");
+            }
+
+            catch (Exception ex)
+            {
+                using (LogContext.PushProperty("Server", server.ToString()))
                 {
-                    if (_onProcessing.CurrentCount == 0)
-                    {
-                        _onProcessing.Release(1);
-                    }
+                    _logger.LogError(ex,
+                        "Encountered error while running {MethodName} for script plugin {Plugin} with event type {EventType}",
+                        nameof(OnEventAsync), _fileName, gameEvent.Type);
+                }
+
+                throw new PluginException("An error occured while executing action for script plugin");
+            }
+
+            finally
+            {
+                if (_onProcessing.CurrentCount == 0)
+                {
+                    _onProcessing.Release(1);
                 }
             }
         }

@@ -956,6 +956,19 @@ namespace SharedLibraryCore
             }
         }
 
+        public static async Task<T> WithWaitCancellation<T>(this Task<T> task,
+            CancellationToken cancellationToken)
+        {
+            var completedTask = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cancellationToken));
+            if (completedTask == task)
+            {
+                return await task;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("Infinite delay task completed.");
+        }
+
         public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout)
         {
             await Task.WhenAny(task, Task.Delay(timeout));

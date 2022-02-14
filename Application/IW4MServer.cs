@@ -236,7 +236,7 @@ namespace IW4MAdmin
         private async Task CreatePluginTask(IPlugin plugin, GameEvent gameEvent)
         {
             // we don't want to run the events on parser plugins
-            if (plugin is ScriptPlugin scriptPlugin && scriptPlugin.IsParser)
+            if (plugin is ScriptPlugin { IsParser: true })
             {
                 return;
             }
@@ -247,6 +247,11 @@ namespace IW4MAdmin
             try
             {
                 await plugin.OnEventAsync(gameEvent, this).WithWaitCancellation(tokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                ServerLogger.LogWarning("Timed out executing event {EventType} for {Plugin}", gameEvent.Type,
+                    plugin.Name);
             }
             catch (Exception ex)
             {

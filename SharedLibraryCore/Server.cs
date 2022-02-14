@@ -390,17 +390,48 @@ namespace SharedLibraryCore
 
         public string[] ExecuteServerCommand(string command)
         {
-            return this.ExecuteCommandAsync(command).GetAwaiter().GetResult();
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromMilliseconds(400));
+
+            try
+            {
+                return this.ExecuteCommandAsync(command).WithWaitCancellation(tokenSource.Token).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string GetServerDvar(string dvarName)
         {
-            return this.GetDvarAsync<string>(dvarName).GetAwaiter().GetResult()?.Value;
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(400));
+            try
+            {
+                return this.GetDvarAsync<string>(dvarName).WithWaitCancellation(tokenSource.Token).GetAwaiter()
+                    .GetResult()?.Value;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
-        public void SetServerDvar(string dvarName, string dvarValue)
+        public bool SetServerDvar(string dvarName, string dvarValue)
         {
-            this.SetDvarAsync(dvarName, dvarValue).GetAwaiter().GetResult();
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(400));
+            try
+            {
+                this.SetDvarAsync(dvarName, dvarValue).WithWaitCancellation(tokenSource.Token).GetAwaiter().GetResult();
+                return true;
+
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public EFClient GetClientByNumber(int clientNumber) =>

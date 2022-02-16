@@ -66,6 +66,7 @@ OnPlayerConnect()
         
         player thread OnPlayerSpawned();
         player thread PlayerTrackingOnInterval();
+        player ToggleNightMode();
     }
 }
 
@@ -99,7 +100,7 @@ OnGameEnded()
     {
         level waittill( "game_ended" );
         // note: you can run data code here but it's possible for 
-        // data to get trucated, so we will try a timer based approach for now
+        // data to get truncated, so we will try a timer based approach for now
     }
 }
 
@@ -233,7 +234,7 @@ SaveTrackingMetrics()
 {
     if ( level.iw4adminIntegrationDebug == 1 )
     {
-        self IPrintLn( "Saving tracking metrics for " + self.persistentClientId );
+        IPrintLn( "Saving tracking metrics for " + self.persistentClientId );
     }
 
     currentShotCount = self getPlayerStat( "mostshotsfired" );
@@ -242,7 +243,7 @@ SaveTrackingMetrics()
 
     if ( level.iw4adminIntegrationDebug == 1 )
     {
-        self IPrintLn( "Total Shots Fired increased by " + change );
+        IPrintLn( "Total Shots Fired increased by " + change );
     }
 
     if ( !IsDefined( change ) )
@@ -396,18 +397,22 @@ NotifyClientEventTimeout( eventType )
 
 NotifyClientEvent( eventInfo )
 {
-    client = getPlayerFromClientNum( int( eventInfo[3] ) );
+    origin = getPlayerFromClientNum( int( eventInfo[3] ) );
+    target = getPlayerFromClientNum( int( eventInfo[4] ) );
     
     event = spawnstruct();
     event.type = eventInfo[1];
     event.subtype = eventInfo[2];
-    event.data = eventInfo[4];
+    event.data = eventInfo[5];
+    event.origin = origin;
+    event.target = target;
     
     if ( level.iw4adminIntegrationDebug == 1 )
     {
-        IPrintLn(event.data);
+        IPrintLn( "NotifyClientEvent->" + event.data );
     }
-    
+
+    client = event.origin;
     client.event = event;
 
     level notify( level.eventTypes.localClientEvent, client );
@@ -457,33 +462,56 @@ OnClientDataReceived( event )
 OnExecuteCommand( event ) 
 {
     data = ParseDataString( event.data );
+    response = "";
+
     switch ( event.subtype ) 
     {
         case "GiveWeapon":
-            self GiveWeaponImpl( data );
+            response = event.target GiveWeaponImpl( data );
             break;
         case "TakeWeapons":
-            self TakeWeaponsImpl();
+            response = event.target TakeWeaponsImpl();
             break;
         case "SwitchTeams":
-            self TeamSwitchImpl();
+            response = event.target TeamSwitchImpl();
             break;
         case "Hide":
-            self HideImpl();
+            response = self HideImpl();
             break;
         case "Unhide":
-            self UnhideImpl();
+            response = self UnhideImpl();
             break;
         case "Alert":
-            self AlertImpl( data );
+            response = event.target AlertImpl( data );
             break;
+        case "Goto":
+            if ( IsDefined( event.target ) )
+            {
+                response = self GotoPlayerImpl( event.target );
+            }
+            else
+            {
+                response = self GotoImpl( event.data );
+            }
+            break;
+        case "Kill":
+            response = event.target KillImpl();
+            break;
+        case "NightMode":
+            NightModeImpl();
+            break;
+    }
+    
+    // send back the response to the origin, but only if they're not the target
+    if ( response != "" && IsPlayer( event.origin ) && event.origin != event.target ) 
+    {
+        event.origin IPrintLnBold( response );
     }
 }
 
 OnSetClientDataCompleted( event )
 {
     // IW4MAdmin let us know it persisted (success or fail)
-    
     if ( level.iw4adminIntegrationDebug == 1 )
     {
         IPrintLn( "Set Client Data -> subtype = " + event.subType + " status = " + event.data["status"] );
@@ -496,54 +524,181 @@ OnSetClientDataCompleted( event )
 
 GiveWeaponImpl( data )
 {
-    if ( IsAlive( self ) ) 
+    if ( !IsAlive( self ) )
     {
-        self IPrintLnBold( "You have been given a new weapon" );
-        self GiveWeapon( data["weaponName"] );
-        self SwitchToWeapon( data["weaponName"] );
+        return self.name + "^7 is not alive";
     }
+    
+    self IPrintLnBold( "You have been given a new weapon" );
+    self GiveWeapon( data["weaponName"] );
+    self SwitchToWeapon( data["weaponName"] );
+    
+    return self.name + "^7 has been given ^5" + data["weaponName"]; 
 }
 
 TakeWeaponsImpl()
 {
-    if ( IsAlive( self ) )
+    if ( !IsAlive( self ) )
     {
-        self TakeAllWeapons();
-        self IPrintLnBold( "All your weapons have been taken" );
+        return self.name + "^7 is not alive";
     }
+    
+    self TakeAllWeapons();
+    self IPrintLnBold( "All your weapons have been taken" );
+    
+    return "Took weapons from " + self.name;
 }
 
 TeamSwitchImpl()
 {
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+    team = level.allies;
+    
     if ( self.team == "allies" ) 
     {
-        self [[level.axis]]();
+        team = level.axis;
     }
-    else
-    {
-        self [[level.allies]]();
-    }
+    
+    self IPrintLnBold( "You are being team switched" );
+    wait( 2 );
+    self [[team]]();
+
+    return self.name + "^7 switched to " + self.team;
 }
 
 HideImpl()
 {
-    if ( IsAlive( self ) )
+    if ( !IsAlive( self ) )
     {
-        self Hide();
-        self IPrintLnBold( "You are now hidden" );
+        self IPrintLnBold( "You are not alive" );
+        return;
     }
+
+    if ( self.isHidden )
+    {
+        self IPrintLnBold( "You are already hidden" );
+        return;
+    }
+
+    self SetClientDvar( "sv_cheats", 1 );
+	self SetClientDvar( "cg_thirdperson", 1 );
+	self SetClientDvar( "sv_cheats", 0 );
+
+    self.savedHealth = self.health;
+    self.health = 9999;
+    self.isHidden = true;
+    
+    self Hide();
+
+    self IPrintLnBold( "You are now ^5hidden ^7from other players" );
 }
 
 UnhideImpl()
 {
-    if ( IsAlive( self ) )
+    if ( !IsAlive( self ) )
     {
-        self Show();
-        self IPrintLnBold( "You are now visible" );
+        self IPrintLnBold( "You are not alive" );
+        return;
     }
+
+	self SetClientDvar( "sv_cheats", 1 );
+	self SetClientDvar( "cg_thirdperson", 0 );
+	self SetClientDvar( "sv_cheats", 0 );
+
+    self.health = self.savedHealth;
+    self.isHidden = false;
+
+    self Show();
+    self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }
 
 AlertImpl( data )
 {
     self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    return "Sent alert to " + self.name; 
+}
+
+GotoImpl( data )
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+
+    position = ( int(data["x"]), int(data["y"]), int(data["z"]) );
+    self SetOrigin( position );
+    self IPrintLnBold( "Moved to " + "("+ position[0] + "," + position[1] + "," + position[2] + ")" );
+}
+
+GotoPlayerImpl( target )
+{
+    if ( !IsAlive( target ) )
+    {
+        self IPrintLnBold( target.name + " is not alive" );
+        return;
+    }
+
+    self SetOrigin( target GetOrigin() );
+    self IPrintLnBold( "Moved to " + target.name );
+}
+
+KillImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + " is not alive";
+    }
+
+    self Suicide();
+    self IPrintLnBold( "You were killed by " + self.name );
+
+    return "You killed " + self.name;
+}
+
+NightModeImpl()
+{
+    if ( !IsDefined ( level.nightModeEnabled ) )
+    {
+        level.nightModeEnabled = true;
+    }
+    else
+    {
+       level.nightModeEnabled = !level.nightModeEnabled;
+    }
+
+    message = "^5NightMode ^7is disabled";
+
+    if ( level.nightModeEnabled )
+    {
+        message = "^5NightMode ^7is enabled";
+    }
+
+    IPrintLnBold( message );
+
+    foreach( player in level.players )
+    {
+        self ToggleNightMode();
+    }
+}
+
+ToggleNightMode()
+{
+    colorMap = 1;
+    fxDraw = 1;
+
+    if ( IsDefined( level.nightModeEnabled ) && level.nightModeEnabled )
+    {
+        colorMap = 0;
+        fxDraw = 0;
+    }
+
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "r_colorMap", colorMap );
+    self SetClientDvar( "fx_draw", fxDraw );
+    self SetClientDvar( "sv_cheats", 0 );
 }

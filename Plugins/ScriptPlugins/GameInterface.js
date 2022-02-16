@@ -22,11 +22,11 @@ let plugin = {
         }
 
         const eventType = eventTypes[gameEvent.Type];
-        
+
         if (eventType === undefined) {
             return;
         }
-        
+
         switch (eventType) {
             case 'start':
                 const enabled = initialize(server);
@@ -77,145 +77,180 @@ let plugin = {
 };
 
 let commands = [{
-    // required
     name: 'giveweapon',
-    // required
     description: 'gives specified weapon',
-    // required
     alias: 'gw',
-    // required
     permission: 'SeniorAdmin',
-    // optional (defaults to false)
-    targetRequired: false,
-    // optional
+    targetRequired: true,
     arguments: [{
+        name: 'player',
+        required: true
+    },
+    {
         name: 'weapon name',
         required: true
     }],
     supportedGames: ['IW4'],
-    // required
     execute: (gameEvent) => {
-        sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, {weaponName: gameEvent.Data});
+        sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, gameEvent.Target, {weaponName: gameEvent.Data});
     }
 },
-    {
-        // required
-        name: 'takeweapons',
-        // required
-        description: 'take all weapons from specifies player',
-        // required
-        alias: 'tw',
-        // required
-        permission: 'SeniorAdmin',
-        // optional (defaults to false)
-        targetRequired: true,
-        // optional
-        arguments: [],
-        supportedGames: ['IW4'],
-        // required
-        execute: (gameEvent) => {
-            sendScriptCommand(gameEvent.Owner, 'TakeWeapons', gameEvent.Target, undefined);
-        }
+{
+    name: 'takeweapons',
+    description: 'take all weapons from specified player',
+    alias: 'tw',
+    permission: 'SeniorAdmin',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
+    }],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'TakeWeapons', gameEvent.Origin, gameEvent.Target, undefined);
+    }
+},
+{
+    name: 'switchteam',
+    description: 'switches specified player to the opposite team',
+    alias: 'st',
+    permission: 'Administrator',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
+    }],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Origin, gameEvent.Target, undefined);
+    }
+},
+{
+    name: 'hide',
+    description: 'hide yourself',
+    alias: 'hi',
+    permission: 'SeniorAdmin',
+    targetRequired: false,
+    arguments: [],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, gameEvent.Origin, undefined);
+    }
+},
+{
+    name: 'unhide',
+    description: 'unhide yourself',
+    alias: 'unh',
+    permission: 'SeniorAdmin',
+    targetRequired: false,
+    arguments: [],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'Unhide', gameEvent.Origin, gameEvent.Origin, undefined);
+    }
+},
+{
+    name: 'alert',
+    description: 'alert a player',
+    alias: 'alr',
+    permission: 'SeniorAdmin',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
     },
-    {
-        // required
-        name: 'switchteam',
-        // required
-        description: 'switches specified player to the opposite team',
-        // required
-        alias: 'st',
-        // required
-        permission: 'Administrator',
-        // optional (defaults to false)
-        targetRequired: true,
-        // optional
-        arguments: [{
-            name: 'player',
+        {
+            name: 'message',
             required: true
         }],
-        supportedGames: ['IW4'],
-        // required
-        execute: (gameEvent) => {
-            sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Target, undefined);
-        }
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.Origin, gameEvent.Target, {
+            alertType: 'Alert',
+            message: gameEvent.Data
+        });
+    }
+},
+{
+    name: 'gotoplayer',
+    description: 'teleport to a player',
+    alias: 'g2p',
+    permission: 'SeniorAdmin',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
+    }],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
+    }
+},
+{
+    name: 'goto',
+    description: 'teleport to a position',
+    alias: 'g2',
+    permission: 'SeniorAdmin',
+    targetRequired: false,
+    arguments: [{
+        name: 'x',
+        required: true
     },
     {
-        // required
-        name: 'hide',
-        // required
-        description: 'hide yourself',
-        // required
-        alias: 'hi',
-        // required
-        permission: 'SeniorAdmin',
-        // optional (defaults to false)
-        targetRequired: false,
-        // optional
-        arguments: [],
-        supportedGames: ['IW4'],
-        // required
-        execute: (gameEvent) => {
-            sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, undefined);
-        }
+        name: 'y',
+        required: true
     },
     {
-        // required
-        name: 'unhide',
-        // required
-        description: 'unhide yourself',
-        // required
-        alias: 'unh',
-        // required
-        permission: 'SeniorAdmin',
-        // optional (defaults to false)
-        targetRequired: false,
-        // optional
-        arguments: [],
-        supportedGames: ['IW4'],
-        // required
-        execute: (gameEvent) => {
-            sendScriptCommand(gameEvent.Owner, 'Unhide', gameEvent.Origin, undefined);
-        }
-    },
-    {
-        // required
-        name: 'alert',
-        // required
-        description: 'alert a player',
-        // required
-        alias: 'alr',
-        // required
-        permission: 'SeniorAdmin',
-        // optional (defaults to false)
-        targetRequired: true,
-        // optional
-        arguments: [{
-            name: 'player',
-            required: true
-        },
-            {
-                name: 'message',
-                required: true
-            }],
-        supportedGames: ['IW4'],
-        // required
-        execute: (gameEvent) => {
-            sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.Target, {
-                alertType: 'Alert',
-                message: gameEvent.Data
-            });
-        }
-    }];
+        name: 'z',
+        required: true
+    }],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        const args = String(gameEvent.Data).split(' ');
+        sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, {
+            x: args[0],
+            y: args[1],
+            z: args[2]
+        });
+    }
+},
+{
+    name: 'kill',
+    description: 'kill a player',
+    alias: 'kpl',
+    permission: 'SeniorAdmin',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
+    }],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'Kill', gameEvent.Origin, gameEvent.Target, undefined);
+    }
+},
+{
+    name: 'nightmode',
+    description: 'sets server into nightmode',
+    alias: 'nitem',
+    permission: 'SeniorAdmin',
+    targetRequired: false,
+    arguments: [],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        sendScriptCommand(gameEvent.Owner, 'NightMode', gameEvent.Origin, undefined, undefined);
+    }
+}];
 
-const sendScriptCommand = (server, command, target, data) => {
+const sendScriptCommand = (server, command, origin, target, data) => {
     const state = servers[server.EndPoint];
     if (state === undefined || !state.enabled) {
         return;
     }
-    sendEvent(server, false, 'ExecuteCommandRequested', command, target, data);
+    sendEvent(server, false, 'ExecuteCommandRequested', command, origin, target, data);
 }
 
-const sendEvent = (server, responseExpected, event, subtype, client, data) => {
+const sendEvent = (server, responseExpected, event, subtype, origin, target, data) => {
     const logger = _serviceResolver.ResolveService('ILogger');
 
     let pendingOut = true;
@@ -241,7 +276,12 @@ const sendEvent = (server, responseExpected, event, subtype, client, data) => {
         logger.WriteWarning(`Reached maximum attempts waiting for output to be available for ${server.EndPoint}`)
     }
 
-    const output = `${responseExpected ? '1' : '0'};${event};${subtype};${client.ClientNumber};${buildDataString(data)}`;
+    let targetClientNumber = -1;
+    if (target != null) {
+        targetClientNumber = target.ClientNumber;
+    }
+
+    const output = `${responseExpected ? '1' : '0'};${event};${subtype};${origin.ClientNumber};${targetClientNumber};${buildDataString(data)}`;
     logger.WriteDebug(`Sending output to server ${output}`);
 
     try {
@@ -273,7 +313,7 @@ const initialize = (server) => {
     servers[server.EndPoint] = {
         enabled: false
     }
-    
+
     let enabled = false;
     try {
         enabled = server.GetServerDvar('sv_iw4madmin_integration_enabled') === '1';
@@ -348,18 +388,18 @@ const pollForEvents = server => {
                     };
                 }
 
-                sendEvent(server, false, 'ClientDataReceived', event.subType, client, data);
+                sendEvent(server, false, 'ClientDataReceived', event.subType, client, undefined, data);
             } else {
                 logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
-                sendEvent(server, false, 'ClientDataReceived', 'Fail', {ClientNumber: event.clientNumber}, undefined);
+                sendEvent(server, false, 'ClientDataReceived', 'Fail', event.clientNumber, undefined, {ClientNumber: event.clientNumber});
             }
         }
 
         if (event.eventType === 'SetClientDataRequested') {
             let client = server.GetClientByNumber(event.clientNumber);
             let clientId;
-            
-            if (client != null){
+
+            if (client != null) {
                 clientId = client.ClientId;
             } else {
                 clientId = parseInt(event.data.clientId);
@@ -369,7 +409,7 @@ const pollForEvents = server => {
 
             if (clientId == null) {
                 logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
-                sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, {status: 'Fail'});
+                sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Fail'});
             } else {
                 if (event.subType === 'Meta') {
                     const metaService = _serviceResolver.ResolveService('IMetaService');
@@ -382,9 +422,9 @@ const pollForEvents = server => {
                         } else {
                             metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult();
                         }
-                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, {status: 'Complete'});
+                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined,{status: 'Complete'});
                     } catch (error) {
-                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, {status: 'Fail'});
+                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined,{status: 'Fail'});
                     }
                 }
             }
@@ -395,8 +435,7 @@ const pollForEvents = server => {
         } catch (error) {
             logger.WriteError(`Could not reset in bus value for ${server.EndPoint} - ${error}`);
         }
-    }
-    else if (server.ClientNum === 0) {
+    } else if (server.ClientNum === 0) {
         servers[server.EndPoint].timer.Stop();
     }
 }

@@ -406,7 +406,7 @@ namespace SharedLibraryCore
         public string GetServerDvar(string dvarName)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(400));
+            tokenSource.CancelAfter(TimeSpan.FromMilliseconds(400));
             try
             {
                 return this.GetDvarAsync<string>(dvarName).WithWaitCancellation(tokenSource.Token).GetAwaiter()
@@ -421,7 +421,7 @@ namespace SharedLibraryCore
         public bool SetServerDvar(string dvarName, string dvarValue)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(400));
+            tokenSource.CancelAfter(TimeSpan.FromMilliseconds(400));
             try
             {
                 this.SetDvarAsync(dvarName, dvarValue).WithWaitCancellation(tokenSource.Token).GetAwaiter().GetResult();

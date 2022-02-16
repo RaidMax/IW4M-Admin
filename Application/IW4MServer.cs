@@ -295,7 +295,7 @@ namespace IW4MAdmin
                     }
                 }
                 
-                if (E.Type == GameEvent.EventType.ConnectionLost)
+                else if (E.Type == GameEvent.EventType.ConnectionLost)
                 {
                     var exception = E.Extra as Exception;
                     ServerLogger.LogError(exception,
@@ -309,7 +309,7 @@ namespace IW4MAdmin
                     Throttled = true;
                 }
 
-                if (E.Type == GameEvent.EventType.ConnectionRestored)
+                else if (E.Type == GameEvent.EventType.ConnectionRestored)
                 {
                     ServerLogger.LogInformation(
                         "Connection restored with {server}", ToString());
@@ -327,7 +327,7 @@ namespace IW4MAdmin
                     Throttled = false;
                 }
 
-                if (E.Type == GameEvent.EventType.ChangePermission)
+                else if (E.Type == GameEvent.EventType.ChangePermission)
                 {
                     var newPermission = (Permission) E.Extra;
                     ServerLogger.LogInformation("{origin} is setting {target} to permission level {newPermission}",
@@ -619,7 +619,7 @@ namespace IW4MAdmin
                     await OnClientUpdate(E.Origin);
                 }
 
-                if (E.Type == GameEvent.EventType.Say)
+                else if (E.Type == GameEvent.EventType.Say)
                 {
                     if (E.Data?.Length > 0)
                     {
@@ -649,7 +649,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                if (E.Type == GameEvent.EventType.MapChange)
+                else if (E.Type == GameEvent.EventType.MapChange)
                 {
                     ServerLogger.LogInformation("New map loaded - {clientCount} active players", ClientNum);
 
@@ -690,7 +690,7 @@ namespace IW4MAdmin
                     }
                 }
 
-                if (E.Type == GameEvent.EventType.MapEnd)
+                else if (E.Type == GameEvent.EventType.MapEnd)
                 {
                     ServerLogger.LogInformation("Game ending...");
 
@@ -700,12 +700,12 @@ namespace IW4MAdmin
                     }
                 }
 
-                if (E.Type == GameEvent.EventType.Tell)
+                else if (E.Type == GameEvent.EventType.Tell)
                 {
                     await Tell(E.Message, E.Target);
                 }
 
-                if (E.Type == GameEvent.EventType.Broadcast)
+                else if (E.Type == GameEvent.EventType.Broadcast)
                 {
                     if (!Utilities.IsDevelopment && E.Data != null) // hides broadcast when in development mode
                     {

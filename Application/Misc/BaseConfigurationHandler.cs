@@ -59,7 +59,7 @@ namespace IW4MAdmin.Application.Misc
 
             catch (Exception e)
             {
-                throw new ConfigurationException("MANAGER_CONFIGURATION_ERROR")
+                throw new ConfigurationException("Could not load configuration")
                 {
                     Errors = new[] { e.Message },
                     ConfigurationFileName = FileName

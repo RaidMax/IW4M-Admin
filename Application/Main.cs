@@ -18,6 +18,7 @@ using SharedLibraryCore.Repositories;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -138,11 +139,8 @@ namespace IW4MAdmin.Application
 
                 if (e is ConfigurationException configException)
                 {
-                    if (translationLookup != null)
-                    {
-                        Console.WriteLine(translationLookup[configException.Message]
-                            .FormatExt(configException.ConfigurationFileName));
-                    }
+                    Console.WriteLine("{{fileName}} contains an error."
+                        .FormatExt(Path.GetFileName(configException.ConfigurationFileName)));
 
                     foreach (var error in configException.Errors)
                     {

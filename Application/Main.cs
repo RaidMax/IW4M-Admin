@@ -113,9 +113,10 @@ namespace IW4MAdmin.Application
                 var tasks = new[]
                 {
                     versionChecker.CheckVersion(),
-                    _serverManager.Init(),
                     _applicationTask
                 };
+
+                await _serverManager.Init();
 
                 await Task.WhenAll(tasks);
             }

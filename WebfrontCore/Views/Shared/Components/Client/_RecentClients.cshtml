@@ -4,7 +4,6 @@
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
 
-
 @*<table class="table table-striped">
         <thead>
             <tr class="bg-primary pt-2 pb-2">
@@ -42,10 +41,16 @@
             <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="h4 mr-auto">
                 <color-code value="@client.Name"></color-code>
             </a>
-            <div class="client-location-flag align-self-center" data-ip="@client.IPAddress"></div>
+            @if (ViewBag.Authorized && ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
+            {
+                <div class="client-location-flag align-self-center" data-ip="@client.IPAddress"></div>
+            }
         </div>
         <div class="d-flex flex-row">
-            <div class="align-self-center  mr-auto">@client.IPAddress</div>
+            @if (ViewBag.Authorized && ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
+            {
+                <div class="align-self-center mr-auto">@client.IPAddress</div>
+            }
             <div class="align-self-center">@client.LastConnectionText</div>
         </div>
     </div>

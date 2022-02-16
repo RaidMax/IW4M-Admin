@@ -95,6 +95,9 @@ $(document).ready(function () {
     $('#actionModal').on('action_form_received', function (e, actionType) {
         if (actionType === 'RecentClients') {
             const ipAddresses = $('.client-location-flag');
+            if (!ipAddresses)
+                return;
+
             $.each(ipAddresses, function (index, address) {
                 $.get('https://ip2c.org/' + $(address).data('ip'), function (result) {
                     const countryCode = result.split(';')[1].toLowerCase();

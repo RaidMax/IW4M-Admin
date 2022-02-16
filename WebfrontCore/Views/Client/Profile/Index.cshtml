@@ -36,7 +36,10 @@
         @if (ViewBag.Authorized)
         {
             <div class="d-flex flex-row justify-content-start flex-fill flex-column flex-lg-row mr-lg-2 mb-2 mb-md-0">
-                <div class="ip-lookup-profile align-self-center mr-0 mr-lg-2 ml-lg-n1" data-ip="@Model.IPAddress"></div>
+                @if (ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
+                {
+                    <div class="ip-lookup-profile align-self-center mr-0 mr-lg-2 ml-lg-n1" data-ip="@Model.IPAddress"></div>
+                }
                 <div id="ip_lookup_country" class="h4 mb-2 mb-lg-0 align-self-center text-muted"></div>
             </div>
 
@@ -56,10 +59,12 @@
 
                 @foreach (var ip in Model.IPs)
                 {
-                    <div>
-                        <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a>
-                        <a href="/Client/FindAsync?clientName=@ip" class="oi oi-magnifying-glass text-muted"></a>
-                    </div>
+                    @if (ViewBag.Authorized && ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
+                    {
+                        <div>
+                            <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a>
+                        </div>
+                    }
                 }
             </div>
         }

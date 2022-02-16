@@ -14,7 +14,10 @@
             case "alias":
                 <span class="text-white">
                     <color-code value="@Model.Name"></color-code>
-                    [@Model.IPAddress]
+                    @if (ViewBag.Authorized && ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
+                    {
+                        <color-code value="[@Model.IPAddress]"></color-code>
+                    }
                 </span>
                 break;
         }

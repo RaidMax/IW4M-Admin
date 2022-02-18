@@ -850,7 +850,7 @@ namespace SharedLibraryCore.Commands
         {
             Name = "mask";
             Description = _translationLookup["COMMANDS_MASK_DESC"];
-            Alias = "hide";
+            Alias = "ma";
             Permission = Permission.Moderator;
             RequiresTarget = false;
         }

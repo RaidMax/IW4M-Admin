@@ -578,7 +578,7 @@ HideImpl()
         return;
     }
 
-    if ( self.isHidden )
+    if ( IsDefined( self.isHidden ) && self.isHidden )
     {
         self IPrintLnBold( "You are already hidden" );
         return;
@@ -682,7 +682,7 @@ NightModeImpl()
 
     foreach( player in level.players )
     {
-        self ToggleNightMode();
+        player ToggleNightMode();
     }
 }
 

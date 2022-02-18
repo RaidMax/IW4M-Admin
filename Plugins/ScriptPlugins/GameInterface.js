@@ -92,6 +92,9 @@ let commands = [{
     }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, gameEvent.Target, {weaponName: gameEvent.Data});
     }
 },
@@ -107,6 +110,9 @@ let commands = [{
     }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'TakeWeapons', gameEvent.Origin, gameEvent.Target, undefined);
     }
 },
@@ -122,30 +128,39 @@ let commands = [{
     }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Origin, gameEvent.Target, undefined);
     }
 },
 {
     name: 'hide',
-    description: 'hide yourself',
+    description: 'hide yourself ingame',
     alias: 'hi',
     permission: 'SeniorAdmin',
     targetRequired: false,
     arguments: [],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, gameEvent.Origin, undefined);
     }
 },
 {
     name: 'unhide',
-    description: 'unhide yourself',
+    description: 'unhide yourself ingame',
     alias: 'unh',
     permission: 'SeniorAdmin',
     targetRequired: false,
     arguments: [],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'Unhide', gameEvent.Origin, gameEvent.Origin, undefined);
     }
 },
@@ -165,6 +180,9 @@ let commands = [{
         }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.Origin, gameEvent.Target, {
             alertType: 'Alert',
             message: gameEvent.Data
@@ -183,6 +201,9 @@ let commands = [{
     }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
     }
 },
@@ -206,6 +227,10 @@ let commands = [{
     }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
+        
         const args = String(gameEvent.Data).split(' ');
         sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, {
             x: args[0],
@@ -226,6 +251,9 @@ let commands = [{
     }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'Kill', gameEvent.Origin, gameEvent.Target, undefined);
     }
 },
@@ -238,6 +266,9 @@ let commands = [{
     arguments: [],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
         sendScriptCommand(gameEvent.Owner, 'NightMode', gameEvent.Origin, undefined, undefined);
     }
 }];
@@ -470,4 +501,12 @@ const parseDataString = data => {
     }
 
     return dict.length === 0 ? data : dict;
+}
+
+const validateEnabled = (server, origin) => {
+    const enabled = servers[server.EndPoint] != null && servers[server.EndPoint].enabled;
+    if (!enabled) {
+        origin.Tell("Game interface is not enabled on this server");
+    }
+    return enabled;
 }

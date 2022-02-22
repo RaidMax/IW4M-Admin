@@ -54,20 +54,8 @@ namespace IW4MAdmin.Application.Commands
                 return;
             }
 
-            string map;
-            string gametype;
-
-            if (match.Groups.Count > 3)
-            {
-                map = match.Groups[2].ToString();
-                gametype = match.Groups[4].ToString();
-            }
-
-            else
-            {
-                map = match.Groups[1].ToString();
-                gametype = match.Groups[3].ToString();
-            }
+            var map = match.Groups[1].Length > 0 ? match.Groups[1].ToString() : match.Groups[2].ToString();
+            var gametype = match.Groups[3].Length > 0 ? match.Groups[3].ToString() : match.Groups[4].ToString();
 
             var matchingMaps = gameEvent.Owner.FindMap(map);
             var matchingGametypes = _defaultSettings.FindGametype(gametype, gameEvent.Owner.GameName);

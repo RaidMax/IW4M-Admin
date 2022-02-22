@@ -236,6 +236,11 @@ SaveTrackingMetrics()
     {
         IPrintLn( "Saving tracking metrics for " + self.persistentClientId );
     }
+    
+    if ( !IsDefined( self.lastShotCount ) )
+    {
+        self.lastShotCount = 0;
+    }
 
     currentShotCount = self getPlayerStat( "mostshotsfired" );
     change = currentShotCount - self.lastShotCount;

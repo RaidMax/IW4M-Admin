@@ -24,7 +24,8 @@ namespace Data.MigrationContext
         {
             if (MigrationExtensions.IsMigration)
             {
-                optionsBuilder.UseMySql(ServerVersion.AutoDetect("Server=127.0.0.1;Database=IW4MAdmin_Migration;Uid=root;Pwd=password;"))
+                var connectionString = "Server=127.0.0.1;Database=IW4MAdmin_Migration;Uid=root;Pwd=password;";
+                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
                     .EnableDetailedErrors()
                     .EnableSensitiveDataLogging();
             }

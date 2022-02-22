@@ -464,7 +464,7 @@ namespace SharedLibraryCore.Services
                     // link2 is deleted
                     // link2 penalties are orphaned
                     await context.Penalties
-                        .Where(_penalty => completeAliasLinkIds.Contains(_penalty.LinkId))
+                        .Where(_penalty => completeAliasLinkIds.Contains(_penalty.LinkId ?? -1))
                         .ForEachAsync(_penalty => _penalty.LinkId = newAliasLink.AliasLinkId);
 
                     entity.AliasLink = newAliasLink;

@@ -3,6 +3,7 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Data.Migrations.Postgresql
 {
     [DbContext(typeof(PostgresqlDatabaseContext))]
-    partial class PostgresqlDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20220222222045_AddEFPenaltyIdentifier")]
+    partial class AddEFPenaltyIdentifier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -985,7 +987,7 @@ namespace Data.Migrations.Postgresql
                     b.Property<bool>("IsEvadedOffense")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("LinkId")
+                    b.Property<int>("LinkId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OffenderId")
@@ -1552,7 +1554,9 @@ namespace Data.Migrations.Postgresql
                 {
                     b.HasOne("Data.Models.EFAliasLink", "Link")
                         .WithMany("ReceivedPenalties")
-                        .HasForeignKey("LinkId");
+                        .HasForeignKey("LinkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Data.Models.Client.EFClient", "Offender")
                         .WithMany("ReceivedPenalties")

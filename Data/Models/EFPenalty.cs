@@ -23,8 +23,7 @@ namespace Data.Models
 
         [Key]
         public int PenaltyId { get; set; }
-        [Required]
-        public int LinkId { get; set; }
+        public int? LinkId { get; set; }
         [ForeignKey("LinkId")]
         public virtual EFAliasLink Link { get; set; }
         [Required]

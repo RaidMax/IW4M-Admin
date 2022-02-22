@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
+#nullable disable
+
 namespace Data.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteDatabaseContext))]
@@ -13,8 +15,7 @@ namespace Data.Migrations.Sqlite
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.10");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
@@ -37,7 +38,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("Vector3Id");
 
-                    b.ToTable("EFACSnapshotVector3");
+                    b.ToTable("EFACSnapshotVector3", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClient", b =>
@@ -91,7 +92,7 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("NetworkId")
                         .IsUnique();
 
-                    b.ToTable("EFClients");
+                    b.ToTable("EFClients", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClientConnectionHistory", b =>
@@ -123,7 +124,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("EFClientConnectionHistory");
+                    b.ToTable("EFClientConnectionHistory", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClientKill", b =>
@@ -197,7 +198,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ViewAnglesVector3Id");
 
-                    b.ToTable("EFClientKills");
+                    b.ToTable("EFClientKills", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClientMessage", b =>
@@ -232,7 +233,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("TimeSent");
 
-                    b.ToTable("EFClientMessages");
+                    b.ToTable("EFClientMessages", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFACSnapshot", b =>
@@ -339,7 +340,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("EFACSnapshot");
+                    b.ToTable("EFACSnapshot", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientHitStatistic", b =>
@@ -413,7 +414,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("WeaponId");
 
-                    b.ToTable("EFClientHitStatistics");
+                    b.ToTable("EFClientHitStatistics", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientRankingHistory", b =>
@@ -458,7 +459,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ZScore");
 
-                    b.ToTable("EFClientRankingHistory");
+                    b.ToTable("EFClientRankingHistory", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientRatingHistory", b =>
@@ -477,7 +478,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("EFClientRatingHistory");
+                    b.ToTable("EFClientRatingHistory", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatistics", b =>
@@ -535,7 +536,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ClientId", "TimePlayed", "ZScore");
 
-                    b.ToTable("EFClientStatistics");
+                    b.ToTable("EFClientStatistics", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFHitLocationCount", b =>
@@ -548,12 +549,12 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("EFClientStatisticsClientId")
-                        .HasColumnName("EFClientStatisticsClientId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("EFClientStatisticsClientId");
 
                     b.Property<long>("EFClientStatisticsServerId")
-                        .HasColumnName("EFClientStatisticsServerId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("EFClientStatisticsServerId");
 
                     b.Property<int>("HitCount")
                         .HasColumnType("INTEGER");
@@ -573,7 +574,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("EFClientStatisticsClientId", "EFClientStatisticsServerId");
 
-                    b.ToTable("EFHitLocationCounts");
+                    b.ToTable("EFHitLocationCounts", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -616,7 +617,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("When", "ServerId", "Performance", "ActivityAmount");
 
-                    b.ToTable("EFRating");
+                    b.ToTable("EFRating", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFHitLocation", b =>
@@ -642,7 +643,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("Name");
 
-                    b.ToTable("EFHitLocations");
+                    b.ToTable("EFHitLocations", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFMap", b =>
@@ -666,7 +667,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("MapId");
 
-                    b.ToTable("EFMaps");
+                    b.ToTable("EFMaps", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFMeansOfDeath", b =>
@@ -690,7 +691,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("MeansOfDeathId");
 
-                    b.ToTable("EFMeansOfDeath");
+                    b.ToTable("EFMeansOfDeath", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFWeapon", b =>
@@ -716,7 +717,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("Name");
 
-                    b.ToTable("EFWeapons");
+                    b.ToTable("EFWeapons", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFWeaponAttachment", b =>
@@ -740,7 +741,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("WeaponAttachmentId");
 
-                    b.ToTable("EFWeaponAttachments");
+                    b.ToTable("EFWeaponAttachments", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFWeaponAttachmentCombo", b =>
@@ -775,7 +776,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("Attachment3Id");
 
-                    b.ToTable("EFWeaponAttachmentCombos");
+                    b.ToTable("EFWeaponAttachmentCombos", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.EFAlias", b =>
@@ -798,12 +799,12 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(24);
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SearchableName")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(24);
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
 
                     b.HasKey("AliasId");
 
@@ -817,7 +818,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("Name", "IPAddress");
 
-                    b.ToTable("EFAlias");
+                    b.ToTable("EFAlias", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.EFAliasLink", b =>
@@ -831,7 +832,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("AliasLinkId");
 
-                    b.ToTable("EFAliasLinks");
+                    b.ToTable("EFAliasLinks", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.EFChangeHistory", b =>
@@ -844,8 +845,8 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(128);
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CurrentValue")
                         .HasColumnType("TEXT");
@@ -893,8 +894,8 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<string>("Key")
                         .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasMaxLength(32);
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("LinkedMetaId")
                         .HasColumnType("INTEGER");
@@ -935,7 +936,7 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("IsEvadedOffense")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("LinkId")
+                    b.Property<int?>("LinkId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("OffenderId")
@@ -962,7 +963,36 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("PunisherId");
 
-                    b.ToTable("EFPenalties");
+                    b.ToTable("EFPenalties", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.EFPenaltyIdentifier", b =>
+                {
+                    b.Property<int>("PenaltyIdentifierId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("IPv4Address")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("NetworkId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PenaltyId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("PenaltyIdentifierId");
+
+                    b.HasIndex("IPv4Address");
+
+                    b.HasIndex("NetworkId");
+
+                    b.HasIndex("PenaltyId");
+
+                    b.ToTable("EFPenaltyIdentifiers", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
@@ -1028,7 +1058,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("ServerId");
 
-                    b.ToTable("EFServers");
+                    b.ToTable("EFServers", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
@@ -1061,7 +1091,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("EFServerSnapshot");
+                    b.ToTable("EFServerSnapshot", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerStatistics", b =>
@@ -1086,7 +1116,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("EFServerStatistics");
+                    b.ToTable("EFServerStatistics", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Vector3", b =>
@@ -1106,7 +1136,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("Vector3Id");
 
-                    b.ToTable("Vector3");
+                    b.ToTable("Vector3", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
@@ -1122,6 +1152,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("Vector3Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Snapshot");
+
+                    b.Navigation("Vector");
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClient", b =>
@@ -1137,6 +1171,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("CurrentAliasId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("AliasLink");
+
+                    b.Navigation("CurrentAlias");
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClientConnectionHistory", b =>
@@ -1152,6 +1190,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClientKill", b =>
@@ -1185,6 +1227,18 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.Vector3", "ViewAngles")
                         .WithMany()
                         .HasForeignKey("ViewAnglesVector3Id");
+
+                    b.Navigation("Attacker");
+
+                    b.Navigation("DeathOrigin");
+
+                    b.Navigation("KillOrigin");
+
+                    b.Navigation("Server");
+
+                    b.Navigation("Victim");
+
+                    b.Navigation("ViewAngles");
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFClientMessage", b =>
@@ -1200,6 +1254,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFACSnapshot", b =>
@@ -1237,6 +1295,18 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("CurrentViewAngle");
+
+                    b.Navigation("HitDestination");
+
+                    b.Navigation("HitOrigin");
+
+                    b.Navigation("LastStrainAngle");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientHitStatistic", b =>
@@ -1266,6 +1336,18 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.Client.Stats.Reference.EFWeapon", "Weapon")
                         .WithMany()
                         .HasForeignKey("WeaponId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("HitLocation");
+
+                    b.Navigation("MeansOfDeath");
+
+                    b.Navigation("Server");
+
+                    b.Navigation("Weapon");
+
+                    b.Navigation("WeaponAttachmentCombo");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientRankingHistory", b =>
@@ -1279,6 +1361,10 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientRatingHistory", b =>
@@ -1288,6 +1374,8 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatistics", b =>
@@ -1303,6 +1391,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFHitLocationCount", b =>
@@ -1324,6 +1416,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("EFClientStatisticsClientId", "EFClientStatisticsServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -1337,6 +1433,10 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
+
+                    b.Navigation("RatingHistory");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.Reference.EFWeaponAttachmentCombo", b =>
@@ -1354,6 +1454,12 @@ namespace Data.Migrations.Sqlite
                     b.HasOne("Data.Models.Client.Stats.Reference.EFWeaponAttachment", "Attachment3")
                         .WithMany()
                         .HasForeignKey("Attachment3Id");
+
+                    b.Navigation("Attachment1");
+
+                    b.Navigation("Attachment2");
+
+                    b.Navigation("Attachment3");
                 });
 
             modelBuilder.Entity("Data.Models.EFAlias", b =>
@@ -1363,6 +1469,8 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("LinkId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Link");
                 });
 
             modelBuilder.Entity("Data.Models.EFMeta", b =>
@@ -1375,15 +1483,17 @@ namespace Data.Migrations.Sqlite
                         .WithMany()
                         .HasForeignKey("LinkedMetaId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Client");
+
+                    b.Navigation("LinkedMeta");
                 });
 
             modelBuilder.Entity("Data.Models.EFPenalty", b =>
                 {
                     b.HasOne("Data.Models.EFAliasLink", "Link")
                         .WithMany("ReceivedPenalties")
-                        .HasForeignKey("LinkId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("LinkId");
 
                     b.HasOne("Data.Models.Client.EFClient", "Offender")
                         .WithMany("ReceivedPenalties")
@@ -1396,6 +1506,23 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("PunisherId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Link");
+
+                    b.Navigation("Offender");
+
+                    b.Navigation("Punisher");
+                });
+
+            modelBuilder.Entity("Data.Models.EFPenaltyIdentifier", b =>
+                {
+                    b.HasOne("Data.Models.EFPenalty", "Penalty")
+                        .WithMany()
+                        .HasForeignKey("PenaltyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Penalty");
                 });
 
             modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
@@ -1415,6 +1542,12 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("SourceClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DestinationClient");
+
+                    b.Navigation("Server");
+
+                    b.Navigation("SourceClient");
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
@@ -1430,6 +1563,10 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Map");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerStatistics", b =>
@@ -1439,6 +1576,39 @@ namespace Data.Migrations.Sqlite
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Client.EFClient", b =>
+                {
+                    b.Navigation("AdministeredPenalties");
+
+                    b.Navigation("Meta");
+
+                    b.Navigation("ReceivedPenalties");
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFACSnapshot", b =>
+                {
+                    b.Navigation("PredictedViewAngles");
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFClientRatingHistory", b =>
+                {
+                    b.Navigation("Ratings");
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatistics", b =>
+                {
+                    b.Navigation("HitLocations");
+                });
+
+            modelBuilder.Entity("Data.Models.EFAliasLink", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("ReceivedPenalties");
                 });
 #pragma warning restore 612, 618
         }

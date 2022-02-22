@@ -35,7 +35,8 @@ namespace WebfrontCore.Controllers
                 return NotFound();
             }
 
-            var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId, client.CurrentAliasId, client.IPAddress);
+            var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId,
+                client.CurrentAliasId, client.NetworkId, client.IPAddress);
 
             var persistentMetaTask = new[]
             {

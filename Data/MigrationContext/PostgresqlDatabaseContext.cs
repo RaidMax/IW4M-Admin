@@ -23,6 +23,7 @@ namespace Data.MigrationContext
         {
             if (MigrationExtensions.IsMigration)
             {
+                AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
                 optionsBuilder.UseNpgsql(
                         "Host=127.0.0.1;Database=IW4MAdmin_Migration;Username=postgres;Password=password;",
                         options => options.SetPostgresVersion(new Version("12.9")))

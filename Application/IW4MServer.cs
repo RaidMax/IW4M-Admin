@@ -482,7 +482,7 @@ namespace IW4MAdmin
 
                 else if (E.Type == GameEvent.EventType.Unflag)
                 {
-                    var unflagPenalty = new EFPenalty()
+                    var unflagPenalty = new EFPenalty
                     {
                         Type = EFPenalty.PenaltyType.Unflag,
                         Expires = DateTime.UtcNow,
@@ -494,7 +494,8 @@ namespace IW4MAdmin
                     };
 
                     E.Target.SetLevel(Permission.User, E.Origin);
-                    await Manager.GetPenaltyService().RemoveActivePenalties(E.Target.AliasLinkId);
+                    await Manager.GetPenaltyService().RemoveActivePenalties(E.Target.AliasLinkId, E.Target.NetworkId,
+                        E.Target.CurrentAlias?.IPAddress);
                     await Manager.GetPenaltyService().Create(unflagPenalty);
                 }
 
@@ -1444,7 +1445,6 @@ namespace IW4MAdmin
                 Offender = targetClient,
                 Offense = reason,
                 Punisher = originClient,
-                Link = targetClient.AliasLink,
                 IsEvadedOffense = isEvade
             };
 
@@ -1479,7 +1479,8 @@ namespace IW4MAdmin
 
             ServerLogger.LogDebug("Creating unban penalty for {targetClient}", targetClient.ToString());
             targetClient.SetLevel(Permission.User, originClient);
-            await Manager.GetPenaltyService().RemoveActivePenalties(targetClient.AliasLink.AliasLinkId);
+            await Manager.GetPenaltyService().RemoveActivePenalties(targetClient.AliasLink.AliasLinkId,
+                targetClient.NetworkId, targetClient.CurrentAlias?.IPAddress);
             await Manager.GetPenaltyService().Create(unbanPenalty);
         }
 

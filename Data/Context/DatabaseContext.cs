@@ -18,6 +18,7 @@ namespace Data.Context
         public DbSet<EFAlias> Aliases { get; set; }
         public DbSet<EFAliasLink> AliasLinks { get; set; }
         public DbSet<EFPenalty> Penalties { get; set; }
+        public DbSet<EFPenaltyIdentifier> PenaltyIdentifiers { get; set; }
         public DbSet<EFMeta> EFMeta { get; set; }
         public DbSet<EFChangeHistory> EFChangeHistory { get; set; }
 
@@ -130,6 +131,12 @@ namespace Data.Context
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
+            modelBuilder.Entity<EFPenaltyIdentifier>(ent =>
+            {
+                ent.HasIndex(identifiers => identifiers.NetworkId);
+                ent.HasIndex(identifiers => identifiers.IPv4Address);
+            });
+
             modelBuilder.Entity<EFClientConnectionHistory>(ent => ent.HasIndex(history => history.CreatedDateTime));
 
             // force full name for database conversion
@@ -137,6 +144,7 @@ namespace Data.Context
             modelBuilder.Entity<EFAlias>().ToTable("EFAlias");
             modelBuilder.Entity<EFAliasLink>().ToTable("EFAliasLinks");
             modelBuilder.Entity<EFPenalty>().ToTable("EFPenalties");
+            modelBuilder.Entity<EFPenaltyIdentifier>().ToTable("EFPenaltyIdentifiers");
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
 

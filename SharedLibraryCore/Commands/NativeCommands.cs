@@ -378,29 +378,31 @@ namespace SharedLibraryCore.Commands
             };
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
             // todo: don't do the lookup here
-            var penalties = await E.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId);
+            var penalties = await gameEvent.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(gameEvent.Target.AliasLinkId,
+                gameEvent.Target.CurrentAliasId, gameEvent.Target.NetworkId, gameEvent.Target.CurrentAlias.IPAddress);
+            
             if (penalties
                     .FirstOrDefault(p =>
                         p.Type == EFPenalty.PenaltyType.Ban || p.Type == EFPenalty.PenaltyType.TempBan) != null)
             {
-                switch ((await E.Target.Unban(E.Data, E.Origin)
-                            .WaitAsync(Utilities.DefaultCommandTimeout, E.Owner.Manager.CancellationToken)).FailReason)
+                switch ((await gameEvent.Target.Unban(gameEvent.Data, gameEvent.Origin)
+                            .WaitAsync(Utilities.DefaultCommandTimeout, gameEvent.Owner.Manager.CancellationToken)).FailReason)
                 {
                     case GameEvent.EventFailReason.None:
-                        E.Origin.Tell(_translationLookup["COMMANDS_UNBAN_SUCCESS"].FormatExt(E.Target));
+                        gameEvent.Origin.Tell(_translationLookup["COMMANDS_UNBAN_SUCCESS"].FormatExt(gameEvent.Target));
                         break;
                     default:
-                        E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                        gameEvent.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
                         break;
                 }
             }
 
             else
             {
-                E.Origin.Tell(_translationLookup["COMMANDS_UNBAN_FAIL"].FormatExt(E.Target));
+                gameEvent.Origin.Tell(_translationLookup["COMMANDS_UNBAN_FAIL"].FormatExt(gameEvent.Target));
             }
         }
     }
@@ -898,7 +900,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var existingPenalties = await E.Owner.Manager.GetPenaltyService()
-                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId, E.Target.IPAddress);
+                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId, E.Target.NetworkId, E.Target.IPAddress);
             var penalty = existingPenalties.FirstOrDefault(b => b.Type > EFPenalty.PenaltyType.Kick);
 
             if (penalty == null)

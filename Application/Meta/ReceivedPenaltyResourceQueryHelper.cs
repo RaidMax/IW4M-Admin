@@ -61,7 +61,7 @@ namespace IW4MAdmin.Application.Meta
 
                 iqIpLinkedPenalties = ctx.Penalties.AsNoTracking()
                     .Where(penalty =>
-                        linkedPenaltyType.Contains(penalty.Type) && aliasedIds.Contains(penalty.LinkId));
+                        linkedPenaltyType.Contains(penalty.Type) && aliasedIds.Contains(penalty.LinkId ?? -1));
             }
 
             var iqAllPenalties = iqPenalties;

@@ -31,7 +31,7 @@ namespace SharedLibraryCore.Services
                 Active = true,
                 OffenderId = newEntity.Offender.ClientId,
                 PunisherId = newEntity.Punisher.ClientId,
-                LinkId = newEntity.Link.AliasLinkId,
+                LinkId = newEntity.Link?.AliasLinkId,
                 Type = newEntity.Type,
                 Expires = newEntity.Expires,
                 Offense = newEntity.Offense,
@@ -40,6 +40,18 @@ namespace SharedLibraryCore.Services
                                    newEntity.Punisher.AdministeredPenalties?.FirstOrDefault()?.AutomatedOffense,
                 IsEvadedOffense = newEntity.IsEvadedOffense
             };
+            
+            if (LinkedPenalties.Contains(newEntity.Type))
+            {
+                var penaltyIdentifiers = new EFPenaltyIdentifier
+                {
+                    Penalty = penalty,
+                    NetworkId = newEntity.Offender.NetworkId,
+                    IPv4Address = newEntity.Offender.CurrentAlias.IPAddress
+                };
+
+                context.PenaltyIdentifiers.Add(penaltyIdentifiers);
+            }
 
             context.Penalties.Add(penalty);
             await context.SaveChangesAsync();
@@ -103,64 +115,25 @@ namespace SharedLibraryCore.Services
             return await iqPenalties.ToListAsync();
         }
 
-        /// <summary>
-        ///     retrieves penalty information for meta service
-        /// </summary>
-        /// <param name="clientId">database id of the client</param>
-        /// <param name="count">how many items to retrieve</param>
-        /// <param name="offset">not used</param>
-        /// <param name="startAt">retreive penalties older than this</param>
-        /// <returns></returns>
-        public async Task<IList<PenaltyInfo>> GetClientPenaltyForMetaAsync(int clientId, int count, int offset,
-            DateTime? startAt)
+        private static readonly EFPenalty.PenaltyType[] LinkedPenalties =
+            { EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.Flag };
+
+        private static readonly Expression<Func<EFPenalty, bool>> Filter = p =>
+            LinkedPenalties.Contains(p.Type) && p.Active && (p.Expires == null || p.Expires > DateTime.UtcNow);
+
+        private static readonly Expression<Func<EFPenaltyIdentifier, bool>> FilterById = pi =>
+            LinkedPenalties.Contains(pi.Penalty.Type) && pi.Penalty.Active &&
+            (pi.Penalty.Expires == null || pi.Penalty.Expires > DateTime.UtcNow);
+
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int currentAliasId, long networkId,
+            int? ip = null)
         {
-            var linkedPenaltyType = Utilities.LinkedPenaltyTypes();
+            var penaltiesByIdentifier = await GetActivePenaltiesByIdentifier(ip, networkId);
 
-            await using var context = _contextFactory.CreateContext(false);
-            var linkId = await context.Clients.AsNoTracking()
-                .Where(_penalty => _penalty.ClientId == clientId)
-                .Select(_penalty => _penalty.AliasLinkId)
-                .FirstOrDefaultAsync();
-
-            var iqPenalties = context.Penalties.AsNoTracking()
-                .Where(_penalty => _penalty.OffenderId == clientId || _penalty.PunisherId == clientId ||
-                                   linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId)
-                .Where(_penalty => _penalty.When <= startAt)
-                .OrderByDescending(_penalty => _penalty.When)
-                .Skip(offset)
-                .Take(count)
-                .Select(_penalty => new PenaltyInfo
-                {
-                    Id = _penalty.PenaltyId,
-                    Offense = _penalty.Offense,
-                    AutomatedOffense = _penalty.AutomatedOffense,
-                    OffenderId = _penalty.OffenderId,
-                    OffenderName = _penalty.Offender.CurrentAlias.Name,
-                    PunisherId = _penalty.PunisherId,
-                    PunisherName = _penalty.Punisher.CurrentAlias.Name,
-                    PunisherLevel = _penalty.Punisher.Level,
-                    PenaltyType = _penalty.Type,
-                    Expires = _penalty.Expires,
-                    TimePunished = _penalty.When,
-                    IsEvade = _penalty.IsEvadedOffense
-                });
-
-            return await iqPenalties.Distinct().ToListAsync();
-        }
-
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int currentAliasId, int? ip = null,
-            bool includePunisherName = false)
-        {
-            var now = DateTime.UtcNow;
-
-            Expression<Func<EFPenalty, bool>> filter = p => new[]
-                                                            {
-                                                                EFPenalty.PenaltyType.TempBan,
-                                                                EFPenalty.PenaltyType.Ban,
-                                                                EFPenalty.PenaltyType.Flag
-                                                            }.Contains(p.Type) &&
-                                                            p.Active &&
-                                                            (p.Expires == null || p.Expires > now);
+            if (penaltiesByIdentifier.Any())
+            {
+                return penaltiesByIdentifier;
+            }
 
             await using var context = _contextFactory.CreateContext(false);
 
@@ -171,12 +144,13 @@ namespace SharedLibraryCore.Services
                 iqIpPenalties = context.Aliases
                     .Where(a => a.IPAddress != null && a.IPAddress == ip)
                     .SelectMany(a => a.Link.ReceivedPenalties)
-                    .Where(filter);
+                    .Where(Filter);
             }
             else
             {
                 var usedIps = await context.Aliases.AsNoTracking()
-                    .Where(alias => (alias.LinkId == linkId || alias.AliasId == currentAliasId) && alias.IPAddress != null)
+                    .Where(alias =>
+                        (alias.LinkId == linkId || alias.AliasId == currentAliasId) && alias.IPAddress != null)
                     .Select(alias => alias.IPAddress).ToListAsync();
 
                 var aliasedIds = await context.Aliases.AsNoTracking().Where(alias => usedIps.Contains(alias.IPAddress))
@@ -184,8 +158,8 @@ namespace SharedLibraryCore.Services
                     .ToListAsync();
 
                 iqIpPenalties = context.Penalties.AsNoTracking()
-                    .Where(penalty => aliasedIds.Contains(penalty.LinkId) || penalty.LinkId == linkId)
-                    .Where(filter);
+                    .Where(penalty => aliasedIds.Contains(penalty.LinkId ?? -1) || penalty.LinkId == linkId)
+                    .Where(Filter);
             }
 
             var activeIpPenalties = await iqIpPenalties.ToListAsync();
@@ -195,11 +169,35 @@ namespace SharedLibraryCore.Services
             return activePenalties.OrderByDescending(p => p.When).ToList();
         }
 
-        public virtual async Task RemoveActivePenalties(int aliasLinkId, int? ipAddress = null)
+        public async Task<List<EFPenalty>> GetActivePenaltiesByIdentifier(int? ip, long networkId)
+        {
+            await using var context = _contextFactory.CreateContext(false);
+            var activePenaltiesIds = context.PenaltyIdentifiers.Where(identifier =>
+                    identifier.IPv4Address != null && identifier.IPv4Address == ip || identifier.NetworkId == networkId)
+                .Where(FilterById);
+            return await activePenaltiesIds.Select(ids => ids.Penalty).ToListAsync();
+        }
+
+        public virtual async Task RemoveActivePenalties(int aliasLinkId, long networkId, int? ipAddress = null)
         {
             await using var context = _contextFactory.CreateContext();
-
             var now = DateTime.UtcNow;
+
+            var activePenalties = await GetActivePenaltiesByIdentifier(ipAddress, networkId);
+
+            if (activePenalties.Any())
+            {
+                var ids = activePenalties.Select(penalty => penalty.PenaltyId);
+                await context.Penalties.Where(penalty => ids.Contains(penalty.PenaltyId))
+                    .ForEachAsync(penalty =>
+                    {
+                        penalty.Active = false;
+                        penalty.Expires = now;
+                    });
+                await context.SaveChangesAsync();
+                return;
+            }
+
             var penaltiesByLink = context.Penalties
                 .Where(p => p.LinkId == aliasLinkId)
                 .Where(p => p.Expires > now || p.Expires == null);

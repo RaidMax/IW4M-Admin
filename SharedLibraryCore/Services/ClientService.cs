@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
@@ -839,13 +840,14 @@ namespace SharedLibraryCore.Services
             }
             catch
             {
+                // ignored
             }
 
             var ipAddress = trimmedIdentifier.ConvertToIP();
 
             var iqLinkIds = context.Aliases.Where(_alias => _alias.Active);
 
-            // we want to query for the IP ADdress
+            // we want to query for the IP Address
             if (ipAddress != null)
             {
                 iqLinkIds = iqLinkIds.Where(_alias => _alias.IPAddress == ipAddress);
@@ -866,12 +868,22 @@ namespace SharedLibraryCore.Services
             var iqClients = context.Clients
                 .Where(_client => _client.Active);
 
+            var match = Regex.Match(trimmedIdentifier ?? "", "\"(.+)\"");
 
-            iqClients = iqClients.Where(_client => networkId == _client.NetworkId ||
-                                                   linkIds.Contains(_client.AliasLinkId)
-                                                   || !_appConfig.EnableImplicitAccountLinking &&
-                                                   _client.CurrentAlias.IPAddress != null &&
-                                                   _client.CurrentAlias.IPAddress == ipAddress);
+            if (match.Success)
+            {
+                iqClients = iqClients.Where(client =>
+                    client.CurrentAlias.SearchableName.ToLower().Equals(match.Groups[1].ToString().ToLower()));
+            }
+
+            else
+            {
+                iqClients = iqClients.Where(_client => networkId == _client.NetworkId ||
+                                                       linkIds.Contains(_client.AliasLinkId)
+                                                       || !_appConfig.EnableImplicitAccountLinking &&
+                                                       _client.CurrentAlias.IPAddress != null &&
+                                                       _client.CurrentAlias.IPAddress == ipAddress);
+            }
 
             // we want to project our results 
             var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)

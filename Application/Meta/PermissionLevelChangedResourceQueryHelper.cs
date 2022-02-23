@@ -39,7 +39,8 @@ public class
                 PreviousPermissionLevelValue = change.PreviousValue,
                 CurrentPermissionLevelValue = change.CurrentValue,
                 When = change.TimeChanged,
-                ClientId = change.TargetEntityId
+                ClientId = change.TargetEntityId,
+                IsSensitive = true
             };
 
         return new ResourceQueryHelperResult<PermissionLevelChangedResponse>

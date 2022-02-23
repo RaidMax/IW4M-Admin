@@ -1023,8 +1023,8 @@ namespace Data.Migrations.Postgresql
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PenaltyIdentifierId"));
 
-                    b.Property<bool>("Active")
-                        .HasColumnType("boolean");
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("IPv4Address")
                         .HasColumnType("integer");
@@ -1034,6 +1034,9 @@ namespace Data.Migrations.Postgresql
 
                     b.Property<int>("PenaltyId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("PenaltyIdentifierId");
 

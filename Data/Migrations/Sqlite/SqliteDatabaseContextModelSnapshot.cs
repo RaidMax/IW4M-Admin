@@ -972,8 +972,8 @@ namespace Data.Migrations.Sqlite
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("Active")
-                        .HasColumnType("INTEGER");
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("IPv4Address")
                         .HasColumnType("INTEGER");
@@ -983,6 +983,9 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<int>("PenaltyId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("PenaltyIdentifierId");
 

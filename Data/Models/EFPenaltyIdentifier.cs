@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Stats.Models;
 
 namespace Data.Models;
 
-public class EFPenaltyIdentifier : SharedEntity
+public class EFPenaltyIdentifier : AuditFields
 {
     [Key]
     public int PenaltyIdentifierId { get; set; }

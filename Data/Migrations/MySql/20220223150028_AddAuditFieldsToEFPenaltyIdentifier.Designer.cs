@@ -3,6 +3,7 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations.MySql
 {
     [DbContext(typeof(MySqlDatabaseContext))]
-    partial class MySqlDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20220223150028_AddAuditFieldsToEFPenaltyIdentifier")]
+    partial class AddAuditFieldsToEFPenaltyIdentifier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

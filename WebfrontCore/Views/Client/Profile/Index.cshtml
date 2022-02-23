@@ -6,11 +6,11 @@
     var match = System.Text.RegularExpressions.Regex.Match(Model.Name.ToUpper(), "[A-Z]").Value;
     var shortCode = match == string.Empty ? "?" : match;
     var gravatarUrl = Model.Meta.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
-    var isFlagged = Model.LevelInt == (int) EFClient.Permission.Flagged;
-    var isPermBanned = Model.LevelInt == (int) EFClient.Permission.Banned;
+    var isFlagged = Model.LevelInt == (int)EFClient.Permission.Flagged;
+    var isPermBanned = Model.LevelInt == (int)EFClient.Permission.Banned;
     var isTempBanned = Model.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
     var translationKey = $"WEBFRONT_PROFILE_{Model.ActivePenalty?.Type.ToString().ToUpper()}_INFO";
-    var ignoredMetaTypes = new[] {MetaType.Information, MetaType.Other, MetaType.QuickMessage};
+    var ignoredMetaTypes = new[] { MetaType.Information, MetaType.Other, MetaType.QuickMessage };
 }
 
 <div id="profile_wrapper" class="pb-3 row d-flex flex-column flex-lg-row">
@@ -44,7 +44,7 @@
                 @foreach (var linked in Model.LinkedAccounts)
                 {
                     <div>
-                        @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new {id = linked.Key}, new {@class = "link-inverse"})
+                        @Html.ActionLink(linked.Value.ToString("X"), "ProfileAsync", "Client", new { id = linked.Key }, new { @class = "link-inverse" })
                     </div>
                 }
                 @foreach (var alias in Model.Aliases)
@@ -110,12 +110,12 @@
                 <div class="profile-action oi oi-flag h3 ml-2 @(isFlagged ? "text-secondary" : "text-success")" data-action="@(isFlagged ? "unflag" : "flag")" aria-hidden="true"></div>
             }
 
-            @if (Model.LevelInt < (int) ViewBag.User.Level && !Model.HasActivePenalty)
+            @if (Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty)
             {
                 <div id="profile_action_ban_btn" class="profile-action oi oi-lock-unlocked text-success h3 ml-2" title="Ban Client" data-action="ban" aria-hidden="true"></div>
             }
 
-            @if (Model.LevelInt < (int) ViewBag.User.Level && Model.HasActivePenalty)
+            @if (Model.LevelInt < (int)ViewBag.User.Level && Model.HasActivePenalty)
             {
                 @if (isTempBanned)
                 {
@@ -145,31 +145,46 @@
     <partial name="Meta/_Information.cshtml" model="@Model.Meta"/>
 </div>
 
-<div class="row border-bottom">
-    <div class="text-center bg-dark p-2 pl-3 pr-4 text-muted col-12 col-md-auto" id="filter_meta_container_button">
-        <span class="oi oi-sort-ascending"></span>
-        <a>@ViewBag.Localization["WEBFRONT_CLIENT_META_FILTER"]</a>
-    </div>
-    <div class="d-none d-md-flex flex-fill" id="filter_meta_container">
-        <a asp-action="ProfileAsync" asp-controller="Client"
-           class="nav-link p-2 pl-3 pr-3 text-center col-12 col-md-auto text-md-left @(!Model.MetaFilterType.HasValue ? "btn-primary text-white" : "text-muted")"
-           asp-route-id="@Model.ClientId">
-            @ViewBag.Localization["META_TYPE_ALL_NAME"]
-        </a>
-
-        @foreach (MetaType type in Enum.GetValues(typeof(MetaType)))
-        {
-            if (!ignoredMetaTypes.Contains(type))
+<div class="row border-bottom bg-dark">
+    <div class="d-md-flex flex-fill align-items-center bg-dark">
+        <div class="text-center bg-dark p-2 pl-3 pr-4 text-muted" id="filter_meta_container_button">
+            <span class="oi oi-sort-ascending"></span>
+            <a>@ViewBag.Localization["WEBFRONT_CLIENT_META_FILTER"]</a>
+        </div>
+        <div id="filter_meta_container" class="d-none d-md-flex flex-md-fill flex-md-wrap">
+            <a asp-action="ProfileAsync" asp-controller="Client"
+               class="nav-link p-2 pl-3 pr-3 text-center col-12 col-md-auto text-md-left @(!Model.MetaFilterType.HasValue ? "btn-primary text-white" : "text-muted")"
+               asp-route-id="@Model.ClientId">
+                @ViewBag.Localization["META_TYPE_ALL_NAME"]
+            </a>
+            @{ var metaTypes = Enum.GetValues(typeof(MetaType))
+                   .Cast<MetaType>()
+                   .Where(type => !ignoredMetaTypes.Contains(type))
+                   .ToList(); }
+            @foreach (var type in metaTypes.Take(4))
             {
                 <a asp-action="ProfileAsync" asp-controller="Client"
-                   class="nav-link p-2 pl-3 pr-3 text-center col-12 col-md-auto text-md-left @(Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-white" : "text-muted")"
+                   class="meta-filter nav-link p-2 pl-3 pr-3 text-center @(Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-white" : "text-muted")"
                    asp-route-id="@Model.ClientId"
                    asp-route-metaFilterType="@type"
                    data-meta-type="@type">
                     @type.ToTranslatedName()
                 </a>
             }
-        }
+            <a href="#" class="nav-link p-2 pl-3 pr-3 text-center text-muted d-none d-md-block" id="expand-meta-filters">...</a>
+            <div class="d-block d-md-none" id="additional-meta-filter">
+                @foreach (var type in metaTypes.Skip(4))
+                {
+                    <a asp-action="ProfileAsync" asp-controller="Client"
+                       class="meta-filter nav-link p-2 pl-3 pr-3 text-center @(Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-white" : "text-muted")"
+                       asp-route-id="@Model.ClientId"
+                       asp-route-metaFilterType="@type"
+                       data-meta-type="@type">
+                        @type.ToTranslatedName()
+                    </a>
+                }
+            </div>
+        </div>
     </div>
 </div>
 
@@ -177,7 +192,7 @@
 {
     <div class="row d-md-flex pt-2">
         <div id="profile_events" class="text-muted text-left pl-4 pr-4 pl-md-0 pr-md-0">
-            @await Component.InvokeAsync("ProfileMetaList", new {clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType})
+            @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
         </div>
     </div>
 }

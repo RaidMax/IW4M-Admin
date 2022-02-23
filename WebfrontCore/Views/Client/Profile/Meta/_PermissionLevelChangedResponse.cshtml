@@ -1,0 +1,29 @@
+﻿@model SharedLibraryCore.Dtos.Meta.Responses.PermissionLevelChangedResponse
+
+@foreach (var token in Utilities.SplitTranslationTokens("WEBFRONT_CLIENT_META_PERMISSION_CHANGED"))
+{
+    if (token.IsInterpolation)
+    {
+        switch (token.MatchValue)
+        {
+            case "permission":
+                <span class="level-color-@((int)Model.CurrentPermissionLevel)">@Model.CurrentPermissionLevel.ToLocalizedLevelName()</span>
+                break;
+            case "originClient":
+                <span class="text-highlight">
+                    <a class="link-inverse" href="@Model.ChangedById">
+                        <color-code value="@Model.ChangedByName"></color-code>
+                    </a>
+                </span>
+                break;
+            case "type":
+                <span class="text-white-50">@token.TranslationValue</span>
+                break;
+        }
+    }
+    
+    else
+    {
+        <span class="text-muted">@token.MatchValue</span>
+    }
+}

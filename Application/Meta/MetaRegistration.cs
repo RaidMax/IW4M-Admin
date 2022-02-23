@@ -22,12 +22,16 @@ namespace IW4MAdmin.Application.Meta
         private readonly IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> _updatedAliasHelper;
         private readonly IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>
             _connectionHistoryHelper;
+        private readonly IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>
+            _permissionLevelHelper;
 
-        public MetaRegistration(ILogger<MetaRegistration> logger, IMetaService metaService, ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
+        public MetaRegistration(ILogger<MetaRegistration> logger, IMetaService metaService,
+            ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
             IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse> receivedPenaltyHelper,
             IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> administeredPenaltyHelper,
             IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> updatedAliasHelper,
-            IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse> connectionHistoryHelper)
+            IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse> connectionHistoryHelper,
+            IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse> permissionLevelHelper)
         {
             _logger = logger;
             _transLookup = transLookup;
@@ -37,6 +41,7 @@ namespace IW4MAdmin.Application.Meta
             _administeredPenaltyHelper = administeredPenaltyHelper;
             _updatedAliasHelper = updatedAliasHelper;
             _connectionHistoryHelper = connectionHistoryHelper;
+            _permissionLevelHelper = permissionLevelHelper;
         }
 
         public void Register()
@@ -46,6 +51,8 @@ namespace IW4MAdmin.Application.Meta
             _metaService.AddRuntimeMeta<ClientPaginationRequest, AdministeredPenaltyResponse>(MetaType.Penalized, GetAdministeredPenaltiesMeta);
             _metaService.AddRuntimeMeta<ClientPaginationRequest, UpdatedAliasResponse>(MetaType.AliasUpdate, GetUpdatedAliasMeta);
             _metaService.AddRuntimeMeta<ClientPaginationRequest, ConnectionHistoryResponse>(MetaType.ConnectionHistory, GetConnectionHistoryMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, PermissionLevelChangedResponse>(
+                MetaType.PermissionLevel, GetPermissionLevelMeta);
         }
 
         private async Task<IEnumerable<InformationResponse>> GetProfileMeta(ClientPaginationRequest request)
@@ -173,6 +180,13 @@ namespace IW4MAdmin.Application.Meta
         {
             var connections = await _connectionHistoryHelper.QueryResource(request);
             return connections.Results;
+        }
+
+        private async Task<IEnumerable<PermissionLevelChangedResponse>> GetPermissionLevelMeta(
+            ClientPaginationRequest request)
+        {
+            var permissionChanges = await _permissionLevelHelper.QueryResource(request);
+            return permissionChanges.Results;
         }
     }
 }

@@ -69,6 +69,10 @@ namespace WebfrontCore.ViewComponents
                     case MetaType.ConnectionHistory:
                         meta = await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request, metaType.Value);
                         break;
+                    case MetaType.PermissionLevel:
+                        meta = await metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(request,
+                            metaType.Value);
+                        break;
                 }
             }
 

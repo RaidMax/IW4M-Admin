@@ -27,6 +27,7 @@ namespace SharedLibraryCore.Interfaces
         Penalized,
         ReceivedPenalty,
         QuickMessage,
-        ConnectionHistory
+        ConnectionHistory,
+        PermissionLevel,
     }
 }

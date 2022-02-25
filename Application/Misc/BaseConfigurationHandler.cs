@@ -27,6 +27,7 @@ namespace IW4MAdmin.Application.Misc
             _serializerOptions = new JsonSerializerOptions
             {
                 WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
             _serializerOptions.Converters.Add(new JsonStringEnumConverter());
             _onSaving = new SemaphoreSlim(1, 1);

@@ -66,7 +66,12 @@ OnPlayerConnect()
         
         player thread OnPlayerSpawned();
         player thread PlayerTrackingOnInterval();
-        player ToggleNightMode();
+        
+        // only toggle if it's enabled
+        if ( IsDefined( level.nightModeEnabled ) && level.nightModeEnabled )
+        {
+            player ToggleNightMode();
+        }
     }
 }
 
@@ -590,8 +595,8 @@ HideImpl()
     }
 
     self SetClientDvar( "sv_cheats", 1 );
-	self SetClientDvar( "cg_thirdperson", 1 );
-	self SetClientDvar( "sv_cheats", 0 );
+    self SetClientDvar( "cg_thirdperson", 1 );
+    self SetClientDvar( "sv_cheats", 0 );
 
     self.savedHealth = self.health;
     self.health = 9999;
@@ -610,9 +615,9 @@ UnhideImpl()
         return;
     }
 
-	self SetClientDvar( "sv_cheats", 1 );
-	self SetClientDvar( "cg_thirdperson", 0 );
-	self SetClientDvar( "sv_cheats", 0 );
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 0 );
+    self SetClientDvar( "sv_cheats", 0 );
 
     self.health = self.savedHealth;
     self.isHidden = false;

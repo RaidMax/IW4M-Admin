@@ -38,11 +38,12 @@ namespace WebfrontCore.ViewComponents
             return View("_List", meta);
         }
 
-        public static async Task<IEnumerable<IClientMeta>> GetClientMeta(IMetaService metaService, MetaType? metaType, EFClient.Permission level, ClientPaginationRequest request)
+        public static async Task<IEnumerable<IClientMeta>> GetClientMeta(IMetaService metaService, MetaType? metaType,
+            EFClient.Permission level, ClientPaginationRequest request)
         {
             IEnumerable<IClientMeta> meta = null;
 
-            if (metaType == null) // all types
+            if (metaType is null or MetaType.All)
             {
                 meta = await metaService.GetRuntimeMeta(request);
             }

@@ -20,6 +20,7 @@ namespace SharedLibraryCore.Interfaces
 
     public enum MetaType
     {
+        All = -1,
         Other,
         Information,
         AliasUpdate,

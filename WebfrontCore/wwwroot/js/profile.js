@@ -35,15 +35,9 @@
     startAt = $('.loader-data-time').last().data('time');
 
     $('#filter_meta_container_button').click(function () {
-        $('#filter_meta_container').hide().removeClass('d-none').addClass('d-block').slideDown();
-        $('#additional-meta-filter').removeClass('d-md-none').addClass('d-flex').slideDown();
-        $('#expand-meta-filters').removeClass('d-md-block');
+        $('#filter_meta_container').removeClass('d-none').addClass('flex-md-column');
+        $('#additional_meta_filter').removeClass('d-md-none');
     });
-    
-    $('#expand-meta-filters').click(function () {
-        $('#additional-meta-filter').removeClass('d-md-none').addClass('d-flex').slideDown();
-        $('#expand-meta-filters').removeClass('d-md-block');
-    })
 
     /*
      * load context of chat 

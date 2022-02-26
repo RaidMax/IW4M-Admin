@@ -146,23 +146,23 @@
     <partial name="Meta/_Information.cshtml" model="@Model.Meta"/>
 </div>
 
-<div class="row border-bottom bg-dark">
-    <div class="d-md-flex flex-fill align-items-center bg-dark">
-        <div class="text-center bg-dark p-2 pl-3 pr-4 text-muted" id="filter_meta_container_button">
-            <span class="oi oi-sort-ascending"></span>
+<div class="row border-bottom">
+    <div class="d-md-flex flex-fill">
+        <div class="bg-dark p-2 pl-3 pr-3 text-center text-muted border-0 align-self-stretch align-middle" id="filter_meta_container_button">
+            <span class="text-primary" id="meta_filter_dropdown_icon">▼</span>
             <a>@ViewBag.Localization["WEBFRONT_CLIENT_META_FILTER"]</a>
         </div>
         <div id="filter_meta_container" class="d-none d-md-flex flex-md-fill flex-md-wrap">
-            <a asp-action="ProfileAsync" asp-controller="Client"
-               class="nav-link p-2 pl-3 pr-3 text-center col-12 col-md-auto text-md-left @(!Model.MetaFilterType.HasValue ? "btn-primary text-white" : "text-muted")"
-               asp-route-id="@Model.ClientId">
-                @ViewBag.Localization["META_TYPE_ALL_NAME"]
-            </a>
-            @{ var metaTypes = Enum.GetValues(typeof(MetaType))
+            @{
+                const int defaultTabCount = 5;
+                var metaTypes = Enum.GetValues(typeof(MetaType))
                    .Cast<MetaType>()
                    .Where(type => !ignoredMetaTypes.Contains(type))
-                   .ToList(); }
-            @foreach (var type in metaTypes.Take(4))
+                   .OrderByDescending(type => type == MetaType.All)
+                   .ToList();
+                var selectedMeta = metaTypes.FirstOrDefault(meta => metaTypes.IndexOf(Model.MetaFilterType ?? MetaType.All) >= defaultTabCount && meta != MetaType.All && meta == Model.MetaFilterType);
+            }
+            @foreach (var type in metaTypes.Take(defaultTabCount - 1).Append(selectedMeta == MetaType.Other ? metaTypes[defaultTabCount - 1] : selectedMeta))
             {
                 <a asp-action="ProfileAsync" asp-controller="Client"
                    class="meta-filter nav-link p-2 pl-3 pr-3 text-center @(Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-white" : "text-muted")"
@@ -172,9 +172,8 @@
                     @type.ToTranslatedName()
                 </a>
             }
-            <a href="#" class="nav-link p-2 pl-3 pr-3 text-center text-muted d-none d-md-block" id="expand-meta-filters">...</a>
-            <div class="d-block d-md-none" id="additional-meta-filter">
-                @foreach (var type in metaTypes.Skip(4))
+            <div class="d-md-none" id="additional_meta_filter">
+                @foreach (var type in (selectedMeta == MetaType.Other ? metaTypes.Skip(defaultTabCount) : metaTypes.Skip(defaultTabCount).Append(metaTypes[defaultTabCount - 1])).Where(meta => selectedMeta == MetaType.Other || meta != selectedMeta))
                 {
                     <a asp-action="ProfileAsync" asp-controller="Client"
                        class="meta-filter nav-link p-2 pl-3 pr-3 text-center @(Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-white" : "text-muted")"

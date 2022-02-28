@@ -597,51 +597,16 @@ namespace SharedLibraryCore.Services
         /// <returns></returns>
         public virtual async Task UpdateLevel(Permission newPermission, EFClient temporalClient, EFClient origin)
         {
-            await using var ctx = _contextFactory.CreateContext();
-            var entity = await ctx.Clients
-                .Where(_client => _client.ClientId == temporalClient.ClientId)
+            await using var context = _contextFactory.CreateContext();
+            var entity = await context.Clients
+                .Where(client => client.ClientId == temporalClient.ClientId)
                 .FirstAsync();
 
-            var oldPermission = entity.Level;
+            _logger.LogInformation("Updating {ClientId} from {OldPermission} to {NewPermission} ",
+                temporalClient.ClientId, entity.Level, newPermission);
 
             entity.Level = newPermission;
-            await ctx.SaveChangesAsync();
-
-            using (LogContext.PushProperty("Server", temporalClient?.CurrentServer?.ToString()))
-            {
-                _logger.LogInformation("Updated {clientId} to {newPermission}", temporalClient.ClientId, newPermission);
-
-                var linkedPermissionSet = new[] { Permission.Banned, Permission.Flagged };
-                // if their permission level has been changed to level that needs to be updated on all accounts
-                if (linkedPermissionSet.Contains(newPermission) || linkedPermissionSet.Contains(oldPermission))
-                {
-                    //get all clients that have the same linkId
-                    var iqMatchingClients = ctx.Clients
-                        .Where(_client => _client.AliasLinkId == entity.AliasLinkId);
-
-                    var iqLinkClients = new List<Data.Models.Client.EFClient>().AsQueryable();
-                    if (!_appConfig.EnableImplicitAccountLinking)
-                    {
-                        var linkIds = await ctx.Aliases.Where(alias =>
-                                alias.IPAddress != null && alias.IPAddress == temporalClient.IPAddress)
-                            .Select(alias => alias.LinkId)
-                            .ToListAsync();
-                        iqLinkClients = ctx.Clients.Where(client => linkIds.Contains(client.AliasLinkId));
-                    }
-
-                    // this updates the level for all the clients with the same LinkId
-                    // only if their new level is flagged or banned
-                    await iqMatchingClients.Union(iqLinkClients).ForEachAsync(_client =>
-                    {
-                        _client.Level = newPermission;
-                        _logger.LogInformation("Updated linked {clientId} to {newPermission}", _client.ClientId,
-                            newPermission);
-                    });
-
-                    await ctx.SaveChangesAsync();
-                }
-            }
-
+            await context.SaveChangesAsync();
             temporalClient.Level = newPermission;
         }
 

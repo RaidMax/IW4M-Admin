@@ -53,6 +53,14 @@ namespace WebfrontCore.Controllers
                 client.SetAdditionalProperty(EFMeta.ClientTag, tag.LinkedMeta.Value);
             }
 
+            // even though we haven't set their level to "banned" yet
+            // (ie they haven't reconnected with the infringing player identifier)
+            // we want to show them as banned as to not confuse people.
+            if (activePenalties.Any(penalty => penalty.Type == EFPenalty.PenaltyType.Ban))
+            {
+                client.Level = Data.Models.Client.EFClient.Permission.Banned;
+            }
+
             var displayLevelInt = (int)client.Level;
             var displayLevel = client.Level.ToLocalizedLevelName();
 

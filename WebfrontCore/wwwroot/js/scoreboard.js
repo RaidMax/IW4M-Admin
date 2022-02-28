@@ -15,6 +15,8 @@ $(document).ready(() => {
         return 0;
     }
     
+    setInterval(refreshScoreboard, 5000);
+    
     $(window.location.hash).tab('show');
     $(`${window.location.hash}_nav`).addClass('active');
 
@@ -32,5 +34,3 @@ function setupDataSorting() {
         refreshScoreboard();
     })
 }
-
-setInterval(refreshScoreboard, 5000);

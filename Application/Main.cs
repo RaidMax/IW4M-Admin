@@ -153,6 +153,8 @@ namespace IW4MAdmin.Application
                 {
                     Console.WriteLine(e.Message);
                 }
+                
+                _serverManager?.Stop();
 
                 Console.WriteLine(exitMessage);
                 await Console.In.ReadAsync(new char[1], 0, 1);

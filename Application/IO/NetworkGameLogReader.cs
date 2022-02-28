@@ -66,8 +66,8 @@ namespace IW4MAdmin.Application.IO
                         }
                         return Task.FromResult(Enumerable.Empty<GameEvent>());
                     }
-                    
-                    new Thread(() => ReadNetworkData(client)).Start();
+
+                    Task.Run(async () => await ReadNetworkData(client, _token), _token);
                 }
                 catch (Exception ex)
                 {
@@ -111,9 +111,9 @@ namespace IW4MAdmin.Application.IO
             return Task.FromResult((IEnumerable<GameEvent>)events);
         }
 
-        private void ReadNetworkData(UdpClient client)
+        private async Task ReadNetworkData(UdpClient client, CancellationToken token)
         {
-            while (!_token.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
                 // get more data
                 IPEndPoint remoteEndpoint = null;
@@ -127,7 +127,13 @@ namespace IW4MAdmin.Application.IO
 
                 try
                 {
-                    bufferedData = client.Receive(ref remoteEndpoint);
+                    var result = await client.ReceiveAsync(_token);
+                    remoteEndpoint = result.RemoteEndPoint;
+                    bufferedData = result.Buffer;
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogDebug("Stopping network log receive");
                 }
                 catch (Exception ex)
                 {

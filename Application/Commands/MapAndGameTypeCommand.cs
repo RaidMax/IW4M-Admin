@@ -92,7 +92,7 @@ namespace IW4MAdmin.Application.Commands
 
             _logger.LogDebug("Changing map to {Map} and gametype {Gametype}", map, gametype);
 
-            await gameEvent.Owner.SetDvarAsync("g_gametype", gametype);
+            await gameEvent.Owner.SetDvarAsync("g_gametype", gametype, gameEvent.Owner.Manager.CancellationToken);
             gameEvent.Owner.Broadcast(_translationLookup["COMMANDS_MAP_SUCCESS"].FormatExt(map));
             await Task.Delay(gameEvent.Owner.Manager.GetApplicationSettings().Configuration().MapChangeDelaySeconds);
 

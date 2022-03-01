@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using SharedLibraryCore.RCon;
 
 namespace SharedLibraryCore.Interfaces
@@ -14,7 +15,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="type">type of RCon query to perform</param>
         /// <param name="parameters">optional parameter list</param>
         /// <returns></returns>
-        Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "");
+        Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", CancellationToken token = default);
 
         /// <summary>
         ///     sets the rcon parser

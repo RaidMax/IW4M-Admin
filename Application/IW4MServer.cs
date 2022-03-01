@@ -321,7 +321,7 @@ namespace IW4MAdmin
 
                     if (!string.IsNullOrEmpty(CustomSayName))
                     {
-                        await this.SetDvarAsync("sv_sayname", CustomSayName);
+                        await this.SetDvarAsync("sv_sayname", CustomSayName, Manager.CancellationToken);
                     }
 
                     Throttled = false;
@@ -783,7 +783,7 @@ namespace IW4MAdmin
         async Task<List<EFClient>[]> PollPlayersAsync()
         {
             var currentClients = GetClientsAsList();
-            var statusResponse = (await this.GetStatusAsync());
+            var statusResponse = await this.GetStatusAsync(Manager.CancellationToken);
             var polledClients = statusResponse.Clients.AsEnumerable();
 
             if (Manager.GetApplicationSettings().Configuration().IgnoreBots)
@@ -1109,7 +1109,7 @@ namespace IW4MAdmin
             RemoteConnection = RConConnectionFactory.CreateConnection(ResolvedIpEndPoint, Password, RconParser.RConEngine);
             RemoteConnection.SetConfiguration(RconParser);
 
-            var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version");
+            var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version", token: Manager.CancellationToken);
             Version = version.Value;
             GameName = Utilities.GetGame(version.Value ?? RconParser.Version);
 
@@ -1126,7 +1126,7 @@ namespace IW4MAdmin
                 Version = RconParser.Version;
             }
 
-            var svRunning = await this.GetMappedDvarValueOrDefaultAsync<string>("sv_running");
+            var svRunning = await this.GetMappedDvarValueOrDefaultAsync<string>("sv_running", token: Manager.CancellationToken);
 
             if (!string.IsNullOrEmpty(svRunning.Value) && svRunning.Value != "1")
             {
@@ -1135,27 +1135,28 @@ namespace IW4MAdmin
 
             var infoResponse = RconParser.Configuration.CommandPrefixes.RConGetInfo != null ? await this.GetInfoAsync() : null;
 
-            string hostname = (await this.GetMappedDvarValueOrDefaultAsync<string>("sv_hostname", "hostname", infoResponse)).Value;
-            string mapname = (await this.GetMappedDvarValueOrDefaultAsync<string>("mapname", infoResponse: infoResponse)).Value;
-            int maxplayers = (await this.GetMappedDvarValueOrDefaultAsync<int>("sv_maxclients", infoResponse: infoResponse)).Value;
-            string gametype = (await this.GetMappedDvarValueOrDefaultAsync<string>("g_gametype", "gametype", infoResponse)).Value;
-            var basepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath");
-            var basegame = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame");
-            var homepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_homepath");
-            var game = (await this.GetMappedDvarValueOrDefaultAsync<string>("fs_game", infoResponse: infoResponse));
-            var logfile = await this.GetMappedDvarValueOrDefaultAsync<string>("g_log");
-            var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync");
-            var ip = await this.GetMappedDvarValueOrDefaultAsync<string>("net_ip");
-            var gamePassword = await this.GetMappedDvarValueOrDefaultAsync("g_password", overrideDefault: "");
+            var hostname = (await this.GetMappedDvarValueOrDefaultAsync<string>("sv_hostname", "hostname", infoResponse, token: Manager.CancellationToken)).Value;
+            var mapname = (await this.GetMappedDvarValueOrDefaultAsync<string>("mapname", infoResponse: infoResponse, token: Manager.CancellationToken)).Value;
+            var maxplayers = (await this.GetMappedDvarValueOrDefaultAsync<int>("sv_maxclients", infoResponse: infoResponse, token: Manager.CancellationToken)).Value;
+            var gametype = (await this.GetMappedDvarValueOrDefaultAsync<string>("g_gametype", "gametype", infoResponse, token: Manager.CancellationToken)).Value;
+            var basepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basepath", token: Manager.CancellationToken);
+            var basegame = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_basegame", token: Manager.CancellationToken);
+            var homepath = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_homepath", token: Manager.CancellationToken);
+            var game = await this.GetMappedDvarValueOrDefaultAsync<string>("fs_game", infoResponse: infoResponse, token: Manager.CancellationToken);
+            var logfile = await this.GetMappedDvarValueOrDefaultAsync<string>("g_log", token: Manager.CancellationToken);
+            var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync", token: Manager.CancellationToken);
+            var ip = await this.GetMappedDvarValueOrDefaultAsync<string>("net_ip", token: Manager.CancellationToken);
+            var gamePassword = await this.GetMappedDvarValueOrDefaultAsync("g_password", overrideDefault: "", token: Manager.CancellationToken);
 
             if (Manager.GetApplicationSettings().Configuration().EnableCustomSayName)
             {
-                await this.SetDvarAsync("sv_sayname", Manager.GetApplicationSettings().Configuration().CustomSayName);
+                await this.SetDvarAsync("sv_sayname", Manager.GetApplicationSettings().Configuration().CustomSayName,
+                    Manager.CancellationToken);
             }
 
             try
             {
-                var website = await this.GetMappedDvarValueOrDefaultAsync<string>("_website");
+                var website = await this.GetMappedDvarValueOrDefaultAsync<string>("_website", token: Manager.CancellationToken);
 
                 // this occurs for games that don't give us anything back when
                 // the dvar is not set
@@ -1201,14 +1202,14 @@ namespace IW4MAdmin
 
                 if (logsync.Value == 0)
                 {
-                    await this.SetDvarAsync("g_logsync", 2); // set to 2 for continous in other games, clamps to 1 for IW4
+                    await this.SetDvarAsync("g_logsync", 2, Manager.CancellationToken); // set to 2 for continous in other games, clamps to 1 for IW4
                     needsRestart = true;
                 }
 
                 if (string.IsNullOrWhiteSpace(logfile.Value))
                 {
                     logfile.Value = "games_mp.log";
-                    await this.SetDvarAsync("g_log", logfile.Value);
+                    await this.SetDvarAsync("g_log", logfile.Value, Manager.CancellationToken);
                     needsRestart = true;
                 }
 
@@ -1220,7 +1221,7 @@ namespace IW4MAdmin
                 }
 
                 // this DVAR isn't set until the a map is loaded
-                await this.SetDvarAsync("logfile", 2);
+                await this.SetDvarAsync("logfile", 2, Manager.CancellationToken);
             }
 
             CustomCallback = await ScriptLoaded();

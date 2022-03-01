@@ -723,14 +723,15 @@ namespace SharedLibraryCore
                 .Replace('/', '_');
         }
 
-        public static Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName, T fallbackValue = default)
+        public static async Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName,
+            T fallbackValue = default, CancellationToken token = default)
         {
-            return server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue);
+            return await server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue, token);
         }
 
         public static async Task<Dvar<T>> GetMappedDvarValueOrDefaultAsync<T>(this Server server, string dvarName,
             string infoResponseName = null, IDictionary<string, string> infoResponse = null,
-            T overrideDefault = default)
+            T overrideDefault = default, CancellationToken token = default)
         {
             // todo: unit test this
             var mappedKey = server.RconParser.GetOverrideDvarName(dvarName);
@@ -749,22 +750,22 @@ namespace SharedLibraryCore
                 };
             }
 
-            return await server.GetDvarAsync(mappedKey, defaultValue);
+            return await server.GetDvarAsync(mappedKey, defaultValue, token: token);
         }
 
-        public static Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
+        public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue, CancellationToken token = default)
         {
-            return server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue);
+            await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token);
         }
 
-        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
+        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName, CancellationToken token = default)
         {
-            return await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName);
+            return await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName, token);
         }
 
-        public static Task<IStatusResponse> GetStatusAsync(this Server server)
+        public static Task<IStatusResponse> GetStatusAsync(this Server server, CancellationToken token)
         {
-            return server.RconParser.GetStatusAsync(server.RemoteConnection);
+            return server.RconParser.GetStatusAsync(server.RemoteConnection, token);
         }
 
         /// <summary>

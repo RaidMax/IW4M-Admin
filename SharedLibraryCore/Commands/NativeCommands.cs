@@ -1190,7 +1190,7 @@ namespace SharedLibraryCore.Commands
 
         public static async Task<string> GetNextMap(Server s, ITranslationLookup lookup)
         {
-            var mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation")).Value?.ToLower() ?? "";
+            var mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation", token: s.Manager.CancellationToken)).Value?.ToLower() ?? "";
             var regexMatches = Regex.Matches(mapRotation,
                     @"((?:gametype|exec) +(?:([a-z]{1,4})(?:.cfg)?))? *map ([a-z|_|\d]+)", RegexOptions.IgnoreCase)
                 .ToList();

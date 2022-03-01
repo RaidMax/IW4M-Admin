@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using static SharedLibraryCore.Server;
 
@@ -52,7 +53,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="dvarName">name of DVAR</param>
         /// <param name="fallbackValue">default value to return if dvar retrieval fails</param>
         /// <returns></returns>
-        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default);
+        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default, CancellationToken token = default);
 
         /// <summary>
         ///     set value of DVAR by name
@@ -61,7 +62,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="dvarName">name of DVAR to set</param>
         /// <param name="dvarValue">value to set DVAR to</param>
         /// <returns></returns>
-        Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue);
+        Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default);
 
         /// <summary>
         ///     executes a console command on the server
@@ -69,8 +70,8 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="connection">RCon connection to use</param>
         /// <param name="command">console command to execute</param>
         /// <returns></returns>
-        Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command);
-
+        Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command, CancellationToken token = default);
+        
         /// <summary>
         ///     get the list of connected clients from status response
         /// </summary>
@@ -78,7 +79,7 @@ namespace SharedLibraryCore.Interfaces
         /// <returns>
         ///     <see cref="IStatusResponse" />
         /// </returns>
-        Task<IStatusResponse> GetStatusAsync(IRConConnection connection);
+        Task<IStatusResponse> GetStatusAsync(IRConConnection connection, CancellationToken token = default);
 
         /// <summary>
         ///     retrieves the value of given dvar key if it exists in the override dict

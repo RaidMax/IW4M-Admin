@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using Microsoft.Extensions.Logging;
@@ -77,19 +78,19 @@ namespace IW4MAdmin.Application.RConParsers
         public string RConEngine { get; set; } = "COD";
         public bool IsOneLog { get; set; }
 
-        public async Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command)
+        public async Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command, CancellationToken token = default)
         {
-            var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command);
+            var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command, token);
             return response.Where(item => item != Configuration.CommandPrefixes.RConResponse).ToArray();
         }
 
-        public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default)
+        public async Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default, CancellationToken token = default)
         {
             string[] lineSplit;
 
             try
             {
-                lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName);
+                lineSplit = await connection.SendQueryAsync(StaticHelpers.QueryType.GET_DVAR, dvarName, token);
             }
             catch
             {
@@ -98,10 +99,10 @@ namespace IW4MAdmin.Application.RConParsers
                     throw;
                 }
 
-                lineSplit = new string[0];
+                lineSplit = Array.Empty<string>();
             }
 
-            string response = string.Join('\n', lineSplit).TrimEnd('\0');
+            var response = string.Join('\n', lineSplit).TrimEnd('\0');
             var match = Regex.Match(response, Configuration.Dvar.Pattern);
 
             if (response.Contains("Unknown command") ||
@@ -109,7 +110,7 @@ namespace IW4MAdmin.Application.RConParsers
             {
                 if (fallbackValue != null)
                 {
-                    return new Dvar<T>()
+                    return new Dvar<T>
                     {
                         Name = dvarName,
                         Value = fallbackValue
@@ -119,17 +120,17 @@ namespace IW4MAdmin.Application.RConParsers
                 throw new DvarException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_DVAR"].FormatExt(dvarName));
             }
 
-            string value = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarValue]].Value;
-            string defaultValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDefaultValue]].Value;
-            string latchedValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarLatchedValue]].Value;
+            var value = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarValue]].Value;
+            var defaultValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarDefaultValue]].Value;
+            var latchedValue = match.Groups[Configuration.Dvar.GroupMapping[ParserRegex.GroupType.RConDvarLatchedValue]].Value;
 
-            string removeTrailingColorCode(string input) => Regex.Replace(input, @"\^7$", "");
+            string RemoveTrailingColorCode(string input) => Regex.Replace(input, @"\^7$", "");
 
-            value = removeTrailingColorCode(value);
-            defaultValue = removeTrailingColorCode(defaultValue);
-            latchedValue = removeTrailingColorCode(latchedValue);
+            value = RemoveTrailingColorCode(value);
+            defaultValue = RemoveTrailingColorCode(defaultValue);
+            latchedValue = RemoveTrailingColorCode(latchedValue);
 
-            return new Dvar<T>()
+            return new Dvar<T>
             {
                 Name = dvarName,
                 Value = string.IsNullOrEmpty(value) ? default : (T)Convert.ChangeType(value, typeof(T)),
@@ -139,10 +140,12 @@ namespace IW4MAdmin.Application.RConParsers
             };
         }
 
-        public virtual async Task<IStatusResponse> GetStatusAsync(IRConConnection connection)
+        public virtual async Task<IStatusResponse> GetStatusAsync(IRConConnection connection, CancellationToken token = default)
         {
-            var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS);
-            _logger.LogDebug("Status Response {response}", string.Join(Environment.NewLine, response));
+            var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS, "status", token);
+            
+            _logger.LogDebug("Status Response {Response}", string.Join(Environment.NewLine, response));
+            
             return new StatusResponse
             {
                 Clients = ClientsFromStatus(response).ToArray(),
@@ -183,13 +186,13 @@ namespace IW4MAdmin.Application.RConParsers
             return (T)Convert.ChangeType(value, typeof(T));
         }
 
-        public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue)
+        public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default)
         {
-            string dvarString = (dvarValue is string str)
+            var dvarString = (dvarValue is string str)
                 ? $"{dvarName} \"{str}\""
                 : $"{dvarName} {dvarValue}";
 
-            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString)).Length > 0;
+            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString, token)).Length > 0;
         }
 
         private List<EFClient> ClientsFromStatus(string[] Status)

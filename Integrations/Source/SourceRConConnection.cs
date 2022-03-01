@@ -48,12 +48,12 @@ namespace Integrations.Source
             _activeQuery.Dispose();
         }
 
-        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "")
+        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "",  CancellationToken token = default)
         {
             try
             {
-                await _activeQuery.WaitAsync();
-                await WaitForAvailable();
+                await _activeQuery.WaitAsync(token);
+                await WaitForAvailable(token);
 
                 if (_needNewSocket)
                 {
@@ -66,7 +66,7 @@ namespace Integrations.Source
                         // ignored
                     }
 
-                    await Task.Delay(ConnectionTimeout);
+                    await Task.Delay(ConnectionTimeout, token);
                     _rconClient = _rconClientFactory.CreateClient(_ipEndPoint);
                     _authenticated = false;
                     _needNewSocket = false;
@@ -147,12 +147,12 @@ namespace Integrations.Source
             }
         }
 
-        private async Task WaitForAvailable()
+        private async Task WaitForAvailable(CancellationToken token)
         {
             var diff = DateTime.Now - _lastQuery;
             if (diff < FloodDelay)
             {
-                await Task.Delay(FloodDelay - diff);
+                await Task.Delay(FloodDelay - diff, token);
             }
         }
 

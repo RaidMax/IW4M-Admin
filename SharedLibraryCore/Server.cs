@@ -377,7 +377,7 @@ namespace SharedLibraryCore
         {
             try
             {
-                return (await this.GetDvarAsync("sv_customcallbacks", "0")).Value == "1";
+                return (await this.GetDvarAsync("sv_customcallbacks", "0", Manager.CancellationToken)).Value == "1";
             }
 
             catch (DvarException)
@@ -391,11 +391,11 @@ namespace SharedLibraryCore
         public string[] ExecuteServerCommand(string command)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromMilliseconds(400));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(1));
 
             try
             {
-                return this.ExecuteCommandAsync(command).WithWaitCancellation(tokenSource.Token).GetAwaiter().GetResult();
+                return this.ExecuteCommandAsync(command, tokenSource.Token).GetAwaiter().GetResult();
             }
             catch
             {
@@ -406,11 +406,10 @@ namespace SharedLibraryCore
         public string GetServerDvar(string dvarName)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromMilliseconds(400));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(1));
             try
             {
-                return this.GetDvarAsync<string>(dvarName).WithWaitCancellation(tokenSource.Token).GetAwaiter()
-                    .GetResult()?.Value;
+                return this.GetDvarAsync<string>(dvarName, token: tokenSource.Token).GetAwaiter().GetResult().Value;
             }
             catch
             {
@@ -421,12 +420,11 @@ namespace SharedLibraryCore
         public bool SetServerDvar(string dvarName, string dvarValue)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromMilliseconds(400));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(1));
             try
             {
-                this.SetDvarAsync(dvarName, dvarValue).WithWaitCancellation(tokenSource.Token).GetAwaiter().GetResult();
+                this.SetDvarAsync(dvarName, dvarValue, tokenSource.Token).GetAwaiter().GetResult();
                 return true;
-
             }
             catch
             {

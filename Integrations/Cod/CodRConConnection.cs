@@ -63,10 +63,21 @@ namespace Integrations.Cod
 
             finally
             {
-                if (ActiveQueries[Endpoint].OnComplete.CurrentCount == 0)
+                var state = ActiveQueries[Endpoint];
+                if (state.OnComplete.CurrentCount == 0)
                 {
-                    ActiveQueries[Endpoint].OnComplete.Release(1);
-                    ActiveQueries[Endpoint].ConnectionAttempts = 0;
+                    state.OnComplete.Release(1);
+                    state.ConnectionAttempts = 0;
+                }
+
+                if (state.OnReceivedData.CurrentCount == 0)
+                {
+                    state.OnReceivedData.Release(1);
+                }
+
+                if (state.OnSentData.CurrentCount == 0)
+                {
+                    state.OnSentData.Release(1);
                 }
             }
         }

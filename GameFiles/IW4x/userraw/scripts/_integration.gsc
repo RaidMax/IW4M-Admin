@@ -501,7 +501,7 @@ OnExecuteCommand( event )
             }
             else
             {
-                response = self GotoImpl( event.data );
+                response = self GotoImpl( data );
             }
             break;
         case "Kill":
@@ -509,6 +509,9 @@ OnExecuteCommand( event )
             break;
         case "NightMode":
             NightModeImpl();
+            break;
+        case "SetSpectator":
+            response = event.target SetSpectatorImpl();
             break;
     }
     
@@ -711,4 +714,17 @@ ToggleNightMode()
     self SetClientDvar( "r_colorMap", colorMap );
     self SetClientDvar( "fx_draw", fxDraw );
     self SetClientDvar( "sv_cheats", 0 );
+}
+
+SetSpectatorImpl()
+{
+    if ( self.pers["team"] == "spectator" ) 
+    {
+        return self.name + " is already spectating";
+    }
+    
+    self [[level.spectator]]();
+    self IPrintLnBold( "You have been moved to spectator" );
+    
+    return self.name + " has been moved to spectator";
 }

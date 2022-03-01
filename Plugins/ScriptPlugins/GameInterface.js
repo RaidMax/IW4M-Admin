@@ -271,6 +271,24 @@ let commands = [{
         }
         sendScriptCommand(gameEvent.Owner, 'NightMode', gameEvent.Origin, undefined, undefined);
     }
+},
+{
+    name: 'setspectator',
+    description: 'sets a player as spectator',
+    alias: 'spec',
+    permission: 'Administrator',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
+    }],
+    supportedGames: ['IW4'],
+    execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            return;
+        }
+        sendScriptCommand(gameEvent.Owner, 'SetSpectator', gameEvent.Origin, gameEvent.Target, undefined);
+    }
 }];
 
 const sendScriptCommand = (server, command, origin, target, data) => {

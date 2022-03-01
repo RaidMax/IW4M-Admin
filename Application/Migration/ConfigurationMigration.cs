@@ -88,7 +88,7 @@ namespace IW4MAdmin.Application.Migration
 
         public static void RemoveObsoletePlugins20210322()
         {
-            var files = new[] {"StatsWeb.dll", "StatsWeb.Views.dll"};
+            var files = new[] {"StatsWeb.dll", "StatsWeb.Views.dll", "IW4ScriptCommands.dll"};
 
             foreach (var file in files)
             {

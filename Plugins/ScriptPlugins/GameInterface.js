@@ -307,6 +307,11 @@ const sendEvent = (server, responseExpected, event, subtype, origin, target, dat
     const start = new Date();
 
     while (pendingOut && pendingCheckCount <= 10) {
+        if (server.Throttled) {
+            logger.WriteWarning('Server is throttled, so we are not attempting to send data');
+            return;
+        }
+        
         try {
             const out = server.GetServerDvar(outDvar);
             pendingOut = !(out == null || out === '' || out === 'null');
@@ -318,6 +323,7 @@ const sendEvent = (server, responseExpected, event, subtype, origin, target, dat
             logger.WriteDebug('Waiting for event bus to be cleared');
             System.Threading.Tasks.Task.Delay(1000).Wait();
         }
+        
         pendingCheckCount++;
     }
 
@@ -397,6 +403,10 @@ const initialize = (server) => {
 };
 
 const pollForEvents = server => {
+    if (server.Throttled) {
+        return;
+    }
+    
     const logger = _serviceResolver.ResolveService('ILogger');
 
     let input;

@@ -51,36 +51,9 @@ namespace Integrations.Cod
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "",
             CancellationToken token = default)
         {
-            try
-            {
-                return await SendQueryAsyncInternal(type, parameters, token);
-            }
-            catch (OperationCanceledException)
-            {
-                _log.LogWarning("Timed out waiting for RCon response");
-                throw new RConException("Did not received RCon response in allocated time frame");
-            }
-
-            finally
-            {
-                var state = ActiveQueries[Endpoint];
-                if (state.OnComplete.CurrentCount == 0)
-                {
-                    state.OnComplete.Release(1);
-                    state.ConnectionAttempts = 0;
-                }
-
-                if (state.OnReceivedData.CurrentCount == 0)
-                {
-                    state.OnReceivedData.Release(1);
-                }
-
-                if (state.OnSentData.CurrentCount == 0)
-                {
-                    state.OnSentData.Release(1);
-                }
-            }
+            return await SendQueryAsyncInternal(type, parameters, token);
         }
+        
         private async Task<string[]> SendQueryAsyncInternal(StaticHelpers.QueryType type, string parameters = "", CancellationToken token = default)
         {
             if (!ActiveQueries.ContainsKey(this.Endpoint))
@@ -93,13 +66,35 @@ namespace Integrations.Cod
             _log.LogDebug("Waiting for semaphore to be released [{Endpoint}]", Endpoint);
 
             // enter the semaphore so only one query is sent at a time per server.
-            await connectionState.OnComplete.WaitAsync(token);
+            try
+            {
+                await connectionState.OnComplete.WaitAsync(token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw new RConException("Timed out waiting for access to rcon socket");
+            }
 
             var timeSinceLastQuery = (DateTime.Now - connectionState.LastQuery).TotalMilliseconds;
 
             if (timeSinceLastQuery < config.FloodProtectInterval)
             {
-                await Task.Delay(config.FloodProtectInterval - (int)timeSinceLastQuery, token);
+                try
+                {
+                    await Task.Delay(config.FloodProtectInterval - (int)timeSinceLastQuery, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new RConException("Timed out waiting for flood protect to expire");
+                }
+
+                finally
+                {
+                    if (connectionState.OnComplete.CurrentCount == 0)
+                    {
+                        connectionState.OnComplete.Release(1);
+                    }
+                }
             }
 
             connectionState.LastQuery = DateTime.Now;
@@ -125,13 +120,19 @@ namespace Integrations.Cod
                 {
                     case StaticHelpers.QueryType.GET_DVAR:
                         waitForResponse |= true;
-                        payload = string.Format(config.CommandPrefixes.RConGetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        payload = string
+                            .Format(config.CommandPrefixes.RConGetDvar, convertedRConPassword,
+                                convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.SET_DVAR:
-                        payload = string.Format(config.CommandPrefixes.RConSetDvar, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        payload = string
+                            .Format(config.CommandPrefixes.RConSetDvar, convertedRConPassword,
+                                convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND:
-                        payload = string.Format(config.CommandPrefixes.RConCommand, convertedRConPassword, convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                        payload = string
+                            .Format(config.CommandPrefixes.RConCommand, convertedRConPassword,
+                                convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_STATUS:
                         waitForResponse |= true;
@@ -143,7 +144,8 @@ namespace Integrations.Cod
                         break;
                     case StaticHelpers.QueryType.COMMAND_STATUS:
                         waitForResponse |= true;
-                        payload = string.Format(config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0").Select(Convert.ToByte).ToArray();
+                        payload = string.Format(config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0")
+                            .Select(Convert.ToByte).ToArray();
                         break;
                 }
             }
@@ -152,7 +154,7 @@ namespace Integrations.Cod
             // e.g: emoji -> windows-1252
             catch (OverflowException ex)
             {
-                connectionState.OnComplete.Release(1);
+               
                 using (LogContext.PushProperty("Server", Endpoint.ToString()))
                 {
                     _log.LogError(ex, "Could not convert RCon data payload to desired encoding {encoding} {params}",
@@ -160,6 +162,14 @@ namespace Integrations.Cod
                 }
 
                 throw new RConException($"Invalid character encountered when converting encodings");
+            }
+
+            finally
+            {
+                if (connectionState.OnComplete.CurrentCount == 0)
+                {
+                    connectionState.OnComplete.Release(1);
+                }
             }
 
             byte[][] response = null;
@@ -170,7 +180,7 @@ namespace Integrations.Cod
                 using (LogContext.PushProperty("Server", Endpoint.ToString()))
                 {
                     _log.LogInformation(
-                        "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts) with parameters {payload}", 
+                        "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts) with parameters {Payload}", 
                         connectionState.ConnectionAttempts, 
                         _retryAttempts, parameters);
                 }
@@ -184,8 +194,46 @@ namespace Integrations.Cod
             {
                 connectionState.SendEventArgs.UserToken = socket;
                 connectionState.ConnectionAttempts++;
-                await connectionState.OnSentData.WaitAsync(token);
-                await connectionState.OnReceivedData.WaitAsync(token);
+
+                // wait for send to complete
+                try
+                {
+                    await connectionState.OnSentData.WaitAsync(token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new RConException("Timed out waiting for access to RCon send socket");
+                }
+                finally
+                {
+                    if (connectionState.OnComplete.CurrentCount == 0 )
+                    {
+                        connectionState.OnComplete.Release(1);
+                    }
+                }
+
+                // wait for receive to complete
+                try
+                {
+                    await connectionState.OnReceivedData.WaitAsync(token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new RConException("Timed out waiting for access to RCon receive socket");
+                }
+                finally
+                {
+                    if (connectionState.OnComplete.CurrentCount == 0 )
+                    {
+                        connectionState.OnComplete.Release(1);
+                    }
+
+                    if (connectionState.OnSentData.CurrentCount == 0)
+                    {
+                        connectionState.OnSentData.Release(1);
+                    }
+                }
+                
                 connectionState.BytesReadPerSegment.Clear();
                 var exceptionCaught = false;
 
@@ -218,7 +266,16 @@ namespace Integrations.Cod
                     if (connectionState.ConnectionAttempts < _retryAttempts)
                     {
                         exceptionCaught = true;
-                        await Task.Delay(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts), token);
+                        try
+                        {
+                            await Task.Delay(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts), token);
+
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw new RConException("Timed out waiting on delay retry");
+                        }
+                        
                         goto retrySend;
                     }
 
@@ -292,7 +349,7 @@ namespace Integrations.Cod
                 throw new RConException("Unexpected response header from server");
             }
 
-            var splitResponse = headerSplit.Last().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var splitResponse = headerSplit.Last().Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
             return splitResponse;
         }
 
@@ -396,7 +453,14 @@ namespace Integrations.Cod
                         _log.LogWarning("Socket timed out while sending RCon data on attempt {Attempt}",
                             connectionState.ConnectionAttempts);
                     }
+                    
                     rconSocket.Close();
+
+                    if (connectionState.OnSentData.CurrentCount == 0)
+                    {
+                        connectionState.OnSentData.Release(1);
+                    }
+                    
                     throw new NetworkException("Timed out sending RCon data", rconSocket);
                 }
             }
@@ -442,6 +506,11 @@ namespace Integrations.Cod
                                 connectionState.ConnectionAttempts,
                                 StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts));
                         }
+                    }
+                    
+                    if (connectionState.OnReceivedData.CurrentCount == 0)
+                    {
+                        connectionState.OnReceivedData.Release(1);
                     }
 
                     rconSocket.Close();

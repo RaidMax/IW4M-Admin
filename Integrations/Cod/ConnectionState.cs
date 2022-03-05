@@ -24,9 +24,15 @@ namespace Integrations.Cod
         public readonly SemaphoreSlim OnSentData = new(1, 1);
         public readonly SemaphoreSlim OnReceivedData = new (1, 1);
        
-        public List<int> BytesReadPerSegment { get; set; } = new List<int>();
-        public SocketAsyncEventArgs SendEventArgs { get; set; } = new SocketAsyncEventArgs();
-        public SocketAsyncEventArgs ReceiveEventArgs { get; set; } = new SocketAsyncEventArgs();
+        public List<int> BytesReadPerSegment { get; set; } = new();
+        public SocketAsyncEventArgs SendEventArgs { get; set; } = new();
+        public SocketAsyncEventArgs ReceiveEventArgs { get; set; } = new();
         public DateTime LastQuery { get; set; } = DateTime.Now;
+    }
+
+    internal class ConnectionUserToken
+    {
+        public Socket Socket { get; set; }
+        public CancellationToken CancellationToken { get; set; }
     }
 }

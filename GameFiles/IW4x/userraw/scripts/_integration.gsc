@@ -128,6 +128,11 @@ DisplayWelcomeData()
 PlayerConnectEvents() 
 {
     self endon( "disconnect" );
+
+    if ( IsDefined( self.isHidden ) && self.isHidden )
+    {
+        self HideImpl();
+    }
     
     clientData = self.pers[level.clientDataKey];
     
@@ -591,18 +596,17 @@ HideImpl()
         return;
     }
 
-    if ( IsDefined( self.isHidden ) && self.isHidden )
-    {
-        self IPrintLnBold( "You are already hidden" );
-        return;
-    }
-
     self SetClientDvar( "sv_cheats", 1 );
     self SetClientDvar( "cg_thirdperson", 1 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self.savedHealth = self.health;
-    self.health = 9999;
+    if ( !IsDefined( self.savedHealth ) || self.health < 1000  )
+    {
+        self.savedHealth = self.health;
+    }
+
+    self.maxhealth = 99999;
+    self.health = 99999;
     self.isHidden = true;
     
     self Hide();

@@ -388,10 +388,10 @@ namespace SharedLibraryCore
 
         public abstract Task<long> GetIdForServer(Server server = null);
 
-        public string[] ExecuteServerCommand(string command)
+        public string[] ExecuteServerCommand(string command, int timeoutMs = 1000)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(0.5));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
 
             try
             {
@@ -403,10 +403,10 @@ namespace SharedLibraryCore
             }
         }
 
-        public string GetServerDvar(string dvarName)
+        public string GetServerDvar(string dvarName, int timeoutMs = 1000)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(0.5));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
             try
             {
                 return this.GetDvarAsync<string>(dvarName, token: tokenSource.Token).GetAwaiter().GetResult().Value;
@@ -417,10 +417,10 @@ namespace SharedLibraryCore
             }
         }
 
-        public bool SetServerDvar(string dvarName, string dvarValue)
+        public bool SetServerDvar(string dvarName, string dvarValue, int timeoutMs = 1000)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(0.5));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
             try
             {
                 this.SetDvarAsync(dvarName, dvarValue, tokenSource.Token).GetAwaiter().GetResult();

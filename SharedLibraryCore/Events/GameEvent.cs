@@ -257,6 +257,7 @@ namespace SharedLibraryCore
         public EFClient Target;
 
         public EventType Type;
+        public string TypeName => Type.ToString();
 
         public GameEvent()
         {

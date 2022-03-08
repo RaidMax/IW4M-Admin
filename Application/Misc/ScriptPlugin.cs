@@ -276,6 +276,8 @@ namespace IW4MAdmin.Application.Misc
             {
                 _logger.LogDebug("OnLoad executing for {Name}", Name);
                 _scriptEngine.SetValue("_manager", manager);
+                _scriptEngine.SetValue("getDvar", GetDvarAsync);
+                _scriptEngine.SetValue("setDvar", SetDvarAsync);
                 _scriptEngine.Evaluate("plugin.onLoadAsync(_manager)");
 
                 return Task.CompletedTask;
@@ -450,6 +452,85 @@ namespace IW4MAdmin.Application.Misc
             }
 
             return commandList;
+        }
+
+        private void GetDvarAsync(Server server, string dvarName, Delegate onCompleted)
+        {
+            Task.Run<Task>(async () =>
+            {
+                var tokenSource = new CancellationTokenSource();
+                tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
+                string result = null;
+                var success = true;
+                try
+                {
+                    result = (await server.GetDvarAsync<string>(dvarName, token: tokenSource.Token)).Value;
+                }
+                catch
+                {
+                    success = false;
+                }
+
+                await _onProcessing.WaitAsync();
+                try
+                {
+                    onCompleted.DynamicInvoke(JsValue.Undefined,
+                        new[]
+                        {
+                            JsValue.FromObject(_scriptEngine, server), 
+                            JsValue.FromObject(_scriptEngine, dvarName),
+                            JsValue.FromObject(_scriptEngine, result),
+                            JsValue.FromObject(_scriptEngine, success), 
+                        });
+                }
+
+                finally
+                {
+                    if (_onProcessing.CurrentCount == 0)
+                    {
+                        _onProcessing.Release();
+                    }
+                }
+            });
+        }
+        private void SetDvarAsync(Server server, string dvarName, string dvarValue, Delegate onCompleted)
+        {
+            Task.Run<Task>(async () =>
+            {
+                var tokenSource = new CancellationTokenSource();
+                tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
+                var success = true;
+
+                try
+                {
+                    await server.SetDvarAsync(dvarName, dvarValue, tokenSource.Token);
+                }
+                catch
+                {
+                    success = false;
+                }
+
+                await _onProcessing.WaitAsync();
+                try
+                {
+                    onCompleted.DynamicInvoke(JsValue.Undefined,
+                        new[]
+                        {
+                            JsValue.FromObject(_scriptEngine, server),
+                            JsValue.FromObject(_scriptEngine, dvarName), 
+                            JsValue.FromObject(_scriptEngine, dvarValue),
+                            JsValue.FromObject(_scriptEngine, success)
+                        });
+                }
+
+                finally
+                {
+                    if (_onProcessing.CurrentCount == 0)
+                    {
+                        _onProcessing.Release();
+                    }
+                }
+            });
         }
     }
 

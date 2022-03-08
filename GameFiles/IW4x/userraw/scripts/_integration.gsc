@@ -603,6 +603,7 @@ HideImpl()
     if ( !IsDefined( self.savedHealth ) || self.health < 1000  )
     {
         self.savedHealth = self.health;
+        self.savedMaxHealth = self.maxhealth;
     }
 
     self.maxhealth = 99999;
@@ -621,12 +622,19 @@ UnhideImpl()
         self IPrintLnBold( "You are not alive" );
         return;
     }
+    
+    if ( IsDefined( self.isHidden ) && !self.isHidden ) 
+    {
+        self IPrintLnBold( "You are not hidden" );
+        return;
+    }
 
     self SetClientDvar( "sv_cheats", 1 );
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
 
     self.health = self.savedHealth;
+    self.maxhealth = self.savedMaxHealth;
     self.isHidden = false;
 
     self Show();

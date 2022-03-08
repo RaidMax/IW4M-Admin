@@ -1,19 +1,14 @@
-﻿const eventTypes = {
-    1: 'start', // a server started being monitored
-    6: 'disconnect', // a client detected a leaving the game
-    9: 'preconnect', // client detected as joining via log or status
-    101: 'warn' // client was warned
-};
-
-const servers = {};
+﻿const servers = {};
 const inDvar = 'sv_iw4madmin_in';
 const outDvar = 'sv_iw4madmin_out';
-const pollRate = 750;
+const pollRate = 900;
+const enableCheckTimeout = 10000;
 let logger = {};
+const maxQueuedMessages = 25;
 
 let plugin = {
     author: 'RaidMax',
-    version: 1.0,
+    version: 1.1,
     name: 'Game Interface',
 
     onEventAsync: (gameEvent, server) => {
@@ -21,7 +16,7 @@ let plugin = {
             return;
         }
 
-        const eventType = eventTypes[gameEvent.Type];
+        const eventType = String(gameEvent.TypeName).toLowerCase();
 
         if (eventType === undefined) {
             return;
@@ -86,10 +81,10 @@ let commands = [{
         name: 'player',
         required: true
     },
-    {
-        name: 'weapon name',
-        required: true
-    }],
+        {
+            name: 'weapon name',
+            required: true
+        }],
     supportedGames: ['IW4'],
     execute: (gameEvent) => {
         if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
@@ -98,198 +93,198 @@ let commands = [{
         sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, gameEvent.Target, {weaponName: gameEvent.Data});
     }
 },
-{
-    name: 'takeweapons',
-    description: 'take all weapons from specified player',
-    alias: 'tw',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.Owner, 'TakeWeapons', gameEvent.Origin, gameEvent.Target, undefined);
-    }
-},
-{
-    name: 'switchteam',
-    description: 'switches specified player to the opposite team',
-    alias: 'st',
-    permission: 'Administrator',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Origin, gameEvent.Target, undefined);
-    }
-},
-{
-    name: 'hide',
-    description: 'hide yourself ingame',
-    alias: 'hi',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, gameEvent.Origin, undefined);
-    }
-},
-{
-    name: 'unhide',
-    description: 'unhide yourself ingame',
-    alias: 'unh',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.Owner, 'Unhide', gameEvent.Origin, gameEvent.Origin, undefined);
-    }
-},
-{
-    name: 'alert',
-    description: 'alert a player',
-    alias: 'alr',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    },
-        {
-            name: 'message',
+    {
+        name: 'takeweapons',
+        description: 'take all weapons from specified player',
+        alias: 'tw',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
             required: true
         }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'TakeWeapons', gameEvent.Origin, gameEvent.Target, undefined);
         }
-        sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.Origin, gameEvent.Target, {
-            alertType: 'Alert',
-            message: gameEvent.Data
-        });
-    }
-},
-{
-    name: 'gotoplayer',
-    description: 'teleport to a player',
-    alias: 'g2p',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
-    }
-},
-{
-    name: 'goto',
-    description: 'teleport to a position',
-    alias: 'g2',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [{
-        name: 'x',
-        required: true
     },
     {
-        name: 'y',
-        required: true
+        name: 'switchteam',
+        description: 'switches specified player to the opposite team',
+        alias: 'st',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Origin, gameEvent.Target, undefined);
+        }
     },
     {
-        name: 'z',
-        required: true
-    }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
+        name: 'hide',
+        description: 'hide yourself ingame',
+        alias: 'hi',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, gameEvent.Origin, undefined);
         }
-        
-        const args = String(gameEvent.Data).split(' ');
-        sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, {
-            x: args[0],
-            y: args[1],
-            z: args[2]
-        });
-    }
-},
-{
-    name: 'kill',
-    description: 'kill a player',
-    alias: 'kpl',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
+    },
+    {
+        name: 'unhide',
+        description: 'unhide yourself ingame',
+        alias: 'unh',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Unhide', gameEvent.Origin, gameEvent.Origin, undefined);
         }
-        sendScriptCommand(gameEvent.Owner, 'Kill', gameEvent.Origin, gameEvent.Target, undefined);
-    }
-},
-{
-    name: 'nightmode',
-    description: 'sets server into nightmode',
-    alias: 'nitem',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
+    },
+    {
+        name: 'alert',
+        description: 'alert a player',
+        alias: 'alr',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        },
+            {
+                name: 'message',
+                required: true
+            }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.Origin, gameEvent.Target, {
+                alertType: 'Alert',
+                message: gameEvent.Data
+            });
         }
-        sendScriptCommand(gameEvent.Owner, 'NightMode', gameEvent.Origin, undefined, undefined);
-    }
-},
-{
-    name: 'setspectator',
-    description: 'sets a player as spectator',
-    alias: 'spec',
-    permission: 'Administrator',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
+    },
+    {
+        name: 'gotoplayer',
+        description: 'teleport to a player',
+        alias: 'g2p',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
         }
-        sendScriptCommand(gameEvent.Owner, 'SetSpectator', gameEvent.Origin, gameEvent.Target, undefined);
-    }
-}];
+    },
+    {
+        name: 'goto',
+        description: 'teleport to a position',
+        alias: 'g2',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [{
+            name: 'x',
+            required: true
+        },
+            {
+                name: 'y',
+                required: true
+            },
+            {
+                name: 'z',
+                required: true
+            }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+
+            const args = String(gameEvent.Data).split(' ');
+            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, {
+                x: args[0],
+                y: args[1],
+                z: args[2]
+            });
+        }
+    },
+    {
+        name: 'kill',
+        description: 'kill a player',
+        alias: 'kpl',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Kill', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'nightmode',
+        description: 'sets server into nightmode',
+        alias: 'nitem',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'NightMode', gameEvent.Origin, undefined, undefined);
+        }
+    },
+    {
+        name: 'setspectator',
+        description: 'sets a player as spectator',
+        alias: 'spec',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'SetSpectator', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    }];
 
 const sendScriptCommand = (server, command, origin, target, data) => {
     const state = servers[server.EndPoint];
@@ -301,34 +296,11 @@ const sendScriptCommand = (server, command, origin, target, data) => {
 
 const sendEvent = (server, responseExpected, event, subtype, origin, target, data) => {
     const logger = _serviceResolver.ResolveService('ILogger');
+    const state = servers[server.EndPoint];
 
-    let pendingOut = true;
-    let pendingCheckCount = 0;
-    const start = new Date();
-
-    while (pendingOut && pendingCheckCount <= 10) {
-        if (server.Throttled) {
-            logger.WriteWarning('Server is throttled, so we are not attempting to send data');
-            return;
-        }
-        
-        try {
-            const out = server.GetServerDvar(outDvar);
-            pendingOut = !(out == null || out === '' || out === 'null');
-        } catch (error) {
-            logger.WriteError(`Could not check server output dvar for IO status ${error}`);
-        }
-
-        if (pendingOut) {
-            logger.WriteDebug('Waiting for event bus to be cleared');
-            System.Threading.Tasks.Task.Delay(1000).Wait();
-        }
-        
-        pendingCheckCount++;
-    }
-
-    if (pendingOut) {
-        logger.WriteWarning(`Reached maximum attempts waiting for output to be available for ${server.EndPoint}`)
+    if (state.queuedMessages.length >= maxQueuedMessages) {
+        logger.WriteWarning('Too many queued messages so we are skipping');
+        return;
     }
 
     let targetClientNumber = -1;
@@ -337,30 +309,10 @@ const sendEvent = (server, responseExpected, event, subtype, origin, target, dat
     }
 
     const output = `${responseExpected ? '1' : '0'};${event};${subtype};${origin.ClientNumber};${targetClientNumber};${buildDataString(data)}`;
-    logger.WriteDebug(`Sending output to server ${output}`);
+    logger.WriteDebug(`Queuing output for server ${output}`);
 
-    try {
-        server.SetServerDvar(outDvar, output);
-        logger.WriteDebug(`SendEvent took ${(new Date() - start) / 1000}ms`);
-    } catch (error) {
-        logger.WriteError(`Could not set server output dvar ${error}`);
-    }
+    state.queuedMessages.push(output);
 };
-
-const parseEvent = (input) => {
-    if (input === undefined) {
-        return {};
-    }
-
-    const eventInfo = input.split(';');
-
-    return {
-        eventType: eventInfo[1],
-        subType: eventInfo[2],
-        clientNumber: eventInfo[3],
-        data: eventInfo.length > 4 ? parseDataString(eventInfo[4]) : undefined
-    }
-}
 
 const initialize = (server) => {
     const logger = _serviceResolver.ResolveService('ILogger');
@@ -371,7 +323,7 @@ const initialize = (server) => {
 
     let enabled = false;
     try {
-        enabled = server.GetServerDvar('sv_iw4madmin_integration_enabled') === '1';
+        enabled = server.GetServerDvar('sv_iw4madmin_integration_enabled', enableCheckTimeout) === '1';
     } catch (error) {
         logger.WriteError(`Could not get integration status of ${server.EndPoint} - ${error}`);
     }
@@ -391,33 +343,36 @@ const initialize = (server) => {
 
     servers[server.EndPoint].timer = timer;
     servers[server.EndPoint].enabled = true;
+    servers[server.EndPoint].waitingOnInput = false;
+    servers[server.EndPoint].waitingOnOutput = false;
+    servers[server.EndPoint].queuedMessages = [];
 
-    try {
-        server.SetServerDvar(inDvar, '');
-        server.SetServerDvar(outDvar, '');
-    } catch (error) {
-        logger.WriteError(`Could set default values bus dvars for ${server.EndPoint} - ${error}`);
-    }
+    setDvar(server, inDvar, '', onSetDvar);
+    setDvar(server, outDvar, '', onSetDvar);
 
     return true;
-};
+}
 
-const pollForEvents = server => {
-    if (server.Throttled) {
-        return;
-    }
-    
+function onReceivedDvar(server, dvarName, dvarValue, success) {
     const logger = _serviceResolver.ResolveService('ILogger');
+    logger.WriteDebug(`Received ${dvarName}=${dvarValue} success=${success}`);
 
-    let input;
-    try {
-        input = server.GetServerDvar(inDvar);
-    } catch (error) {
-        logger.WriteError(`Could not get input bus value for ${server.EndPoint} - ${error}`);
-        return;
+    let input = dvarValue;
+    const state = servers[server.EndPoint];
+
+    if (state.waitingOnOutput && dvarName === outDvar && isEmpty(dvarValue)) {
+        logger.WriteDebug('Setting out bus to read to send');
+        // reset our flag letting use the out bus is open
+        state.waitingOnOutput = !success;
     }
 
-    if (input === undefined || input === null || input === 'null') {
+    if (state.waitingOnInput && dvarName === inDvar) {
+        logger.WriteDebug('Setting in bus to ready to receive');
+        // we've received the data so now we can mark it as ready for more
+        state.waitingOnInput = false;
+    }
+
+    if (isEmpty(input)) {
         input = '';
     }
 
@@ -481,21 +436,77 @@ const pollForEvents = server => {
                         } else {
                             metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult();
                         }
-                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined,{status: 'Complete'});
+                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Complete'});
                     } catch (error) {
-                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined,{status: 'Fail'});
+                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Fail'});
                     }
                 }
             }
         }
 
-        try {
-            server.SetServerDvar(inDvar, '');
-        } catch (error) {
-            logger.WriteError(`Could not reset in bus value for ${server.EndPoint} - ${error}`);
-        }
+        setDvar(server, inDvar, '', onSetDvar);
     } else if (server.ClientNum === 0) {
         servers[server.EndPoint].timer.Stop();
+    }
+}
+
+function onSetDvar(server, dvarName, dvarValue, success) {
+    const logger = _serviceResolver.ResolveService('ILogger');
+    logger.WriteDebug(`Completed set of dvar ${dvarName}=${dvarValue}, success=${success}`);
+
+    const state = servers[server.EndPoint];
+
+    if (dvarName === inDvar && success && isEmpty(dvarValue)) {
+        logger.WriteDebug('In bus is ready for new data');
+        // reset our flag letting use the in bus is ready for more data
+        state.waitingOnInput = false;
+    }
+}
+
+const pollForEvents = server => {
+    const state = servers[server.EndPoint];
+
+    if (state === null || !state.enabled) {
+        return;
+    }
+
+    if (server.Throttled) {
+        return;
+    }
+
+    if (!state.waitingOnInput) {
+        state.waitingOnInput = true;
+        getDvar(server, inDvar, onReceivedDvar);
+    }
+
+    if (!state.waitingOnOutput) {
+        if (state.queuedMessages.length === 0) {
+            logger.WriteDebug('No messages in queue');
+            return;``
+        }
+
+        state.waitingOnOutput = true;
+        const nextMessage = state.queuedMessages.splice(0, 1);
+        setDvar(server, outDvar, nextMessage, onSetDvar);
+    }
+ 
+    if (state.waitingOnOutput) {
+        getDvar(server, outDvar, onReceivedDvar);
+    }
+}
+
+const parseEvent = (input) => {
+    if (input === undefined) {
+        return {};
+    }
+
+    const eventInfo = input.split(';');
+
+    return {
+        eventType: eventInfo[1],
+        subType: eventInfo[2],
+        clientNumber: eventInfo[3],
+        data: eventInfo.length > 4 ? parseDataString(eventInfo[4]) : undefined
     }
 }
 
@@ -534,7 +545,11 @@ const parseDataString = data => {
 const validateEnabled = (server, origin) => {
     const enabled = servers[server.EndPoint] != null && servers[server.EndPoint].enabled;
     if (!enabled) {
-        origin.Tell("Game interface is not enabled on this server");
+        origin.Tell('Game interface is not enabled on this server');
     }
     return enabled;
+}
+
+function isEmpty(value) {
+    return value == null || false || value === '' || value === 'null';
 }

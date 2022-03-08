@@ -348,7 +348,7 @@ namespace IW4MAdmin.Application
             await defaultConfigHandler.BuildAsync();
             var commandConfigHandler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
             await commandConfigHandler.BuildAsync();
-            var statsCommandHandler = new BaseConfigurationHandler<StatsConfiguration>();
+            var statsCommandHandler = new BaseConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             await statsCommandHandler.BuildAsync();
             var defaultConfig = defaultConfigHandler.Configuration();
             var appConfig = appConfigHandler.Configuration();

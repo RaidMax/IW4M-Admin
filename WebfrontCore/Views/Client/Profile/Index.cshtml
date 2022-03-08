@@ -59,7 +59,7 @@
 
                 @foreach (var ip in Model.IPs)
                 {
-                    @if (ViewBag.Authorized && ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
+                    if (ViewBag.Authorized && ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Administrator)
                     {
                         <div>
                             <a class="ip-locate-link" href="#" data-ip="@ip">@ip</a>

@@ -1,13 +1,12 @@
 let plugin = {
     author: 'RaidMax',
-    version: 1.0,
+    version: 1.1,
     name: 'Action on Report',
     enabled: false, // indicates if the plugin is enabled
     reportAction: 'TempBan', // can be TempBan or Ban
     maxReportCount: 5, // how many reports before action is taken
     tempBanDurationMinutes: 60, // how long to temporarily ban the player
     eventTypes: { 'report': 103 },
-    permissionTypes: { 'trusted': 2 },
 
     onEventAsync: function (gameEvent, server) {
         if (!this.enabled) {
@@ -15,7 +14,7 @@ let plugin = {
         }
 
         if (gameEvent.Type === this.eventTypes['report']) {
-            if (!gameEvent.Target.IsIngame || gameEvent.Target.Level >= this.permissionTypes['trusted']) {
+            if (!gameEvent.Target.IsIngame || gameEvent.Target.Level !== 'User') {
                 server.Logger.WriteInfo(`Ignoring report for client (id) ${gameEvent.Target.ClientId} because they are privileged or not ingame`);
                 return;
             }

@@ -89,7 +89,7 @@ namespace IW4MAdmin.Application.IO
 
                 var lines = logData
                     .Split('\n')
-                    .Where(line => line.Length > 0);
+                    .Where(line => line.Length > 0 && !line.Contains('ÿ'));
 
                 foreach (var eventLine in lines)
                 {

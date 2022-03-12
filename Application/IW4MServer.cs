@@ -713,6 +713,11 @@ namespace IW4MAdmin
                         await E.Owner.ExecuteCommandAsync(E.Data);
                     }
                 }
+                
+                else if (E.Type == GameEvent.EventType.JoinTeam)
+                {
+                    E.Origin.UpdateTeam(E.Extra as string);
+                }
 
                 lock (ChatHistory)
                 {

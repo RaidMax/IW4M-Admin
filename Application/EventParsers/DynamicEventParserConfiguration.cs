@@ -8,11 +8,12 @@ namespace IW4MAdmin.Application.EventParsers
     /// generic implementation of the IEventParserConfiguration
     /// allows script plugins to generate dynamic configurations
     /// </summary>
-    sealed internal class DynamicEventParserConfiguration : IEventParserConfiguration
+    internal sealed class DynamicEventParserConfiguration : IEventParserConfiguration
     {
         public string GameDirectory { get; set; }
         public ParserRegex Say { get; set; }
         public ParserRegex Join { get; set; }
+        public ParserRegex JoinTeam { get; set; }
         public ParserRegex Quit { get; set; }
         public ParserRegex Kill { get; set; }
         public ParserRegex Damage { get; set; }
@@ -26,6 +27,7 @@ namespace IW4MAdmin.Application.EventParsers
         {
             Say = parserRegexFactory.CreateParserRegex();
             Join = parserRegexFactory.CreateParserRegex();
+            JoinTeam = parserRegexFactory.CreateParserRegex();
             Quit = parserRegexFactory.CreateParserRegex();
             Kill = parserRegexFactory.CreateParserRegex();
             Damage = parserRegexFactory.CreateParserRegex();

@@ -18,6 +18,11 @@ namespace SharedLibraryCore.Interfaces
         ///     stores the regex information for a join event printed in the game log
         /// </summary>
         ParserRegex Join { get; set; }
+        
+        /// <summary>
+        ///     stores the regex information for a join team event printed in the game log
+        /// </summary>
+        ParserRegex JoinTeam { get; set; }
 
         /// <summary>
         ///     stores the regex information for a quit event printed in the game log

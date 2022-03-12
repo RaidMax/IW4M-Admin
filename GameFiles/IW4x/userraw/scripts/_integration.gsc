@@ -623,7 +623,7 @@ UnhideImpl()
         return;
     }
     
-    if ( IsDefined( self.isHidden ) && !self.isHidden ) 
+    if ( !IsDefined( self.isHidden ) || !self.isHidden ) 
     {
         self IPrintLnBold( "You are not hidden" );
         return;

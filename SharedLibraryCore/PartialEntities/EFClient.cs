@@ -39,6 +39,14 @@ namespace SharedLibraryCore.Database.Models
             Disconnecting
         }
 
+        public enum TeamType
+        {
+            Unknown,
+            Spectator,
+            Allies,
+            Axis
+        }
+
         [NotMapped] private readonly SemaphoreSlim _processingEvent;
 
         public EFClient()
@@ -101,6 +109,9 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped] public string GuidString => NetworkId.ToString("x");
 
         [NotMapped] public ClientState State { get; set; }
+        
+        [NotMapped] public TeamType Team { get; set; }
+        [NotMapped] public string TeamName { get; set; }
 
         [NotMapped]
         // this is kinda dirty, but I need localizable level names
@@ -708,6 +719,17 @@ namespace SharedLibraryCore.Database.Models
             }
 
             return true;
+        }
+
+        public void UpdateTeam(string newTeam)
+        {
+            if (string.IsNullOrEmpty(newTeam))
+            {
+                return;
+            }
+
+            Team = Enum.TryParse(newTeam, true, out TeamType team) ? team : TeamType.Unknown;
+            TeamName = newTeam;
         }
 
         public async Task Lock()

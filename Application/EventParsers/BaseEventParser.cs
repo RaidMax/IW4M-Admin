@@ -49,6 +49,13 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
             Configuration.Join.AddMapping(ParserRegex.GroupType.OriginName, 4);
+            
+            Configuration.JoinTeam.Pattern = @"^(JT);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);(\w+);(.+)$";
+            Configuration.JoinTeam.AddMapping(ParserRegex.GroupType.EventType, 1);
+            Configuration.JoinTeam.AddMapping(ParserRegex.GroupType.OriginNetworkId, 2);
+            Configuration.JoinTeam.AddMapping(ParserRegex.GroupType.OriginClientNumber, 3);
+            Configuration.JoinTeam.AddMapping(ParserRegex.GroupType.OriginTeam, 4);
+            Configuration.JoinTeam.AddMapping(ParserRegex.GroupType.OriginName, 5);
 
             Configuration.Damage.Pattern = @"^(D);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,32});(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0)?;(-?[0-9]+);(axis|allies|world|none)?;([^;]{1,32})?;((?:[0-9]+|[a-z]+|_|\+)+);([0-9]+);((?:[A-Z]|_)+);((?:[a-z]|_)+)$";
             Configuration.Damage.AddMapping(ParserRegex.GroupType.EventType, 1);
@@ -100,6 +107,7 @@ namespace IW4MAdmin.Application.EventParsers
                 {"K", GameEvent.EventType.Kill},
                 {"D", GameEvent.EventType.Damage},
                 {"J", GameEvent.EventType.PreConnect},
+                {"JT", GameEvent.EventType.JoinTeam },
                 {"Q", GameEvent.EventType.PreDisconnect},
             };
         }
@@ -316,6 +324,42 @@ namespace IW4MAdmin.Application.EventParsers
                         Extra = originIdString,
                         RequiredEntity = GameEvent.EventRequiredEntity.None,
                         IsBlocking = true,
+                        GameTime = gameTime,
+                        Source = GameEvent.EventSource.Log
+                    };
+                }
+            }
+
+            if (eventType == GameEvent.EventType.JoinTeam)
+            {
+                var match = Configuration.JoinTeam.PatternMatcher.Match(logLine);
+
+                if (match.Success)
+                {
+                    var originIdString = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
+                    var originName = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginName]];
+                    var team = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginTeam]];
+
+                    var networkId = originIdString.IsBotGuid() ?
+                        originName.GenerateGuidFromString() :
+                        originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
+                    
+                    return new GameEvent
+                    {
+                        Type = GameEvent.EventType.JoinTeam,
+                        Data = logLine,
+                        Origin = new EFClient
+                        {
+                            CurrentAlias = new EFAlias
+                            {
+                                Name = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginName]].TrimNewLine(),
+                            },
+                            NetworkId = networkId,
+                            ClientNumber = Convert.ToInt32(match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]),
+                            State = EFClient.ClientState.Connected,
+                        },
+                        Extra = team,
+                        RequiredEntity = GameEvent.EventRequiredEntity.None,
                         GameTime = gameTime,
                         Source = GameEvent.EventSource.Log
                     };

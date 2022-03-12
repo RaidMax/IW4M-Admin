@@ -65,6 +65,8 @@ OnPlayerConnect()
         }
         
         player thread OnPlayerSpawned();
+        player thread OnPlayerJoinedTeam();
+        player thread OnPlayerJoinedSpectators();
         player thread PlayerTrackingOnInterval();
         
         // only toggle if it's enabled
@@ -95,6 +97,30 @@ OnPlayerDisconnect()
         self waittill( "disconnect" );
         self SaveTrackingMetrics();
     }
+}
+
+OnPlayerJoinedTeam()
+{
+	self endon( "disconnect" );
+
+	for( ;; )
+	{
+		self waittill( "joined_team" );
+        // join spec and join team occur at the same moment - out of order logging would be problematic
+        wait( 0.25 ); 
+        LogPrint( GenerateJoinTeamString( false ) );
+	}
+}
+
+OnPlayerJoinedSpectators()
+{
+	self endon( "disconnect" );
+
+	for( ;; )
+	{
+        self waittill( "joined_spectators" );
+        LogPrint( GenerateJoinTeamString( true ) );
+	}
 }
 
 OnGameEnded() 
@@ -213,6 +239,37 @@ IncrementClientMeta( metaKey, incrementValue, clientId )
 DecrementClientMeta( metaKey, decrementValue, clientId )
 {
     SetClientMeta( metaKey, decrementValue, clientId, "decrement" );
+}
+
+GenerateJoinTeamString( isSpectator ) 
+{
+    team = self.team;
+
+    if ( IsDefined( self.joining_team ) )
+    {
+        team = self.joining_team;
+    }
+    else
+    {
+        if ( isSpectator || !IsDefined( team ) ) 
+        {
+            team = "spectator";
+        }
+    }
+
+    guid = self GetXuid();
+
+    if ( guid == "0" )
+    {
+        guid = self.guid;
+    }
+
+    if ( !IsDefined( guid ) || guid == "0" )
+    {
+        guid = "undefined";
+    }
+
+    return "JT;" + guid + ";" + self getEntityNumber() + ";" + team + ";" + self.name + "\n";
 }
 
 SetClientMeta( metaKey, metaValue, clientId, direction )

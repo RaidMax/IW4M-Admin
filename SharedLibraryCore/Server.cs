@@ -238,6 +238,7 @@ namespace SharedLibraryCore
             return e;
         }
 
+        [Obsolete("Use BroadcastAsync")]
         public void Broadcast(IEnumerable<string> messages, EFClient sender = null)
         {
             foreach (var message in messages)
@@ -248,6 +249,19 @@ namespace SharedLibraryCore
             }
         }
 
+        public async Task BroadcastAsync(IEnumerable<string> messages, EFClient sender = null,
+            CancellationToken token = default)
+        {
+            foreach (var message in messages)
+            {
+                if (Manager.CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                
+                await Broadcast(message, sender).WaitAsync(Utilities.DefaultCommandTimeout, Manager.CancellationToken);
+            }
+        }
 
         /// <summary>
         ///     Send a message to a particular players

@@ -177,7 +177,7 @@ namespace SharedLibraryCore.Database.Models
             return e;
         }
 
-        [Obsolete]
+        [Obsolete("Use TellAsync")]
         public void Tell(IEnumerable<string> messages)
         {
             foreach (var message in messages)
@@ -188,10 +188,15 @@ namespace SharedLibraryCore.Database.Models
             }
         }
 
-        public async Task TellAsync(IEnumerable<string> messages, CancellationToken token =default)
+        public async Task TellAsync(IEnumerable<string> messages, CancellationToken token = default)
         {
             foreach (var message in messages)
             {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+                
                 await Tell(message).WaitAsync(Utilities.DefaultCommandTimeout, token);
             }
         }

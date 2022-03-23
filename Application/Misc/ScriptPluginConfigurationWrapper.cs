@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using IW4MAdmin.Application.Configuration;
 using Jint;
@@ -84,9 +85,9 @@ namespace IW4MAdmin.Application.Misc
 
             var item = _config[_pluginName][key];
 
-            if (item is JArray array)
+            if (item is JsonElement { ValueKind: JsonValueKind.Array } jElem)
             {
-                item = array.ToObject<List<dynamic>>();
+                item = jElem.Deserialize<List<dynamic>>();
             }
 
             return JsValue.FromObject(_scriptEngine, item);

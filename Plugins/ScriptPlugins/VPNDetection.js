@@ -1,14 +1,31 @@
-var plugin = {
-    author: 'RaidMax',
-    version: 1.2,
-    name: 'VPN Detection Plugin',
+const commands = [{
+    name: "whitelistvpn",
+    description: "whitelists a player's client id from VPN detection",
+    alias: "wv",
+    permission: "SeniorAdmin",
+    targetRequired: true,
+    arguments: [{
+        name: "players",
+        required: true
+    }],
+    execute: (gameEvent) => {
+        plugin.vpnExceptionIds.push(gameEvent.Target.ClientId);
+        plugin.configHandler.SetValue('vpnExceptionIds', plugin.vpnExceptionIds);
 
+        gameEvent.Origin.Tell(`Successfully whitelisted ${gameEvent.Target.Name}`);
+    }
+}];
+
+const plugin = {
+    author: 'RaidMax',
+    version: 1.3,
+    name: 'VPN Detection Plugin',
     manager: null,
     logger: null,
     vpnExceptionIds: [],
 
     checkForVpn: function (origin) {
-        var exempt = false;
+        let exempt = false;
         // prevent players that are exempt from being kicked
         this.vpnExceptionIds.forEach(function (id) {
             if (id === origin.ClientId) {
@@ -18,40 +35,41 @@ var plugin = {
         });
 
         if (exempt) {
+            this.logger.WriteInfo(`${origin} is whitelisted, so we are not checking VPN status`);
             return;
         }
 
-        var usingVPN = false;
+        let usingVPN = false;
 
         try {
-            var cl = new System.Net.Http.HttpClient();
-            var re = cl.GetAsync('https://api.xdefcon.com/proxy/check/?ip=' + origin.IPAddressString).Result;
-            var userAgent = 'IW4MAdmin-' + this.manager.GetApplicationSettings().Configuration().Id;
+            const cl = new System.Net.Http.HttpClient();
+            const re = cl.GetAsync(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`).Result;
+            const userAgent = `IW4MAdmin-${this.manager.GetApplicationSettings().Configuration().Id}`;
             cl.DefaultRequestHeaders.Add('User-Agent', userAgent);
-            var co = re.Content;
-            var parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
+            const co = re.Content;
+            const parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
             co.Dispose();
             re.Dispose();
             cl.Dispose();
             usingVPN = parsedJSON.success && parsedJSON.proxy;
         } catch (e) {
-            this.logger.WriteWarning('There was a problem checking client IP for VPN ' + e.message);
+            this.logger.WriteWarning(`There was a problem checking client IP for VPN ${e.message}`);
         }
 
         if (usingVPN) {
             this.logger.WriteInfo(origin + ' is using a VPN (' + origin.IPAddressString + ')');
-            var contactUrl = this.manager.GetApplicationSettings().Configuration().ContactUri;
-            var additionalInfo = '';
+            const contactUrl = this.manager.GetApplicationSettings().Configuration().ContactUri;
+            let additionalInfo = '';
             if (contactUrl) {
-                additionalInfo = _localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED_INFO"] + ' ' + contactUrl;
+                additionalInfo = _localization.LocalizationIndex['SERVER_KICK_VPNS_NOTALLOWED_INFO'] + ' ' + contactUrl;
             }
-            origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"] + ' ' + additionalInfo, _IW4MAdminClient);
+            origin.Kick(_localization.LocalizationIndex['SERVER_KICK_VPNS_NOTALLOWED'] + ' ' + additionalInfo, _IW4MAdminClient);
         }
     },
 
     onEventAsync: function (gameEvent, server) {
         // join event
-        if (gameEvent.Type === 4) {
+        if (gameEvent.TypeName === 'Join') {
             this.checkForVpn(gameEvent.Origin);
         }
     },
@@ -59,6 +77,10 @@ var plugin = {
     onLoadAsync: function (manager) {
         this.manager = manager;
         this.logger = manager.GetLogger(0);
+
+        this.configHandler = _configHandler;
+        this.configHandler.GetValue('vpnExceptionIds').forEach(element => this.vpnExceptionIds.push(element));
+        this.logger.WriteInfo(`Loaded ${this.vpnExceptionIds.length} ids into whitelist`);
     },
 
     onUnloadAsync: function () {

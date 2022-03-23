@@ -29,7 +29,8 @@
       "wwwroot/js/stats.js",
       "wwwroot/js/scoreboard.js",
       "wwwroot/js/configuration.js",
-      "wwwroot/js/advanced_stats.js"
+      "wwwroot/js/advanced_stats.js",
+      "wwwroot/js/liveradar.js"
     ],
     // Optionally specify minification options
     "minify": {

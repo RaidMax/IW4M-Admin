@@ -1,18 +1,22 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Data.Models;
 using Data.Models.Client;
+using SharedLibraryCore;
+using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 
-namespace SharedLibraryCore.Commands
+namespace IW4MAdmin.Application.Commands.ClientTags
 {
     public class SetClientTagCommand : Command
     {
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
 
 
-        public SetClientTagCommand(CommandConfiguration config, ITranslationLookup layout, IMetaService metaService) :
+        public SetClientTagCommand(CommandConfiguration config, ITranslationLookup layout, IMetaServiceV2 metaService) :
             base(config, layout)
         {
             Name = "setclienttag";
@@ -34,8 +38,10 @@ namespace SharedLibraryCore.Commands
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var availableTags = await _metaService.GetPersistentMeta(EFMeta.ClientTagName);
-            var matchingTag = availableTags.FirstOrDefault(tag => tag.Value == gameEvent.Data);
+            var token = gameEvent.Owner.Manager.CancellationToken;
+            
+            var availableTags = await _metaService.GetPersistentMetaValue<List<LookupValue<string>>>(EFMeta.ClientTagNameV2, token);
+            var matchingTag = availableTags.FirstOrDefault(tag => tag.Value == gameEvent.Data.Trim());
 
             if (matchingTag == null)
             {
@@ -44,7 +50,8 @@ namespace SharedLibraryCore.Commands
             }
 
             gameEvent.Target.Tag = matchingTag.Value;
-            await _metaService.AddPersistentMeta(EFMeta.ClientTag, string.Empty, gameEvent.Target, matchingTag);
+            await _metaService.SetPersistentMetaForLookupKey(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, matchingTag.Id,
+                gameEvent.Target.ClientId, token);
             gameEvent.Origin.Tell(_translationLookup["COMMANDS_SET_CLIENT_TAG_SUCCESS"].FormatExt(matchingTag.Value));
         }
     }

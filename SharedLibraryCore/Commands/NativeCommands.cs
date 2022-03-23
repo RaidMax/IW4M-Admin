@@ -1137,10 +1137,10 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class SetGravatarCommand : Command
     {
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
 
         public SetGravatarCommand(CommandConfiguration config, ITranslationLookup translationLookup,
-            IMetaService metaService) : base(config, translationLookup)
+            IMetaServiceV2 metaService) : base(config, translationLookup)
         {
             Name = "setgravatar";
             Description = _translationLookup["COMMANDS_GRAVATAR_DESC"];
@@ -1166,7 +1166,8 @@ namespace SharedLibraryCore.Commands
                 var gravatarEmail = string.Concat(md5
                     .ComputeHash(E.Data.ToLower().Select(d => Convert.ToByte(d)).ToArray())
                     .Select(h => h.ToString("x2")));
-                await _metaService.AddPersistentMeta("GravatarEmail", gravatarEmail, E.Origin);
+                await _metaService.SetPersistentMeta("GravatarEmail", gravatarEmail, E.Origin.ClientId,
+                    E.Owner.Manager.CancellationToken);
             }
 
             E.Origin.Tell(_translationLookup["COMMANDS_GRAVATAR_SUCCESS_NEW"]);

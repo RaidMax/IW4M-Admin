@@ -14,7 +14,7 @@ namespace IW4MAdmin.Application.Factories
     internal class GameServerInstanceFactory : IGameServerInstanceFactory
     {
         private readonly ITranslationLookup _translationLookup;
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
         private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace IW4MAdmin.Application.Factories
         /// <param name="translationLookup"></param>
         /// <param name="rconConnectionFactory"></param>
         public GameServerInstanceFactory(ITranslationLookup translationLookup,
-            IMetaService metaService,
+            IMetaServiceV2 metaService,
             IServiceProvider serviceProvider)
         {
             _translationLookup = translationLookup;

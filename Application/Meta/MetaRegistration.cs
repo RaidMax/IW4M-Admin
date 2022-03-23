@@ -5,6 +5,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -15,17 +16,22 @@ namespace IW4MAdmin.Application.Meta
     {
         private readonly ILogger _logger;
         private ITranslationLookup _transLookup;
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
         private readonly IEntityService<EFClient> _clientEntityService;
         private readonly IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse> _receivedPenaltyHelper;
-        private readonly IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> _administeredPenaltyHelper;
+
+        private readonly IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse>
+            _administeredPenaltyHelper;
+
         private readonly IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse> _updatedAliasHelper;
+
         private readonly IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>
             _connectionHistoryHelper;
+
         private readonly IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>
             _permissionLevelHelper;
 
-        public MetaRegistration(ILogger<MetaRegistration> logger, IMetaService metaService,
+        public MetaRegistration(ILogger<MetaRegistration> logger, IMetaServiceV2 metaService,
             ITranslationLookup transLookup, IEntityService<EFClient> clientEntityService,
             IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse> receivedPenaltyHelper,
             IResourceQueryHelper<ClientPaginationRequest, AdministeredPenaltyResponse> administeredPenaltyHelper,
@@ -46,19 +52,26 @@ namespace IW4MAdmin.Application.Meta
 
         public void Register()
         {
-            _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, GetProfileMeta);
-            _metaService.AddRuntimeMeta<ClientPaginationRequest, ReceivedPenaltyResponse>(MetaType.ReceivedPenalty, GetReceivedPenaltiesMeta);
-            _metaService.AddRuntimeMeta<ClientPaginationRequest, AdministeredPenaltyResponse>(MetaType.Penalized, GetAdministeredPenaltiesMeta);
-            _metaService.AddRuntimeMeta<ClientPaginationRequest, UpdatedAliasResponse>(MetaType.AliasUpdate, GetUpdatedAliasMeta);
-            _metaService.AddRuntimeMeta<ClientPaginationRequest, ConnectionHistoryResponse>(MetaType.ConnectionHistory, GetConnectionHistoryMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information,
+                GetProfileMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, ReceivedPenaltyResponse>(MetaType.ReceivedPenalty,
+                GetReceivedPenaltiesMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, AdministeredPenaltyResponse>(MetaType.Penalized,
+                GetAdministeredPenaltiesMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, UpdatedAliasResponse>(MetaType.AliasUpdate,
+                GetUpdatedAliasMeta);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, ConnectionHistoryResponse>(MetaType.ConnectionHistory,
+                GetConnectionHistoryMeta);
             _metaService.AddRuntimeMeta<ClientPaginationRequest, PermissionLevelChangedResponse>(
                 MetaType.PermissionLevel, GetPermissionLevelMeta);
         }
 
-        private async Task<IEnumerable<InformationResponse>> GetProfileMeta(ClientPaginationRequest request)
+        private async Task<IEnumerable<InformationResponse>> GetProfileMeta(ClientPaginationRequest request,
+            CancellationToken cancellationToken = default)
         {
             var metaList = new List<InformationResponse>();
-            var lastMapMeta = await _metaService.GetPersistentMeta("LastMapPlayed", new EFClient() { ClientId = request.ClientId });
+            var lastMapMeta =
+                await _metaService.GetPersistentMeta("LastMapPlayed", request.ClientId, cancellationToken);
 
             if (lastMapMeta != null)
             {
@@ -75,7 +88,8 @@ namespace IW4MAdmin.Application.Meta
                 });
             }
 
-            var lastServerMeta = await _metaService.GetPersistentMeta("LastServerPlayed", new EFClient() { ClientId = request.ClientId });
+            var lastServerMeta =
+                await _metaService.GetPersistentMeta("LastServerPlayed", request.ClientId, cancellationToken);
 
             if (lastServerMeta != null)
             {
@@ -96,7 +110,7 @@ namespace IW4MAdmin.Application.Meta
 
             if (client == null)
             {
-                _logger.LogWarning("No client found with id {clientId} when generating profile meta", request.ClientId);
+                _logger.LogWarning("No client found with id {ClientId} when generating profile meta", request.ClientId);
                 return metaList;
             }
 
@@ -137,7 +151,8 @@ namespace IW4MAdmin.Application.Meta
             {
                 ClientId = client.ClientId,
                 Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_CONNECTIONS"],
-                Value = client.Connections.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                Value = client.Connections.ToString("#,##0",
+                    new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                 ShouldDisplay = true,
                 Column = 1,
                 Order = 3,
@@ -148,7 +163,9 @@ namespace IW4MAdmin.Application.Meta
             {
                 ClientId = client.ClientId,
                 Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_MASKED"],
-                Value = client.Masked ? Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_TRUE"] : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
+                Value = client.Masked
+                    ? Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_TRUE"]
+                    : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
                 IsSensitive = true,
                 Column = 1,
                 Order = 4,
@@ -158,32 +175,36 @@ namespace IW4MAdmin.Application.Meta
             return metaList;
         }
 
-        private async Task<IEnumerable<ReceivedPenaltyResponse>> GetReceivedPenaltiesMeta(ClientPaginationRequest request)
+        private async Task<IEnumerable<ReceivedPenaltyResponse>> GetReceivedPenaltiesMeta(
+            ClientPaginationRequest request, CancellationToken token = default)
         {
             var penalties = await _receivedPenaltyHelper.QueryResource(request);
             return penalties.Results;
         }
 
-        private async Task<IEnumerable<AdministeredPenaltyResponse>> GetAdministeredPenaltiesMeta(ClientPaginationRequest request)
+        private async Task<IEnumerable<AdministeredPenaltyResponse>> GetAdministeredPenaltiesMeta(
+            ClientPaginationRequest request, CancellationToken token = default)
         {
             var penalties = await _administeredPenaltyHelper.QueryResource(request);
             return penalties.Results;
         }
 
-        private async Task<IEnumerable<UpdatedAliasResponse>> GetUpdatedAliasMeta(ClientPaginationRequest request)
+        private async Task<IEnumerable<UpdatedAliasResponse>> GetUpdatedAliasMeta(ClientPaginationRequest request,
+            CancellationToken token = default)
         {
             var aliases = await _updatedAliasHelper.QueryResource(request);
             return aliases.Results;
         }
-        
-        private async Task<IEnumerable<ConnectionHistoryResponse>> GetConnectionHistoryMeta(ClientPaginationRequest request)
+
+        private async Task<IEnumerable<ConnectionHistoryResponse>> GetConnectionHistoryMeta(
+            ClientPaginationRequest request, CancellationToken token = default)
         {
             var connections = await _connectionHistoryHelper.QueryResource(request);
             return connections.Results;
         }
 
         private async Task<IEnumerable<PermissionLevelChangedResponse>> GetPermissionLevelMeta(
-            ClientPaginationRequest request)
+            ClientPaginationRequest request, CancellationToken token = default)
         {
             var permissionChanges = await _permissionLevelHelper.QueryResource(request);
             return permissionChanges.Results;

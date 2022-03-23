@@ -124,8 +124,8 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public string Tag
         {
-            get => GetAdditionalProperty<string>(EFMeta.ClientTag);
-            set => SetAdditionalProperty(EFMeta.ClientTag, value);
+            get => GetAdditionalProperty<string>(EFMeta.ClientTagV2);
+            set => SetAdditionalProperty(EFMeta.ClientTagV2, value);
         }
 
         [NotMapped]

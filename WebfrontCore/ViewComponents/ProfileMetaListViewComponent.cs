@@ -13,9 +13,9 @@ namespace WebfrontCore.ViewComponents
 {
     public class ProfileMetaListViewComponent : ViewComponent
     {
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
 
-        public ProfileMetaListViewComponent(IMetaService metaService)
+        public ProfileMetaListViewComponent(IMetaServiceV2 metaService)
         {
             _metaService = metaService;
         }
@@ -38,7 +38,7 @@ namespace WebfrontCore.ViewComponents
             return View("_List", meta);
         }
 
-        public static async Task<IEnumerable<IClientMeta>> GetClientMeta(IMetaService metaService, MetaType? metaType,
+        public static async Task<IEnumerable<IClientMeta>> GetClientMeta(IMetaServiceV2 metaService, MetaType? metaType,
             EFClient.Permission level, ClientPaginationRequest request)
         {
             IEnumerable<IClientMeta> meta = null;

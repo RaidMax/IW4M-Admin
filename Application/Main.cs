@@ -278,7 +278,7 @@ namespace IW4MAdmin.Application
 
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
-                .Concat(typeof(Program).Assembly.GetTypes().Where(type => type.Namespace == "IW4MAdmin.Application.Commands"))
+                .Concat(typeof(Program).Assembly.GetTypes().Where(type => type.Namespace?.StartsWith("IW4MAdmin.Application.Commands") ?? false))
                 .Where(command => command.BaseType == typeof(Command)))
             {
                 defaultLogger.LogDebug("Registered native command type {Name}", commandType.Name);
@@ -406,6 +406,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
                 .AddSingleton<IEntityService<EFClient>, ClientService>()
                 .AddSingleton<IMetaService, MetaService>()
+                .AddSingleton<IMetaServiceV2, MetaServiceV2>()
                 .AddSingleton<ClientService>()
                 .AddSingleton<PenaltyService>()
                 .AddSingleton<ChangeHistoryService>()

@@ -116,13 +116,14 @@ namespace WebfrontCore
             // todo: this needs to be handled more gracefully
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<DefaultSettings>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ILoggerFactory>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IConfigurationHandlerFactory>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IDatabaseContextFactory>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IAuditInformationRepository>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<ITranslationLookup>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IEnumerable<IManagerCommand>>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<IMetaService>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetService<ApplicationConfiguration>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IConfigurationHandlerFactory>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IDatabaseContextFactory>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IAuditInformationRepository>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ITranslationLookup>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IEnumerable<IManagerCommand>>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaService>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaServiceV2>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ApplicationConfiguration>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ClientService>());
             services.AddSingleton(
                 Program.ApplicationServiceProvider.GetRequiredService<IServerDistributionCalculator>());

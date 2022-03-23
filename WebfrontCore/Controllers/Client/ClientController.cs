@@ -8,6 +8,7 @@ using SharedLibraryCore.QueryHelper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using Stats.Config;
@@ -17,16 +18,16 @@ namespace WebfrontCore.Controllers
 {
     public class ClientController : BaseController
     {
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
         private readonly StatsConfiguration _config;
 
-        public ClientController(IManager manager, IMetaService metaService, StatsConfiguration config) : base(manager)
+        public ClientController(IManager manager, IMetaServiceV2 metaService, StatsConfiguration config) : base(manager)
         {
             _metaService = metaService;
             _config = config;
         }
 
-        public async Task<IActionResult> ProfileAsync(int id, MetaType? metaFilterType)
+        public async Task<IActionResult> ProfileAsync(int id, MetaType? metaFilterType, CancellationToken token = default)
         {
             var client = await Manager.GetClientService().Get(id);
 
@@ -40,17 +41,17 @@ namespace WebfrontCore.Controllers
 
             var persistentMetaTask = new[]
             {
-                _metaService.GetPersistentMeta(EFMeta.ClientTag, client),
-                _metaService.GetPersistentMeta("GravatarEmail", client)
+                _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, client.ClientId, token),
+                _metaService.GetPersistentMeta("GravatarEmail", client.ClientId, token)
             };
 
             var persistentMeta = await Task.WhenAll(persistentMetaTask);
             var tag = persistentMeta[0];
             var gravatar = persistentMeta[1];
 
-            if (tag?.LinkedMeta != null)
+            if (tag?.Value != null)
             {
-                client.SetAdditionalProperty(EFMeta.ClientTag, tag.LinkedMeta.Value);
+                client.SetAdditionalProperty(EFMeta.ClientTagV2, tag.Value);
             }
 
             // even though we haven't set their level to "banned" yet

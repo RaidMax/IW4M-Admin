@@ -35,7 +35,7 @@ namespace IW4MAdmin
         private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
         public GameLogEventDetection LogEvent;
         private readonly ITranslationLookup _translationLookup;
-        private readonly IMetaService _metaService;
+        private readonly IMetaServiceV2 _metaService;
         private const int REPORT_FLAG_COUNT = 4;
         private long lastGameTime = 0;
 
@@ -49,7 +49,7 @@ namespace IW4MAdmin
             ServerConfiguration serverConfiguration,
             CommandConfiguration commandConfiguration,
             ITranslationLookup lookup,
-            IMetaService metaService, 
+            IMetaServiceV2 metaService, 
             IServiceProvider serviceProvider,
             IClientNoticeMessageFormatter messageFormatter,
             ILookupCache<EFServer> serverCache) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
@@ -350,7 +350,8 @@ namespace IW4MAdmin
                             Time = DateTime.UtcNow
                         });
 
-                        var clientTag = await _metaService.GetPersistentMeta(EFMeta.ClientTag, E.Origin);
+                        var clientTag = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2,
+                            EFMeta.ClientTagNameV2, E.Origin.ClientId, Manager.CancellationToken);
 
                         if (clientTag?.LinkedMeta != null)
                         {
@@ -568,8 +569,10 @@ namespace IW4MAdmin
                         Time = DateTime.UtcNow
                     });
 
-                    await _metaService.AddPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin);
-                    await _metaService.AddPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin);
+                    await _metaService.SetPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin.ClientId,
+                        Manager.CancellationToken);
+                    await _metaService.SetPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin.ClientId,
+                        Manager.CancellationToken);
                 }
 
                 else if (E.Type == GameEvent.EventType.PreDisconnect)

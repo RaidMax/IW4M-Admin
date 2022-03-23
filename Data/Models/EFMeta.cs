@@ -10,8 +10,8 @@ namespace Data.Models
     /// </summary>
     public class EFMeta : SharedEntity
     {
-        public const string ClientTagName = nameof(ClientTagName);
-        public const string ClientTag = nameof(ClientTag);
+        public const string ClientTagNameV2 = nameof(ClientTagNameV2);
+        public const string ClientTagV2 = nameof(ClientTagV2);
 
         [Key]
         public int MetaId { get; set; }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 
 namespace SharedLibraryCore.RCon
 {
@@ -47,16 +46,6 @@ namespace SharedLibraryCore.RCon
             /// </summary>
             COMMAND_STATUS
         }
-
-        /// <summary>
-        ///     line seperator char included in response from the server
-        /// </summary>
-        public static char SeperatorChar = (char)int.Parse("0a", NumberStyles.AllowHexSpecifier);
-
-        /// <summary>
-        ///     interval in milliseconds to wait before sending the next RCon request
-        /// </summary>
-        public static readonly int FloodProtectionInterval = 750;
 
         /// <summary>
         ///     timeout in seconds to wait for a socket send or receive before giving up

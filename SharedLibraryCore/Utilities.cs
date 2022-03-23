@@ -42,7 +42,8 @@ namespace SharedLibraryCore
 #endif
         public static Encoding EncodingType;
         public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
-        public static TimeSpan DefaultCommandTimeout { get; set; } = new TimeSpan(0, 0, 25);
+
+        public static TimeSpan DefaultCommandTimeout { get; set; } = new(0, 0, Utilities.IsDevelopment ? 360 : 25);
         public static char[] DirectorySeparatorChars = { '\\', '/' };
         public static char CommandPrefix { get; set; } = '!';
 

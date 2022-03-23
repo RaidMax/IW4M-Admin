@@ -177,6 +177,7 @@ namespace SharedLibraryCore.Database.Models
             return e;
         }
 
+        [Obsolete]
         public void Tell(IEnumerable<string> messages)
         {
             foreach (var message in messages)
@@ -184,6 +185,14 @@ namespace SharedLibraryCore.Database.Models
 #pragma warning disable 4014
                 Tell(message).WaitAsync();
 #pragma warning restore 4014
+            }
+        }
+
+        public async Task TellAsync(IEnumerable<string> messages, CancellationToken token =default)
+        {
+            foreach (var message in messages)
+            {
+                await Tell(message).WaitAsync(Utilities.DefaultCommandTimeout, token);
             }
         }
 

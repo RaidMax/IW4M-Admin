@@ -335,6 +335,14 @@ namespace SharedLibraryCore
                 processed = true;
             }
 
+            finally
+            {
+                if (_eventFinishedWaiter.CurrentCount == 0)
+                {
+                    _eventFinishedWaiter.Release();
+                }
+            }
+
             if (!processed)
             {
                 using (LogContext.PushProperty("Server", Owner?.ToString()))

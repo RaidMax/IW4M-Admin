@@ -709,37 +709,35 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            if (E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Length < 1 &&
-                E.Owner.ServerConfig.Rules?.Length < 1)
+            if (gameEvent.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules?.Length < 1 &&
+                gameEvent.Owner.ServerConfig.Rules?.Length < 1)
             {
-                var _ = E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix)
-                    ? E.Owner.Broadcast(_translationLookup["COMMANDS_RULES_NONE"])
-                    : E.Origin.Tell(_translationLookup["COMMANDS_RULES_NONE"]);
+                var _ = gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix)
+                    ? gameEvent.Owner.Broadcast(_translationLookup["COMMANDS_RULES_NONE"])
+                    : gameEvent.Origin.Tell(_translationLookup["COMMANDS_RULES_NONE"]);
             }
 
             else
             {
                 var rules = new List<string>();
-                rules.AddRange(E.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules);
-                if (E.Owner.ServerConfig.Rules != null)
+                rules.AddRange(gameEvent.Owner.Manager.GetApplicationSettings().Configuration().GlobalRules);
+                if (gameEvent.Owner.ServerConfig.Rules != null)
                 {
-                    rules.AddRange(E.Owner.ServerConfig.Rules);
+                    rules.AddRange(gameEvent.Owner.ServerConfig.Rules);
                 }
 
-                var ruleFomat = rules.Select(r => $"- {r}");
-                if (E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
+                var ruleFormat = rules.Select(r => $"- {r}");
+                if (gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
                 {
-                    E.Owner.Broadcast(ruleFomat);
+                    gameEvent.Owner.Broadcast(ruleFormat);
                 }
                 else
                 {
-                    E.Origin.Tell(ruleFomat);
+                    await gameEvent.Origin.TellAsync(ruleFormat, gameEvent.Owner.Manager.CancellationToken);
                 }
             }
-
-            return Task.CompletedTask;
         }
     }
 

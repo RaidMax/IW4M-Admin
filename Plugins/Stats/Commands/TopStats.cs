@@ -52,21 +52,19 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             _config = config;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var topStats = await GetTopStats(E.Owner, _translationLookup);
-            if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
+            var topStats = await GetTopStats(gameEvent.Owner, _translationLookup);
+            if (!gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
-                foreach (var stat in topStats)
-                {
-                    E.Origin.Tell(stat);
-                }
+                await gameEvent.Origin.TellAsync(topStats, gameEvent.Owner.Manager.CancellationToken);
             }
             else
             {
                 foreach (var stat in topStats)
                 {
-                    E.Owner.Broadcast(stat);
+                    await gameEvent.Owner.Broadcast(stat).WaitAsync(Utilities.DefaultCommandTimeout,
+                        gameEvent.Owner.Manager.CancellationToken);
                 }
             }
         }

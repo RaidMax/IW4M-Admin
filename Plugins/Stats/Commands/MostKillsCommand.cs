@@ -29,23 +29,21 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             _contextFactory = contextFactory;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var mostKills = await GetMostKills(StatManager.GetIdForServer(E.Owner), Plugin.Config.Configuration(),
+            var mostKills = await GetMostKills(StatManager.GetIdForServer(gameEvent.Owner), Plugin.Config.Configuration(),
                 _contextFactory, _translationLookup);
-            if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
+            if (!gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
-                foreach (var stat in mostKills)
-                {
-                    E.Origin.Tell(stat);
-                }
+                await gameEvent.Origin.TellAsync(mostKills, gameEvent.Owner.Manager.CancellationToken);
             }
 
             else
             {
                 foreach (var stat in mostKills)
                 {
-                    E.Owner.Broadcast(stat);
+                    await gameEvent.Owner.Broadcast(stat).WaitAsync(Utilities.DefaultCommandTimeout,
+                        gameEvent.Owner.Manager.CancellationToken);
                 }
             }
         }

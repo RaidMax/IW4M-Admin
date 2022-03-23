@@ -30,7 +30,8 @@ namespace IW4MAdmin.Application.Commands.ClientTags
             
             if (tags is not null)
             {
-                gameEvent.Origin.Tell(tags.Select(tag => tag.TagName));
+                await gameEvent.Origin.TellAsync(tags.Select(tag => tag.TagName),
+                    gameEvent.Owner.Manager.CancellationToken);
             }
         }
     }

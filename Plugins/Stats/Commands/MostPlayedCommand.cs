@@ -70,22 +70,16 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             _contextFactory = contextFactory;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var topStats = await GetMostPlayed(E.Owner, _translationLookup, _contextFactory);
-            if (!E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
+            var topStats = await GetMostPlayed(gameEvent.Owner, _translationLookup, _contextFactory);
+            if (!gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
-                foreach (var stat in topStats)
-                {
-                    E.Origin.Tell(stat);
-                }
+                await gameEvent.Origin.TellAsync(topStats, gameEvent.Owner.Manager.CancellationToken);
             }
             else
             {
-                foreach (var stat in topStats)
-                {
-                    E.Owner.Broadcast(stat);
-                }
+                gameEvent.Owner.Broadcast(topStats);
             }
         }
     }

@@ -29,7 +29,7 @@ namespace IW4MAdmin.Application.Commands
                     $"[(Color::Accent){client.ClientPermission.Name}(Color::White){(string.IsNullOrEmpty(client.Tag) ? "" : $" {client.Tag}")}(Color::White)][(Color::Yellow)#{client.ClientNumber}(Color::White)] {client.Name}")
                 .ToArray();
 
-            gameEvent.Origin.Tell(clientList);
+            gameEvent.Origin.TellAsync(clientList, gameEvent.Owner.Manager.CancellationToken);
 
             return Task.CompletedTask;
         }

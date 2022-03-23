@@ -59,7 +59,6 @@ namespace IW4MAdmin.Application
         readonly PenaltyService PenaltySvc;
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         readonly IPageList PageList;
-        private readonly IMetaService _metaService;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
         private readonly CancellationTokenSource _tokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
@@ -81,7 +80,7 @@ namespace IW4MAdmin.Application
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
-            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory, IMetaService metaService,
+            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
             IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
             ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService)
         {
@@ -97,7 +96,6 @@ namespace IW4MAdmin.Application
             AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
-            _metaService = metaService;
             _tokenSource = new CancellationTokenSource();
             _commands = commands.ToList();
             _translationLookup = translationLookup;

@@ -14,7 +14,7 @@ let plugin = {
         }
 
         if (gameEvent.Type === this.eventTypes['report']) {
-            if (!gameEvent.Target.IsIngame || gameEvent.Target.Level !== 'User') {
+            if (!gameEvent.Target.IsIngame || (gameEvent.Target.Level !== 'User' && gameEvent.Target.Level !== 'Flagged')) {
                 server.Logger.WriteInfo(`Ignoring report for client (id) ${gameEvent.Target.ClientId} because they are privileged or not ingame`);
                 return;
             }

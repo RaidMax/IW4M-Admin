@@ -18,6 +18,7 @@ namespace IW4MAdmin.Application.Misc
     /// implementation of IMetaService
     /// used to add and retrieve runtime and persistent meta
     /// </summary>
+    [Obsolete("Use MetaServiceV2")]
     public class MetaService : IMetaService
     {
         private readonly IDictionary<MetaType, List<dynamic>> _metaActions;

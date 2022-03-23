@@ -8,6 +8,7 @@ using SharedLibraryCore.QueryHelper;
 
 namespace SharedLibraryCore.Interfaces
 {
+    [Obsolete("Use IMetaServiceV2")]
     public interface IMetaService
     {
         /// <summary>

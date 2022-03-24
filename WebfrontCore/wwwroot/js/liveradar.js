@@ -120,7 +120,7 @@ function drawImage(context, imgSelector, x, y, alpha = 1) {
 function checkCanvasSize(canvas, context, minimap, map) {
 
     let width = Math.round(minimap.width());
-    if (Math.round(context.canvas.width) != width) {
+    if (Math.round(context.canvas.width) !== width) {
 
         canvas.width(width);
         canvas.height(width);
@@ -266,7 +266,7 @@ function updateRadarData() {
     });
 
     $.each(newRadarData, function (index, value) {
-        if (previousRadarData != undefined && index < previousRadarData.length) {
+        if (previousRadarData !== undefined && index < previousRadarData.length) {
 
             let previous = previousRadarData[index];
 
@@ -280,7 +280,7 @@ function updateRadarData() {
             }
 
             // we don't want to treat a disconnected player snapshot as the previous
-            else if (previous.guid == value.guid) {
+            else if (previous.guid === value.guid) {
                 value.previous = previous;
             }
 
@@ -308,7 +308,7 @@ function updateRadarData() {
     previousRadarData = newRadarData;
 
     $('#map_name').html(stateInfo.mapInfo.alias);
-    $('#map_list').css('background-image', `url(../images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@('@')2x.jpg)`);
+    $('#map_list').css('background-image', `url(../images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@2x.jpg)`);
     checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), stateInfo.mapInfo);
     updatePlayerData();
 }
@@ -351,8 +351,8 @@ function updateMap() {
         const endX = ((stateInfo.mapInfo.maxLeft - rotatedCurrentLocation.y) * stateInfo.mapScaler) + (stateInfo.mapInfo.left * stateInfo.imageScaler);
         const endY = ((stateInfo.mapInfo.maxTop - rotatedCurrentLocation.x) * stateInfo.mapScalerY) + (stateInfo.mapInfo.top * stateInfo.imageScaler);
 
-        let teamColor = value.team == 'allies' ? 'rgb(0, 122, 204, 1)' : 'rgb(255, 69, 69)';
-        let fovColor = value.team == 'allies' ? 'rgba(0, 122, 204, 0.2)' : 'rgba(255, 69, 69, 0.2)';
+        let teamColor = value.team === 'allies' ? 'rgb(0, 122, 204, 1)' : 'rgb(255, 69, 69)';
+        let fovColor = value.team === 'allies' ? 'rgba(0, 122, 204, 0.2)' : 'rgba(255, 69, 69, 0.2)';
 
         // this takes care of moving past the roll-over point of yaw/pitch (ie 360->0)
         const rollAngleFix = fixRollAngles(value.previous.radianAngles, value.radianAngles);

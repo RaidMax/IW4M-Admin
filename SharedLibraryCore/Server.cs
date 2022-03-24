@@ -159,14 +159,13 @@ namespace SharedLibraryCore
         ///     Add a player to the server's player list
         /// </summary>
         /// <param name="P">EFClient pulled from memory reading</param>
-        /// <returns>True if player added sucessfully, false otherwise</returns>
+        /// <returns>True if player added successfully, false otherwise</returns>
         public abstract Task<EFClient> OnClientConnected(EFClient P);
 
         /// <summary>
         ///     Remove player by client number
         /// </summary>
-        /// <param name="cNum">Client ID of player to be removed</param>
-        /// <returns>true if removal succeded, false otherwise</returns>
+        /// <returns>true if removal succeeded, false otherwise</returns>
         public abstract Task OnClientDisconnected(EFClient client);
 
         /// <summary>
@@ -219,6 +218,7 @@ namespace SharedLibraryCore
         ///     Send a message to all players
         /// </summary>
         /// <param name="message">Message to be sent to all players</param>
+        /// <param name="sender">Client that initiated the broadcast</param>
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
             var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "",
@@ -322,39 +322,44 @@ namespace SharedLibraryCore
         ///     Kick a player from the server
         /// </summary>
         /// <param name="reason">Reason for kicking</param>
-        /// <param name="Target">EFClient to kick</param>
-        public Task Kick(string reason, EFClient Target, EFClient Origin)
+        /// <param name="target">EFClient to kick</param>
+        /// <param name="origin">Client initating the kick</param>
+        public Task Kick(string reason, EFClient target, EFClient origin)
         {
-            return Kick(reason, Target, Origin, null);
+            return Kick(reason, target, origin, null);
         }
 
         /// <summary>
         ///     Temporarily ban a player ( default 1 hour ) from the server
         /// </summary>
         /// <param name="reason">Reason for banning the player</param>
-        /// <param name="Target">The player to ban</param>
-        public abstract Task TempBan(string reason, TimeSpan length, EFClient Target, EFClient Origin);
+        /// <param name="length">Duration of the ban</param>
+        /// <param name="target">The client to ban</param>
+        /// <param name="origin">The client performing the ban</param>
+        public abstract Task TempBan(string reason, TimeSpan length, EFClient target, EFClient origin);
 
         /// <summary>
         ///     Perm ban a player from the server
         /// </summary>
-        /// <param name="Reason">The reason for the ban</param>
-        /// <param name="Target">The person to ban</param>
-        /// <param name="Origin">The person who banned the target</param>
-        public abstract Task Ban(string Reason, EFClient Target, EFClient Origin, bool isEvade = false);
+        /// <param name="reason">The reason for the ban</param>
+        /// <param name="target">The person to ban</param>
+        /// <param name="origin">The person who banned the target</param>
+        /// <param name="isEvade">obsolete</param>
+        public abstract Task Ban(string reason, EFClient target, EFClient origin, bool isEvade = false);
 
-        public abstract Task Warn(string Reason, EFClient Target, EFClient Origin);
+        public abstract Task Warn(string reason, EFClient target, EFClient origin);
 
         /// <summary>
         ///     Unban a player by npID / GUID
         /// </summary>
-        /// <param name="npID">npID of the player</param>
-        /// <param name="targetClient">I don't remember what this is for</param>
+        /// <param name="reason">reason for unban</param>
+        /// <param name="targetClient">client being unbanned</param>
+        /// <param name="originClient">client performing the unban</param>
         /// <returns></returns>
         public abstract Task Unban(string reason, EFClient targetClient, EFClient originClient);
 
         /// <summary>
-        ///     Change the current searver map
+        ///     Change the current server map
         /// </summary>
         /// <param name="mapName">Non-localized map name</param>
         public async Task LoadMap(string mapName)

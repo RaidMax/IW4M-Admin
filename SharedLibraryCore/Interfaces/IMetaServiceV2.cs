@@ -42,7 +42,6 @@ public interface IMetaServiceV2
     /// <param name="lookupId">Id in the list of lookup values</param>
     /// <param name="clientId">id of the client</param>
     /// <param name="token"></param>
-    /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task SetPersistentMetaForLookupKey(string metaKey, string lookupKey, int lookupId, int clientId,
         CancellationToken token = default);
@@ -100,7 +99,6 @@ public interface IMetaServiceV2
     /// <param name="lookupKey"></param>
     /// <param name="clientId"></param>
     /// <param name="token"></param>
-    /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task<EFMeta> GetPersistentMetaByLookup(string metaKey, string lookupKey, int clientId,
         CancellationToken token = default);
@@ -141,7 +139,6 @@ public interface IMetaServiceV2
     /// removes meta key with given value
     /// </summary>
     /// <param name="metaKey">key of the meta data</param>
-    /// <param name="metaValue">value of the meta data</param>
     /// <param name="token"></param>
     /// <returns></returns>
     Task RemovePersistentMeta(string metaKey, CancellationToken token = default);

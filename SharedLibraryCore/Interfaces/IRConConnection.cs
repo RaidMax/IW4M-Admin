@@ -14,6 +14,7 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="type">type of RCon query to perform</param>
         /// <param name="parameters">optional parameter list</param>
+        /// <param name="token"></param>
         /// <returns></returns>
         Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "", CancellationToken token = default);
 

@@ -587,16 +587,29 @@ namespace IW4MAdmin.Application
 
         public async Task Start() => await UpdateServerStates();
 
-        public void Stop()
+        public async Task Stop()
         {
             _tokenSource.Cancel();
+            
+            foreach (var plugin in Plugins)
+            {
+                try
+                {
+                    await plugin.OnUnloadAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not cleanly unload plugin {PluginName}", plugin.Name);
+                }
+            }   
+            
             IsRunning = false;
         }
 
         public void Restart()
         {
             IsRestartRequested = true;
-            Stop();
+            Stop().GetAwaiter().GetResult();
         }
 
         [Obsolete]

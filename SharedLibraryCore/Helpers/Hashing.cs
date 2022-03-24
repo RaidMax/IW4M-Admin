@@ -8,6 +8,7 @@ namespace SharedLibraryCore.Helpers
         ///     Generate password hash and salt
         /// </summary>
         /// <param name="password">plaintext password</param>
+        /// <param name="saltStr">salt of password</param>
         /// <returns></returns>
         public static string[] Hash(string password, string saltStr = null)
         {

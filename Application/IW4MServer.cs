@@ -903,11 +903,6 @@ namespace IW4MAdmin
 
                 await e.WaitAsync(Utilities.DefaultCommandTimeout, new CancellationTokenRegistration().Token);
             }
-
-            foreach (var plugin in Manager.Plugins)
-            {
-                await plugin.OnUnloadAsync();
-            }
         }
 
         DateTime start = DateTime.Now;

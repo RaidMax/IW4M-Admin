@@ -52,6 +52,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="connection">RCon connection to retrieve with</param>
         /// <param name="dvarName">name of DVAR</param>
         /// <param name="fallbackValue">default value to return if dvar retrieval fails</param>
+        /// <param name="token"></param>
         /// <returns></returns>
         Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default, CancellationToken token = default);
 
@@ -61,6 +62,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="connection">RCon connection to use</param>
         /// <param name="dvarName">name of DVAR to set</param>
         /// <param name="dvarValue">value to set DVAR to</param>
+        /// <param name="token"></param>
         /// <returns></returns>
         Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default);
 
@@ -69,13 +71,15 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="connection">RCon connection to use</param>
         /// <param name="command">console command to execute</param>
+        /// <param name="token"></param>
         /// <returns></returns>
         Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command, CancellationToken token = default);
-        
+
         /// <summary>
         ///     get the list of connected clients from status response
         /// </summary>
         /// <param name="connection">RCon connection to use</param>
+        /// <param name="token"></param>
         /// <returns>
         ///     <see cref="IStatusResponse" />
         /// </returns>

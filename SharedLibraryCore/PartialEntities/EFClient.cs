@@ -307,6 +307,7 @@ namespace SharedLibraryCore.Database.Models
         /// </summary>
         /// <param name="flagReason">reason for flagging</param>
         /// <param name="sender">client performing the flag</param>
+        /// <param name="flagLength">how long the flag should last</param>
         /// <returns>game event for the flag</returns>
         public GameEvent Flag(string flagReason, EFClient sender, TimeSpan? flagLength = null)
         {
@@ -442,6 +443,7 @@ namespace SharedLibraryCore.Database.Models
         /// </summary>
         /// <param name="banReason">reason for the ban</param>
         /// <param name="sender">client performing the ban</param>
+        /// <param name="isEvade">obsolete</param>
         public GameEvent Ban(string banReason, EFClient sender, bool isEvade)
         {
             var e = new GameEvent

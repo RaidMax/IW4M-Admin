@@ -33,10 +33,9 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent E)
         {
-            E.Owner.Manager.Stop();
-            return Task.CompletedTask;
+            await E.Owner.Manager.Stop();
         }
     }
 
@@ -731,7 +730,7 @@ namespace SharedLibraryCore.Commands
                 var ruleFormat = rules.Select(r => $"- {r}");
                 if (gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
                 {
-                    gameEvent.Owner.Broadcast(ruleFormat);
+                    await gameEvent.Owner.BroadcastAsync(ruleFormat, token: gameEvent.Owner.Manager.CancellationToken);
                 }
                 else
                 {

@@ -77,8 +77,12 @@ namespace IW4MAdmin.Application
         /// <param name="e"></param>
         private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
         {
-            _serverManager?.Stop();
-            if (_applicationTask != null)
+            if (_serverManager is not null)
+            {
+                await _serverManager.Stop();
+            }
+
+            if (_applicationTask is not null)
             {
                 await _applicationTask;
             }
@@ -153,8 +157,11 @@ namespace IW4MAdmin.Application
                 {
                     Console.WriteLine(e.Message);
                 }
-                
-                _serverManager?.Stop();
+
+                if (_serverManager is not null)
+                {
+                    await _serverManager?.Stop();
+                }
 
                 Console.WriteLine(exitMessage);
                 await Console.In.ReadAsync(new char[1], 0, 1);

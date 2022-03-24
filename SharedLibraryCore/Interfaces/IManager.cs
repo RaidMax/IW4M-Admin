@@ -32,7 +32,7 @@ namespace SharedLibraryCore.Interfaces
         ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; }
         Task Init();
         Task Start();
-        void Stop();
+        Task Stop();
         void Restart();
 
         [Obsolete]

@@ -14,6 +14,7 @@ namespace SharedLibraryCore.Interfaces
         /// <summary>
         ///     authorizes given token
         /// </summary>
+        /// <param name="networkId">network id of the client to authorize</param>
         /// <param name="token">token to authorize</param>
         /// <returns>true if token authorized successfully, false otherwise</returns>
         bool AuthorizeToken(long networkId, string token);

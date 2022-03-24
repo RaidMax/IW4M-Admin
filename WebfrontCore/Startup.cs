@@ -121,7 +121,9 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IAuditInformationRepository>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ITranslationLookup>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IEnumerable<IManagerCommand>>());
+#pragma warning disable CS0618
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaService>());
+#pragma warning restore CS0618
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaServiceV2>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ApplicationConfiguration>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ClientService>());

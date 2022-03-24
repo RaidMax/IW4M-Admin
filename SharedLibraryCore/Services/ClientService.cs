@@ -593,7 +593,6 @@ namespace SharedLibraryCore.Services
         /// <param name="newPermission"></param>
         /// <param name="temporalClient"></param>
         /// <param name="origin"></param>
-        /// <param name="ctx"></param>
         /// <returns></returns>
         public virtual async Task UpdateLevel(Permission newPermission, EFClient temporalClient, EFClient origin)
         {

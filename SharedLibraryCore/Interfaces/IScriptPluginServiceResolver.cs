@@ -16,7 +16,7 @@
         ///     resolves a service with the given name and generic params
         /// </summary>
         /// <param name="serviceName">class name of service</param>
-        /// <param name="genericParams">generic class names</param>
+        /// <param name="genericParameters">generic class names</param>
         /// <returns></returns>
         object ResolveService(string serviceName, string[] genericParameters);
     }

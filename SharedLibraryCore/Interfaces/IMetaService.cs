@@ -17,6 +17,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="metaKey">key of meta data</param>
         /// <param name="metaValue">value of the meta data</param>
         /// <param name="client">client to save the meta for</param>
+        /// <param name="linkedMeta"></param>
         /// <returns></returns>
         Task AddPersistentMeta(string metaKey, string metaValue, EFClient client, EFMeta linkedMeta = null);
 

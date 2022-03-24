@@ -269,7 +269,7 @@ namespace IW4MAdmin.Plugins.Stats
                 double chestAbdomenRatio = 0;
                 double hitOffsetAverage = 0;
                 double averageSnapValue = 0;
-                var maxStrain = clientStats.Any(c => c.MaxStrain > 0) ? 0 : clientStats.Max(cs => cs.MaxStrain);
+                var maxStrain = !clientStats.Any(c => c.MaxStrain > 0) ? 0 : clientStats.Max(cs => cs.MaxStrain);
 
                 if (clientStats.Any(cs => cs.HitLocations.Count > 0))
                 {

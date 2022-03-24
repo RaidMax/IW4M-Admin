@@ -405,7 +405,9 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IScriptCommandFactory, ScriptCommandFactory>()
                 .AddSingleton<IAuditInformationRepository, AuditInformationRepository>()
                 .AddSingleton<IEntityService<EFClient>, ClientService>()
+#pragma warning disable CS0618
                 .AddSingleton<IMetaService, MetaService>()
+#pragma warning restore CS0618
                 .AddSingleton<IMetaServiceV2, MetaServiceV2>()
                 .AddSingleton<ClientService>()
                 .AddSingleton<PenaltyService>()

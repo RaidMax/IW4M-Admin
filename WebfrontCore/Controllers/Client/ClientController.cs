@@ -191,7 +191,7 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
-        public async Task<IActionResult> Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType)
+        public async Task<IActionResult> Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType, CancellationToken token)
         {
             var request = new ClientPaginationRequest
             {
@@ -201,7 +201,7 @@ namespace WebfrontCore.Controllers
                 Before = DateTime.FromFileTimeUtc(startAt ?? DateTime.UtcNow.ToFileTimeUtc())
             };
 
-            var meta = await ProfileMetaListViewComponent.GetClientMeta(_metaService, metaFilterType, Client.Level, request);
+            var meta = await ProfileMetaListViewComponent.GetClientMeta(_metaService, metaFilterType, Client.Level, request, token);
 
             if (!meta.Any())
             {

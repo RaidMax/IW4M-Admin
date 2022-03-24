@@ -439,7 +439,7 @@ public class MetaServiceV2 : IMetaServiceV2
             return ProcessInformationMeta(allMeta);
         }
 
-        var meta = await _metaActions[metaType][0](request) as IEnumerable<T>;
+        var meta = await _metaActions[metaType][0](request, token) as IEnumerable<T>;
 
         return meta;
     }

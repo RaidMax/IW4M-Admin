@@ -153,6 +153,7 @@ namespace SharedLibraryCore.Configuration
         public bool EnablePrivilegedUserPrivacy { get; set; }
 
         [ConfigurationIgnore] public bool EnableImplicitAccountLinking { get; set; } = false;
+        [ConfigurationIgnore] public TimeSpan RecentAliasIpLinkTimeLimit { get; set; } = TimeSpan.FromDays(7);
 
         [ConfigurationIgnore] public TimeSpan MaxClientHistoryTime { get; set; } = TimeSpan.FromHours(12);
 

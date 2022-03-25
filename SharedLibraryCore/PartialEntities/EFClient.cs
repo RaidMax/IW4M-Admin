@@ -693,13 +693,14 @@ namespace SharedLibraryCore.Database.Models
                     if (Level != Permission.Banned)
                     {
                         Utilities.DefaultLogger.LogInformation(
-                            "Client {client} has a ban penalty, but they're using a new GUID, we we're updating their level and kicking them",
+                            "Client {Client} has a ban penalty, but they're using a new GUID, we we're updating their level and kicking them",
                             ToString());
+                        
                         await SetLevel(Permission.Banned, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
                             CurrentServer.Manager.CancellationToken);
                     }
 
-                    Utilities.DefaultLogger.LogInformation("Kicking {client} because they are banned", ToString());
+                    Utilities.DefaultLogger.LogInformation("Kicking {Client} because they are banned", ToString());
                     Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, banPenalty);
                     return false;
                 }
@@ -732,6 +733,34 @@ namespace SharedLibraryCore.Database.Models
                         ToString());
                     Unflag(Utilities.CurrentLocalization.LocalizationIndex["SERVER_AUTOFLAG_UNFLAG"], autoKickClient);
                 }
+
+                if (Level != Permission.Banned)
+                {
+                    return true;
+                }
+
+                // we want to see if they've recently used a banned IP
+                var recentIPPenalties= await CurrentServer.Manager.GetPenaltyService().ActivePenaltiesByRecentIdentifiers(AliasLinkId);
+                    
+                var recentBanPenalty =
+                    recentIPPenalties.FirstOrDefault(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
+
+                if (recentBanPenalty is null || !IPAddress.HasValue)
+                {
+                    Utilities.DefaultLogger.LogInformation(
+                        "Setting {Client} level to user because they are banned but no direct penalties or recent penalty identifiers exist for them",
+                        ToString());
+                    await SetLevel(Permission.User, autoKickClient).WaitAsync(Utilities.DefaultCommandTimeout,
+                        CurrentServer.Manager.CancellationToken);   
+                    return true;
+                }
+
+                Utilities.DefaultLogger.LogInformation("Updating penalty for {Client} because they recently used a banned IP", this);
+                await CurrentServer.Manager.GetPenaltyService()
+                    .CreatePenaltyIdentifier(recentBanPenalty.PenaltyId, NetworkId, IPAddress.Value);
+                        
+                Utilities.DefaultLogger.LogInformation("Kicking {Client} because they are banned", ToString());
+                Kick(loc["WEBFRONT_PENALTY_LIST_BANNED_REASON"], autoKickClient, recentBanPenalty);
             }
 
             return true;

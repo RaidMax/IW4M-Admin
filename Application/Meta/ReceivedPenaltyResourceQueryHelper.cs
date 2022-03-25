@@ -11,6 +11,7 @@ using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
+using SharedLibraryCore.Services;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
@@ -19,13 +20,14 @@ namespace IW4MAdmin.Application.Meta
     /// implementation of IResourceQueryHelper
     /// used to pull in penalties applied to a given client id
     /// </summary>
-    public class ReceivedPenaltyResourceQueryHelper : IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>
+    public class
+        ReceivedPenaltyResourceQueryHelper : IResourceQueryHelper<ClientPaginationRequest, ReceivedPenaltyResponse>
     {
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ApplicationConfiguration _appConfig;
 
-        public ReceivedPenaltyResourceQueryHelper(ILogger<ReceivedPenaltyResourceQueryHelper> logger, 
+        public ReceivedPenaltyResourceQueryHelper(ILogger<ReceivedPenaltyResourceQueryHelper> logger,
             IDatabaseContextFactory contextFactory, ApplicationConfiguration appConfig)
         {
             _contextFactory = contextFactory;
@@ -33,27 +35,35 @@ namespace IW4MAdmin.Application.Meta
             _appConfig = appConfig;
         }
 
-        public async Task<ResourceQueryHelperResult<ReceivedPenaltyResponse>> QueryResource(ClientPaginationRequest query)
+        public async Task<ResourceQueryHelperResult<ReceivedPenaltyResponse>> QueryResource(
+            ClientPaginationRequest query)
         {
             var linkedPenaltyType = Utilities.LinkedPenaltyTypes();
             await using var ctx = _contextFactory.CreateContext(enableTracking: false);
 
             var linkId = await ctx.Clients.AsNoTracking()
-                    .Where(_client => _client.ClientId == query.ClientId)
-                    .Select(_client => new {_client.AliasLinkId, _client.CurrentAliasId })
-                    .FirstOrDefaultAsync();
+                .Where(_client => _client.ClientId == query.ClientId)
+                .Select(_client => new { _client.AliasLinkId, _client.CurrentAliasId })
+                .FirstOrDefaultAsync();
 
             var iqPenalties = ctx.Penalties.AsNoTracking()
                 .Where(_penalty => _penalty.OffenderId == query.ClientId ||
                                    linkedPenaltyType.Contains(_penalty.Type) && _penalty.LinkId == linkId.AliasLinkId);
 
             IQueryable<EFPenalty> iqIpLinkedPenalties = null;
-            
+            IQueryable<EFPenalty> identifierPenalties = null;
+
             if (!_appConfig.EnableImplicitAccountLinking)
             {
                 var usedIps = await ctx.Aliases.AsNoTracking()
-                    .Where(alias => (alias.LinkId == linkId.AliasLinkId || alias.AliasId == linkId.CurrentAliasId) && alias.IPAddress != null)
+                    .Where(alias =>
+                        (alias.LinkId == linkId.AliasLinkId || alias.AliasId == linkId.CurrentAliasId) &&
+                        alias.IPAddress != null)
                     .Select(alias => alias.IPAddress).ToListAsync();
+
+                   identifierPenalties = ctx.PenaltyIdentifiers.AsNoTracking().Where(identifier =>
+                        identifier.IPv4Address != null && usedIps.Contains(identifier.IPv4Address))
+                    .Select(id => id.Penalty);
 
                 var aliasedIds = await ctx.Aliases.AsNoTracking().Where(alias => usedIps.Contains(alias.IPAddress))
                     .Select(alias => alias.LinkId)
@@ -65,13 +75,18 @@ namespace IW4MAdmin.Application.Meta
             }
 
             var iqAllPenalties = iqPenalties;
-            
+
             if (iqIpLinkedPenalties != null)
             {
                 iqAllPenalties = iqPenalties.Union(iqIpLinkedPenalties);
             }
 
-             var penalties = await iqAllPenalties
+            if (identifierPenalties != null)
+            {
+                iqAllPenalties = iqPenalties.Union(identifierPenalties);
+            }
+
+            var penalties = await iqAllPenalties
                 .Where(_penalty => _penalty.When < query.Before)
                 .OrderByDescending(_penalty => _penalty.When)
                 .Take(query.Count)
@@ -97,7 +112,7 @@ namespace IW4MAdmin.Application.Meta
             {
                 // todo: maybe actually count
                 RetrievedResultCount = penalties.Count,
-                Results = penalties
+                Results = penalties.Distinct()
             };
         }
     }

@@ -59,6 +59,20 @@ namespace SharedLibraryCore.Services
             return newEntity;
         }
 
+        public async Task CreatePenaltyIdentifier(int penaltyId, long networkId, int ipv4Address)
+        {
+            await using var context = _contextFactory.CreateContext();
+            var penaltyIdentifiers = new EFPenaltyIdentifier
+            {
+                PenaltyId = penaltyId,
+                NetworkId = networkId,
+                IPv4Address = ipv4Address
+            };
+
+            context.PenaltyIdentifiers.Add(penaltyIdentifiers);
+            await context.SaveChangesAsync();
+        }
+
         public Task<EFPenalty> Delete(EFPenalty entity)
         {
             throw new NotImplementedException();
@@ -172,9 +186,31 @@ namespace SharedLibraryCore.Services
         public async Task<List<EFPenalty>> GetActivePenaltiesByIdentifier(int? ip, long networkId)
         {
             await using var context = _contextFactory.CreateContext(false);
+
             var activePenaltiesIds = context.PenaltyIdentifiers.Where(identifier =>
                     identifier.IPv4Address != null && identifier.IPv4Address == ip || identifier.NetworkId == networkId)
                 .Where(FilterById);
+            return await activePenaltiesIds.Select(ids => ids.Penalty).ToListAsync();
+        }
+
+        public async Task<List<EFPenalty>> ActivePenaltiesByRecentIdentifiers(int linkId)
+        {
+            await using var context = _contextFactory.CreateContext(false);
+
+            var recentlyUsedIps = await context.Aliases.Where(alias => alias.LinkId == linkId)
+                .Where(alias => alias.IPAddress != null)
+                .Where(alias => alias.DateAdded >= DateTime.UtcNow - _appConfig.RecentAliasIpLinkTimeLimit)
+                .Select(alias => alias.IPAddress).ToListAsync();
+
+            if (!recentlyUsedIps.Any())
+            {
+                return new List<EFPenalty>();
+            }
+
+            var activePenaltiesIds = context.PenaltyIdentifiers
+                .Where(identifier => recentlyUsedIps.Contains(identifier.IPv4Address))
+                .Where(FilterById);
+
             return await activePenaltiesIds.Select(ids => ids.Penalty).ToListAsync();
         }
 

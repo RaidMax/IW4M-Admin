@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using SharedLibraryCore.Database.Models;
 
 namespace WebfrontCore.ViewModels
 {
@@ -24,5 +25,6 @@ namespace WebfrontCore.ViewModels
         public double? ScorePerMinute { get; set; }
         public double? Kdr { get; set; }
         public double? ZScore { get; set; }
+        public EFClient.TeamType Team { get; set; }
     }
 }

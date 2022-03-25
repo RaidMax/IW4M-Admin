@@ -101,7 +101,8 @@ namespace WebfrontCore.Controllers
                         Deaths = clientData.stats?.MatchData?.Deaths,
                         ScorePerMinute = clientData.stats?.SessionSPM,
                         Kdr = clientData.stats?.MatchData?.Kdr,
-                        ZScore = clientData.stats?.ZScore
+                        ZScore = clientData.stats?.ZScore,
+                        Team = clientData.client.Team
                     })
                     .ToList()
             }).ToList();

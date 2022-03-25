@@ -359,7 +359,7 @@ namespace IW4MAdmin.Application.EventParsers
                             State = EFClient.ClientState.Connected,
                         },
                         Extra = team,
-                        RequiredEntity = GameEvent.EventRequiredEntity.None,
+                        RequiredEntity = GameEvent.EventRequiredEntity.Origin,
                         GameTime = gameTime,
                         Source = GameEvent.EventSource.Log
                     };

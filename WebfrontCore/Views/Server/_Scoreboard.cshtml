@@ -38,7 +38,7 @@
     </tr>
     @foreach (var client in Model.ShouldOrderDescending ? Model.ClientInfo.OrderByDescending(OrderByFunc) : Model.ClientInfo.OrderBy(OrderByFunc))
     {
-        <tr>
+        <tr class="team-@client.Team.ToString().ToLower()-bg">
             <td>
                 <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
                     <color-code value="@client.ClientName"></color-code>

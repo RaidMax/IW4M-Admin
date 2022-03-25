@@ -49,7 +49,7 @@
             <td>@(client.Deaths ?? 0)</td>
             <td>@Math.Round(client.Kdr ?? 0, 2)</td>
             <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
-            <td>@(client.ZScore == null ? 0 : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</td>
+            <td>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</td>
             <td class="text-right">@client.Ping</td>
         </tr>
     }

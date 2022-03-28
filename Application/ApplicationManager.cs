@@ -589,19 +589,19 @@ namespace IW4MAdmin.Application
 
         public async Task Stop()
         {
-            _tokenSource.Cancel();
-            
             foreach (var plugin in Plugins)
             {
                 try
                 {
-                    await plugin.OnUnloadAsync();
+                    await plugin.OnUnloadAsync().WithTimeout(Utilities.DefaultCommandTimeout);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Could not cleanly unload plugin {PluginName}", plugin.Name);
                 }
             }   
+            
+            _tokenSource.Cancel();
             
             IsRunning = false;
         }

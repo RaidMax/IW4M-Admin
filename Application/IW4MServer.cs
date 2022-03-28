@@ -97,6 +97,7 @@ namespace IW4MAdmin
             client.Score = clientFromLog.Score;
             client.Ping = clientFromLog.Ping;
             client.Team = clientFromLog.Team;
+            client.TeamName = clientFromLog.TeamName;
             client.CurrentServer = this;
             client.State = ClientState.Connecting;
 

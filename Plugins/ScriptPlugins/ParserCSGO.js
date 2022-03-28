@@ -3,7 +3,7 @@ let eventParser;
 
 const plugin = {
     author: 'RaidMax',
-    version: 0.4,
+    version: 0.5,
     name: 'CS:GO Parser',
     engine: 'Source',
     isParser: true,
@@ -105,6 +105,17 @@ const plugin = {
         eventParser.Configuration.Kill.AddMapping(8, 8);
         eventParser.Configuration.Kill.AddMapping(9, 9);
         eventParser.Configuration.Kill.AddMapping(12, 10);
+
+        eventParser.Configuration.MapEnd.Pattern = '^World triggered "Match_Start" on "(.+)"$';
+
+        eventParser.Configuration.JoinTeam.Pattern = '^"(.+)<(\\d+)><(.*)>" switched from team <(.+)> to <(.+)>$';
+        eventParser.Configuration.JoinTeam.AddMapping(5, 1);
+        eventParser.Configuration.JoinTeam.AddMapping(3, 2);
+        eventParser.Configuration.JoinTeam.AddMapping(1, 3);
+        eventParser.Configuration.JoinTeam.AddMapping(7, 5);
+
+        eventParser.Configuration.TeamMapping.Add('CT', 2);
+        eventParser.Configuration.TeamMapping.Add('TERRORIST', 3);
         
         eventParser.Configuration.Time.Pattern = '^L [01]\\d/[0-3]\\d/\\d+ - [0-2]\\d:[0-5]\\d:[0-5]\\d:';
 

@@ -1,6 +1,8 @@
-﻿using SharedLibraryCore.Interfaces;
+﻿using System.Collections.Generic;
+using SharedLibraryCore.Interfaces;
 using System.Globalization;
 using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -22,6 +24,8 @@ namespace IW4MAdmin.Application.EventParsers
         public ParserRegex MapChange { get; set; }
         public ParserRegex MapEnd { get; set; }
         public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
+
+        public Dictionary<string, EFClient.TeamType> TeamMapping { get; set; } = new();
 
         public DynamicEventParserConfiguration(IParserRegexFactory parserRegexFactory)
         {

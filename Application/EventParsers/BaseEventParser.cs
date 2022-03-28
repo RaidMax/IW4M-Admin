@@ -97,7 +97,8 @@ namespace IW4MAdmin.Application.EventParsers
                 {Configuration.Say, GameEvent.EventType.Say},
                 {Configuration.Kill, GameEvent.EventType.Kill},
                 {Configuration.MapChange, GameEvent.EventType.MapChange},
-                {Configuration.MapEnd, GameEvent.EventType.MapEnd}
+                {Configuration.MapEnd, GameEvent.EventType.MapEnd},
+                {Configuration.JoinTeam, GameEvent.EventType.JoinTeam}
             };
             
             _eventTypeMap = new Dictionary<string, GameEvent.EventType>
@@ -107,8 +108,8 @@ namespace IW4MAdmin.Application.EventParsers
                 {"K", GameEvent.EventType.Kill},
                 {"D", GameEvent.EventType.Damage},
                 {"J", GameEvent.EventType.PreConnect},
-                {"JT", GameEvent.EventType.JoinTeam },
-                {"Q", GameEvent.EventType.PreDisconnect},
+                {"JT", GameEvent.EventType.JoinTeam},
+                {"Q", GameEvent.EventType.PreDisconnect}
             };
         }
 
@@ -339,6 +340,11 @@ namespace IW4MAdmin.Application.EventParsers
                     var originIdString = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
                     var originName = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginName]];
                     var team = match.Values[Configuration.JoinTeam.GroupMapping[ParserRegex.GroupType.OriginTeam]];
+
+                    if (Configuration.TeamMapping.ContainsKey(team))
+                    {
+                        team = Configuration.TeamMapping[team].ToString();
+                    }
 
                     var networkId = originIdString.IsBotGuid() ?
                         originName.GenerateGuidFromString() :

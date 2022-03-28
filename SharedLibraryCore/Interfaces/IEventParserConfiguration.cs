@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
+using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore.Interfaces
 {
@@ -63,5 +65,10 @@ namespace SharedLibraryCore.Interfaces
         ///     indicates the format expected for parsed guids
         /// </summary>
         NumberStyles GuidNumberStyle { get; set; }
+        
+        /// <summary>
+        /// maps the team code name to a type type eg "CT" -> Allies
+        /// </summary>
+        Dictionary<string, EFClient.TeamType> TeamMapping { get; }
     }
 }

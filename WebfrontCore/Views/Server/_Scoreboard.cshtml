@@ -23,7 +23,7 @@
     }
 }
 
-<table class="table table-striped thead-light bg-dark mb-0 table-responsive-md table-sort"
+<table class="table thead-light bg-dark mb-0 table-responsive-md table-sort"
        data-sort-column="@(Model.OrderByKey ?? nameof(ClientScoreboardInfo.Score))"
        data-sort-down="@Model.ShouldOrderDescending.ToString().ToLower()">
     <tr class="bg-dark border-bottom">

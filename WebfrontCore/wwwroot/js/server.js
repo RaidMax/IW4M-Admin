@@ -54,7 +54,7 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
 
     let animationProgress = 0;
     let initialAnimationComplete = false;
-    const originalLineDraw = Chart.controllers.line.prototype.draw;
+    /*const originalLineDraw = Chart.controllers.line.prototype.draw;
     Chart.helpers.extend(Chart.controllers.line.prototype, {
         draw: function () {
             originalLineDraw.apply(this, arguments);
@@ -75,7 +75,7 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
                 ctx.restore();
             });
         }
-    });
+    });*/
 
     const canvas = document.getElementById(`server_history_canvas_${i}`);
     canvas.setAttribute('width', width);

@@ -1003,7 +1003,7 @@ namespace IW4MAdmin
                 {
                     if (!Throttled)
                     {
-                        var _event = new GameEvent()
+                        var gameEvent = new GameEvent
                         {
                             Type = GameEvent.EventType.ConnectionLost,
                             Owner = this,
@@ -1013,8 +1013,10 @@ namespace IW4MAdmin
                             Data = ConnectionErrors.ToString()
                         };
 
-                        Manager.AddEvent(_event);
+                        Manager.AddEvent(gameEvent);
                     }
+
+                    RunServerCollection();
 
                     return true;
                 }
@@ -1022,27 +1024,7 @@ namespace IW4MAdmin
                 LastMessage = DateTime.Now - start;
                 lastCount = DateTime.Now;
 
-                var appConfig = _serviceProvider.GetService<ApplicationConfiguration>();
-                // update the player history 
-                if (lastCount - playerCountStart >= appConfig.ServerDataCollectionInterval)
-                {
-                    var maxItems = Math.Ceiling(appConfig.MaxClientHistoryTime.TotalMinutes /
-                                                appConfig.ServerDataCollectionInterval.TotalMinutes);
-                    
-                    while (ClientHistory.ClientCounts.Count > maxItems) 
-                    {
-                        ClientHistory.ClientCounts.RemoveAt(0);
-                    }
-
-                    ClientHistory.ClientCounts.Add(new ClientCountSnapshot
-                    {
-                        ClientCount = ClientNum,
-                        ConnectionInterrupted = Throttled,
-                        Time = DateTime.UtcNow,
-                        Map = CurrentMap.Name
-                    });
-                    playerCountStart = DateTime.Now;
-                }
+                RunServerCollection();
 
                 // send out broadcast messages
                 if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().Configuration().AutoMessagePeriod
@@ -1088,6 +1070,34 @@ namespace IW4MAdmin
                 Console.WriteLine(loc["SERVER_ERROR_EXCEPTION"].FormatExt($"[{IP}:{Port}]"));
                 return false;
             }
+        }
+
+        private void RunServerCollection()
+        {
+            var appConfig = _serviceProvider.GetService<ApplicationConfiguration>();
+           
+            if (lastCount - playerCountStart < appConfig?.ServerDataCollectionInterval)
+            {
+                return;
+            }
+
+            var maxItems = Math.Ceiling(appConfig.MaxClientHistoryTime.TotalMinutes /
+                                        appConfig.ServerDataCollectionInterval.TotalMinutes);
+                    
+            while (ClientHistory.ClientCounts.Count > maxItems) 
+            {
+                ClientHistory.ClientCounts.RemoveAt(0);
+            }
+
+            ClientHistory.ClientCounts.Add(new ClientCountSnapshot
+            {
+                ClientCount = ClientNum,
+                ConnectionInterrupted = Throttled,
+                Time = DateTime.UtcNow,
+                Map = CurrentMap.Name
+            });
+            
+            playerCountStart = DateTime.Now;
         }
 
         public async Task Initialize()
